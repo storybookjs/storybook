@@ -1,13 +1,36 @@
-name: mvc-assess
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: Ensure your `pull_request_target` job respects the following rules:         #
+#                                                                                                 #
+# - Never write to GitHub Actions cache, as it would allow cache poisoning attacks                #
+# - Only call third-party systems that are aware the code passed to them could be untrustworthy   #
+# - Always set explicit permissions on your PR to limit the capabilities of secrets.GITHUB_TOKEN  #
+#                                                                                                 #
+###################################################################################################
 
-# Initial release: only `workflow_dispatch` is active so a maintainer can
-# trigger an assessment for a specific PR from the Actions UI. Uncomment the
-# `pull_request_target` block once the agent-skill batch path has proven the
-# end-to-end flow during the testing phase.
-#
-# Security note: assess-mvc only reads PR metadata via the GitHub API; it
-# never executes PR code. We check out the trusted base branch (never the
-# fork head) so the workflow stays safe under `pull_request_target`.
+name: sustainability-assess-mvc
 
 permissions: {}
 
@@ -16,6 +39,7 @@ on:
     inputs:
       pr_number:
         description: 'PR number to assess'
+        type: number
         required: true
       reassess:
         description: 'Reassess PRs that already have a verdict label'
@@ -25,51 +49,44 @@ on:
         description: 'Bypass skip rules (drafts, maintainers, mvc:skip)'
         type: boolean
         default: false
+
+  # Initial release: only `workflow_dispatch` is active so a maintainer can
+  # trigger an assessment for a specific PR from the Actions UI. Uncomment the
+  # `pull_request_target` block once the agent-skill batch path has proven the
+  # end-to-end flow during the testing phase.
+  # TODO: Before enabling automated runs, do the following:
+  # - Validate the behavior of the script
+  # - Assess security risks
+  # - Align with Valentin on agent harness in CI
   # pull_request_target:
   #   types:
-  #     - labeled
   #     - synchronize
   #   branches:
   #     - next
-  #     - main
 
 concurrency:
-  group: mvc-assess-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  group: assess-mvc-${{ github.event.inputs.pr_number }}
+  # TODO.
+  # group: assess-mvc-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
   assess:
-    # Run when manually dispatched, OR (when the pull_request_target triggers
-    # are eventually enabled) when the `mvc:pending` label is added or a PR
-    # already marked `mvc:failed` gets a new commit pushed.
-    if: |
-      github.repository_owner == 'storybookjs' && (
-        github.event_name == 'workflow_dispatch' ||
-        (
-          github.event_name == 'pull_request_target' &&
-          github.event.action == 'labeled' &&
-          github.event.label.name == 'mvc:pending'
-        ) ||
-        (
-          github.event_name == 'pull_request_target' &&
-          github.event.action == 'synchronize' &&
-          contains(github.event.pull_request.labels.*.name, 'mvc:failed')
-        )
-      )
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
+      issues: read
       pull-requests: write
     steps:
-      - name: Checkout (trusted base; never the fork head)
+      - name: Checkout (always checking out `next` to prevent attacks)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.ref }}
+          ref: next
           persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
 
@@ -78,23 +95,21 @@ jobs:
 
       - name: Assess MVC
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FORCE: ${{ github.event.inputs.force }}
+          # synchronize fires when new commits land on a PR that already assessed MVC — we want to re-evaluate it.
+          # TODO: re-enable
+          # REASSESS: ${{ github.event.inputs.reassess  || github.event.action == 'synchronize' }}
+          # PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number }}
+          REASSESS: ${{ github.event.inputs.reassess }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
         run: |
-          PR_NUMBER="${{ github.event.inputs.pr_number || github.event.pull_request.number }}"
-
           FLAGS=("--no-dry-run" "--dismiss-previous")
 
-          # synchronize fires when new commits land on a PR that already failed
-          # MVC — we want to re-evaluate it.
-          if [ "${{ github.event_name }}" = "pull_request_target" ] \
-             && [ "${{ github.event.action }}" = "synchronize" ]; then
+          if [ "$REASSESS" = "true" ]; then
             FLAGS+=("--reassess")
           fi
-          if [ "${{ github.event.inputs.reassess }}" = "true" ]; then
-            FLAGS+=("--reassess")
-          fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+          if [ "$FORCE" = "true" ]; then
             FLAGS+=("--force")
           fi
 

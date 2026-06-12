@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setupMsw } from '../../../utils/test-helpers/msw.ts';
-import type { PrContext } from '../types.ts';
+import { mvcPr } from '../test-helpers/fixtures.ts';
 import { checkCostBenefit } from './check.ts';
 
 const { mockJudge } = vi.hoisted(() => ({ mockJudge: vi.fn() }));
@@ -12,30 +12,13 @@ vi.mock('../../../utils/llm/client', () => ({
   resetLlmClient: vi.fn(),
 }));
 
-const pr = (overrides: Partial<PrContext> = {}): PrContext => ({
-  owner: 'storybookjs',
-  repo: 'storybook',
-  number: 1,
-  url: 'u',
-  title: 't',
-  body: 'b',
-  author: 'a',
-  isDraft: false,
-  headSha: 'sha',
-  labels: [],
-  files: [],
-  linkedIssues: [],
-  otherIssues: [], otherPrs: [], unresolved: [],
-  ...overrides,
-});
-
 describe('checkCostBenefit', () => {
   const { server, http, HttpResponse } = setupMsw();
   beforeEach(() => mockJudge.mockReset());
 
   it('PASS for trivial diff regardless of LLM (no LLM call)', async () => {
     const r = await checkCostBenefit(
-      pr({ files: [{ path: 'a.ts', additions: 5, deletions: 1, status: 'modified' }] })
+      mvcPr({ files: [{ path: 'a.ts', additions: 5, deletions: 1, status: 'modified' }] })
     );
     expect(r.status).toBe('pass');
     expect(mockJudge).not.toHaveBeenCalled();
@@ -44,7 +27,7 @@ describe('checkCostBenefit', () => {
   it('relays LLM PASS for larger changes', async () => {
     mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'proportionate' });
     const r = await checkCostBenefit(
-      pr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
+      mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
     expect(r.status).toBe('pass');
   });
@@ -52,7 +35,7 @@ describe('checkCostBenefit', () => {
   it('relays LLM WARN', async () => {
     mockJudge.mockResolvedValueOnce({ verdict: 'warn', reasoning: 'concerns' });
     const r = await checkCostBenefit(
-      pr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
+      mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
     expect(r.status).toBe('warn');
   });
@@ -63,7 +46,7 @@ describe('checkCostBenefit', () => {
       reasoning: 'edge-case + huge diff',
     });
     const r = await checkCostBenefit(
-      pr({ files: [{ path: 'a.ts', additions: 800, deletions: 100, status: 'modified' }] })
+      mvcPr({ files: [{ path: 'a.ts', additions: 800, deletions: 100, status: 'modified' }] })
     );
     expect(r.status).toBe('fail');
     expect(r.guidance).toBeTruthy();
@@ -84,7 +67,7 @@ describe('checkCostBenefit', () => {
     );
     mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
-      pr({
+      mvcPr({
         files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }],
         linkedIssues: [
           {

@@ -3,27 +3,14 @@ import { wasClosedThenReopened } from '../../../utils/github/timeline.ts';
 import type { CheckResult, PrContext } from '../types.ts';
 
 /**
- * Check 3 — Not a duplicate.
+ * PURPOSE: a PR that addresses the same issue as another open or merged PR is
+ * not a Minimum Viable Contribution. This check runs before any LLM-judged
+ * check, so we can early-abort on definitive failures without spending tokens.
  *
- * Purpose: a PR that addresses the same issue as another open or merged PR is
- * not a Minimum Viable Contribution — the maintainer's time is better spent on
- * whichever PR is already further along. This check is the second guardrail
- * (alongside Check 1) that runs before any LLM-judged check, so we can early-
- * abort on definitive structural failures without spending tokens.
- *
- * What we verify, per linked issue:
- *   - An OLDER open PR (lower PR number) cross-referencing the same issue
- *     wins → FAIL. A NEWER open PR doesn't displace this one — the first PR
- *     to be opened for an issue takes precedence.
- *   - Any merged PR that already fixed the issue → FAIL, unless the issue was
- *     subsequently closed-then-reopened (in which case the prior fix didn't
- *     hold and a new attempt is warranted).
- *   - Closed-unmerged PRs and the PR-under-review itself are ignored.
- *
- * Why this shape: we want to fail loudly on duplicate effort but stay silent
- * on dead PRs (closed-unmerged), resurrected work (reopened issues), and
- * later attempts when an earlier PR is already in flight. PR numbers are
- * monotonic per repo so "lower number = older" is a reliable proxy.
+ * FAILS WHEN:
+ * - There is an older open PR (lower PR number) cross-referencing the same issue
+ * - There is a merged PR addressing the same issue (unless the issue was closed
+ *   then reopened, indicating the merged PR wasn't sufficient)
  */
 export async function checkDuplicate(
   pr: Pick<PrContext, 'number' | 'linkedIssues'>
@@ -44,8 +31,7 @@ export async function checkDuplicate(
     ]);
     const relevant = crossRefs.filter((ref) => ref.prNumber !== pr.number);
     for (const ref of relevant) {
-      const isOlderOpenPr =
-        ref.prState === 'open' && !ref.merged && ref.prNumber < pr.number;
+      const isOlderOpenPr = ref.prState === 'open' && !ref.merged && ref.prNumber < pr.number;
       if (isOlderOpenPr) {
         conflicts.push(
           `#${ref.prNumber} (open, predates this PR) references ${issue.owner}/${issue.repo}#${issue.number}`

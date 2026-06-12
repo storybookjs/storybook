@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LinkedIssue, PrContext } from '../types.ts';
+import { mvcIssue, mvcPr } from '../test-helpers/fixtures.ts';
 import { checkRealProblem } from './check.ts';
 
 const { mockJudge } = vi.hoisted(() => ({ mockJudge: vi.fn() }));
@@ -11,34 +11,8 @@ vi.mock('../../../utils/llm/client', () => ({
   resetLlmClient: vi.fn(),
 }));
 
-const issue = (overrides: Partial<LinkedIssue> = {}): LinkedIssue => ({
-  owner: 'storybookjs',
-  repo: 'storybook',
-  number: 42,
-  url: 'u',
-  title: 'I',
-  body: 'b',
-  state: 'open',
-  labels: [],
-  ...overrides,
-});
-
-const pr = (overrides: Partial<PrContext> = {}): PrContext => ({
-  owner: 'storybookjs',
-  repo: 'storybook',
-  number: 1,
-  url: 'u',
-  title: 't',
-  body: 'b',
-  author: 'a',
-  isDraft: false,
-  headSha: 'sha',
-  labels: [],
-  files: [],
-  linkedIssues: [],
-  otherIssues: [], otherPrs: [], unresolved: [],
-  ...overrides,
-});
+const issue = mvcIssue;
+const pr = mvcPr;
 
 describe('checkRealProblem', () => {
   beforeEach(() => mockJudge.mockReset());

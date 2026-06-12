@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setupMsw } from '../utils/test-helpers/msw.ts';
-import type { PrContext } from './assess-mvc/types.ts';
+import {
+  crossRefsHandler,
+  mvcIssue,
+  mvcPr,
+  timelineHandler,
+} from './assess-mvc/test-helpers/fixtures.ts';
 import { runAssessment } from './assess-mvc.ts';
 
 const { mockJudge, mockJudgeText } = vi.hoisted(() => ({
@@ -15,32 +20,7 @@ vi.mock('../utils/llm/client', () => ({
   resetLlmClient: vi.fn(),
 }));
 
-const basePr: PrContext = {
-  owner: 'storybookjs',
-  repo: 'storybook',
-  number: 1,
-  url: 'u',
-  title: 't',
-  body: '',
-  author: 'someone',
-  isDraft: false,
-  headSha: 'sha',
-  labels: ['agent-scan:human'],
-  files: [],
-  linkedIssues: [
-    {
-      owner: 'storybookjs',
-      repo: 'storybook',
-      number: 42,
-      url: 'u',
-      title: 'I',
-      body: 'b',
-      state: 'open',
-      labels: [],
-    },
-  ],
-  otherIssues: [], otherPrs: [], unresolved: [],
-};
+const basePr = mvcPr({ linkedIssues: [mvcIssue({ number: 42 })] });
 
 // Unified shape satisfies every check's schema (zod's default `.strip()`
 // silently drops unknown keys) so we don't need to enumerate per-call shapes.
@@ -53,28 +33,19 @@ const allPassJudge = {
 };
 
 describe('runAssessment (Phase 2: deterministic + LLM)', () => {
-  const { server, http, HttpResponse } = setupMsw();
+  const { server } = setupMsw();
   beforeEach(() => {
     mockJudge.mockReset();
     mockJudgeText.mockReset();
-    // checkDuplicate hits GraphQL (cross-refs) + REST (timeline) for each linked
-    // issue. Default to empty responses; individual tests can override.
-    server.use(
-      http.post('https://api.github.com/graphql', () =>
-        HttpResponse.json({
-          data: { repository: { issue: { timelineItems: { nodes: [] } } } },
-        })
-      ),
-      http.get(
-        'https://api.github.com/repos/storybookjs/storybook/issues/:n/timeline',
-        () => HttpResponse.json([])
-      )
-    );
+    // checkDuplicate hits cross-refs + timeline for each linked issue.
+    // Default to empty responses for any issue number; individual tests
+    // override when they care.
+    server.use(crossRefsHandler(), timelineHandler());
   });
 
   it('FAILs and early-aborts when human check fails; only synthesis runs', async () => {
     mockJudgeText.mockResolvedValueOnce('composed');
-    const result = await runAssessment({ ...basePr, labels: ['agent-scan:automated'] });
+    const result = await runAssessment(mvcPr({ labels: ['agent-scan:automated'] }));
     expect(result.verdict).toBe('fail');
     expect(result.earlyAbort).toBe(true);
     // No LLM judgments on early-abort; only synthesis (judgeText) runs.

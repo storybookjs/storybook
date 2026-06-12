@@ -71,6 +71,11 @@ const CollapseButton = styled(Button)(({ theme }) => ({
   textTransform: 'uppercase',
   color: theme.textMutedColor,
   padding: '0 8px',
+  flex: '1 1 auto',
+  justifyContent: 'flex-start',
+  '&:hover': {
+    background: 'transparent',
+  },
 }));
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
@@ -201,6 +206,19 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
 
   const statusLinks = useMemo<Link[]>(() => {
+    if (item.type === 'root') {
+      return [
+        {
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />,
+          onClick: () => {
+            setFullyExpanded?.();
+          },
+        },
+      ];
+    }
+
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
@@ -219,7 +237,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
+  }, [item.id, item.type, isFullyExpanded, setFullyExpanded, onSelectStoryId, statuses, theme]);
 
   let contextMenu = useContextMenu(item, statusLinks, api);
   if (refId !== 'storybook_internal') {
@@ -339,6 +357,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         data-ref-id={refId}
         data-item-id={item.id}
         data-nodetype="root"
+        onMouseEnter={contextMenu.onMouseEnter}
       >
         <CollapseButton
           variant="ghost"
@@ -353,23 +372,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           <CollapseIcon isExpanded={isExpanded} />
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
-        {isExpanded && (
-          <Button
-            padding="small"
-            variant="ghost"
-            className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Collapse all' : 'Expand all'}
-            data-action="expand-all"
-            data-expanded={isFullyExpanded}
-            onClick={(event) => {
-              event.preventDefault();
-              // @ts-expect-error (non strict)
-              setFullyExpanded();
-            }}
-          >
-            {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-          </Button>
-        )}
+        {contextMenu.node}
       </RootNode>
     );
   }

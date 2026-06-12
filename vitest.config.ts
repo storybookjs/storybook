@@ -39,6 +39,7 @@ export default defineConfig({
 
     pool: 'threads',
     maxWorkers: threadCount,
+    experimental: {},
     projects,
 
     coverage: {

@@ -3,6 +3,7 @@ import React from 'react';
 
 import { type FunctionInterpolation, styled } from 'storybook/theming';
 
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { UseSymbol } from './IconSymbols.tsx';
 import { CollapseIcon } from './components/CollapseIcon.tsx';
 
@@ -75,17 +76,40 @@ const BranchNode = styled.button<{
 
 const LeafNode = styled.a<{ depth?: number }>(commonNodeStyles);
 
-export const RootNode = styled.div({
+export const RootNode = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   marginTop: 16,
   marginBottom: 4,
+  position: 'relative',
+  overflow: 'hidden',
+  borderRadius: 4,
+  '--tree-node-background-hover': theme.background.content,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--tree-node-background-hover': theme.background.app,
+  },
 
   '&:first-of-type': {
     marginTop: 0,
   },
-});
+
+  '&:hover, &:focus-within': {
+    '--tree-node-background-hover': theme.background.hoverable,
+    background: 'var(--tree-node-background-hover)',
+  },
+
+  '& [data-displayed="off"]': {
+    visibility: 'hidden',
+  },
+  '&:hover [data-displayed="off"], &:focus-within [data-displayed="off"]': {
+    visibility: 'visible',
+  },
+  '&:hover [data-displayed="off"] + *': {
+    visibility: 'hidden',
+  },
+}));
 
 const Wrapper = styled.div({
   display: 'flex',

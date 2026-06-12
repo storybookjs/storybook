@@ -28,6 +28,7 @@ export default defineProject({
     }),
     ...extraPlugins,
   ],
+  experimental: {},
   test: {
     name: 'storybook-ui',
     // Playwright occasionally misses the vitest-iframe frame within 1s under full-suite load.

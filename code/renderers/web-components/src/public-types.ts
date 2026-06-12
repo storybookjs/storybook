@@ -11,6 +11,7 @@ import type {
 } from 'storybook/internal/types';
 
 import type { WebComponentsRenderer } from './types.ts';
+import type {} from 'storybook/test';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { WebComponentsRenderer };

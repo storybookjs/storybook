@@ -18,6 +18,7 @@ const storyData = {
 };
 const serviceStoryData = {
   type: 'story',
+  prepared: true,
   id: 'example-button--primary',
   args: { variant: 'primary' },
   initialArgs: { variant: 'primary' },
@@ -83,6 +84,9 @@ const serviceGetDocgen = Object.assign(
       callback(serviceGetDocgen(_input));
       return fn();
     }).mockName('docgenService::getDocgen.subscribe'),
+    loaded: fn((input: { id: string }) => Promise.resolve(serviceGetDocgen(input))).mockName(
+      'docgenService::getDocgen.loaded'
+    ),
   }
 );
 

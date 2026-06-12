@@ -28,6 +28,9 @@ export const codexAgent: AgentDriver = {
     const { model, effort } = variant;
 
     const codex = new Codex({
+      config: {
+        service_tier: settings.serviceTier,
+      },
       env: {
         ...process.env,
         ...env,
@@ -37,6 +40,7 @@ export const codexAgent: AgentDriver = {
     const thread = codex.startThread({
       model,
       modelReasoningEffort: effort as ModelReasoningEffort,
+      sandboxMode: settings.sandboxMode,
       workingDirectory: projectPath,
       approvalPolicy: settings.approvalPolicy,
     });

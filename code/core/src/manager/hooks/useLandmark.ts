@@ -4,7 +4,7 @@ import {
   type AriaLandmarkProps,
   type LandmarkAria,
   useLandmark as useUpstream,
-} from '@react-aria/landmark';
+} from 'react-aria/useLandmark';
 import type { FocusableElement } from '@react-types/shared';
 
 export function useLandmark(

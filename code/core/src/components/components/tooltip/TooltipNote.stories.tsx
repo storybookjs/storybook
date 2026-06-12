@@ -31,3 +31,10 @@ export const Base = meta.story({
     note: 'This is a note',
   },
 });
+
+export const WithShortcut = meta.story({
+  args: {
+    note: 'Actions',
+    shortcut: '⌘ ⇧ U',
+  },
+});

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
-import { TabList as TabListUpstream } from 'react-aria-components/patched-dist/Tabs';
+import { TabList as TabListUpstream } from 'react-aria-components/Tabs';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button.tsx';

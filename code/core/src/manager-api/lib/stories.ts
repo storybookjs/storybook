@@ -222,7 +222,7 @@ export const transformStoryIndexToStoriesHash = (
   });
 
   const { sidebar = {} } = provider.getConfig();
-  const { showRoots, collapsedRoots = [], renderLabel } = sidebar;
+  const { showRoots, collapsedRoots = [], renderAriaLabel, renderLabel } = sidebar;
 
   const setShowRoots = typeof showRoots !== 'undefined';
 
@@ -271,6 +271,7 @@ export const transformStoryIndexToStoriesHash = (
           name: names[idx],
           tags: [],
           depth: idx,
+          renderAriaLabel,
           renderLabel,
           startCollapsed: collapsedRoots.includes(id),
           // Note that this will later get appended to the previous list of children (see below)
@@ -292,6 +293,7 @@ export const transformStoryIndexToStoriesHash = (
           tags: [],
           parent: paths[idx - 1],
           depth: idx,
+          renderAriaLabel,
           renderLabel,
           ...(childId && {
             children: [childId],
@@ -305,6 +307,7 @@ export const transformStoryIndexToStoriesHash = (
           tags: [],
           parent: paths[idx - 1],
           depth: idx,
+          renderAriaLabel,
           renderLabel,
           ...(childId && {
             children: [childId],
@@ -319,6 +322,7 @@ export const transformStoryIndexToStoriesHash = (
       ...item,
       depth: paths.length,
       parent: 'parent' in item ? item.parent : paths[paths.length - 1],
+      renderAriaLabel,
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;

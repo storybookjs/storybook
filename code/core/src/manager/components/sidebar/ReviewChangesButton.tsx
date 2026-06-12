@@ -145,7 +145,7 @@ const ReviewChangesButton = () => {
         onClick={onClick}
       >
         <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-          <UseSymbol type="new" />
+          <UseSymbol type="change-new" />
         </StyledIcon>
         {label}
       </StyledCTA>

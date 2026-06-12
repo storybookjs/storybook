@@ -16,12 +16,20 @@ import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';
 import { UseSymbol } from './IconSymbols.tsx';
 import { NoResults } from './NoResults.tsx';
-import { StatusLabel } from './StatusButton.tsx';
-import { TypeIcon } from './TreeNode.tsx';
+import { TypeIcon } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
+import type { Theme } from '@emotion/react';
+import type { StatusValue } from '../../../types/index.ts';
 
 const { document } = global;
+
+const StatusLabel = styled.div<{ status: StatusValue }>(
+  ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
+    color: getStatus(theme, status).iconColor ?? undefined,
+    margin: 3,
+  })
+);
 
 const ResultsList = styled.ol({
   listStyle: 'none',
@@ -197,8 +205,8 @@ const Result: FC<
           </TypeIcon>
         )}
         {!(item.type === 'component' || item.type === 'story') && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
-            <UseSymbol type="document" />
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="docs">
+            <UseSymbol type="docs" />
           </TypeIcon>
         )}
       </IconWrapper>

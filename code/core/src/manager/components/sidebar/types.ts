@@ -4,7 +4,10 @@ import type { ControllerStateAndHelpers } from 'downshift';
 import type { State, StoriesHash } from 'storybook/manager-api';
 
 export type Refs = State['refs'];
-export type RefType = Refs[keyof Refs] & { allStatuses?: StatusesByStoryIdAndTypeId };
+export type RefType = Refs[keyof Refs] & {
+  allStatuses?: StatusesByStoryIdAndTypeId;
+  rootIds?: string[];
+};
 export type Item = StoriesHash[keyof StoriesHash];
 export type Dataset = Record<string, Item>;
 

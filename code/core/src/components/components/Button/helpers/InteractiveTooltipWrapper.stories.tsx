@@ -5,11 +5,32 @@ import { styled } from 'storybook/theming';
 import preview from '../../../../../../.storybook/preview.tsx';
 import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper.tsx';
 
+const tooltipPlacementOptions = [
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end',
+] as const;
+
 const meta = preview.meta({
   id: 'interactive-tooltip-wrapper-component',
   title: 'InteractiveTooltipWrapper',
   component: InteractiveTooltipWrapper,
   args: { children: <button>Hover me</button> },
+  argTypes: {
+    tooltipPlacement: {
+      control: 'select',
+      options: tooltipPlacementOptions,
+    },
+  },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
@@ -50,6 +71,13 @@ export const Empty = meta.story({
 export const Tooltip = meta.story({
   args: {
     tooltip: 'Save',
+  },
+});
+
+export const CustomTooltipPlacement = meta.story({
+  args: {
+    tooltip: 'Save',
+    tooltipPlacement: 'bottom-end',
   },
 });
 

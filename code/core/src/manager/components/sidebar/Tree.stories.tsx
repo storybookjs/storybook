@@ -18,6 +18,8 @@ import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
 import { index } from './mockdata.large.ts';
 
+// TODO: add stories showcasing the Ctrl+Shift+U shortcut
+
 const managerContext: any = {
   state: {
     docsOptions: {

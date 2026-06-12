@@ -3,7 +3,9 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 const Note = styled.div(({ theme }) => ({
-  padding: '2px 6px',
+  padding: '4px 6px',
+  display: 'flex',
+  gap: '6px',
   lineHeight: '16px',
   fontSize: 10,
   fontWeight: theme.typography.weight.bold,
@@ -14,12 +16,26 @@ const Note = styled.div(({ theme }) => ({
   pointerEvents: 'none',
   zIndex: -1,
   background: theme.base === 'light' ? 'rgba(60, 60, 60, 0.9)' : 'rgba(0, 0, 0, 0.95)',
+
+  '& code': {
+    padding: '0 3px',
+    borderRadius: '2px',
+    background: 'rgba(255, 255, 255, 0.10)',
+  },
 }));
 
 export interface TooltipNoteProps {
+  /* The note to display. */
   note: string;
+  /* The optional keyboard shortcut for the action being presented. */
+  shortcut?: string;
 }
 
-export const TooltipNote = ({ note, ...props }: TooltipNoteProps) => {
-  return <Note {...props}>{note}</Note>;
+export const TooltipNote = ({ note, shortcut, ...props }: TooltipNoteProps) => {
+  return (
+    <Note {...props}>
+      <span>{note}</span>
+      {shortcut && <code>{shortcut}</code>}
+    </Note>
+  );
 };

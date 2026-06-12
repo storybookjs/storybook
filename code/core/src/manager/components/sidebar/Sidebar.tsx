@@ -209,6 +209,7 @@ export const Sidebar = React.memo(function Sidebar({
               <>
                 {
                   <Explorer
+                    api={api}
                     dataset={dataset}
                     selected={selected}
                     isLoading={isLoading}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { setupMsw } from '../test-helpers/msw.ts';
 import { fetchPr, normalizeStorybookPr } from './pr.ts';
@@ -34,6 +34,17 @@ describe('normalizeStorybookPr', () => {
 
 describe('fetchPr', () => {
   const { server, http, HttpResponse } = setupMsw();
+
+  // Default to "no Copilot timeline events" so existing tests don't have to
+  // wire one up themselves — operator-specific tests override.
+  beforeEach(() => {
+    server.use(
+      http.get(
+        'https://api.github.com/repos/storybookjs/storybook/issues/:n/timeline',
+        () => HttpResponse.json([])
+      )
+    );
+  });
 
   it('returns a PrSnapshot with files paginated', async () => {
     server.use(
@@ -89,5 +100,36 @@ describe('fetchPr', () => {
     expect(snapshot.body).not.toContain('#1001');
     expect(snapshot.body).toContain('#42');
     expect(snapshot.body).toContain('More notes');
+  });
+
+  it('attributes the PR to the Copilot operator when copilot_work_started events exist', async () => {
+    server.use(
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/3', () =>
+        HttpResponse.json({
+          number: 3,
+          title: 'agent PR',
+          body: '',
+          user: { login: 'copilot-swe-agent' },
+          draft: false,
+          head: { sha: 'sha' },
+          labels: [],
+          html_url: 'u',
+        })
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/pulls/3/files', () =>
+        HttpResponse.json([])
+      ),
+      http.get('https://api.github.com/repos/storybookjs/storybook/issues/3/timeline', () =>
+        HttpResponse.json([
+          {
+            event: 'copilot_work_started',
+            actor: { login: 'Sidnioulz' },
+            created_at: '2026-06-10T06:29:26Z',
+          },
+        ])
+      )
+    );
+    const snapshot = await fetchPr({ owner: 'storybookjs', repo: 'storybook', number: 3 });
+    expect(snapshot.author).toBe('Sidnioulz');
   });
 });

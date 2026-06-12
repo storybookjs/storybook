@@ -2,6 +2,7 @@ import memoize from 'memoizerific';
 
 import { getGithubClient } from './client.ts';
 import { ORG, PRIMARY_REPO } from './constants.ts';
+import { resolveOperator } from './operator.ts';
 
 /**
  * Coordinates for a PR or an issue. The GitHub REST and GraphQL APIs use the
@@ -113,6 +114,12 @@ async function fetchPrImpl(coords: GithubRefCoords): Promise<PrSnapshot> {
     page += 1;
   }
 
+  // For agent-authored PRs (Copilot et al.), `pr.user.login` is the bot
+  // account. The human operator's identity lives in the timeline's
+  // `copilot_work_started` event. We attribute to the operator when found so
+  // skip-rule maintainer checks and display credit the right person.
+  const operator = await resolveOperator(coords);
+
   return {
     owner: coords.owner,
     repo: coords.repo,
@@ -120,7 +127,7 @@ async function fetchPrImpl(coords: GithubRefCoords): Promise<PrSnapshot> {
     url: pr.html_url,
     title: pr.title,
     body: stripHtmlComments(pr.body ?? ''),
-    author: pr.user?.login ?? '',
+    author: operator ?? pr.user?.login ?? '',
     isDraft: Boolean(pr.draft),
     headSha: pr.head.sha,
     labels: pr.labels.map((l) => l.name),

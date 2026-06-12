@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { resetGithubClient } from '../github/client.ts';
 import { fetchCrossRefs } from '../github/cross-refs.ts';
 import { resolveLinkedIssues } from '../github/linked-issues.ts';
+import { resolveOperator } from '../github/operator.ts';
 import { fetchPr } from '../github/pr.ts';
 import { fetchIssueTimeline } from '../github/timeline.ts';
 
@@ -27,6 +28,7 @@ const MEMOIZED_FNS: MemoizedFn[] = [
   fetchIssueTimeline as unknown as MemoizedFn,
   fetchPr as unknown as MemoizedFn,
   resolveLinkedIssues as unknown as MemoizedFn,
+  resolveOperator as unknown as MemoizedFn,
 ];
 
 export function setupMsw() {

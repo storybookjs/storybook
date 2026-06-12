@@ -59,6 +59,8 @@ export type QueuedEvent = {
 // can load more than once in the same process (e.g. an addon resolving its own copy of the
 // storybook package, or dual CJS/ESM loading). An unconditional assignment would reset
 // already-resolved state back to uninitialized, silently queueing all subsequent events forever.
+// The `in` check (rather than `=== undefined`) is load-bearing: the uninitialized state is
+// literally `undefined`, so only key presence distinguishes "seeded" from "never loaded".
 if (!('SB_TELEMETRY_STATE' in globalThis)) {
   // Start in uninitialized state until we know whether telemetry is enabled or disabled based on
   // presets and CLI options. In the meantime, events are queued.
@@ -121,7 +123,7 @@ export function isTelemetryStateResolved() {
  * Registered by withTelemetry() to delegate to sendTelemetryError with full context
  * (presets, cache, error levels, sub-errors).
  */
-type PayloadErrorHandler = (error: Error, eventType: EventType) => Promise<void>;
+export type PayloadErrorHandler = (error: Error, eventType: EventType) => Promise<void>;
 
 // Guarded for the same reason as SB_TELEMETRY_STATE above: a second load of this module must not
 // clear a handler registered through the first one.

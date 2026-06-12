@@ -37,6 +37,11 @@ interface InternalPR extends PullRequest {
   labels: string[];
 }
 
+/**
+ * Fetch every merged `patch:yes` PR on `next` that hasn't yet been cherry-
+ * picked (`patch:done` not set) onto the given base branch. The release
+ * flow walks this list to decide which patches to apply.
+ */
 export async function getUnpickedPRs(
   baseBranch: string,
   verbose?: boolean
@@ -87,41 +92,4 @@ export async function getUnpickedPRs(
   ${JSON.stringify(unpickedPRs, null, 2)}`);
   }
   return unpickedPRs;
-}
-
-interface LabelsResponse {
-  repository: {
-    labels: {
-      nodes: Array<{ id: string; name: string; description: string | null }>;
-    };
-  };
-}
-
-export async function getLabelIds({
-  repo: fullRepo,
-  labelNames,
-}: {
-  labelNames: string[];
-  repo: string;
-}): Promise<Record<string, string>> {
-  const client = getGithubClient(RELEASE_SCOPES);
-  const query = labelNames.join('+');
-  const [owner, repo] = fullRepo.split('/');
-  const result = await client.graphql<LabelsResponse>(
-    `
-      query ($owner: String!, $repo: String!, $q: String!) {
-        repository(owner: $owner, name: $repo) {
-          labels(query: $q, first: 10) {
-            nodes { id name description }
-          }
-        }
-      }
-    `,
-    { owner, repo, q: query }
-  );
-  const labelToId: Record<string, string> = {};
-  for (const label of result.repository.labels.nodes) {
-    labelToId[label.name] = label.id;
-  }
-  return labelToId;
 }

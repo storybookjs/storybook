@@ -4,7 +4,7 @@ import semver from 'semver';
 import type { PullRequestInfo } from './get-github-info.ts';
 import { getPullInfoFromCommit } from './get-github-info.ts';
 import { getLatestTag, git } from './git-client.ts';
-import { getUnpickedPRs } from './pull-requests.ts';
+import { getUnpickedPRs } from './get-unpicked-prs.ts';
 
 export const RELEASED_LABELS = {
   'BREAKING CHANGE': '❗ Breaking Change',

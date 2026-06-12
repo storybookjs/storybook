@@ -44,3 +44,55 @@ export async function removeLabels(target: GithubRefCoords, labels: string[]): P
     }
   }
 }
+
+interface LabelsResponse {
+  repository: {
+    labels: {
+      nodes: Array<{ id: string; name: string; description: string | null }>;
+    };
+  };
+}
+
+const REPO_RE = /^[\w.-]+\/[\w.-]+$/;
+
+/**
+ * Resolve a set of label names to their GraphQL node IDs. Useful when a
+ * caller needs label IDs to attach via the GraphQL mutation (e.g., the
+ * release `addLabelsToLabelable` mutation), as opposed to the REST endpoint
+ * which accepts names directly.
+ *
+ * Throws on a malformed `repo` argument (expects `owner/name`) so misuse
+ * fails loudly at the call site rather than producing an empty mapping.
+ */
+export async function getLabelIds({
+  repo: fullRepo,
+  labelNames,
+}: {
+  labelNames: string[];
+  repo: string;
+}): Promise<Record<string, string>> {
+  if (!REPO_RE.test(fullRepo)) {
+    throw new Error(
+      `getLabelIds: repo must be in the form owner/name (got ${JSON.stringify(fullRepo)}).`
+    );
+  }
+  const client = getGithubClient();
+  const [owner, repo] = fullRepo.split('/');
+  const result = await client.graphql<LabelsResponse>(
+    `
+      query ($owner: String!, $repo: String!, $q: String!) {
+        repository(owner: $owner, name: $repo) {
+          labels(query: $q, first: 10) {
+            nodes { id name description }
+          }
+        }
+      }
+    `,
+    { owner, repo, q: labelNames.join('+') }
+  );
+  const labelToId: Record<string, string> = {};
+  for (const label of result.repository.labels.nodes) {
+    labelToId[label.name] = label.id;
+  }
+  return labelToId;
+}

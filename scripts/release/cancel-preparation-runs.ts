@@ -8,7 +8,7 @@ import { dedent } from 'ts-dedent';
 
 import { esMain } from '../utils/esmain.ts';
 import { getGithubClient } from '../utils/github/client.ts';
-import { RELEASE_SCOPES } from './utils/pull-requests.ts';
+import { RELEASE_SCOPES } from './utils/get-unpicked-prs.ts';
 
 program
   .name('cancel-preparation-workflows')

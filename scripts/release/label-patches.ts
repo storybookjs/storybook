@@ -7,7 +7,8 @@ import { esMain } from '../utils/esmain.ts';
 import { getGithubClient } from '../utils/github/client.ts';
 import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
-import { getLabelIds, getUnpickedPRs, RELEASE_SCOPES } from './utils/pull-requests.ts';
+import { getLabelIds } from '../utils/github/labels.ts';
+import { getUnpickedPRs, RELEASE_SCOPES } from './utils/get-unpicked-prs.ts';
 
 program
   .name('label-patches')

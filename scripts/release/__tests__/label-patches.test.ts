@@ -4,9 +4,10 @@ import ansiRegex from 'ansi-regex';
 import type { LogResult } from 'simple-git';
 
 import { run } from '../label-patches.ts';
+import * as labels_ from '../../utils/github/labels.ts';
 import * as githubInfo_ from '../utils/get-github-info.ts';
 import * as gitClient_ from '../utils/git-client.ts';
-import * as github_ from '../utils/pull-requests.ts';
+import * as unpicked_ from '../utils/get-unpicked-prs.ts';
 
 const { mockGraphql, mockRest } = vi.hoisted(() => ({
   mockGraphql: vi.fn(),
@@ -15,15 +16,17 @@ const { mockGraphql, mockRest } = vi.hoisted(() => ({
 
 vi.mock('uuid');
 vi.mock('../utils/get-github-info');
-vi.mock('../utils/pull-requests');
+vi.mock('../utils/get-unpicked-prs');
 vi.mock('../utils/git-client');
+vi.mock('../../utils/github/labels');
 vi.mock('../../utils/github/client', () => ({
   getGithubClient: () => ({ rest: mockRest, graphql: mockGraphql }),
   resetGithubClient: vi.fn(),
 }));
 
 const gitClient = vi.mocked(gitClient_, true);
-const github = vi.mocked(github_, true);
+const labels = vi.mocked(labels_, true);
+const unpicked = vi.mocked(unpicked_, true);
 const githubInfo = vi.mocked(githubInfo_, true);
 
 const remoteMock = [
@@ -84,8 +87,8 @@ beforeEach(() => {
   gitClient.git.log.mockResolvedValue(gitLogMock);
   gitClient.git.getRemotes.mockResolvedValue(remoteMock);
   githubInfo.getPullInfoFromCommit.mockResolvedValue(pullInfoMock);
-  github.getLabelIds.mockResolvedValue({ 'patch:done': 'pick-id' });
-  github.getUnpickedPRs.mockResolvedValue([
+  labels.getLabelIds.mockResolvedValue({ 'patch:done': 'pick-id' });
+  unpicked.getUnpickedPRs.mockResolvedValue([
     {
       number: 42,
       id: 'some-id',
@@ -235,5 +238,5 @@ it('should label all PRs when the --all flag is passed', async () => {
       "Successfully labeled all PRs with the patch:done label.",
     ]
   `);
-  expect(github.getUnpickedPRs).toHaveBeenCalledTimes(1);
+  expect(unpicked.getUnpickedPRs).toHaveBeenCalledTimes(1);
 });

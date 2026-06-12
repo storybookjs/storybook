@@ -54,7 +54,6 @@ sb.mock(import('uuid'));
 import '../core/src/shared/open-service/sync-test/preview.ts';
 
 const { document } = global;
-globalThis.CONFIG_TYPE = 'DEVELOPMENT';
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {

@@ -67,6 +67,8 @@ import {
   OpenServiceLoadedDrainExceededError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
+import { applyStatePatch } from './service-sync.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import { rethrowAsync, validateSchema, validateSchemaSync } from './service-validation.ts';
 import type {
   AnySchema,
@@ -1140,6 +1142,48 @@ function subscribeToQuery<TState>(
   };
 }
 
+/**
+ * When a browser static loader is active, queries with `staticPath` fetch prebuilt JSON instead of
+ * running their authored `load` hook (which typically invokes server-only commands).
+ */
+function buildQueryDefinitionsWithStaticLoader<TState>(
+  serviceId: ServiceId,
+  queries: Record<string, RuntimeQueryDefinition<TState>>,
+  staticLoader: StaticLoader,
+  setState: CommandSelf<TState>['setState']
+): Map<string, RuntimeQueryDefinition<TState>> {
+  return new Map(
+    Object.entries(queries).map(([name, queryDef]) => {
+      if (!queryDef.staticPath) {
+        return [name, queryDef] as [string, RuntimeQueryDefinition<TState>];
+      }
+
+      const { staticPath } = queryDef;
+
+      return [
+        name,
+        {
+          ...queryDef,
+          load: async (input: unknown) => {
+            const logicalPath = resolveStaticPath(serviceId, name, { staticPath }, input);
+            const snapshot = await staticLoader(logicalPath, {
+              serviceId,
+              queryName: name,
+              input,
+            });
+
+            setState((state) => {
+              applyStatePatch(state as Record<string, unknown>, snapshot, {
+                preserveMissingKeys: true,
+              });
+            });
+          },
+        },
+      ] as [string, RuntimeQueryDefinition<TState>];
+    })
+  );
+}
+
 /** Builds the runtime query map for one service runtime. */
 function buildQueries<TState>(
   refs: QueryRuntimeRefs<TState>
@@ -1166,6 +1210,7 @@ export function createServiceRuntime<
   def: ServiceDefinition<TState, TQueries, TCommands>,
   runtimeOptions: {
     registryApi: ServiceRegistryApi;
+    staticLoader?: StaticLoader;
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
@@ -1179,7 +1224,7 @@ export function createServiceRuntime<
   const state = deepSignal(rawState as object) as TState;
   const getStateSnapshot = (): TState => structuredClone(rawState);
   const commandSelf = createCommandSelf(state);
-  const { registryApi } = runtimeOptions;
+  const { registryApi, staticLoader } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: commandSelf,
     getService: registryApi.getService,
@@ -1200,9 +1245,16 @@ export function createServiceRuntime<
   let loadCommands = commands as CommandSelf<TState>['commands'];
   const remoteCommandNames = new Set<string>();
 
-  const queryDefinitions = new Map<string, RuntimeQueryDefinition<TState>>(
-    Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
-  );
+  const queryDefinitions = staticLoader
+    ? buildQueryDefinitionsWithStaticLoader(
+        def.id,
+        def.queries as Record<string, RuntimeQueryDefinition<TState>>,
+        staticLoader,
+        commandSelf.setState
+      )
+    : new Map<string, RuntimeQueryDefinition<TState>>(
+        Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
+      );
   const defaultQueries: Record<string, Query<unknown, unknown>> = {};
 
   // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer

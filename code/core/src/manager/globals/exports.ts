@@ -658,6 +658,8 @@ export default {
   ],
   'storybook/internal/manager-errors': [
     'Category',
+    'OpenServiceStaticSnapshotInvalidError',
+    'OpenServiceStaticSnapshotLoadError',
     'ProviderDoesNotExtendBaseProviderError',
     'StatusTypeIdMismatchError',
     'UncaughtManagerError',

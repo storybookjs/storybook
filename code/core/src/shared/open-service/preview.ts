@@ -22,6 +22,7 @@
  */
 
 import { registerService as registerServiceCore } from './service-registry.ts';
+import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
   Queries,
@@ -45,5 +46,7 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  return registerServiceCore(definition, registration);
+  return registerServiceCore(definition, registration, {
+    staticLoader: createBrowserStaticLoader(),
+  });
 }

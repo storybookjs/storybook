@@ -5,6 +5,10 @@ description: Invoke BEFORE you touch a frontend component, on EVERY change, with
 
 # Storybook Stories
 
+The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
+is the **mandatory, ordered process** for working on them, and for keeping
+stories in sync with every frontend component you create, modify, or delete.
+
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
 batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
@@ -21,6 +25,10 @@ working around it. Treat any shortcut as a failure of this workflow.
   you MUST NOT report the component change as complete until this workflow has
   finished for every component you touched. A component change without
   matching, verified stories is not a deliverable.
+- In sandboxed Codex environments, when running any
+  Storybook CLI command, treat it as a
+  likely sandbox/network permission issue and rerun the exact command with
+  `require_escalated` before concluding Storybook is unavailable.
 
 ## Step 0 — Prerequisites
 
@@ -70,22 +78,30 @@ re-prompting.
 
 The Storybook preview MUST be running so the story can be verified.
 
-Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand to check for running Storybook instances. If there is a running instance, note its port and open the preview URL in the preview browser.
-If there is no running instance, start it with the steps below:
+Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand with `require_escalated` to check for running Storybook instances.
 
+If there is a running instance:
+- Note its port
+- Open the preview URL in the preview browser.
+- Make the preview browser visible to the user.
+- Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
+
+If there is no running instance, start it with the steps below:
 1. Start the project's existing Storybook dev script as a background task from
    the Storybook invocation directory
 2. Wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
-3. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
+3. Make the preview browser visible to the user.
+4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
+5. Open the preview URL in the preview browser.
 
-**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
-error. If launch setup reports an error, surface it to the user and STOP.
+**Gate:** Do NOT proceed to Step 2 until the preview browser is visible to the user and has rendered the Storybook URL without
+error.
 
 ## Step 2 — Load the rules (before touching any story file)
 
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` with `require_escalated` to get all available subcommands and options.
   - Save the available subcommands and options in your working memory for reference.
-- Run the ai subcommand to get the story-writing instructions.
+- Run the ai subcommand with `require_escalated` to get the story-writing instructions.
 - Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
 
 **Gate:** Do NOT create or edit any `*.stories.*` file until you are following its output. If you have not called it this task,
@@ -93,7 +109,7 @@ you are not allowed to write a story yet — go back and call it now.
 
 ## Step 3 — Write the story
 
-Create or edit the story strictly following the Step 2 instructions. When this
+Create or edit the story STRICTLY following the Step 2 instructions. When this
 skill runs for a component change, cover the affected surface: new components
 get stories, new props/variants/states get covered, renamed states get
 updated, and deleted components get their stories removed.

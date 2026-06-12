@@ -1,10 +1,19 @@
-import { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+
+/**
+ * The project directory the config dir lives in, used to resolve story globs and to locate
+ * `tsconfig.json`/`jsconfig.json` for language detection. Taking `dirname` before resolving (not
+ * after) keeps `--config-dir .` anchored to the project root instead of its parent.
+ */
+export function getWorkingDir(configDir: string): string {
+  return isAbsolute(configDir) ? dirname(configDir) : resolve(process.cwd(), dirname(configDir));
+}
 
 /**
  * Gathers the project metadata CLI commands need from the target Storybook: config, framework,
@@ -37,9 +46,7 @@ export const getStorybookData = async ({
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
-  const workingDir = isAbsolute(configDir)
-    ? dirname(configDir)
-    : dirname(join(process.cwd(), configDir));
+  const workingDir = getWorkingDir(configDir);
 
   logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({

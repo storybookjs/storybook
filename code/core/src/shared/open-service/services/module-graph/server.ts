@@ -59,7 +59,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     },
     {
       commands: {
-        waitForSettledEngine: {
+        _waitForSettledEngine: {
           handler: async () => {
             await engine!.whenSettled();
           },
@@ -73,19 +73,19 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     workingDir,
     presets: options.presets,
     onSnapshot: (storiesByFile) => {
-      void runtime.commands.applyGraphSnapshot({ storiesByFile });
+      void runtime.commands._applyGraphSnapshot({ storiesByFile });
     },
     onUpdate: ({ storiesByFile, bumpedStoryFiles }) => {
-      void runtime.commands.applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
+      void runtime.commands._applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
     },
     onStoryIndexInvalidated: () => {
-      void runtime.commands.bumpGraphRevision(undefined);
+      void runtime.commands._bumpGraphRevision(undefined);
     },
     onError: (error) => {
-      void runtime.commands.setStatus({ value: 'error', error: errorToErrorLike(error) });
+      void runtime.commands._setStatus({ value: 'error', error: errorToErrorLike(error) });
     },
     onUnavailable: (reason, error) => {
-      void runtime.commands.setStatus({
+      void runtime.commands._setStatus({
         value: 'unavailable',
         reason,
         ...(error ? { error: errorToErrorLike(error) } : {}),
@@ -99,7 +99,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
 
   void changeDetectionAdapterPromise.then((adapter) => {
     if (!adapter) {
-      void runtime.commands.setStatus({
+      void runtime.commands._setStatus({
         value: 'unavailable',
         reason: 'builder does not support change detection',
       });

@@ -37,13 +37,13 @@ type AiPassthroughOptions = {
   json?: string;
   output?: string;
   help?: boolean;
-  /** From the shared command options in `bin/run.ts`; consumed by `withTelemetry`. */
+  /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
-  /** From the shared command options in `bin/run.ts`; consumed by the failure handler. */
+  /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
   logfile?: string | boolean;
 };
 
-/** `handleCommandFailure` from `bin/run.ts`, passed in to avoid an import cycle. */
+/** `handleAiCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
 export type CommandFailureHandler = (
   logFilePath: string | boolean | undefined
 ) => (error: unknown) => Promise<never>;

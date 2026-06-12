@@ -563,6 +563,13 @@ export const PagesAndBench = meta.story({
 
 export const RealAtomicChange = meta.story({
   args: { state: atomicChange },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Round up Button border-radius: 4px → 12px (3× theme multiplier)')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Button — atomic')).toBeInTheDocument();
+  },
 });
 
 export const Stale = meta.story({

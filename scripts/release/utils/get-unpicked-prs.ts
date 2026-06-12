@@ -1,12 +1,4 @@
-import { getGithubClient } from '../../utils/github/client.ts';
-
-/**
- * GitHub scopes required by the release flow. Surfaced in the missing-token
- * error; actual enforcement happens at GitHub. Release scripts manage labels,
- * cancel workflow runs, and read PR/issue history, so they need `repo` +
- * `workflow`.
- */
-export const RELEASE_SCOPES = Object.freeze(['repo', 'workflow']);
+import { getGithubClient, RELEASE_SCOPES } from '../../utils/github/client.ts';
 
 export interface PullRequest {
   number: number;

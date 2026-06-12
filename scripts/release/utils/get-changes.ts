@@ -47,15 +47,11 @@ export interface Change {
 
 /** `[#42](https://…)` markdown for the PR ref. */
 export const prMarkdown = (change: Change): string | null =>
-  change.prNumber !== null && change.prUrl
-    ? `[#${change.prNumber}](${change.prUrl})`
-    : null;
+  change.prNumber !== null && change.prUrl ? `[#${change.prNumber}](${change.prUrl})` : null;
 
 /** `` [`abc1234`](https://…) `` markdown for the commit ref (with link when available). */
 export const commitMarkdown = (change: Change): string =>
-  change.commitUrl
-    ? `[\`${change.commit}\`](${change.commitUrl})`
-    : `\`${change.commit}\``;
+  change.commitUrl ? `[\`${change.commit}\`](${change.commitUrl})` : `\`${change.commit}\``;
 
 const getCommitAt = async (id: string, verbose?: boolean) => {
   if (!semver.valid(id)) {
@@ -177,16 +173,12 @@ export const mapToChanges = ({
   verbose?: boolean;
 }): Change[] => {
   if (commitsWithPrs.length !== commits.length) {
-    console.error(
-      'commitsWithPrs and commits are not the same length, this should not happen'
-    );
+    console.error('commitsWithPrs and commits are not the same length, this should not happen');
     console.error(`commitsWithPrs: ${commitsWithPrs.length}`);
     console.dir(commitsWithPrs, { depth: null, colors: true });
     console.error(`Commits: ${commits.length}`);
     console.dir(commits, { depth: null, colors: true });
-    throw new Error(
-      'commitsWithPrs and commits are not the same length, this should not happen'
-    );
+    throw new Error('commitsWithPrs and commits are not the same length, this should not happen');
   }
   const allEntries = commitsWithPrs.map((it, index) => toChange(it, commits[index].message));
 

@@ -12,17 +12,6 @@ export const REVIEW_FOOTER = [
   "_This review was performed automatically and partially uses AI. If you'd like to appeal the review, please reach out to the Storybook team on [Discord](https://discord.gg/invite/storybook) in the `#contributing` channel._",
 ].join('\n');
 
-/**
- * GitHub scopes required by the assess-mvc CLI. Surfaced in the missing-token
- * error message; the actual scope enforcement happens at GitHub.
- */
-export const ASSESS_MVC_SCOPES = Object.freeze([
-  'pull_requests:read+write',
-  'issues:read+write',
-  'contents:read',
-  'members:read (org)',
-]);
-
 export const VERDICT_LABELS = {
   pass: 'mvc:success',
   fail: 'mvc:failed',

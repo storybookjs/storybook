@@ -5,11 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { esMain } from '../utils/esmain.ts';
 import { getLatestMergedPrsFromCommits } from '../utils/github/associated-prs.ts';
-import { getGithubClient } from '../utils/github/client.ts';
+import { getGithubClient, RELEASE_SCOPES } from '../utils/github/client.ts';
 import { getLabelIds } from '../utils/github/labels.ts';
 import { getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
-import { getUnpickedPRs, RELEASE_SCOPES } from './utils/get-unpicked-prs.ts';
+import { getUnpickedPRs } from './utils/get-unpicked-prs.ts';
 
 program
   .name('label-patches')

@@ -68,6 +68,23 @@ export function createGithubClient(token: string): GithubClient {
 let _client: GithubClient | null = null;
 
 /**
+ * GitHub scopes required by the release flow. Release scripts manage labels,
+ * cancel workflow runs, and read PR/issue history, so they need `repo` +
+ * `workflow`.
+ */
+export const RELEASE_SCOPES = Object.freeze(['repo', 'workflow']);
+
+/**
+ * GitHub scopes required by the assess-mvc CLI.
+ */
+export const ASSESS_MVC_SCOPES = Object.freeze([
+  'pull_requests:write',
+  'issues:read',
+  'contents:read',
+  'members:read (org)',
+]);
+
+/**
  * Process-wide GitHub client accessor. Lazy: the first call resolves the
  * token from the environment and builds a client; subsequent calls return
  * the same instance regardless of arguments. This is what every check / util

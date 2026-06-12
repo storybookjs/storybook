@@ -27,18 +27,13 @@ import * as p from '@clack/prompts';
 import { Command, Option } from 'commander';
 import pc from 'picocolors';
 
-import { getGithubClient } from '../utils/github/client.ts';
+import { getGithubClient, ASSESS_MVC_SCOPES } from '../utils/github/client.ts';
 import { addLabels, removeLabels } from '../utils/github/labels.ts';
 import { resolveLinkedIssues } from '../utils/github/linked-issues.ts';
 import { fetchPr, normalizeStorybookPr } from '../utils/github/pr.ts';
 import { dismissPriorReviews, submitReview, type ReviewEvent } from '../utils/github/reviews.ts';
 import { configureLlmClient, type Effort, type Model } from '../utils/llm/client.ts';
-import {
-  ASSESS_MVC_SCOPES,
-  MANAGED_LABELS,
-  MARKER,
-  VERDICT_LABELS,
-} from './assess-mvc/config.ts';
+import { MANAGED_LABELS, MARKER, VERDICT_LABELS } from './assess-mvc/config.ts';
 import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
 import { computeDependencyDiff } from './assess-mvc/cost-benefit/utils/dependencies.ts';
 import { computeDiffMetrics } from './assess-mvc/cost-benefit/utils/diff-metrics.ts';
@@ -271,9 +266,7 @@ async function main(): Promise<void> {
   p.log.info(
     `${statusTag} · ${partial.files.length} file(s) · head ${pc.dim(partial.headSha.slice(0, 8))}`
   );
-  p.log.info(
-    `Labels: ${partial.labels.length > 0 ? partial.labels.join(', ') : pc.dim('(none)')}`
-  );
+  p.log.info(`Labels: ${partial.labels.length > 0 ? partial.labels.join(', ') : pc.dim('(none)')}`);
   const diffMetrics = computeDiffMetrics(partial.files);
   p.log.info(
     `Diff: ${pc.bold(`+${diffMetrics.added}/-${diffMetrics.removed}`)} (net ${diffMetrics.net} LOC)`
@@ -323,7 +316,15 @@ async function main(): Promise<void> {
     `Linked: ${linkedIssues.length} · Other issues: ${otherIssues.length} · Other PRs: ${otherPrs.length} · Unresolved: ${unresolved.length}`
   );
 
-  const renderRef = (issue: { owner: string; repo: string; number: number; url: string; state: 'open' | 'closed'; title: string; sources?: readonly string[] }) => {
+  const renderRef = (issue: {
+    owner: string;
+    repo: string;
+    number: number;
+    url: string;
+    state: 'open' | 'closed';
+    title: string;
+    sources?: readonly string[];
+  }) => {
     const src = issue.sources?.join('+') ?? 'unknown';
     const ref = pc.cyan(`${issue.owner}/${issue.repo}#${issue.number}`);
     const stateTag = issue.state === 'open' ? pc.green(issue.state) : pc.dim(issue.state);

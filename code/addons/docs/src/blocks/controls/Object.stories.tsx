@@ -71,18 +71,25 @@ export const DelayedObject: Story = {
     const [value, setValue] = useState<object | undefined>(undefined);
 
     useEffect(() => {
-      setValue({
-        name: 'Michael',
-        nested: { someBool: true, someNumber: 22 },
-      });
+      setTimeout(() => {
+        setValue({
+          name: 'Michael',
+          nested: { someBool: true, someNumber: 22 },
+        });
+      }, 1_000);
     }, []);
 
     return <ObjectControl {...args} value={value} />;
   },
+  parameters: {
+    withRawArg: false,
+  },
   play: async ({ canvas }) => {
-    await canvas.findByText('Michael');
+    await canvas.findByText('"Michael"');
     await waitFor(() => {
-      expect(canvas.queryByLabelText('Edit object as JSON')).not.toBeInTheDocument();
+      expect(
+        canvas.queryByRole('textbox', { name: 'Edit object as JSON' })
+      ).not.toBeInTheDocument();
     });
   },
 };

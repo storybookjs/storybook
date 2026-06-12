@@ -61,7 +61,6 @@ import {
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
-import { hasActiveFilters } from '../../shared/utils/story-index-filters.ts';
 import type { ComposedRef } from '../root.tsx';
 import { fullStatusStore } from '../stores/status.ts';
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
@@ -599,14 +598,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     selectFirstStory: () => {
       const state = store.getState();
-      const hasAnyActiveFilters = hasActiveFilters(state);
+      const { filteredIndex } = state;
 
-      if (hasAnyActiveFilters) {
-        const { filteredIndex } = state;
-        if (!filteredIndex) {
-          return;
-        }
-
+      if (filteredIndex) {
         const firstStory = Object.keys(filteredIndex).find(
           (id) => filteredIndex[id].type === 'story'
         );
@@ -1075,11 +1069,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
          * - If the user started storybook with a specific page-URL like "/settings/about"
          */
         if (isCanvasRoute) {
-          const hasAnyActiveFilters = hasActiveFilters(state);
+          const { filteredIndex } = state;
 
-          if (hasAnyActiveFilters && !stateHasSelection) {
-            const { filteredIndex } = state;
-            const storyPassesFilter = filteredIndex && filteredIndex[storyId]?.type === 'story';
+          if (filteredIndex && !stateHasSelection) {
+            const storyPassesFilter = filteredIndex[storyId]?.type === 'story';
 
             if (!storyPassesFilter) {
               const firstFiltered = filteredIndex

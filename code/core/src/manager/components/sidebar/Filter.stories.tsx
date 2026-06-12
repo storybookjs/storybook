@@ -215,6 +215,51 @@ export const ClosedWithSelection: Story = {
   },
 };
 
+export const HiddenTagSelection: Story = {
+  ...ClosedWithSelection,
+  beforeEach: () => {
+    const originalTagsOptions = global.TAGS_OPTIONS;
+    global.TAGS_OPTIONS = {
+      ...originalTagsOptions,
+      hidden: {
+        showFilter: false,
+      },
+    };
+
+    return () => {
+      global.TAGS_OPTIONS = originalTagsOptions;
+    };
+  },
+  parameters: {
+    initialStoryState: {
+      internal_index: {
+        v: 6,
+        entries: {
+          'c1-s1': { tags: ['hidden', 'visible', 'dev', 'play-fn'], type: 'story' } as StoryIndexEntry,
+          'c1-test': { tags: ['test-fn'], type: 'story', subtype: 'test' } as StoryIndexEntry,
+          'c1-doc': { tags: [], type: 'docs' } as unknown as DocsIndexEntry,
+        },
+      } as StoryIndex,
+      includedTagFilters: ['hidden'],
+    },
+  },
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', {}, { timeout: 3000 });
+    expect(button).toHaveAccessibleName('1 active tag filter');
+
+    button.click();
+
+    const visibleTag = await screen.findByText('visible');
+    expect(visibleTag).toBeInTheDocument();
+    expect(screen.queryByText('hidden')).not.toBeInTheDocument();
+
+    const clearButton = await screen.findByRole('button', { name: 'Clear filters' });
+    clearButton.click();
+
+    await screen.findByRole('button', { name: 'Tag filters' });
+  },
+} satisfies Story;
+
 export const Clear = {
   ...ClosedWithSelection,
   beforeEach: () => {

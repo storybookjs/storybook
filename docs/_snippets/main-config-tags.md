@@ -7,6 +7,7 @@ export default {
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 };
@@ -23,6 +24,7 @@ const config: StorybookConfig = {
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 };
@@ -41,6 +43,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -60,6 +63,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -75,6 +79,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -92,6 +97,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -107,6 +113,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -122,6 +129,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });
@@ -139,6 +147,7 @@ export default defineMain({
     // 👇 Define a custom tag named "experimental"
     experimental: {
       defaultFilterSelection: 'exclude', // Or 'include'
+      showFilter: false, // Hide from the sidebar tag filter UI
     },
   },
 });

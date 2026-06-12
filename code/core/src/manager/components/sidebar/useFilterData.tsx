@@ -9,6 +9,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
+import { global } from '@storybook/global';
 
 import { color } from 'storybook/theming';
 
@@ -50,10 +51,11 @@ const BUILT_IN_FILTER_DEFS: Array<{
 export function useTagFilterEntries(indexJson: StoryIndex) {
   return useMemo(() => {
     const entries = Object.values(indexJson.entries);
+    const tagOptions = global.TAGS_OPTIONS ?? {};
 
     const userTagsCounts = entries.reduce<Record<Tag, number>>((acc, entry) => {
       entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS.has(tag)) {
+        if (!BUILT_IN_TAGS.has(tag) && tagOptions[tag]?.showFilter !== false) {
           acc[tag] = (acc[tag] || 0) + 1;
         }
       });
@@ -71,7 +73,9 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
     const getBuiltInCount = (filterFn: FilterFunction | null) =>
       entries.filter((entry) => filterFn?.(entry)).length;
 
-    const builtInEntries: TagFilterEntry[] = BUILT_IN_FILTER_DEFS.map((def) => ({
+    const builtInEntries: TagFilterEntry[] = BUILT_IN_FILTER_DEFS.filter(
+      (def) => tagOptions[def.tag]?.showFilter !== false
+    ).map((def) => ({
       id: def.id,
       type: 'built-in',
       title: def.title,

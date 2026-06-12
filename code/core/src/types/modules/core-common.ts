@@ -394,6 +394,8 @@ type Tag = string;
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
   defaultFilterSelection?: 'include' | 'exclude' | undefined;
+  /** Hide this tag from the sidebar filter UI. */
+  showFilter?: boolean;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }

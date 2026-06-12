@@ -6,7 +6,7 @@ sidebar:
 
 Parent: [main.js|ts configuration](./main-config.mdx)
 
-Type: `{ [tagName: string]: { defaultFilterSelection?: 'include' | 'exclude' } }`
+Type: `{ [tagName: string]: { defaultFilterSelection?: 'include' | 'exclude'; showFilter?: boolean } }`
 
 Define custom [tags](../../writing-stories/tags.mdx) for your stories, or alter the default configuration of built-in tags.
 
@@ -23,5 +23,11 @@ The name of the tag. This can be any static (i.e. not created dynamically) strin
 Type: `'include' | 'exclude'`
 
 Set the default filter selection state for a tag in the Storybook sidebar. If set to `include`, stories with this tag are selected as included. If set to `exclude`, stories with this tag are selected as excluded, and must be explicitly included by selecting the tag in the sidebar filter menu. If not set, the tag has no default selection.
+
+### `[tagName].showFilter`
+
+Type: `boolean`
+
+Hide a tag from the sidebar filter UI by setting this to `false`. The tag can still be used for defaults, URL filters, and other internal logic.
 
 ![Filtering by tags](../../_assets/writing-stories/tag-filter.png)

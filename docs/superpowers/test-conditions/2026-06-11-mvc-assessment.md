@@ -95,7 +95,10 @@ Short-circuits for trivial diffs; otherwise calls LLM with precomputes.
 | Net LOC > 30 + LLM PASS | PASS |
 | Net LOC > 30 + LLM WARN | WARN |
 | Net LOC > 30 + LLM FAIL | FAIL; guidance suggests narrowing or addon |
-| Added runtime dep + LLM judgement | passes the dep name into the LLM prompt |
+| PR adds new yarn.lock entries | passed as `Added` list in the LLM prompt; delta > 0 is a cost signal |
+| PR only removes yarn.lock entries (cleanup / security) | passed as `Removed` list; delta < 0 should weigh as a BENEFIT |
+| PR adds + removes the same name (version bump) | filtered out of both sets, doesn't bias the verdict |
+| PR body explains the dep changes (e.g., "removes X because of CVE-Y") | LLM should credit the rationale and lean toward PASS regardless of delta |
 | Severity label on issue (`sev:S1`–`sev:S4`) | surfaces in prompt as the severity signal |
 | Reactions on issue (+1, -1, tada) | surface in prompt |
 

@@ -40,7 +40,7 @@ import {
   VERDICT_LABELS,
 } from './assess-mvc/config.ts';
 import { checkCostBenefit } from './assess-mvc/cost-benefit/check.ts';
-import { computeAddedDependencies } from './assess-mvc/cost-benefit/utils/dependencies.ts';
+import { computeDependencyDiff } from './assess-mvc/cost-benefit/utils/dependencies.ts';
 import { computeDiffMetrics } from './assess-mvc/cost-benefit/utils/diff-metrics.ts';
 import { checkDuplicate } from './assess-mvc/duplicate/check.ts';
 import { checkExplainsHowToTest } from './assess-mvc/explains-test/check.ts';
@@ -278,11 +278,21 @@ async function main(): Promise<void> {
   p.log.info(
     `Diff: ${pc.bold(`+${diffMetrics.added}/-${diffMetrics.removed}`)} (net ${diffMetrics.net} LOC)`
   );
-  const addedDeps = computeAddedDependencies(partial.files);
-  if (addedDeps.length > 0) {
-    const preview = addedDeps.slice(0, 5).join(', ');
-    const extra = addedDeps.length > 5 ? `, +${addedDeps.length - 5} more` : '';
-    p.log.info(`New deps (${addedDeps.length}): ${preview}${extra}`);
+  const deps = computeDependencyDiff(partial.files);
+  if (deps.added.length > 0) {
+    const preview = deps.added.slice(0, 5).join(', ');
+    const extra = deps.added.length > 5 ? `, +${deps.added.length - 5} more` : '';
+    p.log.info(`New deps (${deps.added.length}): ${preview}${extra}`);
+  }
+  if (deps.removed.length > 0) {
+    const preview = deps.removed.slice(0, 5).join(', ');
+    const extra = deps.removed.length > 5 ? `, +${deps.removed.length - 5} more` : '';
+    p.log.info(`Removed deps (${deps.removed.length}): ${preview}${extra}`);
+  }
+  if (deps.added.length > 0 || deps.removed.length > 0) {
+    const sign = deps.delta > 0 ? '+' : '';
+    const tone = deps.delta < 0 ? pc.green : deps.delta > 0 ? pc.yellow : pc.dim;
+    p.log.info(`Dep delta: ${tone(`${sign}${deps.delta}`)}`);
   }
 
   const skipSpinner = p.spinner();

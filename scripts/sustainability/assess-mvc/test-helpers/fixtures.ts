@@ -4,18 +4,30 @@
  * Two goals:
  *   1. Stop redefining `pr()` / `issue()` in every check test.
  *   2. Make the GraphQL/REST response shapes available behind helpers that
- *      take our internal types (`CrossRefEvent`, `TimelineEvent`,
- *      `LinkedIssue`, `PrContext`) — tests describe the world in our domain
- *      language, the helper handles the API-shape translation.
+ *      take our internal types (`CrossRefEvent`, `Issue`, `PrContext`) —
+ *      tests describe the world in our domain language, the helper handles
+ *      the API-shape translation.
  */
 import { http, HttpResponse } from 'msw';
 
 import type { CrossRefEvent } from '../../../utils/github/cross-refs.ts';
-import type { LinkedIssue } from '../../../utils/github/linked-issues.ts';
+import type { Issue } from '../../../utils/github/issue.ts';
 import type { PrContext } from '../types.ts';
 
+const ZERO_REACTIONS: Issue['reactions'] = {
+  total_count: 0,
+  '+1': 0,
+  '-1': 0,
+  laugh: 0,
+  confused: 0,
+  heart: 0,
+  hooray: 0,
+  eyes: 0,
+  rocket: 0,
+};
+
 /** Linked issue with sensible defaults. */
-export function mvcIssue(overrides: Partial<LinkedIssue> = {}): LinkedIssue {
+export function mvcIssue(overrides: Partial<Issue> = {}): Issue {
   return {
     owner: 'storybookjs',
     repo: 'storybook',
@@ -25,6 +37,8 @@ export function mvcIssue(overrides: Partial<LinkedIssue> = {}): LinkedIssue {
     body: '',
     state: 'open',
     labels: [],
+    author: 'someone',
+    reactions: ZERO_REACTIONS,
     ...overrides,
   };
 }
@@ -45,7 +59,6 @@ export function mvcPr(overrides: Partial<PrContext> = {}): PrContext {
     files: [],
     linkedIssues: [],
     otherIssues: [],
-    otherPrs: [],
     unresolved: [],
     ...overrides,
   };
@@ -78,4 +91,36 @@ export function crossRefsHandler(refs: CrossRefEvent[] = []) {
   );
 }
 
+/**
+ * msw handler for `/issues/{n}/comments`. Takes a list of `{ login }`
+ * entries (one per comment) and emits the minimal REST shape consumed by
+ * `getIssueOrPrComments`. Returns a single un-paginated page; pass at most
+ * 99 entries to avoid the helper looking for a next page.
+ */
+export function commentsHandler(
+  issue: { owner: string; repo: string; number: number },
+  comments: Array<{ login: string | null }> = []
+) {
+  return http.get(
+    `https://api.github.com/repos/${issue.owner}/${issue.repo}/issues/${issue.number}/comments`,
+    () =>
+      HttpResponse.json(
+        comments.map((c, i) => ({
+          id: i + 1,
+          user: c.login ? { login: c.login } : null,
+          created_at: new Date(0).toISOString(),
+          body: '',
+        }))
+      )
+  );
+}
 
+/**
+ * msw handler for `/orgs/{org}/teams/{slug}/members`. Returns the given
+ * logins as a single-page response.
+ */
+export function teamMembersHandler(team: { org: string; slug: string }, logins: string[]) {
+  return http.get(`https://api.github.com/orgs/${team.org}/teams/${team.slug}/members`, () =>
+    HttpResponse.json(logins.map((login, i) => ({ id: i + 1, login })))
+  );
+}

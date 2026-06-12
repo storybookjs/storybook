@@ -106,7 +106,13 @@ describe('computeDependencyDiff', () => {
   it('returns zeros when no yarn.lock is in the diff', () => {
     expect(
       computeDependencyDiff([
-        { path: 'package.json', additions: 1, deletions: 0, patch: '+ "foo": "1"', status: 'modified' },
+        {
+          path: 'package.json',
+          additions: 1,
+          deletions: 0,
+          patch: '+ "foo": "1"',
+          status: 'modified',
+        },
       ])
     ).toEqual({ added: [], removed: [], delta: 0 });
   });

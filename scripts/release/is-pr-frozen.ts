@@ -73,13 +73,11 @@ export const run = async (options: unknown) => {
 
   const repo = await getRepo(verbose);
 
-  const [result] = await getLatestMergedPrsFromCommits({ repo, commits: [commit] }).catch(
-    (err) => {
-      console.error(`🚨 Could not get pull requests from commit: ${commit}`);
-      console.error(err);
-      throw err;
-    }
-  );
+  const [result] = await getLatestMergedPrsFromCommits({ repo, commits: [commit] }).catch((err) => {
+    console.error(`🚨 Could not get pull requests from commit: ${commit}`);
+    console.error(err);
+    throw err;
+  });
   console.log(`🔍 Found pull request:
   ${JSON.stringify(result, null, 2)}`);
 

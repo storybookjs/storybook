@@ -1,6 +1,5 @@
-import { ORG } from '../../utils/github/constants.ts';
-import { teamMembership } from '../../utils/github/teams.ts';
-import { MAINTAINER_TEAM_SLUGS, SKIP_BOT_AUTHORS } from './config.ts';
+import { isMaintainer } from '../../utils/github/teams.ts';
+import { SKIP_BOT_AUTHORS } from './config.ts';
 
 /**
  * Skip-rule evaluation. Each reason exists because of a real failure mode:
@@ -66,7 +65,7 @@ export async function evaluateSkip(
     return { skip: true, reason: 'explicit-skip' };
   }
 
-  if (await teamMembership(ORG, MAINTAINER_TEAM_SLUGS).isMaintainer(pr.author)) {
+  if (await isMaintainer(pr.author)) {
     return { skip: true, reason: 'maintainer' };
   }
 

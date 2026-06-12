@@ -10,10 +10,13 @@ import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { resetGithubClient } from '../github/client.ts';
+import { getIssueOrPrComments } from '../github/comments.ts';
 import { fetchCrossRefs } from '../github/cross-refs.ts';
-import { resolveLinkedIssues } from '../github/linked-issues.ts';
 import { resolveOperator } from '../github/copilot.ts';
+import { fetchIssue } from '../github/issue.ts';
+import { resolveLinkedIssues } from '../github/linked-issues.ts';
 import { fetchPr } from '../github/pr.ts';
+import { isMaintainer, listTeamMembers } from '../github/teams.ts';
 
 const server = setupServer();
 
@@ -24,7 +27,11 @@ interface MemoizedFn {
 }
 const MEMOIZED_FNS: MemoizedFn[] = [
   fetchCrossRefs as unknown as MemoizedFn,
+  fetchIssue as unknown as MemoizedFn,
   fetchPr as unknown as MemoizedFn,
+  getIssueOrPrComments as unknown as MemoizedFn,
+  isMaintainer as unknown as MemoizedFn,
+  listTeamMembers as unknown as MemoizedFn,
   resolveLinkedIssues as unknown as MemoizedFn,
   resolveOperator as unknown as MemoizedFn,
 ];

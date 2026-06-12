@@ -1,3 +1,5 @@
+import memoize from 'memoizerific';
+
 import { getGithubClient } from './client.ts';
 import type { FetchedIssueOrPr, IssueOrPrId } from './types.ts';
 import { isHttpError } from './utils.ts';
@@ -69,4 +71,4 @@ async function fetchIssueImpl(coords: IssueOrPrId): Promise<Issue | null> {
  *
  * Memoized by `issueId` identity.
  */
-export const fetchIssue = memoizerific(1000)(fetchIssueImpl);
+export const fetchIssue = memoize(1000)(fetchIssueImpl);

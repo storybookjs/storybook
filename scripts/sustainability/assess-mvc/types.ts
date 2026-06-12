@@ -1,8 +1,7 @@
 import type { Issue } from '../../utils/github/issue.ts';
-import type { LinkedIssue } from '../../utils/github/linked-issues.ts';
 import type { PrWithFiles } from '../../utils/github/pr.ts';
 
-export type { LinkedIssue, PrWithFiles as PrSnapshot };
+export type { Issue, PrWithFiles as PrSnapshot };
 
 export type CheckId =
   | 'human'
@@ -25,14 +24,13 @@ export type Verdict = 'pass' | 'fail';
 
 /**
  * PR + linked-references context that every check consumes. Composed from
- * the github-side `PrSnapshot` plus the four-bucket result of
- * `resolveLinkedIssues`:
+ * the github-side `PrSnapshot` plus the buckets from `resolveLinkedIssues`:
  *
  *   - `linkedIssues` — strongest signal (GitHub's `closingIssuesReferences`).
  *   - `otherIssues` — body-found refs that resolve to real issues but aren't
  *     in the API list.
- *   - `unresolved` — body-found numbers that aren't issues (could be PRs)
- *     Debug info; doesn't affect the run.
+ *   - `unresolved` — body-found numbers that aren't issues (could be PRs
+ *     or typos). Debug info; doesn't affect the run.
  */
 export interface PrContext extends PrWithFiles {
   linkedIssues: Issue[];

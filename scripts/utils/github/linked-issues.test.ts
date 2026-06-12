@@ -14,9 +14,7 @@ describe('parseBodyReferences', () => {
 
   it('extracts cross-repo storybookjs/x#N references as ambiguous', () => {
     const refs = parseBodyReferences('storybookjs', 'storybook', 'Tracks storybookjs/csf#7.');
-    expect(refs).toEqual([
-      { owner: 'storybookjs', repo: 'csf', number: 7, hint: 'ambiguous' },
-    ]);
+    expect(refs).toEqual([{ owner: 'storybookjs', repo: 'csf', number: 7, hint: 'ambiguous' }]);
   });
 
   it('extracts issue URLs with hint="issue"', () => {
@@ -25,9 +23,7 @@ describe('parseBodyReferences', () => {
       'storybook',
       'See https://github.com/storybookjs/csf/issues/12.'
     );
-    expect(refs).toEqual([
-      { owner: 'storybookjs', repo: 'csf', number: 12, hint: 'issue' },
-    ]);
+    expect(refs).toEqual([{ owner: 'storybookjs', repo: 'csf', number: 12, hint: 'issue' }]);
   });
 
   it('extracts PR URLs with hint="pull"', () => {
@@ -47,9 +43,7 @@ describe('parseBodyReferences', () => {
       'storybook',
       '#5 mentioned, see https://github.com/storybookjs/storybook/pull/5 for context.'
     );
-    expect(refs).toEqual([
-      { owner: 'storybookjs', repo: 'storybook', number: 5, hint: 'pull' },
-    ]);
+    expect(refs).toEqual([{ owner: 'storybookjs', repo: 'storybook', number: 5, hint: 'pull' }]);
   });
 
   it('ignores references outside storybookjs', () => {
@@ -202,7 +196,9 @@ describe('resolveLinkedIssues', () => {
     // observable result rather than the network shape.
     server.use(
       http.post('https://api.github.com/graphql', () =>
-        HttpResponse.json({ data: { repository: { pullRequest: { closingIssuesReferences: { nodes: [] } } } } })
+        HttpResponse.json({
+          data: { repository: { pullRequest: { closingIssuesReferences: { nodes: [] } } } },
+        })
       ),
       http.get('https://api.github.com/repos/storybookjs/storybook/issues/35138', () =>
         HttpResponse.json({

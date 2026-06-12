@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setupMsw } from '../utils/test-helpers/msw.ts';
-import {
-  crossRefsHandler,
-  mvcIssue,
-  mvcPr,
-} from './assess-mvc/test-helpers/fixtures.ts';
+import { crossRefsHandler, mvcIssue, mvcPr } from './assess-mvc/test-helpers/fixtures.ts';
 import { runAssessment } from './assess-mvc.ts';
 
 const { mockJudge, mockJudgeText } = vi.hoisted(() => ({

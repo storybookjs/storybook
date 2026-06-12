@@ -3865,14 +3865,14 @@ Exercise each row against a `sidnioulz/storybook` (or equivalent) mirror with mo
 
 ## Skip rules
 
-| Condition                         | Expected                                       |
-| --------------------------------- | ---------------------------------------------- |
+| Condition                        | Expected                                       |
+| -------------------------------- | ---------------------------------------------- |
 | Draft PR + `--skip-internal-prs` | `Skipped: draft`; exit 0; no labels, no review |
-| PR labeled `mvc:success`          | `Skipped: already-assessed`                    |
-| PR labeled `mvc:failed`           | `Skipped: already-assessed`                    |
-| PR labeled `mvc:skip`             | `Skipped: explicit-skip`                       |
-| Maintainer-authored PR            | `Skipped: maintainer`                          |
-| None of the above                 | runs assessment                                |
+| PR labeled `mvc:success`         | `Skipped: already-assessed`                    |
+| PR labeled `mvc:failed`          | `Skipped: already-assessed`                    |
+| PR labeled `mvc:skip`            | `Skipped: explicit-skip`                       |
+| Maintainer-authored PR           | `Skipped: maintainer`                          |
+| None of the above                | runs assessment                                |
 
 ## Check 1 (human-monitored)
 
@@ -3937,14 +3937,14 @@ Exercise each row against a `sidnioulz/storybook` (or equivalent) mirror with mo
 
 ## CLI flag interactions
 
-| Args                                   | Expected                                      |
-| -------------------------------------- | --------------------------------------------- |
-| `--dry-run` (default)                  | prints summary + body, no GitHub side effects |
-| `--no-dry-run`                         | labels + review applied                       |
-| `--no-dry-run --dismiss-previous`      | prior bot reviews dismissed before new one    |
+| Args                                  | Expected                                      |
+| ------------------------------------- | --------------------------------------------- |
+| `--dry-run` (default)                 | prints summary + body, no GitHub side effects |
+| `--no-dry-run`                        | labels + review applied                       |
+| `--no-dry-run --dismiss-previous`     | prior bot reviews dismissed before new one    |
 | `--skip-internal-prs` + ineligible PR | skip path                                     |
-| `--model opus-4.6 --effort high`       | passes through to LLM client                  |
-| missing `GH_TOKEN` and `GITHUB_TOKEN`  | exit 1 with scopes message                    |
+| `--model opus-4.6 --effort high`      | passes through to LLM client                  |
+| missing `GH_TOKEN` and `GITHUB_TOKEN` | exit 1 with scopes message                    |
 
 ## Idempotency
 

@@ -39,9 +39,8 @@ describe('fetchPr', () => {
   // wire one up themselves — operator-specific tests override.
   beforeEach(() => {
     server.use(
-      http.get(
-        'https://api.github.com/repos/storybookjs/storybook/issues/:n/timeline',
-        () => HttpResponse.json([])
+      http.get('https://api.github.com/repos/storybookjs/storybook/issues/:n/timeline', () =>
+        HttpResponse.json([])
       )
     );
   });
@@ -56,7 +55,17 @@ describe('fetchPr', () => {
           user: { login: 'someone' },
           draft: false,
           head: { sha: 'deadbeef' },
-          labels: [{ id: 1, name: 'bug', color: '', default: false, description: '', node_id: '', url: '' }],
+          labels: [
+            {
+              id: 1,
+              name: 'bug',
+              color: '',
+              default: false,
+              description: '',
+              node_id: '',
+              url: '',
+            },
+          ],
           html_url: 'https://github.com/storybookjs/storybook/pull/1',
         })
       ),

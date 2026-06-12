@@ -27,7 +27,12 @@ describe('evaluateSkip', () => {
   it('does not skip when --force is set, regardless of any other condition', async () => {
     stubNonMaintainer();
     const r = await evaluateSkip(
-      { ...basePr, isDraft: true, labels: ['mvc:success', 'mvc:skip'], author: 'github-actions[bot]' },
+      {
+        ...basePr,
+        isDraft: true,
+        labels: ['mvc:success', 'mvc:skip'],
+        author: 'github-actions[bot]',
+      },
       { force: true, reassess: false }
     );
     expect(r.skip).toBe(false);
@@ -47,9 +52,9 @@ describe('evaluateSkip', () => {
 
   it('skips already-assessed PRs by default', async () => {
     stubNonMaintainer();
-    expect(
-      (await evaluateSkip({ ...basePr, labels: ['mvc:success'] }, baseOpts)).reason
-    ).toBe('already-assessed');
+    expect((await evaluateSkip({ ...basePr, labels: ['mvc:success'] }, baseOpts)).reason).toBe(
+      'already-assessed'
+    );
     expect((await evaluateSkip({ ...basePr, labels: ['mvc:failed'] }, baseOpts)).reason).toBe(
       'already-assessed'
     );
@@ -72,9 +77,9 @@ describe('evaluateSkip', () => {
 
   it('skips mvc:skip', async () => {
     stubNonMaintainer();
-    expect(
-      (await evaluateSkip({ ...basePr, labels: ['mvc:skip'] }, baseOpts)).reason
-    ).toBe('explicit-skip');
+    expect((await evaluateSkip({ ...basePr, labels: ['mvc:skip'] }, baseOpts)).reason).toBe(
+      'explicit-skip'
+    );
   });
 
   it('skips maintainer-authored PRs', async () => {

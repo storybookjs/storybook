@@ -74,7 +74,9 @@ describe('LlmClient.judge', () => {
         { type: 'result' },
       ]) as unknown as ReturnType<typeof query>
     );
-    await expect(client.judge('x', z.object({ verdict: z.enum(['pass', 'fail']) }))).rejects.toThrow();
+    await expect(
+      client.judge('x', z.object({ verdict: z.enum(['pass', 'fail']) }))
+    ).rejects.toThrow();
   });
 });
 
@@ -85,9 +87,7 @@ describe('LlmClient.judgeText', () => {
         {
           type: 'assistant',
           message: {
-            content: [
-              { type: 'text', text: '## Hello\n\nThis is **markdown** with `code`.' },
-            ],
+            content: [{ type: 'text', text: '## Hello\n\nThis is **markdown** with `code`.' }],
           },
         },
         { type: 'result' },

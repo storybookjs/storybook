@@ -1,10 +1,12 @@
 import { z } from 'zod';
 
+import { getIssueOrPrComments, getUniqueParticipants } from '../../../utils/github/comments.ts';
+import { getMostSevereLabel } from '../../../utils/github/labels.ts';
+import { listMaintainerLogins } from '../../../utils/github/teams.ts';
 import { getLlmClient } from '../../../utils/llm/client.ts';
 import type { CheckResult, PrContext } from '../types.ts';
 import { computeDependencyDiff, type DependencyDiff } from './utils/dependencies.ts';
 import { computeDiffMetrics } from './utils/diff-metrics.ts';
-import { getMostSevereLabel } from '../../../utils/github/labels.ts';
 
 const SMALL_CHANGE_NET_LOC = 30;
 
@@ -25,7 +27,9 @@ const Schema = z.object({
  * PRECOMPUTES:
  * - Diff size (net LOC, files changed)
  * - Dependency change diff
- * - Linked-issue severity label, reaction and comment count as benefit signals
+ * - Linked-issue severity label and reaction count as benefit signals
+ * - External-participant count on the linked issue (comments by non-author,
+ *   non-maintainer accounts) as a popularity signal
  *
  * OUTCOME: Default behavior: small changes (≤ {@link SMALL_CHANGE_NET_LOC} net LOC,
  * no dep changes either way) short-circuit to PASS without spending tokens.
@@ -49,8 +53,24 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
   }
 
   const firstIssue = pr.linkedIssues.find((i) => i.state === 'open');
-  const severity = getMostSevereLabel(firstIssue) ?? getMostSevereLabel(pr);
+  const severity = firstIssue ? getMostSevereLabel(firstIssue) : getMostSevereLabel(pr);
   const reactions = firstIssue?.reactions;
+
+  let externalParticipantCount = 0;
+  if (firstIssue) {
+    const [comments, maintainers] = await Promise.all([
+      getIssueOrPrComments({
+        owner: firstIssue.owner,
+        repo: firstIssue.repo,
+        number: firstIssue.number,
+      }),
+      listMaintainerLogins(),
+    ]);
+    const participants = getUniqueParticipants(comments);
+    if (firstIssue.author) participants.delete(firstIssue.author);
+    for (const m of maintainers) participants.delete(m);
+    externalParticipantCount = participants.size;
+  }
 
   const prompt = buildPrompt({
     body: pr.body,
@@ -58,6 +78,8 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
     deps,
     severity,
     reactions,
+    externalParticipantCount,
+    hasLinkedIssue: Boolean(firstIssue),
   });
   const j = await getLlmClient().judge(prompt, Schema);
 
@@ -98,7 +120,12 @@ function buildPrompt(input: {
     eyes: number;
     rocket: number;
   };
+  externalParticipantCount: number;
+  hasLinkedIssue: boolean;
 }): string {
+  const participantsLine = input.hasLinkedIssue
+    ? `External participants on the linked issue (commenters who are not the issue author or a maintainer): ${input.externalParticipantCount}. Treat a high count as strong popularity evidence — multiple unrelated users hitting the same bug is a clear benefit signal.`
+    : 'External participants on the linked issue: (no linked issue).';
   return [
     'You are reviewing a Storybook pull request to judge if it is a viable external contribution. You will decide how much benefit the PR provides relative to its maintenance cost.',
     'FAIL requires CLEAR evidence of mismatch. Default to WARN under uncertainty. Default to PASS for small changes.',
@@ -117,6 +144,7 @@ function buildPrompt(input: {
     '',
     `Linked-issue severity: ${input.severity ?? '(none)'}`,
     `Reactions: +${input.reactions?.['+1'] ?? 0} -${input.reactions?.['-1'] ?? 0} laugh=${input.reactions?.laugh ?? 0} confused=${input.reactions?.confused ?? 0} heart=${input.reactions?.heart ?? 0} hooray=${input.reactions?.hooray ?? 0} eyes=${input.reactions?.eyes ?? 0} rocket=${input.reactions?.rocket ?? 0} total=${input.reactions?.total_count ?? 0}`,
+    participantsLine,
     '',
     'PR body (look for dep-change rationale, security mentions, refactor explanations):',
     input.body || '(empty)',

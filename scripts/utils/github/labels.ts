@@ -1,5 +1,7 @@
 import { getGithubClient } from './client.ts';
-import type { GithubRefCoords } from './pr.ts';
+import type { Issue } from './issue.ts';
+import type { PrWithFiles } from './pr.ts';
+import type { IssueOrPrId } from './types.ts';
 
 function isHttpError(err: unknown, status: number): boolean {
   if (!err || typeof err !== 'object' || !('status' in err)) return false;
@@ -11,7 +13,7 @@ function isHttpError(err: unknown, status: number): boolean {
  * invoke unconditionally with the result of a diff. Uses the issues endpoint
  * — PRs share the issue ID space, so the same path works for both.
  */
-export async function addLabels(target: GithubRefCoords, labels: string[]): Promise<void> {
+export async function addLabels(target: IssueOrPrId, labels: string[]): Promise<void> {
   if (labels.length === 0) return;
   const client = getGithubClient();
   await client.rest('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
@@ -27,7 +29,7 @@ export async function addLabels(target: GithubRefCoords, labels: string[]): Prom
  * call; 404s on a label that isn't present are silently swallowed so callers
  * can pass a "should-not-be-there" set without first checking what's there.
  */
-export async function removeLabels(target: GithubRefCoords, labels: string[]): Promise<void> {
+export async function removeLabels(target: IssueOrPrId, labels: string[]): Promise<void> {
   if (labels.length === 0) return;
   const client = getGithubClient();
   for (const label of labels) {
@@ -95,4 +97,9 @@ export async function getLabelIds({
     labelToId[label.name] = label.id;
   }
   return labelToId;
+}
+
+export function getMostSevereLabel(issueOrPr: Issue | PrWithFiles): string | null {
+  const severityLabels = issueOrPr.labels.filter((l) => /^sev:S[1-4]$/.test(l));
+  return severityLabels.sort()[0] ?? null;
 }

@@ -2,27 +2,18 @@ import { fetchCrossRefs } from '../../../utils/github/cross-refs.ts';
 import type { CheckResult, PrContext } from '../types.ts';
 
 /**
- * Check 3 — Not a duplicate.
+ * PURPOSE: Prevents dozens of PRs from being created for the same issue.
+ * We should have a single contribution at a time to address an issue.
  *
- * Purpose: an MVC contribution should not duplicate work already represented
- * by an existing PR, and shouldn't address a problem that's already been
- * solved. This check is the second deterministic guardrail (alongside Check
- * 1) and runs before the LLM phase, so we can early-abort on definitive
- * structural failures without spending tokens.
+ * TYPE: Deterministic.
  *
- * What we verify, per linked issue:
- *   - The linked issue is OPEN. A closed linked issue means the problem is
- *     already resolved — the author should re-open it (or open a fresh one)
- *     rather than push a new PR against a closed tracker.
- *   - No OLDER open PR (lower PR number) references the same issue. PR
- *     numbers are monotonic per repo, so "lower number = earlier" is a
- *     reliable proxy for "first PR to address this issue". The earlier PR
- *     wins; the newer one should comment on or contribute to it instead.
+ * FAILS IF:
+ * - There is an open linked issue with open PRs created before this PR.
+ * - There is a linked issue but it is already closed.
  *
- * Merged PRs and closed-unmerged PRs that reference the same issue are
- * ignored — a merged fix that didn't hold is captured by the linked issue
- * being re-opened (which makes it eligible again), and closed-unmerged PRs
- * represent abandoned work that shouldn't block a fresh attempt.
+ * Merged and closed PRs that reference the same issue are ignored if it is
+ * still open, as this is a sign previously merged PRs didn't fully address
+ * the issue.
  */
 export async function checkDuplicate(
   pr: Pick<PrContext, 'number' | 'linkedIssues'>
@@ -42,8 +33,7 @@ export async function checkDuplicate(
       id: 'duplicate',
       status: 'fail',
       evidence: `Linked issue(s) ${list} are already closed — the problem is resolved.`,
-      guidance:
-        'If this issue regressed, please re-open it (or open a fresh one) and link that.',
+      guidance: 'If this issue regressed, please re-open it (or open a fresh one and link that).',
     };
   }
 

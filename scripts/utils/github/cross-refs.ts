@@ -1,17 +1,12 @@
 import memoize from 'memoizerific';
 
 import { getGithubClient } from './client.ts';
+import type { IssueOrPrId } from './types.ts';
 
 export interface CrossRefEvent {
   prNumber: number;
   prState: 'open' | 'closed';
   merged: boolean;
-}
-
-interface IssueCoords {
-  owner: string;
-  repo: string;
-  number: number;
 }
 
 interface CrossRefsResponse {
@@ -26,7 +21,7 @@ interface CrossRefsResponse {
   };
 }
 
-async function fetchCrossRefsImpl(issue: IssueCoords): Promise<CrossRefEvent[]> {
+async function fetchCrossRefsImpl(issue: IssueOrPrId): Promise<CrossRefEvent[]> {
   const client = getGithubClient();
   const data = await client.graphql<CrossRefsResponse>(
     `query($owner:String!,$repo:String!,$num:Int!){
@@ -43,7 +38,9 @@ async function fetchCrossRefsImpl(issue: IssueCoords): Promise<CrossRefEvent[]> 
   const nodes = data.repository?.issue?.timelineItems?.nodes ?? [];
   return nodes
     .map((node) => node.source)
-    .filter((src): src is NonNullable<typeof src> => Boolean(src) && typeof src?.number === 'number')
+    .filter(
+      (src): src is NonNullable<typeof src> => Boolean(src) && typeof src?.number === 'number'
+    )
     .map((src) => ({
       prNumber: src.number as number,
       prState: src.state === 'OPEN' ? 'open' : 'closed',

@@ -5,7 +5,7 @@ const WARN_LABEL = 'agent-scan:ignore';
 const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
 
 /**
- * Check 1 — Human-monitored.
+ * Human-monitored.
  *
  * Purpose: MVC review is reserved for contributions where a human author is in
  * the loop. The agent-scan classifier labels every PR; this check turns those

@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { resetGithubClient } from '../github/client.ts';
 import { fetchCrossRefs } from '../github/cross-refs.ts';
 import { resolveLinkedIssues } from '../github/linked-issues.ts';
-import { resolveOperator } from '../github/operator.ts';
+import { resolveOperator } from '../github/copilot.ts';
 import { fetchPr } from '../github/pr.ts';
 
 const server = setupServer();

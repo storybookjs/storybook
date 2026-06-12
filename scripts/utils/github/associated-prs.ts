@@ -87,7 +87,10 @@ async function getLatestMergedPrsFromCommitsImpl(input: {
     );
   }
   for (const c of input.commits) {
-    if (!c) throw new Error('getLatestMergedPrsFromCommits: every commit SHA must be a non-empty string.');
+    if (!c)
+      throw new Error(
+        'getLatestMergedPrsFromCommits: every commit SHA must be a non-empty string.'
+      );
   }
 
   const [owner, name] = input.repo.split('/');
@@ -122,7 +125,9 @@ async function getLatestMergedPrsFromCommitsImpl(input: {
   const client = getGithubClient();
   const data = await client.graphql<BatchResponse>(query, { owner, name });
 
-  return input.commits.map((commit, i) => nodeToCommitWithPr(commit, data.repository[`c${i}`] ?? null));
+  return input.commits.map((commit, i) =>
+    nodeToCommitWithPr(commit, data.repository[`c${i}`] ?? null)
+  );
 }
 
 /**
@@ -130,9 +135,5 @@ async function getLatestMergedPrsFromCommitsImpl(input: {
  * GraphQL round-trip. Returns one `CommitWithPr` per input commit, in the
  * same order — `pr` is `null` for commits with no associated PR (or no PR
  * we could resolve). Memoized by `{ repo, commits }` identity.
- *
- * Replaces the per-commit `getPullInfoFromCommit` + Promise.all pattern from
- * the legacy release flow: batching all the lookups into one query is
- * substantially cheaper when the changelog walks 50–100 commits at a time.
  */
 export const getLatestMergedPrsFromCommits = memoize(1000)(getLatestMergedPrsFromCommitsImpl);

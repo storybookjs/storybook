@@ -308,12 +308,12 @@ async function main(): Promise<void> {
 
   const issuesSpinner = p.spinner();
   issuesSpinner.start('Resolving linked references');
-  const { linkedIssues, otherIssues, otherPrs, unresolved } = await resolveLinkedIssues({
+  const { linkedIssues, otherIssues, unresolved } = await resolveLinkedIssues({
     ...prId,
     body: partial.body,
   });
   issuesSpinner.stop(
-    `Linked: ${linkedIssues.length} · Other issues: ${otherIssues.length} · Other PRs: ${otherPrs.length} · Unresolved: ${unresolved.length}`
+    `Linked: ${linkedIssues.length} · Other issues: ${otherIssues.length} · Other PRs or Unresolved: ${unresolved.length}`
   );
 
   const renderRef = (issue: {
@@ -323,12 +323,10 @@ async function main(): Promise<void> {
     url: string;
     state: 'open' | 'closed';
     title: string;
-    sources?: readonly string[];
   }) => {
-    const src = issue.sources?.join('+') ?? 'unknown';
     const ref = pc.cyan(`${issue.owner}/${issue.repo}#${issue.number}`);
     const stateTag = issue.state === 'open' ? pc.green(issue.state) : pc.dim(issue.state);
-    return `${ref} ${pc.dim(`[${src}]`)} · ${stateTag} · ${issue.title}`;
+    return `${ref} · ${stateTag} · ${issue.title}`;
   };
 
   for (const issue of linkedIssues) {
@@ -337,18 +335,14 @@ async function main(): Promise<void> {
   for (const issue of otherIssues) {
     p.log.info(`${pc.dim('other issue')} · ${renderRef(issue)}`);
   }
-  for (const issue of otherPrs) {
-    p.log.info(`${pc.dim('other PR')} · ${renderRef(issue)}`);
-  }
   for (const ref of unresolved) {
-    p.log.warn(`Unresolved ref: ${pc.dim(ref)}`);
+    p.log.warn(`Other PR or unresolved ref: ${pc.dim(ref)}`);
   }
 
   const pr: PrContext = {
     ...partial,
     linkedIssues,
     otherIssues,
-    otherPrs,
     unresolved,
   };
 

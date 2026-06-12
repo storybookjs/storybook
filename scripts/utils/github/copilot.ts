@@ -1,7 +1,7 @@
 import memoize from 'memoizerific';
 
 import { getGithubClient } from './client.ts';
-import type { GithubRefCoords } from './pr.ts';
+import type { IssueOrPrId } from './types.ts';
 
 /**
  * Custom timeline event GitHub emits when a Copilot-driven PR is set up:
@@ -12,21 +12,18 @@ import type { GithubRefCoords } from './pr.ts';
  */
 const COPILOT_WORK_STARTED = 'copilot_work_started';
 
-async function resolveOperatorImpl(coords: GithubRefCoords): Promise<string | null> {
+async function resolveOperatorImpl(coords: IssueOrPrId): Promise<string | null> {
   const client = getGithubClient();
   let page = 1;
   let earliest: { actor: string; createdAt: string } | null = null;
   while (true) {
-    const { data } = await client.rest(
-      'GET /repos/{owner}/{repo}/issues/{issue_number}/timeline',
-      {
-        owner: coords.owner,
-        repo: coords.repo,
-        issue_number: coords.number,
-        per_page: 100,
-        page,
-      }
-    );
+    const { data } = await client.rest('GET /repos/{owner}/{repo}/issues/{issue_number}/timeline', {
+      owner: coords.owner,
+      repo: coords.repo,
+      issue_number: coords.number,
+      per_page: 100,
+      page,
+    });
     if (data.length === 0) break;
     for (const event of data) {
       const e = event as {

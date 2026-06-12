@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { fetchIssueReactions } from '../../../utils/github/reactions.ts';
 import { getLlmClient } from '../../../utils/llm/client.ts';
 import type { CheckResult, PrContext } from '../types.ts';
 import { computeDependencyDiff, type DependencyDiff } from './utils/dependencies.ts';
 import { computeDiffMetrics } from './utils/diff-metrics.ts';
+import { getMostSevereLabel } from '../../../utils/github/labels.ts';
 
 const SMALL_CHANGE_NET_LOC = 30;
 
@@ -14,24 +14,20 @@ const Schema = z.object({
 });
 
 /**
- * Check 4 — Cost / benefit ratio.
+ * PURPOSE: Every PR adds maintenance surface (review, runtime cost, future
+ * breakage). A PR that costs 500 LOC for an edge-case issue is a poor trade;
+ * the same 500 LOC for a S1 bug touching most users is obvious. This check
+ * pre-assesses the cost/benefit trade-off to flag potentially unmaintainable
+ * code early.
  *
- * Purpose: every PR adds maintenance surface (review, runtime cost, future
- * breakage). A PR that costs 500 LOC for an edge-case issue with three +1s is
- * a poor trade for a small team; the same 500 LOC for a S1 bug touching 80%
- * of users is obvious. This check makes the trade explicit so reviewers don't
- * sleepwalk into either accepting too much or rejecting too little.
+ * TYPE: Deterministic precomputes + LLM.
  *
- * What we verify (precomputes feed the LLM):
- *   - Diff size (net LOC, files changed).
- *   - Dependency changes (added AND removed — a PR that sheds dangerous
- *     transitive deps is a BENEFIT, not a cost, and we don't want to flag
- *     such PRs as cost-heavy just because their yarn.lock churned).
- *   - Linked-issue severity label, reactions, and comment count as benefit
- *     signals.
- *   - PR body — the LLM is told to look for dep-update rationale there.
+ * PRECOMPUTES:
+ * - Diff size (net LOC, files changed)
+ * - Dependency change diff
+ * - Linked-issue severity label, reaction and comment count as benefit signals
  *
- * Default behavior: small changes (≤ {@link SMALL_CHANGE_NET_LOC} net LOC,
+ * OUTCOME: Default behavior: small changes (≤ {@link SMALL_CHANGE_NET_LOC} net LOC,
  * no dep changes either way) short-circuit to PASS without spending tokens.
  * Otherwise the LLM weighs cost against benefit with a bias toward leniency
  * — FAIL only on clear mismatch, WARN under uncertainty, PASS otherwise.
@@ -53,14 +49,8 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
   }
 
   const firstIssue = pr.linkedIssues.find((i) => i.state === 'open');
-  const severity = firstIssue?.labels.find((l) => /^sev:S[1-4]$/.test(l)) ?? null;
-  const reactions = firstIssue
-    ? await fetchIssueReactions({
-        owner: firstIssue.owner,
-        repo: firstIssue.repo,
-        number: firstIssue.number,
-      })
-    : { plus1: 0, minus1: 0, tada: 0 };
+  const severity = getMostSevereLabel(firstIssue) ?? getMostSevereLabel(pr);
+  const reactions = firstIssue?.reactions;
 
   const prompt = buildPrompt({
     body: pr.body,
@@ -77,7 +67,7 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
     evidence: `${j.verdict.toUpperCase()}: ${j.reasoning}`,
     guidance:
       j.verdict === 'fail'
-        ? 'Consider splitting the PR, narrowing to the core issue, or shipping experimental scope in an addon.'
+        ? 'Consider splitting the PR, narrowing to the core issue, or shipping your proposed change in an addon outside the monorepo.'
         : undefined,
   };
 }
@@ -97,10 +87,20 @@ function buildPrompt(input: {
   diffMetrics: ReturnType<typeof computeDiffMetrics>;
   deps: DependencyDiff;
   severity: string | null;
-  reactions: { plus1: number; minus1: number; tada: number };
+  reactions?: {
+    total_count: number;
+    '+1': number;
+    '-1': number;
+    laugh: number;
+    confused: number;
+    heart: number;
+    hooray: number;
+    eyes: number;
+    rocket: number;
+  };
 }): string {
   return [
-    'You are reviewing a Storybook pull request for the MVC "cost/benefit" check.',
+    'You are reviewing a Storybook pull request to judge if it is a viable external contribution. You will decide how much benefit the PR provides relative to its maintenance cost.',
     'FAIL requires CLEAR evidence of mismatch. Default to WARN under uncertainty. Default to PASS for small changes.',
     'Edge-case linked issues warrant a stricter maintenance ceiling than broad ones.',
     '',
@@ -116,7 +116,7 @@ function buildPrompt(input: {
     `Dependencies: ${describeDeps(input.deps)}`,
     '',
     `Linked-issue severity: ${input.severity ?? '(none)'}`,
-    `Reactions: +${input.reactions.plus1} -${input.reactions.minus1} tada=${input.reactions.tada}`,
+    `Reactions: +${input.reactions?.['+1'] ?? 0} -${input.reactions?.['-1'] ?? 0} laugh=${input.reactions?.laugh ?? 0} confused=${input.reactions?.confused ?? 0} heart=${input.reactions?.heart ?? 0} hooray=${input.reactions?.hooray ?? 0} eyes=${input.reactions?.eyes ?? 0} rocket=${input.reactions?.rocket ?? 0} total=${input.reactions?.total_count ?? 0}`,
     '',
     'PR body (look for dep-change rationale, security mentions, refactor explanations):',
     input.body || '(empty)',

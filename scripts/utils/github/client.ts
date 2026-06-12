@@ -34,7 +34,7 @@ export interface GithubClient {
  * are accepted; `GH_TOKEN` wins when both are set so local `gh auth token`
  * runs override workflow defaults.
  */
-export function requireToken(
+export function requireGitHubToken(
   scopes: readonly string[],
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env
 ): string {
@@ -93,7 +93,7 @@ export const ASSESS_MVC_SCOPES = Object.freeze([
  */
 export function getGithubClient(scopes: readonly string[] = DEFAULT_GITHUB_SCOPES): GithubClient {
   if (!_client) {
-    _client = createGithubClient(requireToken(scopes));
+    _client = createGithubClient(requireGitHubToken(scopes));
   }
   return _client;
 }

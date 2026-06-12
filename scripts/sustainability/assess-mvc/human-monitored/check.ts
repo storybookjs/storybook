@@ -1,7 +1,7 @@
 import type { CheckResult, PrContext } from '../types.ts';
 
 const PASS_LABEL = 'agent-scan:human';
-const WARN_LABEL = 'agent-scan:human-operated-agent';
+const WARN_LABEL = 'agent-scan:ignore';
 const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
 
 /**
@@ -9,13 +9,13 @@ const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
  *
  * Purpose: MVC review is reserved for contributions where a human author is in
  * the loop. The agent-scan classifier labels every PR; this check turns those
- * labels into a verdict. A maintainer override (`human-operated-agent`) lets
- * us accept PRs from automated accounts that are confirmed to be driven by a
- * human in real time.
+ * labels into a verdict. A maintainer override (`ignore`) lets us accept PRs
+ * from automated accounts that are confirmed to be driven by a human in real
+ * time.
  *
  * What we verify (purely from PR labels, no I/O):
  *   - `agent-scan:human`                → PASS
- *   - `agent-scan:human-operated-agent` → WARN (maintainer-applied; an agent
+ *   - `agent-scan:ignore` → WARN (maintainer-applied; an agent
  *     account verified to be remotely controlled by a human)
  *   - `agent-scan:mixed` /
  *     `agent-scan:automated`            → FAIL
@@ -23,7 +23,7 @@ const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
  *                                          no review; CI retries later)
  *
  * Priority: PASS beats WARN beats FAIL beats DEFERRED. If a maintainer has
- * applied `human-operated-agent` on a PR also labeled `automated`, the
+ * applied `ignore` on a PR also labeled `automated`, the
  * maintainer's override wins (WARN, not FAIL).
  *
  * Why deterministic: this is the cheapest possible gate and the most

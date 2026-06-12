@@ -1,13 +1,13 @@
 ---
-name: assess-mvc
-description: Assess a single PR against the six MVC criteria, or batch-process eligible open PRs. Use when a maintainer asks for an MVC check, when reviewing a community contribution before triage, or during the backlog-sweep testing phase.
+name: sustainability-assess-mvc
+description: Check if a single PR, or all eligible open PRs, is a Minimum Viable Contribution, worthy of human reviewer time. Use to review new community contributions and tell authors how to make their PR viable; or when a maintainer asks to reassess MVC status on a PR.
 allowed-tools: Bash
 ---
 
-# Assess MVC
+# Assess Minimum Viable Contribution (MVC)
 
 Wraps `scripts/sustainability/assess-mvc.ts`. The script returns a verdict
-(PASS or FAIL), posts a tailored review (COMMENT or REQUEST_CHANGES), and
+(Deferred, PASS or FAIL), posts a tailored review (COMMENT or REQUEST_CHANGES), and
 updates `mvc:*` labels.
 
 ## Environment
@@ -21,8 +21,7 @@ Both vars must be set:
 
 ## Single PR
 
-When a maintainer or agent asks for an assessment of a specific PR. Skip
-rules apply by default; pass `--force` to bypass them.
+When a maintainer or agent asks for an assessment of a specific PR.
 
 ```bash
 GH_TOKEN=$(gh auth token) ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
@@ -30,9 +29,14 @@ GH_TOKEN=$(gh auth token) ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
 ```
 
 Defaults are dry-run (no GitHub writes); add `--no-dry-run` to apply the
-labels and submit the review. Run dry-run first when in doubt.
+labels and submit the review. Run dry-run first unless explicitly told otherwise.
+
+Skip rules apply by default; pass `--force` and `--reassess` to bypass them.
 
 ```bash
+# Safely output an assessment verdict to console.
+node scripts/sustainability/assess-mvc.ts <PR_NUMBER> --dry-run
+
 # Apply the verdict and submit the review.
 node scripts/sustainability/assess-mvc.ts <PR_NUMBER> --no-dry-run
 
@@ -62,33 +66,22 @@ Choices: `sonnet-4.6` | `opus-4.6` | `haiku-4.5` · `low` | `medium` | `high` | 
 
 ## Batch (testing-phase backlog sweep)
 
-While the workflow's `pull_request_target` triggers are still commented out,
-sweep the open backlog manually. The script's built-in skip rules handle
-ineligible PRs (drafts, prior verdicts, maintainer-authored, `mvc:skip`) so
-this is safe to run wide.
+Scan open PRs or use user input to determine which PRs to assess.
+The script's built-in skip rules handle ineligible PRs (drafts, prior verdicts,
+maintainer-authored, `mvc:skip`) so this is safe to run wide.
 
-1. Find eligible PRs:
-
-   ```bash
-   gh search prs --repo storybookjs/storybook \
-     'is:pr is:open draft:no -label:mvc:success -label:mvc:failed -label:mvc:skip' \
-     --json number --jq '.[].number' --limit 200
-   ```
-
-2. For each, assess with writes enabled:
+1. Find eligible PRs, and for each, call the assessment script:
 
    ```bash
    for pr in $(gh search prs --repo storybookjs/storybook \
      'is:pr is:open draft:no -label:mvc:success -label:mvc:failed -label:mvc:skip' \
      --json number --jq '.[].number' --limit 200); do
      GH_TOKEN=$(gh auth token) ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-       node scripts/sustainability/assess-mvc.ts "$pr" --no-dry-run --dismiss-previous
+       node scripts/sustainability/assess-mvc.ts "$pr"
    done
    ```
 
-3. Collect any `Deferred:` outputs — those are PRs without an `agent-scan:*`
-   label and will be retried automatically by the `mvc-assess` workflow once
-   `agent-scan` labels them.
+2. Collect `Pass`, `Fail` and `Deferred` outputs and present them to the user.
 
 ## Reading the output
 
@@ -106,15 +99,14 @@ clack renders progressive output. The key lines:
 - **Missing `GH_TOKEN`** → script exits 1 with the required-scopes list.
 - **PR not in `storybookjs/`** → script exits 1; the URL must point at the org.
 - **`Deferred: No agent-scan:* label yet`** → the `agent-scan` workflow hasn't
-  labeled this PR yet. Retry once it does (the `mvc-assess` workflow listens
-  for that label and re-runs automatically).
+  labeled this PR yet. Retry once it has (the `mvc-assess` workflow listens
+  for that label and re-runs automatically), or trigger it yourself.
 - **A specific check seems off** → re-run with `--model opus-4.6 --effort high`
   for that PR. If the verdict still looks wrong, capture the prompt with `-v`
   and report.
 
 ## What this script does NOT do
 
-- Approve PRs. A separate phase-2 aggregator will APPROVE when both
-  `mvc:success` and `verification:success` are present.
-- Verify PR correctness (separate `verification:*` workflow).
-- Complete PRs (add tests/stories/docs — separate finalization agent).
+- Approve PRs; this is the maintainers' job.
+- Verify PR correctness (separate verification agent).
+- Complete PRs (add tests/stories/docs; separate finalization agent).

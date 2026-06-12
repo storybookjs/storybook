@@ -10,22 +10,22 @@ describe('checkHumanMonitored', () => {
     });
   });
 
-  it('WARN when agent-scan:human-operated-agent is present', () => {
-    const r = checkHumanMonitored({ labels: ['agent-scan:human-operated-agent'] });
+  it('WARN when agent-scan:ignore is present', () => {
+    const r = checkHumanMonitored({ labels: ['agent-scan:ignore'] });
     expect(r.status).toBe('warn');
-    expect(r.evidence).toBe('Labeled agent-scan:human-operated-agent.');
+    expect(r.evidence).toBe('Labeled agent-scan:ignore.');
   });
 
   it('WARN beats FAIL when both labels are present', () => {
     const r = checkHumanMonitored({
-      labels: ['agent-scan:automated', 'agent-scan:human-operated-agent'],
+      labels: ['agent-scan:automated', 'agent-scan:ignore'],
     });
     expect(r.status).toBe('warn');
   });
 
-  it('PASS beats WARN when both human and human-operated-agent are present', () => {
+  it('PASS beats WARN when both labels are present', () => {
     const r = checkHumanMonitored({
-      labels: ['agent-scan:human', 'agent-scan:human-operated-agent'],
+      labels: ['agent-scan:human', 'agent-scan:ignore'],
     });
     expect(r.status).toBe('pass');
   });

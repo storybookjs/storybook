@@ -19,12 +19,14 @@ import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 export const ReviewCollectionSchema = v.object({
 	title: v.pipe(
 		v.string(),
-		v.description('Short, PR-dense title for this collection, e.g. "Direct Button importers".'),
+		v.description(
+			'Short, human-readable title for this collection — phrased the way a person would say it, e.g. "Components that use the Button" or "The checkout pages". Avoid story-title formats like "Button — all variants" or "UI/Button/Primary"; it must not be mistaken for a Storybook story title. Plain text, no markdown.',
+		),
 	),
 	rationale: v.pipe(
 		v.string(),
 		v.description(
-			'One sentence explaining why this collection is relevant to the change — what it shows and why a reviewer would look here. Describe the content on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown and why it matters (e.g. "The checkout pages where the Button appears in real context"), not what to do (e.g. "Verify it still renders correctly").',
+			'One sentence explaining why this collection is relevant to the change — what it shows and why a reviewer would look here. Describe the content on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown and why it matters (e.g. "The checkout pages where the **Button** appears in real context"), not what to do (e.g. "Verify it still renders correctly"). Write in markdown, restricted to **bold**, *italic*, and `code` (backticks) — no links, headings, or lists. Use bold/italic to highlight the key concept and backticks for code identifiers like component or token names (e.g. "The checkout pages where `Button` appears in real context").',
 		),
 	),
 	storyIds: v.pipe(
@@ -155,7 +157,7 @@ Provide:
     - For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree.
     - A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph).
     - Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them.
-    - Give each collection a concise title and a one-sentence rationale. The title describes **what** this collection consists of (e.g. "Button — all variants", "Checkout pages"); the rationale explains **why** this collection is relevant to the change (e.g. "The pages where the Button appears in real context").
+    - Give each collection a concise title and a one-sentence rationale. The title describes **what** this collection consists of, written the way a human would say it (e.g. "All the Button variants", "The checkout pages") — never in story-title format like "Button — all variants" or "UI/Button/Primary", which reads as a Storybook story title. The rationale explains **why** this collection is relevant to the change (e.g. "The pages where \`Button\` appears in real context"). Rationales are markdown restricted to **bold**, *italic*, and \`code\` (backticks) — use emphasis for the key concept and backticks for code identifiers; no links, headings, or lists.
     - Never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm" — describe what's on screen and why it matters, not tasks to perform.
     - When iterating on a review, keep collections and stories that also appeared in a previous review in the same order, so the reviewer isn't disoriented by reshuffling.
 - changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.

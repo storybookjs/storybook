@@ -197,6 +197,50 @@ export const internalStorybookE2e = defineJob(
   [commonJobsNoOpJob]
 );
 
+export const internalStorybookBuildE2e = defineJob(
+  'Internal storybook build E2E',
+  (workflowName) => ({
+    executor: {
+      name: 'sb_playwright',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Build internal storybook',
+          working_directory: 'code',
+          command: 'yarn storybook:ui:build',
+        },
+      },
+      {
+        run: {
+          name: 'Serve internal storybook static build',
+          working_directory: 'code',
+          background: true,
+          command: 'yarn http-server storybook-static --port 6006 -s',
+        },
+      },
+      server.wait(['6006']),
+      {
+        run: {
+          name: 'Run internal Storybook static E2E tests',
+          command:
+            'STORYBOOK_TYPE=static yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+        },
+      },
+      artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+      artifact.persist(
+        join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+        'playwright-results'
+      ),
+      testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
+      ...workflow.reportOnFailure(workflowName),
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
 export const check = defineJob(
   'TypeScript validation',
   (workflowName) => ({

@@ -31,8 +31,10 @@ const clean = (obj: { [key: string]: any }) =>
   );
 
 const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
-  height: '100%',
-  maxHeight: '100vh',
+  // `minHeight` (not `height`) so the wrapper fills a short panel but grows with tall
+  // content; otherwise a fixed height clips the bottom padding into the middle of the
+  // scrolled content and the save bar overlaps the last control (#34531).
+  minHeight: '100%',
   paddingBottom: showSaveFromUI ? 41 : 0,
   backgroundColor: theme.background.content,
 

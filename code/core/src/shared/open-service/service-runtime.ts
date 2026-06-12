@@ -1172,6 +1172,11 @@ function buildQueryDefinitionsWithStaticLoader<TState>(
               input,
             });
 
+            // Unlike reactive loads (which gate writes through `buildGatedCommands` so a superseded
+            // run cannot clobber a newer one), this write is ungated. Static snapshots are immutable
+            // and keyed per input via `staticPath(input)`, so re-running the same input produces
+            // identical data and `preserveMissingKeys: true` never erases a sibling input's state —
+            // there is no stale-write race to guard against.
             setState((state) => {
               applyStatePatch(state as Record<string, unknown>, snapshot, {
                 preserveMissingKeys: true,

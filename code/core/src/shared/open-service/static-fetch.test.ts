@@ -72,10 +72,7 @@ describe('createBrowserStaticLoader', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const loader = createBrowserStaticLoader();
-    const snapshot = await loader!(
-      'internal-fixture/static-fetch/alpha.json',
-      staticLoaderContext
-    );
+    const snapshot = await loader!('internal-fixture/static-fetch/alpha.json', staticLoaderContext);
 
     expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/alpha.json');
     expect(snapshot).toEqual({ entries: { alpha: 'from-file' } });
@@ -90,7 +87,9 @@ describe('createBrowserStaticLoader', () => {
 
     const loader = createBrowserStaticLoader();
 
-    const error = await loader!('missing.json', staticLoaderContext).catch((caught: unknown) => caught);
+    const error = await loader!('missing.json', staticLoaderContext).catch(
+      (caught: unknown) => caught
+    );
     expect(error).toBeInstanceOf(OpenServiceStaticSnapshotLoadError);
     expect(error).toMatchObject({
       data: {
@@ -170,7 +169,9 @@ describe('createBrowserStaticLoader', () => {
 
     const loader = createBrowserStaticLoader();
 
-    const error = await loader!('invalid.json', staticLoaderContext).catch((caught: unknown) => caught);
+    const error = await loader!('invalid.json', staticLoaderContext).catch(
+      (caught: unknown) => caught
+    );
     expect(error).toBeInstanceOf(OpenServiceStaticSnapshotInvalidError);
     expect(error).toMatchObject({
       data: {

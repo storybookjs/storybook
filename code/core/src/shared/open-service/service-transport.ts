@@ -63,7 +63,20 @@ import type { ServiceId } from './types.ts';
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
 type RuntimeCommand = (input: unknown) => Promise<unknown>;
 
-/** Window for a requester to receive a `services:command-ack` before rejecting. */
+/**
+ * Window for a requester to receive a `services:command-ack` before rejecting as unhandled.
+ *
+ * Detection is timing-based, not presence-based: there is no peer registry, so "no peer implements
+ * this" is inferred from the absence of an ack. The budget covers one manager↔server (or
+ * manager↔preview-iframe) round trip; 300ms is comfortably above a healthy postMessage/websocket
+ * hop while still failing fast in a static build where no server peer exists at all.
+ *
+ * Trade-off: a peer that is merely slow (busy iframe, large payload, loaded CI) can ack past this
+ * window. The responder acks-then-executes ({@link connectCommandTransport} `onInvoke`), so in that
+ * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
+ * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
+ * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
+ */
 export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
 
 type PendingRemoteCommand = {
@@ -389,6 +402,8 @@ export function connectCommandTransport(context: {
     const callId = generateClientId();
 
     return new Promise<unknown>((resolve, reject) => {
+      // Reject if no peer acknowledges in time. See REMOTE_COMMAND_ACK_TIMEOUT_MS for the
+      // best-effort semantics: a slow peer may still execute the command after we reject here.
       const noAckTimer = setTimeout(() => {
         settle(callId, (entry) =>
           entry.reject(

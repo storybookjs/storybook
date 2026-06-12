@@ -5,6 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, waitFor } from 'storybook/test';
 
 import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
+import { createDemoStore } from '../demo-store.ts';
 import { staticLoadSyncService } from './preview.ts';
 
 type StaticLoadSnapshot = {
@@ -13,31 +14,14 @@ type StaticLoadSnapshot = {
   unbackedStatus: string;
 };
 
-let currentValue: StaticLoadSnapshot = {
+const store = createDemoStore<StaticLoadSnapshot>({
   alpha: undefined,
   beta: undefined,
   unbackedStatus: 'pending',
-};
-const listeners = new Set<() => void>();
-
-function setCurrentValue(value: StaticLoadSnapshot) {
-  currentValue = value;
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribeToCurrentValue(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getCurrentValue() {
-  return currentValue;
-}
+});
 
 function StaticLoadDemo() {
-  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
+  const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
@@ -111,13 +95,13 @@ const meta = {
       beta: staticLoadSyncService.queries.getEntry({ id: 'beta' }),
       unbackedStatus: 'pending',
     };
-    setCurrentValue(initialValue);
+    store.set(initialValue);
 
     const unsubscribeAlpha = staticLoadSyncService.queries.getEntry.subscribe(
       { id: 'alpha' },
       (alpha) => {
         if (active) {
-          setCurrentValue({ ...currentValue, alpha });
+          store.set({ ...store.get(), alpha });
         }
       }
     );
@@ -125,13 +109,13 @@ const meta = {
       { id: 'beta' },
       (beta) => {
         if (active) {
-          setCurrentValue({ ...currentValue, beta });
+          store.set({ ...store.get(), beta });
         }
       }
     );
     const unsubscribeUnbacked = staticLoadSyncService.queries.getUnbacked.subscribe((unbacked) => {
       if (active && unbacked !== null) {
-        setCurrentValue({ ...currentValue, unbackedStatus: JSON.stringify(unbacked) });
+        store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
       }
     });
 
@@ -139,13 +123,13 @@ const meta = {
       .loaded()
       .then((unbacked) => {
         if (active) {
-          setCurrentValue({ ...currentValue, unbackedStatus: JSON.stringify(unbacked) });
+          store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
         }
       })
       .catch((error: unknown) => {
         if (active) {
-          setCurrentValue({
-            ...currentValue,
+          store.set({
+            ...store.get(),
             unbackedStatus: error instanceof Error ? error.message : String(error),
           });
         }
@@ -156,7 +140,7 @@ const meta = {
       unsubscribeAlpha();
       unsubscribeBeta();
       unsubscribeUnbacked();
-      setCurrentValue(initialValue);
+      store.set(initialValue);
     };
   },
 } satisfies Meta<typeof StaticLoadDemo>;

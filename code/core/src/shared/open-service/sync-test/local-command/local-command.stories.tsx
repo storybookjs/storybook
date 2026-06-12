@@ -5,29 +5,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, waitFor } from 'storybook/test';
 
 import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
+import { createDemoStore } from '../demo-store.ts';
 import { localCommandSyncService } from './preview.ts';
 
-let currentValue = '';
-const listeners = new Set<() => void>();
-
-function setCurrentValue(value: string) {
-  currentValue = value;
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribeToCurrentValue(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getCurrentValue() {
-  return currentValue;
-}
+const store = createDemoStore('');
 
 function LocalCommandDemo() {
-  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
+  const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
@@ -87,14 +71,11 @@ const meta = {
   },
   beforeEach: () => {
     const initialValue = localCommandSyncService.queries.getValue();
-    setCurrentValue(initialValue);
-    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(
-      undefined,
-      setCurrentValue
-    );
+    store.set(initialValue);
+    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(undefined, store.set);
     return async () => {
       unsubscribe();
-      setCurrentValue(initialValue);
+      store.set(initialValue);
       await localCommandSyncService.commands.setValue({ value: initialValue });
     };
   },

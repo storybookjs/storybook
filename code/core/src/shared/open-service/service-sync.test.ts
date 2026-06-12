@@ -23,14 +23,33 @@ describe('applyStatePatch', () => {
     expect(target).toEqual({ value: 'new' });
   });
 
-  it('skips prototype-pollution keys', () => {
-    const target = { safe: 'ok' };
-    const source = { __proto__: { polluted: true }, safe: 'updated' };
+  // A JSON object literal would make `__proto__` set the prototype rather than an own key, so the
+  // guard would never run. `JSON.parse` produces real own `__proto__`/`constructor`/`prototype`
+  // keys, which is exactly the untrusted payload shape that reaches this code from static files and
+  // channel snapshots.
+  const pollutionSource = () =>
+    JSON.parse(
+      '{"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true},"safe":"updated"}'
+    ) as Record<string, unknown>;
 
-    applyStatePatch(target, source as Record<string, unknown>, { preserveMissingKeys: true });
+  it('skips prototype-pollution keys when preserving missing keys', () => {
+    const target = { safe: 'ok' };
+
+    applyStatePatch(target, pollutionSource(), { preserveMissingKeys: true });
 
     expect(target).toEqual({ safe: 'updated' });
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect((Object.getPrototypeOf({}) as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('skips prototype-pollution keys when deleting missing keys', () => {
+    const target = { safe: 'ok' };
+
+    applyStatePatch(target, pollutionSource(), { preserveMissingKeys: false });
+
+    expect(target).toEqual({ safe: 'updated' });
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect((Object.getPrototypeOf({}) as Record<string, unknown>).polluted).toBeUndefined();
   });
 
   it('deletes nested keys missing from the source snapshot', () => {

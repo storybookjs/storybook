@@ -130,7 +130,8 @@ function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) 
     };
   }, [service]);
 
-  const unbackedStatus = unbackedError ?? (unbacked === null ? 'pending' : JSON.stringify(unbacked));
+  const unbackedStatus =
+    unbackedError ?? (unbacked === null ? 'pending' : JSON.stringify(unbacked));
 
   return (
     <DemoSection title="Static Load">

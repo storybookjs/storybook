@@ -28,6 +28,9 @@ Tested against a mirror PR; assertions on stdout + label state.
 
 | Setup | Flags | Expected |
 |---|---|---|
+| PR authored by `github-actions[bot]` (release bumps) | (defaults) | `Skipped: release-pr`; exit 0 |
+| PR authored by `github-actions[bot]` | `--force` | proceeds (force bypasses release-pr) |
+| PR authored by `copilot-swe-agent` (with `copilot_work_started` event) | (defaults) | proceeds — operator detection rewrites author to the human |
 | Open PR labeled `mvc:success` | (defaults) | `Skipped: already-assessed`; exit 0 |
 | Open PR labeled `mvc:failed` | (defaults) | `Skipped: already-assessed` |
 | Open PR labeled `mvc:success` | `--reassess` | proceeds with assessment |

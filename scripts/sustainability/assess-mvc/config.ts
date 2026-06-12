@@ -35,3 +35,13 @@ export const SKIP_LABELS = ['mvc:success', 'mvc:failed', 'mvc:skip'] as const;
 // Maintainer team slugs queried for `--skip-internal-prs`. Confirm with org admin
 // before enabling triggers in the workflow (spec section 12 open decision).
 export const MAINTAINER_TEAM_SLUGS = ['core', 'dx', 'maintainers'] as const;
+
+/**
+ * PR-author logins that mean "this is a release / automation PR, not a
+ * contribution to assess". Mostly GitHub Actions's bot account that authors
+ * Storybook's version-bump / patch-release PRs. Copilot-driven PRs aren't in
+ * this list — operator detection (see `resolveOperator`) rewrites their
+ * author to the human who tasked the agent, so they reach `evaluateSkip`
+ * with a human login.
+ */
+export const SKIP_BOT_AUTHORS = ['github-actions[bot]'] as const;

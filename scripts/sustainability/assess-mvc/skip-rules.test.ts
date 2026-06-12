@@ -27,9 +27,21 @@ describe('evaluateSkip', () => {
   it('does not skip when --force is set, regardless of any other condition', async () => {
     stubNonMaintainer();
     const r = await evaluateSkip(
-      { ...basePr, isDraft: true, labels: ['mvc:success', 'mvc:skip'] },
+      { ...basePr, isDraft: true, labels: ['mvc:success', 'mvc:skip'], author: 'github-actions[bot]' },
       { force: true, reassess: false }
     );
+    expect(r.skip).toBe(false);
+  });
+
+  it('skips PRs authored by github-actions[bot] as release-pr', async () => {
+    stubNonMaintainer();
+    const r = await evaluateSkip({ ...basePr, author: 'github-actions[bot]' }, baseOpts);
+    expect(r).toMatchObject({ skip: true, reason: 'release-pr' });
+  });
+
+  it('does NOT skip Copilot PRs — operator detection rewrites author to the human', async () => {
+    stubNonMaintainer();
+    const r = await evaluateSkip({ ...basePr, author: 'Sidnioulz' }, baseOpts);
     expect(r.skip).toBe(false);
   });
 

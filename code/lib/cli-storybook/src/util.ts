@@ -43,7 +43,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly isUpgrade: boolean;
   readonly beforeVersion: string;
   readonly currentCLIVersion: string;
-  readonly latestCLIVersionOnNPM: string;
+  readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
   readonly hasCsfFactoryPreview: boolean;
@@ -309,8 +309,15 @@ const processProject = async ({
       packageManager.latestVersion('storybook@next'),
     ]);
 
+    if (latestCLIVersionOnNPM == null) {
+      logger.debug(
+        `${name} - Could not determine the latest Storybook version from the registry; skipping the outdated-version check.`
+      );
+    }
+
     // Calculate version flags
-    const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM!);
+    const isCLIOutdated =
+      latestCLIVersionOnNPM != null && lt(currentCLIVersion, latestCLIVersionOnNPM);
     const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
     const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
     const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
@@ -345,7 +352,7 @@ const processProject = async ({
       isUpgrade,
       beforeVersion: versionInstalled,
       currentCLIVersion,
-      latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
+      latestCLIVersionOnNPM,
       isCLIExactPrerelease,
       autoblockerCheckResults,
       previewConfigPath,

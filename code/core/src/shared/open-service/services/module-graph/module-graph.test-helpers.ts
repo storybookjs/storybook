@@ -133,7 +133,7 @@ export function registerTestModuleGraphService(workingDir = process.cwd()) {
     },
     {
       commands: {
-        waitForSettledEngine: {
+        _waitForSettledEngine: {
           handler: async () => undefined,
         },
       },

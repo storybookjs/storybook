@@ -1,6 +1,8 @@
+import { versions } from 'storybook/internal/common';
+
 import { describe, expect, it, vi } from 'vitest';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { MCP_CLIENT_INFO, McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
 const record: StorybookInstanceRecord = {
@@ -13,10 +15,10 @@ const record: StorybookInstanceRecord = {
   mcp: { status: 'ready', endpoint: '/mcp' },
 };
 
-const jsonResponse = (body: unknown, status = 200) =>
+const jsonResponse = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
 
 const sseResponse = (body: string, status = 200) =>
@@ -24,6 +26,12 @@ const sseResponse = (body: string, status = 200) =>
     status,
     headers: { 'Content-Type': 'text/event-stream' },
   });
+
+/**
+ * Every JSON-RPC request is preceded by a best-effort `initialize` handshake POST, so the actual
+ * request under test is always the last fetch call.
+ */
+const lastCall = (fetchImpl: typeof fetch) => vi.mocked(fetchImpl).mock.calls.at(-1)!;
 
 describe('callMcpTool', () => {
   it('POSTs a JSON-RPC tools/call request to the endpoint (application/json)', async () => {
@@ -43,7 +51,7 @@ describe('callMcpTool', () => {
 
     expect(result.content).toEqual([{ type: 'text', text: 'hello' }]);
 
-    const call = vi.mocked(fetchImpl).mock.calls[0];
+    const call = lastCall(fetchImpl);
     expect(call[0]).toBe('http://localhost:6006/mcp');
     const init = call[1] as RequestInit;
     const headers = init.headers as Record<string, string>;
@@ -73,7 +81,7 @@ describe('callMcpTool', () => {
       fetchImpl
     );
 
-    expect(vi.mocked(fetchImpl).mock.calls[0][0]).toBe('http://127.0.0.1:6007/mcp');
+    expect(lastCall(fetchImpl)[0]).toBe('http://127.0.0.1:6007/mcp');
   });
 
   it('parses a single-event SSE response (text/event-stream)', async () => {
@@ -192,7 +200,7 @@ describe('listMcpTools', () => {
 
     await expect(listMcpTools(record, fetchImpl)).resolves.toEqual(tools);
 
-    const body = JSON.parse(vi.mocked(fetchImpl).mock.calls[0][1]?.body as string);
+    const body = JSON.parse(lastCall(fetchImpl)[1]?.body as string);
     expect(body).toMatchObject({ method: 'tools/list', params: {} });
   });
 
@@ -210,5 +218,146 @@ describe('listMcpTools', () => {
         result: { tools: [{ description: 'nameless' }] },
       })) as typeof fetch;
     await expect(listMcpTools(record, fetchImpl)).rejects.toThrow(/unexpected response shape/);
+  });
+});
+
+describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
+  const initializeResponse = (sessionId?: string) =>
+    jsonResponse(
+      { jsonrpc: '2.0', id: 'init', result: { protocolVersion: '2025-06-18', serverInfo: {} } },
+      200,
+      sessionId ? { 'mcp-session-id': sessionId } : {}
+    );
+
+  const toolResult = () =>
+    jsonResponse({
+      jsonrpc: '2.0',
+      id: 'call',
+      result: { content: [{ type: 'text', text: 'hi' }] },
+    });
+
+  it('sends initialize with the storybook-cli clientInfo before the actual request', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeResponse('session-1'))
+      .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
+
+    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const [initTarget, initInit] = vi.mocked(fetchImpl).mock.calls[0];
+    expect(initTarget).toBe('http://localhost:6006/mcp');
+    const initBody = JSON.parse((initInit as RequestInit).body as string);
+    expect(initBody).toMatchObject({
+      jsonrpc: '2.0',
+      method: 'initialize',
+      params: {
+        protocolVersion: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        capabilities: {},
+        clientInfo: { name: 'storybook-cli', version: versions.storybook },
+      },
+    });
+    expect(MCP_CLIENT_INFO).toEqual({ name: 'storybook-cli', version: versions.storybook });
+  });
+
+  it('threads the session id from the handshake into the actual request', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeResponse('session-42'))
+      .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
+
+    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+
+    const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
+    expect(headers['Mcp-Session-Id']).toBe('session-42');
+  });
+
+  it('proceeds without a session header when the handshake response has no session id', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeResponse(undefined))
+      .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
+
+    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+
+    expect(result.content).toEqual([{ type: 'text', text: 'hi' }]);
+    const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
+    expect(headers).not.toHaveProperty('Mcp-Session-Id');
+  });
+
+  it('proceeds without a session header when the handshake request rejects', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('connection refused'))
+      .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
+
+    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+
+    expect(result.content).toEqual([{ type: 'text', text: 'hi' }]);
+    const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
+    expect(headers).not.toHaveProperty('Mcp-Session-Id');
+  });
+
+  it('ignores the session id of a non-ok handshake response', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('boom', { status: 500, headers: { 'mcp-session-id': 'session-broken' } })
+      )
+      .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
+
+    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+
+    const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
+    expect(headers).not.toHaveProperty('Mcp-Session-Id');
+  });
+
+  it('drains the handshake response body before sending the actual request', async () => {
+    // The server stores the clientInfo while producing the handshake response body, so the
+    // follow-up request may only be sent after that body has been consumed.
+    let drained = false;
+    const initBody = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        drained = true;
+        controller.enqueue(new TextEncoder().encode('{}'));
+        controller.close();
+      },
+    });
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(initBody, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'mcp-session-id': 'session-1' },
+        })
+      )
+      .mockImplementationOnce(async () => {
+        expect(drained).toBe(true);
+        return toolResult();
+      }) as unknown as typeof fetch;
+
+    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    expect(drained).toBe(true);
+  });
+
+  it('also performs the handshake for tools/list requests', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeResponse('session-7'))
+      .mockResolvedValueOnce(
+        jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools: [] } })
+      ) as unknown as typeof fetch;
+
+    await listMcpTools(record, fetchImpl);
+
+    const initBody = JSON.parse(
+      (vi.mocked(fetchImpl).mock.calls[0][1] as RequestInit).body as string
+    );
+    expect(initBody.method).toBe('initialize');
+    const headers = (vi.mocked(fetchImpl).mock.calls[1][1] as RequestInit).headers as Record<
+      string,
+      string
+    >;
+    expect(headers['Mcp-Session-Id']).toBe('session-7');
   });
 });

@@ -42,6 +42,16 @@ type ControlsInteractiveState = {
   resetArgs: ReturnType<typeof useArgs>[2];
 };
 
+type ControlsTablesProps = ControlsInteractiveState & {
+  mainName?: string;
+  mainRows: StrictArgTypes;
+  subcomponentRows: Record<string, StrictArgTypes>;
+  include?: PropDescriptor;
+  exclude?: PropDescriptor;
+  sort?: SortType;
+  storyId: string;
+};
+
 function getControlsFilterProps(story: PreparedStory, props: ControlsProps): ControlsParameters {
   const controlsParameters = story.parameters.docs?.controls || ({} as ControlsParameters);
 
@@ -66,7 +76,7 @@ function useControlsInteractiveState(
   return { controlsId, args, globals, updateArgs, resetArgs };
 }
 
-function renderControlsTables({
+const ControlsTables: FC<ControlsTablesProps> = ({
   mainName = 'Story',
   mainRows,
   subcomponentRows,
@@ -79,20 +89,7 @@ function renderControlsTables({
   globals,
   updateArgs,
   resetArgs,
-}: {
-  mainName?: string;
-  mainRows: StrictArgTypes;
-  subcomponentRows: Record<string, StrictArgTypes>;
-  include?: PropDescriptor;
-  exclude?: PropDescriptor;
-  sort?: SortType;
-  storyId: string;
-  controlsId: string;
-  args: Args;
-  globals: Globals;
-  updateArgs: ControlsInteractiveState['updateArgs'];
-  resetArgs: ControlsInteractiveState['resetArgs'];
-}) {
+}) => {
   const filteredMainRows = filterArgTypes(mainRows, include, exclude);
 
   if (Object.keys(subcomponentRows).length === 0) {
@@ -139,7 +136,7 @@ function renderControlsTables({
       controlsId={controlsId}
     />
   );
-}
+};
 
 const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
   const { parameters, argTypes, component, subcomponents } = story;
@@ -150,14 +147,16 @@ const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) =>
     return null;
   }
 
-  return renderControlsTables({
-    mainName: getComponentName(component) || 'Story',
-    mainRows: argTypes,
-    subcomponentRows: extractSubcomponentArgTypes(subcomponents, parameters),
-    ...filterProps,
-    storyId: story.id,
-    ...interactiveState,
-  });
+  return (
+    <ControlsTables
+      mainName={getComponentName(component) || 'Story'}
+      mainRows={argTypes}
+      subcomponentRows={extractSubcomponentArgTypes(subcomponents, parameters)}
+      {...filterProps}
+      storyId={story.id}
+      {...interactiveState}
+    />
+  );
 };
 
 const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
@@ -176,14 +175,16 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
     return null;
   }
 
-  return renderControlsTables({
-    mainName: getComponentName(component) ?? serviceRows.serviceComponentName,
-    mainRows: serviceRows.mainRows,
-    subcomponentRows: serviceRows.subcomponentRows,
-    ...filterProps,
-    storyId: story.id,
-    ...interactiveState,
-  });
+  return (
+    <ControlsTables
+      mainName={getComponentName(component) ?? serviceRows.serviceComponentName}
+      mainRows={serviceRows.mainRows}
+      subcomponentRows={serviceRows.subcomponentRows}
+      {...filterProps}
+      storyId={story.id}
+      {...interactiveState}
+    />
+  );
 };
 
 const ControlsImpl: FC<ControlsProps> = (props) => {

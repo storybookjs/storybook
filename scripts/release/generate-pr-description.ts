@@ -8,8 +8,13 @@ import { z } from 'zod';
 import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import type { Change } from './utils/get-changes.ts';
-import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes.ts';
-import type { PullRequestInfo } from './utils/get-github-info.ts';
+import {
+  LABELS_BY_IMPORTANCE,
+  RELEASED_LABELS,
+  commitMarkdown,
+  getChanges,
+  prMarkdown,
+} from './utils/get-changes.ts';
 
 program
   .name('generate-pr-description')
@@ -72,25 +77,25 @@ export const mapToChangelist = ({
       return true;
     })
     .sort((a, b) => {
-      const isReleasable = (pr: PullRequestInfo) =>
-        (pr.labels ?? []).some((label) => Object.keys(RELEASED_LABELS).includes(label));
+      const isReleasable = (entry: Change) =>
+        entry.labels.some((label) => Object.keys(RELEASED_LABELS).includes(label));
       return Number(isReleasable(b)) - Number(isReleasable(a));
     })
     .map((change) => {
-      if (!change.pull) {
-        return `- [ ] **⚠️ Direct commit**: ${change.title} ${change.links.commit}`;
+      if (change.prNumber === null) {
+        return `- [ ] **⚠️ Direct commit**: ${change.title} ${commitMarkdown(change)}`;
       }
 
       const label = (change.labels
-        ?.filter((l) => Object.keys(LABELS_BY_IMPORTANCE).includes(l))
+        .filter((l) => Object.keys(LABELS_BY_IMPORTANCE).includes(l))
         .sort(
           (a, b) =>
             Object.keys(LABELS_BY_IMPORTANCE).indexOf(a) -
             Object.keys(LABELS_BY_IMPORTANCE).indexOf(b)
         )[0] || 'unknown') as keyof typeof LABELS_BY_IMPORTANCE;
 
-      return `- [ ] **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${change.links.pull}${
-        !unpickedPatches && change.labels?.includes('patch:yes') ? ' (will also be patched)' : ''
+      return `- [ ] **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${prMarkdown(change)}${
+        !unpickedPatches && change.labels.includes('patch:yes') ? ' (will also be patched)' : ''
       }`;
     })
     .join('\n');
@@ -113,7 +118,7 @@ export const mapCherryPicksToTodo = ({
           `Cherry pick commit "${commit}" not found in changes, this should not happen?!`
         );
       }
-      return `- [ ] ${foundChange.links.pull}: \`git cherry-pick -m1 -x ${commit}\``;
+      return `- [ ] ${prMarkdown(foundChange) ?? commitMarkdown(foundChange)}: \`git cherry-pick -m1 -x ${commit}\``;
     })
     .join('\n');
 

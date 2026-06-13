@@ -1,0 +1,116 @@
+###################################################################################################
+#                                                                                                 #
+#                                            ██                                                   #
+#                                          ██░░██                                                 #
+#  ░░          ░░                        ██░░░░░░██                            ░░░░               #
+#                                      ██░░░░░░░░░░██                                             #
+#                                      ██░░░░░░░░░░██                                             #
+#                                    ██░░░░░░░░░░░░░░██                                           #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                  ██░░░░░░██████░░░░░░██                                         #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                                ██░░░░░░░░██████░░░░░░░░██                                       #
+#                              ██░░░░░░░░░░██████░░░░░░░░░░██                                     #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                            ██░░░░░░░░░░░░██████░░░░░░░░░░░░██                                   #
+#                          ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██                                 #
+#                          ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                                 #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                        ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██                               #
+#                      ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██                             #
+#        ░░            ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██                             #
+#                        ██████████████████████████████████████████                               #
+#                                                                                                 #
+#                                                                                                 #
+#   SECURITY WARNING: Ensure your `pull_request_target` job respects the following rules:         #
+#                                                                                                 #
+# - Never write to GitHub Actions cache, as it would allow cache poisoning attacks                #
+# - Only call third-party systems that are aware the code passed to them could be untrustworthy   #
+# - Always set explicit permissions on your PR to limit the capabilities of secrets.GITHUB_TOKEN  #
+#                                                                                                 #
+###################################################################################################
+
+name: sustainability-assess-mvc
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to assess'
+        type: number
+        required: true
+      reassess:
+        description: 'Reassess PRs that already have a verdict label'
+        type: boolean
+        default: false
+      force:
+        description: 'Bypass skip rules (drafts, maintainers, mvc:skip)'
+        type: boolean
+        default: false
+
+  # Initial release: only `workflow_dispatch` is active so a maintainer can
+  # trigger an assessment for a specific PR from the Actions UI. Uncomment the
+  # `pull_request_target` block once the agent-skill batch path has proven the
+  # end-to-end flow during the testing phase.
+  # TODO: Before enabling automated runs, do the following:
+  # - Validate the behavior of the script
+  # - Assess security risks
+  # - Align with Valentin on agent harness in CI
+  # pull_request_target:
+  #   types:
+  #     - synchronize
+  #   branches:
+  #     - next
+
+concurrency:
+  group: assess-mvc-${{ github.event.inputs.pr_number }}
+  # TODO.
+  # group: assess-mvc-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  assess:
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+    steps:
+      - name: Checkout (always checking out `next` to prevent attacks)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: next
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Assess MVC
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FORCE: ${{ github.event.inputs.force }}
+          # synchronize fires when new commits land on a PR that already assessed MVC — we want to re-evaluate it.
+          # TODO: re-enable
+          # REASSESS: ${{ github.event.inputs.reassess  || github.event.action == 'synchronize' }}
+          # PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number }}
+          REASSESS: ${{ github.event.inputs.reassess }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+        run: |
+          FLAGS=("--no-dry-run" "--dismiss-previous")
+
+          if [ "$REASSESS" = "true" ]; then
+            FLAGS+=("--reassess")
+          fi
+          if [ "$FORCE" = "true" ]; then
+            FLAGS+=("--force")
+          fi
+
+          node scripts/sustainability/assess-mvc.ts "$PR_NUMBER" "${FLAGS[@]}"

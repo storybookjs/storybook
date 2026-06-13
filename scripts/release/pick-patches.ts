@@ -7,7 +7,7 @@ import invariant from 'tiny-invariant';
 
 import { esMain } from '../utils/esmain.ts';
 import { git } from './utils/git-client.ts';
-import { getUnpickedPRs } from './utils/github-client.ts';
+import { getUnpickedPRs } from './utils/get-unpicked-prs.ts';
 
 program.name('pick-patches').description('Cherry pick patch PRs back to main');
 

@@ -1,0 +1,294 @@
+import { Tag } from 'storybook/internal/core-server';
+import { storyNameFromExport } from 'storybook/internal/csf';
+import { extractDescription as extractCsfDescription, loadCsf } from 'storybook/internal/csf-tools';
+import type {
+  ComponentManifest,
+  IndexEntry,
+  PresetPropertyFn,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
+
+import path from 'pathe';
+
+import type { Component, Directive } from '../client/compodoc-types';
+import {
+  extractDescription as extractCompodocDescription,
+  findComponentInCompodoc,
+  getComponentFilePath,
+  invalidateCompodocCache,
+  loadCompodocJson,
+} from './compodocDocgen';
+import { generateAngularSnippet, mergeArgsFromAst } from './generateCodeSnippet';
+import { buildComponentImport } from './getComponentImports';
+import { extractJSDocInfo } from './jsdocTags';
+import { cachedFindUp, cachedReadFileSync, invalidateCache } from './utils';
+
+type ComponentOrDirective = Component | Directive;
+
+/** Angular-specific extension of ComponentManifest with Compodoc raw data. */
+interface AngularComponentManifest extends ComponentManifest {
+  /** Raw Compodoc data for future extensions */
+  compodocData?: ComponentOrDirective;
+}
+
+function selectComponentEntries(manifestEntries: IndexEntry[]) {
+  const entriesByComponentId = new Map<string, IndexEntry>();
+
+  manifestEntries
+    .filter(
+      (entry) =>
+        (entry.type === 'story' && entry.subtype === 'story') ||
+        // Attached docs entries are the only docs entries that can contribute to a
+        // component manifest, because they point back to a story file through storiesImports.
+        (entry.type === 'docs' &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
+          entry.storiesImports.length > 0)
+    )
+    .forEach((entry) => {
+      const componentId = entry.id.split('--')[0];
+      const existingEntry = entriesByComponentId.get(componentId);
+
+      if (!existingEntry) {
+        // Keep the first eligible entry as a fallback so docs-only manifest coverage
+        // continues to work when no story entry for that component carries the manifest tag.
+        entriesByComponentId.set(componentId, entry);
+        return;
+      }
+
+      if (existingEntry.type === 'docs' && entry.type === 'story') {
+        // When both entries exist for the same component id, the story entry is authoritative.
+        // Attached docs may list unrelated stories first in storiesImports, so using the story
+        // entry avoids resolving the manifest from the wrong file.
+        entriesByComponentId.set(componentId, entry);
+      }
+    });
+
+  return [...entriesByComponentId.values()];
+}
+
+/** Find the nearest package.json and return its `name` field. */
+function getPackageInfo(
+  componentPath: string | undefined,
+  fallbackPath: string
+): string | undefined {
+  const nearestPkg = cachedFindUp('package.json', {
+    cwd: path.dirname(componentPath ?? fallbackPath),
+  });
+
+  try {
+    return nearestPkg
+      ? (JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string) as { name?: string }).name
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Extract stories from a parsed CSF file, generating Angular template snippets. */
+function extractStories(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  componentData: ComponentOrDirective | undefined,
+  manifestEntries: IndexEntry[]
+) {
+  const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
+
+  return Object.entries(csf._stories)
+    .filter(([, story]) =>
+      // Only include stories that are in the list of entries already filtered for the 'manifest' tag
+      manifestEntryIds.has(story.id)
+    )
+    .map(([storyExport, story]) => {
+      try {
+        const jsdocComment = extractCsfDescription(csf._storyStatements[storyExport]);
+        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+
+        // Merge meta + story args from AST and generate the Angular template snippet
+        const args = mergeArgsFromAst(csf._metaNode, csf._storyAnnotations[storyExport]);
+        const snippet = generateAngularSnippet(
+          Object.keys(args).length > 0 ? args : undefined,
+          componentData
+        );
+
+        return {
+          id: story.id,
+          name: story.name ?? storyNameFromExport(storyExport),
+          snippet,
+          description: finalDescription?.trim(),
+          summary: tags.summary?.[0],
+        };
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        return {
+          id: story.id,
+          name: story.name ?? storyNameFromExport(storyExport),
+          error: { name: error.name, message: error.message },
+        };
+      }
+    });
+}
+
+/** Extract component-level description from CSF meta and/or Compodoc data. */
+function extractComponentDescription(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  compodocDescription: string | undefined
+) {
+  const jsdocComment = extractCsfDescription(csf._metaStatement) || compodocDescription;
+  const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+  return {
+    description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
+    summary: tags.summary?.[0],
+    jsDocTags: tags,
+  };
+}
+
+/**
+ * Main manifest generator for Angular.
+ *
+ * Implements the `experimental_manifests` preset property. Reads Compodoc's `documentation.json` to
+ * extract component metadata, then iterates over tagged IndexEntries to build ComponentManifest
+ * objects.
+ */
+export const manifests: PresetPropertyFn<
+  'experimental_manifests',
+  StorybookConfigRaw,
+  { manifestEntries: IndexEntry[] }
+> = async (existingManifests = {}, options) => {
+  const { manifestEntries } = options;
+
+  // Invalidate caches between runs
+  invalidateCache();
+  invalidateCompodocCache();
+
+  const startTime = performance.now();
+
+  // Load Compodoc JSON from disk
+  const workspaceRoot = process.cwd();
+  const compodocJson = loadCompodocJson(workspaceRoot);
+
+  if (!compodocJson) {
+    // Compodoc JSON not found — return existing manifests with a warning
+    return {
+      ...existingManifests,
+      components: {
+        v: 0,
+        components: {},
+        meta: {
+          docgen: 'compodoc' as const,
+          durationMs: Math.round(performance.now() - startTime),
+        },
+      },
+    };
+  }
+
+  const entriesByUniqueComponent = selectComponentEntries(manifestEntries);
+
+  const components = entriesByUniqueComponent
+    .map((entry): AngularComponentManifest | undefined => {
+      try {
+        const storyFilePath = entry.type === 'story' ? entry.importPath : entry.storiesImports[0];
+
+        const absoluteImportPath = path.join(workspaceRoot, storyFilePath);
+        const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+        const csf = loadCsf(storyFile, { makeTitle: () => entry.title }).parse();
+
+        const componentName = csf._meta?.component;
+        const id = entry.id.split('--')[0];
+        const title = entry.title.split('/').at(-1)?.replaceAll(/\s+/g, '') ?? '';
+
+        // Look up the component in Compodoc JSON
+        const componentData = componentName
+          ? findComponentInCompodoc(componentName, compodocJson)
+          : undefined;
+
+        // Build import statement
+        const componentFilePath = componentData
+          ? getComponentFilePath(componentData as ComponentOrDirective)
+          : undefined;
+        const storyPackageName = getPackageInfo(undefined, absoluteImportPath);
+        const componentPackageName = getPackageInfo(componentFilePath, absoluteImportPath);
+        const packageName =
+          componentPackageName && componentPackageName !== storyPackageName
+            ? componentPackageName
+            : undefined;
+        const importStatement = componentData
+          ? buildComponentImport(componentData as ComponentOrDirective, storyFilePath, packageName)
+          : '';
+
+        // Extract stories with Angular template snippets
+        const stories = extractStories(
+          csf,
+          componentData as ComponentOrDirective | undefined,
+          manifestEntries
+        );
+
+        // Extract component-level description from CSF and Compodoc
+        const compodocDescription = extractCompodocDescription(componentData);
+        const { description, summary, jsDocTags } = extractComponentDescription(
+          csf,
+          compodocDescription
+        );
+
+        const base: AngularComponentManifest = {
+          id,
+          name: componentName ?? title,
+          path: storyFilePath,
+          stories,
+          import: importStatement,
+          description,
+          summary,
+          jsDocTags,
+          compodocData: componentData as ComponentOrDirective | undefined,
+        };
+
+        if (!componentData) {
+          const error = componentName
+            ? {
+                name: 'Component not found in Compodoc',
+                message:
+                  `Component "${componentName}" was not found in the Compodoc documentation.json. ` +
+                  `Make sure Compodoc has been run and the component is included in the tsconfig used by Compodoc.`,
+              }
+            : {
+                name: 'No component found',
+                message:
+                  'We could not detect the component from your story file. Specify meta.component.',
+              };
+          return { ...base, error };
+        }
+
+        return base;
+      } catch (e) {
+        const storyFilePath =
+          entry.type === 'story' ? entry.importPath : (entry.storiesImports[0] ?? entry.importPath);
+        const id = entry.id.split('--')[0];
+        const title = entry.title.split('/').at(-1)?.replaceAll(/\s+/g, '') ?? '';
+        return {
+          id,
+          name: title,
+          path: storyFilePath,
+          stories: [],
+          jsDocTags: {},
+          error: {
+            name: e instanceof Error ? e.name : 'Unknown error',
+            message: e instanceof Error ? e.message : String(e),
+          },
+        };
+      }
+    })
+    .filter((component): component is AngularComponentManifest => component !== undefined);
+
+  const durationMs = Math.round(performance.now() - startTime);
+
+  return {
+    ...existingManifests,
+    components: {
+      v: 0,
+      components: Object.fromEntries(components.map((component) => [component.id, component])),
+      meta: {
+        docgen: 'compodoc' as const,
+        durationMs,
+      },
+    },
+  };
+};

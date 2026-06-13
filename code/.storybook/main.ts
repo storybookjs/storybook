@@ -157,7 +157,9 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    experimentalDocgenServer: true,
+    // Disabled for now: the docgen service does not yet work in production builds. Keeping it off
+    // ensures this branch exercises the normal (non-experimental) docgen path without regressions.
+    experimentalDocgenServer: false,
     experimentalReactComponentMeta: true,
     changeDetection: true,
   },

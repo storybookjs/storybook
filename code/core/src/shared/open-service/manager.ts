@@ -19,7 +19,7 @@
  * ```
  */
 
-import { registerService as registerServiceCore } from './service-registry.ts';
+import { getService, registerService as registerServiceCore } from './service-registry.ts';
 import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
@@ -32,6 +32,7 @@ import type {
 
 export { useServiceCommand } from './use-service-command.ts';
 export { useServiceQuery } from './use-service-query.ts';
+export { getService };
 
 /**
  * Registers a service in the manager and returns its runtime surface.

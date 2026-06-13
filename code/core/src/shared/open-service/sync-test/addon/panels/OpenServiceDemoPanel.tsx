@@ -103,7 +103,7 @@ function CommandDemoSection({
 function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) {
   const alpha = useServiceQuery(service, 'getEntry', { id: 'alpha' });
   const beta = useServiceQuery(service, 'getEntry', { id: 'beta' });
-  const unbacked = useServiceQuery(service, 'getUnbacked', undefined);
+  const unbacked = useServiceQuery(service, 'getUnbacked');
   const [unbackedError, setUnbackedError] = React.useState<string | null>(null);
 
   // TODO: The useServiceQuery hook doesn't expose errors from queries that fail to load.

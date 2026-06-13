@@ -335,6 +335,7 @@ export default {
     'experimental_useStatusStore',
     'experimental_useTestProviderStore',
     'experimental_useUniversalStore',
+    'getService',
     'internal_checklistStore',
     'internal_fullStatusStore',
     'internal_fullTestProviderStore',

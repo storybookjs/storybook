@@ -28,6 +28,15 @@ export interface RunOptions<ResultType> {
   yes?: boolean;
   /** Glob pattern for story files (for csf-factories codemod) */
   glob?: string;
+  /**
+   * Collector for core addons whose postinstall configuration must run AFTER dependencies are
+   * installed. A fix that adds a core addon via `add(..., { skipPostinstall: true })` pushes the
+   * addon name here; the runner configures them once `installDependencies` has completed, mirroring
+   * CLI init's install-then-configure ordering. Deferral is required because an addon's postinstall
+   * hook can only be resolved once the package is on disk, and automigrate batches installs to the
+   * end of the run.
+   */
+  addonsToConfigure?: string[];
 }
 
 /**

@@ -15,8 +15,42 @@ export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.ANGULAR,
     renderer: SupportedRenderer.ANGULAR,
-    framework: SupportedFramework.ANGULAR,
-    builderOverride: SupportedBuilder.WEBPACK5,
+    framework: (builder: SupportedBuilder) => {
+      return builder === SupportedBuilder.VITE
+        ? SupportedFramework.ANGULAR_VITE
+        : SupportedFramework.ANGULAR;
+    },
+    builderOverride: async ({ options }) => {
+      // In non-interactive contexts (--yes, CI, or no TTY) default to Vite without prompting,
+      // matching Phase 2 of #34012 ("Set default framework option for new Angular projects
+      // using Vite"). Interactive runs still get a prompt so users can opt into the legacy
+      // webpack builder.
+      const isInteractive =
+        !options.yes && !process.env.CI && !!process.stdout.isTTY && !!process.stdin.isTTY;
+
+      if (!isInteractive) {
+        return SupportedBuilder.VITE;
+      }
+
+      logger.info(dedent`
+        Storybook has two Angular builder options: Vite and Webpack 5.
+
+        We recommend angular-vite (in preview), which is much faster and more modern.
+        The webpack-based @storybook/angular remains available for projects that need it.
+      `);
+
+      return prompt.select({
+        message: 'Which builder would you like to use?',
+        options: [
+          {
+            label: '@storybook/angular-vite (Vite)',
+            value: SupportedBuilder.VITE,
+            hint: 'in preview',
+          },
+          { label: '@storybook/angular (Webpack)', value: SupportedBuilder.WEBPACK5 },
+        ],
+      });
+    },
   },
   configure: async (packageManager, context) => {
     const angularJSON = new AngularJSON();
@@ -47,6 +81,7 @@ export default defineGeneratorModule({
       );
     }
 
+    const isVite = context.builder === SupportedBuilder.VITE;
     const { root, projectType } = angularProject;
     const { projects } = angularJSON;
     const useCompodoc = context.yes ? true : await promptForCompoDocs(context.telemetryService);
@@ -57,6 +92,7 @@ export default defineGeneratorModule({
       storybookFolder,
       useCompodoc,
       root,
+      useVite: isVite,
     });
     angularJSON.write();
 
@@ -117,15 +153,33 @@ export default defineGeneratorModule({
         : '@angular/platform-browser-dynamic',
     ];
 
+    const extraPackages = [
+      ...extraAngularDeps,
+      ...(isVite
+        ? [
+            angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+            '@analogjs/vite-plugin-angular',
+            'vite',
+          ]
+        : []),
+      ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
+    ];
+
     return {
-      extraPackages: [
-        ...extraAngularDeps,
-        ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
-      ],
+      extraPackages,
       addScripts: false, // Handled above based on project count
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,
       storybookCommand: `ng run ${angularProjectName}:storybook`,
+      // For the Vite framework, Compodoc is owned by the framework Vite plugin,
+      // so it is configured via framework.options in main.ts rather than the
+      // angular.json builder. The Webpack framework keeps it in angular.json.
+      ...(isVite && {
+        frameworkOptions: {
+          compodoc: useCompodoc,
+          ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
+        },
+      }),
       ...(useCompodoc && {
         frameworkPreviewParts: {
           prefix: dedent`

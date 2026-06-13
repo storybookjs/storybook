@@ -714,6 +714,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
@@ -732,6 +733,36 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
+  },
+  'angular-cli/vite-default-ts': {
+    name: 'Angular CLI Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      // Pin to the same major `ng new` installs for the core packages (currently 21). All
+      // @angular/* packages must share one version — under the analogjs partial-declaration
+      // linker even a patch skew breaks JIT at vitest setup ("JIT compilation failed for
+      // PlatformLocation"). `@latest` would pull v22 while `ng new` scaffolds v21. Bump the
+      // major here once `ng new` creates v22 projects.
+      extraDependencies: ['@angular/forms@21', '@angular/animations@21'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench'],
+    initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
@@ -1070,6 +1101,7 @@ export const normal: TemplateKey[] = [
   // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
+  'angular-cli/vite-default-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',

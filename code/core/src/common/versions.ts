@@ -11,6 +11,7 @@ export default {
   '@storybook/builder-webpack5': '10.5.0-alpha.6',
   storybook: '10.5.0-alpha.6',
   '@storybook/angular': '10.5.0-alpha.6',
+  '@storybook/angular-vite': '10.5.0-alpha.6',
   '@storybook/ember': '10.5.0-alpha.6',
   '@storybook/html-vite': '10.5.0-alpha.6',
   '@storybook/nextjs': '10.5.0-alpha.6',

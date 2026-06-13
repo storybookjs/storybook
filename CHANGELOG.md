@@ -1,3 +1,8 @@
+## 10.4.5
+
+- Core: Rework AI checklist feature gate - [#35053](https://github.com/storybookjs/storybook/pull/35053), thanks @Sidnioulz!
+- Preview: Stop mixed CSF3+4 stories getting core annotations injected twice - [#35094](https://github.com/storybookjs/storybook/pull/35094), thanks @JReinhold!
+
 ## 10.4.4
 
 - Preview: Stop mixed CSF3+4 stories getting core annotations injected twice - [#35094](https://github.com/storybookjs/storybook/pull/35094), thanks @JReinhold!

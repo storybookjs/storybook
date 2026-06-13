@@ -104,6 +104,39 @@ describe('story extraction', () => {
     `);
   });
 
+  it('uses a project-relative import path returned by an indexer', async () => {
+    const relativePath = './src/A.js';
+    const absolutePath = join(options.workingDir, relativePath);
+    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
+
+    const generator = new StoryIndexGenerator([specifier], {
+      ...options,
+      indexers: [
+        {
+          test: /A\.js$/,
+          createIndex: async () => [
+            {
+              type: 'story',
+              importPath: './src/A.stories.js',
+              exportName: 'StoryOne',
+              title: 'A',
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = await generator.extractStories(specifier, absolutePath);
+
+    expect(result).toMatchObject({
+      entries: [
+        {
+          importPath: './src/A.stories.js',
+        },
+      ],
+    });
+  });
+
   it('extracts stories from minimal indexer inputs', async () => {
     const relativePath = './src/first-nested/deeply/F.stories.js';
     const absolutePath = join(options.workingDir, relativePath);

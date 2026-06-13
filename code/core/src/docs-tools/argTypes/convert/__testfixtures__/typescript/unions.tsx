@@ -17,5 +17,6 @@ interface Props {
   kind?: Kind;
   inlinedNumericLiteralUnion: 0 | 1;
   enumUnion: EnumUnion;
+  unionWithNull: 'primary' | null | 1;
 }
 export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;

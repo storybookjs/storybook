@@ -22,7 +22,7 @@ export type SBObjectType = SBBaseType & {
 };
 export type SBEnumType = SBBaseType & {
   name: 'enum';
-  value: (string | number)[];
+  value: (string | number | null)[];
 };
 export type SBIntersectionType = SBBaseType & {
   name: 'intersection';

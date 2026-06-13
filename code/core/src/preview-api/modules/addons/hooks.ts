@@ -1,11 +1,11 @@
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from "storybook/internal/client-logger";
 import {
   FORCE_RE_RENDER,
   RESET_STORY_ARGS,
   STORY_RENDERED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-} from 'storybook/internal/core-events';
+} from "storybook/internal/core-events";
 import type {
   Args,
   DecoratorApplicator,
@@ -14,11 +14,11 @@ import type {
   Renderer,
   StoryContext,
   StoryId,
-} from 'storybook/internal/types';
+} from "storybook/internal/types";
 
-import { global } from '@storybook/global';
+import { global } from "@storybook/global";
 
-import { addons } from './main.ts';
+import { addons } from "./main.ts";
 
 interface Hook {
   name: string;
@@ -33,7 +33,10 @@ interface Effect {
 
 type AbstractFunction = (...args: any[]) => any;
 
-export class HooksContext<TRenderer extends Renderer, TArgs extends Args = Args> {
+export class HooksContext<
+  TRenderer extends Renderer,
+  TArgs extends Args = Args,
+> {
   hookListsMap: WeakMap<AbstractFunction, Hook[]> = undefined as any;
 
   mountedDecorators: Set<AbstractFunction> = undefined as any;
@@ -44,7 +47,7 @@ export class HooksContext<TRenderer extends Renderer, TArgs extends Args = Args>
 
   nextHookIndex: number = undefined as any;
 
-  currentPhase: 'MOUNT' | 'UPDATE' | 'NONE' = undefined as any;
+  currentPhase: "MOUNT" | "UPDATE" | "NONE" = undefined as any;
 
   currentEffects: Effect[] = undefined as any;
 
@@ -75,7 +78,7 @@ export class HooksContext<TRenderer extends Renderer, TArgs extends Args = Args>
     this.prevMountedDecorators = new Set();
     this.currentHooks = [];
     this.nextHookIndex = 0;
-    this.currentPhase = 'NONE';
+    this.currentPhase = "NONE";
     this.currentEffects = [];
     this.prevEffects = [];
     this.currentDecoratorName = null;
@@ -129,15 +132,15 @@ export class HooksContext<TRenderer extends Renderer, TArgs extends Args = Args>
 }
 
 function hookify<TRenderer extends Renderer>(
-  storyFn: LegacyStoryFn<TRenderer>
+  storyFn: LegacyStoryFn<TRenderer>,
 ): LegacyStoryFn<TRenderer>;
 function hookify<TRenderer extends Renderer>(
-  decorator: DecoratorFunction<TRenderer>
+  decorator: DecoratorFunction<TRenderer>,
 ): DecoratorFunction<TRenderer>;
 function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
   const hookified = (...args: any[]) => {
     const { hooks }: { hooks: HooksContext<TRenderer> } =
-      typeof args[0] === 'function' ? args[1] : args[0];
+      typeof args[0] === "function" ? args[1] : args[0];
 
     const prevPhase = hooks.currentPhase;
     const prevHooks = hooks.currentHooks;
@@ -146,10 +149,10 @@ function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
 
     hooks.currentDecoratorName = fn.name;
     if (hooks.prevMountedDecorators.has(fn)) {
-      hooks.currentPhase = 'UPDATE';
+      hooks.currentPhase = "UPDATE";
       hooks.currentHooks = hooks.hookListsMap.get(fn) || [];
     } else {
-      hooks.currentPhase = 'MOUNT';
+      hooks.currentPhase = "MOUNT";
       hooks.currentHooks = [];
       hooks.hookListsMap.set(fn, hooks.currentHooks);
       hooks.prevMountedDecorators.add(fn);
@@ -161,9 +164,9 @@ function hookify<TRenderer extends Renderer>(fn: AbstractFunction) {
     const result = fn(...args);
     global.STORYBOOK_HOOKS_CONTEXT = prevContext;
 
-    if (hooks.currentPhase === 'UPDATE' && hooks.getNextHook() != null) {
+    if (hooks.currentPhase === "UPDATE" && hooks.getNextHook() != null) {
       throw new Error(
-        'Rendered fewer hooks than expected. This may be caused by an accidental early return statement.'
+        "Rendered fewer hooks than expected. This may be caused by an accidental early return statement.",
       );
     }
 
@@ -183,12 +186,15 @@ let numberOfRenders = 0;
 const RENDER_LIMIT = 25;
 export const applyHooks =
   <TRenderer extends Renderer>(
-    applyDecorators: DecoratorApplicator<TRenderer>
+    applyDecorators: DecoratorApplicator<TRenderer>,
   ): DecoratorApplicator<TRenderer> =>
-  (storyFn: LegacyStoryFn<TRenderer>, decorators: DecoratorFunction<TRenderer>[]) => {
+  (
+    storyFn: LegacyStoryFn<TRenderer>,
+    decorators: DecoratorFunction<TRenderer>[],
+  ) => {
     const decorated = applyDecorators(
       hookify(storyFn),
-      decorators.map((decorator) => hookify(decorator))
+      decorators.map((decorator) => hookify(decorator)),
     );
     return (context) => {
       const { hooks } = context as { hooks: HooksContext<TRenderer> };
@@ -205,7 +211,7 @@ export const applyHooks =
         numberOfRenders += 1;
         if (numberOfRenders > RENDER_LIMIT) {
           throw new Error(
-            'Too many re-renders. Storybook limits the number of renders to prevent an infinite loop.'
+            "Too many re-renders. Storybook limits the number of renders to prevent an infinite loop.",
           );
         }
       }
@@ -215,12 +221,13 @@ export const applyHooks =
   };
 
 const areDepsEqual = (deps: any[], nextDeps: any[]) =>
-  deps.length === nextDeps.length && deps.every((dep, i) => dep === nextDeps[i]);
+  deps.length === nextDeps.length &&
+  deps.every((dep, i) => dep === nextDeps[i]);
 
 const invalidHooksError = () =>
   new Error(
-    'Storybook preview hooks can only be called inside decorators and story functions.\n\n' +
-      "When combining Storybook hooks (e.g. useArgs) with framework hooks (e.g. React's useState, useEffect, useRef) in the same render function, use Storybook's equivalents from 'storybook/preview-api' instead: useState, useEffect, useRef, useMemo, useCallback, useReducer."
+    "Storybook preview hooks can only be called inside decorators and story functions.\n\n" +
+      "When combining Storybook hooks (e.g. useArgs) with framework hooks (e.g. React's useState, useEffect, useRef) in the same render function, use Storybook's equivalents from 'storybook/preview-api' instead: useState, useEffect, useRef, useMemo, useCallback, useReducer.",
   );
 
 function getHooksContextOrNull<
@@ -241,12 +248,16 @@ function getHooksContextOrThrow<
   return hooks;
 }
 
-function useHook(name: string, callback: (hook: Hook) => void, deps?: any[] | undefined): Hook {
+function useHook(
+  name: string,
+  callback: (hook: Hook) => void,
+  deps?: any[] | undefined,
+): Hook {
   const hooks = getHooksContextOrThrow();
-  if (hooks.currentPhase === 'MOUNT') {
+  if (hooks.currentPhase === "MOUNT") {
     if (deps != null && !Array.isArray(deps)) {
       logger.warn(
-        `${name} received a final argument that is not an array (instead, received ${deps}). When specified, the final argument must be an array.`
+        `${name} received a final argument that is not an array (instead, received ${deps}). When specified, the final argument must be an array.`,
       );
     }
     const hook: Hook = { name, deps };
@@ -255,23 +266,25 @@ function useHook(name: string, callback: (hook: Hook) => void, deps?: any[] | un
     return hook;
   }
 
-  if (hooks.currentPhase === 'UPDATE') {
+  if (hooks.currentPhase === "UPDATE") {
     const hook = hooks.getNextHook();
     if (hook == null) {
-      throw new Error('Rendered more hooks than during the previous render.');
+      throw new Error("Rendered more hooks than during the previous render.");
     }
 
     if (hook.name !== name) {
       logger.warn(
         `Storybook has detected a change in the order of Hooks${
-          hooks.currentDecoratorName ? ` called by ${hooks.currentDecoratorName}` : ''
-        }. This will lead to bugs and errors if not fixed.`
+          hooks.currentDecoratorName
+            ? ` called by ${hooks.currentDecoratorName}`
+            : ""
+        }. This will lead to bugs and errors if not fixed.`,
       );
     }
 
     if (deps != null && hook.deps == null) {
       logger.warn(
-        `${name} received a final argument during this render, but not during the previous render. Even though the final argument is optional, its type cannot change between renders.`
+        `${name} received a final argument during this render, but not during the previous render. Even though the final argument is optional, its type cannot change between renders.`,
       );
     }
 
@@ -291,13 +304,17 @@ Incoming: ${deps}`);
   throw invalidHooksError();
 }
 
-function useMemoLike<T>(name: string, nextCreate: () => T, deps: any[] | undefined): T {
+function useMemoLike<T>(
+  name: string,
+  nextCreate: () => T,
+  deps: any[] | undefined,
+): T {
   const { memoizedState } = useHook(
     name,
     (hook) => {
       hook.memoizedState = nextCreate();
     },
-    deps
+    deps,
   );
   return memoizedState;
 }
@@ -320,7 +337,7 @@ function useMemoLike<T>(name: string, nextCreate: () => T, deps: any[] | undefin
  * @returns {T} The memoized value.
  */
 export function useMemo<T>(nextCreate: () => T, deps?: any[]): T {
-  return useMemoLike('useMemo', nextCreate, deps);
+  return useMemoLike("useMemo", nextCreate, deps);
 }
 
 /**
@@ -342,7 +359,7 @@ export function useMemo<T>(nextCreate: () => T, deps?: any[]): T {
  */
 /* Returns a memoized callback, see https://reactjs.org/docs/hooks-reference.html#usecallback */
 export function useCallback<T>(callback: T, deps?: any[]): T {
-  return useMemoLike('useCallback', () => callback, deps);
+  return useMemoLike("useCallback", () => callback, deps);
 }
 
 function useRefLike<T>(name: string, initialValue: T): { current: T } {
@@ -365,35 +382,38 @@ function useRefLike<T>(name: string, initialValue: T): { current: T } {
  */
 /* Returns a mutable ref object, see https://reactjs.org/docs/hooks-reference.html#useref */
 export function useRef<T>(initialValue: T): { current: T } {
-  return useRefLike('useRef', initialValue);
+  return useRefLike("useRef", initialValue);
 }
 
 function triggerUpdate() {
   const hooks = getHooksContextOrNull();
   // Rerun storyFn if updates were triggered synchronously, force rerender otherwise
-  if (hooks != null && hooks.currentPhase !== 'NONE') {
+  if (hooks != null && hooks.currentPhase !== "NONE") {
     hooks.hasUpdates = true;
   } else {
     try {
       addons.getChannel().emit(FORCE_RE_RENDER);
     } catch (e) {
-      logger.warn('State updates of Storybook preview hooks work only in browser');
+      logger.warn(
+        "State updates of Storybook preview hooks work only in browser",
+      );
     }
   }
 }
 
 function useStateLike<S>(
   name: string,
-  initialState: (() => S) | S
+  initialState: (() => S) | S,
 ): [S, (update: ((prevState: S) => S) | S) => void] {
   const stateRef = useRefLike(
     name,
     // @ts-expect-error S type should never be function, but there's no way to tell that to TypeScript
-    typeof initialState === 'function' ? initialState() : initialState
+    typeof initialState === "function" ? initialState() : initialState,
   );
   const setState = (update: ((prevState: S) => S) | S) => {
     // @ts-expect-error S type should never be function, but there's no way to tell that to TypeScript
-    stateRef.current = typeof update === 'function' ? update(stateRef.current) : update;
+    stateRef.current =
+      typeof update === "function" ? update(stateRef.current) : update;
     triggerUpdate();
   };
   return [stateRef.current, setState];
@@ -416,9 +436,9 @@ function useStateLike<S>(
  *   value and a function to update it.
  */
 export function useState<S>(
-  initialState: (() => S) | S
+  initialState: (() => S) | S,
 ): [S, (update: ((prevState: S) => S) | S) => void] {
-  return useStateLike('useState', initialState);
+  return useStateLike("useState", initialState);
 }
 
 /**
@@ -456,21 +476,23 @@ export function useState<S>(
  */
 export function useReducer<S, A>(
   reducer: (state: S, action: A) => S,
-  initialState: S
+  initialState: S,
 ): [S, (action: A) => void];
 export function useReducer<S, I, A>(
   reducer: (state: S, action: A) => S,
   initialArg: I,
-  init: (initialArg: I) => S
+  init: (initialArg: I) => S,
 ): [S, (action: A) => void];
 export function useReducer<S, A>(
   reducer: (state: S, action: A) => S,
   initialArg: any,
-  init?: any
+  init?: any,
 ): [S, (action: A) => void] {
-  const initialState: (() => S) | S = init != null ? () => init(initialArg) : initialArg;
-  const [state, setState] = useStateLike('useReducer', initialState);
-  const dispatch = (action: A) => setState((prevState) => reducer(prevState, action));
+  const initialState: (() => S) | S =
+    init != null ? () => init(initialArg) : initialArg;
+  const [state, setState] = useStateLike("useReducer", initialState);
+  const dispatch = (action: A) =>
+    setState((prevState) => reducer(prevState, action));
   return [state, dispatch];
 }
 
@@ -495,9 +517,12 @@ export function useReducer<S, A>(
  *   effect will be re-run.
  * @returns {void}
  */
-export function useEffect(create: () => (() => void) | void, deps?: any[]): void {
+export function useEffect(
+  create: () => (() => void) | void,
+  deps?: any[],
+): void {
   const hooks = getHooksContextOrThrow();
-  const effect = useMemoLike('useEffect', () => ({ create }), deps);
+  const effect = useMemoLike("useEffect", () => ({ create }), deps);
   if (!hooks.currentEffects.includes(effect)) {
     hooks.currentEffects.push(effect);
   }
@@ -531,10 +556,12 @@ export function useChannel(eventMap: EventMap, deps: any[] = []) {
   const channel = addons.getChannel();
 
   useEffect(() => {
-    Object.entries(eventMap).forEach(([type, listener]) => channel.on(type, listener));
+    Object.entries(eventMap).forEach(([type, listener]) =>
+      channel.on(type, listener),
+    );
     return () => {
       Object.entries(eventMap).forEach(([type, listener]) =>
-        channel.removeListener(type, listener)
+        channel.removeListener(type, listener),
       );
     };
   }, [...Object.keys(eventMap), ...deps]);
@@ -587,7 +614,10 @@ export function useStoryContext<
  * @returns {S | undefined} The value of the parameter, or the default value if the parameter is not
  *   set.
  */
-export function useParameter<S>(parameterKey: string, defaultValue?: S): S | undefined {
+export function useParameter<S>(
+  parameterKey: string,
+  defaultValue?: S,
+): S | undefined {
   const { parameters } = useStoryContext();
   if (parameterKey) {
     return parameters[parameterKey] ?? (defaultValue as S);
@@ -608,10 +638,10 @@ export function useParameter<S>(parameterKey: string, defaultValue?: S): S | und
  * ```
  *
  * @template TArgs The type of the story's args.
- * @returns {[TArgs, (newArgs: Partial<TArgs>) => void, (argNames?: (keyof TArgs)[]) => void]} An
- *   array containing the current args, a function to update them, and a function to reset them.
+ * @returns {readonly [TArgs, (newArgs: Partial<TArgs>) => void, (argNames?: (keyof TArgs)[]) => void]} A
+ *   readonly tuple containing the current args, a function to update them, and a function to reset them.
  */
-export function useArgs<TArgs extends Args = Args>(): [
+export function useArgs<TArgs extends Args = Args>(): readonly [
   TArgs,
   (newArgs: Partial<TArgs>) => void,
   (argNames?: (keyof TArgs)[]) => void,
@@ -620,16 +650,18 @@ export function useArgs<TArgs extends Args = Args>(): [
   const { id: storyId, args } = useStoryContext<Renderer, TArgs>();
 
   const updateArgs = useCallback(
-    (updatedArgs: Partial<TArgs>) => channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs }),
-    [channel, storyId]
+    (updatedArgs: Partial<TArgs>) =>
+      channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs }),
+    [channel, storyId],
   );
 
   const resetArgs = useCallback(
-    (argNames?: (keyof TArgs)[]) => channel.emit(RESET_STORY_ARGS, { storyId, argNames }),
-    [channel, storyId]
+    (argNames?: (keyof TArgs)[]) =>
+      channel.emit(RESET_STORY_ARGS, { storyId, argNames }),
+    [channel, storyId],
   );
 
-  return [args as TArgs, updateArgs, resetArgs];
+  return [args as TArgs, updateArgs, resetArgs] as const;
 }
 
 /**
@@ -652,7 +684,7 @@ export function useGlobals(): [Args, (newGlobals: Args) => void] {
 
   const updateGlobals = useCallback(
     (newGlobals: Args) => channel.emit(UPDATE_GLOBALS, { globals: newGlobals }),
-    [channel]
+    [channel],
   );
 
   return [globals, updateGlobals];

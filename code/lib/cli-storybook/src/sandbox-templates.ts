@@ -740,8 +740,12 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Move this to latest or 22 once ng new creates v22 projects
-      extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
+      // Pin to the same major `ng new` installs for the core packages (currently 21). All
+      // @angular/* packages must share one version — under the analogjs partial-declaration
+      // linker even a patch skew breaks JIT at vitest setup ("JIT compilation failed for
+      // PlatformLocation"). `@latest` would pull v22 while `ng new` scaffolds v21. Bump the
+      // major here once `ng new` creates v22 projects.
+      extraDependencies: ['@angular/forms@21', '@angular/animations@21'],
       useCsfFactory: true,
       mainConfig: {
         features: {

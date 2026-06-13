@@ -153,7 +153,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
+        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX, 'setup-instructions'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
@@ -169,6 +169,7 @@ describe('experimental_manifests', () => {
       name: 'docs',
       path: './Example.mdx',
       title: 'Example',
+      tags: [Tag.MANIFEST, Tag.ATTACHED_MDX, 'setup-instructions'],
       summary: 'An example documentation page',
     });
     expect(result.components?.components.example.docs?.['example--docs'].content).toContain(
@@ -184,7 +185,7 @@ describe('experimental_manifests', () => {
         title: 'Standalone',
         type: 'docs',
         importPath: './Standalone.mdx',
-        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX, 'setup-instructions'],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];
@@ -197,6 +198,7 @@ describe('experimental_manifests', () => {
       name: 'docs',
       path: './Standalone.mdx',
       title: 'Standalone',
+      tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX, 'setup-instructions'],
       summary: 'A standalone documentation page',
     });
     expect(result.docs?.docs['standalone--docs'].content).toContain(
@@ -324,6 +326,7 @@ describe('experimental_manifests', () => {
       name: 'docs',
       path: './NonExistent.mdx',
       title: 'Missing',
+      tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
       error: {
         name: 'Error',
         message: expect.stringContaining('ENOENT'),

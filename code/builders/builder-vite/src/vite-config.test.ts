@@ -47,6 +47,7 @@ describe('commonConfig', () => {
     );
     const config = await commonConfig(dummyOptions, 'development');
     expect(config.configFile).toBe(false);
+    expect(config.publicDir).toBe(false);
     expect(config.plugins).toBeDefined();
   });
 

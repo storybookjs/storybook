@@ -112,59 +112,67 @@ test.describe('open-service sync example', () => {
 
     const otherPage = await context.newPage();
 
-    await gotoOpenServiceStory(
-      page,
-      'core-shared-open-service-sync-test-local-command--local-command-sync'
-    );
-    await gotoOpenServiceStory(
-      otherPage,
-      'core-shared-open-service-sync-test-local-command--local-command-sync'
-    );
-
-    const firstPanelInput = page.getByRole('textbox', {
-      name: 'Local command manager panel sync input',
-    });
-    const firstStoryInput = page
-      .frameLocator('#storybook-preview-iframe')
-      .getByRole('textbox', { name: 'Local command story sync input' });
-    const firstRawStoryValue = page
-      .frameLocator('#storybook-preview-iframe')
-      .getByTestId('local-command-raw-service-state-value');
-    const secondPanelInput = otherPage.getByRole('textbox', {
-      name: 'Local command manager panel sync input',
-    });
-    const secondStoryInput = otherPage
-      .frameLocator('#storybook-preview-iframe')
-      .getByRole('textbox', { name: 'Local command story sync input' });
-    const secondRawStoryValue = otherPage
-      .frameLocator('#storybook-preview-iframe')
-      .getByTestId('local-command-raw-service-state-value');
-
-    await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-
+    // Outer try guarantees the second tab is closed even if setup (navigation/visibility) throws.
     try {
-      await firstPanelInput.fill('');
-      await expect(firstStoryInput).toHaveValue('');
-      await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
-      await expect(secondStoryInput).toHaveValue('');
-      await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
+      await gotoOpenServiceStory(
+        page,
+        'core-shared-open-service-sync-test-local-command--local-command-sync'
+      );
+      await gotoOpenServiceStory(
+        otherPage,
+        'core-shared-open-service-sync-test-local-command--local-command-sync'
+      );
 
-      await firstPanelInput.fill('local command: from first tab');
-      await expect(secondStoryInput).toHaveValue('local command: from first tab');
-      await expect(secondRawStoryValue).toHaveText(JSON.stringify('local command: from first tab'));
-      await expect(secondPanelInput).toHaveValue('local command: from first tab');
+      const firstPanelInput = page.getByRole('textbox', {
+        name: 'Local command manager panel sync input',
+      });
+      const firstStoryInput = page
+        .frameLocator('#storybook-preview-iframe')
+        .getByRole('textbox', { name: 'Local command story sync input' });
+      const firstRawStoryValue = page
+        .frameLocator('#storybook-preview-iframe')
+        .getByTestId('local-command-raw-service-state-value');
+      const secondPanelInput = otherPage.getByRole('textbox', {
+        name: 'Local command manager panel sync input',
+      });
+      const secondStoryInput = otherPage
+        .frameLocator('#storybook-preview-iframe')
+        .getByRole('textbox', { name: 'Local command story sync input' });
+      const secondRawStoryValue = otherPage
+        .frameLocator('#storybook-preview-iframe')
+        .getByTestId('local-command-raw-service-state-value');
 
-      await secondStoryInput.fill('local command: from second tab');
-      await expect(firstPanelInput).toHaveValue('local command: from second tab');
-      await expect(firstStoryInput).toHaveValue('local command: from second tab');
-      await expect(firstRawStoryValue).toHaveText(JSON.stringify('local command: from second tab'));
+      await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+
+      try {
+        await firstPanelInput.fill('');
+        await expect(firstStoryInput).toHaveValue('');
+        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
+        await expect(secondStoryInput).toHaveValue('');
+        await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
+
+        await firstPanelInput.fill('local command: from first tab');
+        await expect(secondStoryInput).toHaveValue('local command: from first tab');
+        await expect(secondRawStoryValue).toHaveText(
+          JSON.stringify('local command: from first tab')
+        );
+        await expect(secondPanelInput).toHaveValue('local command: from first tab');
+
+        await secondStoryInput.fill('local command: from second tab');
+        await expect(firstPanelInput).toHaveValue('local command: from second tab');
+        await expect(firstStoryInput).toHaveValue('local command: from second tab');
+        await expect(firstRawStoryValue).toHaveText(
+          JSON.stringify('local command: from second tab')
+        );
+      } finally {
+        await firstPanelInput.fill('');
+        await expect(firstStoryInput).toHaveValue('');
+        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
+      }
     } finally {
-      await firstPanelInput.fill('');
-      await expect(firstStoryInput).toHaveValue('');
-      await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
       await otherPage.close();
     }
   });
@@ -249,63 +257,67 @@ test.describe('open-service sync example', () => {
 
     const otherPage = await context.newPage();
 
-    await gotoOpenServiceStory(
-      page,
-      'core-shared-open-service-sync-test-remote-command--remote-command-sync'
-    );
-    await gotoOpenServiceStory(
-      otherPage,
-      'core-shared-open-service-sync-test-remote-command--remote-command-sync'
-    );
-
-    const firstPanelInput = page.getByRole('textbox', {
-      name: 'Remote command manager panel sync input',
-    });
-    const firstStoryInput = page
-      .frameLocator('#storybook-preview-iframe')
-      .getByRole('textbox', { name: 'Remote command story sync input' });
-    const firstRawStoryValue = page
-      .frameLocator('#storybook-preview-iframe')
-      .getByTestId('remote-command-raw-service-state-value');
-    const secondPanelInput = otherPage.getByRole('textbox', {
-      name: 'Remote command manager panel sync input',
-    });
-    const secondStoryInput = otherPage
-      .frameLocator('#storybook-preview-iframe')
-      .getByRole('textbox', { name: 'Remote command story sync input' });
-    const secondRawStoryValue = otherPage
-      .frameLocator('#storybook-preview-iframe')
-      .getByTestId('remote-command-raw-service-state-value');
-
-    await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-    await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-
+    // Outer try guarantees the second tab is closed even if setup (navigation/visibility) throws.
     try {
-      await firstPanelInput.fill('');
-      await expect(firstStoryInput).toHaveValue('');
-      await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
-      await expect(secondStoryInput).toHaveValue('');
-      await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
-
-      await firstPanelInput.fill('remote command: from first tab');
-      await expect(secondStoryInput).toHaveValue('remote command: from first tab');
-      await expect(secondRawStoryValue).toHaveText(
-        JSON.stringify('remote command: from first tab')
+      await gotoOpenServiceStory(
+        page,
+        'core-shared-open-service-sync-test-remote-command--remote-command-sync'
       );
-      await expect(secondPanelInput).toHaveValue('remote command: from first tab');
-
-      await secondStoryInput.fill('remote command: from second tab');
-      await expect(firstPanelInput).toHaveValue('remote command: from second tab');
-      await expect(firstStoryInput).toHaveValue('remote command: from second tab');
-      await expect(firstRawStoryValue).toHaveText(
-        JSON.stringify('remote command: from second tab')
+      await gotoOpenServiceStory(
+        otherPage,
+        'core-shared-open-service-sync-test-remote-command--remote-command-sync'
       );
+
+      const firstPanelInput = page.getByRole('textbox', {
+        name: 'Remote command manager panel sync input',
+      });
+      const firstStoryInput = page
+        .frameLocator('#storybook-preview-iframe')
+        .getByRole('textbox', { name: 'Remote command story sync input' });
+      const firstRawStoryValue = page
+        .frameLocator('#storybook-preview-iframe')
+        .getByTestId('remote-command-raw-service-state-value');
+      const secondPanelInput = otherPage.getByRole('textbox', {
+        name: 'Remote command manager panel sync input',
+      });
+      const secondStoryInput = otherPage
+        .frameLocator('#storybook-preview-iframe')
+        .getByRole('textbox', { name: 'Remote command story sync input' });
+      const secondRawStoryValue = otherPage
+        .frameLocator('#storybook-preview-iframe')
+        .getByTestId('remote-command-raw-service-state-value');
+
+      await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+      await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+
+      try {
+        await firstPanelInput.fill('');
+        await expect(firstStoryInput).toHaveValue('');
+        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
+        await expect(secondStoryInput).toHaveValue('');
+        await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
+
+        await firstPanelInput.fill('remote command: from first tab');
+        await expect(secondStoryInput).toHaveValue('remote command: from first tab');
+        await expect(secondRawStoryValue).toHaveText(
+          JSON.stringify('remote command: from first tab')
+        );
+        await expect(secondPanelInput).toHaveValue('remote command: from first tab');
+
+        await secondStoryInput.fill('remote command: from second tab');
+        await expect(firstPanelInput).toHaveValue('remote command: from second tab');
+        await expect(firstStoryInput).toHaveValue('remote command: from second tab');
+        await expect(firstRawStoryValue).toHaveText(
+          JSON.stringify('remote command: from second tab')
+        );
+      } finally {
+        await firstPanelInput.fill('');
+        await expect(firstStoryInput).toHaveValue('');
+        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
+      }
     } finally {
-      await firstPanelInput.fill('');
-      await expect(firstStoryInput).toHaveValue('');
-      await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
       await otherPage.close();
     }
   });

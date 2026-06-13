@@ -103,7 +103,7 @@ function CommandDemoSection({
 function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) {
   const alpha = useServiceQuery(service, 'getEntry', { id: 'alpha' });
   const beta = useServiceQuery(service, 'getEntry', { id: 'beta' });
-  const unbacked = useServiceQuery(service, 'getUnbacked');
+  const unbacked = useServiceQuery(service, 'getUnbacked', undefined);
   const [unbackedError, setUnbackedError] = React.useState<string | null>(null);
 
   // TODO: The useServiceQuery hook doesn't expose errors from queries that fail to load.
@@ -130,8 +130,12 @@ function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) 
     };
   }, [service]);
 
+  // Prefer the resolved state over the load error: a remote command is best-effort, so a slow peer
+  // can still execute it (populating state) after the load promise already rejected on the ack
+  // timeout. Only surface the error while state is still unset — the steady state in a static build
+  // with no server to run the command.
   const unbackedStatus =
-    unbackedError ?? (unbacked === null ? 'pending' : JSON.stringify(unbacked));
+    unbacked !== null ? JSON.stringify(unbacked) : (unbackedError ?? 'pending');
 
   return (
     <DemoSection title="Static Load">

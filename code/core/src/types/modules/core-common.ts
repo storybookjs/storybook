@@ -788,15 +788,15 @@ export interface StorybookConfig {
   experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 }
 
-export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);
+export type PresetValue<T> = T | ((config?: T, options?: Options) => T | Promise<T>);
 
 export type PresetProperty<K, TStorybookConfig = StorybookConfigRaw> =
   | TStorybookConfig[K extends keyof TStorybookConfig ? K : never]
   | PresetPropertyFn<K, TStorybookConfig>;
 
 export type PresetPropertyFn<K, TStorybookConfig = StorybookConfigRaw, TOptions = {}> = (
-  config: TStorybookConfig[K extends keyof TStorybookConfig ? K : never],
-  options: Options & TOptions
+  config?: TStorybookConfig[K extends keyof TStorybookConfig ? K : never],
+  options?: Options & TOptions
 ) =>
   | TStorybookConfig[K extends keyof TStorybookConfig ? K : never]
   | Promise<TStorybookConfig[K extends keyof TStorybookConfig ? K : never]>;

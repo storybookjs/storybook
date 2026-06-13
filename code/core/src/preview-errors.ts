@@ -373,6 +373,17 @@ export class InvalidBlockOfPropError extends StorybookError {
   }
 }
 
+export class NoMetaAttachedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'NoMetaAttachedError',
+      category: Category.BLOCKS,
+      code: 2,
+      message: 'No CSF file attached to this docs file, did you forget to use <Meta of={} />?',
+    });
+  }
+}
+
 export class UnsupportedViewportDimensionError extends StorybookError {
   constructor(public data: { dimension: string; value: string }) {
     super({

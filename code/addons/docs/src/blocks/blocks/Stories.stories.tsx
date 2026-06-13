@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import * as DefaultButtonStories from '../examples/Button.stories';
+import * as StoriesBlockParametersStories from '../examples/StoriesBlockParameters.stories';
 import { Stories } from './Stories';
 
 const meta = {
@@ -26,6 +28,28 @@ export const WithoutPrimary: Story = {
   args: { includePrimary: false },
   parameters: {
     relativeCsfPaths: ['../examples/Button.stories'],
+  },
+};
+export const WithoutPrimaryStory: Story = {
+  args: { includePrimaryStory: false },
+  parameters: {
+    relativeCsfPaths: ['../examples/Button.stories'],
+  },
+};
+export const OfCSFFile: Story = {
+  args: {
+    of: DefaultButtonStories,
+  },
+  parameters: {
+    relativeCsfPaths: ['../examples/Button.stories'],
+  },
+};
+export const WithDocsStoriesParameters: Story = {
+  args: {
+    of: StoriesBlockParametersStories,
+  },
+  parameters: {
+    relativeCsfPaths: ['../examples/StoriesBlockParameters.stories'],
   },
 };
 export const DifferentToolbars: Story = {

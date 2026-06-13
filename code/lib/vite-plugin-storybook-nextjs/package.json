@@ -1,6 +1,9 @@
 {
   "name": "vite-plugin-storybook-nextjs",
   "version": "3.3.0",
+  "bugs": {
+    "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs.git"

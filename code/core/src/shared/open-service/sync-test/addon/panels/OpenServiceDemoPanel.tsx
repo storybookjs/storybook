@@ -103,19 +103,27 @@ function CommandDemoSection({
 function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) {
   const alpha = useServiceQuery(service, 'getEntry', { id: 'alpha' });
   const beta = useServiceQuery(service, 'getEntry', { id: 'beta' });
-  const unbacked = useServiceQuery(service, 'getUnbacked');
+  const [unbacked, setUnbacked] = React.useState<string | null>(null);
   const [unbackedError, setUnbackedError] = React.useState<string | null>(null);
 
-  // TODO: The useServiceQuery hook doesn't expose errors from queries that fail to load.
-  // It should of course support that, but it doesn't yet.
-  // So we have this manual effect to track the error.
+  // `getUnbacked` is read via the query's own subscribe/loaded rather than `useServiceQuery`: it is a
+  // void-input query with a `load`, a shape whose input type the hook's conditional signature infers
+  // inconsistently across the package boundary. The query methods are stable, and this also lets us
+  // surface the load error, which `useServiceQuery` does not expose yet.
   React.useEffect(() => {
     let active = true;
 
+    const unsubscribe = service.queries.getUnbacked.subscribe((value) => {
+      if (active && value !== null) {
+        setUnbacked(value);
+      }
+    });
+
     void service.queries.getUnbacked
       .loaded()
-      .then(() => {
+      .then((value) => {
         if (active) {
+          setUnbacked(value);
           setUnbackedError(null);
         }
       })
@@ -127,6 +135,7 @@ function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) 
 
     return () => {
       active = false;
+      unsubscribe();
     };
   }, [service]);
 

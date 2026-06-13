@@ -553,6 +553,13 @@ export interface StorybookConfigRaw {
     experimentalRSC?: boolean;
 
     /**
+     * Adds docs story subheadings to the search index.
+     *
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalSearchDocsHeadings?: boolean;
+
+    /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
      *
      * Set NODE_ENV to development in built Storybooks for better testability and debuggability

@@ -43,8 +43,9 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'headings', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -161,6 +162,7 @@ export type SearchProps = {
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
+  updateLastViewed?: (story: { storyId: string; refId: string; anchor?: string }) => void;
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
@@ -172,6 +174,7 @@ export const Search = React.memo<SearchProps>(function Search({
   dataset,
   enableShortcuts = true,
   getLastViewed,
+  updateLastViewed,
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
@@ -184,25 +187,52 @@ export const Search = React.memo<SearchProps>(function Search({
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+    const list: SearchItem[] = [];
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
-              : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
-            };
-          })
-        );
+    for (const [refId, { index, allStatuses }] of dataset.entries) {
+      if (!index) {
+        continue;
       }
-      return acc;
-    }, []);
+
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+      const datasetValues = Object.values(index);
+
+      for (const datasetValue of datasetValues) {
+        const storyStatuses = allStatuses?.[datasetValue.id];
+        const mostCriticalStatusValue = storyStatuses
+          ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+          : null;
+
+        list.push({
+          ...searchItem(datasetValue, dataset.hash[refId]),
+          status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
+        });
+
+        // Narrow down type to more specific API_DocsEntry with headings
+        if (datasetValue.type !== 'docs') {
+          continue;
+        }
+
+        if (!globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          continue;
+        }
+
+        const headings = datasetValue.headings ?? [];
+        headings.forEach((heading: string) => {
+          const searchItemRef = searchItem(datasetValue, dataset.hash[refId]);
+          const namePostfix = searchItemRef.path?.[0] === heading ? '' : ` / ${heading}`;
+
+          list.push({
+            ...searchItemRef,
+            // TODO add comment about why -> fuse breaks if id is not unique
+            id: `${datasetValue.id}#${heading.replaceAll(' ', '-').toLowerCase()}`,
+            name: `${datasetValue.name}${namePostfix}`,
+            status: mostCriticalStatusValue || groupStatus[datasetValue.id] || null,
+          });
+        });
+      }
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 
@@ -247,9 +277,17 @@ export const Search = React.memo<SearchProps>(function Search({
   const onSelect = useCallback(
     (selectedItem: DownshiftItem) => {
       if (isSearchResult(selectedItem)) {
-        const { id, refId } = selectedItem.item;
-        // @ts-expect-error (non strict)
-        api?.selectStory(id, undefined, { ref: refId !== DEFAULT_REF_ID && refId });
+        const { id: rawId, refId } = selectedItem.item;
+        const [storyId, anchor] = rawId.split('#');
+
+        updateLastViewed?.({ storyId, refId, anchor });
+
+        api?.selectStory(storyId, undefined, {
+          // @ts-expect-error (non strict)
+          ref: refId !== DEFAULT_REF_ID && refId,
+          scrollTo: anchor,
+        });
+
         // @ts-expect-error (non strict)
         inputRef.current.blur();
         showAllComponents(false);
@@ -348,16 +386,33 @@ export const Search = React.memo<SearchProps>(function Search({
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId }) => {
+          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];
               const item = story.type === 'story' ? data.index[story.parent] : story;
+              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
               // prevent duplicates
               // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === item.id)) {
+              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
+                const baseItem = searchItem(item, dataset.hash[refId]);
+                let resultItem = baseItem;
+                if (anchor && item.type === 'docs') {
+                  const matchingHeading = item.headings?.find(
+                    (h: string) => h.replaceAll(' ', '-').toLowerCase() === anchor
+                  );
+                  if (matchingHeading) {
+                    const namePostfix =
+                      baseItem.path?.[0] === matchingHeading ? '' : ` / ${matchingHeading}`;
+                    resultItem = {
+                      ...baseItem,
+                      id: entryId,
+                      name: `${item.name}${namePostfix}`,
+                    };
+                  }
+                }
                 // @ts-expect-error (non strict)
-                acc.push({ item: searchItem(item, dataset.hash[refId]), matches: [], score: 0 });
+                acc.push({ item: resultItem, matches: [], score: 0 });
               }
             }
             return acc;

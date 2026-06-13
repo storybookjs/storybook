@@ -27,7 +27,8 @@ export const useLastViewed = (selection: Selection) => {
     (story: StoryRef) => {
       const items = lastViewedRef.current;
       const index = items.findIndex(
-        ({ storyId, refId }) => storyId === story.storyId && refId === story.refId
+        ({ storyId, refId, anchor }) =>
+          storyId === story.storyId && refId === story.refId && anchor === story.anchor
       );
 
       if (index === 0) {
@@ -51,6 +52,7 @@ export const useLastViewed = (selection: Selection) => {
 
   return {
     getLastViewed: useCallback(() => lastViewedRef.current, [lastViewedRef]),
+    updateLastViewed,
     clearLastViewed: useCallback(() => {
       lastViewedRef.current = lastViewedRef.current.slice(0, 1);
       save(lastViewedRef.current);

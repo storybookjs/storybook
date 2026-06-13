@@ -28,6 +28,10 @@ If you need to pass props to the component returned by your decorator, you can d
 
 <CodeSnippets path="your-component-with-decorator-with-props.md" />
 
+The story function is passed as the first decorator argument, and the story context is passed as the second argument. For example, you can provide Svelte context by calling `setContext` in the decorator before returning a decorator component or `story()`. The returned decorator component and its child components can then read the value with Svelte's `getContext`.
+
+<CodeSnippets path="your-component-with-decorator-with-context.md" />
+
 </If>
 
 <If notRenderer="svelte">

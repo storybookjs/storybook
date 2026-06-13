@@ -8,7 +8,7 @@ import { getService, registerService } from '../../server.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { toStoryIndexPath } from '../module-graph/types.ts';
 import { docgenServiceDef } from './definition.ts';
-import type { DocgenPayload, DocgenProvider } from './types.ts';
+import type { DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
   workingDir?: string;
@@ -41,6 +41,7 @@ export type RegisterDocgenServiceOptions = {
  */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
+  const extractedComponentIds = new Set<string>();
 
   const runtime = registerService(docgenServiceDef, {
     queries: {
@@ -77,6 +78,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
           ctx.self.setState((state) => {
             state.components[input.id] = payload;
           });
+          extractedComponentIds.add(input.id);
           return payload;
         },
       },
@@ -137,7 +139,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     // Only refresh components that already have extracted docgen in service state, so we never
     // eagerly extract docgen nobody has requested yet.
     const componentIdsToRefresh = Array.from(bumpedComponentIds).filter((id) => {
-      return runtime.queries.getDocgen({ id }) !== undefined;
+      return extractedComponentIds.has(id);
     });
 
     if (componentIdsToRefresh.length === 0) {

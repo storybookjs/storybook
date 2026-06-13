@@ -156,9 +156,9 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    // Disabled for now: the docgen service does not yet work in production builds. Keeping it off
-    // ensures this branch exercises the normal (non-experimental) docgen path without regressions.
-    experimentalDocgenServer: false,
+    // Disabled by default for production builds; the internal dev server enables it via
+    // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
+    experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
     experimentalReactComponentMeta: true,
     changeDetection: true,
   },

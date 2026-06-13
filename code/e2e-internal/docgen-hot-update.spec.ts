@@ -10,7 +10,6 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 const codeDir = process.cwd();
-const mainConfigPath = join(codeDir, '.storybook/main.ts');
 const buttonSourcePath = join(codeDir, 'core/src/components/components/Button/Button.tsx');
 const storyPath = '/story/button-component--base';
 const hotUpdatePropName = 'e2eDocgenHotUpdateProp';
@@ -21,27 +20,12 @@ const hotUpdatePropSource = `
   ${hotUpdatePropName}?: 'before' | 'after';
 `;
 
-let originalMainConfig: string | undefined;
 let originalButtonSource: string | undefined;
 
 async function restoreFile(path: string, contents: string) {
   if ((await readFile(path, 'utf8')) !== contents) {
     await writeFile(path, contents, 'utf8');
   }
-}
-
-async function enableExperimentalDocgenServer() {
-  const current = await readFile(mainConfigPath, 'utf8');
-  originalMainConfig = current;
-
-  if (!current.includes('experimentalDocgenServer: false')) {
-    return;
-  }
-
-  await writeFile(
-    mainConfigPath,
-    current.replace('experimentalDocgenServer: false', 'experimentalDocgenServer: true')
-  );
 }
 
 async function addHotUpdateProp() {
@@ -58,22 +42,6 @@ async function addHotUpdateProp() {
   await writeFile(buttonSourcePath, current.replace(marker, `${marker}${hotUpdatePropSource}`));
 }
 
-async function waitForStorybookServer() {
-  await expect
-    .poll(
-      async () => {
-        try {
-          const response = await fetch(storybookUrl);
-          return response.ok;
-        } catch {
-          return false;
-        }
-      },
-      { timeout: PREVIEW_STORY_TIMEOUT }
-    )
-    .toBe(true);
-}
-
 test.describe('docgen open service hot updates', () => {
   test.describe.configure({ mode: 'serial' });
   test.setTimeout(90_000);
@@ -82,15 +50,12 @@ test.describe('docgen open service hot updates', () => {
     test.skip(!runsAgainstDevServer, 'Docgen hot updates require the dev server file watcher.');
 
     originalButtonSource = await readFile(buttonSourcePath, 'utf8');
-    await enableExperimentalDocgenServer();
-    await waitForStorybookServer();
   });
 
   test.afterAll(async () => {
-    await Promise.all([
-      originalButtonSource ? restoreFile(buttonSourcePath, originalButtonSource) : undefined,
-      originalMainConfig ? restoreFile(mainConfigPath, originalMainConfig) : undefined,
-    ]);
+    if (originalButtonSource) {
+      await restoreFile(buttonSourcePath, originalButtonSource);
+    }
   });
 
   test('updates manager Controls when a component prop type changes without navigation', async ({
@@ -99,6 +64,21 @@ test.describe('docgen open service hot updates', () => {
     await restoreFile(buttonSourcePath, originalButtonSource!);
 
     await page.goto(`${storybookUrl}/?path=${storyPath}`);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            Boolean(
+              (
+                globalThis as {
+                  FEATURES?: { experimentalDocgenServer?: boolean };
+                }
+              ).FEATURES?.experimentalDocgenServer
+            )
+          ),
+        { timeout: PREVIEW_STORY_TIMEOUT }
+      )
+      .toBe(true);
     await waitForPreviewReady(page);
     await expect(
       page.frameLocator('#storybook-preview-iframe').getByRole('button', { name: 'Button' })

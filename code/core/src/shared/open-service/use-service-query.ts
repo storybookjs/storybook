@@ -6,9 +6,9 @@
  *
  * Re-renders only when the specific query result changes by value. Signal-level dedup
  * inside the service runtime ensures that a load which rewrites a deeply-equal payload does
- * not re-fire the subscription; `isEqual` in `getSnapshot` provides an additional
+ * not re-fire the subscription; `isEqual` in the subscription callback provides an additional
  * referential-stability layer at the React boundary so the component sees a stable object
- * reference across snapshot reads that return the same logical value.
+ * reference across updates that return the same logical value.
  *
  * Object inputs are compared with deep equality when deciding whether to re-subscribe, so inline
  * literals at the call site are safe.
@@ -88,21 +88,11 @@ export function useServiceQuery<TKey extends string, TInput, TOutput>(
     [queryFn, subscriptionKey]
   );
 
-  // Read directly from the service to get the freshest synchronous value, but compare with
-  // the previously stored snapshot so React sees a stable reference when the value is
-  // deeply equal. This prevents unnecessary re-renders when `getSnapshot` is called outside
-  // of a subscriber notification (e.g. on React's concurrent-mode bailout checks).
+  // React may call getSnapshot multiple times during render/bailout checks, so it must be a pure
+  // ref read. Calling the service query here would be observable for queries with load hooks.
   const getSnapshot = React.useCallback((): TOutput => {
-    const value = queryFn(subscriptionKey.input);
-    const previous = snapshotRef.current as TOutput;
+    return snapshotRef.current as TOutput;
+  }, []);
 
-    if (isEqual(value, previous)) {
-      return previous;
-    }
-
-    snapshotRef.current = value;
-    return value;
-  }, [queryFn, subscriptionKey]);
-
-  return React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return React.useSyncExternalStore(subscribe, getSnapshot);
 }

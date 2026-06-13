@@ -6,7 +6,7 @@ import { x } from 'tinyexec';
 import {
   DEFAULT_PROMPT_NAME,
   PROMPT_NAMES,
-} from '../../../code/lib/cli-storybook/src/ai/setup-prompts/index.ts';
+} from '../../../code/core/src/cli/ai/setup-prompts/index.ts';
 import { getAiSetupPrompt } from '../../../code/core/src/shared/utils/ai-prompts.ts';
 
 export interface Logger {

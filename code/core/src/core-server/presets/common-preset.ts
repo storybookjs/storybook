@@ -161,6 +161,8 @@ export const env = async () => {
   return raw;
 };
 
+export const htmlLang = (previous: string | undefined) => previous || 'en';
+
 export const previewBody = async (base: any, { configDir, presets }: Options) => {
   const interpolations = await presets.apply<Record<string, string>>('env');
   return getPreviewBodyTemplate(configDir, interpolations);

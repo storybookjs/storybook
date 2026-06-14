@@ -87,6 +87,9 @@ const command = (name: string) =>
           logger.outro(`Debug logs are written to: ${logFile}`);
         } catch {}
       }
+      if (command.name() === 'build') {
+        process.exit(0);
+      }
     });
 
 command('dev')

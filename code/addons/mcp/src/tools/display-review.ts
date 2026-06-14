@@ -19,8 +19,8 @@ const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's
 1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
 2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-
-Field formatting rules are on each schema property.
+4. Apply the field formatting rules from each schema property. Do not use em-dashes anywhere.
+5. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
 
 ## Curating (Trigger 1)
 Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
@@ -45,7 +45,7 @@ export const ReviewCollectionSchema = v.object({
 	rationale: v.pipe(
 		v.string(),
 		v.description(
-			'Rationale explaining **why** this collection is relevant to the user. One or two sentences. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key concepts and backticks for literal source code references like component or token names.',
+			'Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.',
 		),
 	),
 	storyIds: v.pipe(
@@ -66,7 +66,7 @@ export const ReviewStateSchema = v.object({
 	description: v.pipe(
 		v.string(),
 		v.description(
-			'Description of the review scope, including what\'s there, why it\'s relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\`.',
+			'Description of the review scope, including what\'s there, why it\'s relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.',
 		),
 	),
 	collections: v.array(ReviewCollectionSchema),

@@ -9,40 +9,24 @@ import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 
-const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Create a curated set of stories to display on Storybook's review page. Use this to spot-check the visual impact of a code change, or to show the user specific components or stories when they ask for them. Call this automatically after changing any code that is expected to impact frontend application code or UI components.
+const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
 
-**Every storyId you use MUST come from one of these tools:** — \`get-changed-stories\`, \`get-stories-by-component\`, or \`list-all-documentation\`. Reject any storyIds derived from file paths, story names, or memory. If you don't have a verified storyId for a story you want to include, call \`get-stories-by-component\` to resolve it first.
+## When to call
+- **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Omit \`changedFiles\`.
 
-## Triggers
+## Hard rules
+1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
+2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
 
-1. **After a frontend, UI component, CSS, theme or localization code change**: Automatically invoke this tool to help the user spot-check for visual changes. Use \`get-changed-stories\` to get the list of stories that changed, and curate from there, or fall back to \`get-stories-by-component\` if change detection is unavailable.
-2. **When the user requests to see stories or components** (e.g. "show me all badge components", "what button variants do we have", "display the checkout stories"): Find a relevant set of stories matching the request using \`get-stories-by-component\` and/or \`list-all-documentation\`. Skip \`get-changed-stories\` because file changes are irrelevant in this case.
+Field formatting rules are on each schema property.
 
-## Curating collections
+## Curating (Trigger 1)
+Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
 
-A review mainly consists of a list of collections, each containing at least one story (preferably more than one). It is your job to select/curate relevant stories, and group them into collections. Depending on the trigger, you will use a different process to curate collections.
-
-When reviewing code changes (**Trigger 1**):
-- Answer: *What components, pages or other UI surfaces are affected by this code?* by tracing upward from the edited files through the import graph until you hit page-level or top-level story files.
-- Answer: *What would a developer want to spot-check in real context?* by considering the visual impact of the changes, including places where changes are explicitly not supposed to be visible.
-- Include at least one story per layer of the import chain. In case of a localized change or refactor, start with the most immediately affected components/stories, followed by their usage locations, and so on. In case of a larger feature, start with the most central components/stories (page / container / module), followed by specific lower-level components, and finish with the outermost high-level usage locations (if not yet covered).
-
-## Output
-
-- title: a PR-style title for the change — short and specific.
-- description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. Guidelines:
-    - For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree.
-    - A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph).
-    - Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them.
-    - Give each collection a concise title and a one-sentence rationale. The title describes **what** this collection consists of, written the way a human would say it (e.g. "All the Button variants", "The checkout pages") — never in story-title format like "Button — all variants" or "UI/Button/Primary", which reads as a Storybook story title. The rationale explains **why** this collection is relevant to the change (e.g. "The pages where \`Button\` appears in real context"). Rationales are markdown restricted to **bold**, *italic*, and \`code\` (backticks) — use emphasis for the key concept and backticks for code identifiers; no links, headings, or lists.
-    - Never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm" — describe what's on screen and why it matters, not tasks to perform.
-    - When iterating on a review, keep collections and stories that also appeared in a previous review in the same order, so the reviewer isn't disoriented by reshuffling.
-- changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.
-
-Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
-
-Always include the returned reviewUrl in your final user-facing response so the user can open it. This tool maintains a single active review state; each call replaces the previously published review.`;
+## Curating (Trigger 2)
+Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.`;
 
 /**
  * Canonical schema for the agent-pushed review payload.
@@ -55,13 +39,13 @@ export const ReviewCollectionSchema = v.object({
 	title: v.pipe(
 		v.string(),
 		v.description(
-			'Short, human-readable title for this collection — phrased the way a person would say it, e.g. "Components that use the Button" or "The checkout pages". Avoid story-title formats like "Button — all variants" or "UI/Button/Primary"; it must not be mistaken for a Storybook story title. Plain text, no markdown.',
+			'Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.',
 		),
 	),
 	rationale: v.pipe(
 		v.string(),
 		v.description(
-			'One sentence explaining why this collection is relevant to the change — what it shows and why a reviewer would look here. Describe the content on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown and why it matters (e.g. "The checkout pages where the **Button** appears in real context"), not what to do (e.g. "Verify it still renders correctly"). Write in markdown, restricted to **bold**, *italic*, and `code` (backticks) — no links, headings, or lists. Use bold/italic to highlight the key concept and backticks for code identifiers like component or token names (e.g. "The checkout pages where `Button` appears in real context").',
+			'Rationale explaining **why** this collection is relevant to the user. One or two sentences. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key concepts and backticks for literal source code references like component or token names.',
 		),
 	),
 	storyIds: v.pipe(
@@ -76,12 +60,14 @@ export const ReviewStateSchema = v.object({
 	title: v.pipe(
 		v.string(),
 		v.description(
-			'PR-style title for the change — short and specific, e.g. "Recolour the primary button".',
+			'Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.',
 		),
 	),
 	description: v.pipe(
 		v.string(),
-		v.description('One-line summary of what changed and where to start reviewing.'),
+		v.description(
+			'Description of the review scope, including what\'s there, why it\'s relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\`.',
+		),
 	),
 	collections: v.array(ReviewCollectionSchema),
 	changedFiles: v.pipe(

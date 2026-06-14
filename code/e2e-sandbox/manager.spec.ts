@@ -271,7 +271,7 @@ test.describe('Manager UI', () => {
 
       // The new window URL should contain the args
       const newArgs = new URL(newPage.url()).searchParams.get('args');
-      expect(decodeURIComponent(newArgs || '')).toContain('label:Hello world');
+      expect((newArgs ?? '').replace(/\+/g, ' ')).toContain('label:Hello world');
 
       // Verify text presence dynamically without asserting strict HTML tag names
       await expect(newPage.locator('#storybook-root').getByText('Hello world')).toBeVisible();

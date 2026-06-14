@@ -7,7 +7,7 @@ import type { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
 import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
 
-import type { moduleGraphServiceDef } from 'storybook/internal/core-server';
+import type { ModuleGraphService } from 'storybook/internal/core-server';
 
 import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
@@ -38,7 +38,7 @@ const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onC
       if (cancelled) {
         return;
       }
-      const service = getService<typeof moduleGraphServiceDef>('core/module-graph');
+      const service = getService<ModuleGraphService>('core/module-graph');
       // Omit the input to watch the entire graph. The initial emission carries
       // revision 0 (or the current revision at subscribe time); only subsequent
       // advances represent a change after the review was cached.
@@ -71,7 +71,7 @@ export function __resetCache(): void {
 function prepareReview(payload: ReviewState): ReviewState {
   // Staleness is server-authoritative (set by the file-watch handler), so a
   // fresh push must never inherit a stale flag from the agent payload.
-  const { stale: _untrustedStale, ...rest } = payload;
+  const { stale: _untrustedStale, hasBaseline: _hasBaselineHint, ...rest } = payload;
   return {
     ...rest,
     // Server-side timestamp is authoritative for "Created x minutes ago".
@@ -104,13 +104,18 @@ export const experimental_serverChannel = async (
   channel.on(EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
     // A fresh review starts non-stale; its new createdAt re-anchors staleness.
     cached = prepareReview(payload);
-    channel.emit(EVENTS.DISPLAY_REVIEW, cached);
+    channel.emit(EVENTS.DISPLAY_REVIEW, { ...cached, collapseNavOnOpen: true });
   });
 
   channel.on(EVENTS.REQUEST_REVIEW, () => {
     if (cached) {
       channel.emit(EVENTS.DISPLAY_REVIEW, cached);
     }
+  });
+
+  channel.on(EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
+    cached = undefined;
+    channel.emit(EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
   });
 
   // Mark the cached review stale on the first module-graph change that lands

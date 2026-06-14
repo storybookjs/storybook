@@ -8323,6 +8323,7 @@ __metadata:
   resolution: "@storybook/addon-review@workspace:code/addons/review"
   dependencies:
     http-proxy-middleware: "npm:^4.0.0"
+    markdown-to-jsx: "npm:^7.7.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     sirv: "npm:^2.0.4"

@@ -12,6 +12,7 @@ const minimal: ReviewState = {
   title: 'Button prop rename',
   description:
     'Renamed the Button `appearance` prop to `variant` and updated all internal usages. No visual change is expected.',
+  createdAt: Date.now() - 2 * 60 * 1000,
   collections: [
     {
       title: 'Button',
@@ -23,6 +24,7 @@ const minimal: ReviewState = {
 
 const full: ReviewState = {
   title: 'Primary button visual refresh',
+  createdAt: Date.now() - 14 * 60 * 1000,
   description:
     'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],
@@ -418,6 +420,60 @@ for (const state of [minimal, full, largeCascade, pagesAndBench, atomicChange, m
   }
 }
 
+const fortyStoryCollection: ReviewState = {
+  title: 'Large collection overflow',
+  description:
+    'A single collection with 40 stories to exercise the two-row cap and "Review all" overflow affordance.',
+  collections: [
+    {
+      title: 'All changed stories',
+      rationale: 'Every story affected by this change.',
+      storyIds: [
+        'button-component--base',
+        'button-component--variants',
+        'button-component--sizes',
+        'button-component--paddings',
+        'button-component--pseudo-states',
+        'button-component--icon-only',
+        'components-togglebutton--variants',
+        'components-togglebutton--sizes',
+        'components-tabs-tabsview--basic',
+        'components-tabs--stateful-static',
+        'components-tabs--stateless-with-tools',
+        'components-toolbar--basic',
+        'components-toolbar--scrollable',
+        'components-abstracttoolbar--basic',
+        'select-component--base',
+        'components-card--default',
+        'components-bar-bar--default',
+        'components-collapsible--default',
+        'overlay-modal--base',
+        'overlay-modal--interactive-mouse',
+        'overlay-popover--with-hide-button',
+        'overlay-popover--with-chrome',
+        'manager-main--default',
+        'manager-main--about-page',
+        'manager-main--guide-page',
+        'manager-settings-aboutscreen--default',
+        'manager-settings-guidepage--default',
+        'manager-settings-shortcutsscreen--defaults',
+        'manager-settings-checklist--default',
+        'manager-sidebar-sidebar--simple',
+        'manager-sidebar-sidebar--with-refs',
+        'manager-sidebar-sidebar--statuses-open',
+        'manager-sidebar-sidebar--searching',
+        'manager-sidebar-sidebar--with-cta-active',
+        'manager-sidebar-filesearchmodal--default',
+        'manager-sidebar-filesearchlist--default',
+        'manager-container-menu--with-shortcuts',
+        'manager-container-menu--with-shortcuts-active',
+        'manager-components-preview-viewport--default',
+        'bench--es-build-analyzer',
+      ],
+    },
+  ],
+};
+
 const meta = preview.meta({
   component: SummaryScreen,
   parameters: {
@@ -426,7 +482,7 @@ const meta = preview.meta({
       ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
     },
   },
-  args: { getStoryPreviewHref, storyInfo: demoStoryInfo },
+  args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: () => {} },
 });
 
 export const Empty = meta.story({
@@ -442,17 +498,48 @@ export const Minimal = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
-    await expect(await canvas.findByText(/Showing 2 agent-curated stories/i)).toBeInTheDocument();
+    await expect(await canvas.findByText(/2 stories for quick review/i)).toBeInTheDocument();
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
+    await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
+    await expect(
+      await canvas.findByRole('link', { name: 'Back to last story' })
+    ).toBeInTheDocument();
+  },
+});
+
+export const WithBackButton = meta.story({
+  args: {
+    state: minimal,
+    lastReviewedStoryHref: '?path=/story/button-component--base&collection=0',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('link', { name: 'Back to last story' })
+    ).toBeInTheDocument();
   },
 });
 
 export const Full = meta.story({
-  args: { state: full },
+  args: {
+    state: full,
+    storyInfo: {
+      // Collection 1 — first story is new
+      'button-component--variants': { title: 'Button', name: 'Variants', isNew: true },
+      'button-component--base': { title: 'Button', name: 'Base' },
+      'button-component--sizes': { title: 'Button', name: 'Sizes' },
+      // Collection 2 — first story is new
+      'components-togglebutton--variants': {
+        title: 'ToggleButton',
+        name: 'Variants',
+        isNew: true,
+      },
+      'components-togglebutton--sizes': { title: 'ToggleButton', name: 'Sizes' },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
-    await expect(await canvas.findByRole('link', { name: 'View Storybook' })).toBeInTheDocument();
   },
 });
 
@@ -476,6 +563,13 @@ export const PagesAndBench = meta.story({
 
 export const RealAtomicChange = meta.story({
   args: { state: atomicChange },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Round up Button border-radius: 4px → 12px (3× theme multiplier)')
+    ).toBeInTheDocument();
+    await expect(await canvas.findByText('Button — atomic')).toBeInTheDocument();
+  },
 });
 
 export const Stale = meta.story({
@@ -486,6 +580,17 @@ export const Stale = meta.story({
       await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
     ).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});
+
+// A single collection with 40 stories: the grid caps at 2 rows and shows a
+// "Review all 40" button in the last slot until the user expands it.
+export const LargeCollectionOverflow = meta.story({
+  args: { state: fortyStoryCollection },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Large collection overflow')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: /Review all 40/i })).toBeInTheDocument();
   },
 });
 

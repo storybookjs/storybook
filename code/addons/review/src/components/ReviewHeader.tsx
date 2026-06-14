@@ -2,25 +2,35 @@ import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Root = styled.header(({ theme }) => ({
+const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
+  containerType: 'inline-size',
+  containerName: 'review-header',
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
-  background: theme.background.content,
+  width: '100%',
+  background: $variant === 'toolbar' ? theme.barBg : theme.background.content,
   color: theme.color.defaultText,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  ...($variant === 'page' ? { borderBottom: `1px solid ${theme.appBorderColor}` } : {}),
 }));
 
-const TopRow = styled.div({
+const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
+  display: 'flex',
+  flexWrap: 'wrap',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 16px 10px',
+  minHeight: 40,
+}));
+
+const Main = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  alignItems: 'flex-start',
+  alignItems: 'center',
   gap: 8,
-  padding: '16px 16px 8px 16px',
-  minHeight: 40,
-  '&:last-of-type': {
-    paddingBottom: 16,
-  },
+  flex: '1 1 auto',
+  minWidth: 0,
 });
 
 const Leading = styled.div({
@@ -32,7 +42,7 @@ const Leading = styled.div({
 const TextBlock = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  gap: 2,
+  gap: 4,
   flexGrow: 1,
   minWidth: 0,
 });
@@ -55,8 +65,9 @@ const Title = styled.h1(({ theme }) => ({
 
 const Subtitle = styled.div(({ theme }) => ({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
-  gap: 5,
+  gap: 8,
   color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
   lineHeight: '20px',
@@ -64,17 +75,20 @@ const Subtitle = styled.div(({ theme }) => ({
 
 const Actions = styled.div({
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
+  justifyContent: 'flex-end',
   gap: 6,
-  flexShrink: 0,
+  flex: '0 1 auto',
+  marginLeft: 'auto',
 });
 
 const SecondRow = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
-  padding: '8px 12px 8px 16px',
-  minHeight: 40,
+  padding: '0 16px 2px 16px',
+  minHeight: 39,
 });
 
 export interface ReviewHeaderProps {
@@ -92,6 +106,8 @@ export interface ReviewHeaderProps {
    * heading instead of being left on the now-unmounted trigger.
    */
   autoFocusTitle?: boolean;
+  /** Compact layout for the preview toolbar header row. */
+  variant?: 'page' | 'toolbar';
 }
 
 export const ReviewHeader: FC<ReviewHeaderProps> = ({
@@ -101,6 +117,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   actions,
   secondRow,
   autoFocusTitle = false,
+  variant = 'page',
 }) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -110,15 +127,17 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   }, [autoFocusTitle]);
 
   return (
-    <Root>
-      <TopRow>
-        {leading ? <Leading>{leading}</Leading> : null}
-        <TextBlock>
-          <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>
-            {title}
-          </Title>
-          {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
-        </TextBlock>
+    <Root $variant={variant}>
+      <TopRow $variant={variant}>
+        <Main>
+          {leading ? <Leading>{leading}</Leading> : null}
+          <TextBlock>
+            <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>
+              {title}
+            </Title>
+            {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
+          </TextBlock>
+        </Main>
         {actions ? <Actions>{actions}</Actions> : null}
       </TopRow>
       {secondRow ? <SecondRow>{secondRow}</SecondRow> : null}

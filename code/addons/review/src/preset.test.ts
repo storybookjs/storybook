@@ -79,7 +79,10 @@ describe('addon-review experimental_serverChannel', () => {
     await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
 
     expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+      {
+        event: EVENTS.DISPLAY_REVIEW,
+        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+      },
     ]);
   });
 
@@ -91,7 +94,10 @@ describe('addon-review experimental_serverChannel', () => {
     await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithStale);
 
     expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+      {
+        event: EVENTS.DISPLAY_REVIEW,
+        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+      },
     ]);
     expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
   });
@@ -127,7 +133,23 @@ describe('addon-review experimental_serverChannel', () => {
 
     expect(channel.on).toHaveBeenCalledWith(EVENTS.PUSH_REVIEW, expect.any(Function));
     expect(channel.on).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledTimes(2);
+    expect(channel.on).toHaveBeenCalledWith(EVENTS.DISMISS_REVIEW, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledTimes(3);
+  });
+
+  it('on DISMISS_REVIEW, clears cache and emits REVIEW_DISMISSED with return search', async () => {
+    const { channel, emitted } = createMockChannel();
+
+    await experimental_serverChannel(channel, {} as Options, {});
+    await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+    emitted.length = 0;
+    await (channel as any).fire(EVENTS.DISMISS_REVIEW, '?path=/story/foo');
+
+    expect(emitted).toEqual([{ event: EVENTS.REVIEW_DISMISSED, payload: '?path=/story/foo' }]);
+
+    emitted.length = 0;
+    await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+    expect(emitted).toEqual([]);
   });
 
   describe('staleness', () => {

@@ -34,6 +34,7 @@ import {
   getGroupDualStatus,
   getGroupStatus,
   getMostCriticalStatusValue,
+  getSidebarVisibleStatus,
   getStatus,
   statusPriority,
 } from '../../utils/status.tsx';
@@ -221,7 +222,19 @@ const Node = React.memo<NodeProps>(function Node(props) {
     return [];
   }, [item.id, item.type, onSelectStoryId, statuses, theme]);
 
-  let contextMenu = useContextMenu(item, statusLinks, api);
+  const visibleStatus = useMemo(
+    () =>
+      getSidebarVisibleStatus({
+        theme,
+        item,
+        statuses,
+        groupDualStatus,
+        isModifiedFilterActive,
+      }),
+    [theme, item, statuses, groupDualStatus, isModifiedFilterActive]
+  );
+
+  let contextMenu = useContextMenu(item, statusLinks, api, visibleStatus);
   if (refId !== 'storybook_internal') {
     contextMenu = { node: null, onMouseEnter: () => {} };
   }

@@ -1,4 +1,7 @@
-export { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../shared/status-store/index.ts';
+export {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
+} from '../../shared/status-store/index.ts';
 export type {
   Status,
   StatusValue,

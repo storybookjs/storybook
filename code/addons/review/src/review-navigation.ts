@@ -1,11 +1,13 @@
 import { REVIEW_CHANGES_URL } from './constants.ts';
+import type { ReviewState } from './review-state.ts';
 
-// A detail-screen target: a collection (indexed into state.collections) and,
-// optionally, the specific story within it that is being reviewed.
-export interface ReviewDetailLocation {
-  collectionIndex: number;
-  storyId?: string;
-}
+/** Fallback display name when the Storybook index has not resolved a title. */
+export const prettifyComponentId = (componentId: string) =>
+  componentId
+    .split(/[-/]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 
 const tryDecodeURIComponent = (value: string): string => {
   try {
@@ -15,43 +17,231 @@ const tryDecodeURIComponent = (value: string): string => {
   }
 };
 
-// Storybook's manager router keeps the active route in the `path` query param
-// (see core/src/router) — `Route`/`api.navigate` read `?path=…`, not
-// window.location.pathname. Hrefs therefore wrap the route in `?path=…`.
-export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
+/** Normalize preview URLs or encoded ids down to a plain story id. */
+export const normalizeReviewStoryId = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
 
-export const buildReviewChangesDetailHref = (location: ReviewDetailLocation): string => {
-  const base = `${REVIEW_CHANGES_URL}${location.collectionIndex}`;
-  const target = location.storyId ? `${base}/${encodeURIComponent(location.storyId)}` : base;
-  return `?path=${target}`;
+  const shouldTreatAsUrl =
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/iframe.html') ||
+    trimmed.startsWith('iframe.html') ||
+    trimmed.startsWith('./iframe.html');
+
+  if (shouldTreatAsUrl) {
+    try {
+      const url = new URL(trimmed, 'https://storybook.local');
+      const id = url.searchParams.get('id');
+      if (id) {
+        return tryDecodeURIComponent(id);
+      }
+    } catch {
+      // Fall through to the regex-based extraction below.
+    }
+  }
+
+  const queryIdMatch = trimmed.match(/(?:^|[?&])id=([^&#]+)/);
+  if (queryIdMatch?.[1]) {
+    return tryDecodeURIComponent(queryIdMatch[1]);
+  }
+
+  return trimmed;
 };
 
-// Parse a detail-screen target out of the URL. Returns null for the summary.
-export const parseReviewChangesDetailLocation = (search: string): ReviewDetailLocation | null => {
-  const params = new URLSearchParams(search);
-  const path = params.get('path') ?? '';
+/** Preview iframe URL for a story thumbnail. */
+export const storyPreviewUrl = (storyId: string, { freeze = false }: { freeze?: boolean } = {}) =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story${freeze ? '&freeze=finished' : ''}`;
 
-  if (!path.startsWith(REVIEW_CHANGES_URL)) {
+/** Link to a story in the regular Storybook manager. */
+export const buildStorybookStoryHref = (storyId: string): string =>
+  `?path=/story/${encodeURIComponent(normalizeReviewStoryId(storyId))}`;
+
+/** A single navigable slot in the flattened review list (duplicates allowed). */
+export interface ReviewNavEntry {
+  storyId: string;
+  collectionIndex: number;
+}
+
+export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
+
+export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
+
+/** Default back target when no story has been visited yet. */
+export const STORYBOOK_ROOT_HREF = '/';
+
+export const buildSummaryBackHref = (lastReviewedStoryHref: string | null | undefined): string =>
+  lastReviewedStoryHref || STORYBOOK_ROOT_HREF;
+
+/** Marks summary-header back links for SPA navigation in useReviewNavigationInterceptor. */
+export const REVIEW_SUMMARY_BACK_ATTR = 'data-review-summary-back';
+
+export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
+  `?path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
+
+/** Storybook manager navigate target (without the leading `?path=` wrapper). */
+export const buildReviewStoryNavigationTarget = (entry: ReviewNavEntry): string =>
+  `/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
+
+export const parseReviewStoryHref = (href: string): ReviewNavEntry | null => {
+  if (!href.startsWith('?path=/story/')) {
     return null;
   }
-
-  const segments = path.slice(REVIEW_CHANGES_URL.length).split('/').filter(Boolean);
-  if (segments.length === 0) {
+  const query = href.startsWith('?') ? href.slice(1) : href;
+  const params = new URLSearchParams(query);
+  const path = params.get('path');
+  if (!path?.startsWith('/story/')) {
     return null;
   }
-
-  const collectionIndex = Number(segments[0]);
-  if (!Number.isInteger(collectionIndex) || collectionIndex < 0) {
+  const storyId = path.slice('/story/'.length);
+  const collectionIndex = parseCollectionIndex(
+    params.get(REVIEW_COLLECTION_QUERY_PARAM) ?? undefined
+  );
+  if (!storyId || collectionIndex === undefined) {
     return null;
   }
-  // Reject trailing junk (e.g. `0/story/extra`) so the route parses strictly.
-  if (segments.length > 2) {
+  return { storyId, collectionIndex };
+};
+
+/** Walk collections in order, pushing every story occurrence. */
+export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] => {
+  const entries: ReviewNavEntry[] = [];
+  state.collections.forEach((collection, collectionIndex) => {
+    for (const storyId of collection.storyIds) {
+      entries.push({ storyId, collectionIndex });
+    }
+  });
+  return entries;
+};
+
+export const isReviewSummaryPath = (path: string): boolean =>
+  path === REVIEW_CHANGES_URL || path === '/review';
+
+/** True when the manager route is a review story (`/story/...` with `collection`). */
+export const isReviewStoryRoute = (path: string, collectionIndex: number | undefined): boolean =>
+  parseStoryIdFromPath(path) !== null && collectionIndex !== undefined;
+
+/** True for the review summary or an in-review story URL (before review state loads). */
+export const isReviewSessionPath = (path: string, collectionIndex: number | undefined): boolean =>
+  isReviewSummaryPath(path) || isReviewStoryRoute(path, collectionIndex);
+
+export const parseStoryIdFromPath = (path: string): string | null => {
+  if (!path.startsWith('/story/')) {
     return null;
   }
+  const storyId = path.slice('/story/'.length);
+  return storyId || null;
+};
 
-  const storySegment = segments[1];
+export const parseCollectionIndex = (value: string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!/^\d+$/.test(value)) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : undefined;
+};
+
+/**
+ * Resolve the active navigation slot from the current story and optional
+ * `collection` query param. Falls back to the first matching storyId.
+ */
+export const resolveActiveNavEntry = (
+  entries: ReviewNavEntry[],
+  storyId: string,
+  collectionIndex?: number
+): ReviewNavEntry | null => {
+  if (entries.length === 0) {
+    return null;
+  }
+  if (collectionIndex !== undefined) {
+    const exact = entries.find(
+      (entry) => entry.storyId === storyId && entry.collectionIndex === collectionIndex
+    );
+    if (exact) {
+      return exact;
+    }
+  }
+  return entries.find((entry) => entry.storyId === storyId) ?? null;
+};
+
+export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntry): number =>
+  entries.findIndex(
+    (entry) => entry.storyId === active.storyId && entry.collectionIndex === active.collectionIndex
+  );
+
+export const isStoryInReview = (entries: ReviewNavEntry[], storyId: string): boolean =>
+  entries.some((entry) => entry.storyId === storyId);
+
+/** Previous/next targets in the flattened review sequence, wrapping at the ends. */
+export const getReviewDetailNeighbors = (
+  entries: readonly ReviewNavEntry[],
+  index: number
+): { previous: ReviewNavEntry; next: ReviewNavEntry } | null => {
+  const total = entries.length;
+  if (total === 0 || index < 0 || index >= total) {
+    return null;
+  }
   return {
-    collectionIndex,
-    storyId: storySegment ? tryDecodeURIComponent(storySegment) : undefined,
+    previous: entries[(index - 1 + total) % total],
+    next: entries[(index + 1) % total],
+  };
+};
+
+/** First story of the collection one step away, wrapping and skipping empty collections. */
+export const getAdjacentCollectionFirstStory = (
+  collections: readonly { storyIds: string[] }[],
+  collectionIndex: number,
+  direction: 1 | -1
+): ReviewNavEntry | null => {
+  const total = collections.length;
+  if (total === 0) {
+    return null;
+  }
+  for (let step = 1; step <= total; step += 1) {
+    const index = (((collectionIndex + direction * step) % total) + total) % total;
+    const candidate = collections[index];
+    if (candidate && candidate.storyIds.length > 0) {
+      return { collectionIndex: index, storyId: candidate.storyIds[0] };
+    }
+  }
+  return null;
+};
+
+/** Keyboard shortcut targets for the active reviewed story, as ready-to-navigate hrefs. */
+export interface ReviewShortcutHrefs {
+  back: string;
+  previous: string;
+  next: string;
+  previousCollection: string;
+  nextCollection: string;
+}
+
+export const buildReviewShortcutHrefs = (
+  collections: readonly { storyIds: string[] }[],
+  entries: readonly ReviewNavEntry[],
+  activeIndex: number
+): ReviewShortcutHrefs | null => {
+  if (activeIndex < 0 || entries.length === 0) {
+    return null;
+  }
+  const active = entries[activeIndex];
+  const neighbors = getReviewDetailNeighbors(entries, activeIndex);
+  const fallback = active;
+  const previousCollection =
+    getAdjacentCollectionFirstStory(collections, active.collectionIndex, -1) ?? fallback;
+  const nextCollection =
+    getAdjacentCollectionFirstStory(collections, active.collectionIndex, 1) ?? fallback;
+
+  return {
+    back: buildReviewChangesSummaryHref(),
+    previous: buildReviewStoryHref(neighbors?.previous ?? fallback),
+    next: buildReviewStoryHref(neighbors?.next ?? fallback),
+    previousCollection: buildReviewStoryHref(previousCollection),
+    nextCollection: buildReviewStoryHref(nextCollection),
   };
 };

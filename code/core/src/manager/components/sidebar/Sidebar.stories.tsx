@@ -16,6 +16,7 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
@@ -63,9 +64,7 @@ const managerContext: any = (
     once: fn().mockName('api::once'),
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
-    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-      'api::getShortcutKeys'
-    ),
+    getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),

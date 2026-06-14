@@ -111,6 +111,10 @@ describe('extractType', () => {
       // ['T[]', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       ['[]', { name: 'other', value: 'empty-enum' }],
       ['"primary" | "secondary"', { name: 'enum', value: ['primary', 'secondary'] }],
+      // Single-quoted string-literal unions (e.g. from Angular `input<'S' | 'M' | 'L'>()`)
+      // are how compodoc emits literal types; they must infer a select control too.
+      ["'primary' | 'secondary'", { name: 'enum', value: ['primary', 'secondary'] }],
+      ["'S' | 'M' | 'L'", { name: 'enum', value: ['S', 'M', 'L'] }],
       ['TypeAlias', { name: 'enum', value: ['Type Alias 1', 'Type Alias 2', 'Type Alias 3'] }],
       // ['EnumNumeric', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       // ['EnumNumericInitial', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT

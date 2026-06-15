@@ -24,8 +24,7 @@ import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import { Filter } from './Filter.tsx';
-import ReviewChangesButton from './ReviewChangesButton.tsx';
-import ReviewCuratedStoriesButton from './ReviewCuratedStoriesButton.tsx';
+import ReviewSidebarFilters from './ReviewSidebarFilters.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -54,13 +53,6 @@ const Stack = styled.div({
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
-});
-
-const BelowSearchContent = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  marginTop: -8,
 });
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
@@ -200,12 +192,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
-            belowSearchContent={
-              <BelowSearchContent>
-                <ReviewCuratedStoriesButton />
-                <ReviewChangesButton />
-              </BelowSearchContent>
-            }
+            belowSearchContent={<ReviewSidebarFilters />}
             {...lastViewedProps}
           >
             {({

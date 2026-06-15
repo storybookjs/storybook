@@ -20,6 +20,7 @@ export type MdxAnalysisResult = {
   isTemplate: boolean;
   metaTags?: string[];
   imports: string[];
+  headings: string[];
 };
 
 type ImportMap = Record<string, string>;
@@ -38,7 +39,7 @@ const parseMdx = (code: string) =>
   });
 
 type ParsedMdxRoot = ReturnType<typeof parseMdx>;
-type MdxMetadata = Omit<MdxAnalysisResult, 'imports'>;
+type MdxMetadata = Omit<MdxAnalysisResult, 'imports' | 'headings'>;
 
 const createEmptyMdxMetadata = (): MdxMetadata => ({
   title: undefined,
@@ -190,6 +191,43 @@ const extractMeta = (metaElement: MdxJsxFlowElement, importMap: ImportMap): MdxM
   metaTags: getMetaTags(metaElement),
 });
 
+const getHeadingText = (node: { children?: unknown[] }): string => {
+  if (!node.children) {
+    return '';
+  }
+  return node.children
+    .map((child) => {
+      const c = child as { type: string; value?: string; children?: unknown[] };
+      if (c.type === 'text') {
+        return c.value ?? '';
+      }
+      if (c.children) {
+        return getHeadingText(c as { children: unknown[] });
+      }
+      return '';
+    })
+    .join('');
+};
+
+const getHeadings = (root: ParsedMdxRoot): string[] => {
+  const headings: string[] = [];
+
+  const walk = (nodes: unknown[]) => {
+    for (const node of nodes) {
+      const n = node as { type: string; depth?: number; children?: unknown[] };
+      if (n.type === 'heading' && typeof n.depth === 'number' && n.depth <= 4) {
+        headings.push(getHeadingText(n as { children?: unknown[] }));
+      }
+      if (n.children) {
+        walk(n.children);
+      }
+    }
+  };
+
+  walk(root.children as unknown[]);
+  return headings;
+};
+
 export const extractImports = (root: Program): ImportMap => {
   const importMap: ImportMap = {};
 
@@ -234,6 +272,7 @@ const analyzeParsedMdx = (root: ParsedMdxRoot): MdxAnalysisResult => {
   return {
     ...metadata,
     imports: Array.from(new Set(Object.values(importMap))),
+    headings: getHeadings(root),
   };
 };
 

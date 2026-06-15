@@ -11,6 +11,7 @@ import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
 import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsProvider } from '../../shared/open-service/services/story-docs/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
@@ -23,9 +24,17 @@ export type {
   DocgenProvider,
   DocgenProviderInput,
   DocgenProviderPreset,
-  DocgenStory,
   DocgenSubcomponent,
 } from '../../shared/open-service/services/docgen/types.ts';
+export type {
+  StoryDoc,
+  StoryDocsById,
+  StoryDocsError,
+  StoryDocsPayload,
+  StoryDocsProvider,
+  StoryDocsProviderInput,
+  StoryDocsProviderPreset,
+} from '../../shared/open-service/services/story-docs/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -131,6 +140,11 @@ export interface Presets {
     config: DocgenProvider,
     args?: any
   ): Promise<DocgenProvider>;
+  apply(
+    extension: 'experimental_storyDocsProvider',
+    config: StoryDocsProvider,
+    args?: any
+  ): Promise<StoryDocsProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -456,6 +470,7 @@ export interface StorybookConfigRaw {
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   experimental_docgenProvider?: DocgenProvider;
+  experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -786,6 +801,15 @@ export interface StorybookConfig {
    * may delegate to it via the input forwarding pattern.
    */
   experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
+
+  /**
+   * Middleware-style provider for the experimental story-docs service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_storyDocsProvider?: PresetValue<
+    StorybookConfigRaw['experimental_storyDocsProvider']
+  >;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

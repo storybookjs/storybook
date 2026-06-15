@@ -32,7 +32,7 @@ const AgenticButton = styled(ToggleButton)(({ theme }) => {
   };
 });
 
-export type CopyButtonProps = Omit<ButtonProps, 'children' | 'onClick' | 'ariaLabel'> &
+export type CopyButtonProps = Omit<ButtonProps, 'children' | 'onClick' | 'ariaLabel' | 'theme'> &
   UseCopyButtonOptions<ReactNode> & {
     appearance?: 'default' | 'agentic';
   };
@@ -60,14 +60,17 @@ export function CopyButton({
   });
 
   if (appearance === 'agentic') {
+    const { padding = 'small', disabled } = buttonProps;
+
     return (
       <AgenticButton
         variant="outline"
-        padding="small"
+        padding={padding}
         pressed={false}
         disableAllTooltips
-        {...buttonProps}
-        {...copyButtonProps}
+        disabled={disabled}
+        onClick={copyButtonProps.onClick}
+        ariaLabel={copyButtonProps.ariaLabel}
       >
         {buttonChildren}
       </AgenticButton>

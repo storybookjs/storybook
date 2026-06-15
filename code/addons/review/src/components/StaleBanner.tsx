@@ -45,7 +45,7 @@ const Message = styled.div(({ theme }) => ({
 const Prompt = styled.p(({ theme }) => ({
   margin: 0,
   fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s2 - 1,
+  fontSize: theme.typography.size.s1 - 1,
   padding: '6px 10px',
   background: theme.background.app,
   boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
@@ -70,16 +70,18 @@ export const StaleBanner: FC = () => (
               <Title>Prompt for your agent to refresh this review:</Title>
               <Prompt>{REFRESH_PROMPT}</Prompt>
               <CopyButton
-                padding="small"
+                appearance="agentic"
                 ariaLabel="Copy prompt to refresh this review"
+                ariaLabelOnCopy="Prompt copied to clipboard"
                 content={REFRESH_PROMPT}
                 childrenOnCopy={
                   <>
-                    <CheckIcon /> Copied
+                    <CheckIcon /> Copy prompt
                   </>
                 }
               >
-                <CopyIcon /> Copy prompt
+                <CopyIcon />
+                Copy prompt
               </CopyButton>
             </Message>
           </PopoverContent>

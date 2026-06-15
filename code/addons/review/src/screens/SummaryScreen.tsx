@@ -16,6 +16,7 @@ import {
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
   CloseAltIcon,
+  CopyIcon,
   SearchIcon,
   StorybookIcon,
   WandIcon,
@@ -371,9 +372,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </>
             }
           >
-            <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-              <UseSymbol type="reviewing" />
-            </svg>
+            <CopyIcon />
             Copy prompt
           </CopyButton>
           <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">

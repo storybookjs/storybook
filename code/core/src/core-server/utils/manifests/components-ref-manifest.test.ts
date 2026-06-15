@@ -5,12 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import { docgenManifestRef } from '../../../shared/open-service/services/docgen/paths.ts';
+import { storyDocsManifestRef } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 
 import {
   COMPONENTS_REF_MANIFEST_VERSION,
   buildComponentsRefManifest,
   loadDocgenPayloadsFromDisk,
+  loadStoryDocsPayloadsFromDisk,
+  mergeManifestPayloads,
   toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
 
@@ -75,7 +79,6 @@ describe('components-ref-manifest', () => {
       summary: 'Click me',
       path: './button.stories.tsx',
       jsDocTags: {},
-      stories: [],
     };
     vol.fromNestedJSON({
       '/output/services/core/docgen/button.json': JSON.stringify({
@@ -92,6 +95,81 @@ describe('components-ref-manifest', () => {
     await expect(loadDocgenPayloadsFromDisk('/output', ['button'])).resolves.toEqual({});
   });
 
+  it('builds index entries with nested docgen and story-docs refs when payloads exist', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      description: 'A button',
+      summary: 'Click me',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      stories: {
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      },
+    };
+
+    expect(
+      toComponentManifestIndexEntries(['button'], { button: docgen }, { button: storyDocs })
+    ).toEqual({
+      button: {
+        id: 'button',
+        name: 'Button',
+        description: 'A button',
+        summary: 'Click me',
+        docgen: { $ref: docgenManifestRef('button') },
+        stories: { $ref: storyDocsManifestRef('button') },
+      },
+    });
+  });
+
+  it('merges docgen and story-docs payloads for the HTML debugger', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+      description: 'A button',
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      import: 'import { Button } from "./Button";',
+      stories: {
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      },
+    };
+
+    expect(mergeManifestPayloads(docgen, storyDocs)).toEqual({
+      ...docgen,
+      import: 'import { Button } from "./Button";',
+      stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+    });
+  });
+
+  it('loads story-docs payloads from built snapshots on disk', async () => {
+    const payload: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      stories: {},
+    };
+    vol.fromNestedJSON({
+      '/output/services/core/story-docs/button.json': JSON.stringify({
+        components: { button: payload },
+      }),
+    });
+
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'])).resolves.toEqual({
+      button: payload,
+    });
+  });
+
   it('builds index entries with a nested docgen ref when a payload exists', () => {
     const payload: DocgenPayload = {
       id: 'button',
@@ -100,7 +178,6 @@ describe('components-ref-manifest', () => {
       summary: 'Click me',
       path: './button.stories.tsx',
       jsDocTags: {},
-      stories: [],
     };
 
     expect(toComponentManifestIndexEntries(['button'], { button: payload })).toEqual({

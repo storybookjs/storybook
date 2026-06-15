@@ -10,31 +10,49 @@ import invariant from 'tiny-invariant';
 
 import { getService } from '../../../shared/open-service/server.ts';
 import type { DocgenService } from '../../../shared/open-service/services/docgen/definition.ts';
+import type { StoryDocsService } from '../../../shared/open-service/services/story-docs/definition.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import {
   buildComponentsRefManifest,
   loadDocgenPayloadsFromDisk,
+  loadStoryDocsPayloadsFromDisk,
+  mergeManifestPayloads,
   toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
 import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
 
 /**
- * Wraps docgen payloads in a {@link ComponentsManifest} shell for the HTML debugger.
- *
- * Docgen engine metadata (`meta.docgen`) is supplied by the renderer through
- * `experimental_manifests` — core does not infer it from payload shape.
+ * Wraps merged docgen + story-docs payloads in a {@link ComponentsManifest} shell for the HTML
+ * debugger.
  */
 function buildComponentsManifest(
-  components: Record<string, DocgenPayload>,
+  components: Record<string, ComponentManifest>,
   meta: ComponentsManifest['meta']
 ): ComponentsManifest {
   return {
     v: 0,
-    components: components as Record<string, ComponentManifest>,
+    components,
     meta,
   };
+}
+
+function mergeServicePayloads(
+  docgenPayloads: Record<string, DocgenPayload>,
+  storyDocsPayloads: Record<string, StoryDocsPayload>,
+  componentIds: string[]
+): Record<string, ComponentManifest> {
+  return Object.fromEntries(
+    componentIds.flatMap((id) => {
+      const docgen = docgenPayloads[id];
+      if (!docgen) {
+        return [];
+      }
+      return [[id, mergeManifestPayloads(docgen, storyDocsPayloads[id])] as const];
+    })
+  );
 }
 
 /** Narrows an unknown manifest value to the docs manifest shape used by the HTML debugger. */
@@ -112,11 +130,19 @@ async function renderComponentsHtmlFromService(
   docsManifest?: DocsManifest
 ) {
   const docgenService = getService<DocgenService>('core/docgen');
+  const storyDocsService = getService<StoryDocsService>('core/story-docs');
   const startTime = performance.now();
-  const allPayloads = await docgenService.queries.getDocgenForAllComponents.loaded();
+
+  const [allDocgenPayloads, allStoryDocsPayloads] = await Promise.all([
+    docgenService.queries.getDocgenForAllComponents.loaded(),
+    storyDocsService.queries.getStoryDocsForAllComponents.loaded(),
+  ]);
+
   const durationMs = Math.round(performance.now() - startTime);
-  const components = Object.fromEntries(
-    manifestComponentIds.flatMap((id) => (allPayloads[id] ? [[id, allPayloads[id]]] : []))
+  const components = mergeServicePayloads(
+    allDocgenPayloads,
+    allStoryDocsPayloads,
+    manifestComponentIds
   );
 
   return renderComponentsManifest(
@@ -165,15 +191,23 @@ async function writeDocgenServerManifests(
   // Read docgen once from the snapshots written by writeOpenServiceStaticFiles. The same payloads
   // back both components.json and the HTML debugger, so the build never re-extracts from the service.
   const startTime = performance.now();
-  const payloads = await loadDocgenPayloadsFromDisk(outputDir, manifestComponentIds);
+  const [docgenPayloads, storyDocsPayloads] = await Promise.all([
+    loadDocgenPayloadsFromDisk(outputDir, manifestComponentIds),
+    loadStoryDocsPayloadsFromDisk(outputDir, manifestComponentIds),
+  ]);
   const durationMs = Math.round(performance.now() - startTime);
+  const mergedComponents = mergeServicePayloads(
+    docgenPayloads,
+    storyDocsPayloads,
+    manifestComponentIds
+  );
 
   if (manifestComponentIds.length > 0) {
     await writeFile(
       join(manifestsDir, 'components.json'),
       JSON.stringify(
         buildComponentsRefManifest(
-          toComponentManifestIndexEntries(manifestComponentIds, payloads),
+          toComponentManifestIndexEntries(manifestComponentIds, docgenPayloads, storyDocsPayloads),
           manifests.components?.meta
         )
       )
@@ -186,7 +220,7 @@ async function writeDocgenServerManifests(
     await writeFile(
       join(manifestsDir, 'components.html'),
       renderComponentsManifest(
-        buildComponentsManifest(payloads, resolveDocgenMeta(manifests, durationMs)),
+        buildComponentsManifest(mergedComponents, resolveDocgenMeta(manifests, durationMs)),
         docsManifest
       )
     );

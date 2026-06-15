@@ -28,10 +28,12 @@ import type {
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
+  StoryDocsProvider,
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -362,6 +364,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerDocgenService({
       getIndex: () => storyIndexGenerator.getIndex(),
       provider,
+      workingDir: process.cwd(),
+    });
+
+    const storyDocsProvider = await options.presets.apply<StoryDocsProvider>(
+      'experimental_storyDocsProvider',
+      async () => undefined
+    );
+
+    registerStoryDocsService({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      provider: storyDocsProvider,
       workingDir: process.cwd(),
     });
   }

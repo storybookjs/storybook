@@ -32,6 +32,7 @@ import { Tag } from '../../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../../shared/utils/story-index-filters.ts';
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 import type { MaybePromise } from './Preview.tsx';
+import { setupStoryFreezer } from './setupStoryFreezer.ts';
 import { Preview } from './Preview.tsx';
 import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
@@ -94,6 +95,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
+    setupStoryFreezer(this.channel);
 
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));
     this.channel.on(UPDATE_QUERY_PARAMS, this.onUpdateQueryParams.bind(this));

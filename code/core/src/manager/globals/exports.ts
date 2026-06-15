@@ -584,6 +584,7 @@ export default {
     'interleaveSeparators',
     'nameSpaceClassNames',
     'resetComponents',
+    'useCopyButton',
     'useTabsState',
     'withReset',
   ],

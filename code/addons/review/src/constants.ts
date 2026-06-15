@@ -1,0 +1,38 @@
+export const ADDON_ID = 'storybook/addon-review';
+export const PAGE_ID = `${ADDON_ID}/page`;
+export const REVIEW_CHANGES_URL = '/review/';
+
+// Dev-server route (declared in preset.ts) that proxies the deployed baseline
+// Storybook. Shared contract between the server-side proxy and the client-side
+// baseline iframes / index fetch — keep all consumers pointed at this constant.
+export const BASELINE_PROXY_PATH = '/__review-baseline';
+// The baseline Storybook's index, used to detect stories absent from the
+// baseline. Derived from the proxy path so the route stays single-sourced.
+export const BASELINE_INDEX_URL = `${BASELINE_PROXY_PATH}/index.json`;
+
+// sessionStorage key recording whether the manager sidebar (hidden while the
+// review page is open) should be restored when the user leaves. Survives the
+// full-reload navigations between review screens. Value: 'restore' | 'keep'.
+export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
+
+// sessionStorage key remembering the detail screen's preview layout so it
+// persists as the user moves between the detail and summary screens (and
+// across the full-reload navigations between them). Value: '1up' | '2up'.
+export const PREVIEW_MODE_SESSION_KEY = `${ADDON_ID}/preview-mode`;
+
+// `@storybook/addon-mcp` display-review tool call emits this event with the raw agent payload.
+const PUSH_REVIEW = `${ADDON_ID}/push-review`;
+// Display agent review in the UI
+const DISPLAY_REVIEW = `${ADDON_ID}/display-review`;
+// Requests for the cached state of the agent review
+const REQUEST_REVIEW = `${ADDON_ID}/request-review`;
+// Server signals that a source file changed after the cached review was created,
+// so the open review page should surface a "may be stale" banner.
+const REVIEW_STALE = `${ADDON_ID}/review-stale`;
+
+export const EVENTS = {
+  PUSH_REVIEW,
+  DISPLAY_REVIEW,
+  REQUEST_REVIEW,
+  REVIEW_STALE,
+};

@@ -1,7 +1,3 @@
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -242,61 +238,74 @@ describe('NPM Proxy', () => {
   });
 
   describe('findInstallations', () => {
-    it('should find dependencies if npm ls writes warnings to stderr', async () => {
-      const actualCommand =
-        await vi.importActual<typeof import('../utils/command.ts')>('../utils/command.ts');
-      const tempDir = mkdtempSync(join(tmpdir(), 'storybook-npm-proxy-'));
-      const originalPath = process.env.PATH;
-
-      mockedExecuteCommand.mockImplementation(actualCommand.executeCommand);
-      writeFileSync(
-        join(tempDir, 'fake-npm.cjs'),
-        [
-          'const args = process.argv.slice(2);',
-          "console.error('npm warning peer dependency issue');",
-          "if (args.some((arg) => !['ls', '--json', '--depth=99'].includes(arg))) {",
-          '  process.exit(1);',
-          '}',
-          'process.stdout.write(JSON.stringify({',
-          '  dependencies: {',
-          "    '@storybook/react': { version: '1.2.3' },",
-          '  },',
-          '}));',
-          '',
-        ].join('\n')
-      );
-      writeFileSync(
-        join(tempDir, 'npm'),
-        [
-          '#!/bin/sh',
-          `exec "${process.execPath}" "${join(tempDir, 'fake-npm.cjs')}" "$@"`,
-          '',
-        ].join('\n')
-      );
-      writeFileSync(
-        join(tempDir, 'npm.cmd'),
-        ['@echo off', `"${process.execPath}" "%~dp0fake-npm.cjs" %*`, ''].join('\r\n')
-      );
-      chmodSync(join(tempDir, 'npm'), 0o755);
-      process.env.PATH = `${tempDir}${delimiter}${originalPath ?? ''}`;
-
-      try {
-        const tempNpmProxy = new NPMProxy({ cwd: tempDir });
-        const installations = await tempNpmProxy.findInstallations(['@storybook/*']);
-
-        expect(installations).toMatchObject({
+    it('parses stdout JSON and ignores npm warnings written to stderr', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
           dependencies: {
-            '@storybook/react': [{ version: '1.2.3' }],
+            '@storybook/react': { version: '1.2.3' },
           },
-          duplicatedDependencies: {},
-          infoCommand: 'npm ls --depth=1',
-          dedupeCommand: 'npm dedupe',
-        });
-      } finally {
-        process.env.PATH = originalPath;
-        rmSync(tempDir, { recursive: true, force: true });
-        mockedExecuteCommand.mockReset();
-      }
+        }),
+        // npm routinely emits peer-dependency / deprecation warnings on stderr
+        stderr: 'npm warn ERESOLVE overriding peer dependency\nnpm warn deprecated foo@1.0.0',
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['ls', '--json', '--depth=99'],
+          env: { FORCE_COLOR: 'false' },
+          stdio: ['pipe', 'pipe', 'ignore'],
+        })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
+      mockedExecuteCommand.mockReset();
+      mockedExecuteCommand
+        .mockRejectedValueOnce(new Error('npm error code ELSPROBLEMS'))
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            dependencies: {
+              '@storybook/react': { version: '1.2.3' },
+            },
+          }),
+        } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99'] })
+      );
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=0'] })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('returns undefined and never treats stderr as the dependency source when stdout is empty', async () => {
+      mockedExecuteCommand.mockReset();
+      // Valid-looking JSON on stderr must never be parsed as the result.
+      const stderrJson = JSON.stringify({
+        dependencies: { '@storybook/react': { version: '9.9.9' } },
+      });
+      mockedExecuteCommand.mockResolvedValue({ stdout: undefined, stderr: stderrJson } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toBeUndefined();
     });
   });
 

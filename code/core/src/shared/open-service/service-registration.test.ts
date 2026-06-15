@@ -3,12 +3,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { defineService } from './service-definition.ts';
 import {
-  assignEntryFieldInputSchema,
   awaitedPreloadValueServiceDef,
+  assignEntryFieldInputSchema,
   createDerivedBooleanFromChildQueryServiceDef,
   entryIdInputSchema,
+  type MutableRecordLookupService,
+  hiddenServiceDef,
+  internalStaticBuildServiceDef,
+  mixedVisibilityServiceDef,
   mutableRecordLookupServiceDef,
   recordFieldsOutputSchema,
+  registeredCommandOverrideServiceDef,
   voidOutputSchema,
 } from './fixtures.ts';
 import {
@@ -65,20 +70,12 @@ describe('service registration', () => {
     expect(descriptor.commands.assignRecordField.output).toBe(voidOutputSchema);
   });
 
-  it('throws when registering the same service id twice', () => {
-    registerService(mutableRecordLookupServiceDef);
+  it('is idempotent by id: re-registering returns the existing instance instead of throwing', () => {
+    const first = registerService(mutableRecordLookupServiceDef);
+    const second = registerService(mutableRecordLookupServiceDef);
 
-    try {
-      registerService(mutableRecordLookupServiceDef);
-      expect.unreachable('Expected duplicate registration to throw');
-    } catch (error) {
-      expect(error).toMatchObject({
-        fromStorybook: true,
-        code: 6,
-        message:
-          'A service with id "internal-fixture/mutable-record-lookup" is already registered.',
-      });
-    }
+    expect(second).toBe(first);
+    expect(getRegisteredServices()).toHaveLength(1);
   });
 
   it('throws a Storybook error when resolving a missing registered service id', () => {
@@ -87,11 +84,13 @@ describe('service registration', () => {
     );
   });
 
-  it('throws a Storybook error when a registered query or command is missing its handler', async () => {
+  it('throws a Storybook error when a registered query is missing its handler', () => {
+    // A command without a local handler does NOT throw here — it requests remote execution from a
+    // peer that implements it (see service-command-transport.test.ts). Queries stay local-only.
     const service = registerService(
       defineService({
         id: 'internal-fixture/unimplemented-operations',
-        description: 'Leaves handlers undefined so registration can supply them later.',
+        description: 'Leaves the query handler undefined so registration can supply it later.',
         initialState: {} as Record<string, never>,
         queries: {
           getValue: {
@@ -100,25 +99,13 @@ describe('service registration', () => {
             output: v.string(),
           },
         },
-        commands: {
-          run: {
-            description: 'Runs a command that is not implemented in this environment.',
-            input: v.undefined(),
-            output: voidOutputSchema,
-          },
-        },
+        commands: {},
       })
     );
 
     expect(() => service.queries.getValue(undefined)).toThrow(
       'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
-    await expect(service.commands.run(undefined)).rejects.toMatchObject({
-      fromStorybook: true,
-      code: 8,
-      message:
-        'Command "internal-fixture/unimplemented-operations.run" is not implemented for this environment.',
-    });
   });
 
   it('lets handlers resolve another registered service by id through ctx.getService', async () => {
@@ -137,45 +124,19 @@ describe('service registration', () => {
   });
 
   it('allows server registration to provide handlers that are omitted from the definition', async () => {
-    const incrementableServiceDef = defineService({
-      id: 'internal-fixture/registered-command-override',
-      description: 'Provides a command handler at registration time.',
-      initialState: { count: 0 },
-      queries: {
-        getCount: {
-          description: 'Reads the current count.',
-          input: v.undefined(),
-          output: v.number(),
-          handler: (_input, ctx) => ctx.self.state.count,
-        },
-      },
-      commands: {
-        increment: {
-          description: 'Increments the current count.',
-          input: v.undefined(),
-          output: voidOutputSchema,
-        },
-        assignFromLookup: {
-          description: 'Reads another service and mirrors whether a marker exists.',
-          input: assignEntryFieldInputSchema,
-          output: voidOutputSchema,
-        },
-      },
-    });
-
     registerService(mutableRecordLookupServiceDef);
-    const service = registerService(incrementableServiceDef, {
+    const service = registerService(registeredCommandOverrideServiceDef, {
       commands: {
         increment: {
           handler: async (_input, ctx) => {
-            ctx.self.setState((draft) => {
-              draft.count += 1;
+            ctx.self.setState((state) => {
+              state.count += 1;
             });
           },
         },
         assignFromLookup: {
           handler: async (input, ctx) => {
-            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
+            const lookup = ctx.getService<MutableRecordLookupService>(
               'internal-fixture/mutable-record-lookup'
             );
 
@@ -184,8 +145,8 @@ describe('service registration', () => {
             const record = lookup.queries.getRecordFields({
               entryId: input.entryId,
             });
-            ctx.self.setState((draft) => {
-              draft.count = record?.marker === input.fieldValue ? 1 : 0;
+            ctx.self.setState((state) => {
+              state.count = record?.marker === input.fieldValue ? 1 : 0;
             });
           },
         },
@@ -217,10 +178,10 @@ describe('service registration', () => {
     expect(descriptor.queries.getPreloadedValue.staticPath).toBe(true);
   });
 
-  it('allows load and staticInputs to be supplied only at registration time', async () => {
+  it('allows staticInputs to be supplied only at registration time', async () => {
     const serviceDef = defineService({
       id: 'internal-fixture/registration-only-static-build',
-      description: 'Declares staticPath in the definition and load at registration.',
+      description: 'Declares staticPath and load in the definition; staticInputs at registration.',
       initialState: { value: null as string | null },
       queries: {
         getValue: {
@@ -228,8 +189,10 @@ describe('service registration', () => {
           input: v.object({ build: v.literal('once') }),
           output: v.nullable(v.string()),
           handler: (_input, ctx) => ctx.self.state.value,
+          load: async (_input, ctx) => {
+            await ctx.self.commands.setValue(undefined);
+          },
           staticPath: () => 'state.json',
-          staticInputs: async () => [{ build: 'once' as const }],
         },
       },
       commands: {
@@ -244,16 +207,14 @@ describe('service registration', () => {
     registerService(serviceDef, {
       queries: {
         getValue: {
-          load: async (_input, ctx) => {
-            await ctx.self.commands.setValue(undefined);
-          },
+          staticInputs: async () => [{ build: 'once' as const }],
         },
       },
       commands: {
         setValue: {
           handler: async (_input, ctx) => {
-            ctx.self.setState((draft) => {
-              draft.value = 'built-at-registration';
+            ctx.self.setState((state) => {
+              state.value = 'built-at-registration';
             });
           },
         },
@@ -271,5 +232,77 @@ describe('service registration', () => {
         build: 'once',
       })
     ).toBe(null);
+  });
+
+  it('omits internal operations from describeService and listServices summaries', async () => {
+    const service = registerService(mixedVisibilityServiceDef);
+
+    await expect(listServices()).resolves.toEqual([
+      {
+        id: 'internal-fixture/mixed-visibility',
+        description: 'Exposes one public and one internal operation per family.',
+        queryNames: ['getValue'],
+        commandNames: ['setValue'],
+      },
+    ]);
+
+    const descriptor = await describeService('internal-fixture/mixed-visibility');
+
+    expect(Object.keys(descriptor.queries)).toEqual(['getValue']);
+    expect(Object.keys(descriptor.commands)).toEqual(['setValue']);
+
+    expect(service.queries._getInternalValue(undefined)).toBe(0);
+    await service.commands._reset(undefined);
+    expect(service.queries.getValue(undefined)).toBe(0);
+  });
+
+  it('omits internal services from listServices while keeping runtime access', async () => {
+    registerService(mutableRecordLookupServiceDef);
+    registerService(hiddenServiceDef);
+
+    await expect(listServices()).resolves.toEqual([
+      {
+        id: 'internal-fixture/mutable-record-lookup',
+        description: 'Provides a mutable record lookup keyed by entry id.',
+        queryNames: ['getRecordFields'],
+        commandNames: ['assignRecordField'],
+      },
+    ]);
+
+    const descriptor = await describeService('internal-fixture/hidden-service');
+
+    expect(descriptor).toMatchObject({
+      id: 'internal-fixture/hidden-service',
+      description: 'Hidden from listServices.',
+      queries: {
+        getSecret: {
+          name: 'getSecret',
+          description: 'Returns the secret flag.',
+        },
+      },
+      commands: {},
+    });
+
+    expect(getService('internal-fixture/hidden-service').queries.getSecret(undefined)).toBe(true);
+  });
+
+  it('still builds static snapshots for internal queries', async () => {
+    registerService(internalStaticBuildServiceDef, {
+      commands: {
+        _setValue: {
+          handler: async (_input, ctx) => {
+            ctx.self.setState((draft) => {
+              draft.value = 'built-internal';
+            });
+          },
+        },
+      },
+    });
+
+    await expect(buildStaticFiles()).resolves.toEqual({
+      'internal-fixture/internal-static-build/state.json': {
+        value: 'built-internal',
+      },
+    });
   });
 });

@@ -16,8 +16,9 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  *
  * This function serves as the main entry point for Storybook CLI operations.
  *
- * - Core Storybook commands (dev, build, index) are routed to the core binary at
- *   storybook/dist/bin/core.js
+ * - Core Storybook commands (dev, build, index, ai) are routed to the core binary at
+ *   storybook/dist/bin/core.js — `ai` is bundled because agent skills invoke it repeatedly and
+ *   must never wait on an npx download
  * - Init is routed to the create-storybook package via npx
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli via npx
  */
@@ -33,7 +34,7 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 async function run() {
   const args = process.argv.slice(2);
 
-  if (['dev', 'build', 'index'].includes(args[0])) {
+  if (['dev', 'build', 'index', 'ai'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;

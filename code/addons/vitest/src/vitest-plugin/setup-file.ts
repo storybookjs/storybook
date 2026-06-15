@@ -2,6 +2,7 @@ import { afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
 
@@ -16,9 +17,31 @@ export type Task = Partial<RunnerTask> & {
   meta: Record<string, any>;
 };
 
+let defaultChannel: Channel | null = null;
+
 export const initTransport = () => {
+  const existing = getChannel();
+  if (existing) {
+    defaultChannel ??= existing as Channel;
+    return;
+  }
+
   const transport = { setHandler: vi.fn(), send: vi.fn() };
-  globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
+  const channel = new Channel({ transport });
+  defaultChannel = channel;
+  setChannel(channel);
+};
+
+/** Restore the channel installed for story tests (e.g. after manager stories swap in a mock). */
+export const restoreDefaultChannel = () => {
+  if (!defaultChannel) {
+    initTransport();
+    return;
+  }
+
+  if (getChannel() !== defaultChannel) {
+    setChannel(defaultChannel);
+  }
 };
 
 export const modifyErrorMessage = ({ task }: { task: Task }) => {
@@ -44,4 +67,7 @@ beforeAll(() => {
   }
 });
 
-afterEach(modifyErrorMessage);
+afterEach((ctx) => {
+  restoreDefaultChannel();
+  modifyErrorMessage({ task: ctx.task });
+});

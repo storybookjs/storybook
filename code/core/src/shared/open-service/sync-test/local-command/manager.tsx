@@ -13,7 +13,6 @@ type LocalCommandSyncService = ServiceInstanceOf<typeof localCommandSyncServiceD
 function LocalCommandSyncTool({ service }: { service: LocalCommandSyncService }) {
   const value = useServiceQuery(service, 'getValue');
   const setValue = useServiceCommand(service, 'setValue');
-  return null;
   return (
     <label style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}>
       <input

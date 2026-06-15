@@ -13,7 +13,6 @@ type RemoteCommandSyncService = ServiceInstanceOf<typeof remoteCommandSyncServic
 function RemoteCommandSyncTool({ service }: { service: RemoteCommandSyncService }) {
   const value = useServiceQuery(service, 'getValue');
   const setValue = useServiceCommand(service, 'setValue');
-  return null;
   return (
     <label style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}>
       <input

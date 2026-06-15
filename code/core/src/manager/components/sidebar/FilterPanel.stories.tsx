@@ -16,9 +16,9 @@ import { FilterPanel } from './FilterPanel.tsx';
 const getStatusFilterTitles = (canvas: ReturnType<typeof within>) =>
   canvas
     .getAllByRole('checkbox')
-    .map((checkbox) => checkbox.getAttribute('aria-label') ?? '')
-    .filter((label) => label.startsWith('status filter:'))
-    .map((label) => label.replace(/^status filter: (?:exclude )?/, ''));
+    .map((checkbox: HTMLElement) => checkbox.getAttribute('aria-label') ?? '')
+    .filter((label: string) => label.startsWith('status filter:'))
+    .map((label: string) => label.replace(/^status filter: (?:exclude )?/, ''));
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {

@@ -48,6 +48,9 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [
+            "hello",
+          ],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -80,6 +83,9 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [
+            "hello",
+          ],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -112,6 +118,9 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [
+            "hello",
+          ],
           "id": "custom-id",
           "imports": [],
           "isTemplate": false,
@@ -145,6 +154,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [
             "@storybook/blocks",
@@ -187,6 +197,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [
             "@storybook/blocks",
@@ -218,6 +229,9 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [
+            "Docs with of",
+          ],
           "id": undefined,
           "imports": [
             "../src/A.stories",
@@ -251,6 +265,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -279,6 +294,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [],
           "isTemplate": true,
@@ -296,6 +312,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [],
           "isTemplate": true,
@@ -313,6 +330,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -353,6 +371,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -403,6 +422,9 @@ describe('analyzeMdx', () => {
     `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [
+            "hello",
+          ],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -422,6 +444,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -467,6 +490,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "headings": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -477,6 +501,35 @@ describe('analyzeMdx', () => {
           "of": "./Button.stories",
           "summary": undefined,
           "title": undefined,
+        }
+      `);
+    });
+  });
+
+  describe('headings', () => {
+    it('markdown', async () => {
+      const input = dedent`
+        # hello **world**
+        ## Goodbye
+        ### Hi again
+
+        <Meta title="foobar" />
+      `;
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
+        {
+          "headings": [
+            "hello world",
+            "Goodbye",
+            "Hi again",
+          ],
+          "id": undefined,
+          "imports": [],
+          "isTemplate": false,
+          "metaTags": undefined,
+          "name": undefined,
+          "of": undefined,
+          "summary": undefined,
+          "title": "foobar",
         }
       `);
     });

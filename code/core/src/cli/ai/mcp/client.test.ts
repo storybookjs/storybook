@@ -337,10 +337,16 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
   });
 
   it('ignores the session id of a non-ok handshake response', async () => {
+    let canceled = false;
+    const initBody = new ReadableStream<Uint8Array>({
+      cancel() {
+        canceled = true;
+      },
+    });
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response('boom', { status: 500, headers: { 'mcp-session-id': 'session-broken' } })
+        new Response(initBody, { status: 500, headers: { 'mcp-session-id': 'session-broken' } })
       )
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
@@ -348,6 +354,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
 
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
     expect(headers).not.toHaveProperty('Mcp-Session-Id');
+    expect(canceled).toBe(true);
   });
 
   it('drains the handshake response body before sending the actual request', async () => {

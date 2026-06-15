@@ -35,7 +35,7 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue({
       tools: [{ name: 'list-all-documentation', description: 'List docs' }],
-      serverMetadata: {},
+      serverMetadata: { instructions: 'Follow the story workflow.' },
     });
 });
 
@@ -259,13 +259,14 @@ describe('buildStorybookCommandsHelp', () => {
         },
         { name: 'list-all-documentation' },
       ],
-      serverMetadata: {},
+      serverMetadata: { instructions: 'Follow the story workflow.' },
     });
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
-      'Storybook commands (from the Storybook running at http://localhost:6006):'
+      'Storybook help from the Storybook running at http://localhost:6006:'
     );
+    expect(section).toContain('# Storybook commands');
     expect(section).toContain('get-documentation');
     expect(section).toContain('Get docs for a component.');
     expect(section).not.toContain('Long details');
@@ -281,16 +282,26 @@ describe('buildStorybookCommandsHelp', () => {
     });
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Storybook workflow instructions:\nUse existing stories');
-    expect(section).toContain('Storybook commands (from the Storybook running');
-    expect(section.indexOf('Storybook workflow instructions:')).toBeLessThan(
-      section.indexOf('Storybook commands (from the Storybook running')
+    expect(section).toBe(
+      [
+        'Storybook help from the Storybook running at http://localhost:6006:',
+        '',
+        '# Storybook workflow instructions',
+        '',
+        'Use existing stories as examples.',
+        'Run tests after writing stories.',
+        '',
+        '# Storybook commands',
+        '',
+        '  get-documentation  Get docs for a component.',
+        '',
+        "Run 'storybook ai <command> --help' for a command's description and arguments.",
+      ].join('\n')
     );
-    expect(section).toContain('get-documentation');
   });
 
   it.each(['', '   ', undefined])(
-    'omits workflow instructions when initialize instructions are %j',
+    'treats missing workflow instructions as unavailable help metadata when initialize instructions are %j',
     async (instructions) => {
       vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
         tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
@@ -298,9 +309,9 @@ describe('buildStorybookCommandsHelp', () => {
       });
 
       const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-      expect(section).not.toContain('Storybook workflow instructions:');
-      expect(section).toContain('Storybook commands (from the Storybook running');
-      expect(section).toContain('get-documentation');
+      expect(section).not.toContain('# Storybook workflow instructions');
+      expect(section).toContain('Storybook commands: (unavailable');
+      expect(section).toContain('did not provide workflow instructions');
     }
   );
 
@@ -346,7 +357,7 @@ describe('buildStorybookCommandsHelp', () => {
     vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '10.5.0' }]);
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
-      'Storybook commands (from the Storybook running at http://localhost:6006, Storybook 10.5.0):'
+      'Storybook help from the Storybook running at http://localhost:6006, Storybook 10.5.0:'
     );
   });
 

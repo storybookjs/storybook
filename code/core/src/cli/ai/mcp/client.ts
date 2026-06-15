@@ -125,18 +125,25 @@ const REQUEST_HEADERS = {
   [STORYBOOK_MCP_PROXY_HEADER]: STORYBOOK_MCP_PROXY_HEADER_VALUE,
 };
 
+type InitializeMcpSessionResult = {
+  sessionId: string | null;
+  serverMetadata: McpServerMetadata;
+};
+
 /**
  * Send a minimal MCP `initialize` request carrying {@link MCP_CLIENT_INFO} and return the session
- * id the transport assigned, or null when the handshake fails in any way.
+ * id plus any best-effort server metadata from the initialize response.
  *
- * Its only purpose is telemetry segmentation, and the flow is MCP Streamable HTTP spec behavior,
- * not a tmcp implementation detail: the server assigns a session id during initialization,
- * returns it in the `Mcp-Session-Id` response header, and associates the session's clientInfo
- * with later requests echoing that header. Any spec-compliant server (e.g. the official MCP SDK
- * transports) behaves the same, so addon-mcp can move off tmcp without breaking this client.
+ * The session id is MCP Streamable HTTP spec behavior, not a tmcp implementation detail: the
+ * server assigns it during initialization, returns it in the `Mcp-Session-Id` response header,
+ * and associates the session's clientInfo with later requests echoing that header. The same
+ * initialize result can also carry server instructions, so metadata is parsed from the response
+ * body even when no session id is assigned.
+ *
  * The handshake is strictly best-effort — when it fails (or a future server ignores sessions),
  * the actual command request proceeds without a session and keeps working; only the telemetry
- * segmentation is lost, and error reporting stays anchored on the real call.
+ * segmentation and initialize metadata are lost, and error reporting stays anchored on the real
+ * call.
  *
  * Sessions are deliberately one-shot: each JSON-RPC request gets its own handshake and the session
  * is never reused or closed. A CLI invocation makes one request on the happy path (two on error
@@ -147,11 +154,6 @@ const REQUEST_HEADERS = {
  * server has processed the initialize message (and stored the clientInfo); returning on headers
  * alone would race the follow-up request against that processing.
  */
-type InitializeMcpSessionResult = {
-  sessionId: string | null;
-  serverMetadata: McpServerMetadata;
-};
-
 async function initializeMcpSession(
   target: string,
   fetchImpl: typeof fetch
@@ -174,6 +176,7 @@ async function initializeMcpSession(
     });
     const sessionId = response.headers.get('mcp-session-id');
     if (!response.ok) {
+      await response.body?.cancel();
       return { sessionId: null, serverMetadata: {} };
     }
 

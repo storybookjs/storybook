@@ -204,19 +204,27 @@ export async function buildStorybookCommandsHelp(
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
+  const instructions = serverMetadata.instructions?.trim();
+  if (!instructions) {
+    // A ready addon-mcp command server is expected to provide workflow instructions. Treat missing
+    // instructions as a defensive contract failure, not as a normal commands-only help mode.
+    return unavailable(`the Storybook at ${record.url} did not provide workflow instructions`);
+  }
+
   return [
-    ...formatWorkflowInstructionsSection(serverMetadata.instructions),
-    `Storybook commands (from the Storybook running at ${record.url}${version}):`,
+    `Storybook help from the Storybook running at ${record.url}${version}:`,
     ...siblingNote,
+    '',
+    '# Storybook workflow instructions',
+    '',
+    instructions,
+    '',
+    '# Storybook commands',
+    '',
     ...lines,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,
   ].join('\n');
-}
-
-function formatWorkflowInstructionsSection(instructions: string | undefined): string[] {
-  const trimmed = instructions?.trim();
-  return trimmed ? ['Storybook workflow instructions:', trimmed, ''] : [];
 }
 
 /** One-line reason why the help section cannot list commands, accurate per intercept. */

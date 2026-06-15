@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import {
+  McpJsonRpcError,
+  callMcpTool,
+  listMcpTools,
+  listMcpToolsWithServerMetadata,
+} from './client.ts';
 import { readRegistry } from './registry.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
@@ -26,6 +31,12 @@ beforeEach(() => {
   vi.mocked(listMcpTools)
     .mockReset()
     .mockResolvedValue([{ name: 'list-all-documentation', description: 'List docs' }]);
+  vi.mocked(listMcpToolsWithServerMetadata)
+    .mockReset()
+    .mockResolvedValue({
+      tools: [{ name: 'list-all-documentation', description: 'List docs' }],
+      serverMetadata: {},
+    });
 });
 
 describe('runAiTool', () => {
@@ -240,13 +251,16 @@ describe('runAiTool', () => {
 
 describe('buildStorybookCommandsHelp', () => {
   it('lists each tool with the first line of its description', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([
-      {
-        name: 'get-documentation',
-        description: 'Get docs for a component.\n\nLong details that should not appear.',
-      },
-      { name: 'list-all-documentation' },
-    ]);
+    vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
+      tools: [
+        {
+          name: 'get-documentation',
+          description: 'Get docs for a component.\n\nLong details that should not appear.',
+        },
+        { name: 'list-all-documentation' },
+      ],
+      serverMetadata: {},
+    });
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
@@ -257,6 +271,38 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).not.toContain('Long details');
     expect(section).toContain("Run 'storybook ai <command> --help'");
   });
+
+  it('prints workflow instructions before the dynamic commands list when initialize provides them', async () => {
+    vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
+      tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
+      serverMetadata: {
+        instructions: 'Use existing stories as examples.\nRun tests after writing stories.',
+      },
+    });
+
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('Storybook workflow instructions:\nUse existing stories');
+    expect(section).toContain('Storybook commands (from the Storybook running');
+    expect(section.indexOf('Storybook workflow instructions:')).toBeLessThan(
+      section.indexOf('Storybook commands (from the Storybook running')
+    );
+    expect(section).toContain('get-documentation');
+  });
+
+  it.each(['', '   ', undefined])(
+    'omits workflow instructions when initialize instructions are %j',
+    async (instructions) => {
+      vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
+        tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
+        serverMetadata: instructions === undefined ? {} : { instructions },
+      });
+
+      const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+      expect(section).not.toContain('Storybook workflow instructions:');
+      expect(section).toContain('Storybook commands (from the Storybook running');
+      expect(section).toContain('get-documentation');
+    }
+  );
 
   it('degrades to a note when no Storybook is running (help must not fail)', async () => {
     vi.mocked(readRegistry).mockResolvedValue([]);
@@ -305,14 +351,17 @@ describe('buildStorybookCommandsHelp', () => {
   });
 
   it('degrades to a note when the MCP server is unreachable', async () => {
-    vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
+    vi.mocked(listMcpToolsWithServerMetadata).mockRejectedValue(new Error('connection refused'));
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain('Storybook commands: (unavailable');
     expect(section).toContain('could not be reached');
   });
 
   it('degrades to a note when no tools are exposed', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([]);
+    vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
+      tools: [],
+      serverMetadata: {},
+    });
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain('provides no commands');
   });

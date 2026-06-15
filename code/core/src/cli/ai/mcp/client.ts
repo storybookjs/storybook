@@ -62,9 +62,22 @@ const JsonRpcEnvelopeSchema = v.looseObject({
   error: v.optional(v.looseObject({ code: v.number(), message: v.string() })),
 });
 
+const InitializeResultSchema = v.looseObject({
+  instructions: v.optional(v.string()),
+});
+
 const ToolListResultSchema = v.looseObject({
   tools: v.optional(v.array(McpToolDescriptorSchema)),
 });
+
+export type McpServerMetadata = {
+  instructions?: string;
+};
+
+export type McpToolList = {
+  tools: McpToolDescriptor[];
+  serverMetadata: McpServerMetadata;
+};
 
 /** Forward an MCP `tools/call` JSON-RPC request to a local Storybook MCP server. */
 export async function callMcpTool(
@@ -72,7 +85,14 @@ export async function callMcpTool(
   params: ToolCallParams,
   fetchImpl: typeof fetch = fetch
 ): Promise<ToolCallResult> {
-  return sendJsonRpcRequest(record, 'tools/call', params, ToolCallResultSchema, fetchImpl);
+  const { result } = await sendJsonRpcRequest(
+    record,
+    'tools/call',
+    params,
+    ToolCallResultSchema,
+    fetchImpl
+  );
+  return result;
 }
 
 /** List the tools exposed by a local Storybook MCP server via `tools/list`. */
@@ -80,14 +100,23 @@ export async function listMcpTools(
   record: StorybookInstanceRecord,
   fetchImpl: typeof fetch = fetch
 ): Promise<McpToolDescriptor[]> {
-  const result = await sendJsonRpcRequest(
+  const { tools } = await listMcpToolsWithServerMetadata(record, fetchImpl);
+  return tools;
+}
+
+/** List tools and include server metadata from the preceding MCP `initialize` response. */
+export async function listMcpToolsWithServerMetadata(
+  record: StorybookInstanceRecord,
+  fetchImpl: typeof fetch = fetch
+): Promise<McpToolList> {
+  const { result, serverMetadata } = await sendJsonRpcRequest(
     record,
     'tools/list',
     {},
     ToolListResultSchema,
     fetchImpl
   );
-  return result.tools ?? [];
+  return { tools: result.tools ?? [], serverMetadata };
 }
 
 const REQUEST_HEADERS = {
@@ -118,10 +147,15 @@ const REQUEST_HEADERS = {
  * server has processed the initialize message (and stored the clientInfo); returning on headers
  * alone would race the follow-up request against that processing.
  */
+type InitializeMcpSessionResult = {
+  sessionId: string | null;
+  serverMetadata: McpServerMetadata;
+};
+
 async function initializeMcpSession(
   target: string,
   fetchImpl: typeof fetch
-): Promise<string | null> {
+): Promise<InitializeMcpSessionResult> {
   try {
     const response = await fetchImpl(target, {
       method: 'POST',
@@ -139,13 +173,20 @@ async function initializeMcpSession(
       signal: AbortSignal.timeout(INITIALIZE_TIMEOUT_MS),
     });
     const sessionId = response.headers.get('mcp-session-id');
-    if (!response.ok || !sessionId) {
-      return null;
+    if (!response.ok) {
+      return { sessionId: null, serverMetadata: {} };
     }
-    await response.text();
-    return sessionId;
+
+    let serverMetadata: McpServerMetadata = {};
+    try {
+      serverMetadata = parseInitializeServerMetadata(await readJsonRpcResponse(response, target));
+    } catch {
+      // The initialize request is best-effort metadata; a malformed response must not block the
+      // actual tools/list or tools/call request from preserving its existing behavior.
+    }
+    return { sessionId, serverMetadata };
   } catch {
-    return null;
+    return { sessionId: null, serverMetadata: {} };
   }
 }
 
@@ -169,7 +210,7 @@ async function sendJsonRpcRequest<TResult>(
   params: unknown,
   resultSchema: v.GenericSchema<unknown, TResult>,
   fetchImpl: typeof fetch
-): Promise<TResult> {
+): Promise<{ result: TResult; serverMetadata: McpServerMetadata }> {
   const endpoint = record.mcp.endpoint;
   if (!endpoint) {
     throw new Error(`The Storybook instance at ${record.cwd} has no server endpoint registered`);
@@ -177,7 +218,7 @@ async function sendJsonRpcRequest<TResult>(
 
   const target = new URL(endpoint, record.url).href;
 
-  const sessionId = await initializeMcpSession(target, fetchImpl);
+  const { sessionId, serverMetadata } = await initializeMcpSession(target, fetchImpl);
 
   const response = await fetchImpl(target, {
     method: 'POST',
@@ -217,22 +258,38 @@ async function sendJsonRpcRequest<TResult>(
   if (!result.success) {
     throw unexpectedShapeError(target);
   }
-  return result.output;
+  return { result: result.output, serverMetadata };
 }
 
 function unexpectedShapeError(target: string): Error {
   return new Error(`The Storybook server at ${target} returned an unexpected response shape`);
 }
 
+function parseInitializeServerMetadata(payload: unknown): McpServerMetadata {
+  const envelope = v.safeParse(JsonRpcEnvelopeSchema, payload);
+  if (!envelope.success || envelope.output.error || envelope.output.result === undefined) {
+    return {};
+  }
+
+  const result = v.safeParse(InitializeResultSchema, envelope.output.result);
+  if (!result.success) {
+    return {};
+  }
+
+  const instructions = result.output.instructions?.trim();
+  return instructions ? { instructions } : {};
+}
+
 async function readJsonRpcResponse(response: Response, endpoint: string): Promise<unknown> {
   const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+  const body = await response.text();
 
   if (contentType.includes('application/json')) {
-    return await response.json();
+    return JSON.parse(body);
   }
 
   if (contentType.includes('text/event-stream')) {
-    return parseSseEnvelope(await response.text(), endpoint);
+    return parseSseEnvelope(body, endpoint);
   }
 
   throw new Error(

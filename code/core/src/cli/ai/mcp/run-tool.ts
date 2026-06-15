@@ -1,6 +1,11 @@
 import { resolve } from 'node:path';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import {
+  McpJsonRpcError,
+  callMcpTool,
+  listMcpTools,
+  listMcpToolsWithServerMetadata,
+} from './client.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
@@ -173,12 +178,13 @@ export async function buildStorybookCommandsHelp(
   }
   const { record, matches } = resolution;
 
-  let tools: McpToolDescriptor[];
+  let toolList: Awaited<ReturnType<typeof listMcpToolsWithServerMetadata>>;
   try {
-    tools = await listMcpTools(record, deps.fetchImpl);
+    toolList = await listMcpToolsWithServerMetadata(record, deps.fetchImpl);
   } catch {
     return unavailable(`the Storybook at ${record.url} could not be reached`);
   }
+  const { tools, serverMetadata } = toolList;
   if (tools.length === 0) {
     return unavailable(`the Storybook at ${record.url} provides no commands`);
   }
@@ -198,12 +204,18 @@ export async function buildStorybookCommandsHelp(
   });
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
   return [
+    ...formatWorkflowInstructionsSection(serverMetadata.instructions),
     `Storybook commands (from the Storybook running at ${record.url}${version}):`,
     ...siblingNote,
     ...lines,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,
   ].join('\n');
+}
+
+function formatWorkflowInstructionsSection(instructions: string | undefined): string[] {
+  const trimmed = instructions?.trim();
+  return trimmed ? ['Storybook workflow instructions:', trimmed, ''] : [];
 }
 
 /** One-line reason why the help section cannot list commands, accurate per intercept. */

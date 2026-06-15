@@ -26,6 +26,13 @@ const Item = styled.li({
   padding: 0,
 });
 
+const SUITE_HEAD_BREAKPOINT = 450;
+
+const TestPanelContainer = styled.section({
+  position: 'relative',
+  width: '100%',
+});
+
 const ProgressWrapper = styled.div({
   position: 'relative',
   height: 10,
@@ -34,13 +41,25 @@ const ProgressWrapper = styled.div({
   top: -2,
 });
 
-const SuiteHead = styled.div({
-  display: 'flex',
-  alignItems: 'baseline',
-  position: 'absolute',
-  zIndex: 2,
-  right: 20,
-  marginTop: 15,
+const SuiteHead = styled.div<{ panelWidth: number }>(({ panelWidth, theme }) => {
+  const compact = panelWidth > 0 && panelWidth <= SUITE_HEAD_BREAKPOINT;
+
+  return {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'flex-end',
+    ...(compact
+      ? {
+          padding: '8px 20px',
+          borderBottom: `1px solid ${theme.appBorderColor}`,
+        }
+      : {
+          position: 'absolute',
+          zIndex: 2,
+          right: 20,
+          marginTop: 15,
+        }),
+  };
 });
 
 const UnstyledSuiteTotals: FC<{
@@ -129,10 +148,12 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
   const entries: any = testsByType.entries();
   const sortedTestsByCount = [...entries].sort((a, b) => a[1].length - b[1].length);
 
+  const panelWidth = width ?? 0;
+
   return (
-    <section ref={ref}>
-      <SuiteHead>
-        <SuiteTotals {...{ result, width: width ?? 0 }} />
+    <TestPanelContainer ref={ref}>
+      <SuiteHead panelWidth={panelWidth}>
+        <SuiteTotals {...{ result, width: panelWidth }} />
         {width != null && width > 240 ? (
           <ProgressWrapper>
             {sortedTestsByCount.map((entry: any) => {
@@ -246,7 +267,7 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
           </List>
         </div>
       </TabsState>
-    </section>
+    </TestPanelContainer>
   );
 };
 

@@ -27,10 +27,10 @@ const jsonResponse = (body: unknown, status = 200, headers: Record<string, strin
     headers: { 'Content-Type': 'application/json', ...headers },
   });
 
-const sseResponse = (body: string, status = 200) =>
+const sseResponse = (body: string, status = 200, headers: Record<string, string> = {}) =>
   new Response(body, {
     status,
-    headers: { 'Content-Type': 'text/event-stream' },
+    headers: { 'Content-Type': 'text/event-stream', ...headers },
   });
 
 /**
@@ -243,11 +243,35 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       sessionId ? { 'mcp-session-id': sessionId } : {}
     );
 
+  const initializeSseResponse = (sessionId: string | undefined, instructions: unknown) => {
+    const envelope = {
+      jsonrpc: '2.0',
+      id: 'init',
+      result: {
+        protocolVersion: '2025-06-18',
+        serverInfo: {},
+        instructions,
+      },
+    };
+    return sseResponse(
+      `event: message\ndata: ${JSON.stringify(envelope)}\n\n`,
+      200,
+      sessionId ? { 'mcp-session-id': sessionId } : {}
+    );
+  };
+
   const toolResult = () =>
     jsonResponse({
       jsonrpc: '2.0',
       id: 'call',
       result: { content: [{ type: 'text', text: 'hi' }] },
+    });
+
+  const toolListResult = (tools: unknown[] = []) =>
+    jsonResponse({
+      jsonrpc: '2.0',
+      id: 'list',
+      result: { tools },
     });
 
   it('sends initialize with the storybook-cli clientInfo before the actual request', async () => {
@@ -390,7 +414,20 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
     });
   });
 
-  it.each([undefined, '', '   '])(
+  it('returns server instructions from an SSE initialize response', async () => {
+    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeSseResponse('session-1', '  Follow the story workflow.  '))
+      .mockResolvedValueOnce(toolListResult(tools)) as unknown as typeof fetch;
+
+    await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
+      tools,
+      serverMetadata: { instructions: 'Follow the story workflow.' },
+    });
+  });
+
+  it.each([undefined, '', '   ', 123])(
     'omits server instructions when initialize returns %j',
     async (instructions) => {
       const fetchImpl = vi
@@ -406,6 +443,33 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       });
     }
   );
+
+  it.each([
+    [
+      'malformed JSON',
+      () =>
+        new Response('not json', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'mcp-session-id': 'session-1' },
+        }),
+    ],
+    [
+      'a JSON-RPC error',
+      () => jsonResponse({ jsonrpc: '2.0', id: 'init', error: { code: -32000, message: 'bad' } }),
+    ],
+    ['no result', () => jsonResponse({ jsonrpc: '2.0', id: 'init' })],
+  ])('keeps tools/list working when initialize returns %s', async (_label, initResponse) => {
+    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initResponse())
+      .mockResolvedValueOnce(toolListResult(tools)) as unknown as typeof fetch;
+
+    await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
+      tools,
+      serverMetadata: {},
+    });
+  });
 
   it('keeps listMcpTools returning only the tool descriptors', async () => {
     const tools = [{ name: 'get-documentation', description: 'Get docs' }];

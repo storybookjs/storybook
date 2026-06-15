@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import {
   McpJsonRpcError,
+  type McpToolList,
   callMcpTool,
   listMcpTools,
   listMcpToolsWithServerMetadata,
@@ -178,7 +179,7 @@ export async function buildStorybookCommandsHelp(
   }
   const { record, matches } = resolution;
 
-  let toolList: Awaited<ReturnType<typeof listMcpToolsWithServerMetadata>>;
+  let toolList: McpToolList;
   try {
     toolList = await listMcpToolsWithServerMetadata(record, deps.fetchImpl);
   } catch {

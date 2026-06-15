@@ -1,5 +1,8 @@
+import React from 'react';
+
 import { expect, within } from 'storybook/test';
 
+import { IconSymbols } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
 import preview from '../../../../.storybook/preview.tsx';
 import { CollectionGrid, type StoryInfo } from './CollectionGrid.tsx';
 
@@ -30,6 +33,7 @@ const fortyStoryIds = [
   'manager-main--default',
   'manager-main--about-page',
   'manager-main--guide-page',
+
   'manager-settings-aboutscreen--default',
   'manager-settings-guidepage--default',
   'manager-settings-shortcutsscreen--defaults',
@@ -76,6 +80,14 @@ const demoStoryInfo: Record<string, StoryInfo> = Object.fromEntries(
 
 const meta = preview.meta({
   component: CollectionGrid,
+  decorators: [
+    (Story) => (
+      <>
+        <IconSymbols />
+        <Story />
+      </>
+    ),
+  ],
   parameters: {
     layout: 'fullscreen',
     chromatic: {

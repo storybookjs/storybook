@@ -1,0 +1,55 @@
+{
+  "title": "Agentic Review: story-view navigation and UI polish",
+  "description": "PR **#35110** replaces the bespoke review detail screen with normal story URLs (`?path=/story/...&collection=...`), keeps the summary mounted via a portal, and polishes the review UX with **agentic** theme colors, markdown descriptions, status icons on story tiles, and natural header wrapping.\n\nStart with the **Full** summary (markdown description + collection grid), then open **On Reviewed Story** for the toolbar header on a real story view.",
+  "changedFiles": [
+    "code/addons/review/src/screens/SummaryScreen.tsx",
+    "code/addons/review/src/components/CollectionGrid.tsx",
+    "code/addons/review/src/components/ReviewHeader.tsx",
+    "code/addons/review/src/ReviewToolbarHeader.tsx",
+    "code/core/src/theming/base.ts",
+    "code/core/src/manager/utils/status.tsx",
+    "code/addons/review/src/ReviewProvider.tsx",
+    "code/addons/review/src/review-navigation.ts"
+  ],
+  "collections": [
+    {
+      "title": "Review summary screen",
+      "rationale": "The curated review summary with **agentic** markdown description, searchable collections, stale banner, and story tiles with change-status icons.",
+      "storyIds": [
+        "addons-review-screens-summaryscreen--full",
+        "addons-review-screens-summaryscreen--stale",
+        "addons-review-screens-summaryscreen--real-atomic-change",
+        "addons-review-screens-summaryscreen--large-collection-overflow"
+      ]
+    },
+    {
+      "title": "Story toolbar header on reviewed stories",
+      "rationale": "The `TOOLBAR_HEADER` bar shown while reviewing a story — collection context, prev/next navigation, progress, and back-to-summary link.",
+      "storyIds": [
+        "addons-review-reviewtoolbarheader--on-reviewed-story",
+        "addons-review-reviewtoolbarheader--new-story",
+        "addons-review-reviewtoolbarheader--progress"
+      ]
+    },
+    {
+      "title": "Collection grid and story links",
+      "rationale": "Thumbnail grid layout, overflow handling, and navigation into standard story URLs with a `collection` query param.",
+      "storyIds": [
+        "addons-review-components-collectiongrid--default",
+        "addons-review-components-collectiongrid--many-stories-overflow",
+        "addons-review-reviewpage--collections",
+        "addons-review-reviewpage--story-links-use-collection-param"
+      ]
+    },
+    {
+      "title": "Sidebar change-detection icons",
+      "rationale": "Sidebar status icons after this PR — **plus** for new stories and **agentic purple** for reviewing — plus the review CTA states.",
+      "storyIds": [
+        "manager-sidebar-sidebar--statuses-new",
+        "manager-sidebar-sidebar--statuses-modified",
+        "manager-sidebar-sidebar--with-cta-active",
+        "manager-sidebar-reviewchangesbutton--active"
+      ]
+    }
+  ]
+}

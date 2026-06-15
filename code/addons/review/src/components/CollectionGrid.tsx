@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState, type FC } from 'react'
 import { Button, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { CircleIcon, PlusIcon } from '@storybook/icons';
+import { UseSymbol } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
 
 import { Highlight } from './Highlight.tsx';
 
@@ -222,22 +222,18 @@ const Label = styled.div({
   overflow: 'hidden',
 });
 
-const ChangeStatusIcon = styled.span(({ theme }) => ({
-  display: 'inline-flex',
+const ChangeStatusIcon = styled.div(({ theme }) => ({
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
   color: theme.fgColor.accent,
-  svg: {
+  '> svg': {
+    flex: '0 0 14px',
     width: 14,
     height: 14,
   },
 }));
-
-const ModifiedStatusIcon = styled(CircleIcon)({
-  width: 8,
-  height: 8,
-});
 
 const LabelComponent = styled.span({
   fontWeight: 700,
@@ -315,17 +311,16 @@ const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } =
   name: info.name,
 });
 
-const changeStatusTooltip = (changeStatus: StoryChangeStatus) =>
-  changeStatus === 'new' ? 'New story' : 'Modified story';
-
 const StoryChangeStatusIndicator: FC<{ changeStatus: StoryChangeStatus }> = ({ changeStatus }) => (
   <WithTooltip
     placement="top"
     trigger="hover"
-    tooltip={<TooltipNote note={changeStatusTooltip(changeStatus)} />}
+    tooltip={<TooltipNote note={changeStatus === 'new' ? 'New story' : 'Modified story'} />}
   >
     <ChangeStatusIcon aria-hidden>
-      {changeStatus === 'new' ? <PlusIcon /> : <ModifiedStatusIcon />}
+      <svg viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type={changeStatus === 'new' ? 'new' : 'modified'} />
+      </svg>
     </ChangeStatusIcon>
   </WithTooltip>
 );

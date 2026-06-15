@@ -1,5 +1,8 @@
+import React from 'react';
+
 import { expect, within } from 'storybook/test';
 
+import { IconSymbols } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
 import preview from '../../../../.storybook/preview.tsx';
 import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import type { ReviewState } from '../review-state.ts';
@@ -476,6 +479,14 @@ const fortyStoryCollection: ReviewState = {
 
 const meta = preview.meta({
   component: SummaryScreen,
+  decorators: [
+    (Story) => (
+      <>
+        <IconSymbols />
+        <Story />
+      </>
+    ),
+  ],
   parameters: {
     layout: 'fullscreen',
     chromatic: {
@@ -501,9 +512,7 @@ export const Minimal = meta.story({
     await expect(await canvas.findByText(/2 stories for quick review/i)).toBeInTheDocument();
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
     await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
-    await expect(
-      await canvas.findByRole('link', { name: 'Back to last story' })
-    ).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Exit review' })).toBeInTheDocument();
   },
 });
 
@@ -514,9 +523,7 @@ export const WithBackButton = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole('link', { name: 'Back to last story' })
-    ).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Exit review' })).toBeInTheDocument();
   },
 });
 

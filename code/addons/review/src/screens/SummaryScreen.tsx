@@ -16,11 +16,12 @@ import {
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
   CloseAltIcon,
-  PlusIcon,
   SearchIcon,
   StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
+
+import { UseSymbol } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
 
 import Markdown from 'markdown-to-jsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
@@ -118,6 +119,18 @@ const SearchIconWrap = styled.span(({ theme }) => ({
   justifyContent: 'center',
   color: theme.textMutedColor,
   width: 22,
+}));
+
+const ChangeStatusIcon = styled.span(({ theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: theme.fgColor.accent,
+  '> svg': {
+    flex: '0 0 14px',
+    width: 14,
+    height: 14,
+  },
 }));
 
 // Wrapper that gives the overlay ScrollArea a bounded height to scroll within.
@@ -348,7 +361,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <span>Waiting for the agent to display a review…</span>
         <div>
           <CopyButton
-            padding="small"
+            appearance="agentic"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
             content="Generate a Storybook review including my latest changes using the display-review tool."
@@ -358,7 +371,10 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </>
             }
           >
-            <WandIcon /> Copy prompt
+            <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden>
+              <UseSymbol type="reviewing" />
+            </svg>
+            Copy prompt
           </CopyButton>
           <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
             <CloseAltIcon />
@@ -394,13 +410,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       {isStale ? <StaleBanner /> : null}
       <ReviewHeader
         leading={
-          <Button
-            variant="ghost"
-            size="small"
-            padding="small"
-            ariaLabel="Back to last story"
-            asChild
-          >
+          <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
             <a
               href={buildSummaryBackHref(lastReviewedStoryHref)}
               {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}
@@ -436,7 +446,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 pressed={showNewOnly}
                 onClick={() => setShowNewOnly((v) => !v)}
               >
-                <PlusIcon />
+                <ChangeStatusIcon aria-hidden>
+                  <svg viewBox="0 0 14 14" width="14" height="14">
+                    <UseSymbol type="new" />
+                  </svg>
+                </ChangeStatusIcon>
                 {newStoryCount} new
               </ToggleButton>
             ) : null}

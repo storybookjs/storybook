@@ -143,6 +143,16 @@ export const FilterPanel = ({
     [statusEntries, toStatusFilterItem]
   );
 
+  const changeDetectionStatusItems = useMemo(
+    () => statusItems.filter((item) => item.id !== 'reviewing'),
+    [statusItems]
+  );
+
+  const reviewingStatusItems = useMemo(
+    () => statusItems.filter((item) => item.id === 'reviewing'),
+    [statusItems]
+  );
+
   const filterIds = useMemo(
     () => [...builtInEntries.map((e) => e.id), ...tagEntries.map((e) => e.id)],
     [builtInEntries, tagEntries]
@@ -212,6 +222,14 @@ export const FilterPanel = ({
           </ActionList.Item>
         </ActionList>
       )}
+      {reviewingStatusItems.length > 0 && (
+        <ActionList>
+          {reviewingStatusItems.map((item) => {
+            const link = createFilterLink(item);
+            return <Fragment key={link.id}>{link.content}</Fragment>;
+          })}
+        </ActionList>
+      )}
       {builtInItems.length > 0 && (
         <ActionList>
           {builtInItems.map((item) => {
@@ -220,9 +238,9 @@ export const FilterPanel = ({
           })}
         </ActionList>
       )}
-      {statusItems.length > 0 && (
+      {changeDetectionStatusItems.length > 0 && (
         <ActionList>
-          {statusItems.map((item) => {
+          {changeDetectionStatusItems.map((item) => {
             const link = createFilterLink(item);
             return <Fragment key={link.id}>{link.content}</Fragment>;
           })}

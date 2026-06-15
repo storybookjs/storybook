@@ -57,6 +57,7 @@ import {
   syncReviewStatuses,
 } from './review-status.ts';
 import { setReviewStatusFilters } from './review-status-filters.ts';
+import { openReviewSidebar } from './review-sidebar.ts';
 import { sessionStore } from './session-store.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
@@ -111,6 +112,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     (returnSearch?: string | null) => {
       api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
       reviewStore.releaseSummaryOverlaySuppression();
+      openReviewSidebar(api);
 
       const target = returnSearch ?? sessionStore.read(RETURN_PATH_SESSION_KEY);
       sessionStore.remove(RETURN_PATH_SESSION_KEY);
@@ -329,15 +331,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setPendingNavCollapse(false);
   }, [api, isSummaryVisible, pendingNavCollapse]);
 
-  // Restore the sidebar when leaving the review session if we collapsed it on entry.
+  // Show the sidebar when leaving the review session.
   useEffect(() => {
     if (isInReviewSession) {
       return;
     }
-    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore') {
-      api.toggleNav(true);
-    }
-    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+    openReviewSidebar(api);
   }, [api, isInReviewSession]);
 
   const value = useMemo<ReviewStoreState>(

@@ -33,11 +33,66 @@ interface ReviewPayload {
 }
 
 const BADGE_COMPONENT_IMPORT_PATHS = ['./core/src/components/components/Badge/Badge.stories.tsx'];
-const BADGE_USAGE_IMPORT_PATHS = [
-  './core/src/components/components/ActionList/ActionList.stories.tsx',
-  './core/src/manager/components/panel/Panel.stories.tsx',
+
+const STATUS_BADGE_IMPORT_PATHS = [
+  './core/src/component-testing/components/StatusBadge.stories.tsx',
 ];
-const PAGES_IMPORT_PATHS = ['./core/src/pages/GuidePage/GuidePage.stories.tsx'];
+
+/** Story files that render Badge directly, with the exports that actually show it. */
+const BADGE_DIRECT_USAGE: Array<{ importPaths: string[]; storyNames: string[] }> = [
+  {
+    importPaths: ['./core/src/components/components/ActionList/ActionList.stories.tsx'],
+    storyNames: ['Default'],
+  },
+  {
+    importPaths: ['./core/src/manager/components/panel/Panel.stories.tsx'],
+    storyNames: ['JSX Titles'],
+  },
+];
+
+/** Manager surfaces where Badge appears in sidebar, filters, or error UI. */
+const BADGE_MANAGER_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
+  {
+    importPaths: ['./core/src/manager/components/sidebar/Filter.stories.tsx'],
+    storyNames: ['With Selection'],
+  },
+  {
+    importPaths: ['./core/src/manager/components/sidebar/FilterPanel.stories.tsx'],
+    storyNames: ['With Statuses', 'With Statuses Included'],
+  },
+  {
+    importPaths: ['./core/src/manager/components/error-boundary/ManagerErrorBoundary.stories.tsx'],
+    storyNames: ['With Error'],
+  },
+];
+
+/** Addon panels that use compact Badge for tab counts and status. */
+const BADGE_ADDON_PANELS: Array<{ importPaths: string[]; storyNames: string[] }> = [
+  {
+    importPaths: ['./addons/a11y/src/components/A11YPanel.stories.tsx'],
+    storyNames: ['Manual', 'Ready With Results'],
+  },
+  {
+    importPaths: ['./core/src/component-testing/components/InteractionsPanel.stories.tsx'],
+    storyNames: ['Passing', 'Failed'],
+  },
+];
+
+/** A11y report rows where Badge marks violation impact. */
+const BADGE_A11Y_REPORT: Array<{ importPaths: string[]; storyNames: string[] }> = [
+  {
+    importPaths: ['./addons/a11y/src/components/Report/Report.stories.tsx'],
+    storyNames: ['Violations', 'Incomplete'],
+  },
+];
+
+/** Review addon surfaces that render Badge for story status. */
+const BADGE_REVIEW_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
+  {
+    importPaths: ['./addons/review/src/ReviewToolbarHeader.stories.tsx'],
+    storyNames: ['New Story'],
+  },
+];
 
 function normalizeStorybookUrl(url: string): string {
   return url.replace(/\/$/, '');
@@ -109,6 +164,15 @@ function storyIdsForImportPaths(
     .sort();
 }
 
+function storyIdsForUsageSpecs(
+  index: StoryIndex,
+  specs: Array<{ importPaths: string[]; storyNames: string[] }>
+): string[] {
+  return specs.flatMap(({ importPaths, storyNames }) =>
+    storyIdsForImportPaths(index, importPaths, storyNames)
+  );
+}
+
 /**
  * Build a review payload for the Badge component and its known in-repo usages.
  * Story IDs are resolved from the live Storybook index so the review always
@@ -116,40 +180,62 @@ function storyIdsForImportPaths(
  */
 export function buildBadgeReview(index: StoryIndex): ReviewPayload {
   const badgeStoryIds = storyIdsForImportPaths(index, BADGE_COMPONENT_IMPORT_PATHS);
-  const usageStoryIds = storyIdsForImportPaths(index, BADGE_USAGE_IMPORT_PATHS, [
-    'Default',
-    'JSX Titles',
-  ]);
-  const pagesStoryIds = storyIdsForImportPaths(index, PAGES_IMPORT_PATHS, ['Default']);
+  const statusBadgeStoryIds = storyIdsForImportPaths(index, STATUS_BADGE_IMPORT_PATHS);
+  const directUsageStoryIds = storyIdsForUsageSpecs(index, BADGE_DIRECT_USAGE);
+  const managerSurfaceStoryIds = storyIdsForUsageSpecs(index, BADGE_MANAGER_SURFACES);
+  const addonPanelStoryIds = storyIdsForUsageSpecs(index, BADGE_ADDON_PANELS);
+  const a11yReportStoryIds = storyIdsForUsageSpecs(index, BADGE_A11Y_REPORT);
+  const reviewSurfaceStoryIds = storyIdsForUsageSpecs(index, BADGE_REVIEW_SURFACES);
 
   const collections: ReviewCollection[] = [
     {
-      title: 'Badge variants',
-      rationale: 'The core Badge component across its status and compact variants.',
+      title: 'Badge all status variants',
+      rationale:
+        'Core Badge stories covering default styling, every status color, and compact mode.',
       storyIds: badgeStoryIds,
     },
-  ];
-
-  if (usageStoryIds.length > 0) {
-    collections.push({
-      title: 'Usages of Badge',
-      rationale: 'Components that use Badge in real UI context.',
-      storyIds: usageStoryIds,
-    });
-  }
-
-  if (pagesStoryIds.length > 0) {
-    collections.push({
-      title: 'Screens that use Badge',
-      rationale: 'Screens that use Badge.',
-      storyIds: pagesStoryIds,
-    });
-  }
+    {
+      title: 'StatusBadge test result states',
+      rationale:
+        'StatusBadge wraps Badge for component-testing UI; verify each test outcome state.',
+      storyIds: statusBadgeStoryIds,
+    },
+    {
+      title: 'Direct Badge importers',
+      rationale:
+        'Components that render Badge inline: ActionList item labels and addon Panel titles.',
+      storyIds: directUsageStoryIds,
+    },
+    {
+      title: 'Manager surfaces with Badge',
+      rationale:
+        'Sidebar tag filters, status filter chips, and the manager error boundary where Badge marks selection and errors.',
+      storyIds: managerSurfaceStoryIds,
+    },
+    {
+      title: 'Addon panels with Badge',
+      rationale:
+        'Accessibility and interactions addon panels that use compact Badge counts on tabs and toolbars.',
+      storyIds: addonPanelStoryIds,
+    },
+    {
+      title: 'A11y report impact badges',
+      rationale:
+        'Accessibility Report rows where Badge communicates violation severity and incomplete checks.',
+      storyIds: a11yReportStoryIds,
+    },
+    {
+      title: 'Review toolbar new story badge',
+      rationale:
+        'Review addon toolbar header showing the positive Badge label on newly added stories.',
+      storyIds: reviewSurfaceStoryIds,
+    },
+  ].filter((collection) => collection.storyIds.length > 0);
 
   return {
-    title: 'Badge component overview',
+    title: 'Badge component and usage locations',
     description:
-      'A curated selection of Badge variants and the UI surfaces where Badge appears in context.',
+      'Review **Badge** status variants, the **StatusBadge** wrapper, and the manager and addon surfaces where **Badge** appears in real UI context.',
     collections,
   };
 }

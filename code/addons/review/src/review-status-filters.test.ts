@@ -3,7 +3,7 @@ import type { API } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
 
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
-import { setReviewStatusFilters } from './review-status-filters.ts';
+import { setReviewStatusFilters, clearReviewingStatusFilter } from './review-status-filters.ts';
 
 describe('setReviewStatusFilters', () => {
   it('prefers setAllStatusFilters when available', async () => {
@@ -35,5 +35,29 @@ describe('setReviewStatusFilters', () => {
     await expect(
       setReviewStatusFilters({} as API, [REVIEWING_STATUS_VALUE], [])
     ).resolves.toBeUndefined();
+  });
+});
+
+describe('clearReviewingStatusFilter', () => {
+  it('removes reviewing from included and excluded filters', async () => {
+    const setAllStatusFilters = vi.fn().mockResolvedValue(undefined);
+    const api = { setAllStatusFilters } as unknown as API;
+
+    await clearReviewingStatusFilter(
+      api,
+      [REVIEWING_STATUS_VALUE, 'status-value:new' as StatusValue],
+      [REVIEWING_STATUS_VALUE]
+    );
+
+    expect(setAllStatusFilters).toHaveBeenCalledWith(['status-value:new'], []);
+  });
+
+  it('is a no-op when reviewing is not active', async () => {
+    const setAllStatusFilters = vi.fn().mockResolvedValue(undefined);
+    const api = { setAllStatusFilters } as unknown as API;
+
+    await clearReviewingStatusFilter(api, ['status-value:new' as StatusValue], []);
+
+    expect(setAllStatusFilters).not.toHaveBeenCalled();
   });
 });

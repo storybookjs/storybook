@@ -38,6 +38,7 @@ const Message = styled.div(({ theme }) => ({
   lineHeight: '18px',
   display: 'flex',
   flexDirection: 'column',
+  alignItems: 'flex-start',
   gap: 8,
 }));
 

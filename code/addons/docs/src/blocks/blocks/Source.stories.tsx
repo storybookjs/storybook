@@ -8,10 +8,17 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
+import { vi } from 'vitest';
 
 import * as ParametersStories from '../examples/SourceParameters.stories';
 import { Source } from './Source';
 import { SourceContext, argsHash } from './SourceContainer';
+import { storyDocsServiceStoryBeforeEach } from './mock-story-docs-service';
+
+vi.mock('storybook/preview-api', { spy: true });
+
+const SERVICE_IMPORT = "import { EmptyExample } from './EmptyExample';";
+const SERVICE_SNIPPET = '<EmptyExample something="from-service" />';
 
 const meta: Meta<typeof Source> = {
   component: Source,
@@ -211,6 +218,23 @@ export const DefaultAttached = {};
 export const Of: Story = {
   args: {
     of: ParametersStories.NoParameters,
+  },
+};
+
+export const OfStorySnippetFromStoryDocsService: Story = {
+  args: {
+    of: ParametersStories.NoParameters,
+  },
+  beforeEach: storyDocsServiceStoryBeforeEach(ParametersStories.NoParameters, {
+    import: SERVICE_IMPORT,
+    snippet: SERVICE_SNIPPET,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvas.getByText(SERVICE_IMPORT, { exact: false })).toBeInTheDocument();
+      expect(canvas.getByText(SERVICE_SNIPPET, { exact: false })).toBeInTheDocument();
+    });
   },
 };
 

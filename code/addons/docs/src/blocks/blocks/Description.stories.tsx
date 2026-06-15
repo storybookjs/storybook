@@ -1,13 +1,20 @@
-import React from 'react';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect } from 'storybook/test';
+import { vi } from 'vitest';
 
 import { Button as ButtonComponent } from '../examples/Button';
 import * as DefaultButtonStories from '../examples/Button.stories';
 import * as ButtonStoriesWithMetaDescriptionAsBoth from '../examples/ButtonWithMetaDescriptionAsBoth.stories';
 import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWithMetaDescriptionAsComment.stories';
 import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
+import * as ParametersStories from '../examples/SourceParameters.stories';
 import { Description } from './Description';
+import { storyDocsServiceStoryBeforeEach } from './mock-story-docs-service';
+
+vi.mock('storybook/preview-api', { spy: true });
+
+const SERVICE_STORY_DESCRIPTION = 'Description from the story-docs service';
 
 const meta: Meta<typeof Description> = {
   component: Description,
@@ -110,6 +117,20 @@ export const OfStoryAsStoryCommentAndParameter: Story = {
   },
   parameters: { relativeCsfPaths: ['../examples/Button.stories'] },
 };
+
+export const OfStoryFromStoryDocsService: Story = {
+  args: {
+    of: ParametersStories.NoParameters,
+  },
+  parameters: { relativeCsfPaths: ['../examples/SourceParameters.stories'] },
+  beforeEach: storyDocsServiceStoryBeforeEach(ParametersStories.NoParameters, {
+    description: SERVICE_STORY_DESCRIPTION,
+  }),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent(SERVICE_STORY_DESCRIPTION);
+  },
+};
+
 export const DefaultAttached: Story = {
   parameters: { relativeCsfPaths: ['../examples/Button.stories'], attached: true },
 };

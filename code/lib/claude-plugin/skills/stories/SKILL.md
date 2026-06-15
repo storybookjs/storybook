@@ -51,16 +51,26 @@ working around it. Treat any shortcut as a failure of this workflow.
 Installing and configuring Storybook is invasive, so it is the **user's choice**.
 Never set it up on your own initiative as a side effect of a component change.
 
-Before asking the user anything, check whether they have already declined:
+Before asking the user anything, check whether they have already declined. An
+opt-out can be saved at two scopes:
 
-1. **Read the saved decision** at `.claude/storybook-optout.json` (project-local).
-   If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
-   Storybook for this project. Do NOT ask again — silently skip all story work,
-   finish the component change (if any), and move on.
-2. **If there is no opt-out file**, briefly tell the user the project has no
-   Storybook and ask whether they want to set it up (and write stories) for it.
-3. **If the user declines**, persist that choice so future invocations don't
-   re-ask: write `.claude/storybook-optout.json` with:
+- **User-level** (all projects): `~/.claude/storybook-optout.json`
+- **Project-level** (this project only): `.claude/storybook-optout.json`
+
+1. **Read the saved decision.** Check the user-level file first, then the
+   project-level file. If either exists with `{ "storybookOptOut": true }`, the
+   user has ALREADY refused Storybook at that scope. Do NOT ask again — silently
+   skip all story work, finish the component change (if any), and move on.
+2. **If there is no opt-out file at either scope**, briefly tell the user the
+   project has no Storybook and ask whether they want to set it up (and write
+   stories). Offer three choices:
+   - **Yes** — set it up for this project.
+   - **No, not for this project** — decline at the project level.
+   - **No, and don't ask me again in any project** — decline at the user level.
+3. **If the user declines**, persist that choice at the scope they chose so
+   future invocations don't re-ask. For a project-level decline, write
+   `.claude/storybook-optout.json`; for a user-level decline, write
+   `~/.claude/storybook-optout.json`. In both cases the contents are:
 
    ```json
    {
@@ -75,12 +85,13 @@ Before asking the user anything, check whether they have already declined:
 
 4. **If the user opts in**, set Storybook up via the setup skills
    (`storybook-init` / `storybook-setup`), then resume this workflow from
-   Step 1. If an opt-out file existed from a previous "no", delete it.
+   Step 1. If an opt-out file existed at either scope from a previous "no",
+   delete it.
 
 **Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
 dependencies, or invoke the setup skills unless the user has explicitly opted in
-this time. A saved opt-out MUST be respected on every later invocation without
-re-prompting.
+this time. A saved opt-out at either scope MUST be respected on every later
+invocation without re-prompting.
 
 ## Step 1 — Open the preview browser up front
 

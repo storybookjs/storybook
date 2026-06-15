@@ -16,6 +16,10 @@ description: >-
 
 # Storybook Stories
 
+The Storybook CLI ai subcommands is the source of truth for _how_ to write stories. This skill
+is the **mandatory, ordered process** for working on them, and for keeping
+stories in sync with every frontend component you create, modify, or delete.
+
 This is a STRICT, GATED workflow. You MUST execute the steps below in order and
 satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
 batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
@@ -47,36 +51,40 @@ working around it. Treat any shortcut as a failure of this workflow.
 Installing and configuring Storybook is invasive, so it is the **user's choice**.
 Never set it up on your own initiative as a side effect of a component change.
 
-Before asking the user anything, check whether they have already declined:
+Before asking the user anything, check whether they have already declined. A
+decline can apply at two scopes:
 
-1. **Read the saved decision** at `.claude/storybook-optout.json` (project-local).
-   If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
-   Storybook for this project. Do NOT ask again — silently skip all story work,
-   finish the component change (if any), and move on.
-2. **If there is no opt-out file**, briefly tell the user the project has no
-   Storybook and ask whether they want to set it up (and write stories) for it.
-3. **If the user declines**, persist that choice so future invocations don't
-   re-ask: write `.claude/storybook-optout.json` with:
+- **User-level** — the user never wants Storybook set up in any project.
+- **Project-level** — the user only declined for this project.
 
-   ```json
-   {
-   	"storybookOptOut": true,
-   	"reason": "<short paraphrase of what the user said>"
-   }
-   ```
-
-   Then finish the component change (if any) without any story work. If the
-   user explicitly asked for story work, STOP and report that Storybook is
-   required for it.
+1. **Look for a previously recorded decline.** If you find one that applies here
+   (at either scope), the user has ALREADY refused Storybook. Do NOT ask again —
+   silently skip all story work, finish the component change (if any), and move
+   on.
+2. **If there is no recorded decline**, briefly tell the user the project has no
+   Storybook and ask whether they want to set it up (and write stories). Offer
+   three choices:
+   - **Yes** — set it up for this project.
+   - **No, not for this project** — decline at the project level.
+   - **No, and don't ask me again in any project** — decline at the user level.
+3. **If the user declines**, remember that decision durably so future
+   invocations don't re-ask, recording the scope they chose (this project vs.
+   all projects) and a short paraphrase of their reason. Choose an appropriate
+   place and format yourself — but do NOT commit it to the project's version
+   control; if the only durable option lives inside the repo, keep it out of
+   commits (e.g. via `.gitignore`). Then finish the component change (if any)
+   without any story work. If the user explicitly asked for story work, STOP and
+   report that Storybook is required for it.
 
 4. **If the user opts in**, set Storybook up via the setup skills
    (`storybook-init` / `storybook-setup`), then resume this workflow from
-   Step 1. If an opt-out file existed from a previous "no", delete it.
+   Step 1. If you recorded a decline at either scope from a previous "no", clear
+   it.
 
 **Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
 dependencies, or invoke the setup skills unless the user has explicitly opted in
-this time. A saved opt-out MUST be respected on every later invocation without
-re-prompting.
+this time. A recorded decline at either scope MUST be respected on every later
+invocation without re-prompting.
 
 ## Step 1 — Open the preview browser up front
 
@@ -114,3 +122,25 @@ updated, and deleted components get their stories removed.
 
 **Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.
+
+## Step 4 — Preview and verify
+
+Produce a preview for every story you touched with **STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai preview-stories** (prefer
+`{ storyId }` inputs). Before showing any returned URL to the user, navigate to
+it in the preview browser and confirm the story renders without errors.
+
+**Gate:** Every URL you put in your final response MUST have been opened in the
+preview browser first — no exceptions, per the Absolute rules. Do NOT report the
+story as done until each preview link has been navigated and verified.
+
+## Step 5 — Publish the review page
+
+Once the stories render cleanly, call **display-review** so the user can review
+exactly what changed in one place. This tool does NOT just return a link — it
+publishes a curated **review page** inside the already-running Storybook and
+returns its `reviewUrl`. The review page IS the deliverable; the raw
+`preview-stories` URLs from Step 4 are for your own verification.
+
+**Gate:** Do NOT report the task as done until `display-review` has succeeded,
+you have opened the returned `reviewUrl` in the preview browser, and that link is
+the final element of your user-facing response.

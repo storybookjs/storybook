@@ -1102,7 +1102,7 @@ function subscribeToQuery<TState>(
         selector(output);
         return detachSnapshot(selector(validated));
       }
-      return validateQueryOutput(refs, queryName, queryDef, output);
+      return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));
     });
 
     let hasEmitted = false;

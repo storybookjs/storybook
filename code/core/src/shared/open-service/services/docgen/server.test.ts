@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { buildStaticFiles, clearRegistry } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
+import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerDocgenService } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
@@ -190,6 +191,39 @@ describe('docgen open service', () => {
 
       await expect(service.queries.getDocgen.loaded({ id: 'unknown' })).rejects.toThrow(
         /No story or attached docs entry was found for component id "unknown"/
+      );
+    });
+  });
+
+  describe('module graph hot refresh', () => {
+    it('refreshes already-extracted components without loading every bumped component', async () => {
+      const buttonEntry = makeStoryEntry('button--primary', 'Button');
+      const cardEntry = makeStoryEntry('card--primary', 'Card');
+      const provider = vi.fn<DocgenProvider>(async ({ entry }) =>
+        makeDocgenPayload({
+          id: entry.id.split('--')[0],
+          name: entry.title,
+          path: entry.importPath,
+        })
+      );
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([buttonEntry, cardEntry]),
+        provider,
+      });
+
+      await service.queries.getDocgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      await moduleGraph.commands._applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./button.stories.tsx', './card.stories.tsx'],
+      });
+
+      await vi.waitFor(() =>
+        expect(provider.mock.calls.map(([input]) => input.entry.importPath)).toEqual([
+          './button.stories.tsx',
+          './button.stories.tsx',
+        ])
       );
     });
   });

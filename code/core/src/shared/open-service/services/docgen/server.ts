@@ -5,7 +5,7 @@ import { getService, registerService } from '../../server.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { subscribeStoryFileChangeRefresh } from '../subscribe-story-file-change-refresh.ts';
 import { docgenServiceDef } from './definition.ts';
-import type { DocgenPayload, DocgenProvider } from './types.ts';
+import type { DocgenProvider } from './types.ts';
 
 export type RegisterDocgenServiceOptions = {
   workingDir?: string;

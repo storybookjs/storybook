@@ -4,6 +4,7 @@ import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
   IndexEntry,
+  StoryDocsPayload,
 } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -186,10 +187,57 @@ function createSubcomponentDocgen({
 }
 
 /**
- * Builds resolved React component docgen from a parsed CSF file and index entry. Shared by the
- * docgen provider (RCM) and the experimental manifest generator (all docgen engines).
+ * Builds story snippets, descriptions, and file-level import statements from a parsed CSF file.
+ * Used by the story-docs open service and composed into the legacy combined manifest.
  */
-export function buildReactComponentDocgenFromResolved({
+export function buildStoryDocsFromResolved({
+  entry,
+  storyPath,
+  storyFilePath,
+  csf,
+  componentName,
+  component,
+  allComponents,
+  filterStoryIds,
+}: {
+  entry: IndexEntry;
+  storyPath: string;
+  storyFilePath: string;
+  csf: ParsedCsf;
+  componentName: string | undefined;
+  component: ComponentRef | undefined;
+  allComponents: ComponentRef[];
+  /** When set, only stories whose ids are in the set are included (manifest tag filtering). */
+  filterStoryIds?: ReadonlySet<string>;
+}): StoryDocsPayload {
+  const id = getComponentIdFromEntry(entry);
+  const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
+
+  const packageName = getPackageInfo(component?.path, storyPath);
+  const fallbackImport = getFallbackImport(packageName, componentName);
+  const imports =
+    getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
+  const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds);
+
+  return {
+    id,
+    name: componentName ?? title,
+    path: storyFilePath,
+    ...(imports ? { import: imports } : {}),
+    stories: Object.fromEntries(storyEntries.map((story) => [story.id, story])),
+  };
+}
+
+/**
+ * Component docgen fields without story snippets or file-level imports.
+ */
+export type ComponentDocgenFromResolved = Omit<ReactComponentManifest, 'stories' | 'import'>;
+
+/**
+ * Builds component docgen fields (props, descriptions, subcomponents) without story snippets or
+ * file-level imports. Used by the docgen open service.
+ */
+export function buildComponentDocgenFromResolved({
   entry,
   storyPath,
   storyFilePath,
@@ -197,10 +245,8 @@ export function buildReactComponentDocgenFromResolved({
   csf,
   componentName,
   component,
-  allComponents,
   subcomponents,
   docgenEngine,
-  filterStoryIds,
 }: {
   entry: IndexEntry;
   storyPath: string;
@@ -209,30 +255,19 @@ export function buildReactComponentDocgenFromResolved({
   csf: ParsedCsf;
   componentName: string | undefined;
   component: ComponentRef | undefined;
-  allComponents: ComponentRef[];
   subcomponents: ResolvedSubcomponent[];
   docgenEngine: DocgenEngine;
-  /** When set, only stories whose ids are in the set are included (manifest tag filtering). */
-  filterStoryIds?: ReadonlySet<string>;
-}): ReactComponentManifest {
+}): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-
   const packageName = getPackageInfo(component?.path, storyPath);
-  const fallbackImport = getFallbackImport(packageName, componentName);
-  const imports =
-    getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
-
-  const stories = extractStorySnippets(csf, component?.componentName, filterStoryIds);
 
   const base = {
     id,
     name: componentName ?? title,
     path: storyFilePath,
-    stories,
-    import: imports || undefined,
     jsDocTags: {},
-  } satisfies Partial<ReactComponentManifest>;
+  } satisfies Partial<ComponentDocgenFromResolved>;
 
   const {
     reactDocgen,
@@ -290,12 +325,70 @@ export function buildReactComponentDocgenFromResolved({
     ...base,
     description,
     summary,
-    import: imports || undefined,
     reactDocgen,
     reactDocgenTypescript,
     reactComponentMeta,
     jsDocTags,
     ...(Object.keys(subcomponentEntries).length > 0 ? { subcomponents: subcomponentEntries } : {}),
     error: docgenError,
+  };
+}
+
+/**
+ * Builds resolved React component docgen from a parsed CSF file and index entry. Shared by the
+ * docgen provider (RCM) and the experimental manifest generator (all docgen engines).
+ */
+export function buildReactComponentDocgenFromResolved({
+  entry,
+  storyPath,
+  storyFilePath,
+  storyFile,
+  csf,
+  componentName,
+  component,
+  allComponents,
+  subcomponents,
+  docgenEngine,
+  filterStoryIds,
+}: {
+  entry: IndexEntry;
+  storyPath: string;
+  storyFilePath: string;
+  storyFile: string;
+  csf: ParsedCsf;
+  componentName: string | undefined;
+  component: ComponentRef | undefined;
+  allComponents: ComponentRef[];
+  subcomponents: ResolvedSubcomponent[];
+  docgenEngine: DocgenEngine;
+  /** When set, only stories whose ids are in the set are included (manifest tag filtering). */
+  filterStoryIds?: ReadonlySet<string>;
+}): ReactComponentManifest {
+  const storyDocs = buildStoryDocsFromResolved({
+    entry,
+    storyPath,
+    storyFilePath,
+    csf,
+    componentName,
+    component,
+    allComponents,
+    filterStoryIds,
+  });
+  const componentDocgen = buildComponentDocgenFromResolved({
+    entry,
+    storyPath,
+    storyFilePath,
+    storyFile,
+    csf,
+    componentName,
+    component,
+    subcomponents,
+    docgenEngine,
+  });
+
+  return {
+    ...componentDocgen,
+    stories: Object.values(storyDocs.stories),
+    ...(storyDocs.import ? { import: storyDocs.import } : {}),
   };
 }

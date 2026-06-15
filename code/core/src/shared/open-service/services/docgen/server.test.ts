@@ -34,7 +34,6 @@ function makeDocgenPayload(overrides: Partial<DocgenPayload> = {}): DocgenPayloa
     name: 'Button',
     path: './button.stories.tsx',
     jsDocTags: {},
-    stories: [],
     ...overrides,
   };
 }
@@ -254,7 +253,6 @@ describe('docgen open service', () => {
             path: './button.stories.tsx',
             description: 'from ./button.stories.tsx',
             jsDocTags: {},
-            stories: [],
           },
         },
       });

@@ -30,7 +30,9 @@ export type ServiceId = string;
  */
 export type ServiceState<TState> = TState &
   (TState extends readonly unknown[]
-    ? { __openServiceStateError: 'Service state must be a plain object, not an array.' }
+    ? {
+        __openServiceStateError: 'Service state must be a plain object, not an array.';
+      }
     : unknown);
 
 /** Public schema shape exposed when describing a schema-backed service contract. */
@@ -250,6 +252,11 @@ export type QueryDefinition<
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   description?: string;
+  /**
+   * When true, hides this query from `describeService()` output. Defaults to false. Does not disable
+   * the query at runtime — callers with a service handle can still invoke it.
+   */
+  internal?: boolean;
   input: TInputSchema;
   output: TOutputSchema;
   /** Logical path for the serialized state snapshot, relative to this service's output folder. */
@@ -283,6 +290,11 @@ export type CommandDefinition<
   TOutputSchema extends AnySchema,
 > = {
   description?: string;
+  /**
+   * When true, hides this command from `describeService()` output. Defaults to false. Does not
+   * disable the command at runtime — callers with a service handle can still invoke it.
+   */
+  internal?: boolean;
   input: TInputSchema;
   output: TOutputSchema;
   handler?: BivariantCallback<
@@ -294,6 +306,7 @@ export type CommandDefinition<
 /** Internal structural constraint used to store any query definition in a record. */
 export type AnyQueryDefinition<TState> = {
   description?: string;
+  internal?: boolean;
   input: AnySchema;
   output: AnySchema;
   staticPath?: BivariantCallback<[input: unknown], string>;
@@ -305,6 +318,7 @@ export type AnyQueryDefinition<TState> = {
 /** Internal structural constraint used to store any command definition in a record. */
 export type AnyCommandDefinition<TState> = {
   description?: string;
+  internal?: boolean;
   input: AnySchema;
   output: AnySchema;
   handler?: BivariantCallback<
@@ -326,6 +340,11 @@ export type ServiceDefinition<
 > = {
   id: ServiceId;
   description?: string;
+  /**
+   * When true, hides this service from `listServices()` output. Defaults to false. Does not disable
+   * the service at runtime — callers can still resolve it through `getService()`.
+   */
+  internal?: boolean;
   /**
    * Initial state for the service. Must be a plain object (not a primitive, `null`, or array) — see
    * {@link ServiceState} for why. The authoring boundary (`defineService`) enforces this; the runtime
@@ -372,10 +391,7 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-  getService<TDefinition extends AnyServiceDefinition>(
-    serviceId: ServiceId
-  ): ServiceInstanceOf<TDefinition>;
+  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

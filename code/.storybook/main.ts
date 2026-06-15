@@ -156,7 +156,9 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    experimentalDocgenServer: true,
+    // Disabled for now: the docgen service does not yet work in production builds. Keeping it off
+    // ensures this branch exercises the normal (non-experimental) docgen path without regressions.
+    experimentalDocgenServer: false,
     experimentalReactComponentMeta: true,
     changeDetection: true,
   },
@@ -188,7 +190,13 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            // Internal e2e writes traces under code/playwright-results while the dev server is running.
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);

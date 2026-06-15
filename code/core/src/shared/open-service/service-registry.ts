@@ -16,7 +16,6 @@
  */
 
 import {
-  OpenServiceDuplicateRegistrationError,
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
@@ -34,7 +33,6 @@ import type {
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
-  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
@@ -81,27 +79,31 @@ function describeDefinition(definition: AnyServiceDefinition): ServiceDescriptor
     id: definition.id,
     description: definition.description,
     queries: Object.fromEntries(
-      Object.entries(definition.queries).map(([name, query]) => [
-        name,
-        {
+      Object.entries(definition.queries)
+        .filter(([, query]) => !query.internal)
+        .map(([name, query]) => [
           name,
-          description: query.description,
-          input: query.input,
-          output: query.output,
-          ...(query.staticPath ? { staticPath: true as const } : {}),
-        },
-      ])
+          {
+            name,
+            description: query.description,
+            input: query.input,
+            output: query.output,
+            ...(query.staticPath ? { staticPath: true as const } : {}),
+          },
+        ])
     ),
     commands: Object.fromEntries(
-      Object.entries(definition.commands).map(([name, command]) => [
-        name,
-        {
+      Object.entries(definition.commands)
+        .filter(([, command]) => !command.internal)
+        .map(([name, command]) => [
           name,
-          description: command.description,
-          input: command.input,
-          output: command.output,
-        },
-      ])
+          {
+            name,
+            description: command.description,
+            input: command.input,
+            output: command.output,
+          },
+        ])
     ),
   };
 }
@@ -193,7 +195,7 @@ export interface ServiceRegisterOptions {
  * callers use, wraps commands to broadcast their post-mutation state, and joins the cross-peer sync
  * protocol as a hub or leaf (`relay`). Each runtime must install the addons channel at its entry
  * boundary before calling this (builders, manager boot, server `services` preset, or Node import
- * bootstrap). Duplicate ids are rejected up front so lookups remain deterministic.
+ * bootstrap). Registration is idempotent by id: a repeated registration returns the existing runtime.
  */
 export function registerService<
   TState,
@@ -206,8 +208,15 @@ export function registerService<
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   const registry = getRegistry();
 
-  if (registry.has(definition.id)) {
-    throw new OpenServiceDuplicateRegistrationError({ serviceId: definition.id });
+  // Registration is idempotent by id. Re-registering an already-registered service returns the
+  // existing runtime instead of throwing. This deliberately swallows duplicate-id collisions, which is
+  // the right trade-off: core services register from a `beforeAll` annotation that CSF4 composes twice
+  // (once in `definePreview`, once in `StoryStore`), and `beforeAll` also re-runs on HMR. A second
+  // registration is a no-op rather than a crash.
+  const existingEntry = registry.get(definition.id);
+  if (existingEntry) {
+    return existingEntry.instance as unknown as ServiceInstance<TState, TQueries, TCommands> &
+      ServiceRegistryApi;
   }
 
   const ownClientId = generateClientId();
@@ -261,6 +270,7 @@ export function registerService<
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
+    runtime,
   });
 
   const instance = {
@@ -291,7 +301,9 @@ export function getRegisteredServices(): AnyServiceDefinition[] {
 
 /** Returns one summary entry per registered service — the lowest-cost discovery endpoint. */
 export async function listServices(): Promise<ServiceSummary[]> {
-  return Array.from(getRegistry().values(), ({ summary }) => summary);
+  return Array.from(getRegistry().values())
+    .filter(({ definition }) => !definition.internal)
+    .map(({ summary }) => summary);
 }
 
 /** Returns the schema-backed descriptor for one registered service. */
@@ -311,20 +323,14 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
  */
-export function getService(serviceId: ServiceId): RuntimeService;
-export function getService<TDefinition extends AnyServiceDefinition>(
-  serviceId: ServiceId
-): ServiceInstanceOf<TDefinition>;
-export function getService<TDefinition extends AnyServiceDefinition>(
-  serviceId: ServiceId
-): RuntimeService | ServiceInstanceOf<TDefinition> {
+export function getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.instance as unknown as ServiceInstanceOf<TDefinition>;
+  return entry.instance as unknown as TInstance;
 }
 
 /**

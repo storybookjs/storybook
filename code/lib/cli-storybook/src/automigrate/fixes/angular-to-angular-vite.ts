@@ -1,10 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import { transformImportFiles } from 'storybook/internal/common';
+import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
+import { dirname, relative, resolve } from 'pathe';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -37,6 +39,88 @@ const rewriteBuilderRefs = (content: string): string =>
   content
     .replace(/@storybook\/angular:start-storybook/g, `${ANGULAR_VITE_PACKAGE}:start-storybook`)
     .replace(/@storybook\/angular:build-storybook/g, `${ANGULAR_VITE_PACKAGE}:build-storybook`);
+
+/**
+ * Repoint an existing `test-storybook` package.json script at standalone Vitest. The
+ * @storybook/test-runner flow does not carry over to @storybook/angular-vite, so the script should
+ * run `vitest run` directly. No-ops when the script is absent, and is idempotent (rewriting an
+ * already-`vitest run` value yields the same string).
+ */
+const rewriteTestStorybookScript = (content: string): string =>
+  content.replace(/("test-storybook"\s*:\s*)"(?:[^"\\]|\\.)*"/, '$1"vitest run"');
+
+// Config file basenames whose presence means a Vite/Vitest setup already exists, so the migration
+// must not write a fresh `vitest.config.ts` over it — the deferred addon-vitest postinstall updates
+// the existing file (and the workspace path) instead.
+const VITE_CONFIG_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
+
+/**
+ * Find an existing Vite/Vitest/workspace config by searching from the Storybook config dir up to the
+ * project root, mirroring the addon-vitest postinstall's lookup. Returns the first match, or
+ * `undefined` when none exists.
+ */
+const findExistingViteConfig = (configDir: string): string | undefined => {
+  const search = (basename: string, extensions: string[]) =>
+    find.any(
+      extensions.map((ext) => basename + ext),
+      { last: getProjectRoot(), cwd: configDir }
+    );
+
+  return (
+    search('vitest.workspace', ['.ts', '.js', '.json']) ||
+    search('vite.config', VITE_CONFIG_EXTENSIONS) ||
+    search('vitest.config', VITE_CONFIG_EXTENSIONS)
+  );
+};
+
+/**
+ * A standalone `vitest.config.ts` for Angular projects. The nested `plugins` array carries
+ * `storybookAngularVitest()` ahead of `storybookTest()` so standalone `vitest` runs receive the
+ * Angular build options (styles, assets, zoneless, …) — both must live in the same array.
+ * `configDirRelative` is the path from this file's directory to the Storybook config dir.
+ */
+const buildAngularVitestConfig = (
+  configDirRelative: string
+): string => `import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineConfig } from 'vitest/config';
+
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { storybookAngularVitest } from '@storybook/angular-vite/vitest';
+
+import { playwright } from '@vitest/browser-playwright';
+
+const dirname =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+
+// More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+export default defineConfig({
+  test: {
+    projects: [
+      {
+        extends: true,
+        plugins: [
+          // Forwards Angular build options (styles, assets, zoneless, …) into standalone vitest runs
+          storybookAngularVitest({}),
+          // The plugin will run tests for the stories defined in your Storybook config
+          // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+          storybookTest({ configDir: path.join(dirname, '${configDirRelative}') }),
+        ],
+        test: {
+          name: 'storybook',
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+    ],
+  },
+});
+`;
 
 const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
   try {
@@ -338,11 +422,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // 4. Rewrite Angular CLI builder references in package.json scripts.
+    // 4. Rewrite Angular CLI builder references and the `test-storybook` script in package.json.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      const { changed } = await transformJsonFile(pkgJsonPath, dryRun);
-      if (changed) {
-        logger.debug(`Updated builder references in ${pkgJsonPath}`);
+      try {
+        const content = await readFile(pkgJsonPath, 'utf-8');
+        const transformed = rewriteTestStorybookScript(rewriteBuilderRefs(content));
+        if (transformed !== content && !dryRun) {
+          await writeFile(pkgJsonPath, transformed);
+          logger.debug(`Updated builder references and scripts in ${pkgJsonPath}`);
+        }
+      } catch {
+        continue;
       }
     }
 
@@ -397,6 +487,21 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           });
 
       if (wantsVitest) {
+        // Create a standalone vitest.config.ts (already wired with storybookAngularVitest) when the
+        // project has no Vite/Vitest config yet. The deferred addon-vitest postinstall is
+        // idempotent: it detects this fully-wired config and skips, and updates an existing config
+        // when one is found — so we only create the file here, never overwrite.
+        if (configDir && !findExistingViteConfig(configDir)) {
+          const newConfigFile = resolve(dirname(configDir), 'vitest.config.ts');
+          const configDirRelative = relative(dirname(newConfigFile), configDir);
+          const formatted = await formatFileContent(
+            newConfigFile,
+            buildAngularVitestConfig(configDirRelative)
+          );
+          await writeFile(newConfigFile, formatted);
+          logger.step(`Creating a Vitest config file: ${newConfigFile}`);
+        }
+
         try {
           // Add to package.json + main.ts now, but defer the postinstall: dependencies are
           // installed in a single batch at the end of automigrate, so the addon isn't on disk

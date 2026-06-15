@@ -39,6 +39,12 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock('storybook/internal/common', () => ({
   transformImportFiles: vi.fn().mockResolvedValue([]),
+  getProjectRoot: vi.fn().mockReturnValue('/project'),
+  formatFileContent: vi.fn((_filePath: string, content: string) => Promise.resolve(content)),
+}));
+
+vi.mock('empathic/find', () => ({
+  any: vi.fn().mockReturnValue(undefined),
 }));
 
 vi.mock('globby', () => ({
@@ -621,6 +627,147 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       } as any);
 
       expect(mockAdd).not.toHaveBeenCalled();
+    });
+
+    it('rewrites an existing test-storybook script to "vitest run"', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      const packageJsonContent = JSON.stringify(
+        {
+          scripts: {
+            storybook: '@storybook/angular:start-storybook',
+            'test-storybook': 'test-storybook --url http://localhost:6006',
+          },
+        },
+        null,
+        2
+      );
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('package.json')) {
+          return Promise.resolve(packageJsonContent) as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '/project/package.json',
+        expect.stringContaining('"test-storybook": "vitest run"')
+      );
+      // Builder refs in the same file are still rewritten alongside the script change.
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '/project/package.json',
+        expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
+      );
+    });
+
+    it('leaves package.json untouched when there is no test-storybook script or builder ref', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      mockReadFile.mockImplementation((filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('package.json')) {
+          return Promise.resolve(JSON.stringify({ scripts: { build: 'ng build' } })) as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith('/project/package.json', expect.anything());
+    });
+
+    it('creates a wired vitest.config.ts when no Vite/Vitest config exists', async () => {
+      // accept addon-vitest, decline addon-a11y
+      mockPromptConfirm.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToConfigure: [],
+      } as any);
+
+      const configWrite = mockWriteFile.mock.calls.find(([p]) => p === '/project/vitest.config.ts');
+      expect(configWrite).toBeDefined();
+      const written = String(configWrite![1]);
+      // storybookAngularVitest must come before storybookTest in the same plugins array.
+      expect(written).toContain(
+        "import { storybookAngularVitest } from '@storybook/angular-vite/vitest'"
+      );
+      expect(written.indexOf('storybookAngularVitest({})')).toBeGreaterThan(-1);
+      expect(written.indexOf('storybookAngularVitest({})')).toBeLessThan(
+        written.indexOf('storybookTest(')
+      );
+      expect(written).toContain("path.join(dirname, '.storybook')");
+    });
+
+    it('does not create a vitest.config.ts when one already exists', async () => {
+      const find = await import('empathic/find');
+      vi.mocked(find.any).mockReturnValueOnce('/project/vitest.config.ts');
+
+      mockPromptConfirm.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToConfigure: [],
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/vitest.config.ts',
+        expect.anything()
+      );
+    });
+
+    it('does not create a vitest.config.ts in dry-run mode', async () => {
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: true,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToConfigure: [],
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/vitest.config.ts',
+        expect.anything()
+      );
     });
   });
 });

@@ -15,7 +15,7 @@ import {
   CheckIcon,
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
-  CloseAltIcon,
+  CloseIcon,
   CopyIcon,
   SearchIcon,
   StorybookIcon,
@@ -156,8 +156,8 @@ const List = styled.div({
 const SummaryCard = styled(Card)({
   display: 'flex',
   alignItems: 'flex-start',
+  padding: '9px 12px',
   gap: 10,
-  padding: '14px 17px',
   svg: {
     flexShrink: 0,
     marginTop: 4,
@@ -168,11 +168,12 @@ const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
   flex: 1,
   minWidth: 0,
   fontSize: theme.typography.size.s2,
+  color: theme.color.defaultText,
   p: {
     margin: 0,
-    '& + &': {
-      marginTop: 10,
-    },
+  },
+  'p + p': {
+    marginTop: 10,
   },
   code: {
     color: theme.fgColor.agentic,
@@ -245,7 +246,7 @@ const NoResults = styled.div(({ theme }) => ({
 
 const Footer = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
-  padding: 10,
+  padding: '10px 10px 20px',
   fontSize: theme.typography.size.s2,
   textAlign: 'center',
   textWrap: 'balance',
@@ -379,7 +380,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             Copy prompt
           </CopyButton>
           <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
-            <CloseAltIcon />
+            <CloseIcon />
             Close
           </Button>
         </div>
@@ -543,8 +544,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               })
             )}
             <Footer>
-              The review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
-              relevant for you to review right now. Because this is AI-curated, results may be
+              This review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
+              relevant for you to spot-check right now. Because this is AI-curated, results may be
               inaccurate or incomplete.
             </Footer>
           </List>

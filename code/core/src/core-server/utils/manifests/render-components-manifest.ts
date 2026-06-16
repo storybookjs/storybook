@@ -17,10 +17,11 @@ import type {
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 

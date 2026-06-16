@@ -1,50 +1,76 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { groupBy } from 'storybook/internal/common';
-import { Tag, analyzeMdx } from 'storybook/internal/core-server';
+import { getComponentIdFromEntry, groupBy } from 'storybook/internal/common';
+import {
+  type DocsManifestEntry,
+  type DocsManifestRefEntry,
+  type MdxDocPayload,
+  Tag,
+  analyzeMdx,
+  mdxManifestRef,
+} from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentManifest,
+  ComponentsManifest,
   DocsIndexEntry,
   IndexEntry,
   Manifests,
-  Path,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-export interface DocsManifestEntry {
-  id: string;
-  name: string;
-  path: Path;
-  title: string;
-  content?: string;
-  summary?: string;
-  error?: { name: string; message: string };
-}
+import { extractDocsSummary } from './extract-docs-summary.ts';
+
+export type { DocsManifestEntry } from 'storybook/internal/core-server';
 
 interface DocsManifest {
   v: number;
   docs: Record<string, DocsManifestEntry>;
 }
 
-interface ComponentManifestWithDocs extends ComponentManifest {
+/**
+ * A component row carrying docs. In legacy mode this is a full {@link ComponentManifest}; in
+ * `experimentalDocgenServer` mode core builds the real component rows from docgen, so attached docs
+ * may be synthesized onto a minimal `{ id, name }` shell — hence the `Partial`.
+ */
+type ComponentManifestWithDocs = Partial<ComponentManifest> & {
+  id: string;
+  name: string;
   docs?: Record<string, DocsManifestEntry>;
-}
+};
 
 interface ComponentsManifestWithDocs {
   v: number;
   components: Record<string, ComponentManifestWithDocs>;
+  meta?: ComponentsManifest['meta'];
 }
 
-interface ManifestsWithDocs extends Manifests {
+/**
+ * `Manifests` view that also exposes the docs-augmented `docs`/`components` shapes. Uses
+ * `Omit<Manifests, 'components'>` so every other manifest keeps its `Manifests` typing while
+ * `components` is specialized to carry docs.
+ */
+interface ManifestsWithDocs extends Omit<Manifests, 'components'> {
   docs?: DocsManifest;
   components?: ComponentsManifestWithDocs;
 }
 
-/** Converts a DocsIndexEntry to a DocsManifestEntry by reading its file content. */
-export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<DocsManifestEntry> {
+/** Builds the manifest entry for one docs index entry, owning the single component-id context. */
+type DocBuilder = (
+  entry: DocsIndexEntry,
+  componentId: string
+) => Promise<DocsManifestEntry> | DocsManifestEntry;
+
+/**
+ * Reads one MDX file into a full payload (content + derived summary).
+ *
+ * `summary` is derived once here — an explicit `Meta summary` when present, falling back to text
+ * extracted from the content — so the service, the legacy inline manifest, and the ref index all
+ * share one summary. It is omitted (like `content`) when the file cannot be read.
+ */
+export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<MdxDocPayload> {
   const absolutePath = path.join(process.cwd(), entry.importPath);
   try {
     const content = await fs.readFile(absolutePath, 'utf-8');
@@ -55,6 +81,7 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
       We should find a way to only do it once and cache/access the analysis somehow
     */
     const { summary } = await analyzeMdx(content);
+    const derivedSummary = summary ?? extractDocsSummary(content);
 
     return {
       id: entry.id,
@@ -62,7 +89,7 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
       path: entry.importPath,
       title: entry.title,
       content,
-      ...(summary && { summary }),
+      ...(derivedSummary !== undefined && { summary: derivedSummary }),
     };
   } catch (err) {
     return {
@@ -79,48 +106,62 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
 }
 
 /**
- * Extracts unattached MDX entries (standalone docs not attached to any component). These are added
- * to a separate `docs` manifest.
+ * Builds a shallow `$ref` row. No file I/O: the MDX service owns the full payload (content +
+ * summary); core layers the summary into the static index by reading those snapshots.
  */
-export async function extractUnattachedDocsEntries(
-  entries: DocsIndexEntry[]
+function createDocsManifestRefEntry(
+  entry: DocsIndexEntry,
+  componentId: string
+): DocsManifestRefEntry {
+  return {
+    id: entry.id,
+    name: entry.name,
+    mdx: { $ref: mdxManifestRef(componentId, entry.id) },
+  };
+}
+
+/** Builds the unattached `docs` map (standalone docs keyed by their own id). */
+async function buildUnattachedDocs(
+  entries: DocsIndexEntry[],
+  build: DocBuilder
 ): Promise<Record<string, DocsManifestEntry>> {
-  if (entries.length === 0) {
-    return {};
-  }
-  const entriesWithContent = await Promise.all(entries.map(createDocsManifestEntry));
-  return Object.fromEntries(entriesWithContent.map((entry) => [entry.id, entry]));
+  const docs = await Promise.all(
+    entries.map(async (entry) => [entry.id, await build(entry, entry.id)] as const)
+  );
+
+  return Object.fromEntries(docs);
 }
 
 /**
- * Extracts attached docs entries by adding them to their corresponding component manifests.
- *
- * Returns the updated components manifest with docs added to each component.
+ * Adds attached docs to their owning component, immutably synthesizing a minimal component row when
+ * one does not exist yet (the docgen-server components manifest starts empty).
  */
-export async function extractAttachedDocsEntries(
+async function applyAttachedDocs(
   entries: DocsIndexEntry[],
-  existingComponents: ComponentsManifestWithDocs | undefined
+  existingComponents: ComponentsManifestWithDocs | undefined,
+  build: DocBuilder
 ): Promise<ComponentsManifestWithDocs | undefined> {
   if (!existingComponents || entries.length === 0) {
     return existingComponents;
   }
 
-  const entriesWithContent = await Promise.all(entries.map(createDocsManifestEntry));
+  const docs = await Promise.all(
+    entries.map(async (entry) => {
+      const componentId = getComponentIdFromEntry(entry);
+      return { componentId, doc: await build(entry, componentId) };
+    })
+  );
 
-  // Add docs to their corresponding components based on the entry id prefix
-  for (const docsEntry of entriesWithContent) {
-    const componentId = docsEntry.id.split('--')[0];
-
-    const component = existingComponents.components[componentId];
-    if (component) {
-      if (!component.docs) {
-        component.docs = {};
-      }
-      component.docs[docsEntry.id] = docsEntry;
-    }
+  const components = { ...existingComponents.components };
+  for (const { componentId, doc } of docs) {
+    const component = components[componentId] ?? { id: componentId, name: componentId };
+    components[componentId] = {
+      ...component,
+      docs: { ...component.docs, [doc.id]: doc },
+    };
   }
 
-  return existingComponents;
+  return { ...existingComponents, components };
 }
 
 /**
@@ -131,13 +172,18 @@ export async function extractAttachedDocsEntries(
  * - Attached MDX entries (with 'attached-mdx' tag) are added to their corresponding component
  *   manifests under a `docs` property.
  * - Docs entries without either tag are ignored.
+ *
+ * In `experimentalDocgenServer` mode docs become shallow `$ref` rows (resolved from the MDX service
+ * snapshots); otherwise the full content is inlined.
  */
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[] }
-> = async (existingManifests = {}, { manifestEntries }) => {
+> = async (existingManifests = {}, { manifestEntries, presets }) => {
   const startPerformance = performance.now();
+  const features = await presets?.apply?.('features');
+  const useMdxService = features?.experimentalDocgenServer === true;
 
   const docsEntries = manifestEntries.filter(
     (entry): entry is DocsIndexEntry => entry.type === 'docs'
@@ -163,10 +209,11 @@ export const manifests: PresetPropertyFn<
   }
 
   const existingManifestsWithDocs = existingManifests as ManifestsWithDocs;
+  const build: DocBuilder = useMdxService ? createDocsManifestRefEntry : createDocsManifestEntry;
 
   const [unattachedDocs, updatedComponents] = await Promise.all([
-    extractUnattachedDocsEntries(unattachedEntries),
-    extractAttachedDocsEntries(attachedEntries, existingManifestsWithDocs.components),
+    buildUnattachedDocs(unattachedEntries, build),
+    applyAttachedDocs(attachedEntries, existingManifestsWithDocs.components, build),
   ]);
 
   const processedCount = unattachedEntries.length + attachedEntries.length;
@@ -174,20 +221,20 @@ export const manifests: PresetPropertyFn<
     `Docs manifest generation took ${performance.now() - startPerformance}ms for ${processedCount} entries (${unattachedEntries.length} unattached, ${attachedEntries.length} attached)`
   );
 
-  const result = { ...existingManifestsWithDocs };
+  const result: ManifestsWithDocs = { ...existingManifestsWithDocs };
 
-  // Add unattached docs to the docs manifest
   if (Object.keys(unattachedDocs).length > 0) {
     result.docs = {
-      v: 0,
+      v: useMdxService ? 1 : 0,
       docs: unattachedDocs,
     };
   }
 
-  // Update the components manifest with attached docs
   if (updatedComponents) {
     result.components = updatedComponents;
   }
 
-  return result;
+  // Augmented with docs but structurally a `Manifests` at runtime; component rows may be the
+  // minimal `{ id, name }` shells synthesized for attached docs in docgen-server mode.
+  return result as Manifests;
 };

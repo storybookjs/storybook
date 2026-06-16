@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import os from 'node:os';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
 import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
@@ -242,7 +243,8 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'success' },
     });
     await parse(program, ['ai', '-o', '/out/result.md', 'tool-x']);
-    expect(writeFile).toHaveBeenCalledWith('/out/result.md', 'markdown result\n', 'utf-8');
+    const expectedPath = os.platform() === 'win32' ? 'C:\\out\\result.md' : '/out/result.md';
+    expect(writeFile).toHaveBeenCalledWith(expectedPath, 'markdown result\n', 'utf-8');
     expect(process.stdout.write).not.toHaveBeenCalledWith('markdown result\n');
   });
 

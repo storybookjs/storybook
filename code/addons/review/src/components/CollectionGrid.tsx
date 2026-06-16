@@ -311,15 +311,11 @@ const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } =
   name: info.name,
 });
 
-const StoryChangeStatusIndicator: FC<{ changeStatus: StoryChangeStatus }> = ({ changeStatus }) => (
-  <WithTooltip
-    placement="top"
-    trigger="hover"
-    tooltip={<TooltipNote note={changeStatus === 'new' ? 'New story' : 'Modified story'} />}
-  >
+const StoryChangeStatusIndicator: FC<{ changeStatus: StoryChangeStatus }> = () => (
+  <WithTooltip placement="top" trigger="hover" tooltip={<TooltipNote note="New story" />}>
     <ChangeStatusIcon aria-hidden>
       <svg viewBox="0 0 14 14" width="14" height="14">
-        <UseSymbol type={changeStatus === 'new' ? 'new' : 'modified'} />
+        <UseSymbol type="new" />
       </svg>
     </ChangeStatusIcon>
   </WithTooltip>
@@ -479,7 +475,7 @@ const StoryPreviewCell: FC<{
       </Frame>
       <ActionBar>
         <Label>
-          {info.changeStatus ? (
+          {info.changeStatus === 'new' ? (
             <StoryChangeStatusIndicator changeStatus={info.changeStatus} />
           ) : null}
           <LabelComponent>

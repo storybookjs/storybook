@@ -134,27 +134,34 @@ describe('useServiceQuery', () => {
     expect(subscribeSpy.mock.calls.length).toBe(subscribeCallsAfterMount);
   });
 
-  it('maintains referential stability when result is deeply equal', async () => {
-    const service = registerService(mutableRecordLookupServiceDef);
-
-    await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
-
+  it('uses emitted snapshots without deep-equal output filtering', async () => {
+    const subscribers: Array<(value: { k: string }) => void> = [];
+    const getRecordFields = Object.assign(
+      vi.fn(() => ({ k: 'v' })),
+      {
+        subscribe: vi.fn(
+          (_input: { entryId: string }, callback: (value: { k: string }) => void) => {
+            subscribers.push(callback);
+            return () => {};
+          }
+        ),
+      }
+    );
+    const service = { queries: { getRecordFields } };
     let renderCount = 0;
     const { result } = renderHook(() => {
       renderCount++;
-      return useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+      return useServiceQuery(service, 'getRecordFields', { entryId: 'a' }) as { k: string };
     });
 
     const firstRef = result.current;
     const countAfterMount = renderCount;
 
-    // Assign the same value again — deeply equal, so no re-render.
-    await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
+    await waitFor(() => expect(subscribers).toHaveLength(1));
+    subscribers[0]({ k: 'v' });
 
-    // Wait a tick to let any spurious re-renders fire.
-    await new Promise<void>((resolve) => setTimeout(resolve, 20));
-
-    expect(result.current).toBe(firstRef);
-    expect(renderCount).toBe(countAfterMount);
+    await waitFor(() => expect(renderCount).toBe(countAfterMount + 1));
+    expect(result.current).toEqual(firstRef);
+    expect(result.current).not.toBe(firstRef);
   });
 });

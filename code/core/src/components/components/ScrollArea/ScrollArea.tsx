@@ -28,20 +28,21 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
   })
 );
 
-const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{ focusable: boolean; containOverscroll: boolean }>(
-  ({ focusable, theme, containOverscroll }) => ({
-    width: '100%',
-    height: '100%',
-    '-webkit-overflow-scrolling': 'touch',
-    ...(containOverscroll ? { overscrollBehavior: 'contain' } : {}),
-    '&:focus': focusable
-      ? {
-          outline: `2px solid ${theme.color.secondary}`,
-          outlineOffset: -2,
-        }
-      : {},
-  })
-);
+const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{
+  focusable: boolean;
+  containOverscroll: boolean;
+}>(({ focusable, theme, containOverscroll }) => ({
+  width: '100%',
+  height: '100%',
+  '-webkit-overflow-scrolling': 'touch',
+  ...(containOverscroll ? { overscrollBehavior: 'contain' } : {}),
+  '&:focus': focusable
+    ? {
+        outline: `2px solid ${theme.color.secondary}`,
+        outlineOffset: -2,
+      }
+    : {},
+}));
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   offset: number;

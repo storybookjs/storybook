@@ -56,7 +56,6 @@ export const useReviewNavigationInterceptor = () => {
       if (anchor?.hasAttribute(REVIEW_SUMMARY_BACK_ATTR)) {
         event.preventDefault();
         reviewStore.suppressSummaryOverlay();
-        reviewStore.releaseSummaryOverlaySuppression();
         api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
         void clearReviewingStatusFilter(
           api,

@@ -2,10 +2,10 @@ import React, { useLayoutEffect, useRef, useState, useSyncExternalStore, type FC
 import { createPortal } from 'react-dom';
 
 import { useStorybookState } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import {
   isReviewSessionPath,
-  isReviewSummaryPath,
   isStoryInReview,
   parseCollectionIndex,
   parseStoryIdFromPath,
@@ -13,15 +13,7 @@ import {
 import { reviewStore, useReview } from './review-store.ts';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
 
-/** Matches `#main-content-wrapper` in core MainAreaContainer — the pages grid cell beside the sidebar. */
-export const REVIEW_SUMMARY_PORTAL_TARGET_ID = 'main-content-wrapper';
-
-const PORTAL_HOST_ID = 'storybook-review-summary-portal';
-
-/** Remove a stale portal host left from earlier implementations. */
-const removeLegacyPortalHost = () => {
-  document.getElementById(PORTAL_HOST_ID)?.remove();
-};
+const LEGACY_PORTAL_HOST_ID = 'storybook-review-summary-portal';
 
 const useSummaryOverlayShown = () =>
   useSyncExternalStore(
@@ -30,47 +22,38 @@ const useSummaryOverlayShown = () =>
     () => reviewStore.isSummaryOverlayShown()
   );
 
-const useMainContentPortalTarget = (enabled: boolean): HTMLElement | null => {
-  const [target, setTarget] = useState<HTMLElement | null>(() =>
-    enabled ? document.getElementById(REVIEW_SUMMARY_PORTAL_TARGET_ID) : null
-  );
-
-  useLayoutEffect(() => {
-    if (!enabled) {
-      setTarget(null);
-      return undefined;
-    }
-
-    const resolve = () => {
-      const node = document.getElementById(REVIEW_SUMMARY_PORTAL_TARGET_ID);
-      setTarget(node);
-      return node;
-    };
-
-    if (resolve()) {
-      return undefined;
-    }
-
-    const observer = new MutationObserver(() => {
-      if (resolve()) {
-        observer.disconnect();
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [enabled]);
-
-  return target;
-};
-
-const summaryPortalStyle: React.CSSProperties = {
+// One stable host for the portal: never reparented, never display:none. While a
+// reviewed story is open the host is parked off-screen so thumbnail iframes
+// keep their documents alive.
+const SummaryHost = styled.div<{ $visible: boolean }>(({ $visible }) => ({
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
   minHeight: 0,
   height: '100%',
   overflow: 'hidden',
-};
+  position: 'fixed',
+  top: 0,
+  bottom: 0,
+  right: 0,
+  ...($visible
+    ? {
+        visibility: 'visible',
+        pointerEvents: 'auto',
+        zIndex: 2,
+        left: 0,
+        '@media (min-width: 600px)': {
+          left: 'var(--nav-width, 0px)',
+        },
+      }
+    : {
+        visibility: 'hidden',
+        pointerEvents: 'none',
+        zIndex: -1,
+        left: '-10000px',
+        width: '100vw',
+      }),
+}));
 
 export const ReviewSummaryPortal: FC = () => {
   const { path, viewMode, customQueryParams } = useStorybookState();
@@ -84,14 +67,9 @@ export const ReviewSummaryPortal: FC = () => {
     lastReviewedStoryHref,
   } = useReview();
   const overlayShown = useSummaryOverlayShown();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const portalTarget = useMainContentPortalTarget(overlayShown);
+  const [portalHost, setPortalHost] = useState<HTMLDivElement | null>(null);
+  const hostRef = useRef<HTMLDivElement | null>(null);
 
-  useLayoutEffect(() => {
-    removeLegacyPortalHost();
-  }, []);
-
-  const isSummaryVisible = isReviewSummaryPath(path);
   const collectionParam = customQueryParams?.collection as string | undefined;
   const collectionIndex = parseCollectionIndex(collectionParam);
   const storyIdFromPath = parseStoryIdFromPath(path);
@@ -102,59 +80,44 @@ export const ReviewSummaryPortal: FC = () => {
   const isInReviewSession = isReviewSessionPath(path, collectionIndex) || isOnReviewedStory;
 
   useLayoutEffect(() => {
-    const node = containerRef.current;
+    document.getElementById(LEGACY_PORTAL_HOST_ID)?.remove();
+  }, []);
+
+  useLayoutEffect(() => {
+    const node = hostRef.current;
     if (node) {
       node.inert = !overlayShown;
     }
-  }, [overlayShown]);
+  }, [overlayShown, portalHost]);
 
   if (!isInReviewSession) {
     return null;
   }
 
-  const summaryScreen = (
-    <SummaryScreen
-      state={state}
-      storyInfo={storyInfo}
-      getStoryPreviewHref={getStoryPreviewHref}
-      isStale={isStale}
-      previewsPaused={!overlayShown}
-      onDismiss={dismissReview}
-      lastReviewedStoryHref={lastReviewedStoryHref}
-    />
-  );
-
-  if (overlayShown) {
-    const portalContent = (
-      <div ref={containerRef} style={summaryPortalStyle} data-review-summary="visible">
-        {summaryScreen}
-      </div>
-    );
-
-    if (portalTarget) {
-      return createPortal(portalContent, portalTarget);
-    }
-
-    // Isolated stories and the first paint before Layout mounts: fill the viewport.
-    return (
-      <div
-        ref={containerRef}
-        style={{
-          ...summaryPortalStyle,
-          position: 'fixed',
-          inset: 0,
-          zIndex: 10,
-        }}
-        data-review-summary="visible"
-      >
-        {summaryScreen}
-      </div>
-    );
-  }
-
   return (
-    <div ref={containerRef} aria-hidden style={{ display: 'none' }} data-review-summary="hidden">
-      {summaryScreen}
-    </div>
+    <>
+      <SummaryHost
+        ref={(node) => {
+          hostRef.current = node;
+          setPortalHost(node);
+        }}
+        $visible={overlayShown}
+        aria-hidden={!overlayShown}
+        data-review-summary={overlayShown ? 'visible' : 'hidden'}
+      />
+      {portalHost &&
+        createPortal(
+          <SummaryScreen
+            state={state}
+            storyInfo={storyInfo}
+            getStoryPreviewHref={getStoryPreviewHref}
+            isStale={isStale}
+            previewsPaused={!overlayShown}
+            onDismiss={dismissReview}
+            lastReviewedStoryHref={lastReviewedStoryHref}
+          />,
+          portalHost
+        )}
+    </>
   );
 };

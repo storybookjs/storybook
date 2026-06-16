@@ -414,8 +414,11 @@ const StoryPreviewCell: FC<{
     if (!isInView) {
       return undefined;
     }
+    const previewHref = getPreviewHref(storyId);
     const task: PreviewTask = {
-      start: () => setSrc(getPreviewHref(storyId)),
+      start: () => {
+        setSrc((current) => current ?? previewHref);
+      },
       started: false,
       finished: false,
     };

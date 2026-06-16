@@ -80,7 +80,7 @@
     "@typescript-eslint/parser": "^8.48.0",
     "@vitest/coverage-v8": "^4.1.5",
     "ansi-regex": "^6.0.1",
-    "chromatic": "^13.3.4",
+    "chromatic": "^17.4.1",
     "citty": "^0.2.1",
     "codecov": "^3.8.1",
     "commander": "^14.0.2",

@@ -43,36 +43,40 @@ working around it. Treat any shortcut as a failure of this workflow.
 Installing and configuring Storybook is invasive, so it is the **user's choice**.
 Never set it up on your own initiative as a side effect of a component change.
 
-Before asking the user anything, check whether they have already declined:
+Before asking the user anything, check whether they have already declined. A
+decline can apply at two scopes:
 
-1. **Read the saved decision** at `.codex/storybook-optout.json` (project-local).
-   If it exists with `{ "storybookOptOut": true }`, the user has ALREADY refused
-   Storybook for this project. Do NOT ask again — silently skip all story work,
-   finish the component change (if any), and move on.
-2. **If there is no opt-out file**, briefly tell the user the project has no
-   Storybook and ask whether they want to set it up (and write stories) for it.
-3. **If the user declines**, persist that choice so future invocations don't
-   re-ask: write `.codex/storybook-optout.json` with:
+- **User-level** — the user never wants Storybook set up in any project.
+- **Project-level** — the user only declined for this project.
 
-   ```json
-   {
-   	"storybookOptOut": true,
-   	"reason": "<short paraphrase of what the user said>"
-   }
-   ```
-
-   Then finish the component change (if any) without any story work. If the
-   user explicitly asked for story work, STOP and report that Storybook is
-   required for it.
+1. **Look for a previously recorded decline.** If you find one that applies here
+   (at either scope), the user has ALREADY refused Storybook. Do NOT ask again —
+   silently skip all story work, finish the component change (if any), and move
+   on.
+2. **If there is no recorded decline**, briefly tell the user the project has no
+   Storybook and ask whether they want to set it up (and write stories). Offer
+   three choices:
+   - **Yes** — set it up for this project.
+   - **No, not for this project** — decline at the project level.
+   - **No, and don't ask me again in any project** — decline at the user level.
+3. **If the user declines**, remember that decision durably so future
+   invocations don't re-ask, recording the scope they chose (this project vs.
+   all projects) and a short paraphrase of their reason. Choose an appropriate
+   place and format yourself — but do NOT commit it to the project's version
+   control; if the only durable option lives inside the repo, keep it out of
+   commits (e.g. via `.gitignore`). Then finish the component change (if any)
+   without any story work. If the user explicitly asked for story work, STOP and
+   report that Storybook is required for it.
 
 4. **If the user opts in**, set Storybook up via the setup skills
    (`init` / `setup`), then resume this workflow from
-   Step 1. If an opt-out file existed from a previous "no", delete it.
+   Step 1. If you recorded a decline at either scope from a previous "no", clear
+   it.
 
 **Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
 dependencies, or invoke the setup skills unless the user has explicitly opted in
-this time. A saved opt-out MUST be respected on every later invocation without
-re-prompting.
+this time. A recorded decline at either scope MUST be respected on every later
+invocation without re-prompting.
 
 ## Step 1 — Guarantee a running preview browser
 
@@ -103,16 +107,7 @@ error.
   - Save the available subcommands and options in your working memory for reference.
 - Run the ai subcommand with `require_escalated` to get the story-writing instructions.
 - Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
-
-**Gate:** Do NOT create or edit any `*.stories.*` file until you are following its output. If you have not called it this task,
-you are not allowed to write a story yet — go back and call it now.
-
-## Step 3 — Write the story
-
-Create or edit the story STRICTLY following the Step 2 instructions. When this
-skill runs for a component change, cover the affected surface: new components
-get stories, new props/variants/states get covered, renamed states get
-updated, and deleted components get their stories removed.
+- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
 
 **Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
 rather than guessing.

@@ -168,11 +168,11 @@ const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
   flex: 1,
   minWidth: 0,
   fontSize: theme.typography.size.s2,
-  '& > *:first-child': {
-    marginTop: 0,
-  },
-  '& > *:last-child': {
-    marginBottom: 0,
+  p: {
+    margin: 0,
+    '& + &': {
+      marginTop: 10,
+    },
   },
   code: {
     color: theme.fgColor.agentic,

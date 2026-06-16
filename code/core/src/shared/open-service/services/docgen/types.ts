@@ -1,3 +1,4 @@
+import type { StrictArgTypes } from '../../../../types/modules/csf.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
@@ -48,6 +49,8 @@ export interface DocgenPayload {
   import?: string;
   summary?: string;
   jsDocTags: DocgenJsDocTags;
+  /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
+  argTypes?: StrictArgTypes;
   stories: DocgenStory[];
   subcomponents?: Record<string, DocgenSubcomponent>;
   error?: DocgenError;
@@ -62,6 +65,8 @@ export interface DocgenSubcomponent {
   summary?: string;
   import?: string;
   jsDocTags: DocgenJsDocTags;
+  /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
+  argTypes?: StrictArgTypes;
   error?: DocgenError;
   [key: string]: unknown;
 }

@@ -69,7 +69,7 @@ Internal tests and implementation code may import from the individual modules di
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
 - [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
-- [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
+- [service-sync.ts](./service-sync.ts): last-write-wins ordering, `applyStatePatch` structural state application, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
@@ -338,10 +338,10 @@ an arbitrary style choice:
 - **Reactivity.** State is wrapped in a `deepSignal` proxy for fine-grained per-field tracking, and
   `deepSignal` throws (`"this object can't be observed"`) on scalars, `null`, and `undefined` — there
   are no fields to track on a scalar.
-- **Sync.** Cross-peer reconciliation (`deepReconcile` in [service-sync.ts](./service-sync.ts)) merges
+- **Sync.** Cross-peer reconciliation (`applyStatePatch` in [service-sync.ts](./service-sync.ts)) merges
   state by walking object keys; it has no concept of replacing a whole scalar.
 
-Arrays are a special case: `deepSignal` *can* observe them, but `deepReconcile` replaces arrays
+Arrays are a special case: `deepSignal` *can* observe them, but `applyStatePatch` replaces arrays
 wholesale rather than merging by key, so a **top-level** array state would silently fail to sync
 between peers. They are therefore rejected too. Wrap collections in a field instead:
 
@@ -422,7 +422,7 @@ If multiple tasks resolve to the same path, their states are deep-merged.
 
 `writeOpenServiceStaticFiles(outputDir)` then writes those logical paths underneath `<outputDir>/services`, converting slash-separated logical keys into native filesystem paths for the current operating system.
 
-These snapshots are currently only a build artifact for the server-side static build flow. This slice does not implement a separate runtime mode that consumes prebuilt snapshot stores instead of running `load` normally.
+In a static Storybook build (`CONFIG_TYPE === 'PRODUCTION'`), manager and preview runtimes pass a browser static loader into `registerService`. For every query that declares `staticPath`, the runtime swaps the authored `load` hook for a fetch of `./services/<serviceId>/<staticPath>` relative to the served HTML root (the same convention as `./index.json`), then applies the JSON snapshot via `applyStatePatch(..., { preserveMissingKeys: true })` so snapshots for one query input do not delete state populated by other inputs. Development mode keeps running `load` normally against the dev server.
 
 Static path rules:
 
@@ -489,9 +489,9 @@ Every channel event carries the emitter's `clientId` (generated per `registerSer
 
 Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
 
-### `deepReconcile`
+### `applyStatePatch`
 
-Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepReconcile` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, keys absent from the snapshot are deleted so deletions propagate, and `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `applyStatePatch` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer sync passes `false` so deletions propagate from full snapshots; static JSON loading passes `true` because each static file is a partial snapshot. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
 
 ### State sync sequence
 
@@ -635,9 +635,11 @@ The manager is connected to both the dev server and the preview, so it can invok
 in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
 calls through the manager, or implement the command on a directly-connected peer.
 
-There is **no timeout**. Invoking a command that no reachable peer implements leaves the promise
-pending forever, until the service is unregistered — `disconnect` rejects every outstanding call with
-`OpenServiceRemoteCommandDisconnectedError`.
+If no peer emits `services:command-ack` within a short window, the requester
+rejects with `OpenServiceRemoteCommandUnhandledError` — the common case in a static build when a
+query's `load` calls a server-only command. Once a peer acknowledges, the requester waits for
+`services:command-result` or `services:command-error` as before. Unregistering the service still
+rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
 
 ## React Hooks
 

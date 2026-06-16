@@ -1,2 +1,1 @@
-import './local-command/manager.tsx';
-import './remote-command/manager.tsx';
+import './addon/manager.tsx';

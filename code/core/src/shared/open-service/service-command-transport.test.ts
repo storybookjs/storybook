@@ -27,6 +27,7 @@ import {
 } from './service-channel.ts';
 import { deserializeError } from './service-error-serialization.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
+import { REMOTE_COMMAND_ACK_TIMEOUT_MS } from './service-transport.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const remoteOnlyServiceDef = defineService({
@@ -88,6 +89,7 @@ function emittedCalls(channel: ReturnType<typeof createTestChannel>, event: stri
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   clearRegistry();
   installTestChannel(null);
 });
@@ -98,7 +100,6 @@ describe('remote command requester (no local handler)', () => {
     installTestChannel(channel);
 
     const service = registerService(remoteOnlyServiceDef);
-    // Never settled in this test; swallow the unregister rejection clearRegistry triggers in afterEach.
     service.commands.doThing({ value: 'hi' }).catch(() => {});
 
     const invokes = emittedCalls(channel, SERVICE_COMMAND_INVOKE);
@@ -110,6 +111,8 @@ describe('remote command requester (no local handler)', () => {
       callId: expect.any(String),
       clientId: expect.any(String),
     });
+
+    unregisterService(remoteOnlyServiceDef.id);
   });
 
   it('resolves with the result of the matching command-result reply', async () => {
@@ -212,6 +215,50 @@ describe('remote command requester (no local handler)', () => {
     });
 
     await expect(promise).resolves.toBe('correct');
+  });
+
+  it('rejects when no peer acknowledges the invoke within the timeout', async () => {
+    vi.useFakeTimers();
+
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(remoteOnlyServiceDef);
+    const promise = service.commands.doThing({ value: 'hi' });
+    const assertion = expect(promise).rejects.toThrow(
+      'No runtime acknowledged remote command "internal-fixture/remote-only-command.doThing"; its handler is not implemented in any connected runtime.'
+    );
+
+    await vi.advanceTimersByTimeAsync(REMOTE_COMMAND_ACK_TIMEOUT_MS);
+    await assertion;
+  });
+
+  it('does not reject after a peer acknowledges the invoke', async () => {
+    vi.useFakeTimers();
+
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(remoteOnlyServiceDef);
+    const promise = service.commands.doThing({ value: 'hi' });
+
+    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0][1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_ACK, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+      clientId: 'peer',
+    });
+
+    await vi.advanceTimersByTimeAsync(REMOTE_COMMAND_ACK_TIMEOUT_MS);
+
+    channel.emitExternal(SERVICE_COMMAND_RESULT, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+      result: 'done',
+      clientId: 'peer',
+    });
+
+    await expect(promise).resolves.toBe('done');
   });
 
   it('rejects in-flight remote calls when the service is unregistered', async () => {

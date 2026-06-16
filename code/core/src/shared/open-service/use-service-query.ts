@@ -4,11 +4,10 @@
  * Backed by `useSyncExternalStore`, so it integrates correctly with React 18+ concurrent
  * features and works in both manager and preview contexts without any adapter.
  *
- * Re-renders only when the specific query result changes by value. Signal-level dedup
- * inside the service runtime ensures that a load which rewrites a deeply-equal payload does
- * not re-fire the subscription; `isEqual` in the subscription callback provides an additional
- * referential-stability layer at the React boundary so the component sees a stable object
- * reference across updates that return the same logical value.
+ * Re-renders only when the subscribed service query emits a new snapshot. Signal-level dedup inside
+ * the service runtime ensures that a load which rewrites a deeply-equal payload does not re-fire the
+ * subscription; this hook intentionally trusts those emissions rather than deep-comparing outputs a
+ * second time.
  *
  * Object inputs are compared with deep equality when deciding whether to re-subscribe, so inline
  * literals at the call site are safe.
@@ -79,9 +78,6 @@ export function useServiceQuery<TKey extends string, TInput, TOutput>(
   const subscribe = React.useCallback(
     (listener: () => void): (() => void) =>
       queryFn.subscribe(subscriptionKey.input, (value) => {
-        if (isEqual(value, snapshotRef.current)) {
-          return;
-        }
         snapshotRef.current = value;
         listener();
       }),

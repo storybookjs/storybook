@@ -14,6 +14,7 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
 const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
@@ -156,9 +157,9 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    // Disabled for now: the docgen service does not yet work in production builds. Keeping it off
-    // ensures this branch exercises the normal (non-experimental) docgen path without regressions.
-    experimentalDocgenServer: false,
+    // Disabled by default for production builds; the internal dev server enables it via
+    // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
+    experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
     experimentalReactComponentMeta: true,
     changeDetection: true,
   },
@@ -173,12 +174,14 @@ const config = defineMain({
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/preview-api': previewApiPath,
                 'storybook/theming/create': themingCreatePath,
                 'storybook/theming': themingPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {
                 'storybook/manager-api': managerApiPath,
+                'storybook/preview-api': previewApiPath,
               },
       },
       plugins: [react()],

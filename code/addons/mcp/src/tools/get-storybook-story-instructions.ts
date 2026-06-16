@@ -90,8 +90,8 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 					? `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
 					: `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
 				const changedStoryFallbackLinkGuidance = changeDetectionEnabled
-					? `If you do not share all changed story links, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
-					: `When linking only a subset of stories, mention that additional relevant stories may exist in Storybook.`;
+					? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
+					: `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
 
 				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)

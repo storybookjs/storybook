@@ -23,12 +23,13 @@ export type BuildServerInstructionsOptions = {
  * `get-storybook-story-instructions` output so the two can never drift apart
  * and contradict each other.
  *
- * Keyed on whether a review was published (we have a `reviewUrl`), not merely on
- * `display-review` being available — many valid paths (non-visual refactors)
- * skip the review and have no `reviewUrl`.
+ * Keyed on whether `display-review` is available in this Storybook setup.
+ * When available, the guidance covers both paths: ending with a review section
+ * after publishing, or falling back to preview URLs when no review was published
+ * (e.g. non-visual refactors).
  */
-export function getFinalLinksGuidance(reviewEnabled: boolean): string {
-	return reviewEnabled
+export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
+	return reviewToolAvailable
 		? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example `## 👀 Review your changes`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link using the returned `reviewUrl` (for example `[Open the Storybook review page](<reviewUrl>)`). Nothing should come after this section. Never also list the individual story or preview URLs. If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.'
 		: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 }
@@ -45,9 +46,8 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 			: graphSupported
 				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
 				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
-		// Final response shows one set of links, never both: prefer the curated
-		// review page when a review was actually published, otherwise fall back to
-		// the raw preview URLs. Shared with the story-instructions output via
+		// Final response shows one set of links, never both when display-review
+		// is available. Shared with the story-instructions output via
 		// getFinalLinksGuidance so the two can't drift apart.
 		const finalLinksStep = getFinalLinksGuidance(reviewEnabled);
 		sections.push(

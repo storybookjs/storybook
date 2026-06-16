@@ -19,7 +19,7 @@ const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's
 1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
 2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-4. Apply the field formatting rules from each schema property. Do not use em-dashes anywhere.
+4. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
 5. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
 
 ## Curating (Trigger 1)
@@ -66,7 +66,7 @@ export const ReviewStateSchema = v.object({
 	description: v.pipe(
 		v.string(),
 		v.description(
-			'Description of the review scope, including what\'s there, why it\'s relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.',
+			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
 		),
 	),
 	collections: v.array(ReviewCollectionSchema),

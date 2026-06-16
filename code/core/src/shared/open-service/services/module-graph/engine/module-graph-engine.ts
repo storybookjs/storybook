@@ -30,8 +30,6 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Fired when the story index invalidates, even if no graph edges changed. */
-  onStoryIndexInvalidated?: () => void;
   /** Mirrors the built reverse index into the `core/module-graph` open service. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
   /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
@@ -271,9 +269,11 @@ export class ModuleGraphEngine {
           this.refreshInFlight = false;
         });
     }
-    // The story index changed even when no story files were added/removed (e.g. a story renamed
-    // within a file); signal consumers so derived state is recomputed.
-    this.options.onStoryIndexInvalidated?.();
+    // Index invalidation does not bump the graph revision on its own. Any change that consumers
+    // care about already flows through a precise `onUpdate`: a story-file content edit (including a
+    // story renamed within a file) arrives as a builder file-change event, and a story that entered
+    // or left the index is replayed as an add/unlink by `refreshStoryFiles` above. A blanket bump
+    // here would only add an untargeted revision and clobber the latest changed-story set.
   }
 
   /**

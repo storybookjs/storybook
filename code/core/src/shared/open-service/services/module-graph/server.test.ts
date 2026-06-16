@@ -6,6 +6,7 @@ import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
   createMockAdapter,
+  createStoryIndex,
   installDependencyGraphMocks,
   registerTestModuleGraphService,
 } from './module-graph.test-helpers.ts';
@@ -356,21 +357,6 @@ describe('module-graph open service', () => {
       });
     });
 
-    it('clears story files but keeps the current revision after _bumpGraphRevision', async () => {
-      const runtime = registerBareModuleGraph();
-
-      await runtime.commands._applyGraphUpdate({
-        storiesByFile: {},
-        bumpedStoryFiles: ['./src/Button.stories.tsx'],
-      });
-      await runtime.commands._bumpGraphRevision(undefined);
-
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
-        revision: 2,
-        storyFiles: [],
-      });
-    });
-
     it('notifies subscribers when the latest change set updates', async () => {
       const runtime = registerBareModuleGraph();
       const seen: Array<{ revision: number; storyFiles: string[] }> = [];
@@ -432,22 +418,6 @@ describe('module-graph open service', () => {
         })
       ).toBe(1);
       expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);
-    });
-
-    it('advances watch-all but not scoped reads on a bare revision bump', async () => {
-      const runtime = registerBareModuleGraph();
-      await runtime.commands._applyGraphSnapshot({
-        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
-      });
-
-      await runtime.commands._bumpGraphRevision(undefined);
-
-      // Index reconciliation advances the global (watch-all) revision...
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
-      // ...but is not attributed to any specific story.
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
-        0
-      );
     });
   });
 
@@ -522,18 +492,33 @@ describe('module-graph open service', () => {
     });
 
     // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
-    it('builds the graph once the adapter is provided and mirrors it into service state', async () => {
+    it('builds the graph from the adapter and turns index invalidations into targeted updates', async () => {
       const reverseIndex = buildReverseIndex([
         ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
       ]);
       installDependencyGraphMocks(reverseIndex);
 
-      const channel = { on: vi.fn(() => () => undefined), emit: vi.fn() };
+      const baselineIndex = createStoryIndex([
+        { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+      ]);
+      const indexWithCard = createStoryIndex([
+        { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+        { storyId: 'card--primary', importPath: './src/Card.stories.tsx', title: 'Card' },
+      ]);
+      // Build reads the baseline; the first invalidation re-reads it unchanged, the second adds Card.
+      const getIndex = vi
+        .fn()
+        .mockResolvedValueOnce(baselineIndex)
+        .mockResolvedValueOnce(baselineIndex)
+        .mockResolvedValue(indexWithCard);
+
+      const on = vi.fn<(event: string, listener: () => void) => () => void>(() => () => undefined);
+      const channel = { on, emit: vi.fn() };
       const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
 
       const runtime = registerModuleGraphService({
         channel: channel as never,
-        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        getIndex,
         workingDir: '/repo',
       });
 
@@ -548,6 +533,30 @@ describe('module-graph open service', () => {
       expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
+
+      const invalidate = channel.on.mock.calls.find(
+        ([event]) => event === STORY_INDEX_INVALIDATED
+      )?.[1];
+      expect(invalidate).toBeTypeOf('function');
+
+      // An invalidation that does not change the story set must not advance the revision on its own
+      // (no untargeted bump, no clobbered change set).
+      invalidate!();
+      await runtime.commands._waitForSettledEngine(undefined);
+      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
+      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        revision: 0,
+        storyFiles: [],
+      });
+
+      // A newly-indexed story is reconciled and reported as a targeted change.
+      invalidate!();
+      await vi.waitFor(() => {
+        expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+          revision: 1,
+          storyFiles: ['./src/Card.stories.tsx'],
+        });
+      });
     });
   });
 });

@@ -25,10 +25,7 @@ working around it. Treat any shortcut as a failure of this workflow.
   you MUST NOT report the component change as complete until this workflow has
   finished for every component you touched. A component change without
   matching, verified stories is not a deliverable.
-- In sandboxed Codex environments, when running any
-  Storybook CLI command, treat it as a
-  likely sandbox/network permission issue and rerun the exact command with
-  `require_escalated` before concluding Storybook is unavailable.
+- In sandboxed Codex environments, run any Storybook CLI command with `require_escalated` (sandbox/network permissions may otherwise prevent localhost access).
 
 ## Step 0 — Prerequisites
 

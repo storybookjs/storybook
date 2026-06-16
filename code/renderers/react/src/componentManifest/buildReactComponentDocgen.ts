@@ -231,7 +231,21 @@ export function buildStoryDocsFromResolved({
 /**
  * Component docgen fields without story snippets or file-level imports.
  */
-export type ComponentDocgenFromResolved = Omit<ReactComponentManifest, 'stories' | 'import'>;
+// Derive from the base `ComponentManifest` (which has no index signature) rather than
+// `Omit<ReactComponentManifest, …>`: `ReactComponentManifest` carries a `[key: string]: unknown`
+// index signature (needed so it stays assignable to `DocgenPayload`), and `Omit` over an
+// index-signature type collapses to just the index signature, dropping the named props. We re-add
+// the React docgen fields and the index signature explicitly.
+export type ComponentDocgenFromResolved = Omit<
+  ComponentManifest,
+  'stories' | 'import' | 'subcomponents'
+> & {
+  reactDocgen?: DocObj;
+  reactDocgenTypescript?: ComponentDocWithExportName;
+  reactComponentMeta?: ComponentDoc;
+  subcomponents?: Record<string, ReactSubcomponentManifest>;
+  [key: string]: unknown;
+};
 
 /**
  * Builds component docgen fields (props, descriptions, subcomponents) without story snippets or

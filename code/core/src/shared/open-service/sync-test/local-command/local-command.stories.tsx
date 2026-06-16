@@ -4,37 +4,22 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, waitFor } from 'storybook/test';
 
+import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
+import { createDemoStore } from '../demo-store.ts';
 import { localCommandSyncService } from './preview.ts';
 
-let currentValue = '';
-const listeners = new Set<() => void>();
-
-function setCurrentValue(value: string) {
-  currentValue = value;
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribeToCurrentValue(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getCurrentValue() {
-  return currentValue;
-}
+const store = createDemoStore('');
 
 function LocalCommandDemo() {
-  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
+  const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
       <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>Open service local command sync demo</h1>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
-        This story shares one open-service value with the manager toolbar input. Typing here or in
-        the local-command toolbar input runs <code>setValue</code> locally in that runtime, then
-        syncs the updated state to the other peers.
+        This story shares one open-service value with the manager Open Service panel. Typing here or
+        in the panel input runs <code>setValue</code> locally in that runtime, then syncs the
+        updated state to the other peers.
       </p>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
         Unlike the remote-command sibling, this story can run in Storybook Vitest because the
@@ -47,7 +32,7 @@ function LocalCommandDemo() {
           aria-label="Local command story sync input"
           type="text"
           value={value}
-          placeholder="Type to sync with the toolbar"
+          placeholder="Type to sync with the manager panel"
           onChange={(event) => {
             void localCommandSyncService.commands.setValue({ value: event.currentTarget.value });
           }}
@@ -58,7 +43,7 @@ function LocalCommandDemo() {
       <section style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 14, margin: '0 0 6px' }}>Raw service value</h2>
         <pre
-          aria-label="Local command raw service state value"
+          data-testid="local-command-raw-service-state-value"
           style={{
             background: 'rgba(0, 0, 0, 0.06)',
             borderRadius: 4,
@@ -82,14 +67,17 @@ const meta = {
   component: LocalCommandDemo,
   parameters: {
     layout: 'centered',
+    [OPEN_SERVICE_DEMO_PARAM_KEY]: { enabled: true },
   },
   beforeEach: () => {
-    setCurrentValue(localCommandSyncService.queries.getValue());
-    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(
-      undefined,
-      setCurrentValue
-    );
-    return unsubscribe;
+    const initialValue = localCommandSyncService.queries.getValue();
+    store.set(initialValue);
+    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(undefined, store.set);
+    return async () => {
+      unsubscribe();
+      store.set(initialValue);
+      await localCommandSyncService.commands.setValue({ value: initialValue });
+    };
   },
 } satisfies Meta<typeof LocalCommandDemo>;
 
@@ -102,27 +90,19 @@ export const LocalCommandSync: Story = {};
 export const LocalCommandPlayFunction: Story = {
   play: async ({ canvas, userEvent }) => {
     const input = await canvas.findByLabelText('Local command story sync input');
-    const raw = await canvas.findByLabelText('Local command raw service state value');
+    const raw = await canvas.findByTestId('local-command-raw-service-state-value');
     const nextValue = 'local-command-sync-value';
 
-    try {
-      await userEvent.clear(input);
+    await userEvent.clear(input);
 
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(''));
-      });
+    await waitFor(() => {
+      expect(raw).toHaveTextContent(JSON.stringify(''));
+    });
 
-      await userEvent.type(input, nextValue);
+    await userEvent.type(input, nextValue);
 
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(nextValue));
-      });
-    } finally {
-      await userEvent.clear(input);
-
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(''));
-      });
-    }
+    await waitFor(() => {
+      expect(raw).toHaveTextContent(JSON.stringify(nextValue));
+    });
   },
 };

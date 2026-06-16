@@ -276,6 +276,17 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
   }
 }
 
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

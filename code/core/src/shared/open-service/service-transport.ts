@@ -9,8 +9,9 @@
  * adopted state.
  *
  * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires all
- *   three halves below against one channel so they can never be assembled inconsistently, and returns
- *   the command map callers expose plus a combined teardown.
+ *   three halves below against one channel, installs the channel-routed command map on the runtime
+ *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
+ *   expose plus a combined teardown.
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,
  *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot.
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
@@ -27,7 +28,10 @@
 
 import * as v from 'valibot';
 
-import { OpenServiceRemoteCommandDisconnectedError } from '../../server-errors.ts';
+import {
+  OpenServiceRemoteCommandDisconnectedError,
+  OpenServiceRemoteCommandUnhandledError,
+} from '../../server-errors.ts';
 import {
   SERVICE_COMMAND_ACK,
   SERVICE_COMMAND_ERROR,
@@ -44,6 +48,7 @@ import {
   type ServiceChannel,
   type SyncStartPayload,
   type SyncStartReplyPayload,
+  commandAckSchema,
   commandErrorSchema,
   commandInvokeSchema,
   commandResultSchema,
@@ -57,6 +62,29 @@ import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
 type RuntimeCommand = (input: unknown) => Promise<unknown>;
+
+/**
+ * Window for a requester to receive a `services:command-ack` before rejecting as unhandled.
+ *
+ * Detection is timing-based, not presence-based: there is no peer registry, so "no peer implements
+ * this" is inferred from the absence of an ack. The budget covers one manager↔server (or
+ * manager↔preview-iframe) round trip; 300ms is comfortably above a healthy postMessage/websocket
+ * hop while still failing fast in a static build where no server peer exists at all.
+ *
+ * Trade-off: a peer that is merely slow (busy iframe, large payload, loaded CI) can ack past this
+ * window. The responder acks-then-executes ({@link connectCommandTransport} `onInvoke`), so in that
+ * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
+ * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
+ * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
+ */
+export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
+
+type PendingRemoteCommand = {
+  commandName: string;
+  resolve: (value: unknown) => void;
+  reject: (error: unknown) => void;
+  noAckTimer: ReturnType<typeof setTimeout>;
+};
 
 /** The shared bits both helpers need: which service, who we are, and our sync state. */
 interface RuntimeTransportContext {
@@ -282,20 +310,15 @@ export function connectCommandTransport(context: {
     context;
 
   // Requester bookkeeping: in-flight remote calls keyed by callId, settled by the first reply.
-  const pending = new Map<
-    string,
-    { resolve: (value: unknown) => void; reject: (error: unknown) => void }
-  >();
+  const pending = new Map<string, PendingRemoteCommand>();
 
-  const settle = (
-    callId: string,
-    apply: (entry: { resolve: (v: unknown) => void; reject: (e: unknown) => void }) => void
-  ): void => {
+  const settle = (callId: string, apply: (entry: PendingRemoteCommand) => void): void => {
     const entry = pending.get(callId);
     if (!entry) {
       return;
     }
     pending.delete(callId);
+    clearTimeout(entry.noAckTimer);
     apply(entry);
   };
 
@@ -356,15 +379,43 @@ export function connectCommandTransport(context: {
     settle(failure.output.callId, (entry) => entry.reject(deserializeError(failure.output.error)));
   };
 
+  const onAck = (payload: unknown): void => {
+    const ack = v.safeParse(commandAckSchema, payload);
+    if (!ack.success || ack.output.serviceId !== serviceId) {
+      return;
+    }
+
+    const entry = pending.get(ack.output.callId);
+    if (!entry) {
+      return;
+    }
+
+    clearTimeout(entry.noAckTimer);
+  };
+
   channel.on(SERVICE_COMMAND_INVOKE, onInvoke);
   channel.on(SERVICE_COMMAND_RESULT, onResult);
   channel.on(SERVICE_COMMAND_ERROR, onError);
+  channel.on(SERVICE_COMMAND_ACK, onAck);
 
   const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
     const callId = generateClientId();
 
     return new Promise<unknown>((resolve, reject) => {
-      pending.set(callId, { resolve, reject });
+      // Reject if no peer acknowledges in time. See REMOTE_COMMAND_ACK_TIMEOUT_MS for the
+      // best-effort semantics: a slow peer may still execute the command after we reject here.
+      const noAckTimer = setTimeout(() => {
+        settle(callId, (entry) =>
+          entry.reject(
+            new OpenServiceRemoteCommandUnhandledError({
+              serviceId,
+              commandName: entry.commandName,
+            })
+          )
+        );
+      }, REMOTE_COMMAND_ACK_TIMEOUT_MS);
+
+      pending.set(callId, { commandName, resolve, reject, noAckTimer });
       channel.emit(SERVICE_COMMAND_INVOKE, {
         serviceId,
         commandName,
@@ -388,15 +439,25 @@ export function connectCommandTransport(context: {
       channel.off(SERVICE_COMMAND_INVOKE, onInvoke);
       channel.off(SERVICE_COMMAND_RESULT, onResult);
       channel.off(SERVICE_COMMAND_ERROR, onError);
+      channel.off(SERVICE_COMMAND_ACK, onAck);
 
       // Fail any still-pending remote calls so awaiters don't hang forever past teardown.
       for (const [, entry] of pending) {
+        clearTimeout(entry.noAckTimer);
         entry.reject(new OpenServiceRemoteCommandDisconnectedError({ serviceId }));
       }
       pending.clear();
     },
   };
 }
+
+/** Runtime surface needed to install the channel-routed command map for load bodies. */
+type ChannelConnectedRuntime = {
+  attachChannelCommands(
+    commands: Record<string, RuntimeCommand>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void;
+};
 
 /**
  * Wires one service runtime to the channel end to end and returns the command map callers expose plus
@@ -405,6 +466,8 @@ export function connectCommandTransport(context: {
  * This is the one entry point `registerService` uses, so the three transport halves — command
  * broadcasting, the remote-command protocol, and the sync-start + patch listeners — are always
  * assembled together against the same `channel` and can never drift into using different channels.
+ * The channel-routed command map is also installed on the runtime so load bodies invoke
+ * peer-implemented commands remotely instead of throwing locally.
  */
 export function connectServiceToChannel(
   context: RuntimeTransportContext & {
@@ -416,6 +479,8 @@ export function connectServiceToChannel(
     implementedCommandNames: ReadonlySet<string>;
     /** Every command name declared by the service definition. */
     commandNames: readonly string[];
+    /** Runtime to wire with the channel-routed command map for load bodies. */
+    runtime: ChannelConnectedRuntime;
   }
 ): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
   const {
@@ -428,6 +493,7 @@ export function connectServiceToChannel(
     commands,
     implementedCommandNames,
     commandNames,
+    runtime,
   } = context;
 
   // Wrap commands so a local mutation broadcasts its post-mutation snapshot. State adopted from peers
@@ -459,6 +525,10 @@ export function connectServiceToChannel(
     channel,
     relay,
   });
+
+  // Load bodies call commands through the channel-routed map so a command implemented only on a peer
+  // is requested remotely instead of throwing locally.
+  runtime.attachChannelCommands(commandTransport.commands, implementedCommandNames);
 
   return {
     commands: commandTransport.commands,

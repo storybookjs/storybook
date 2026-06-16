@@ -17,10 +17,10 @@ export type ServiceId = string;
  * 1. State is wrapped in a `deepSignal` proxy for fine-grained per-field reactivity, and `deepSignal`
  *    throws ("this object can't be observed") on primitives, `null`, and `undefined` — there are no
  *    fields to track on a scalar.
- * 2. Cross-peer sync (`deepReconcile` in `service-sync.ts`) merges state by walking object keys; it
- *    has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
+ * 2. Cross-peer sync (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys;
+ *    it has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
  *
- * Arrays are technically observable by `deepSignal` but are still rejected here: `deepReconcile`
+ * Arrays are technically observable by `deepSignal` but are still rejected here: `applyStatePatch`
  * replaces arrays wholesale rather than merging by key, so a *top-level* array state would silently
  * fail to sync between peers. Wrap collections in a field instead (`{ items: [...] }`).
  *
@@ -30,7 +30,9 @@ export type ServiceId = string;
  */
 export type ServiceState<TState> = TState &
   (TState extends readonly unknown[]
-    ? { __openServiceStateError: 'Service state must be a plain object, not an array.' }
+    ? {
+        __openServiceStateError: 'Service state must be a plain object, not an array.';
+      }
     : unknown);
 
 /** Public schema shape exposed when describing a schema-backed service contract. */
@@ -389,10 +391,7 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-  getService<TDefinition extends AnyServiceDefinition>(
-    serviceId: ServiceId
-  ): ServiceInstanceOf<TDefinition>;
+  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

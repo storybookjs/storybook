@@ -16,13 +16,13 @@
  */
 
 import {
-  OpenServiceDuplicateRegistrationError,
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
 } from '../../server-errors.ts';
 import { getChannel } from '../../channels/channel-slot.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectServiceToChannel } from './service-transport.ts';
 import type {
@@ -34,7 +34,6 @@ import type {
   ServiceDescriptor,
   ServiceId,
   ServiceInstance,
-  ServiceInstanceOf,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
@@ -188,6 +187,12 @@ export interface ServiceRegisterOptions {
    * iframe) keep the default `false` — with a single transport there is nothing to forward.
    */
   relay?: boolean;
+  /**
+   * When set, queries with `staticPath` fetch prebuilt JSON snapshots instead of running their
+   * authored `load` hooks. Browser entrypoints pass {@link createBrowserStaticLoader}; the server
+   * omits this so static builds still run real loads to generate files.
+   */
+  staticLoader?: StaticLoader;
 }
 
 /**
@@ -197,7 +202,7 @@ export interface ServiceRegisterOptions {
  * callers use, wraps commands to broadcast their post-mutation state, and joins the cross-peer sync
  * protocol as a hub or leaf (`relay`). Each runtime must install the addons channel at its entry
  * boundary before calling this (builders, manager boot, server `services` preset, or Node import
- * bootstrap). Duplicate ids are rejected up front so lookups remain deterministic.
+ * bootstrap). Registration is idempotent by id: a repeated registration returns the existing runtime.
  */
 export function registerService<
   TState,
@@ -206,12 +211,19 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
-  { relay = false }: ServiceRegisterOptions = {}
+  { relay = false, staticLoader }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   const registry = getRegistry();
 
-  if (registry.has(definition.id)) {
-    throw new OpenServiceDuplicateRegistrationError({ serviceId: definition.id });
+  // Registration is idempotent by id. Re-registering an already-registered service returns the
+  // existing runtime instead of throwing. This deliberately swallows duplicate-id collisions, which is
+  // the right trade-off: core services register from a `beforeAll` annotation that CSF4 composes twice
+  // (once in `definePreview`, once in `StoryStore`), and `beforeAll` also re-runs on HMR. A second
+  // registration is a no-op rather than a crash.
+  const existingEntry = registry.get(definition.id);
+  if (existingEntry) {
+    return existingEntry.instance as unknown as ServiceInstance<TState, TQueries, TCommands> &
+      ServiceRegistryApi;
   }
 
   const ownClientId = generateClientId();
@@ -221,7 +233,7 @@ export function registerService<
   // shared `initialState` (which would otherwise leak state across registrations).
   const runtime = createServiceRuntime(
     resolvedDefinition,
-    { registryApi: serviceRegistryApi },
+    { registryApi: serviceRegistryApi, staticLoader },
     structuredClone(resolvedDefinition.initialState)
   );
 
@@ -265,6 +277,7 @@ export function registerService<
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
+    runtime,
   });
 
   const instance = {
@@ -317,20 +330,14 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
  */
-export function getService(serviceId: ServiceId): RuntimeService;
-export function getService<TDefinition extends AnyServiceDefinition>(
-  serviceId: ServiceId
-): ServiceInstanceOf<TDefinition>;
-export function getService<TDefinition extends AnyServiceDefinition>(
-  serviceId: ServiceId
-): RuntimeService | ServiceInstanceOf<TDefinition> {
+export function getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
   }
 
-  return entry.instance as unknown as ServiceInstanceOf<TDefinition>;
+  return entry.instance as unknown as TInstance;
 }
 
 /**

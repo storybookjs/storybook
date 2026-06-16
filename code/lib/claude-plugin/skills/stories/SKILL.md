@@ -104,7 +104,7 @@ error. If launch setup reports an error, surface it to the user and STOP.
 - Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <subcommand> --port <port>` to get the story-writing instructions.
   - If the subcommand allows a port option, use the port you saved in Step 1.
 - Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
+- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
 
-**Gate:** Do NOT create or edit any `*.stories.*` file until this tool has
-returned and you are following its output. If you have not called it this task,
-you are not allowed to write a story yet — go back and call it now.
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
+rather than guessing.

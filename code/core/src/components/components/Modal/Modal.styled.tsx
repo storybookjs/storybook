@@ -143,6 +143,7 @@ export const Container = styled.div<{
           width: width ?? '100%',
           height: height ?? '80%',
           maxWidth: '100%',
+          paddingBottom: 'env(safe-area-inset-bottom)',
           background: theme.background.content,
           '@supports (interpolate-size: allow-keywords)': {
             interpolateSize: 'allow-keywords',

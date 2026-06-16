@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
-import { Button, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
-
-import { UseSymbol } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
 
 import { Highlight } from './Highlight.tsx';
 
@@ -222,19 +220,6 @@ const Label = styled.div({
   overflow: 'hidden',
 });
 
-const ChangeStatusIcon = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-  color: theme.fgColor.accent,
-  '> svg': {
-    flex: '0 0 14px',
-    width: 14,
-    height: 14,
-  },
-}));
-
 const LabelComponent = styled.span({
   fontWeight: 700,
   whiteSpace: 'nowrap',
@@ -253,6 +238,10 @@ const LabelStory = styled.span({
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
+});
+
+const NewBadge = styled(Badge)({
+  flexShrink: 0,
 });
 
 const ReviewAllCell = styled.div(({ theme }) => ({
@@ -310,16 +299,6 @@ const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } =
   component: info.title.split('/').pop() ?? info.title,
   name: info.name,
 });
-
-const StoryChangeStatusIndicator: FC<{ changeStatus: StoryChangeStatus }> = () => (
-  <WithTooltip placement="top" trigger="hover" tooltip={<TooltipNote note="New story" />}>
-    <ChangeStatusIcon aria-hidden>
-      <svg viewBox="0 0 14 14" width="14" height="14">
-        <UseSymbol type="new" />
-      </svg>
-    </ChangeStatusIcon>
-  </WithTooltip>
-);
 
 const getPreloadMargin = (scrollRoot: HTMLElement | null): number => {
   if (!scrollRoot) {
@@ -475,9 +454,6 @@ const StoryPreviewCell: FC<{
       </Frame>
       <ActionBar>
         <Label>
-          {info.changeStatus === 'new' ? (
-            <StoryChangeStatusIndicator changeStatus={info.changeStatus} />
-          ) : null}
           <LabelComponent>
             <Highlight text={component} query={query} />
           </LabelComponent>
@@ -485,6 +461,11 @@ const StoryPreviewCell: FC<{
           <LabelStory>
             <Highlight text={name} query={query} />
           </LabelStory>
+          {info.changeStatus === 'new' || info.isNew ? (
+            <NewBadge status="positive" compact>
+              New
+            </NewBadge>
+          ) : null}
         </Label>
       </ActionBar>
     </Cell>

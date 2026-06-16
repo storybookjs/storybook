@@ -22,8 +22,6 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
-import { UseSymbol } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
-
 import Markdown from 'markdown-to-jsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
@@ -120,18 +118,6 @@ const SearchIconWrap = styled.span(({ theme }) => ({
   justifyContent: 'center',
   color: theme.textMutedColor,
   width: 22,
-}));
-
-const ChangeStatusIcon = styled.span(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: theme.fgColor.accent,
-  '> svg': {
-    flex: '0 0 14px',
-    width: 14,
-    height: 14,
-  },
 }));
 
 // Wrapper that gives the overlay ScrollArea a bounded height to scroll within.
@@ -449,11 +435,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 pressed={showNewOnly}
                 onClick={() => setShowNewOnly((v) => !v)}
               >
-                <ChangeStatusIcon aria-hidden>
-                  <svg viewBox="0 0 14 14" width="14" height="14">
-                    <UseSymbol type="new" />
-                  </svg>
-                </ChangeStatusIcon>
                 {newStoryCount} new
               </ToggleButton>
             ) : null}

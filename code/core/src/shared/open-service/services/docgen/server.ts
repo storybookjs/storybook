@@ -1,104 +1,244 @@
-import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
+import {
+  getStoryImportPathFromEntry,
+  selectComponentEntriesByComponentId,
+} from '../../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
-import type { StoryIndex } from '../../../../types/modules/indexer.ts';
+import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { getService, registerService } from '../../server.ts';
+import type { CommandCtx, Commands, Queries, ServiceDefinition } from '../../types.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
-import { subscribeStoryFileChangeRefresh } from '../subscribe-story-file-change-refresh.ts';
+import { toStoryIndexPath } from '../module-graph/types.ts';
+import { storyDocsServiceDef } from '../story-docs/definition.ts';
+import type { StoryDocsProvider } from '../story-docs/types.ts';
 import { docgenServiceDef } from './definition.ts';
 import type { DocgenProvider } from './types.ts';
 
-export type RegisterDocgenServiceOptions = {
-  workingDir?: string;
-  /**
-   * Returns the current story index when the service needs it. Callers should bind this to a
-   * pre-resolved generator so each docgen call does not re-await generator initialization.
-   */
+/** Extraction services key provider-extracted payloads by component id under `components`. */
+type ExtractionServiceState = { components: Record<string, unknown> };
+
+type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
+
+type RegisterExtractionServiceOptions<TPayload> = {
+  workingDir: string;
   getIndex: () => Promise<StoryIndex>;
-  /**
-   * Fully composed docgen provider chain produced by
-   * `presets.apply('experimental_docgenProvider', ...)`. May return `undefined` when no provider
-   * in the chain has docgen for the requested file.
-   */
-  provider: DocgenProvider;
+  provider: ExtractionProvider<TPayload>;
+  /** Query whose `staticInputs` enumerate the eligible component ids. */
+  queryName: string;
+  /** Command that extracts and stores one component's payload. */
+  extractCommand: string;
+  /** Command that extracts every component in the story index. */
+  extractAllCommand: string;
 };
 
 /**
- * Registers the docgen open service against the process-global registry.
+ * Re-extracts already-cached components when the module graph reports story file changes.
  *
- * The `extractDocgen` command does the work: it reads the story index, picks an entry for the
- * requested component id, hands the resolved index entry to the provider chain, and stores the
- * returned payload (if any) into state. The `getDocgen` query's load hook simply invokes that
- * command. Both the `static.inputs` enumeration and the per-component pick use
- * {@link selectComponentEntriesByComponentId} — the same selection (and tie-breaking) the React
- * component manifest generator uses — so the two flows always resolve a component id to the same
- * index entry.
- *
- * Requires the `core/module-graph` service to be registered (it always is in the dev server); we
- * subscribe to it to keep already-extracted docgen fresh when source files change.
+ * `getLatestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
+ * "something changed" trigger; `storyFiles` is an optimization hint that is sometimes legitimately
+ * empty (e.g. after a story-index invalidation). When the hint is empty we refresh every
+ * already-extracted component; when populated we refresh only those mapped from the bumped files.
  */
-export function registerDocgenService(options: RegisterDocgenServiceOptions) {
-  const workingDir = options.workingDir ?? process.cwd();
+function subscribeExtractionServiceRefresh(
+  moduleGraph: ModuleGraphService,
+  options: {
+    workingDir: string;
+    getIndex: () => Promise<StoryIndex>;
+    hasExtractedPayload: (componentId: string) => boolean;
+    refreshComponent: (componentId: string) => Promise<unknown>;
+  }
+) {
+  const refreshExtracted = async (componentIds: Iterable<string>) => {
+    const idsToRefresh = Array.from(componentIds).filter((id) => options.hasExtractedPayload(id));
+    if (idsToRefresh.length === 0) {
+      return;
+    }
+    await Promise.all(
+      idsToRefresh.map((id) => options.refreshComponent(id).catch(() => undefined))
+    );
+  };
+
+  moduleGraph.queries.getLatestStoryChanges.subscribe(
+    undefined,
+    async ({ revision, storyFiles }) => {
+      if (revision === 0) {
+        return;
+      }
+
+      const componentEntries = selectComponentEntriesByComponentId(
+        Object.values((await options.getIndex()).entries)
+      );
+
+      if (storyFiles.length === 0) {
+        await refreshExtracted(componentEntries.keys());
+        return;
+      }
+
+      const componentEntryCandidates = Array.from(componentEntries)
+        .map(([id, entry]) => {
+          const storyFilePath = getStoryImportPathFromEntry(entry);
+          if (!storyFilePath) {
+            return undefined;
+          }
+          return {
+            id,
+            storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
+          };
+        })
+        .filter((candidate) => candidate !== undefined);
+
+      const bumpedComponentIds = new Set<string>();
+      for (const storyFile of storyFiles) {
+        const componentEntry = componentEntryCandidates.find(
+          (candidate) => candidate.storyIndexPath === storyFile
+        );
+        if (!componentEntry) {
+          continue;
+        }
+        bumpedComponentIds.add(componentEntry.id);
+      }
+
+      await refreshExtracted(bumpedComponentIds);
+    }
+  );
+}
+
+/**
+ * Registers one component-id-keyed extraction service (`core/docgen` or `core/story-docs`).
+ *
+ * Both services share the same wiring: a `staticInputs` enumeration over the eligible component
+ * entries, an `extract` command that runs the provider chain and stores the payload, an
+ * `extractAll` command that fans out over the index, and a module-graph subscription that re-extracts
+ * already-extracted components when their source files change. The per-component pick and the
+ * `staticInputs` enumeration both use {@link selectComponentEntriesByComponentId} so a component id
+ * always resolves to the same index entry.
+ *
+ * Requires the `core/module-graph` service to be registered (it always is in the dev server).
+ */
+function registerExtractionService<
+  TState extends ExtractionServiceState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+>(
+  definition: ServiceDefinition<TState, TQueries, TCommands>,
+  options: RegisterExtractionServiceOptions<TState['components'][string]>
+) {
+  const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
   const extractedComponentIds = new Set<string>();
 
-  const runtime = registerService(docgenServiceDef, {
+  const resolveComponentEntries = async () =>
+    selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
+
+  const extractComponent = async (
+    ctx: CommandCtx<TState>,
+    id: string
+  ): Promise<TState['components'][string] | undefined> => {
+    const entry = (await resolveComponentEntries()).get(id);
+
+    if (!entry) {
+      throw new OpenServiceDocgenMissingComponentError({ id });
+    }
+
+    const payload = await provider({ entry });
+
+    if (!payload) {
+      return undefined;
+    }
+
+    ctx.self.setState((state) => {
+      state.components[id] = payload;
+    });
+    extractedComponentIds.add(id);
+    return payload;
+  };
+
+  const runtime = registerService(definition, {
     queries: {
-      getDocgen: {
+      [queryName]: {
         staticInputs: async () => {
-          const index = await options.getIndex();
-          const eligible = selectComponentEntriesByComponentId(Object.values(index.entries));
+          const eligible = await resolveComponentEntries();
           return Array.from(eligible.keys(), (id) => ({ id }));
         },
       },
     },
     commands: {
-      extractDocgen: {
-        handler: async (input, ctx) => {
-          const index = await options.getIndex();
-          const entry = selectComponentEntriesByComponentId(Object.values(index.entries)).get(
-            input.id
-          );
-
-          if (!entry) {
-            throw new OpenServiceDocgenMissingComponentError({ id: input.id });
-          }
-
-          // Provider errors bubble out of the command unchanged; consumers see the underlying
-          // failure rather than a generic "missing".
-          const payload = await options.provider({ entry });
-
-          if (!payload) {
-            // No provider produced docgen for this file — leave state untouched and signal
-            // "nothing here" to the caller.
-            return undefined;
-          }
-
-          ctx.self.setState((state) => {
-            state.components[input.id] = payload;
-          });
-          extractedComponentIds.add(input.id);
-          return payload;
-        },
+      [extractCommand]: {
+        handler: (input: { id: string }, ctx: CommandCtx<TState>) =>
+          extractComponent(ctx, input.id),
       },
-      extractAllDocgen: {
-        handler: async (_input, ctx) => {
-          const index = await options.getIndex();
-          const ids = Array.from(
-            selectComponentEntriesByComponentId(Object.values(index.entries)).keys()
-          );
-          await Promise.all(ids.map((id) => ctx.self.commands.extractDocgen({ id })));
+      [extractAllCommand]: {
+        handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
+          const ids = Array.from((await resolveComponentEntries()).keys());
+          await Promise.all(ids.map((id) => extractComponent(ctx, id)));
         },
       },
     },
   });
 
   const moduleGraph = getService<ModuleGraphService>('core/module-graph');
-
-  subscribeStoryFileChangeRefresh(moduleGraph, {
+  subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
-    getIndex: options.getIndex,
+    getIndex,
     hasExtractedPayload: (id) => extractedComponentIds.has(id),
-    refreshComponent: (id) => runtime.commands.extractDocgen({ id }),
+    refreshComponent: (id) =>
+      (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
+        extractCommand
+      ]({ id }),
   });
 
   return runtime;
+}
+
+export type RegisterDocgenServicesOptions = {
+  workingDir?: string;
+  /**
+   * Returns the current story index when a service needs it. Callers should bind this to a
+   * pre-resolved generator so each call does not re-await generator initialization.
+   */
+  getIndex: () => Promise<StoryIndex>;
+  /**
+   * Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`.
+   * Omit to skip registering the `core/docgen` service.
+   */
+  docgenProvider?: DocgenProvider;
+  /**
+   * Fully composed story-docs provider chain from
+   * `presets.apply('experimental_storyDocsProvider', ...)`. Omit to skip registering the
+   * `core/story-docs` service.
+   */
+  storyDocsProvider?: StoryDocsProvider;
+};
+
+/**
+ * Registers the docgen open services (`core/docgen` and `core/story-docs`) against the process-global
+ * registry.
+ *
+ * `core/docgen` carries component prop docgen; `core/story-docs` carries per-story snippets,
+ * descriptions, and file-level imports. Each is registered only when its provider is supplied.
+ */
+export function registerDocgenServices(options: RegisterDocgenServicesOptions) {
+  const workingDir = options.workingDir ?? process.cwd();
+
+  const docgen = options.docgenProvider
+    ? registerExtractionService(docgenServiceDef, {
+        workingDir,
+        getIndex: options.getIndex,
+        provider: options.docgenProvider,
+        queryName: 'getDocgen',
+        extractCommand: 'extractDocgen',
+        extractAllCommand: 'extractAllDocgen',
+      })
+    : undefined;
+
+  const storyDocs = options.storyDocsProvider
+    ? registerExtractionService(storyDocsServiceDef, {
+        workingDir,
+        getIndex: options.getIndex,
+        provider: options.storyDocsProvider,
+        queryName: 'getStoryDocs',
+        extractCommand: 'extractStoryDocs',
+        extractAllCommand: 'extractAllStoryDocs',
+      })
+    : undefined;
+
+  return { docgen, storyDocs };
 }

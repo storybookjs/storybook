@@ -5,11 +5,26 @@ import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/m
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerDocgenService } from './server.ts';
+import { registerDocgenServices } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
 
+/** Registers only the `core/docgen` service (the story-docs service is left out of these tests). */
+function registerDocgenService(options: {
+  getIndex: () => Promise<StoryIndex>;
+  provider: DocgenProvider;
+}) {
+  const { docgen } = registerDocgenServices({
+    getIndex: options.getIndex,
+    docgenProvider: options.provider,
+  });
+  if (!docgen) {
+    throw new Error('docgen service was not registered');
+  }
+  return docgen;
+}
+
 beforeEach(() => {
-  // registerDocgenService subscribes to `core/module-graph` and fails hard when it is missing, so
+  // registerDocgenServices subscribes to `core/module-graph` and fails hard when it is missing, so
   // the dependency must be registered first (mirroring the dev-server, where it always is).
   registerTestModuleGraphService();
 });

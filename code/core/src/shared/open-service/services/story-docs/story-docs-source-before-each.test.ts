@@ -59,24 +59,27 @@ describe('shouldSkipStoryDocsEmit', () => {
   it('skips when source code is provided', () => {
     expect(
       shouldSkipStoryDocsEmit({
-        parameters: { __isArgsStory: true, docs: { source: { code: 'const x = 1;' } } },
-      } as StoryContext)
+        __isArgsStory: true,
+        docs: { source: { code: 'const x = 1;' } },
+      })
     ).toBe(true);
   });
 
   it('skips when source type is CODE', () => {
     expect(
       shouldSkipStoryDocsEmit({
-        parameters: { __isArgsStory: true, docs: { source: { type: SourceType.CODE } } },
-      } as StoryContext)
+        __isArgsStory: true,
+        docs: { source: { type: SourceType.CODE } },
+      })
     ).toBe(true);
   });
 
   it('does not skip for args stories with DYNAMIC source type', () => {
     expect(
       shouldSkipStoryDocsEmit({
-        parameters: { __isArgsStory: true, docs: { source: { type: SourceType.DYNAMIC } } },
-      } as StoryContext)
+        __isArgsStory: true,
+        docs: { source: { type: SourceType.DYNAMIC } },
+      })
     ).toBe(false);
   });
 });
@@ -86,7 +89,6 @@ describe('storyDocsSourceBeforeEach', () => {
     vi.clearAllMocks();
     globalThis.FEATURES = { experimentalDocgenServer: true };
     mockedEmitTransformCode.mockResolvedValue(undefined);
-
     mockStoryDocsService(() => Promise.resolve(payload));
   });
 

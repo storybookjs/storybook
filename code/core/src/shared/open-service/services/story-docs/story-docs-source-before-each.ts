@@ -1,4 +1,4 @@
-import { SourceType } from 'storybook/internal/docs-tools';
+import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
 
@@ -7,22 +7,7 @@ import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import { selectSnippetForStory } from './snippet.ts';
 
-/**
- * Whether the story-docs source hook should skip emitting to the Code panel.
- *
- * Mirrors {@link skipJsxRender} in the React `jsxDecorator` so static service snippets replace
- * dynamic JSX rendering under the same conditions.
- */
-export function shouldSkipStoryDocsEmit(context: StoryContext): boolean {
-  const sourceParams = context.parameters?.docs?.source;
-  const isArgsStory = context.parameters?.__isArgsStory;
-
-  if (sourceParams?.type === SourceType.DYNAMIC) {
-    return false;
-  }
-
-  return !isArgsStory || sourceParams?.code !== undefined || sourceParams?.type === SourceType.CODE;
-}
+export { shouldSkipStoryDocsEmit };
 
 /**
  * Preview `beforeEach` hook that emits a static story-docs snippet to the manager Code panel via
@@ -32,7 +17,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
     return;
   }
-  if (shouldSkipStoryDocsEmit(context)) {
+  if (shouldSkipStoryDocsEmit(context.parameters)) {
     return;
   }
 
@@ -57,10 +42,11 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
         return;
       }
       const snippet = selectSnippetForStory(payload, storyId);
-      if (snippet === undefined) {
+      const source = snippet ?? context.parameters?.docs?.source?.originalSource;
+      if (source === undefined) {
         return;
       }
-      return emitTransformCode(snippet, context);
+      return emitTransformCode(source, context);
     });
 
   return () => {

@@ -226,6 +226,36 @@ describe('docgen open service', () => {
         ])
       );
     });
+
+    it('refreshes already-extracted components on an empty-change-set revision bump', async () => {
+      const buttonEntry = makeStoryEntry('button--primary', 'Button');
+      const cardEntry = makeStoryEntry('card--primary', 'Card');
+      const provider = vi.fn<DocgenProvider>(async ({ entry }) =>
+        makeDocgenPayload({
+          id: entry.id.split('--')[0],
+          name: entry.title,
+          path: entry.importPath,
+        })
+      );
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([buttonEntry, cardEntry]),
+        provider,
+      });
+
+      await service.queries.getDocgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      // A story-index invalidation bumps the revision without naming the changed stories; only the
+      // already-extracted `button` should re-extract, `card` (never loaded) should not.
+      await moduleGraph.commands._bumpGraphRevision(undefined);
+
+      await vi.waitFor(() =>
+        expect(provider.mock.calls.map(([input]) => input.entry.importPath)).toEqual([
+          './button.stories.tsx',
+          './button.stories.tsx',
+        ])
+      );
+    });
   });
 
   describe('static build', () => {

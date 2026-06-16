@@ -7,10 +7,11 @@ import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
 
 import {
   ADDON_ID,
+  expectsStoryDocsCodePanelSnippet,
   PANEL_ID,
   PARAM_KEY,
   SNIPPET_RENDERED,
-} from '../../../core/src/docs-tools/shared';
+} from 'storybook/internal/docs-tools';
 import type { SourceParameters } from './blocks/blocks';
 import { Source } from './blocks/components/Source';
 
@@ -18,10 +19,12 @@ const CodePanel = ({
   active,
   lastEvent,
   currentStoryId,
+  storyParameters,
 }: {
   active: boolean | undefined;
   lastEvent: any | undefined;
   currentStoryId: string | undefined;
+  storyParameters: Record<string, unknown> | undefined;
 }) => {
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
@@ -52,15 +55,16 @@ const CodePanel = ({
   const theme = useTheme();
   const isDark = theme.base !== 'light';
 
+  const expectsServiceSnippet = expectsStoryDocsCodePanelSnippet(storyParameters);
+  const code =
+    parameter.source?.code ||
+    codeSnippet.source ||
+    (expectsServiceSnippet ? '' : parameter.source?.originalSource);
+
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
-        <Source
-          {...parameter.source}
-          code={parameter.source?.code || codeSnippet.source || parameter.source?.originalSource}
-          format={codeSnippet.format}
-          dark={isDark}
-        />
+        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
       </SourceStyles>
     </AddonPanel>
   );
@@ -92,7 +96,14 @@ addons.register(ADDON_ID, (api) => {
 
       const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
 
-      return <CodePanel currentStoryId={currentStory?.id} lastEvent={lastEvent} active={active} />;
+      return (
+        <CodePanel
+          currentStoryId={currentStory?.id}
+          storyParameters={currentStory?.parameters}
+          lastEvent={lastEvent}
+          active={active}
+        />
+      );
     },
   });
 });

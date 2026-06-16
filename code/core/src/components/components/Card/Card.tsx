@@ -1,7 +1,32 @@
 import React, { type ComponentProps, type DOMAttributes, forwardRef } from 'react';
 
-import type { CSSObject, color } from 'storybook/theming';
+import type { StorybookTheme } from 'storybook/theming';
 import { keyframes, styled } from 'storybook/theming';
+
+type ThemeColor = keyof StorybookTheme['color'] | keyof StorybookTheme['fgColor'];
+
+const getColor = (theme: StorybookTheme, color?: ThemeColor) => {
+  if (color && color in theme.fgColor) {
+    return theme.fgColor[color as keyof typeof theme.fgColor];
+  }
+  if (color && color in theme.color) {
+    return theme.color[color as keyof typeof theme.color];
+  }
+};
+const getBorderColor = (theme: StorybookTheme, color?: ThemeColor) => {
+  if (color && color in theme.borderColor) {
+    return theme.borderColor[color as keyof typeof theme.borderColor];
+  }
+  if (color && color in theme.color) {
+    return theme.color[color as keyof typeof theme.color];
+  }
+};
+const getBackgroundColor = (theme: StorybookTheme, color?: ThemeColor) => {
+  if (color && color in theme.bgColor) {
+    return theme.bgColor[color as keyof typeof theme.bgColor];
+  }
+  return theme.background.content;
+};
 
 const fadeInOut = keyframes({
   '0%': { opacity: 0 },
@@ -26,23 +51,25 @@ const slide = keyframes({
   },
 });
 
-const CardContent = styled.div(({ theme }) => ({
+const CardContent = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
+  color: getColor(theme, color),
   borderRadius: theme.appBorderRadius,
-  backgroundColor: theme.background.content,
+  backgroundColor: getBackgroundColor(theme, color),
   position: 'relative',
 }));
 
 const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
-  color?: keyof typeof color;
-}>(({ animation = 'none', color, theme }) => ({
+  color?: ThemeColor;
+  outlineColor?: ThemeColor;
+}>(({ animation = 'none', color, outlineColor = color, theme }) => ({
   position: 'relative',
   width: '100%',
   padding: 1,
   overflow: 'hidden',
-  backgroundColor: theme.background.content,
+  backgroundColor: getBackgroundColor(theme, color),
   borderRadius: theme.appBorderRadius + 1,
-  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
+  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && outlineColor && getBorderColor(theme, outlineColor)) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
 
   '@supports (interpolate-size: allow-keywords)': {
@@ -91,18 +118,25 @@ const CardOutline = styled.div<{
 
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';
-  outlineColor?: keyof typeof color;
+  color?: ThemeColor;
+  outlineColor?: ThemeColor;
   outlineAttrs?: DOMAttributes<HTMLDivElement>;
 }
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', outlineColor, outlineAttrs: outlineAttrs = {}, ...props },
+    { outlineAnimation = 'none', color, outlineColor, outlineAttrs: outlineAttrs = {}, ...props },
     ref
   ) {
     return (
-      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref} {...outlineAttrs}>
-        <CardContent {...props} />
+      <CardOutline
+        animation={outlineAnimation}
+        color={color}
+        outlineColor={outlineColor}
+        ref={ref}
+        {...outlineAttrs}
+      >
+        <CardContent color={color} {...props} />
       </CardOutline>
     );
   }),

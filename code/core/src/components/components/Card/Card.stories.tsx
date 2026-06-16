@@ -27,19 +27,43 @@ export const Spinning = meta.story(() => (
   </Card>
 ));
 
+export const Agentic = meta.story(() => (
+  <Card color="agentic">
+    <Contents>Agentic</Contents>
+  </Card>
+));
+
 export const Positive = meta.story(() => (
-  <Card outlineColor="positive">
+  <Card color="positive">
     <Contents>Positive</Contents>
   </Card>
 ));
 
 export const Warning = meta.story(() => (
-  <Card outlineColor="warning">
+  <Card color="warning">
     <Contents>Warning</Contents>
   </Card>
 ));
 
 export const Negative = meta.story(() => (
+  <Card color="negative">
+    <Contents>Negative</Contents>
+  </Card>
+));
+
+export const PositiveOutline = meta.story(() => (
+  <Card outlineColor="positive">
+    <Contents>Positive</Contents>
+  </Card>
+));
+
+export const WarningOutline = meta.story(() => (
+  <Card outlineColor="warning">
+    <Contents>Warning</Contents>
+  </Card>
+));
+
+export const NegativeOutline = meta.story(() => (
   <Card outlineColor="negative">
     <Contents>Negative</Contents>
   </Card>

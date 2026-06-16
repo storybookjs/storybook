@@ -153,26 +153,21 @@ const List = styled.div({
   },
 });
 
-const Description = styled.div(({ theme }) => ({
+const SummaryCard = styled(Card)({
   display: 'flex',
   alignItems: 'flex-start',
   gap: 10,
-  padding: '10px 12px',
-  color: theme.fgColor.agentic,
-  background: theme.bgColor.agentic,
-  boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
-  borderRadius: theme.appBorderRadius,
+  padding: '14px 17px',
   svg: {
     flexShrink: 0,
-    verticalAlign: 'top',
-    marginTop: 3,
+    marginTop: 5,
   },
-}));
+});
 
-const DescriptionContent = styled(DocumentWrapper)(({ theme }) => ({
+const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
   flex: 1,
   minWidth: 0,
-  textWrap: 'balance',
+  fontSize: theme.typography.size.s3,
   '& > *:first-child': {
     marginTop: 0,
   },
@@ -181,7 +176,7 @@ const DescriptionContent = styled(DocumentWrapper)(({ theme }) => ({
   },
   code: {
     color: theme.fgColor.agentic,
-    fontSize: theme.typography.size.s2 - 1,
+    fontSize: theme.typography.size.s2,
     lineHeight: '1.5em',
     margin: 0,
     padding: '0 4px',
@@ -472,12 +467,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ListScroll>
         <ScrollArea vertical>
           <List>
-            <Description>
+            <SummaryCard color="agentic">
               <WandIcon />
-              <DescriptionContent>
-                <Markdown>{state.description}</Markdown>
-              </DescriptionContent>
-            </Description>
+              <SummaryContent>
+                <Markdown>{'**Summary:** ' + state.description}</Markdown>
+              </SummaryContent>
+            </SummaryCard>
             {visibleCollections.length === 0 ? (
               <NoResults>
                 {showNewOnly && !search.trim()

@@ -29,8 +29,6 @@ describe('mergeServiceArgTypes', () => {
       initialArgs: { size: 'large', label: 'Button' },
       customArgTypes: {
         backgroundColor: { control: 'color' },
-        // prepareStory already ran inferArgTypes with size in initialArgs
-        size: { name: 'size', type: { name: 'string' }, control: { type: 'text' } },
       },
     });
 
@@ -38,7 +36,7 @@ describe('mergeServiceArgTypes', () => {
     expect(result.size?.control).toEqual({ type: 'radio' });
   });
 
-  it('keeps user-authored argType overrides that are not type inference', () => {
+  it('keeps user-authored argType overrides from annotations', () => {
     const result = mergeServiceArgTypes({
       payload,
       storyId: 'example-button--large',
@@ -46,9 +44,6 @@ describe('mergeServiceArgTypes', () => {
       initialArgs: { size: 'large', label: 'Button' },
       customArgTypes: {
         size: {
-          name: 'size',
-          type: { name: 'string' },
-          control: { type: 'text' },
           description: 'How large should the button be?',
         },
       },
@@ -57,6 +52,21 @@ describe('mergeServiceArgTypes', () => {
     expect(result.size?.type).toEqual({ name: 'enum', value: ['small', 'medium', 'large'] });
     expect(result.size?.control).toEqual({ type: 'radio' });
     expect(result.size?.description).toBe('How large should the button be?');
+  });
+
+  it('respects user control overrides over inferred controls', () => {
+    const result = mergeServiceArgTypes({
+      payload,
+      storyId: 'example-button--large',
+      parameters: { __isArgsStory: true },
+      initialArgs: { size: 'large', label: 'Button' },
+      customArgTypes: {
+        size: { control: 'select' },
+      },
+    });
+
+    expect(result.size?.type).toEqual({ name: 'enum', value: ['small', 'medium', 'large'] });
+    expect(result.size?.control).toBe('select');
   });
 
   it('preserves enum control when story args omit the enum prop', () => {

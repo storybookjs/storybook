@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   ArgsEnhancer,
@@ -723,6 +723,57 @@ describe('prepareStory', () => {
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
       firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
+    });
+  });
+
+  describe('with `FEATURES.experimentalDocgenServer`', () => {
+    beforeEach(() => {
+      global.FEATURES = { experimentalDocgenServer: true };
+    });
+
+    afterEach(() => {
+      global.FEATURES = {};
+    });
+
+    it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {
+      const { argTypes } = prepareStory(
+        {
+          id,
+          name,
+          args: { size: 'large', label: 'Button' },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          argTypes: { backgroundColor: { control: 'color' } },
+        },
+        { render }
+      );
+
+      expect(argTypes.backgroundColor).toEqual({ control: 'color' });
+      expect(argTypes.size).toBeUndefined();
+      expect(argTypes.label).toBeUndefined();
+    });
+
+    it('keeps user-authored control overrides without inferring types from args', () => {
+      const { argTypes } = prepareStory(
+        {
+          id,
+          name,
+          args: { size: 'large' },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          argTypes: { size: { control: 'select' } },
+        },
+        { render }
+      );
+
+      expect(argTypes.size).toEqual({ control: 'select' });
+      expect(argTypes.size?.type).toBeUndefined();
     });
   });
 });

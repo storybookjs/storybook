@@ -5,7 +5,13 @@ import {
 import { OpenServiceDocgenMissingComponentError } from '../../../../server-errors.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { getService, registerService } from '../../server.ts';
-import type { CommandCtx, Commands, Queries, ServiceDefinition } from '../../types.ts';
+import type {
+  CommandCtx,
+  Commands,
+  Queries,
+  ServiceDefinition,
+  ServiceRegistrationOptions,
+} from '../../types.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { toStoryIndexPath } from '../module-graph/types.ts';
 import { storyDocsServiceDef } from '../story-docs/definition.ts';
@@ -172,7 +178,7 @@ function registerExtractionService<
         },
       },
     },
-  });
+  } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
 
   const moduleGraph = getService<ModuleGraphService>('core/module-graph');
   subscribeExtractionServiceRefresh(moduleGraph, {

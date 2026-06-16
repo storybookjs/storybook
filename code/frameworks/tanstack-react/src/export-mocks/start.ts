@@ -588,6 +588,10 @@ function createMockServerFnBuilder(): any {
     return createMockServerFnBuilder();
   };
 
+  builder.validator = () => {
+    return createMockServerFnBuilder();
+  };
+
   builder.handler = (handlerFn?: (...args: any[]) => any) => {
     const mock = fn().mockName('@tanstack/start-client-core::createServerFn.handler()');
 

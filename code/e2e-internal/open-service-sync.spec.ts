@@ -18,7 +18,7 @@ const STORY_READY_TIMEOUT = PREVIEW_STORY_TIMEOUT;
 const STATIC_LOAD_TIMEOUT = 20_000;
 
 async function openOpenServicePanel(page: Page) {
-  const tab = page.locator('[role=tablist] [role=tab]').filter({ hasText: /^Open Service/ });
+  const tab = page.getByRole('tab', { name: /^Open Service/ });
   await expect(tab).toBeVisible({ timeout: STORY_READY_TIMEOUT });
   await tab.click();
   await expect(page.locator('#storybook-panel-root').getByRole('tabpanel')).toBeVisible();

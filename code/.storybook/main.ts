@@ -38,6 +38,10 @@ const config = defineMain({
       titlePrefix: 'preview',
     },
     {
+      directory: '../core/src/shared',
+      titlePrefix: 'core/shared',
+    },
+    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },
@@ -152,6 +156,10 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    // Disabled by default for production builds; the internal dev server enables it via
+    // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
+    experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
+    experimentalReactComponentMeta: true,
     changeDetection: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
@@ -182,7 +190,13 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            // Internal e2e writes traces under code/playwright-results while the dev server is running.
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);

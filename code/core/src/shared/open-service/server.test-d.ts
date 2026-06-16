@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { type MutableRecordLookupService, mutableRecordLookupServiceDef } from './fixtures.ts';
 import { registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
@@ -18,6 +18,21 @@ const registrationOnlyServiceDef = defineService({
     getValue: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
+      handler: (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+        expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
+        expectTypeOf(
+          ctx.getService('internal-fixture/missing-service')
+        ).toEqualTypeOf<RuntimeService>();
+
+        return ctx.self.state.valuesById[input.entryId] ?? null;
+      },
+      load: async (input, ctx) => {
+        await ctx.self.commands.preloadValue(input);
+      },
       staticPath: (input) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         return `${input.entryId}.json`;
@@ -39,25 +54,6 @@ const registrationOnlyServiceDef = defineService({
 const registeredService = registerService(registrationOnlyServiceDef, {
   queries: {
     getValue: {
-      handler: (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
-        // @ts-expect-error query handlers do not receive commands on self
-        void ctx.self.commands;
-        expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
-        expectTypeOf(
-          ctx.getService('internal-fixture/missing-service')
-        ).toEqualTypeOf<RuntimeService>();
-
-        return ctx.self.state.valuesById[input.entryId] ?? null;
-      },
-      load: async (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-          entryId: string;
-        }>();
-        await ctx.self.commands.preloadValue(input);
-      },
       staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
@@ -65,16 +61,16 @@ const registeredService = registerService(registrationOnlyServiceDef, {
     increment: {
       handler: (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<number>();
-        ctx.self.setState((draft) => {
-          draft.count += input;
+        ctx.self.setState((state) => {
+          state.count += input;
         });
       },
     },
     preloadValue: {
       handler: async (input, ctx) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        ctx.self.setState((draft) => {
-          draft.valuesById[input.entryId] = 'ready';
+        ctx.self.setState((state) => {
+          state.valuesById[input.entryId] = 'ready';
         });
       },
     },
@@ -107,8 +103,17 @@ describe('open-service registration types', () => {
     registerService(registrationOnlyServiceDef, {
       queries: {
         getValue: {
-          // @ts-expect-error query registration output must match the declared schema
-          handler: () => 123,
+          // @ts-expect-error query handlers belong on the definition, not at registration
+          handler: () => 'wrong',
+        },
+      },
+    });
+
+    registerService(registrationOnlyServiceDef, {
+      queries: {
+        getValue: {
+          // @ts-expect-error load must be declared on the definition, not at registration
+          load: async () => {},
         },
       },
     });
@@ -125,29 +130,36 @@ describe('open-service registration types', () => {
     });
   });
 
-  it('types cross-service lookups when getService receives a definition generic', () => {
+  it('types cross-service lookups when getService receives an instance generic', () => {
     registerService(mutableRecordLookupServiceDef);
-    registerService(registrationOnlyServiceDef, {
-      queries: {
-        getValue: {
-          handler: (_input, ctx) => {
-            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
-              'internal-fixture/mutable-record-lookup'
-            );
+    registerService(
+      defineService({
+        id: 'internal-fixture/open-service-registration-cross-service',
+        initialState: { valuesById: {} as Record<string, string | undefined> },
+        queries: {
+          getValue: {
+            input: entryIdInputSchema,
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => {
+              const lookup = ctx.getService<MutableRecordLookupService>(
+                'internal-fixture/mutable-record-lookup'
+              );
 
-            expectTypeOf(lookup.queries.getRecordFields).returns.toEqualTypeOf<Record<
-              string,
-              string
-            > | null>();
-            const missingService = ctx.getService('internal-fixture/missing-service');
-            expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
-            // @ts-expect-error getRecordFields requires an entryId string
-            lookup.queries.getRecordFields({});
+              expectTypeOf(lookup.queries.getRecordFields).returns.toEqualTypeOf<Record<
+                string,
+                string
+              > | null>();
+              const missingService = ctx.getService('internal-fixture/missing-service');
+              expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
+              // @ts-expect-error getRecordFields requires an entryId string
+              lookup.queries.getRecordFields({});
 
-            return null;
+              return null;
+            },
           },
         },
-      },
-    });
+        commands: {},
+      })
+    );
   });
 });

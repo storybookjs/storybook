@@ -16,6 +16,7 @@ import {
 import {
   awaitedPreloadValueServiceDef,
   createSharedStaticFileServiceDef,
+  type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
 
@@ -114,15 +115,15 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+              const source = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
               const record = source.queries.getRecordFields({
                 entryId: 'entry-a',
               });
 
-              ctx.self.setState((draft) => {
-                draft.value = record?.marker ?? null;
+              ctx.self.setState((state) => {
+                state.value = record?.marker ?? null;
               });
 
               return undefined;
@@ -167,8 +168,8 @@ describe('server static builds', () => {
             output: v.undefined(),
             handler: async (_input, ctx) => {
               readyEntryIds.splice(0, readyEntryIds.length, 'entry-a');
-              ctx.self.setState((draft) => {
-                draft.built = true;
+              ctx.self.setState((state) => {
+                state.built = true;
               });
 
               return undefined;
@@ -200,8 +201,8 @@ describe('server static builds', () => {
             input: v.object({ entryId: v.string() }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.value = input.entryId;
+              ctx.self.setState((state) => {
+                state.value = input.entryId;
               });
 
               return undefined;
@@ -281,8 +282,8 @@ describe('server static builds', () => {
             }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.value = input.value;
+              ctx.self.setState((state) => {
+                state.value = input.value;
               });
 
               return undefined;
@@ -370,8 +371,8 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.value = 'invalid';
+              ctx.self.setState((state) => {
+                state.value = 'invalid';
               });
 
               return undefined;
@@ -427,8 +428,8 @@ describe('server static builds', () => {
             }),
             output: v.undefined(),
             handler: async (input, ctx) => {
-              ctx.self.setState((draft) => {
-                draft.value = input.value;
+              ctx.self.setState((state) => {
+                state.value = input.value;
               });
 
               return undefined;

@@ -5504,6 +5504,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@preact/signals-core@npm:^1.14.2":
+  version: 1.14.2
+  resolution: "@preact/signals-core@npm:1.14.2"
+  checksum: 10c0/898e6e22a5d2a11bd3d5b109c8d9bacff0e9bc9f23c01455901b7feab8c441dc03fdd53cfd7b5f9275b0df052fcaeb8c8928f537cebb190d9e02a6f2a3ac441e
+  languageName: node
+  linkType: hard
+
 "@radix-ui/number@npm:1.1.0":
   version: 1.1.0
   resolution: "@radix-ui/number@npm:1.1.0"
@@ -8464,6 +8471,7 @@ __metadata:
     html-webpack-plugin: "npm:^5.5.0"
     magic-string: "npm:^0.30.5"
     pretty-hrtime: "npm:^1.0.3"
+    semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
     style-loader: "npm:^4.0.0"
@@ -8499,6 +8507,7 @@ __metadata:
     globby: "npm:^14.1.0"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^4.0.0"
+    memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
     semver: "npm:^7.7.3"
@@ -8508,6 +8517,7 @@ __metadata:
     tinyclip: "npm:^0.1.12"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    valibot: "npm:^1.4.0"
   bin:
     cli: ./dist/bin/index.js
   languageName: unknown
@@ -9064,6 +9074,7 @@ __metadata:
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
+    memfs: "npm:^4.11.1"
     prop-types: "npm:^15.7.2"
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.2.2"
@@ -12542,7 +12553,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"alien-signals@npm:^3.0.0, alien-signals@npm:^3.2.0":
+"alien-signals@npm:^3.0.0":
   version: 3.2.1
   resolution: "alien-signals@npm:3.2.1"
   checksum: 10c0/4c4064faa208126177224d1ed6a2310687d452dec0771994e276d9af4c72e853fcb969ae4a7fcd034b1d1b9accb9500f4941178326eeea1cb8f64ec612853ef8
@@ -15765,6 +15776,27 @@ __metadata:
   version: 4.3.1
   resolution: "deepmerge@npm:4.3.1"
   checksum: 10c0/e53481aaf1aa2c4082b5342be6b6d8ad9dfe387bc92ce197a66dea08bd4265904a087e75e464f14d1347cf2ac8afe1e4c16b266e0561cc5df29382d3c5f80044
+  languageName: node
+  linkType: hard
+
+"deepsignal@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "deepsignal@npm:1.6.0"
+  peerDependencies:
+    "@preact/signals": ^1.1.4 || ^2.0.0
+    "@preact/signals-core": ^1.5.1
+    "@preact/signals-react": ^1.3.8 || ^2.0.0 || ^3.0.0
+    preact: ^10.16.0
+  peerDependenciesMeta:
+    "@preact/signals":
+      optional: true
+    "@preact/signals-core":
+      optional: true
+    "@preact/signals-react":
+      optional: true
+    preact:
+      optional: true
+  checksum: 10c0/76664442ba8b9e33d54bcbf6131e19712d4b0b9d5705213c27a09bff9fb32c7772053047f143450f158728d95de09ead31ed5fe6917a70c30b70fdd1e3c2e60b
   languageName: node
   linkType: hard
 
@@ -29599,6 +29631,7 @@ __metadata:
     "@happy-dom/global-registrator": "npm:^20.0.11"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
+    "@preact/signals-core": "npm:^1.14.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@react-aria/interactions": "npm:^3.25.5"
@@ -29643,7 +29676,6 @@ __metadata:
     "@yarnpkg/libzip": "npm:2.3.0"
     acorn: "npm:^8.15.0"
     acorn-jsx: "npm:^5.3.2"
-    alien-signals: "npm:^3.2.0"
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
@@ -29654,6 +29686,7 @@ __metadata:
     copy-to-clipboard: "npm:^3.3.1"
     cross-spawn: "npm:^7.0.6"
     deep-object-diff: "npm:^1.1.0"
+    deepsignal: "npm:^1.6.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
     detect-port: "npm:^1.6.1"

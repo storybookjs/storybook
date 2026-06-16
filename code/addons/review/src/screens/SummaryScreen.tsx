@@ -243,6 +243,14 @@ const NoResults = styled.div(({ theme }) => ({
   fontSize: 14,
 }));
 
+const Footer = styled.div(({ theme }) => ({
+  color: theme.textMutedColor,
+  padding: 10,
+  fontSize: theme.typography.size.s2,
+  textAlign: 'center',
+  textWrap: 'balance',
+}));
+
 // A story matches the search if its id, component title, or story name
 // contains the query. Search narrows results to this story level, so a
 // collection is shown with only its matching stories.
@@ -534,6 +542,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 );
               })
             )}
+            <Footer>
+              The review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
+              relevant for you to review right now. Because this is AI-curated, results may be
+              inaccurate or incomplete.
+            </Footer>
           </List>
         </ScrollArea>
       </ListScroll>

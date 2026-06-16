@@ -65,6 +65,28 @@ const Counter = styled(Button)(({ theme }) => ({
   fontWeight: theme.typography.weight.regular,
 }));
 
+const BackToReviewButton = styled(Button)(({ theme }) => {
+  const surface = {
+    color: theme.fgColor.agentic,
+    background: theme.bgColor.agentic,
+    boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
+  };
+
+  return {
+    '&&, &&:active': surface,
+    '&&:hover': {
+      ...surface,
+      boxShadow: `inset 0 0 0 1px ${theme.fgColor.agentic}`,
+    },
+    '&&:focus-visible': {
+      ...surface,
+      outline: `2px solid ${theme.fgColor.agentic}`,
+      outlineOffset: 2,
+      zIndex: 1,
+    },
+  };
+});
+
 const componentName = (componentTitle: string): string =>
   componentTitle
     .split('/')
@@ -161,12 +183,18 @@ export const ReviewToolbarHeader: FC = () => {
         <ReviewHeader
           variant="toolbar"
           leading={
-            <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
+            <BackToReviewButton
+              variant="outline"
+              size="small"
+              padding="small"
+              ariaLabel="Back to review"
+              asChild
+            >
               <a href={buildReviewChangesSummaryHref()}>
                 <ChevronSmallLeftIcon />
                 <WandIcon />
               </a>
-            </Button>
+            </BackToReviewButton>
           }
           title={collectionTitle}
           subtitle={subtitle}

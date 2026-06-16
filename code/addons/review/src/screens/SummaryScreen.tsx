@@ -160,14 +160,14 @@ const SummaryCard = styled(Card)({
   padding: '14px 17px',
   svg: {
     flexShrink: 0,
-    marginTop: 5,
+    marginTop: 4,
   },
 });
 
 const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
   flex: 1,
   minWidth: 0,
-  fontSize: theme.typography.size.s3,
+  fontSize: theme.typography.size.s2,
   '& > *:first-child': {
     marginTop: 0,
   },
@@ -176,7 +176,7 @@ const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
   },
   code: {
     color: theme.fgColor.agentic,
-    fontSize: theme.typography.size.s2,
+    fontSize: theme.typography.size.s2 - 1,
     lineHeight: '1.5em',
     margin: 0,
     padding: '0 4px',

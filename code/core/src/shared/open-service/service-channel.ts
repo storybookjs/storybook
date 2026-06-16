@@ -89,8 +89,9 @@ export type CommandInvokePayload = v.InferOutput<typeof commandInvokeSchema>;
 /**
  * Emitted by an implementing peer the moment it accepts a `services:command-invoke`.
  *
- * Purely informational: it tells observers (and the requester) that at least one peer has picked
- * the call up. The requester still resolves/rejects only on the result/error reply.
+ * Requesters use this to detect that at least one peer will run the command; if no ack arrives
+ * within a short window, the request rejects as unhandled. The requester still resolves/rejects on
+ * the result/error reply once a peer has acknowledged.
  */
 export const commandAckSchema = v.object({
   serviceId: v.string(),

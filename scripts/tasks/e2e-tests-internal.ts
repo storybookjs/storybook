@@ -18,6 +18,7 @@ export const e2eTestsInternal: Task = {
     const env = {
       CI: 'true',
       STORYBOOK_URL: storybookUrl,
+      STORYBOOK_TYPE: process.env.STORYBOOK_TYPE || 'dev',
       ...(junitFilename && {
         PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename,
       }),

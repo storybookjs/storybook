@@ -47,7 +47,6 @@ export interface StoryDocsPayload {
   import?: string;
   stories: StoryDocsById;
   error?: StoryDocsError;
-  [key: string]: unknown;
 }
 
 /**

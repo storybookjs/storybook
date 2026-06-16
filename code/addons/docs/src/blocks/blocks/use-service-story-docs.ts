@@ -2,32 +2,17 @@ import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import type { StoryDocsService } from 'storybook/open-service';
+import {
+  type StoryDocsService,
+  selectSnippetForStory,
+  selectStoryDoc,
+} from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 type SnapshotCache<T> = {
   storyId: string | undefined;
   value: T | undefined;
 };
-
-function selectStoryDoc(
-  payload: StoryDocsPayload | undefined,
-  storyId: string
-): StoryDoc | undefined {
-  return payload?.stories[storyId];
-}
-
-function selectSnippetForStory(
-  payload: StoryDocsPayload | undefined,
-  storyId: string
-): string | undefined {
-  const story = payload?.stories[storyId];
-  if (story?.snippet === undefined) {
-    return undefined;
-  }
-  const trimmedImport = payload?.import?.trim();
-  return trimmedImport ? `${trimmedImport}\n\n${story.snippet}` : story.snippet;
-}
 
 /**
  * Subscribes docs blocks to one story in the preview's local `core/story-docs` runtime.

@@ -1,4 +1,4 @@
-import type { StoryDocsPayload } from './types.ts';
+import type { StoryDoc, StoryDocsPayload } from './types.ts';
 
 /** Prepends a CSF file import block to a story snippet for display in docs and the Code panel. */
 export function prependImportToSnippet(importBlock: string | undefined, snippet: string): string {
@@ -7,6 +7,14 @@ export function prependImportToSnippet(importBlock: string | undefined, snippet:
     return snippet;
   }
   return `${trimmedImport}\n\n${snippet}`;
+}
+
+/** Resolves the story-docs entry for one story from a story-docs payload. */
+export function selectStoryDoc(
+  payload: StoryDocsPayload | undefined,
+  storyId: string
+): StoryDoc | undefined {
+  return payload?.stories[storyId];
 }
 
 /** Resolves the display snippet for one story from a story-docs payload. */

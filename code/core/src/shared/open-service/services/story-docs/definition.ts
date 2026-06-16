@@ -21,7 +21,7 @@ const storyDocSchema = v.object({
   error: v.optional(storyDocsErrorSchema),
 });
 
-const storyDocsPayloadSchema = v.looseObject({
+const storyDocsPayloadSchema = v.object({
   id: v.string(),
   name: v.string(),
   path: v.string(),

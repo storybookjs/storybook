@@ -1,7 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { StoryContext } from 'storybook/internal/types';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
@@ -87,16 +87,20 @@ describe('shouldSkipStoryDocsEmit', () => {
 describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    globalThis.FEATURES = { experimentalDocgenServer: true };
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('emits the service snippet through emitTransformCode', async () => {
     const context = {
       id: storyId,
       parameters: { __isArgsStory: true },
-    } as StoryContext;
+    } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
     await Promise.resolve();
@@ -113,7 +117,7 @@ describe('storyDocsSourceBeforeEach', () => {
         __isArgsStory: true,
         docs: { source: { code: 'const x = 1;' } },
       },
-    } as StoryContext;
+    } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
     await cleanup?.();
@@ -132,7 +136,7 @@ describe('storyDocsSourceBeforeEach', () => {
     const context = {
       id: storyId,
       parameters: { __isArgsStory: true },
-    } as StoryContext;
+    } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
     const cleanupDone = cleanup?.();

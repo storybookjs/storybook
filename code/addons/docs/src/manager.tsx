@@ -9,11 +9,20 @@ import {
   ADDON_ID,
   PANEL_ID,
   PARAM_KEY,
+  type StoryDocsCodePanelParameters,
   shouldWaitForServiceSnippet,
   SNIPPET_RENDERED,
 } from 'storybook/internal/docs-tools';
+import type { StoryId } from 'storybook/internal/types';
 import type { SourceParameters } from './blocks/blocks';
 import { Source } from './blocks/components/Source';
+
+/** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
+type SnippetRenderedEvent = {
+  id?: StoryId;
+  source?: string;
+  format?: SyntaxHighlighterFormatTypes;
+};
 
 const CodePanel = ({
   active,
@@ -23,17 +32,18 @@ const CodePanel = ({
   storyPrepared,
 }: {
   active: boolean | undefined;
-  lastEvent: any | undefined;
+  lastEvent: SnippetRenderedEvent | undefined;
   currentStoryId: string | undefined;
-  storyParameters: Record<string, unknown> | undefined;
+  storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
 }) => {
+  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
   }>({
-    source: lastEvent?.id === currentStoryId ? lastEvent?.source : undefined,
-    format: lastEvent?.id === currentStoryId ? (lastEvent?.format ?? undefined) : undefined,
+    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
+    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
   });
 
   const parameter = useParameter(PARAM_KEY, {

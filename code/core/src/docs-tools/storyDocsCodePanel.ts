@@ -27,15 +27,6 @@ export function shouldSkipStoryDocsEmit(parameters?: StoryDocsCodePanelParameter
   return !isArgsStory || sourceParams?.code !== undefined || sourceParams?.type === SourceType.CODE;
 }
 
-/** Whether the Code panel should wait for a story-docs service snippet instead of showing raw CSF. */
-export function expectsStoryDocsCodePanelSnippet(
-  parameters?: StoryDocsCodePanelParameters
-): boolean {
-  return (
-    Boolean(globalThis.FEATURES?.experimentalDocgenServer) && !shouldSkipStoryDocsEmit(parameters)
-  );
-}
-
 /**
  * Whether the Code panel should keep rendering blank while it waits for a story-docs service snippet
  * instead of falling back to raw CSF (`originalSource`).

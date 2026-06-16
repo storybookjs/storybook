@@ -1,9 +1,5 @@
 import { SourceType } from './shared.ts';
-import {
-  expectsStoryDocsCodePanelSnippet,
-  shouldSkipStoryDocsEmit,
-  shouldWaitForServiceSnippet,
-} from './storyDocsCodePanel.ts';
+import { shouldSkipStoryDocsEmit, shouldWaitForServiceSnippet } from './storyDocsCodePanel.ts';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,26 +10,6 @@ describe('storyDocsCodePanel', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-  });
-
-  describe('expectsStoryDocsCodePanelSnippet', () => {
-    it('is true for args stories when experimentalDocgenServer is enabled', () => {
-      expect(expectsStoryDocsCodePanelSnippet({ __isArgsStory: true })).toBe(true);
-    });
-
-    it('is false when experimentalDocgenServer is disabled', () => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: false });
-      expect(expectsStoryDocsCodePanelSnippet({ __isArgsStory: true })).toBe(false);
-    });
-
-    it('is false when story-docs emit is skipped', () => {
-      expect(
-        expectsStoryDocsCodePanelSnippet({
-          __isArgsStory: true,
-          docs: { source: { type: SourceType.CODE } },
-        })
-      ).toBe(false);
-    });
   });
 
   describe('shouldSkipStoryDocsEmit', () => {

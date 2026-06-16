@@ -59,7 +59,7 @@ const Prompt = styled.p(({ theme }) => ({
 export const StaleBanner: FC = () => (
   <Bar role="status" aria-live="polite">
     <span>
-      This review may be stale.{' '}
+      Code changes detected. This review may be stale.{' '}
       <PopoverProvider
         ariaLabel="Prompt to refresh stale review"
         placement="bottom"

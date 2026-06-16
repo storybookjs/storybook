@@ -20,7 +20,7 @@ const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   flexDirection: 'row',
   alignItems: 'center',
   gap: 8,
-  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px 16px 16px 10px',
+  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px',
   minHeight: 40,
 }));
 
@@ -36,19 +36,19 @@ const Main = styled.div({
 const Leading = styled.div({
   display: 'flex',
   alignItems: 'center',
+  alignSelf: 'flex-start',
   flexShrink: 0,
 });
 
 const TextBlock = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  gap: 4,
   flexGrow: 1,
   minWidth: 0,
 });
 
 const Title = styled.h1(({ theme }) => ({
-  margin: 0,
+  margin: '2px 0',
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',

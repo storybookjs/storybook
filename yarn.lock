@@ -27205,13 +27205,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picoquery@npm:^1.4.0":
-  version: 1.5.0
-  resolution: "picoquery@npm:1.5.0"
-  checksum: 10c0/c4c3f971196c8ef4b836b7e0142ec4ea8667def4652afbdaecbea09f2ae4923ee56596e8032894388b45ce3835df1c40d82692d8d8574559a76db71ac7fd3233
-  languageName: node
-  linkType: hard
-
 "picoquery@npm:^2.5.0":
   version: 2.5.0
   resolution: "picoquery@npm:2.5.0"
@@ -31414,7 +31407,7 @@ __metadata:
     package-manager-detector: "npm:^1.1.0"
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
-    picoquery: "npm:^1.4.0"
+    picoquery: "npm:^2.5.0"
     polished: "npm:^4.2.2"
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"

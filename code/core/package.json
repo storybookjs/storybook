@@ -366,7 +366,7 @@
     "package-manager-detector": "^1.1.0",
     "picocolors": "^1.1.0",
     "picomatch": "^2.3.0",
-    "picoquery": "^1.4.0",
+    "picoquery": "^2.5.0",
     "polished": "^4.2.2",
     "polka": "^1.0.0-next.28",
     "prettier": "^3.7.1",

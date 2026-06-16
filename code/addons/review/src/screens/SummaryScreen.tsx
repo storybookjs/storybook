@@ -7,7 +7,6 @@ import {
   DocumentWrapper,
   IconButton,
   ScrollArea,
-  ToggleButton,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
@@ -426,17 +425,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         actions={
           <>
             {newStoryCount > 0 ? (
-              <ToggleButton
+              <Button
                 variant="ghost"
                 size="small"
                 padding="small"
                 ariaLabel={false}
                 tooltip="Toggle filtering of new stories"
-                pressed={showNewOnly}
+                active={showNewOnly}
                 onClick={() => setShowNewOnly((v) => !v)}
               >
                 {newStoryCount} new
-              </ToggleButton>
+              </Button>
             ) : null}
             <SearchField>
               <SearchIconWrap>

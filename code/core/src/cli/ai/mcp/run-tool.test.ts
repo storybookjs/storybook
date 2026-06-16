@@ -300,21 +300,6 @@ describe('buildStorybookCommandsHelp', () => {
     );
   });
 
-  it.each(['', '   ', undefined])(
-    'treats missing workflow instructions as unavailable help metadata when initialize instructions are %j',
-    async (instructions) => {
-      vi.mocked(listMcpToolsWithServerMetadata).mockResolvedValue({
-        tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
-        serverMetadata: instructions === undefined ? {} : { instructions },
-      });
-
-      const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-      expect(section).not.toContain('# Storybook workflow instructions');
-      expect(section).toContain('Storybook commands: (unavailable');
-      expect(section).toContain('did not provide workflow instructions');
-    }
-  );
-
   it('degrades to a note when no Storybook is running (help must not fail)', async () => {
     vi.mocked(readRegistry).mockResolvedValue([]);
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });

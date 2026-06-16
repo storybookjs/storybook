@@ -1,5 +1,7 @@
 import { resolve } from 'node:path';
 
+import { invariant } from 'storybook/internal/common';
+
 import {
   McpJsonRpcError,
   type McpToolList,
@@ -204,12 +206,15 @@ export async function buildStorybookCommandsHelp(
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
-  const instructions = serverMetadata.instructions?.trim();
-  if (!instructions) {
-    // A ready addon-mcp command server is expected to provide workflow instructions. Treat missing
-    // instructions as a defensive contract failure, not as a normal commands-only help mode.
-    return unavailable(`the Storybook at ${record.url} did not provide workflow instructions`);
-  }
+  const { instructions } = serverMetadata;
+  // Unreachable with a healthy addon-mcp: it gates instructions and tools on the same dev/test/docs
+  // toolsets (non-empty tools imply non-empty instructions), and the initialize handshake shares the
+  // request budget, so a slow server can't drop instructions while tools/list succeeds. Reaching here
+  // means the server returned commands but no instructions — a contract bug.
+  invariant(
+    instructions,
+    `The Storybook MCP server at ${record.url} exposed commands but no workflow instructions`
+  );
 
   return [
     `Storybook help from the Storybook running at ${record.url}${version}:`,

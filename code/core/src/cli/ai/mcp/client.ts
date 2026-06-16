@@ -33,14 +33,6 @@ export const MCP_CLIENT_INFO = { name: 'storybook-cli', version: versions.storyb
 /** Protocol version sent on `initialize`; tmcp (the addon-mcp server library) supports it. */
 const MCP_PROTOCOL_VERSION = '2025-06-18';
 
-/**
- * The handshake is telemetry garnish sitting on the critical path of every command, so its budget
- * must stay small: a local tmcp `initialize` answers in milliseconds, and a few seconds is already
- * generous headroom for a busy dev server. On timeout (or any other failure) the command simply
- * proceeds without clientInfo.
- */
-const INITIALIZE_TIMEOUT_MS = 3 * 1000;
-
 export type ToolCallParams = {
   name: string;
   arguments?: Record<string, unknown>;
@@ -140,10 +132,14 @@ type InitializeMcpSessionResult = {
  * initialize result can also carry server instructions, so metadata is parsed from the response
  * body even when no session id is assigned.
  *
- * The handshake is strictly best-effort — when it fails (or a future server ignores sessions),
- * the actual command request proceeds without a session and keeps working; only the telemetry
- * segmentation and initialize metadata are lost, and error reporting stays anchored on the real
- * call.
+ * The handshake is best-effort — when it fails (or a future server ignores sessions), the actual
+ * request proceeds without a session and keeps working; only the telemetry segmentation and
+ * initialize metadata are lost, and error reporting stays anchored on the real call. It shares the
+ * full {@link REQUEST_TIMEOUT_MS} budget rather than a tighter one: `storybook ai --help` renders the
+ * server instructions carried here, and the only thing that slows the handshake is the dev server
+ * still starting up — which the command must wait through anyway. A tighter budget would just drop
+ * the instructions on that first slow request while the command list (sent right after) comes back
+ * fine.
  *
  * Sessions are deliberately one-shot: each JSON-RPC request gets its own handshake and the session
  * is never reused or closed. A CLI invocation makes one request on the happy path (two on error
@@ -172,7 +168,7 @@ async function initializeMcpSession(
           clientInfo: MCP_CLIENT_INFO,
         },
       }),
-      signal: AbortSignal.timeout(INITIALIZE_TIMEOUT_MS),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     const sessionId = response.headers.get('mcp-session-id');
     if (!response.ok) {

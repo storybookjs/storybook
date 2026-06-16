@@ -32,6 +32,7 @@ import {
   PREVIEW_MODE_SESSION_KEY,
   LAST_REVIEWED_STORY_SESSION_KEY,
   RESTORE_NAV_SESSION_KEY,
+  RESTORE_PANEL_SESSION_KEY,
   RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
@@ -319,7 +320,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [isInReviewSession, viewMode, location?.search]);
 
-  // Collapse the sidebar the first time a freshly pushed review summary is opened.
+  // Collapse the sidebar and addon panel the first time a freshly pushed review summary is opened.
   useEffect(() => {
     if (!isSummaryVisible || !pendingNavCollapse) {
       return;
@@ -327,7 +328,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
       sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
     }
+    if (sessionStore.read(RESTORE_PANEL_SESSION_KEY) === null) {
+      sessionStore.write(RESTORE_PANEL_SESSION_KEY, api.getIsPanelShown() ? 'restore' : 'keep');
+    }
     api.toggleNav(false);
+    api.togglePanel(false);
     setPendingNavCollapse(false);
   }, [api, isSummaryVisible, pendingNavCollapse]);
 

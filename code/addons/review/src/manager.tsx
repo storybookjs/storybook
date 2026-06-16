@@ -12,6 +12,7 @@ import {
   PAGE_ID,
   REVIEW_CHANGES_URL,
   RESTORE_NAV_SESSION_KEY,
+  RESTORE_PANEL_SESSION_KEY,
   EVENTS,
 } from './constants.ts';
 import { isReviewPath } from './ReviewProvider.tsx';
@@ -43,10 +44,19 @@ addons.register(ADDON_ID, (api) => {
     query.get(REVIEW_COLLECTION_QUERY_PARAM) ?? undefined
   );
   const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY);
-  if (!isReviewSessionPath(path, collectionIndex) && restoreNav !== null) {
-    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
-    if (restoreNav === 'restore') {
-      api.toggleNav(true);
+  const restorePanel = sessionStore.read(RESTORE_PANEL_SESSION_KEY);
+  if (!isReviewSessionPath(path, collectionIndex)) {
+    if (restoreNav !== null) {
+      sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+      if (restoreNav === 'restore') {
+        api.toggleNav(true);
+      }
+    }
+    if (restorePanel !== null) {
+      sessionStore.remove(RESTORE_PANEL_SESSION_KEY);
+      if (restorePanel === 'restore') {
+        api.togglePanel(true);
+      }
     }
   }
 

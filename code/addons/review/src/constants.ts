@@ -10,10 +10,11 @@ export const BASELINE_PROXY_PATH = '/__review-baseline';
 // baseline. Derived from the proxy path so the route stays single-sourced.
 export const BASELINE_INDEX_URL = `${BASELINE_PROXY_PATH}/index.json`;
 
-// sessionStorage key recording whether the manager sidebar (hidden while the
-// review page is open) should be restored when the user leaves. Survives the
-// full-reload navigations between review screens. Value: 'restore' | 'keep'.
+// sessionStorage keys recording whether manager chrome hidden while the review
+// page is open should be restored when the user leaves. Survive full-reload
+// navigations between review screens. Value: 'restore' | 'keep'.
 export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
+export const RESTORE_PANEL_SESSION_KEY = `${ADDON_ID}/restore-panel`;
 
 // sessionStorage key for the canvas URL to restore when the user dismisses a
 // review. Updated while browsing stories/docs outside a review session.

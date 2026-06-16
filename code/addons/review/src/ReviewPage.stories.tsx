@@ -9,7 +9,7 @@ import {
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
-import { EVENTS, RESTORE_NAV_SESSION_KEY } from './constants.ts';
+import { EVENTS, RESTORE_NAV_SESSION_KEY, RESTORE_PANEL_SESSION_KEY } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
@@ -176,6 +176,7 @@ const meta = preview.meta({
     toggleNavMock.mockReset();
     fetchMock.mockClear();
     sessionStore.remove(RESTORE_NAV_SESSION_KEY);
+    sessionStore.remove(RESTORE_PANEL_SESSION_KEY);
     internal_fullStatusStore.unset();
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     document.getElementById('storybook-review-summary-portal')?.remove();

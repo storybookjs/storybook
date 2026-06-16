@@ -238,6 +238,7 @@ const LabelStory = styled.span({
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
+  marginRight: 4,
 });
 
 const NewBadge = styled(Badge)({

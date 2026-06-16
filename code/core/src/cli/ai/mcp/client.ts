@@ -178,7 +178,10 @@ async function initializeMcpSession(
 
     let serverMetadata: McpServerMetadata = {};
     try {
-      serverMetadata = parseInitializeServerMetadata(await readJsonRpcResponse(response, target));
+      serverMetadata = parseInitializeServerMetadata(
+        await readJsonRpcResponse(response, target),
+        target
+      );
     } catch {
       // The initialize request is best-effort metadata; a malformed response must not block the
       // actual tools/list or tools/call request from preserving its existing behavior.
@@ -242,18 +245,12 @@ async function sendJsonRpcRequest<TResult>(
 
   const payload = await readJsonRpcResponse(response, target);
 
-  const envelope = v.safeParse(JsonRpcEnvelopeSchema, payload);
-  if (!envelope.success) {
-    throw unexpectedShapeError(target);
-  }
-  if (envelope.output.error) {
-    throw new McpJsonRpcError(envelope.output.error.code, envelope.output.error.message);
-  }
-  if (envelope.output.result === undefined) {
-    throw new Error('The Storybook server returned no result');
+  const unwrapped = unwrapJsonRpcResult(payload, target);
+  if (!unwrapped.ok) {
+    throw unwrapped.error;
   }
 
-  const result = v.safeParse(resultSchema, envelope.output.result);
+  const result = v.safeParse(resultSchema, unwrapped.result);
   if (!result.success) {
     throw unexpectedShapeError(target);
   }
@@ -264,13 +261,38 @@ function unexpectedShapeError(target: string): Error {
   return new Error(`The Storybook server at ${target} returned an unexpected response shape`);
 }
 
-function parseInitializeServerMetadata(payload: unknown): McpServerMetadata {
+/**
+ * Unwrap a parsed JSON-RPC payload into its `result`, or report why it isn't usable. The command
+ * path throws on the reported error; the best-effort initialize-metadata parse falls back to empty
+ * — sharing this keeps the envelope handling in one place.
+ */
+function unwrapJsonRpcResult(
+  payload: unknown,
+  target: string
+): { ok: true; result: unknown } | { ok: false; error: Error } {
   const envelope = v.safeParse(JsonRpcEnvelopeSchema, payload);
-  if (!envelope.success || envelope.output.error || envelope.output.result === undefined) {
+  if (!envelope.success) {
+    return { ok: false, error: unexpectedShapeError(target) };
+  }
+  if (envelope.output.error) {
+    return {
+      ok: false,
+      error: new McpJsonRpcError(envelope.output.error.code, envelope.output.error.message),
+    };
+  }
+  if (envelope.output.result === undefined) {
+    return { ok: false, error: new Error('The Storybook server returned no result') };
+  }
+  return { ok: true, result: envelope.output.result };
+}
+
+function parseInitializeServerMetadata(payload: unknown, target: string): McpServerMetadata {
+  const unwrapped = unwrapJsonRpcResult(payload, target);
+  if (!unwrapped.ok) {
     return {};
   }
 
-  const result = v.safeParse(InitializeResultSchema, envelope.output.result);
+  const result = v.safeParse(InitializeResultSchema, unwrapped.result);
   if (!result.success) {
     return {};
   }

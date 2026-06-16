@@ -89,7 +89,7 @@ export {
 export type { SelectionStore, View } from './preview-web.ts';
 
 /** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
-export { registerService } from '../shared/open-service/preview.ts';
+export { getService, registerService } from '../shared/open-service/preview.ts';
 export {
   clearChannel,
   ensureChannel,

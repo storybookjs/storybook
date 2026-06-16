@@ -46,6 +46,7 @@ export type EventType =
   | 'share'
   | 'ghost-stories'
   | 'sidebar-filter'
+  | 'ai-command'
   | 'ai-init-opt-in'
   | 'ai-prompt-nudge'
   | 'ai-setup'

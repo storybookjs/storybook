@@ -148,7 +148,9 @@ describe('components-ref-manifest', () => {
     expect(mergeManifestPayloads(docgen, storyDocs)).toEqual({
       ...docgen,
       import: 'import { Button } from "./Button";',
-      stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+      stories: {
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      },
     });
   });
 

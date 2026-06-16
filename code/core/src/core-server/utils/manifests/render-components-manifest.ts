@@ -800,8 +800,9 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
     );
   }
 
-  const totalStories = c.stories?.length ?? 0;
-  const storyErrors = (c.stories ?? []).filter((e) => !!e?.error).length;
+  const allStories = Object.values(c.stories ?? {});
+  const totalStories = allStories.length;
+  const storyErrors = allStories.filter((e) => !!e?.error).length;
   const storyOk = totalStories - storyErrors;
 
   // Analyze attached docs
@@ -907,7 +908,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const allStories = c.stories ?? [];
+  const allStories = Object.values(c.stories ?? {});
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
   const subcomponentEntries = Object.entries(c.subcomponents ?? {});

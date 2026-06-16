@@ -64,7 +64,7 @@ export function mergeManifestPayloads(
 ): ComponentManifest {
   return {
     ...docgen,
-    stories: storyDocs?.stories ? Object.values(storyDocs.stories) : [],
+    stories: storyDocs?.stories ?? {},
     ...(storyDocs?.import ? { import: storyDocs.import } : {}),
   };
 }

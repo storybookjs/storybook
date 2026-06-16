@@ -10,9 +10,8 @@ import type { Polka } from 'polka';
 
 import { clearRegistry } from '../../../shared/open-service/server.ts';
 import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
-import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
+import { registerDocgenServices } from '../../../shared/open-service/services/docgen/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
-import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { StoryDocsProvider } from '../../../shared/open-service/services/story-docs/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import { registerManifests, writeManifests } from './manifests.ts';
@@ -124,7 +123,7 @@ describe('manifests', () => {
             id: 'button',
             name: 'Button',
             path: './Button.tsx',
-            stories: [],
+            stories: {},
             jsDocTags: {},
           },
         },
@@ -149,7 +148,7 @@ describe('manifests', () => {
               id: 'button',
               name: 'Button',
               path: './Button.stories.tsx',
-              stories: [],
+              stories: {},
               jsDocTags: {},
               subcomponents: {
                 ButtonIcon: {
@@ -339,13 +338,10 @@ describe('manifests', () => {
       }));
 
       registerTestModuleGraphService();
-      registerDocgenService({
+      registerDocgenServices({
         getIndex: () => mockGenerator.getIndex(),
-        provider: docgenProvider,
-      });
-      registerStoryDocsService({
-        getIndex: () => mockGenerator.getIndex(),
-        provider: storyDocsProvider,
+        docgenProvider,
+        storyDocsProvider,
       });
 
       vol.fromNestedJSON({
@@ -550,7 +546,7 @@ describe('manifests', () => {
               id: 'button',
               name: 'Button',
               path: './Button.tsx',
-              stories: [],
+              stories: {},
               jsDocTags: {},
             },
           },

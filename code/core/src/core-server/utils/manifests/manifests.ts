@@ -33,7 +33,7 @@ function buildComponentsManifest(
   meta: ComponentsManifest['meta']
 ): ComponentsManifest {
   return {
-    v: 0,
+    v: 1,
     components,
     meta,
   };

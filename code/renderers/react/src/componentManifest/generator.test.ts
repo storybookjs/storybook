@@ -141,36 +141,36 @@ test('manifests generates correct id, name, description and examples ', async ()
             },
           },
           "reactDocgenTypescript": undefined,
-          "stories": [
-            {
-              "description": undefined,
-              "id": "example-button--primary",
-              "name": "Primary",
-              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
-              "summary": undefined,
-            },
-            {
-              "description": undefined,
-              "id": "example-button--secondary",
-              "name": "Secondary",
-              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
-              "summary": undefined,
-            },
-            {
+          "stories": {
+            "example-button--large": {
               "description": undefined,
               "id": "example-button--large",
               "name": "Large",
               "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button" />;",
               "summary": undefined,
             },
-            {
+            "example-button--primary": {
+              "description": undefined,
+              "id": "example-button--primary",
+              "name": "Primary",
+              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
+              "summary": undefined,
+            },
+            "example-button--secondary": {
+              "description": undefined,
+              "id": "example-button--secondary",
+              "name": "Secondary",
+              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button" />;",
+              "summary": undefined,
+            },
+            "example-button--small": {
               "description": undefined,
               "id": "example-button--small",
               "name": "Small",
               "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button" />;",
               "summary": undefined,
             },
-          ],
+          },
           "summary": undefined,
         },
         "example-header": {
@@ -248,8 +248,8 @@ test('manifests generates correct id, name, description and examples ', async ()
             },
           },
           "reactDocgenTypescript": undefined,
-          "stories": [
-            {
+          "stories": {
+            "example-header--logged-in": {
               "description": undefined,
               "id": "example-header--logged-in",
               "name": "Logged In",
@@ -260,14 +260,14 @@ test('manifests generates correct id, name, description and examples ', async ()
         user={{ name: 'Jane Doe' }} />;",
               "summary": undefined,
             },
-            {
+            "example-header--logged-out": {
               "description": undefined,
               "id": "example-header--logged-out",
               "name": "Logged Out",
               "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
               "summary": undefined,
             },
-          ],
+          },
           "summary": "Component summary",
         },
       },
@@ -383,15 +383,15 @@ test('fall back to index title when no component name', async () => {
         },
       },
       "reactDocgenTypescript": undefined,
-      "stories": [
-        {
+      "stories": {
+        "example-button--primary": {
           "description": undefined,
           "id": "example-button--primary",
           "name": "Primary",
           "snippet": "const Primary = () => <Button csf1="story" />;",
           "summary": undefined,
         },
-      ],
+      },
       "summary": undefined,
     }
   `);
@@ -433,8 +433,8 @@ test('component exported from other file', async () => {
         },
       },
       "reactDocgenTypescript": undefined,
-      "stories": [
-        {
+      "stories": {
+        "example-button--primary": {
           "error": {
             "message": "Expected story to be a function or variable declaration
        9 | export default meta;
@@ -446,7 +446,7 @@ test('component exported from other file', async () => {
           "id": "example-button--primary",
           "name": "Primary",
         },
-      ],
+      },
       "summary": undefined,
     }
   `);
@@ -488,8 +488,8 @@ test('unknown expressions', async () => {
         },
       },
       "reactDocgenTypescript": undefined,
-      "stories": [
-        {
+      "stories": {
+        "example-button--primary": {
           "error": {
             "message": "Expected story to be csf factory, function or an object expression
        9 | export default meta;
@@ -501,7 +501,7 @@ test('unknown expressions', async () => {
           "id": "example-button--primary",
           "name": "Primary",
         },
-      ],
+      },
       "summary": undefined,
     }
   `);
@@ -1093,7 +1093,7 @@ test('should create component manifest when only attached-mdx docs have manifest
               },
             },
             "reactDocgenTypescript": undefined,
-            "stories": [],
+            "stories": {},
             "summary": undefined,
           },
         },
@@ -1189,13 +1189,13 @@ test('should prefer story entries over attached-mdx docs entries for the same co
 
   expect(component?.name).toBe('Primary');
   expect(component?.path).toBe('./src/Primary/Primary.stories.tsx');
-  expect(component?.stories).toMatchObject([
-    {
+  expect(component?.stories).toMatchObject({
+    'example-primary--default': {
       id: 'example-primary--default',
       name: 'Default',
     },
-  ]);
-  expect(component?.stories[0]?.snippet).toContain('<Primary');
+  });
+  expect(component?.stories['example-primary--default']?.snippet).toContain('<Primary');
 });
 
 test('stories are populated when meta has no explicit title', async () => {
@@ -1257,22 +1257,22 @@ test('stories are populated when meta has no explicit title', async () => {
   // When no explicit title is in the meta, stories should still be populated
   // because the generator should use the index entry's title as fallback
   expect(component?.stories).toMatchInlineSnapshot(`
-    [
-      {
+    {
+      "card--default": {
         "description": undefined,
         "id": "card--default",
         "name": "Default",
         "snippet": "const Default = () => <Card label="Click me" />;",
         "summary": undefined,
       },
-      {
+      "card--large": {
         "description": undefined,
         "id": "card--large",
         "name": "Large",
         "snippet": "const Large = () => <Card label="Big button" size="large" />;",
         "summary": undefined,
       },
-    ]
+    }
   `);
 });
 
@@ -1288,14 +1288,14 @@ test('should extract story description and summary from JSDoc comments', async (
   const manifest = await getManifestForStory(code);
 
   expect(manifest?.stories).toMatchInlineSnapshot(`
-    [
-      {
+    {
+      "example-button--primary": {
         "description": "This is a longer description of the Primary story",
         "id": "example-button--primary",
         "name": "Primary",
         "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button" />;",
         "summary": "This is a brief summary",
       },
-    ]
+    }
   `);
 });

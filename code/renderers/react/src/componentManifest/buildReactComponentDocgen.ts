@@ -402,7 +402,7 @@ export function buildReactComponentDocgenFromResolved({
 
   return {
     ...componentDocgen,
-    stories: Object.values(storyDocs.stories),
+    stories: storyDocs.stories,
     ...(storyDocs.import ? { import: storyDocs.import } : {}),
   };
 }

@@ -6,7 +6,7 @@
     "code/core/src/manager/utils/status.tsx",
     "code/core/src/manager/components/sidebar/FilterPanel.tsx",
     "code/core/src/manager/components/sidebar/useFilterData.tsx",
-    "code/core/src/manager/components/sidebar/ReviewCuratedStoriesButton.tsx",
+    "code/core/src/manager/components/sidebar/ReviewWidget.tsx",
     "code/core/src/manager/components/sidebar/ReviewChangesButton.tsx",
     "code/addons/review/src/review-status.ts",
     "code/addons/review/src/review-status-filters.ts",
@@ -35,12 +35,12 @@
       ]
     },
     {
-      "title": "ReviewCuratedStoriesButton — idle and active",
-      "rationale": "New CTA for AI-curated reviews: idle label, active reviewing state with agentic styling, and toggle that applies the reviewing filter.",
+      "title": "ReviewWidget — quick review CTA",
+      "rationale": "AI-curated review CTA: story count label, open-review navigation, and dismiss action.",
       "storyIds": [
-        "manager-sidebar-reviewcuratedstoriesbutton--idle",
-        "manager-sidebar-reviewcuratedstoriesbutton--active",
-        "manager-sidebar-reviewcuratedstoriesbutton--toggle-activate"
+        "manager-sidebar-reviewwidget--default",
+        "manager-sidebar-reviewwidget--open-review",
+        "manager-sidebar-reviewwidget--dismiss-review"
       ]
     },
     {

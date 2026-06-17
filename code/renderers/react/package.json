@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.7",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -74,11 +74,12 @@
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
+    "memfs": "^4.11.1",
     "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
+    "react-element-to-jsx-string": "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "type-fest": "^5.6.0"
   },
   "peerDependencies": {
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

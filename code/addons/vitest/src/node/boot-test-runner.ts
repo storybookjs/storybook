@@ -9,6 +9,8 @@ import {
 } from 'storybook/internal/core-server';
 import type { EventInfo, Options } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { normalize } from 'pathe';
 
 import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
@@ -49,10 +51,12 @@ const bootTestRunner = async ({
   channel,
   store,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   let stderr: string[] = [];
   const killChild = () => {
@@ -86,6 +90,7 @@ const bootTestRunner = async ({
             VITEST_CHILD_PROCESS: 'true',
             NODE_ENV: process.env.NODE_ENV ?? 'test',
             STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+            STORYBOOK_CONFIG_LOADER: configLoader,
           },
           extendEnv: true,
         },
@@ -159,19 +164,21 @@ export const runTestRunner = async ({
   initEvent,
   initArgs,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   initEvent?: string;
   initArgs?: any[];
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner({ channel, store, options });
+    await bootTestRunner({ channel, store, options, configLoader });
     ready = true;
   }
 };

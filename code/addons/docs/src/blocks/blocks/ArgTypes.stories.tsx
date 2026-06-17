@@ -1,16 +1,13 @@
-import React from 'react';
-
+/** Custom docs page: {@link ./ArgTypes.mdx} (attached via `<Meta of={...} />`). */
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import { within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
 import { ArgTypes } from './ArgTypes';
 
-const meta: Meta<typeof ArgTypes> = {
+const meta = {
   title: 'Blocks/ArgTypes',
   component: ArgTypes,
   parameters: {
@@ -21,7 +18,8 @@ const meta: Meta<typeof ArgTypes> = {
     ],
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof ArgTypes>;
+
 export default meta;
 
 type Story = StoryObj<typeof meta>;
@@ -108,7 +106,7 @@ export const Categories: Story = {
 };
 
 const findSubcomponentTabs = async (
-  canvas: ReturnType<typeof within>,
+  canvas: Parameters<NonNullable<Story['play']>>[0]['canvas'],
   step: PlayFunctionContext['step']
 ) => {
   let subcomponentATab: HTMLElement | null = null;
@@ -124,16 +122,17 @@ export const SubcomponentsOfMeta: Story = {
   args: {
     of: SubcomponentsExampleStories.default,
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, step }) => {
     await findSubcomponentTabs(canvas, step);
   },
 };
 
 export const SubcomponentsOfStory: Story = {
-  ...SubcomponentsOfMeta,
   args: {
     of: SubcomponentsExampleStories.NoParameters,
+  },
+  play: async ({ canvas, step }) => {
+    await findSubcomponentTabs(canvas, step);
   },
 };
 
@@ -142,8 +141,7 @@ export const SubcomponentsIncludeProp: Story = {
     of: SubcomponentsExampleStories.NoParameters,
     include: ['a', 'f'],
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, step }) => {
     const { subcomponentBTab } = await findSubcomponentTabs(canvas, step);
     if (subcomponentBTab) {
       await (subcomponentBTab as HTMLElement & { click: () => Promise<void> }).click();

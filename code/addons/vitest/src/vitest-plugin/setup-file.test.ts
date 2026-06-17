@@ -1,6 +1,50 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type Task, modifyErrorMessage } from './setup-file.ts';
+import { Channel, clearChannel, getChannel, setChannel } from 'storybook/internal/channels';
+
+import {
+  type Task,
+  initTransport,
+  modifyErrorMessage,
+  restoreDefaultChannel,
+} from './setup-file.ts';
+
+describe('initTransport', () => {
+  afterEach(() => {
+    clearChannel();
+  });
+
+  it('should initialize the addons channel when missing', () => {
+    clearChannel();
+
+    initTransport();
+
+    expect(getChannel()).toBeInstanceOf(Channel);
+  });
+
+  it('restoreDefaultChannel reinstalls the default when the slot was replaced', () => {
+    initTransport();
+    const defaultRef = getChannel();
+
+    setChannel(new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } }));
+
+    restoreDefaultChannel();
+
+    expect(getChannel()).toBe(defaultRef);
+  });
+
+  it('should not overwrite an existing addons channel', () => {
+    const transport = { setHandler: vi.fn(), send: vi.fn() };
+    const existingChannel = new Channel({ transport });
+    clearChannel();
+    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
+      existingChannel;
+
+    initTransport();
+
+    expect(getChannel()).toBe(existingChannel);
+  });
+});
 
 describe('modifyErrorMessage', () => {
   const originalUrl = import.meta.env.__STORYBOOK_URL__;
@@ -75,5 +119,42 @@ describe('modifyErrorMessage', () => {
     modifyErrorMessage({ task });
 
     expect(task.result?.errors?.[0].message).toBe('Non story test failure');
+  });
+});
+
+describe('resetMousePositionBeforeTests', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+    vi.doUnmock('vitest/browser');
+    vi.doUnmock('@vitest/browser/context');
+  });
+
+  it('should reset the mouse position when the browser command exists', async () => {
+    const resetMousePosition = vi.fn().mockResolvedValue(undefined);
+
+    vi.doMock('vitest/browser', () => ({
+      commands: {
+        resetMousePosition,
+      },
+    }));
+
+    const { resetMousePositionBeforeTests } = await import('./setup-file.browser.4.ts');
+
+    await resetMousePositionBeforeTests();
+
+    expect(resetMousePosition).toHaveBeenCalledTimes(1);
+  });
+
+  it('should do nothing when resetMousePosition is not callable', async () => {
+    vi.doMock('vitest/browser', () => ({
+      commands: {
+        resetMousePosition: 'not-a-function',
+      },
+    }));
+
+    const { resetMousePositionBeforeTests } = await import('./setup-file.browser.4.ts');
+
+    await expect(resetMousePositionBeforeTests()).resolves.toBeUndefined();
   });
 });

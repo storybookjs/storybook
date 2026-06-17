@@ -31,12 +31,7 @@ const preview = new PreviewWeb(importFn, getProjectAnnotations);
 window.__STORYBOOK_PREVIEW__ = preview;
 window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
 
-const __storybookShouldFreezePreview__ = (() => {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('freeze') === 'finished' && (params.get('viewMode') ?? 'story') === 'story';
-})();
-
-if (import.meta.webpackHot && !__storybookShouldFreezePreview__) {
+if (import.meta.webpackHot) {
   import.meta.webpackHot.addStatusHandler((status) => {
     if (status === 'idle') {
       preview.channel.emit(STORY_HOT_UPDATED);

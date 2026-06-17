@@ -2,7 +2,6 @@ import { getChannel } from 'storybook/internal/channels';
 import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
-import { setupFrozenPreviewHMRGuard } from '../preview-api/modules/preview-web/setupStoryFreezer.ts';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
@@ -51,7 +50,6 @@ export function setup() {
   if (freeze) {
     setInert(true);
   }
-  setupFrozenPreviewHMRGuard();
 
   /**
    * Ensure we synchronise the preview runtime's inert state with the manager's. The inert attribute

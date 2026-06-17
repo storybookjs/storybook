@@ -4,11 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { global as globalRef } from '@storybook/global';
 
-import {
-  setupFrozenPreviewHMRGuard,
-  setupStoryFreezer,
-  shouldFreeze,
-} from './setupStoryFreezer.ts';
+import { setupStoryFreezer, shouldFreeze } from './setupStoryFreezer.ts';
 
 type Listener = (...args: unknown[]) => void;
 
@@ -49,59 +45,6 @@ describe('shouldEnableFreezeOnStoryFinished', () => {
         search: '?id=example--story&viewMode=docs&freeze=finished',
       })
     ).toBe(false);
-  });
-});
-
-describe('setupFrozenPreviewHMRGuard', () => {
-  let previousHref: string;
-  let originalReload: Location['reload'];
-
-  beforeEach(() => {
-    previousHref = window.location.href;
-    originalReload = window.location.reload.bind(window.location);
-  });
-
-  afterEach(() => {
-    Object.defineProperty(window.location, 'reload', {
-      configurable: true,
-      writable: true,
-      value: originalReload,
-    });
-    window.history.replaceState({}, '', previousHref);
-  });
-
-  it('blocks location.reload when freeze=finished', () => {
-    window.history.replaceState(
-      {},
-      '',
-      '/iframe.html?id=example--story&viewMode=story&freeze=finished'
-    );
-
-    const reloadSpy = vi.fn();
-    Object.defineProperty(window.location, 'reload', {
-      configurable: true,
-      writable: true,
-      value: reloadSpy,
-    });
-
-    expect(setupFrozenPreviewHMRGuard()).toBe(true);
-    window.location.reload();
-    expect(reloadSpy).not.toHaveBeenCalled();
-  });
-
-  it('does not install when freeze mode is disabled', () => {
-    window.history.replaceState({}, '', '/iframe.html?id=example--story&viewMode=story');
-
-    const reloadSpy = vi.fn();
-    Object.defineProperty(window.location, 'reload', {
-      configurable: true,
-      writable: true,
-      value: reloadSpy,
-    });
-
-    expect(setupFrozenPreviewHMRGuard()).toBe(false);
-    window.location.reload();
-    expect(reloadSpy).toHaveBeenCalled();
   });
 });
 

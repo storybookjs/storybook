@@ -27,6 +27,7 @@ import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
 import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
+import { patchMcpStoriesRecord } from '../patch-mcp-stories-record.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
 import { updatePackageScripts } from '../utils/package-json.ts';
@@ -247,6 +248,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       debug,
     });
     await addWorkaroundResolutions({ cwd, dryRun, debug, key });
+    await patchMcpStoriesRecord(cwd);
   } else {
     // We need to add package resolutions to ensure that we only ever install the latest version
     // of any storybook packages as verdaccio is not able to both proxy to npm and publish over
@@ -269,6 +271,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
         errorMessage: `🚨 Installing local dependencies failed`,
       }
     );
+    await patchMcpStoriesRecord(cwd);
   }
 };
 

@@ -2,7 +2,6 @@ import type { StoryContext } from 'storybook/internal/types';
 import type { ModuleExport, StoryDocsPayload } from 'storybook/internal/types';
 import type { StoryDocsService } from 'storybook/open-service';
 import * as previewApi from 'storybook/preview-api';
-import { vi } from 'vitest';
 
 import type { DocsContextProps } from './DocsContext.ts';
 
@@ -33,12 +32,13 @@ export type StoryDocsMockData = {
 export function mockStoryDocsServiceForOf(
   docsContext: DocsContextProps,
   of: ModuleExport,
-  data: StoryDocsMockData
+  data: StoryDocsMockData,
+  mockGetService: typeof previewApi.getService
 ) {
   const { story } = docsContext.resolveOf(of, ['story']);
   const componentId = story.id.split('--')[0]!;
 
-  vi.mocked(previewApi.getService).mockImplementation((serviceId) => {
+  mockGetService.mockImplementation((serviceId) => {
     if (serviceId === 'core/story-docs') {
       return createMockStoryDocsService({
         [componentId]: {
@@ -63,12 +63,13 @@ export function mockStoryDocsServiceForOf(
 
 export function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockData) {
   return async (context: StoryContext) => {
+    const { vi } = await import('vitest');
     const docsContext = context.loaded?.docsContext as DocsContextProps | undefined;
     if (!docsContext) {
       throw new Error('docsContext is required to mock story-docs for docs block stories');
     }
 
-    mockStoryDocsServiceForOf(docsContext, of, data);
+    mockStoryDocsServiceForOf(docsContext, of, data, vi.mocked(previewApi.getService));
 
     return () => {
       vi.mocked(previewApi.getService).mockRestore();

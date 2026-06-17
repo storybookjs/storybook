@@ -253,9 +253,14 @@ export function getGroupStatus(
         .filter((i) => i.type === 'story');
 
       const combinedStatus = getMostCriticalStatusValue(
-        // @ts-expect-error (non strict)
         leafs
-          .flatMap((story) => Object.values(allStatuses[story.id] || {}))
+          .flatMap(
+            (story) =>
+              Object.values(allStatuses[story.id!] || {}) as Array<{
+                typeId: string;
+                value: StatusValue;
+              }>
+          )
           .filter((s) => s.typeId !== REVIEW_STATUS_TYPE_ID)
           .map((s) => s.value)
       );

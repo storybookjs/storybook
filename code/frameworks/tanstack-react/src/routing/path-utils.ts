@@ -26,3 +26,8 @@ export function normalizeFileRoutePath(path: string): string {
   const stripped = removeGroups(removeUnderscores(removeLayoutSegments(path)) ?? '');
   return stripped || '/';
 }
+
+export function isPathlessLayoutRoute(path: string): boolean {
+  const lastSegment = path.split('/').filter(Boolean).pop() ?? '';
+  return lastSegment.startsWith('_');
+}

@@ -695,7 +695,6 @@ export default {
     'REVIEW_NAMESPACE',
     'REVIEW_STATUS_TYPE_ID',
     'SupportedBuilder',
-    'SupportedFramework',
     'SupportedLanguage',
     'SupportedRenderer',
   ],

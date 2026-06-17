@@ -1,3 +1,5 @@
+import React, { type ReactNode } from 'react';
+
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
@@ -6,14 +8,24 @@ import {
   type State,
   internal_fullStatusStore,
 } from 'storybook/manager-api';
-import { MemoryRouter } from 'storybook/internal/router';
+import {
+  MemoryRouter,
+  parsePath,
+  queryFromLocation,
+  resolvePathQueryParam,
+  useLocation,
+} from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, RESTORE_PANEL_SESSION_KEY } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
-import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  buildReviewStoryHref,
+  isReviewSummaryPath,
+} from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { sessionStore } from './session-store.ts';
 
@@ -147,6 +159,45 @@ const ReviewHarness = () => (
   </ReviewProvider>
 );
 
+const deriveViewMode = (path: string): State['viewMode'] => {
+  if (path.startsWith('/story/') || path.startsWith('/docs/')) {
+    return parsePath(path).viewMode as State['viewMode'];
+  }
+  if (isReviewSummaryPath(path)) {
+    return 'review';
+  }
+  return managerState.viewMode;
+};
+
+/** Keep ManagerContext path/viewMode in sync with MemoryRouter navigations in play tests. */
+const ManagerStateSync = ({
+  children,
+  parameters,
+}: {
+  children: ReactNode;
+  parameters?: { managerState?: Partial<State> };
+}) => {
+  const location = useLocation();
+  const query = queryFromLocation(location);
+  const path = resolvePathQueryParam(location.search, String(query.path ?? ''));
+  const customQueryParams: Record<string, string> = {};
+  if (query[REVIEW_COLLECTION_QUERY_PARAM] !== undefined) {
+    customQueryParams[REVIEW_COLLECTION_QUERY_PARAM] = String(query[REVIEW_COLLECTION_QUERY_PARAM]);
+  }
+
+  const state = {
+    ...managerState,
+    ...(parameters?.managerState ?? {}),
+    path,
+    viewMode: deriveViewMode(path),
+    customQueryParams,
+  } as State;
+
+  return (
+    <ManagerContext.Provider value={{ state, api: managerApi }}>{children}</ManagerContext.Provider>
+  );
+};
+
 const meta = preview.meta({
   component: ReviewHarness,
   parameters: {
@@ -157,24 +208,16 @@ const meta = preview.meta({
   },
   decorators: [
     (Story, { parameters }) => (
-      <ManagerContext.Provider
-        value={{
-          state: {
-            ...managerState,
-            ...(parameters?.managerState ?? {}),
-          },
-          api: managerApi,
-        }}
-      >
-        <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/?path=/review/']}>
+      <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/?path=/review/']}>
+        <ManagerStateSync parameters={parameters}>
           <div
             id="main-content-wrapper"
             style={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: 0 }}
           >
             <Story />
           </div>
-        </MemoryRouter>
-      </ManagerContext.Provider>
+        </ManagerStateSync>
+      </MemoryRouter>
     ),
   ],
   beforeEach: () => {

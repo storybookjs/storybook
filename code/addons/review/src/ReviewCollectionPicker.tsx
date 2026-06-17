@@ -97,7 +97,7 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: 'nearest' });
-  }, []);
+  }, [activeEntry.storyId, activeEntry.collectionIndex]);
 
   return (
     <PopoverList role="list" aria-label="Stories in this review">

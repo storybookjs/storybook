@@ -36,6 +36,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
   return {
     name: 'storybook:vue-component-meta-plugin',
     transform: {
+      order: 'post',
       filter: { id: { include, exclude } },
       async handler(src, id) {
         if (!filter(id)) {

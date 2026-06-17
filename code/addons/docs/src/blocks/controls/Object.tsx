@@ -6,7 +6,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -171,10 +171,10 @@ export const ObjectControl: FC<ObjectProps> = ({
   onChange,
   argType,
 }) => {
-  const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+  const hadDataRef = useRef(hasData);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
@@ -197,6 +197,13 @@ export const ObjectControl: FC<ObjectProps> = ({
     onChange({});
     setForceVisible(true);
   }, [onChange, setForceVisible]);
+
+  useEffect(() => {
+    if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
+      setShowRaw(false);
+    }
+    hadDataRef.current = hasData;
+  }, [forceVisible, hasData, showRaw]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -223,20 +230,26 @@ export const ObjectControl: FC<ObjectProps> = ({
     );
   }
 
+  const rawInputId = getControlId(name, storyId, controlsId);
   const rawJSONForm = (
-    <RawInput
-      ref={htmlElRef}
-      id={getControlId(name, storyId, controlsId)}
-      minRows={3}
-      name={name}
-      key={jsonString}
-      defaultValue={jsonString}
-      onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-      placeholder="Edit JSON string..."
-      autoFocus={forceVisible}
-      valid={parseError ? 'error' : undefined}
-      readOnly={readonly}
-    />
+    <>
+      <label htmlFor={rawInputId} className="sb-sr-only">
+        Edit {name} as JSON
+      </label>
+      <RawInput
+        ref={htmlElRef}
+        id={rawInputId}
+        minRows={3}
+        name={name}
+        key={jsonString}
+        defaultValue={jsonString}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        placeholder="Edit JSON string..."
+        autoFocus={forceVisible}
+        valid={parseError ? 'error' : undefined}
+        readOnly={readonly}
+      />
+    </>
   );
 
   const isObjectOrArray =
@@ -283,7 +296,7 @@ export const ObjectControl: FC<ObjectProps> = ({
               <SubtractIcon />
             </ActionButton>
           }
-          inputElement={(_: any, __: any, ___: any, key: string) =>
+          inputElement={(_: unknown, __: unknown, ___: unknown, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }
           fallback={rawJSONForm}

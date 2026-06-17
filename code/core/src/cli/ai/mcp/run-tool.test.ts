@@ -293,7 +293,9 @@ describe('buildStorybookCommandsHelp', () => {
         '',
         '# Storybook commands',
         '',
-        '  get-documentation  Get docs for a component.',
+        '| Command             | Description               |',
+        '| ------------------- | ------------------------- |',
+        '| `get-documentation` | Get docs for a component. |',
         '',
         "Run 'storybook ai <command> --help' for a command's description and arguments.",
       ].join('\n')

@@ -200,11 +200,12 @@ export async function buildStorybookCommandsHelp(
         ]
       : [];
 
-  const width = Math.max(...tools.map((tool) => tool.name.length)) + 2;
-  const lines = tools.map((tool) => {
-    const summary = tool.description?.trim().split('\n')[0] ?? '';
-    return `  ${tool.name.padEnd(width)}${summary}`;
-  });
+  const commandsTable = formatTable(
+    tools.map((tool) => ({
+      command: `\`${tool.name}\``,
+      description: tool.description?.trim().split('\n')[0] ?? '',
+    }))
+  );
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
   const { instructions } = serverMetadata;
   // Unreachable with a healthy addon-mcp: it gates instructions and tools on the same dev/test/docs
@@ -226,10 +227,31 @@ export async function buildStorybookCommandsHelp(
     '',
     '# Storybook commands',
     '',
-    ...lines,
+    ...commandsTable,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,
   ].join('\n');
+}
+
+/**
+ * Render the commands as a markdown table with both columns padded to a uniform width so the
+ * pipe separators line up when read as plain text in a terminal.
+ */
+function formatTable(rows: { command: string; description: string }[]): string[] {
+  const commandHeader = 'Command';
+  const descriptionHeader = 'Description';
+  const commandWidth = Math.max(commandHeader.length, ...rows.map((r) => r.command.length));
+  const descriptionWidth = Math.max(
+    descriptionHeader.length,
+    ...rows.map((r) => r.description.length)
+  );
+  const row = (command: string, description: string) =>
+    `| ${command.padEnd(commandWidth)} | ${description.padEnd(descriptionWidth)} |`;
+  return [
+    row(commandHeader, descriptionHeader),
+    `| ${'-'.repeat(commandWidth)} | ${'-'.repeat(descriptionWidth)} |`,
+    ...rows.map((r) => row(r.command, r.description)),
+  ];
 }
 
 /** One-line reason why the help section cannot list commands, accurate per intercept. */

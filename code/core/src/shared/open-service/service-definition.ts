@@ -76,24 +76,14 @@ type DefinedCommands<
   };
 };
 
-/**
- * Finalizes a service definition while preserving inline query and command inference.
- *
- * The generic order matters here. We infer the per-operation schema maps first, then derive the
- * concrete query/command definition maps from those schemas. If we instead ask TypeScript to infer
- * the full runtime `ServiceDefinition` maps directly, it widens callback parameters to `unknown`
- * before it has correlated each inline object's `input` and `output` properties.
- */
-export const defineService = <
-  // `extends object` rejects primitives, `null`, and `undefined` (while still accepting both
-  // `interface` and `type` state shapes); `ServiceState` additionally rejects arrays. State must be a
-  // plain object — see `ServiceState` for the deep-signal / deep-reconcile reasons.
-  TState extends object,
-  const TQueryInputSchemas extends OperationInputSchemas,
-  const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
-  const TCommandInputSchemas extends OperationInputSchemas,
-  const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
->(def: {
+/** Argument object shared by both `defineService` call forms. */
+type ServiceDefinitionInput<
+  TState,
+  TQueryInputSchemas extends OperationInputSchemas,
+  TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
+  TCommandInputSchemas extends OperationInputSchemas,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+> = {
   id: ServiceId;
   description?: string;
   internal?: boolean;
@@ -106,7 +96,16 @@ export const defineService = <
     TCommandOutputSchemas
   >;
   commands: DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>;
-}): ServiceDefinition<
+};
+
+/** Definition type produced from a `ServiceDefinitionInput`, shared by both call forms. */
+type ResolvedServiceDefinition<
+  TState,
+  TQueryInputSchemas extends OperationInputSchemas,
+  TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
+  TCommandInputSchemas extends OperationInputSchemas,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+> = ServiceDefinition<
   TState,
   DefinedQueries<
     TState,
@@ -116,4 +115,61 @@ export const defineService = <
     TCommandOutputSchemas
   >,
   DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>
-> => def;
+>;
+
+/**
+ * Direct form — infers state from `initialState` plus all schemas. Use when the initial value fully
+ * conveys the state type.
+ */
+export function defineService<
+  TState extends object,
+  const TQueryInputSchemas extends OperationInputSchemas,
+  const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
+  const TCommandInputSchemas extends OperationInputSchemas,
+  const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+>(
+  def: ServiceDefinitionInput<
+    TState,
+    TQueryInputSchemas,
+    TQueryOutputSchemas,
+    TCommandInputSchemas,
+    TCommandOutputSchemas
+  >
+): ResolvedServiceDefinition<
+  TState,
+  TQueryInputSchemas,
+  TQueryOutputSchemas,
+  TCommandInputSchemas,
+  TCommandOutputSchemas
+>;
+
+/**
+ * Curried form — `defineService<MyState>()(def)` pins the state type so `initialState` is checked
+ * against it instead of cast. Use when the initial value can't convey the full type, e.g.
+ * `{ items: {} }` that should be `Record<string, Item>`.
+ */
+export function defineService<TState extends object>(): <
+  const TQueryInputSchemas extends OperationInputSchemas,
+  const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
+  const TCommandInputSchemas extends OperationInputSchemas,
+  const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+>(
+  def: ServiceDefinitionInput<
+    TState,
+    TQueryInputSchemas,
+    TQueryOutputSchemas,
+    TCommandInputSchemas,
+    TCommandOutputSchemas
+  >
+) => ResolvedServiceDefinition<
+  TState,
+  TQueryInputSchemas,
+  TQueryOutputSchemas,
+  TCommandInputSchemas,
+  TCommandOutputSchemas
+>;
+
+export function defineService(def?: unknown): unknown {
+  // No arg = curried form: return the inner function.
+  return def === undefined ? (innerDef: unknown) => innerDef : def;
+}

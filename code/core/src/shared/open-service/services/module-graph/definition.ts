@@ -67,7 +67,7 @@ const noInputSchema = v.undefined();
 
 export type { ModuleGraphServiceState } from './types.ts';
 
-export const moduleGraphServiceDef = defineService({
+export const moduleGraphServiceDef = defineService<ModuleGraphServiceState>()({
   id: 'core/module-graph',
   description:
     'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
@@ -78,7 +78,7 @@ export const moduleGraphServiceDef = defineService({
     storiesByFile: {},
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
-  } as ModuleGraphServiceState,
+  },
   queries: {
     getStoriesForFiles: {
       description:

@@ -88,11 +88,11 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
  * surfaces extraction errors. `getDocgenForAllComponents` delegates to the `extractAllDocgen`
  * command, whose handler is supplied at registration because it needs the story index.
  */
-export const docgenServiceDef = defineService({
+export const docgenServiceDef = defineService<DocgenServiceState>()({
   id: 'core/docgen',
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
-  initialState: { components: {} } as DocgenServiceState,
+  initialState: { components: {} },
   queries: {
     getDocgen: {
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',

@@ -3,14 +3,12 @@ import React, { type HTMLAttributes, createContext, useEffect, useRef, useState 
 import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
-import { FocusScope } from '@react-aria/focus';
-import {
-  Overlay,
-  UNSAFE_PortalProvider,
-  ariaHideOutside,
-  useModalOverlay,
-} from '@react-aria/overlays';
-import { mergeProps } from '@react-aria/utils';
+import { FocusScope } from 'react-aria/FocusScope';
+import { Overlay } from 'react-aria/Overlay';
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
+import { useModalOverlay } from 'react-aria/useModalOverlay';
+import { ariaHideOutside } from '@react-aria/overlays';
+import { mergeProps } from 'react-aria/mergeProps';
 import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
 import { useTransitionState } from 'react-transition-state';
@@ -191,9 +189,7 @@ function BaseModal({
       } else {
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
-          if (!e.nativeEvent.defaultPrevented) {
-            close();
-          }
+          close();
         }
       }
     },

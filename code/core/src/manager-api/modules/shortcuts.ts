@@ -1,6 +1,7 @@
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
@@ -85,8 +86,9 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
+   * @returns The matched shortcut action name, or undefined if no shortcut was matched.
    */
-  handleKeydownEvent(event: KeyboardEventLike): void;
+  handleKeydownEvent(event: KeyboardEventLike): API_Action | undefined;
   /**
    * Handles a shortcut feature.
    *
@@ -114,7 +116,6 @@ export interface API_Shortcuts {
   nextStory: API_KeyCollection;
   shortcutsPage: API_KeyCollection;
   aboutPage: API_KeyCollection;
-  escape: API_KeyCollection;
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
@@ -123,6 +124,7 @@ export interface API_Shortcuts {
   copyStoryLink: API_KeyCollection;
   goToPreviousLandmark: API_KeyCollection;
   goToNextLandmark: API_KeyCollection;
+  contextMenu: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -156,7 +158,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: [controlOrMetaKey(), 'shift', ','],
   aboutPage: [controlOrMetaKey(), ','],
-  escape: ['escape'], // This one is not customizable
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
@@ -165,11 +166,18 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
+  contextMenu: [controlOrMetaKey(), 'shift', 'U'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
 
 const addonsShortcuts: API_AddonShortcuts = {};
+
+/**
+ * Storage for recently removed features that still exist in users' browser cache.
+ * Prevents runtime errors in console for those users.
+ */
+const removedFeatures: string[] = ['escape'];
 
 function shouldSkipShortcut(event: KeyboardEvent) {
   const target = event.target as Element;
@@ -251,8 +259,12 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         shortcutMatchesShortcut(shortcut!, shortcuts[feature])
       );
       if (matchedFeature) {
+        if (removedFeatures.includes(matchedFeature)) {
+          return;
+        }
         api.handleShortcutFeature(matchedFeature, event);
       }
+      return matchedFeature;
     },
 
     // warning: event might not have a full prototype chain because it may originate from the channel
@@ -272,16 +284,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         event.preventDefault();
       }
       switch (feature) {
-        case 'escape': {
-          if (fullAPI.getIsFullscreen()) {
-            fullAPI.toggleFullscreen(false);
-          } else if (fullAPI.getIsNavShown()) {
-            fullAPI.toggleNav(true);
-          }
-          break;
-        }
-
-        // Handled by @react-aria/interactions and useLandmarkIndicator
+        // Handled by react-aria and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
           break;
@@ -454,6 +457,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.emit(STORIES_EXPAND_ALL);
           break;
         }
+        case 'contextMenu': {
+          fullAPI.emit(SIDEBAR_OPEN_CONTEXT_MENU);
+          break;
+        }
         case 'remount': {
           fullAPI.emit(FORCE_REMOUNT, { storyId });
           break;
@@ -505,12 +512,26 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   };
 
   const initModule = () => {
-    // Listen for keydown events in the manager
-    document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!shouldSkipShortcut(event)) {
-        api.handleKeydownEvent(event);
-      }
-    });
+    // Listen for keydown events in the manager.
+    // Capture phase ensures we run before React Aria (and other component libraries) can
+    // call stopPropagation(), which would prevent bubbling-phase listeners from firing.
+    // When a shortcut is matched we also stop propagation so React Aria cannot re-dispatch
+    // the same event (which it does for ArrowUp/Down) and cause double-firing or
+    // unintended tree navigation as a side effect.
+    // Landmark-navigation shortcuts (F6 / Shift+F6) are intentionally excluded: Storybook's
+    // handler is a no-op for them and React Aria must be allowed to handle them.
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (!shouldSkipShortcut(event)) {
+          const matched = api.handleKeydownEvent(event);
+          if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
+            event.stopPropagation();
+          }
+        }
+      },
+      { capture: true }
+    );
 
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {

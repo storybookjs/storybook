@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels/index.ts';
-import type { State } from '../../manager-api/index.ts';
+import type { Channel } from '../../channels.ts';
+import type { State } from '../../manager-api.ts';
 import type { RenderData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { Addon_RenderOptions } from './addons.ts';
@@ -106,7 +106,20 @@ export interface API_SidebarOptions<API = any> {
   showRoots?: boolean;
   filters?: Record<string, API_FilterFunction>;
   collapsedRoots?: string[];
-  renderLabel?: (item: API_HashEntry, api: API) => any;
+  renderAriaLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context: {
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
+  renderLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context: {
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
 }
 
 interface OnClearOptions {

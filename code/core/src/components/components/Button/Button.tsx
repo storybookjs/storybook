@@ -7,6 +7,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
+import type { PopperPlacement } from '../shared/overlayHelpers.tsx';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';
 import { useAriaDescription } from './helpers/useAriaDescription.tsx';
@@ -28,6 +29,11 @@ export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, '
    * consider making this the same as the aria-label.
    */
   tooltip?: string;
+
+  /**
+   * The preferred placement of the tooltip.
+   */
+  tooltipPlacement?: PopperPlacement;
 
   /**
    * Only use this flag when tooltips on button interfere with other keyboard interactions, like
@@ -66,6 +72,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ariaLabel,
       ariaDescription = undefined,
       tooltip = undefined,
+      tooltipPlacement = 'top',
       shortcut = undefined,
       disableAllTooltips = false,
       ...props
@@ -130,6 +137,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disableAllTooltips={disableAllTooltips}
           shortcut={shortcut}
           tooltip={finalTooltip}
+          tooltipPlacement={tooltipPlacement}
         >
           <StyledButton
             data-deprecated={deprecated}

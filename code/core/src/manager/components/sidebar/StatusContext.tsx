@@ -13,13 +13,27 @@ import type { Item } from '../../container/Sidebar.tsx';
 import { getDescendantIds } from '../../utils/tree.ts';
 
 export const StatusContext = createContext<{
-  data?: StoriesHash;
+  data: StoriesHash;
   allStatuses?: StatusesByStoryIdAndTypeId;
-  groupStatus?: Record<StoryId, StatusValue>;
-}>({});
+  groupDualStatus?: Record<StoryId, { test: Status; change: Status }>;
+}>({ data: {} });
+
+function hasStatusWorthReporting(
+  groupDualStatus: Record<StoryId, { test: Status; change: Status }>,
+  itemId: StoryId
+) {
+  return (
+    ['status-value:new', 'status-value:modified', 'status-value:affected'].includes(
+      groupDualStatus[itemId]?.change.value
+    ) ||
+    ['status-value:pending', 'status-value:warning', 'status-value:error'].includes(
+      groupDualStatus[itemId]?.test.value
+    )
+  );
+}
 
 export const useStatusSummary = (item: Item) => {
-  const { data, allStatuses, groupStatus } = useContext(StatusContext);
+  const { data, allStatuses, groupDualStatus } = useContext(StatusContext);
   const summary: {
     counts: Record<StatusValue, number>;
     statusesByValue: Record<StatusValue, Record<StoryId, Status[]>>;
@@ -46,19 +60,7 @@ export const useStatusSummary = (item: Item) => {
     },
   };
 
-  if (
-    data &&
-    allStatuses &&
-    groupStatus &&
-    [
-      'status-value:pending',
-      'status-value:new',
-      'status-value:modified',
-      'status-value:affected',
-      'status-value:warning',
-      'status-value:error',
-    ].includes(groupStatus[item.id])
-  ) {
+  if (data && allStatuses && groupDualStatus && hasStatusWorthReporting(groupDualStatus, item.id)) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
       for (const status of Object.values(allStatuses[storyId] ?? {})) {
         summary.counts[status.value]++;

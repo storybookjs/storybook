@@ -1,14 +1,15 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
+import type { API } from 'storybook/manager-api';
+
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { HighlightStyles } from './HighlightStyles.tsx';
 import { Ref } from './Refs.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
-import { useHighlighted } from './useHighlighted.ts';
 
 export interface ExplorerProps {
   className?: string;
+  api: API;
   isLoading: boolean;
   isBrowsing: boolean;
   isHidden: boolean;
@@ -18,6 +19,7 @@ export interface ExplorerProps {
 }
 
 export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
+  api,
   hasEntries,
   isLoading,
   isBrowsing,
@@ -27,14 +29,6 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   ...restProps
 }) {
   const containerRef = useRef<HTMLElement>(null);
-
-  // Track highlighted nodes, keep it in sync with props and enable keyboard navigation
-  const [highlighted, setHighlighted, highlightedRef] = useHighlighted({
-    containerRef,
-    isLoading,
-    isBrowsing,
-    selected,
-  });
 
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'storybook-explorer-tree-heading', role: 'navigation' },
@@ -48,25 +42,21 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       className={isBrowsing ? undefined : 'sb-sr-only'}
       ref={containerRef}
       id="storybook-explorer-tree"
-      data-highlighted-ref-id={highlighted?.refId}
-      data-highlighted-item-id={highlighted?.itemId}
       {...landmarkProps}
       {...restProps}
     >
       <h2 id="storybook-explorer-tree-heading" className="sb-sr-only">
         Stories
       </h2>
-      {highlighted && <HighlightStyles {...highlighted} />}
       {dataset.entries.map(([refId, ref]) => (
         <Ref
           {...ref}
           key={refId}
+          api={api}
           isLoading={isLoading}
           isBrowsing={isBrowsing}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
-          highlightedRef={highlightedRef}
-          setHighlighted={setHighlighted}
         />
       ))}
     </nav>

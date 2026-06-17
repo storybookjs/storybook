@@ -11,7 +11,7 @@ import React, {
 
 import { Form } from 'storybook/internal/components';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(

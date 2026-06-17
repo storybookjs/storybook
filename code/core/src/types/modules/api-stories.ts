@@ -1,7 +1,7 @@
+import type { API_SidebarOptions, StatusByTypeId } from 'storybook/internal/types';
 import type { DocsOptions } from './core-common.ts';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf.ts';
 import type { IndexEntry } from './indexer.ts';
-import type { StatusByTypeId } from './status.ts';
 
 export interface API_BaseEntry {
   id: StoryId;
@@ -9,7 +9,8 @@ export interface API_BaseEntry {
   name: string;
   tags: Tag[];
   refId?: string;
-  renderLabel?: (item: API_HashEntry, api: any) => any;
+  renderAriaLabel?: API_SidebarOptions['renderAriaLabel'];
+  renderLabel?: API_SidebarOptions['renderLabel'];
 }
 
 export interface API_RootEntry extends API_BaseEntry {
@@ -59,7 +60,8 @@ export interface API_StoryEntry extends API_BaseEntry {
   children?: StoryId[];
 }
 
-export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'children'> {
+export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'children' | 'parent'> {
+  parent: StoryId;
   subtype: 'test';
 }
 
@@ -75,11 +77,12 @@ export type API_HashEntry =
 /**
  * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the
  * hash not only for each story or docs entry, but also for each "group" of the component (split on
- * '/'), as that's how things are manipulated in the manager (i.e. in the sidebar)
+ * '/'), as that's how things are manipulated in parts of the manager (i.e. in search).
  */
 export interface API_IndexHash {
   [id: string]: API_HashEntry;
 }
+
 // We used to received a bit more data over the channel on the SET_STORIES event, including
 // the full parameters for each story.
 export type API_PreparedIndexEntry = IndexEntry & {

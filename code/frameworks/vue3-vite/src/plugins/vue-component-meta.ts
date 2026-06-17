@@ -2,8 +2,8 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import { parseLocalBindings } from 'storybook/internal/oxc-parser';
 
-import { escapeRegExp } from 'es-toolkit/string';
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
 import {
@@ -116,21 +116,17 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           const s = new MagicString(src);
 
+          // Names with a local binding in this module that we can safely attach "__docgenInfo" to.
+          // Re-exports (e.g. "export { default as MyComponent } from './MyComponent.vue'" or
+          // "export * from './Tabs'") resolve via checker.getExportNames but have no local binding
+          // here, so attaching to them would reference an undefined variable at runtime.
+          const localBindings = await parseLocalBindings(id, src);
+
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
-            const escaped = escapeRegExp(name);
 
-            // we can only add the "__docgenInfo" to variables that are actually defined in the current file
-            // so e.g. re-exports like "export { default as MyComponent } from './MyComponent.vue'" must be ignored
-            // to prevent runtime errors
-            if (
-              new RegExp(`export {.*${escaped}.*}`).test(src) ||
-              new RegExp(`export \\* from ['"]\\S*${escaped}['"]`).test(src) ||
-              // when using re-exports, some exports might be resolved via checker.getExportNames
-              // but are not directly exported inside the current file so we need to ignore them too
-              !new RegExp(`(^|[^$_\\w])${escaped}(?=[^$_\\w]|$)`).test(src)
-            ) {
+            if (!localBindings.has(name)) {
               return;
             }
 

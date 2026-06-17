@@ -242,12 +242,47 @@ export class OpenServiceLoadedDrainExceededError extends StorybookError {
 }
 
 export class OpenServiceDocgenMissingComponentError extends StorybookError {
-  constructor(public data: { componentId: string }) {
+  constructor(public data: { id: string }) {
     super({
       name: 'OpenServiceDocgenMissingComponentError',
       category: Category.CORE_COMMON,
       code: 12,
-      message: `No story or attached docs entry was found for componentId "${data.componentId}". The docgen service can only return docs for components that are present in the story index.`,
+      message: `No story or attached docs entry was found for component id "${data.id}". The docgen service can only return docs for components that are present in the story index.`,
+    });
+  }
+}
+
+export class OpenServiceMissingChannelError extends StorybookError {
+  constructor(public data: { serviceId?: ServiceId } = {}) {
+    super({
+      name: 'OpenServiceMissingChannelError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: data.serviceId
+        ? `Cannot register service "${data.serviceId}": the Storybook addons channel is not installed in this runtime.`
+        : 'The Storybook addons channel is not installed in this runtime.',
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceRemoteCommandDisconnectedError',
+      category: Category.CORE_COMMON,
+      code: 14,
+      message: `Service "${data.serviceId}" was unregistered before a remote command resolved.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
     });
   }
 }

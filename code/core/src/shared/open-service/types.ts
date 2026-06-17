@@ -9,6 +9,32 @@ export type AnySchema = StandardSchemaV1<unknown, unknown>;
 /** Stable alias for service identifiers across definition, runtime, and registration APIs. */
 export type ServiceId = string;
 
+/**
+ * Constrains a service's state to a plain object — the only shape the architecture supports.
+ *
+ * This is not an arbitrary restriction; two layers require it:
+ *
+ * 1. State is wrapped in a `deepSignal` proxy for fine-grained per-field reactivity, and `deepSignal`
+ *    throws ("this object can't be observed") on primitives, `null`, and `undefined` — there are no
+ *    fields to track on a scalar.
+ * 2. Cross-peer sync (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys;
+ *    it has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
+ *
+ * Arrays are technically observable by `deepSignal` but are still rejected here: `applyStatePatch`
+ * replaces arrays wholesale rather than merging by key, so a *top-level* array state would silently
+ * fail to sync between peers. Wrap collections in a field instead (`{ items: [...] }`).
+ *
+ * Authoring helpers pair this with an `extends object` bound (which rejects primitives, `null`, and
+ * `undefined` while still accepting both `interface` and `type` declarations). The naked `TState` in
+ * the intersection keeps it transparent to inference; only an array collapses to the branded error.
+ */
+export type ServiceState<TState> = TState &
+  (TState extends readonly unknown[]
+    ? {
+        __openServiceStateError: 'Service state must be a plain object, not an array.';
+      }
+    : unknown);
+
 /** Public schema shape exposed when describing a schema-backed service contract. */
 export type SchemaDescriptor = AnySchema;
 
@@ -76,15 +102,13 @@ export type CommandFunctions<
  * before reading. Use `.subscribe(input, callback)` to receive the current value immediately
  * (synchronously) and again after the background `load` settles (deduped while in-flight), plus
  * further emissions whenever tracked state changes.
+ *
+ * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
+ * zero arguments: `query()` and `query.loaded()`.
  */
-export type Query<TInput, TOutput> = {
+type InputQuery<TInput, TOutput> = {
   (input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
-  /**
-   * Subscribe to a query. The callback fires once with the current value and again whenever the
-   * tracked state it reads changes. An optional `selector` narrows what the subscriber depends on:
-   * the callback receives the selected slice and only fires when that slice changes by value.
-   */
   subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
   subscribe<TSelected>(
     input: TInput,
@@ -92,6 +116,21 @@ export type Query<TInput, TOutput> = {
     callback: (selected: TSelected) => void
   ): () => void;
 };
+
+/** Zero-argument overloads merged into {@link Query} when the input schema is void. */
+type VoidQuery<TOutput> = {
+  (): TOutput;
+  loaded(): Promise<TOutput>;
+  subscribe(callback: (value: TOutput) => void): () => void;
+  subscribe<TSelected>(
+    selector: (value: TOutput) => TSelected,
+    callback: (selected: TSelected) => void
+  ): () => void;
+};
+
+export type Query<TInput, TOutput> = undefined extends TInput
+  ? VoidQuery<TOutput> & InputQuery<TInput, TOutput>
+  : InputQuery<TInput, TOutput>;
 
 /**
  * Read-only service handle exposed to query handlers.
@@ -213,6 +252,11 @@ export type QueryDefinition<
     MatchingOutputSchemas<TCommandInputSchemas>,
 > = {
   description?: string;
+  /**
+   * When true, hides this query from `describeService()` output. Defaults to false. Does not disable
+   * the query at runtime — callers with a service handle can still invoke it.
+   */
+  internal?: boolean;
   input: TInputSchema;
   output: TOutputSchema;
   /** Logical path for the serialized state snapshot, relative to this service's output folder. */
@@ -246,6 +290,11 @@ export type CommandDefinition<
   TOutputSchema extends AnySchema,
 > = {
   description?: string;
+  /**
+   * When true, hides this command from `describeService()` output. Defaults to false. Does not
+   * disable the command at runtime — callers with a service handle can still invoke it.
+   */
+  internal?: boolean;
   input: TInputSchema;
   output: TOutputSchema;
   handler?: BivariantCallback<
@@ -257,6 +306,7 @@ export type CommandDefinition<
 /** Internal structural constraint used to store any query definition in a record. */
 export type AnyQueryDefinition<TState> = {
   description?: string;
+  internal?: boolean;
   input: AnySchema;
   output: AnySchema;
   staticPath?: BivariantCallback<[input: unknown], string>;
@@ -268,6 +318,7 @@ export type AnyQueryDefinition<TState> = {
 /** Internal structural constraint used to store any command definition in a record. */
 export type AnyCommandDefinition<TState> = {
   description?: string;
+  internal?: boolean;
   input: AnySchema;
   output: AnySchema;
   handler?: BivariantCallback<
@@ -289,6 +340,16 @@ export type ServiceDefinition<
 > = {
   id: ServiceId;
   description?: string;
+  /**
+   * When true, hides this service from `listServices()` output. Defaults to false. Does not disable
+   * the service at runtime — callers can still resolve it through `getService()`.
+   */
+  internal?: boolean;
+  /**
+   * Initial state for the service. Must be a plain object (not a primitive, `null`, or array) — see
+   * {@link ServiceState} for why. The authoring boundary (`defineService`) enforces this; the runtime
+   * type stays `TState` so already-constructed definitions flow through the registry unchanged.
+   */
   initialState: TState;
   queries: TQueries;
   commands: TCommands;
@@ -330,19 +391,13 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService(serviceId: ServiceId): RuntimeService;
-  getService<TDefinition extends AnyServiceDefinition>(
-    serviceId: ServiceId
-  ): ServiceInstanceOf<TDefinition>;
+  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &
   ServiceRegistryApi;
 
-export type ServiceQueryRegistration<TState, TQuery extends AnyQueryDefinition<TState>> = Pick<
-  TQuery,
-  'handler' | 'load'
-> & {
+export type ServiceQueryRegistration<TState> = {
   /** Static build inputs that may depend on registry or other server context. */
   staticInputs?: RegisteredStaticInputs<TState>;
 };
@@ -358,7 +413,7 @@ export type ServiceRegistrationOptions<
   TCommands extends Commands<TState>,
 > = {
   queries?: {
-    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState, TQueries[TKey]>;
+    [TKey in keyof TQueries]?: ServiceQueryRegistration<TState>;
   };
   commands?: {
     [TKey in keyof TCommands]?: ServiceCommandRegistration<TState, TCommands[TKey]>;

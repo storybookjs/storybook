@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { defineService } from './service-definition.ts';
-import { serviceRegistryApi } from './service-registration.ts';
+import { serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { clearRegistry, registerService } from './server.ts';
 import {
@@ -77,6 +77,34 @@ describe('service runtime', () => {
       });
 
       expect(calls).toEqual([null, { marker: 'updated' }]);
+      unsubscribe();
+    });
+
+    it('emits detached snapshots when nested state changes', async () => {
+      const service = registerService(mutableRecordLookupServiceDef);
+      const calls: Array<Record<string, string> | null> = [];
+
+      const unsubscribe = service.queries.getRecordFields.subscribe(
+        { entryId: 'entry-a' },
+        (value) => {
+          calls.push(value);
+        }
+      );
+
+      await vi.waitFor(() => expect(calls).toEqual([null]));
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'first',
+      });
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'second',
+      });
+
+      expect(calls).toEqual([null, { marker: 'first' }, { marker: 'second' }]);
+      expect(calls[1]).not.toBe(calls[2]);
       unsubscribe();
     });
 
@@ -907,6 +935,37 @@ describe('service runtime', () => {
       const service = registerService(failingDef);
 
       await expect(service.queries.getValue.loaded(undefined)).rejects.toThrow('boom');
+    });
+
+    it('allows zero-argument .loaded() for v.void() queries', async () => {
+      const voidDef = defineService({
+        id: 'internal-fixture/void-loaded',
+        initialState: { ready: false },
+        queries: {
+          getReady: {
+            input: v.void(),
+            output: v.boolean(),
+            handler: (_input, ctx) => ctx.self.state.ready,
+            load: async (_input, ctx) => {
+              await ctx.self.commands.markReady(undefined);
+            },
+          },
+        },
+        commands: {
+          markReady: {
+            input: v.void(),
+            output: v.void(),
+            handler: (_input, ctx) => {
+              ctx.self.setState((state) => {
+                state.ready = true;
+              });
+            },
+          },
+        },
+      });
+      const service = registerService(voidDef);
+
+      await expect(service.queries.getReady.loaded()).resolves.toBe(true);
     });
 
     it('breaks a load cycle without deadlocking', async () => {

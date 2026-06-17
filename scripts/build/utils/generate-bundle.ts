@@ -147,6 +147,7 @@ export async function generateBundle({
       'storybook/measure': './src/measure',
       'storybook/actions': './src/actions',
       'storybook/viewport': './src/viewport',
+      'storybook/open-service': './src/shared/open-service',
       // The following aliases ensures that the manager has a single version of React,
       // even if transitive dependencies would depend on other versions.
       react: resolvePackageDir('react'),

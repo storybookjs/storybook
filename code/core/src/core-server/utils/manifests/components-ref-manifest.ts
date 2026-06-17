@@ -40,6 +40,10 @@ export type ComponentsRefManifest = {
   meta?: ComponentsManifest['meta'];
 };
 
+export type ComponentManifestWithStoryDocs = Omit<ComponentManifest, 'stories'> & {
+  stories: StoryDocsPayload['stories'];
+};
+
 function readDocgenSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
   const payload = components?.[id];
@@ -61,7 +65,7 @@ function readStoryDocsSnapshotPayload(document: unknown, id: string): StoryDocsP
 export function mergeManifestPayloads(
   docgen: DocgenPayload,
   storyDocs?: StoryDocsPayload
-): ComponentManifest {
+): ComponentManifestWithStoryDocs {
   return {
     ...docgen,
     stories: storyDocs?.stories ?? {},

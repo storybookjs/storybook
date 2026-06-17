@@ -426,18 +426,14 @@ export interface ComponentManifest {
   description?: string | undefined;
   import?: string | undefined;
   summary?: string | undefined;
-  /** Per-story snippets/metadata keyed by story id (mirrors the story-docs payload shape). */
-  stories: Record<
-    string,
-    {
-      id: string;
-      name: string;
-      snippet?: string | undefined;
-      description?: string | undefined;
-      summary?: string | undefined;
-      error?: { name: string; message: string };
-    }
-  >;
+  stories: {
+    id: string;
+    name: string;
+    snippet?: string | undefined;
+    description?: string | undefined;
+    summary?: string | undefined;
+    error?: { name: string; message: string };
+  }[];
   jsDocTags: Record<string, string[]>;
   subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };

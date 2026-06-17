@@ -36,16 +36,31 @@ interface ComponentManifestLikeWithDocgen extends ComponentSubcomponentManifest 
   reactComponentMeta?: ReactComponentMetaDoc;
 }
 
+export type ComponentManifestStory = ComponentManifest['stories'][number];
+export type ComponentManifestStories =
+  | ComponentManifest['stories']
+  | Record<string, ComponentManifestStory>;
+
 /** Extended component manifest that may include docs from the docs addon */
-interface ComponentManifestWithDocs extends ComponentManifestLikeWithDocgen, ComponentManifest {
+export interface ComponentManifestWithDocs
+  extends ComponentManifestLikeWithDocgen, Omit<ComponentManifest, 'stories' | 'subcomponents'> {
+  stories: ComponentManifestStories;
   docs?: Record<string, DocsManifestEntry>;
   subcomponents?: Record<string, ComponentManifestLikeWithDocgen>;
+}
+
+export interface ComponentsManifestForRenderer extends Omit<ComponentsManifest, 'components'> {
+  components: Record<string, ComponentManifestWithDocs>;
+}
+
+function storyEntries(stories?: ComponentManifestStories): ComponentManifestStory[] {
+  return Array.isArray(stories) ? stories : Object.values(stories ?? {});
 }
 
 // AI generated manifests/components.html page
 // Only HTML/CSS no JS
 export function renderComponentsManifest(
-  manifest: ComponentsManifest | undefined,
+  manifest: ComponentsManifestForRenderer | undefined,
   docsManifest?: DocsManifest
 ) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
@@ -800,7 +815,7 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
     );
   }
 
-  const allStories = Object.values(c.stories ?? {});
+  const allStories = storyEntries(c.stories);
   const totalStories = allStories.length;
   const storyErrors = allStories.filter((e) => !!e?.error).length;
   const storyOk = totalStories - storyErrors;
@@ -908,7 +923,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const allStories = Object.values(c.stories ?? {});
+  const allStories = storyEntries(c.stories);
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
   const subcomponentEntries = Object.entries(c.subcomponents ?? {});

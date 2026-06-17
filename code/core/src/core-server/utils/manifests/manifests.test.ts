@@ -115,6 +115,32 @@ describe('manifests', () => {
       expect(files['/output/manifests/another.json']).toBe(JSON.stringify({ items: [1, 2, 3] }));
     });
 
+    it('writes legacy inline components.json with array-shaped stories when experimentalDocgenServer is disabled', async () => {
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './Button.stories.tsx',
+              stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+              jsDocTags: {},
+            },
+          },
+        },
+      };
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      expect(componentsJson.v).toBe(0);
+      expect(componentsJson.components.button.stories).toEqual([
+        { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      ]);
+    });
+
     it('should write HTML file when components manifest exists', async () => {
       const componentsManifest: ComponentsManifest = {
         v: 0,
@@ -123,7 +149,7 @@ describe('manifests', () => {
             id: 'button',
             name: 'Button',
             path: './Button.tsx',
-            stories: {},
+            stories: [],
             jsDocTags: {},
           },
         },
@@ -148,7 +174,7 @@ describe('manifests', () => {
               id: 'button',
               name: 'Button',
               path: './Button.stories.tsx',
-              stories: {},
+              stories: [],
               jsDocTags: {},
               subcomponents: {
                 ButtonIcon: {
@@ -386,6 +412,12 @@ describe('manifests', () => {
         docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
         stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
       });
+      const storyDocsJson = JSON.parse(
+        files['/output/services/core/story-docs/button.json'] as string
+      );
+      expect(storyDocsJson.components.button.stories).toEqual({
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      });
       expect(files['/output/manifests/docs.json']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('Button');
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
@@ -546,7 +578,7 @@ describe('manifests', () => {
               id: 'button',
               name: 'Button',
               path: './Button.tsx',
-              stories: {},
+              stories: [],
               jsDocTags: {},
             },
           },

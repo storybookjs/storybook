@@ -127,7 +127,7 @@ describe('components-ref-manifest', () => {
     });
   });
 
-  it('merges docgen and story-docs payloads for the HTML debugger', () => {
+  it('merges docgen and story-docs payloads with Record-shaped stories', () => {
     const docgen: DocgenPayload = {
       id: 'button',
       name: 'Button',
@@ -142,16 +142,21 @@ describe('components-ref-manifest', () => {
       import: 'import { Button } from "./Button";',
       stories: {
         'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        'button--secondary': { id: 'button--secondary', name: 'Secondary', snippet: '<Button />' },
       },
     };
 
-    expect(mergeManifestPayloads(docgen, storyDocs)).toEqual({
+    const merged = mergeManifestPayloads(docgen, storyDocs);
+
+    expect(merged).toEqual({
       ...docgen,
       import: 'import { Button } from "./Button";',
       stories: {
         'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        'button--secondary': { id: 'button--secondary', name: 'Secondary', snippet: '<Button />' },
       },
     });
+    expect(Object.keys(merged.stories)).toEqual(['button--primary', 'button--secondary']);
   });
 
   it('loads story-docs payloads from built snapshots on disk', async () => {

@@ -12,26 +12,31 @@ import { getService } from '../../../shared/open-service/server.ts';
 import type { DocgenService } from '../../../shared/open-service/services/docgen/definition.ts';
 import type { StoryDocsService } from '../../../shared/open-service/services/story-docs/definition.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
-import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
+import type { ComponentsManifest } from '../../../types/modules/core-common.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import {
   buildComponentsRefManifest,
+  type ComponentManifestWithStoryDocs,
   loadDocgenPayloadsFromDisk,
   loadStoryDocsPayloadsFromDisk,
   mergeManifestPayloads,
   toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
-import { type DocsManifest, renderComponentsManifest } from './render-components-manifest.ts';
+import {
+  type ComponentsManifestForRenderer,
+  type DocsManifest,
+  renderComponentsManifest,
+} from './render-components-manifest.ts';
 
 /**
  * Wraps merged docgen + story-docs payloads in a {@link ComponentsManifest} shell for the HTML
  * debugger.
  */
 function buildComponentsManifest(
-  components: Record<string, ComponentManifest>,
+  components: Record<string, ComponentManifestWithStoryDocs>,
   meta: ComponentsManifest['meta']
-): ComponentsManifest {
+): ComponentsManifestForRenderer {
   return {
     v: 1,
     components,
@@ -43,7 +48,7 @@ function mergeServicePayloads(
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload>,
   componentIds: string[]
-): Record<string, ComponentManifest> {
+): Record<string, ComponentManifestWithStoryDocs> {
   return Object.fromEntries(
     componentIds.flatMap((id) => {
       const docgen = docgenPayloads[id];

@@ -81,11 +81,9 @@ test.describe('addon-mcp', () => {
           path: expect.stringContaining('Button.stories'),
         });
 
-        // Should have stories keyed by story id (not the legacy array shape)
-        expect(Array.isArray(button.stories)).toBe(false);
-        expect(typeof button.stories).toBe('object');
-        expect(button.stories).not.toBeNull();
-        expect(Object.keys(button.stories).length).toBeGreaterThan(0);
+        // Should have stories
+        expect(button.stories).toBeInstanceOf(Array);
+        expect(button.stories.length).toBeGreaterThan(0);
 
         // Should have reactDocgen info with props
         expect(button).toHaveProperty('reactDocgen');

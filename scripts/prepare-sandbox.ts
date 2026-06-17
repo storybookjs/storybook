@@ -7,7 +7,6 @@ import waitOn from 'wait-on';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { exec } from './utils/exec.ts';
 import { isNxTaskExecution } from './utils/nx.ts';
-import { patchMcpStoriesRecord } from './patch-mcp-stories-record.ts';
 
 /**
  * Prepares a sandbox for use during NX task execution.
@@ -72,9 +71,6 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
     // Restore node_modules — the NX cache deliberately excludes them to keep
     // the remote cache small. The yarn cache is shared, so this is fast.
     await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
-    await patchMcpStoriesRecord(sandboxDir);
-  } else {
-    await patchMcpStoriesRecord(sandboxDir);
   }
 
   // SvelteKit requires a sync step to generate types after install

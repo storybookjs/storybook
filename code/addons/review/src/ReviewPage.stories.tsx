@@ -340,16 +340,12 @@ export const PendingUpdateSupersedesStale = meta.story({
 
     applyReviewState();
     emitMock(EVENTS.REVIEW_STALE);
-    await expect(
-      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
-    ).toBeInTheDocument();
+    await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Switch' })).toBeInTheDocument();
-    expect(
-      canvas.queryByText('This review may be stale. Ask your agent to refresh it.')
-    ).not.toBeInTheDocument();
+    expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
   },
 });

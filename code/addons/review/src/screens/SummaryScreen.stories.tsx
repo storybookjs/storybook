@@ -572,9 +572,8 @@ export const Stale = meta.story({
   args: { state: full, isStale: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
-    ).toBeInTheDocument();
+    await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
+    await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
   },
 });

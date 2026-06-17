@@ -18,7 +18,6 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
       description: downstream.description
         ? `${downstream.description} (docs enabled)`
         : 'docs enabled',
-      props: [...downstream.props, { source: '@storybook/addon-docs', kind: 'docs-marker' }],
     };
   };
 };

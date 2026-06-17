@@ -9,7 +9,7 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.12+` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
+- **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
@@ -243,11 +243,22 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
 
+### Filesystem tests with `memfs`
+
+For unit tests that touch `node:fs` / `node:fs/promises`, use [`memfs`](https://github.com/streamich/memfs) instead of real temp directories or wholesale `node:fs` mocks:
+
+- Import `vol` from `memfs` and call `vol.reset()` in `beforeEach`
+- Seed virtual files with `vol.fromNestedJSON({ '/absolute/path/file.json': '...' })` or memfs `writeFile` after redirecting spies
+- Use `vi.mock('node:fs/promises', { spy: true })` and, in `beforeEach`, point `mkdir` / `writeFile` / `readFile` at `memfs.fs.promises` (see `code/core/src/shared/open-service/server.test.ts`)
+- Assert disk state with `vol.toJSON()` when helpful
+
+Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async factory mock unless a test file already standardizes on the spy redirect pattern above.
+
 ## Quality and Logging
 
 After changing files:
 
-1. Format with `yarn fmt:write` (run from the repo root)
+1. **Always** format with `yarn fmt:write`, run from the `code/` directory (`cd code && yarn fmt:write`), once you are done editing. The repo uses `oxfmt`, so hand-written formatting will frequently be wrong — do not skip this step.
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
@@ -273,12 +284,12 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 ## Environment Variables
 
-| Variable                      | Purpose                     |
-| ----------------------------- | --------------------------- |
-| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
-| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
-| `DEBUG`                       | Enable debug logging        |
+| Variable                      | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation                     |
+| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry                               |
+| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
+| `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid

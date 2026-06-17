@@ -17,10 +17,14 @@ import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
 
 export type {
+  DocgenError,
+  DocgenJsDocTags,
   DocgenPayload,
   DocgenProvider,
   DocgenProviderInput,
   DocgenProviderPreset,
+  DocgenStory,
+  DocgenSubcomponent,
 } from '../../shared/open-service/services/docgen/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -317,7 +321,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
    * Returns a change-detection adapter the core change-detection service uses to (a) read
    * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
    */
-  changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
+  changeDetectionAdapter?(): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -409,6 +413,7 @@ export interface ComponentManifest {
   import?: string | undefined;
   summary?: string | undefined;
   stories: {
+    id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;
@@ -640,13 +645,13 @@ export interface StorybookConfigRaw {
    * @experimental Subject to change before stable release.
    */
   experimental_importParsers?:
-    | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+    | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
     | ((
-        existing: import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        existing: import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
       ) =>
-        | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
         | Promise<
-            import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+            import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
           >);
 
   storyIndexGenerator?: StoryIndexGenerator;

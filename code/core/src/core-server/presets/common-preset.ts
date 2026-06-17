@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -27,6 +31,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -224,7 +229,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {
@@ -323,6 +328,18 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
+  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
+  // generator, not a promise.
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  registerModuleGraphService({
+    channel: options.channel,
+    getIndex: () => storyIndexGenerator.getIndex(),
+    workingDir: process.cwd(),
+    presets: options.presets,
+  });
+
   const features = await options.presets.apply('features');
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
@@ -330,9 +347,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const generator =
-      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
     const provider = await options.presets.apply<DocgenProvider>(
       'experimental_docgenProvider',
       /**
@@ -346,8 +360,9 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
 
     registerDocgenService({
-      getIndex: () => generator.getIndex(),
+      getIndex: () => storyIndexGenerator.getIndex(),
       provider,
+      workingDir: process.cwd(),
     });
   }
 };

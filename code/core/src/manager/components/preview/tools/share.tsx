@@ -100,7 +100,6 @@ export const isolationModeTool: Addon_BaseType = {
     <Consumer filter={mapper}>
       {({ api, storyId, refId }) => {
         if (!storyId) return null;
-        const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
         return (
           <Button
             padding="small"
@@ -108,6 +107,11 @@ export const isolationModeTool: Addon_BaseType = {
             ariaLabel="Open in isolation mode"
             tooltip="Open in isolation mode"
             onClick={() => {
+              const originHrefs = api.getStoryHrefs(storyId, {
+                base: 'origin',
+                refId,
+                inheritArgs: true,
+              });
               window.open(originHrefs.previewHref, '_blank', 'noopener,noreferrer');
               api.emit(SHARE_ISOLATE_MODE, originHrefs.previewHref);
             }}

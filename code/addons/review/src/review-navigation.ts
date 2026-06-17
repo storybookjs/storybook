@@ -9,55 +9,9 @@ export const prettifyComponentId = (componentId: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
-const tryDecodeURIComponent = (value: string): string => {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-};
-
-/** Normalize preview URLs or encoded ids down to a plain story id. */
-export const normalizeReviewStoryId = (value: string): string => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-
-  const shouldTreatAsUrl =
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('/iframe.html') ||
-    trimmed.startsWith('iframe.html') ||
-    trimmed.startsWith('./iframe.html');
-
-  if (shouldTreatAsUrl) {
-    try {
-      const url = new URL(trimmed, 'https://storybook.local');
-      const id = url.searchParams.get('id');
-      if (id) {
-        return tryDecodeURIComponent(id);
-      }
-    } catch {
-      // Fall through to the regex-based extraction below.
-    }
-  }
-
-  const queryIdMatch = trimmed.match(/(?:^|[?&])id=([^&#]+)/);
-  if (queryIdMatch?.[1]) {
-    return tryDecodeURIComponent(queryIdMatch[1]);
-  }
-
-  return trimmed;
-};
-
 /** Preview iframe URL for a story thumbnail. */
 export const storyPreviewUrl = (storyId: string, { freeze = false }: { freeze?: boolean } = {}) =>
   `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story${freeze ? '&freeze=finished' : ''}`;
-
-/** Link to a story in the regular Storybook manager. */
-export const buildStorybookStoryHref = (storyId: string): string =>
-  `?path=/story/${encodeURIComponent(normalizeReviewStoryId(storyId))}`;
 
 /** A single navigable slot in the flattened review list (duplicates allowed). */
 export interface ReviewNavEntry {
@@ -72,18 +26,19 @@ export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`
 /** Default back target when no story has been visited yet. */
 export const STORYBOOK_ROOT_HREF = '/';
 
-export const buildSummaryBackHref = (lastReviewedStoryHref: string | null | undefined): string =>
-  lastReviewedStoryHref || STORYBOOK_ROOT_HREF;
+export const buildSummaryBackHref = (returnSearch: string | null | undefined): string =>
+  returnSearch || STORYBOOK_ROOT_HREF;
 
 /** Marks summary-header back links for SPA navigation in useReviewNavigationInterceptor. */
 export const REVIEW_SUMMARY_BACK_ATTR = 'data-review-summary-back';
 
-export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
-  `?path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
-
-/** Storybook manager navigate target (without the leading `?path=` wrapper). */
-export const buildReviewStoryNavigationTarget = (entry: ReviewNavEntry): string =>
+/** Storybook router navigate target for a review story (no `?path=` wrapper). */
+export const buildReviewStoryTarget = (entry: ReviewNavEntry): string =>
   `/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
+
+/** Full `?path=` href for a review story, derived from the router target. */
+export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
+  `?path=${buildReviewStoryTarget(entry)}`;
 
 export const parseReviewStoryHref = (href: string): ReviewNavEntry | null => {
   if (!href.startsWith('?path=/story/')) {
@@ -123,9 +78,20 @@ export const isReviewSummaryPath = (path: string): boolean =>
 export const isReviewStoryRoute = (path: string, collectionIndex: number | undefined): boolean =>
   parseStoryIdFromPath(path) !== null && collectionIndex !== undefined;
 
-/** True for the review summary or an in-review story URL (before review state loads). */
-export const isReviewSessionPath = (path: string, collectionIndex: number | undefined): boolean =>
+/**
+ * True for the review summary or an in-review story URL. A pure routing helper —
+ * review *mode* is interaction-driven and never inferred from the route (see
+ * docs/adr/0001-interaction-driven-review-mode.md).
+ */
+export const isReviewModeRoute = (path: string, collectionIndex: number | undefined): boolean =>
   isReviewSummaryPath(path) || isReviewStoryRoute(path, collectionIndex);
+
+/** True when a manager search string points back at a review route (not a canvas). */
+export const isReviewReturnSearch = (search: string): boolean => {
+  const path =
+    new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('path') ?? '';
+  return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
+};
 
 export const parseStoryIdFromPath = (path: string): string | null => {
   if (!path.startsWith('/story/')) {
@@ -174,11 +140,8 @@ export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntr
     (entry) => entry.storyId === active.storyId && entry.collectionIndex === active.collectionIndex
   );
 
-export const isStoryInReview = (entries: ReviewNavEntry[], storyId: string): boolean =>
-  entries.some((entry) => entry.storyId === storyId);
-
 /** Previous/next targets in the flattened review sequence, wrapping at the ends. */
-export const getReviewDetailNeighbors = (
+export const getAdjacentReviewEntries = (
   entries: readonly ReviewNavEntry[],
   index: number
 ): { previous: ReviewNavEntry; next: ReviewNavEntry } | null => {
@@ -230,7 +193,7 @@ export const buildReviewShortcutHrefs = (
     return null;
   }
   const active = entries[activeIndex];
-  const neighbors = getReviewDetailNeighbors(entries, activeIndex);
+  const neighbors = getAdjacentReviewEntries(entries, activeIndex);
   const fallback = active;
   const previousCollection =
     getAdjacentCollectionFirstStory(collections, active.collectionIndex, -1) ?? fallback;

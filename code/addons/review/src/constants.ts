@@ -10,19 +10,14 @@ export const BASELINE_PROXY_PATH = '/__review-baseline';
 // baseline. Derived from the proxy path so the route stays single-sourced.
 export const BASELINE_INDEX_URL = `${BASELINE_PROXY_PATH}/index.json`;
 
-// sessionStorage keys recording whether manager chrome hidden while the review
-// page is open should be restored when the user leaves. Survive full-reload
-// navigations between review screens. Value: 'restore' | 'keep'.
-export const RESTORE_NAV_SESSION_KEY = `${ADDON_ID}/restore-nav`;
-export const RESTORE_PANEL_SESSION_KEY = `${ADDON_ID}/restore-panel`;
+// sessionStorage key for the canvas search to return to when leaving review
+// mode (both summary back-to-Storybook and dismiss). Captured while browsing
+// stories/docs outside review mode, so it points at the pre-review canvas.
+export const PRE_REVIEW_RETURN_KEY = `${ADDON_ID}/pre-review-return`;
 
-// sessionStorage key for the canvas URL to restore when the user dismisses a
-// review. Updated while browsing stories/docs outside a review session.
-export const RETURN_PATH_SESSION_KEY = `${ADDON_ID}/return-path`;
-
-// sessionStorage key for the last story or docs manager search visited before
-// opening the summary overlay. Used by the summary header back button.
-export const LAST_REVIEWED_STORY_SESSION_KEY = `${ADDON_ID}/last-reviewed-story`;
+// sessionStorage marker deduplicating the one-time auto-enter on first landing
+// on the review summary. Reset on dismiss and when a new review payload arrives.
+export const AUTO_ENTERED_SESSION_KEY = `${ADDON_ID}/auto-entered`;
 
 // sessionStorage key remembering the compare mode for the tab session.
 // Value: 'latest' | 'baseline' | 'split' (legacy '1up'/'2up' are migrated on read).

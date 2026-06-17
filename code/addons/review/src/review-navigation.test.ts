@@ -6,11 +6,11 @@ import {
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
-  buildReviewStoryNavigationTarget,
+  buildReviewStoryTarget,
   buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
-  getReviewDetailNeighbors,
-  isReviewSessionPath,
+  getAdjacentReviewEntries,
+  isReviewModeRoute,
   isReviewStoryRoute,
   isReviewSummaryPath,
   parseCollectionIndex,
@@ -45,9 +45,9 @@ describe('buildReviewStoryHref', () => {
   });
 });
 
-describe('buildReviewStoryNavigationTarget', () => {
-  it('builds a manager navigate target without the query wrapper', () => {
-    expect(buildReviewStoryNavigationTarget({ storyId: 'story-a', collectionIndex: 1 })).toBe(
+describe('buildReviewStoryTarget', () => {
+  it('builds a router navigate target without the query wrapper', () => {
+    expect(buildReviewStoryTarget({ storyId: 'story-a', collectionIndex: 1 })).toBe(
       `/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
     );
   });
@@ -123,13 +123,13 @@ describe('path helpers', () => {
     expect(parseCollectionIndex('   ')).toBeUndefined();
   });
 
-  it('detects review session routes from path and collection', () => {
-    expect(isReviewSessionPath('/review/', undefined)).toBe(true);
-    expect(isReviewSessionPath('/review', undefined)).toBe(true);
+  it('detects review-mode routes from path and collection', () => {
+    expect(isReviewModeRoute('/review/', undefined)).toBe(true);
+    expect(isReviewModeRoute('/review', undefined)).toBe(true);
     expect(isReviewStoryRoute('/story/foo--bar', 0)).toBe(true);
     expect(isReviewStoryRoute('/story/foo--bar', undefined)).toBe(false);
-    expect(isReviewSessionPath('/story/foo--bar', 1)).toBe(true);
-    expect(isReviewSessionPath('/story/foo--bar', undefined)).toBe(false);
+    expect(isReviewModeRoute('/story/foo--bar', 1)).toBe(true);
+    expect(isReviewModeRoute('/story/foo--bar', undefined)).toBe(false);
   });
 
   it('builds the summary href', () => {
@@ -137,38 +137,38 @@ describe('path helpers', () => {
   });
 });
 
-describe('getReviewDetailNeighbors', () => {
+describe('getAdjacentReviewEntries', () => {
   const sequence = buildFlattenedNavEntries(reviewState);
 
   it('crosses into the next collection at a collection boundary', () => {
-    expect(getReviewDetailNeighbors(sequence, 1)?.next).toEqual({
+    expect(getAdjacentReviewEntries(sequence, 1)?.next).toEqual({
       collectionIndex: 1,
       storyId: 'story-a',
     });
   });
 
   it('crosses into the previous collection at a collection boundary', () => {
-    expect(getReviewDetailNeighbors(sequence, 2)?.previous).toEqual({
+    expect(getAdjacentReviewEntries(sequence, 2)?.previous).toEqual({
       collectionIndex: 0,
       storyId: 'story-b',
     });
   });
 
   it('wraps from the last story to the first and back', () => {
-    expect(getReviewDetailNeighbors(sequence, sequence.length - 1)?.next).toEqual({
+    expect(getAdjacentReviewEntries(sequence, sequence.length - 1)?.next).toEqual({
       collectionIndex: 0,
       storyId: 'story-a',
     });
-    expect(getReviewDetailNeighbors(sequence, 0)?.previous).toEqual({
+    expect(getAdjacentReviewEntries(sequence, 0)?.previous).toEqual({
       collectionIndex: 1,
       storyId: 'story-c',
     });
   });
 
   it('returns null for an empty sequence or an out-of-range index', () => {
-    expect(getReviewDetailNeighbors([], 0)).toBeNull();
-    expect(getReviewDetailNeighbors(sequence, -1)).toBeNull();
-    expect(getReviewDetailNeighbors(sequence, sequence.length)).toBeNull();
+    expect(getAdjacentReviewEntries([], 0)).toBeNull();
+    expect(getAdjacentReviewEntries(sequence, -1)).toBeNull();
+    expect(getAdjacentReviewEntries(sequence, sequence.length)).toBeNull();
   });
 });
 

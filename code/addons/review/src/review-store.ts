@@ -15,15 +15,13 @@ export interface ReviewStoreState {
   newlyAddedStoryIds: Set<string>;
   activeEntry: ReviewNavEntry | null;
   activeIndex: number;
-  isInReviewSession: boolean;
+  isInReviewMode: boolean;
   isSummaryVisible: boolean;
   compareMode: CompareMode;
   showCompare: boolean;
   getStoryPreviewHref: (storyId: string) => string;
   setCompareMode: (mode: CompareMode) => void;
   dismissReview: () => void;
-  /** Href of the last story or docs page viewed (anywhere in Storybook). */
-  lastReviewedStoryHref: string | null;
 }
 
 const emptyStore: ReviewStoreState = {
@@ -36,14 +34,13 @@ const emptyStore: ReviewStoreState = {
   newlyAddedStoryIds: new Set(),
   activeEntry: null,
   activeIndex: -1,
-  isInReviewSession: false,
+  isInReviewMode: false,
   isSummaryVisible: false,
   compareMode: 'latest',
   showCompare: false,
   getStoryPreviewHref: () => '',
   setCompareMode: () => {},
   dismissReview: () => {},
-  lastReviewedStoryHref: null,
 };
 
 let currentStore: ReviewStoreState = emptyStore;

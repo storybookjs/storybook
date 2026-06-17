@@ -80,6 +80,15 @@ export interface StorybookParameters {
    * If you pass `none`, no styles are applied.
    */
   layout?: Layout;
+  /**
+   * The BCP-47 language tag applied to the rendered story's document.
+   *
+   * In story view this sets `<html lang>`; in docs view it sets `lang` on the embedded story canvas.
+   * Inherited project → meta → story.
+   *
+   * @default 'en'
+   */
+  htmlLang?: string;
 }
 
 export interface StorybookTypes {

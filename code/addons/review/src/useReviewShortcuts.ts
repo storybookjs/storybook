@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import { useNavigate } from 'storybook/internal/router';
-import { useStorybookApi } from 'storybook/manager-api';
+import { type ReviewModeFilters, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import type { StatusValue } from 'storybook/internal/types';
 
-import { ADDON_ID, REVIEW_CHANGES_URL } from './constants.ts';
+import { ADDON_ID } from './constants.ts';
+import { navigateToReviewEntry, navigateToReviewSummary } from './review-actions.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   buildReviewShortcutHrefs,
-  buildReviewStoryNavigationTarget,
   parseReviewStoryHref,
   type ReviewShortcutHrefs,
 } from './review-navigation.ts';
-import { reviewStore, useReview } from './review-store.ts';
+import { useReview } from './review-store.ts';
 
 /**
  * Register review navigation as customizable addon shortcuts and keep their
@@ -21,7 +21,22 @@ export const useReviewShortcuts = () => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { state, flattenedEntries, activeEntry, activeIndex } = useReview();
+  const { includedStatusFilters, excludedStatusFilters, includedTagFilters, excludedTagFilters } =
+    useStorybookState();
   const shortcutHrefsRef = useRef<ReviewShortcutHrefs | null>(null);
+
+  const filtersRef = useRef<ReviewModeFilters>({
+    includedStatusFilters: [],
+    excludedStatusFilters: [],
+    includedTagFilters: [],
+    excludedTagFilters: [],
+  });
+  filtersRef.current = {
+    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
+    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
+    includedTagFilters: includedTagFilters ?? [],
+    excludedTagFilters: excludedTagFilters ?? [],
+  };
 
   const navigateToShortcut = useCallback(
     (target: keyof ReviewShortcutHrefs) => {
@@ -31,8 +46,7 @@ export const useReviewShortcuts = () => {
       }
 
       if (target === 'back') {
-        api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-        navigate(REVIEW_CHANGES_URL);
+        navigateToReviewSummary(api, navigate, filtersRef.current);
         return;
       }
 
@@ -40,12 +54,7 @@ export const useReviewShortcuts = () => {
       if (!entry) {
         return;
       }
-
-      reviewStore.suppressSummaryOverlay();
-      api.setQueryParams({
-        [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex),
-      });
-      navigate(buildReviewStoryNavigationTarget(entry));
+      navigateToReviewEntry(api, navigate, entry, filtersRef.current);
     },
     [api, navigate]
   );

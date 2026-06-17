@@ -10,14 +10,17 @@ import React, {
 } from 'react';
 
 import {
+  type ReviewModeFilters,
+  enterReviewMode,
   experimental_getStatusStore,
   experimental_useStatusStore,
+  isReviewModeActive,
   useChannel,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
 import { useNavigate } from 'storybook/internal/router';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { StatusValue, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import {
@@ -26,38 +29,30 @@ import {
   type StoryInfo,
 } from './components/CollectionGrid.tsx';
 import {
+  AUTO_ENTERED_SESSION_KEY,
   BASELINE_INDEX_URL,
   DEFAULT_COMPARE_MODE,
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
-  LAST_REVIEWED_STORY_SESSION_KEY,
-  RETURN_PATH_SESSION_KEY,
+  PRE_REVIEW_RETURN_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
 } from './constants.ts';
+import { navigateOutOfReview } from './review-actions.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
-  isReviewSessionPath,
+  isReviewReturnSearch,
   isReviewSummaryPath,
-  isStoryInReview,
   parseCollectionIndex,
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
-  type ReviewNavEntry,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore, type ReviewStoreState } from './review-store.ts';
-import {
-  REVIEWING_STATUS_VALUE,
-  clearReviewStatuses,
-  collectReviewStoryIds,
-  syncReviewStatuses,
-} from './review-status.ts';
-import { setReviewStatusFilters } from './review-status-filters.ts';
-import { collapseReviewChrome, openReviewSidebar } from './review-sidebar.ts';
+import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
 import { sessionStore } from './session-store.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
@@ -74,12 +69,6 @@ const readCompareMode = (): CompareMode => {
   return DEFAULT_COMPARE_MODE;
 };
 
-const isReviewReturnSearch = (search: string) => {
-  const path =
-    new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('path') ?? '';
-  return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
-};
-
 const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState): boolean =>
   current !== null &&
   current.createdAt !== undefined &&
@@ -92,17 +81,45 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [isStale, setIsStale] = useState(false);
   const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
   const [compareMode, setCompareModeState] = useState<CompareMode>(readCompareMode);
-  const [lastReviewedStoryHref, setLastReviewedStoryHref] = useState<string | null>(() =>
-    sessionStore.read(LAST_REVIEWED_STORY_SESSION_KEY)
-  );
+  const [isInReviewMode, setIsInReviewMode] = useState(() => isReviewModeActive());
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
-  const wasInReviewSessionRef = useRef(false);
   const displayedReviewRef = useRef<ReviewState | null>(null);
   displayedReviewRef.current = state;
 
   const api = useStorybookApi();
   const navigate = useNavigate();
-  const { index, path, viewMode, customQueryParams, location } = useStorybookState();
+  const {
+    index,
+    path,
+    viewMode,
+    customQueryParams,
+    location,
+    includedStatusFilters,
+    excludedStatusFilters,
+    includedTagFilters,
+    excludedTagFilters,
+  } = useStorybookState();
+
+  const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
+
+  // Current sidebar filters, snapshotted by enterReviewMode and restored on exit.
+  const filtersRef = useRef<ReviewModeFilters>({
+    includedStatusFilters: [],
+    excludedStatusFilters: [],
+    includedTagFilters: [],
+    excludedTagFilters: [],
+  });
+  filtersRef.current = {
+    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
+    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
+    includedTagFilters: includedTagFilters ?? [],
+    excludedTagFilters: excludedTagFilters ?? [],
+  };
+
+  const enterReview = useCallback(() => {
+    void enterReviewMode(api, filtersRef.current);
+    setIsInReviewMode(true);
+  }, [api]);
 
   const setCompareMode = useCallback((mode: CompareMode) => {
     setCompareModeState(mode);
@@ -114,25 +131,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [api]
   );
 
-  const navigateToReturn = useCallback(
-    (returnSearch?: string | null) => {
-      api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-      reviewStore.releaseSummaryOverlaySuppression();
-      openReviewSidebar(api);
-
-      const target = returnSearch ?? sessionStore.read(RETURN_PATH_SESSION_KEY);
-      sessionStore.remove(RETURN_PATH_SESSION_KEY);
-
-      if (target && !isReviewReturnSearch(target)) {
-        navigate(target.startsWith('?') ? target : `?${target}`, { plain: true });
-        return;
-      }
-
-      api.selectFirstStory();
-    },
-    [api, navigate]
-  );
-
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
       const current = displayedReviewRef.current;
@@ -141,6 +139,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         return;
       }
       setPendingReview(null);
+      // A fresh payload re-arms the one-time auto-enter.
+      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(next);
       setIsStale(!!next.stale);
     },
@@ -150,17 +150,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
       previousReviewStoryIdsRef.current = new Set();
-      void setReviewStatusFilters(api, [], []);
+      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(null);
       setPendingReview(null);
       setIsStale(false);
       setBaselineStoryIds(null);
-      navigateToReturn(returnSearch);
+      setIsInReviewMode(false);
+      navigateOutOfReview(api, navigate, returnSearch);
     },
   });
 
   const dismissReview = useCallback(() => {
-    const returnSearch = sessionStore.read(RETURN_PATH_SESSION_KEY);
+    const returnSearch = sessionStore.read(PRE_REVIEW_RETURN_KEY);
     emit(EVENTS.DISMISS_REVIEW, returnSearch);
   }, [emit]);
 
@@ -171,27 +172,28 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setState(pendingReview);
     setIsStale(!!pendingReview.stale);
     setPendingReview(null);
+    sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+    enterReview();
     navigate(buildReviewChangesSummaryHref(), { plain: true });
-  }, [navigate, pendingReview]);
+  }, [enterReview, navigate, pendingReview]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
   }, [emit]);
 
-  // Tag every story in the active review and filter the sidebar to them only.
+  // Tag every story in the active review so the sidebar shows reviewing status
+  // and the Quick review widget can count them. Filtering is owned by review mode.
   useEffect(() => {
     if (!state) {
       return;
     }
-
     const storyIds = collectReviewStoryIds(state);
     previousReviewStoryIdsRef.current = syncReviewStatuses(
       reviewStatusStore,
       storyIds,
       previousReviewStoryIdsRef.current
     );
-    void setReviewStatusFilters(api, [REVIEWING_STATUS_VALUE], []);
-  }, [api, state?.createdAt]);
+  }, [state]);
 
   const reviewCreatedAt = state?.createdAt;
   useEffect(() => {
@@ -268,7 +270,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         const entry =
           direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
         const shared = {
-          isNew: newlyAddedStoryIds.has(storyId) || undefined,
+          isNewlyAdded: newlyAddedStoryIds.has(storyId) || undefined,
           changeStatus: getStoryChangeStatus(storyId),
         };
         if (entry?.type === 'story' && entry.title) {
@@ -288,7 +290,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     return info;
   }, [allStatuses, api, index, newlyAddedStoryIds, state]);
 
-  const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
   const collectionIndex = parseCollectionIndex(collectionParam);
   const storyIdFromPath = parseStoryIdFromPath(path);
   const activeEntry =
@@ -298,20 +299,36 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const activeIndex = activeEntry ? resolveNavIndex(flattenedEntries, activeEntry) : -1;
 
   const isSummaryVisible = isReviewSummaryPath(path);
-  const isOnReviewedStory =
-    viewMode === 'story' &&
-    storyIdFromPath !== null &&
-    isStoryInReview(flattenedEntries, storyIdFromPath);
-  const isInReviewSession = isReviewSessionPath(path, collectionIndex) || isOnReviewedStory;
 
   const showCompare =
     baselineStoryIds !== null &&
     activeEntry !== null &&
     !newlyAddedStoryIds.has(activeEntry.storyId);
 
-  // Remember the last story or docs URL visited so the summary back button can return there.
+  // Re-sync the persisted review-mode flag on every navigation. Enter/exit
+  // performed by the nav interceptor and shortcuts toggle it out of band before
+  // navigating, so a route change is the signal to re-read it.
   useEffect(() => {
-    if (isSummaryVisible) {
+    setIsInReviewMode(isReviewModeActive());
+  }, [path, collectionParam]);
+
+  // First landing on the summary with a clean, newly available review enters
+  // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
+  useEffect(() => {
+    if (!state || !isSummaryVisible || isReviewModeActive()) {
+      return;
+    }
+    if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === '1') {
+      return;
+    }
+    sessionStore.write(AUTO_ENTERED_SESSION_KEY, '1');
+    enterReview();
+  }, [state, isSummaryVisible, enterReview]);
+
+  // Remember the last canvas search outside review mode so leaving review can
+  // return to the pre-review canvas (both summary back and dismiss).
+  useEffect(() => {
+    if (isInReviewMode) {
       return;
     }
     if (viewMode !== 'story' && viewMode !== 'docs') {
@@ -319,45 +336,9 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     const search = location?.search;
     if (search && !isReviewReturnSearch(search)) {
-      sessionStore.write(LAST_REVIEWED_STORY_SESSION_KEY, search);
-      setLastReviewedStoryHref(search);
+      sessionStore.write(PRE_REVIEW_RETURN_KEY, search);
     }
-  }, [isSummaryVisible, viewMode, location?.search]);
-
-  // Remember the last canvas URL outside a review session so dismiss can return there.
-  useEffect(() => {
-    if (isInReviewSession) {
-      return;
-    }
-    if (viewMode !== 'story' && viewMode !== 'docs') {
-      return;
-    }
-    const search = location?.search;
-    if (search && !isReviewReturnSearch(search)) {
-      sessionStore.write(RETURN_PATH_SESSION_KEY, search);
-    }
-  }, [isInReviewSession, viewMode, location?.search]);
-
-  // Collapse the sidebar and addon panel when entering a review session.
-  useEffect(() => {
-    if (!isInReviewSession) {
-      wasInReviewSessionRef.current = false;
-      return;
-    }
-    if (wasInReviewSessionRef.current) {
-      return;
-    }
-    wasInReviewSessionRef.current = true;
-    collapseReviewChrome(api);
-  }, [api, isInReviewSession]);
-
-  // Show the sidebar when leaving the review session.
-  useEffect(() => {
-    if (isInReviewSession) {
-      return;
-    }
-    openReviewSidebar(api);
-  }, [api, isInReviewSession]);
+  }, [isInReviewMode, viewMode, location?.search]);
 
   const value = useMemo<ReviewStoreState>(
     () => ({
@@ -370,14 +351,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       newlyAddedStoryIds,
       activeEntry,
       activeIndex,
-      isInReviewSession,
+      isInReviewMode,
       isSummaryVisible,
       compareMode,
       setCompareMode,
       showCompare,
       getStoryPreviewHref,
       dismissReview,
-      lastReviewedStoryHref,
     }),
     [
       state,
@@ -389,14 +369,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       newlyAddedStoryIds,
       activeEntry,
       activeIndex,
-      isInReviewSession,
+      isInReviewMode,
       isSummaryVisible,
       compareMode,
       setCompareMode,
       showCompare,
       getStoryPreviewHref,
       dismissReview,
-      lastReviewedStoryHref,
     ]
   );
 

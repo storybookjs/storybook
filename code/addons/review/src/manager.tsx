@@ -7,21 +7,8 @@ import { ReviewProvider } from './ReviewProvider.tsx';
 import { reviewPreviewWrapper } from './ReviewPreviewWrapper.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
-import {
-  ADDON_ID,
-  PAGE_ID,
-  REVIEW_CHANGES_URL,
-  RESTORE_NAV_SESSION_KEY,
-  RESTORE_PANEL_SESSION_KEY,
-  EVENTS,
-} from './constants.ts';
+import { ADDON_ID, PAGE_ID, REVIEW_CHANGES_URL, EVENTS } from './constants.ts';
 import { isReviewPath } from './ReviewProvider.tsx';
-import {
-  REVIEW_COLLECTION_QUERY_PARAM,
-  isReviewSessionPath,
-  parseCollectionIndex,
-} from './review-navigation.ts';
-import { sessionStore } from './session-store.ts';
 import { useReviewNavigationInterceptor } from './useReviewNavigationInterceptor.ts';
 import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
@@ -38,28 +25,6 @@ const ReviewNavigationLayer = () => {
 };
 
 addons.register(ADDON_ID, (api) => {
-  const query = new URLSearchParams(window.location.search);
-  const path = query.get('path') ?? '';
-  const collectionIndex = parseCollectionIndex(
-    query.get(REVIEW_COLLECTION_QUERY_PARAM) ?? undefined
-  );
-  const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY);
-  const restorePanel = sessionStore.read(RESTORE_PANEL_SESSION_KEY);
-  if (!isReviewSessionPath(path, collectionIndex)) {
-    if (restoreNav !== null) {
-      sessionStore.remove(RESTORE_NAV_SESSION_KEY);
-      if (restoreNav === 'restore') {
-        api.toggleNav(true);
-      }
-    }
-    if (restorePanel !== null) {
-      sessionStore.remove(RESTORE_PANEL_SESSION_KEY);
-      if (restorePanel === 'restore') {
-        api.togglePanel(true);
-      }
-    }
-  }
-
   api.getChannel()?.on(EVENTS.DISPLAY_REVIEW, () => {
     const currentPath = new URLSearchParams(window.location.search).get('path') ?? '';
     if (!isReviewPath(currentPath)) {

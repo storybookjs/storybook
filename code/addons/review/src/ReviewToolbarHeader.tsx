@@ -11,7 +11,7 @@ import { AttentionBanner } from './components/AttentionBanner.tsx';
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
-  getReviewDetailNeighbors,
+  getAdjacentReviewEntries,
 } from './review-navigation.ts';
 import { useReview } from './review-store.ts';
 
@@ -92,7 +92,7 @@ export const ReviewToolbarHeader: FC = () => {
   const collection = state.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
   const totalStories = flattenedEntries.length;
-  const neighbors = getReviewDetailNeighbors(flattenedEntries, activeIndex);
+  const neighbors = getAdjacentReviewEntries(flattenedEntries, activeIndex);
   const previousEntry = neighbors?.previous ?? activeEntry;
   const nextEntry = neighbors?.next ?? activeEntry;
   const progress = totalStories > 1 ? activeIndex / (totalStories - 1) : 0;

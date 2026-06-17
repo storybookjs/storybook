@@ -104,7 +104,7 @@ export type StoryChangeStatus = 'new' | 'modified';
 export interface StoryInfo {
   title: string;
   name: string;
-  isNew?: boolean;
+  isNewlyAdded?: boolean;
   changeStatus?: StoryChangeStatus;
 }
 
@@ -462,7 +462,7 @@ const StoryPreviewCell: FC<{
           <LabelStory>
             <Highlight text={name} query={query} />
           </LabelStory>
-          {info.changeStatus === 'new' || info.isNew ? (
+          {info.changeStatus === 'new' || info.isNewlyAdded ? (
             <NewBadge status="positive" compact>
               New
             </NewBadge>

@@ -11,17 +11,11 @@ import {
 import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
-import {
-  ADDON_ID,
-  EVENTS,
-  RESTORE_NAV_SESSION_KEY,
-  RESTORE_PANEL_SESSION_KEY,
-} from './constants.ts';
+import { ADDON_ID, EVENTS } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { sessionStore } from './session-store.ts';
 import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
 type EventListener = (payload?: unknown) => void;
@@ -174,8 +168,7 @@ const meta = preview.meta({
     toggleNavMock.mockReset();
     setAddonShortcutMock.mockReset();
     fetchMock.mockClear();
-    sessionStore.remove(RESTORE_NAV_SESSION_KEY);
-    sessionStore.remove(RESTORE_PANEL_SESSION_KEY);
+    sessionStorage.clear();
     internal_fullStatusStore.unset();
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
     return () => {

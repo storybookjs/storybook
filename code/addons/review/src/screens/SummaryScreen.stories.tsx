@@ -521,14 +521,14 @@ export const Full = meta.story({
     state: full,
     storyInfo: {
       // Collection 1 — first story is new
-      'button-component--variants': { title: 'Button', name: 'Variants', isNew: true },
+      'button-component--variants': { title: 'Button', name: 'Variants', isNewlyAdded: true },
       'button-component--base': { title: 'Button', name: 'Base' },
       'button-component--sizes': { title: 'Button', name: 'Sizes' },
       // Collection 2 — first story is new
       'components-togglebutton--variants': {
         title: 'ToggleButton',
         name: 'Variants',
-        isNew: true,
+        isNewlyAdded: true,
       },
       'components-togglebutton--sizes': { title: 'ToggleButton', name: 'Sizes' },
     },

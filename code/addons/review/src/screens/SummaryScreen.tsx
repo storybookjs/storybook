@@ -281,10 +281,10 @@ export interface SummaryScreenProps {
   onAcceptPendingUpdate?: () => void;
   /** Keep summary preview iframes mounted while the overlay is hidden. */
   previewsPaused?: boolean;
-  /** Clears the active review (if any) and returns to the last viewed story. */
+  /** Clears the active review (if any) and returns to the pre-review canvas. */
   onDismiss: () => void;
-  /** Last visited story/docs manager search, or root when none is recorded yet. */
-  lastReviewedStoryHref?: string | null;
+  /** Pre-review canvas search, or root when none is recorded yet. */
+  returnSearch?: string | null;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -296,7 +296,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   onAcceptPendingUpdate,
   previewsPaused = false,
   onDismiss,
-  lastReviewedStoryHref = null,
+  returnSearch = null,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
@@ -325,7 +325,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const newStoryCount = useMemo(
     () =>
       new Set(
-        (state?.collections ?? []).flatMap((c) => c.storyIds).filter((id) => storyInfo[id]?.isNew)
+        (state?.collections ?? [])
+          .flatMap((c) => c.storyIds)
+          .filter((id) => storyInfo[id]?.isNewlyAdded)
       ).size,
     [state, storyInfo]
   );
@@ -343,7 +345,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 storyMatchesQuery(storyId, storyInfo, normalizedQuery)
               );
           if (showNewOnly) {
-            storyIds = storyIds.filter((id) => storyInfo[id]?.isNew);
+            storyIds = storyIds.filter((id) => storyInfo[id]?.isNewlyAdded);
           }
           return { collection, index, storyIds };
         })
@@ -410,10 +412,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ReviewHeader
         leading={
           <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
-            <a
-              href={buildSummaryBackHref(lastReviewedStoryHref)}
-              {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}
-            >
+            <a href={buildSummaryBackHref(returnSearch)} {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}>
               <ChevronSmallLeftIcon />
               <StorybookIcon />
             </a>

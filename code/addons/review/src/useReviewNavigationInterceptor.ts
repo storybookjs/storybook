@@ -1,21 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useNavigate } from 'storybook/internal/router';
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { type ReviewModeFilters, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
 
-import { REVIEW_CHANGES_URL } from './constants.ts';
+import { PRE_REVIEW_RETURN_KEY } from './constants.ts';
+import {
+  navigateOutOfReview,
+  navigateToReviewEntry,
+  navigateToReviewSummary,
+} from './review-actions.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   REVIEW_SUMMARY_BACK_ATTR,
-  STORYBOOK_ROOT_HREF,
   buildReviewChangesSummaryHref,
-  buildReviewStoryNavigationTarget,
   parseReviewStoryHref,
 } from './review-navigation.ts';
-import { openReviewSidebar } from './review-sidebar.ts';
-import { clearReviewingStatusFilter } from './review-status-filters.ts';
-import { reviewStore } from './review-store.ts';
+import { sessionStore } from './session-store.ts';
 
 const isReviewStoryHref = (href: string) =>
   href.startsWith('?path=/story/') && href.includes(`${REVIEW_COLLECTION_QUERY_PARAM}=`);
@@ -29,10 +30,22 @@ const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummary
 export const useReviewNavigationInterceptor = () => {
   const navigate = useNavigate();
   const api = useStorybookApi();
-  const {
-    includedStatusFilters: rawIncludedStatusFilters,
-    excludedStatusFilters: rawExcludedStatusFilters,
-  } = useStorybookState();
+  const { includedStatusFilters, excludedStatusFilters, includedTagFilters, excludedTagFilters } =
+    useStorybookState();
+
+  // Keep the latest filters available to the click handler without re-binding it.
+  const filtersRef = useRef<ReviewModeFilters>({
+    includedStatusFilters: [],
+    excludedStatusFilters: [],
+    includedTagFilters: [],
+    excludedTagFilters: [],
+  });
+  filtersRef.current = {
+    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
+    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
+    includedTagFilters: includedTagFilters ?? [],
+    excludedTagFilters: excludedTagFilters ?? [],
+  };
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -55,19 +68,7 @@ export const useReviewNavigationInterceptor = () => {
 
       if (anchor?.hasAttribute(REVIEW_SUMMARY_BACK_ATTR)) {
         event.preventDefault();
-        reviewStore.suppressSummaryOverlay();
-        api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-        void clearReviewingStatusFilter(
-          api,
-          (rawIncludedStatusFilters ?? []) as StatusValue[],
-          (rawExcludedStatusFilters ?? []) as StatusValue[]
-        );
-        openReviewSidebar(api);
-        if (href === STORYBOOK_ROOT_HREF || href === '/?') {
-          navigate(STORYBOOK_ROOT_HREF);
-          return;
-        }
-        navigate(href.startsWith('?') ? href : `?${href}`, { plain: true });
+        navigateOutOfReview(api, navigate, sessionStore.read(PRE_REVIEW_RETURN_KEY));
         return;
       }
 
@@ -77,8 +78,7 @@ export const useReviewNavigationInterceptor = () => {
       event.preventDefault();
 
       if (isReviewSummaryHref(href)) {
-        api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-        navigate(REVIEW_CHANGES_URL);
+        navigateToReviewSummary(api, navigate, filtersRef.current);
         return;
       }
 
@@ -86,14 +86,9 @@ export const useReviewNavigationInterceptor = () => {
       if (!entry) {
         return;
       }
-
-      reviewStore.suppressSummaryOverlay();
-      api.setQueryParams({
-        [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex),
-      });
-      navigate(buildReviewStoryNavigationTarget(entry));
+      navigateToReviewEntry(api, navigate, entry, filtersRef.current);
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
-  }, [api, navigate, rawExcludedStatusFilters, rawIncludedStatusFilters]);
+  }, [api, navigate]);
 };

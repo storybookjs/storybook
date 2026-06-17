@@ -81,10 +81,7 @@ const ReviewPreviewCompare: FC<PropsWithChildren> = ({ children }) => {
   const storyId = activeEntry?.storyId ?? '';
   const previewHref = storyId ? api.getStoryHrefs(storyId).previewHref : '';
 
-  const { baselineFrameRef, latestPreviewSrc, baselinePreviewSrc } = useBaselineComparison(
-    previewHref,
-    showCompare
-  );
+  const { baselineFrameRef, baselinePreviewSrc } = useBaselineComparison(previewHref, showCompare);
 
   if (!showCompare || !activeEntry) {
     return <>{children}</>;
@@ -119,8 +116,6 @@ const ReviewPreviewCompare: FC<PropsWithChildren> = ({ children }) => {
       <LatestPane ref={latestPaneRef} $singleUp={isSingleUp} $active={showLatest}>
         {children}
       </LatestPane>
-      {/* Keep latest preview URL in sync for the hook when not using the iframe ref directly */}
-      <span hidden>{latestPreviewSrc}</span>
     </CompareRoot>
   );
 };

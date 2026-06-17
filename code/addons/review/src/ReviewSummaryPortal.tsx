@@ -4,14 +4,10 @@ import { createPortal } from 'react-dom';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import {
-  isReviewSessionPath,
-  isStoryInReview,
-  parseCollectionIndex,
-  parseStoryIdFromPath,
-} from './review-navigation.ts';
+import { PRE_REVIEW_RETURN_KEY } from './constants.ts';
 import { reviewStore, useReview } from './review-store.ts';
 import { SummaryScreen } from './screens/SummaryScreen.tsx';
+import { sessionStore } from './session-store.ts';
 
 const LEGACY_PORTAL_HOST_ID = 'storybook-review-summary-portal';
 const DESKTOP_BREAKPOINT_PX = 600;
@@ -92,7 +88,6 @@ const SummaryHost = styled.div<{ $visible: boolean; $insets: ChromeInsets }>(
 );
 
 export const ReviewSummaryPortal: FC = () => {
-  const { path, viewMode, customQueryParams } = useStorybookState();
   const chromeInsets = useDesktopChromeInsets();
   const {
     state,
@@ -101,22 +96,13 @@ export const ReviewSummaryPortal: FC = () => {
     hasPendingUpdate,
     onAcceptPendingUpdate,
     getStoryPreviewHref,
-    flattenedEntries,
     dismissReview,
-    lastReviewedStoryHref,
+    isInReviewMode,
+    isSummaryVisible,
   } = useReview();
   const overlayShown = useSummaryOverlayShown();
   const [portalHost, setPortalHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
-
-  const collectionParam = customQueryParams?.collection as string | undefined;
-  const collectionIndex = parseCollectionIndex(collectionParam);
-  const storyIdFromPath = parseStoryIdFromPath(path);
-  const isOnReviewedStory =
-    viewMode === 'story' &&
-    storyIdFromPath !== null &&
-    isStoryInReview(flattenedEntries, storyIdFromPath);
-  const isInReviewSession = isReviewSessionPath(path, collectionIndex) || isOnReviewedStory;
 
   useLayoutEffect(() => {
     document.getElementById(LEGACY_PORTAL_HOST_ID)?.remove();
@@ -129,7 +115,9 @@ export const ReviewSummaryPortal: FC = () => {
     }
   }, [overlayShown, portalHost]);
 
-  if (!isInReviewSession) {
+  // Mount on the summary route (so the page renders) and throughout review mode
+  // (so parked thumbnail iframes survive round-trips to individual stories).
+  if (!isSummaryVisible && !isInReviewMode) {
     return null;
   }
 
@@ -156,7 +144,7 @@ export const ReviewSummaryPortal: FC = () => {
             onAcceptPendingUpdate={onAcceptPendingUpdate}
             previewsPaused={!overlayShown}
             onDismiss={dismissReview}
-            lastReviewedStoryHref={lastReviewedStoryHref}
+            returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}
           />,
           portalHost
         )}

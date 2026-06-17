@@ -155,7 +155,7 @@ export const BuiltInOnly: Story = {
         storyId: 'c2-story1',
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
       }
     ),
   },
@@ -247,7 +247,7 @@ export const WithStatuses: Story = {
         storyId: 'c2-story1',
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
       }
     ),
   },
@@ -289,13 +289,13 @@ export const OnlyModifiedStatus: Story = {
   },
 };
 
-export const OnlyAffectedStatus: Story = {
+export const OnlyRelatedStatus: Story = {
   args: {
     allStatuses: makeStatuses({
       storyId: 'c2-story1',
       typeId: 'change-detection',
       statusValue: 'status-value:affected',
-      title: 'Affected',
+      title: 'Related',
     }),
   },
 };

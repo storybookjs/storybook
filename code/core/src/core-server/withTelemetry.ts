@@ -1,7 +1,7 @@
 import {
   HandledError,
   cache,
-  getStorybookInfo,
+  loadMainConfig,
   isCI,
   loadAllPresets,
 } from 'storybook/internal/common';
@@ -16,10 +16,9 @@ import {
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
-import type { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { StorybookError } from '../storybook-error.ts';
-import { dirname } from 'path';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -27,6 +26,7 @@ type TelemetryOptions = {
   printError?: (err: any) => void;
   skipPrompt?: boolean;
   eventType?: EventType;
+  fallbackTelemetryState?: boolean;
 };
 
 const promptCrashReports = async () => {
@@ -165,44 +165,66 @@ export async function sendTelemetryError(
   }
 }
 
-export function isTelemetryEnabled(options: TelemetryOptions) {
-  return !options.cliOptions.disableTelemetry;
+async function resolveTelemetryState(options: TelemetryOptions) {
+  // 1. If telemetry is explicitly set via CLI options or env var, set and skip loading main config
+  if (options.cliOptions.disableTelemetry !== undefined) {
+    return await setTelemetryEnabled(!options.cliOptions.disableTelemetry);
+  }
+
+  let mainConfig;
+  const configDir =
+    options.cliOptions.configDir ?? options.presetOptions?.configDir ?? '.storybook';
+  try {
+    mainConfig = (await loadMainConfig({ configDir })) as StorybookConfigRaw;
+  } catch {}
+
+  // 2. If main config succesfully loaded, set based on that
+  // (unset = enabled, true/false = disabled/enabled)
+  if (mainConfig) {
+    return await setTelemetryEnabled(!mainConfig?.core?.disableTelemetry);
+  }
+
+  // 3. If main config could not be loaded, set to fallback,
+  // which is usually disabled but can be enabled for certain commands (e.g. init)
+  await setTelemetryEnabled(options.fallbackTelemetryState ?? false);
+}
+
+function isInterruptionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const signal = 'signal' in error ? error.signal : undefined;
+  const code = 'code' in error ? error.code : undefined;
+  const name = 'name' in error ? error.name : undefined;
+  const message =
+    'message' in error && typeof error.message === 'string' ? error.message : undefined;
+  const cause = 'cause' in error ? error.cause : undefined;
+
+  return (
+    signal === 'SIGINT' ||
+    code === 'ABORT_ERR' ||
+    code === 'ERR_CANCELED' ||
+    name === 'AbortError' ||
+    message?.includes('Command was killed with SIGINT') ||
+    message?.includes('The operation was aborted') ||
+    isInterruptionError(cause)
+  );
 }
 
 /**
- * Resolve telemetry state by loading presets from configDir to check core.disableTelemetry.
- * Used when run() completes without resolving telemetry state (e.g. CLI commands like
- * add/remove/doctor/upgrade/migrate that don't load presets themselves).
+ * Commands that report a `canceled` event when the user interrupts them with Ctrl+C. Other
+ * commands simply die on SIGINT without telemetry.
  */
-async function tryResolveTelemetryStateFromConfig(options: TelemetryOptions) {
-  const configDir = options.cliOptions.configDir || options.presetOptions?.configDir;
-
-  try {
-    const { mainConfig } = await getStorybookInfo(
-      configDir,
-      configDir ? dirname(configDir) : undefined
-    );
-
-    if (!mainConfig) {
-      // No config dir available — default to enabled
-      await setTelemetryEnabled(true);
-      return;
-    }
-
-    await setTelemetryEnabled(!mainConfig.core?.disableTelemetry);
-  } catch {
-    // If presets fail to load, conservatively disable
-    await setTelemetryEnabled(false);
-  }
-}
+const CANCELLATION_TRACKED_EVENTS: EventType[] = ['init', 'ai-command'];
 
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  if (!isTelemetryEnabled(options)) {
-    await setTelemetryEnabled(false);
+  if (!isTelemetryStateResolved()) {
+    await resolveTelemetryState(options);
   }
 
   let canceled = false;
@@ -214,7 +236,8 @@ export async function withTelemetry<T>(
     process.exit(0);
   }
 
-  if (eventType === 'init') {
+  const trackCancellation = CANCELLATION_TRACKED_EVENTS.includes(eventType);
+  if (trackCancellation) {
     // We catch Ctrl+C user interactions to be able to detect a cancel event
     process.on('SIGINT', cancelTelemetry);
   }
@@ -229,20 +252,14 @@ export async function withTelemetry<T>(
 
   try {
     const result = await run();
-
-    // If run() completed but telemetry state was never resolved (e.g. CLI commands like
-    // add/remove/doctor that don't load presets themselves), load the config to resolve it.
-    if (!isTelemetryStateResolved()) {
-      await tryResolveTelemetryStateFromConfig(options);
-    }
-
     return result;
-  } catch (error: any) {
-    if (!isTelemetryStateResolved()) {
-      await tryResolveTelemetryStateFromConfig(options);
+  } catch (error: unknown) {
+    if (canceled) {
+      return undefined;
     }
 
-    if (canceled) {
+    if (trackCancellation && isInterruptionError(error)) {
+      await cancelTelemetry();
       return undefined;
     }
 

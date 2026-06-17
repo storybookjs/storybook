@@ -51,39 +51,23 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
   return (
     <Wrapper inAddonPanel={inAddonPanel}>
       <EmptyTabContent
-        title={
-          inAddonPanel
-            ? 'Interactive story playground'
-            : "Args table with interactive controls couldn't be auto-generated"
-        }
+        title="This story has no controls"
         description={
           <>
-            Controls give you an easy to use interface to test your components. Set your story args
-            and you&apos;ll see controls appearing here automatically.
+            Storybook couldn&apos;t find or generate any controls for this story. Define{' '}
+            <code>args</code> or <code>argTypes</code>, or configure docgen to let Storybook
+            generate controls automatically.
           </>
         }
         footer={
           <Links>
-            {inAddonPanel && (
-              <>
-                <Link
-                  href="https://storybook.js.org/docs/essentials/controls?ref=ui"
-                  target="_blank"
-                  withArrow
-                >
-                  <DocumentIcon /> Read docs
-                </Link>
-              </>
-            )}
-            {!inAddonPanel && (
-              <Link
-                href="https://storybook.js.org/docs/essentials/controls?ref=ui"
-                target="_blank"
-                withArrow
-              >
-                <DocumentIcon /> Learn how to set that up
-              </Link>
-            )}
+            <Link
+              href="https://storybook.js.org/docs/essentials/controls?ref=ui"
+              target="_blank"
+              withArrow
+            >
+              <DocumentIcon /> Read docs
+            </Link>
           </Links>
         }
       />

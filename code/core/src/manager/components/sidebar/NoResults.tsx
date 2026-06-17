@@ -14,4 +14,8 @@ export const NoResults = styled.div(({ theme }) => ({
     color: theme.textMutedColor,
     fontSize: `${theme.typography.size.s1}px`,
   },
+  button: {
+    marginTop: 8,
+    alignSelf: 'center',
+  },
 }));

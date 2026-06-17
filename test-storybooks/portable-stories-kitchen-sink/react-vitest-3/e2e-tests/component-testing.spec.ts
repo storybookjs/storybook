@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { SbPage } from "../../../../code/e2e-tests/util";
+import { SbPage } from "../../../../code/e2e-sandbox/util";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const TEST_STORY_PATH = path.resolve(
@@ -550,7 +550,7 @@ test.describe("component testing", () => {
       page.locator(
         '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: Success"]'
       )
-    ).toHaveCount(1);
+    ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
   test("should show unhandled errors in the testing module", async ({

@@ -155,6 +155,23 @@ describe('check-docs', () => {
       expect(errors.length).toBe(1);
       expect(errors[0].message).toContain('missing variant prop');
     });
+    it('passes for multi-line <Callout> with variant on a subsequent line', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout\n  variant="info"\n  icon="💡"\n>\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutVariant(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for multi-line <Callout> without variant', async () => {
+      await writeFile(
+        path.join(docsDir, 'foo.mdx'),
+        '<Callout\n  icon="💡"\n>\n\nContent\n\n</Callout>'
+      );
+      const errors = await checkCalloutVariant(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('missing variant prop');
+    });
   });
 
   describe('checkNoBodyH1', () => {

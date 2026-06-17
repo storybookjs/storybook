@@ -15,8 +15,10 @@ import { color } from 'storybook/theming';
 import {
   BUILT_IN_TAGS,
   STATUS_DISPLAY_ORDER,
+  countStatusesByValue,
   getFilterFunction,
   statusValueShortName,
+  statusValueDescription,
 } from './FilterPanel.utils.ts';
 
 export interface TagFilterEntry {
@@ -31,6 +33,7 @@ export interface StatusFilterEntry {
   statusValue: StatusValue;
   shortName: string;
   count: number;
+  description?: string;
 }
 
 const BUILT_IN_FILTER_DEFS: Array<{
@@ -86,16 +89,12 @@ export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) 
       return [];
     }
 
-    const counts = {} as Record<StatusValue, number>;
-    Object.values(allStatuses).forEach((statusByTypeId) => {
-      Object.values(statusByTypeId).forEach((status) => {
-        counts[status.value] = (counts[status.value] ?? 0) + 1;
-      });
-    });
+    const counts = countStatusesByValue(allStatuses);
 
     return STATUS_DISPLAY_ORDER.map((statusValue) => ({
       statusValue,
       shortName: statusValueShortName(statusValue),
+      description: statusValueDescription(statusValue),
       count: counts[statusValue] ?? 0,
     }));
   }, [allStatuses]);

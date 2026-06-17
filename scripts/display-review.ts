@@ -7,6 +7,7 @@ import { esMain } from './utils/esmain.ts';
 
 const DEFAULT_STORYBOOK_URL = process.env.STORYBOOK_URL ?? 'http://localhost:6006';
 const MCP_PATH = '/mcp';
+const REQUEST_TIMEOUT_MS = 15_000;
 
 interface StoryIndexEntry {
   id: string;
@@ -98,6 +99,21 @@ function normalizeStorybookUrl(url: string): string {
   return url.replace(/\/$/, '');
 }
 
+async function fetchWithTimeout(input: string, init: RequestInit = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms: ${input}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function parseMcpResponse(response: Response): Promise<unknown> {
   const text = await response.text();
   const dataLine = text.split('\n').find((line) => line.startsWith('data: '));
@@ -114,7 +130,7 @@ async function mcpCall(
   id = 1
 ) {
   const endpoint = `${normalizeStorybookUrl(storybookUrl)}${MCP_PATH}`;
-  const response = await fetch(endpoint, {
+  const response = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
@@ -140,7 +156,7 @@ async function mcpCall(
 }
 
 async function fetchStoryIndex(storybookUrl: string): Promise<StoryIndex> {
-  const response = await fetch(`${normalizeStorybookUrl(storybookUrl)}/index.json`);
+  const response = await fetchWithTimeout(`${normalizeStorybookUrl(storybookUrl)}/index.json`);
   if (!response.ok) {
     throw new Error(
       `Could not fetch story index from ${storybookUrl} (${response.status}). Is Storybook running?`

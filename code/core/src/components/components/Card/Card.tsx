@@ -108,7 +108,7 @@ const CardOutline = styled.div<{
       width: 'max(100vw, 100vh)',
       animation: `${spin} 3s linear infinite`,
       backgroundImage:
-        color === 'negative'
+        outlineColor === 'negative'
           ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
             `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
           : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,

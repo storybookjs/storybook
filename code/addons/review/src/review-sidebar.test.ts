@@ -61,9 +61,9 @@ describe('collapseReviewChrome', () => {
 });
 
 describe('openReviewSidebar', () => {
-  it('always expands the sidebar and addon panel and clears the restore flags', () => {
-    sessionStore.write(RESTORE_NAV_SESSION_KEY, 'keep');
-    sessionStore.write(RESTORE_PANEL_SESSION_KEY, 'keep');
+  it('restores chrome that was visible before collapse and clears the restore flags', () => {
+    sessionStore.write(RESTORE_NAV_SESSION_KEY, 'restore');
+    sessionStore.write(RESTORE_PANEL_SESSION_KEY, 'restore');
     const toggleNav = vi.fn();
     const togglePanel = vi.fn();
 
@@ -71,6 +71,20 @@ describe('openReviewSidebar', () => {
 
     expect(toggleNav).toHaveBeenCalledWith(true);
     expect(togglePanel).toHaveBeenCalledWith(true);
+    expect(sessionStore.read(RESTORE_NAV_SESSION_KEY)).toBeNull();
+    expect(sessionStore.read(RESTORE_PANEL_SESSION_KEY)).toBeNull();
+  });
+
+  it('keeps hidden chrome hidden when collapse stored keep flags', () => {
+    sessionStore.write(RESTORE_NAV_SESSION_KEY, 'keep');
+    sessionStore.write(RESTORE_PANEL_SESSION_KEY, 'keep');
+    const toggleNav = vi.fn();
+    const togglePanel = vi.fn();
+
+    openReviewSidebar({ toggleNav, togglePanel });
+
+    expect(toggleNav).not.toHaveBeenCalled();
+    expect(togglePanel).not.toHaveBeenCalled();
     expect(sessionStore.read(RESTORE_NAV_SESSION_KEY)).toBeNull();
     expect(sessionStore.read(RESTORE_PANEL_SESSION_KEY)).toBeNull();
   });

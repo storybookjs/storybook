@@ -25,8 +25,14 @@ export const collapseReviewChrome = (api: ReviewChromeApi) => {
 
 /** Show the manager sidebar and addon panel when leaving the review summary. */
 export const openReviewSidebar = (api: ReviewChromeApi) => {
-  api.toggleNav?.(true);
-  api.togglePanel?.(true);
+  const restoreNav = sessionStore.read(RESTORE_NAV_SESSION_KEY) === 'restore';
+  const restorePanel = sessionStore.read(RESTORE_PANEL_SESSION_KEY) === 'restore';
+  if (restoreNav) {
+    api.toggleNav?.(true);
+  }
+  if (restorePanel) {
+    api.togglePanel?.(true);
+  }
   sessionStore.remove(RESTORE_NAV_SESSION_KEY);
   sessionStore.remove(RESTORE_PANEL_SESSION_KEY);
 };

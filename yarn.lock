@@ -8180,7 +8180,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@standard-schema/spec@npm:^1.1.0":
+"@standard-schema/spec@npm:^1.0.0, @standard-schema/spec@npm:^1.1.0":
   version: 1.1.0
   resolution: "@standard-schema/spec@npm:1.1.0"
   checksum: 10c0/d90f55acde4b2deb983529c87e8025fa693de1a5e8b49ecc6eb84d1fd96328add0e03d7d551442156c7432fd78165b2c26ff561b970a9a881f046abb78d6a526
@@ -8283,11 +8283,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-mcp@link:../../mcp/packages/addon-mcp::locator=%40storybook%2Fcode%40workspace%3Acode":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-mcp@link:../../mcp/packages/addon-mcp::locator=%40storybook%2Fcode%40workspace%3Acode"
+"@storybook/addon-mcp@npm:*":
+  version: 0.6.0
+  resolution: "@storybook/addon-mcp@npm:0.6.0"
+  dependencies:
+    "@storybook/mcp": "npm:0.7.0"
+    "@tmcp/adapter-valibot": "npm:^0.1.5"
+    "@tmcp/transport-http": "npm:^0.8.5"
+    picoquery: "npm:^2.5.0"
+    tmcp: "npm:^1.19.3"
+    valibot: "npm:1.2.0"
+  peerDependencies:
+    "@storybook/addon-vitest": ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    storybook: ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+  peerDependenciesMeta:
+    "@storybook/addon-vitest":
+      optional: true
+  checksum: 10c0/f1edf6edd3ee242a54f3fb6cfb967a71504cca3ae160b43012d9d25d5485ad521b10d382010732428714ba58ad691c6638ec0a1393f7d16b0e736221f8ded8c0
   languageName: node
-  linkType: soft
+  linkType: hard
 
 "@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:code/addons/onboarding":
   version: 0.0.0-use.local
@@ -8534,7 +8548,7 @@ __metadata:
     "@storybook/addon-designs": "npm:^11.0.3"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-mcp": "link:../../mcp/packages/addon-mcp"
+    "@storybook/addon-mcp": "npm:*"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-review": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
@@ -8745,6 +8759,18 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 10c0/072486356fc929ba5a1a225a8636f0e50b2019083e86e4d48d55aeeae4b40f17731cd1eea9cf1785c53e5fc4409fa93aeca15dccb96675c8e7ab536b18ba864c
+  languageName: node
+  linkType: hard
+
+"@storybook/mcp@npm:0.7.0":
+  version: 0.7.0
+  resolution: "@storybook/mcp@npm:0.7.0"
+  dependencies:
+    "@tmcp/adapter-valibot": "npm:^0.1.5"
+    "@tmcp/transport-http": "npm:^0.8.5"
+    tmcp: "npm:^1.19.3"
+    valibot: "npm:1.2.0"
+  checksum: 10c0/56c90e597684e55e40451da47fc41e581d21365f405990c3cfbaaf8a19b71da17ede83399ed1524c6a1726050b0e0ba55474de5344cdeefe0cf9045faccb92b8
   languageName: node
   linkType: hard
 
@@ -9913,6 +9939,45 @@ __metadata:
     "@vue/compiler-sfc":
       optional: true
   checksum: 10c0/b7547bae3a957f541174503c8274572b240e9ba58fdeaa20aa1f95decee2a124ff3c90d83c2f11a9c5fb7689f744786e79b553a26f81fe8691b5bd58a74c813e
+  languageName: node
+  linkType: hard
+
+"@tmcp/adapter-valibot@npm:^0.1.5":
+  version: 0.1.6
+  resolution: "@tmcp/adapter-valibot@npm:0.1.6"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.0.0"
+    "@valibot/to-json-schema": "npm:^1.3.0"
+    valibot: "npm:^1.1.0"
+  peerDependencies:
+    tmcp: ^1.17.0
+    valibot: ^1.1.0
+  checksum: 10c0/4261efa7318f335eb7a8787f16a4db285a3e38288c31bc3b21fe61808c7e0c2057e09675d7b86d14cbe3ba2babad2ffe1891c4498001b27f74cb22fa135eef02
+  languageName: node
+  linkType: hard
+
+"@tmcp/session-manager@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@tmcp/session-manager@npm:0.2.2"
+  peerDependencies:
+    tmcp: ^1.16.3
+  checksum: 10c0/a29507e7e36568f4eb5f0e7525c651adf4ec16d11273499f538f2e5cc4071920294c08cc4771b11cb52bc9f999e3a1a32466bb6521f605fc482cc932139b5d25
+  languageName: node
+  linkType: hard
+
+"@tmcp/transport-http@npm:^0.8.5":
+  version: 0.8.6
+  resolution: "@tmcp/transport-http@npm:0.8.6"
+  dependencies:
+    "@tmcp/session-manager": "npm:^0.2.2"
+    esm-env: "npm:^1.2.2"
+  peerDependencies:
+    "@tmcp/auth": ^0.3.3 || ^0.4.0
+    tmcp: ^1.18.0
+  peerDependenciesMeta:
+    "@tmcp/auth":
+      optional: true
+  checksum: 10c0/da9a734cf15bcc84527194b2848ebcb33815fb9c26d579a90b2f0052eb193d764c1857f4c172f87167a51339f78cf7e17eba2b15f8a90459158b54a519291527
   languageName: node
   linkType: hard
 
@@ -11247,6 +11312,15 @@ __metadata:
   version: 1.11.1
   resolution: "@unrs/resolver-binding-win32-x64-msvc@npm:1.11.1"
   conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@valibot/to-json-schema@npm:^1.3.0":
+  version: 1.7.1
+  resolution: "@valibot/to-json-schema@npm:1.7.1"
+  peerDependencies:
+    valibot: ^1.4.0
+  checksum: 10c0/15ef472fae3229ab0dc6860325e5c6d21e724e4edbb1794ec603bc3881925bcaf5db44b30536925141758abea155b33b640129dcbb0ddfb47414cb967a6eeae1
   languageName: node
   linkType: hard
 
@@ -17619,7 +17693,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esm-env@npm:^1.2.1":
+"esm-env@npm:^1.2.1, esm-env@npm:^1.2.2":
   version: 1.2.2
   resolution: "esm-env@npm:1.2.2"
   checksum: 10c0/3d25c973f2fd69c25ffff29c964399cea573fe10795ecc1d26f6f957ce0483d3254e1cceddb34bf3296a0d7b0f1d53a28992f064ba509dfe6366751e752c4166
@@ -21605,6 +21679,13 @@ __metadata:
   version: 2.3.1
   resolution: "json-parse-even-better-errors@npm:2.3.1"
   checksum: 10c0/140932564c8f0b88455432e0f33c4cb4086b8868e37524e07e723f4eaedb9425bdc2bafd71bd1d9765bd15fd1e2d126972bc83990f55c467168c228c24d665f3
+  languageName: node
+  linkType: hard
+
+"json-rpc-2.0@npm:^1.7.1":
+  version: 1.7.1
+  resolution: "json-rpc-2.0@npm:1.7.1"
+  checksum: 10c0/260f573fd2f38c04bce63076b9293ed0c222c10bff12dd14fed8b926555af6d390c4bcc888b01dd42f28a8759056b8e4420b9f65f09e64d12d042a541fd88695
   languageName: node
   linkType: hard
 
@@ -25704,6 +25785,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"picoquery@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "picoquery@npm:2.5.0"
+  checksum: 10c0/ac22a7622ecf6f6c0d2657b04d2ca346f814ff4d343827e6ca53d2d5cecfebee18d80b1290b916d11db6f62866bec26e92bb0a0d7939bd15971e60320db8d265
+  languageName: node
+  linkType: hard
+
 "pify@npm:^2.3.0":
   version: 2.3.0
   resolution: "pify@npm:2.3.0"
@@ -29390,6 +29478,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"sqids@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "sqids@npm:0.3.0"
+  checksum: 10c0/2ce528b83f2780166b2e8025ece1e8262ee217ed51ab5656959cb6e1a885eee5b6ea86627ce6b0321d7b0eeb34a2ed455476c01c44e6e55e18cee52b3e1b9eb3
+  languageName: node
+  linkType: hard
+
 "srvx@npm:^0.11.9":
   version: 0.11.13
   resolution: "srvx@npm:0.11.13"
@@ -30655,6 +30750,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tmcp@npm:^1.19.3":
+  version: 1.19.4
+  resolution: "tmcp@npm:1.19.4"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.0.0"
+    json-rpc-2.0: "npm:^1.7.1"
+    sqids: "npm:^0.3.0"
+    uri-template-matcher: "npm:^1.1.1"
+    valibot: "npm:^1.1.0"
+  checksum: 10c0/fcb275c74fe4dd80da3eb4702d7631423e73f2dd9ec537228457b997a9206ece899295035a492a9238184e28a46017034f63c6a4aa82d1fe0ee486fb7b33449a
+  languageName: node
+  linkType: hard
+
 "tmp@npm:0.0.28":
   version: 0.0.28
   resolution: "tmp@npm:0.0.28"
@@ -31583,6 +31691,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"uri-template-matcher@npm:^1.1.1":
+  version: 1.1.2
+  resolution: "uri-template-matcher@npm:1.1.2"
+  checksum: 10c0/27bf1880a9110b85aff4d09157869b3b37c4355f1c8212e17f698394116fc79da1896c2f03f795eb5bee0007434b448c4f3002ade257e604a1176c14b8157d12
+  languageName: node
+  linkType: hard
+
 "url-join@npm:^4.0.1":
   version: 4.0.1
   resolution: "url-join@npm:4.0.1"
@@ -31767,6 +31882,30 @@ __metadata:
     "@types/istanbul-lib-coverage": "npm:^2.0.1"
     convert-source-map: "npm:^2.0.0"
   checksum: 10c0/968bcf1c7c88c04df1ffb463c179558a2ec17aa49e49376120504958239d9e9dad5281aa05f2a78542b8557f2be0b0b4c325710262f3b838b40d703d5ed30c23
+  languageName: node
+  linkType: hard
+
+"valibot@npm:1.2.0":
+  version: 1.2.0
+  resolution: "valibot@npm:1.2.0"
+  peerDependencies:
+    typescript: ">=5"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/e6897ed2008fc900380a6ce39b62bc5fca45fd5e070f70571c6380ede3ba026d0b7016230215d87f7f3d672a28dbde5a0522d39830b493fdc3dccd1a59ef4ee6
+  languageName: node
+  linkType: hard
+
+"valibot@npm:^1.1.0":
+  version: 1.4.1
+  resolution: "valibot@npm:1.4.1"
+  peerDependencies:
+    typescript: ">=5"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/8a492d9c6d21032abea4fa29eafa355e5c31f1df6a3ba4b207abf20433c00b66b30884f60b225c3348113a327f20bb19e01e9b7771663e462cf94398ff39d233
   languageName: node
   linkType: hard
 

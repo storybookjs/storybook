@@ -54,7 +54,7 @@
     "@storybook/addon-designs": "^11.0.3",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
-    "@storybook/addon-mcp": "link:../../mcp/packages/addon-mcp",
+    "@storybook/addon-mcp": "*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-review": "workspace:*",
     "@storybook/addon-themes": "workspace:*",

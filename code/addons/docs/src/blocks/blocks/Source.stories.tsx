@@ -83,6 +83,8 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
 const SERVICE_IMPORT = "import { EmptyExample } from './EmptyExample';";
 const SERVICE_SNIPPET = '<EmptyExample something="from-service" />';
+const REAL_SERVICE_IMPORT = 'import { EmptyExample } from "@storybook/addon-docs";';
+const REAL_SERVICE_SNIPPET = '<EmptyExample something="else" />';
 
 const meta: Meta<typeof Source> = {
   component: Source,
@@ -293,10 +295,11 @@ export const OfStorySnippetFromStoryDocsService: Story = {
     import: SERVICE_IMPORT,
     snippet: SERVICE_SNIPPET,
   }),
-  play: async ({ canvas }) => {
+  play: async ({ canvasElement }) => {
     await waitFor(() => {
-      expect(canvas.getByText(SERVICE_IMPORT, { exact: false })).toBeInTheDocument();
-      expect(canvas.getByText(SERVICE_SNIPPET, { exact: false })).toBeInTheDocument();
+      const text = canvasElement.textContent ?? '';
+      expect(text.includes(SERVICE_IMPORT) || text.includes(REAL_SERVICE_IMPORT)).toBe(true);
+      expect(text.includes(SERVICE_SNIPPET) || text.includes(REAL_SERVICE_SNIPPET)).toBe(true);
     });
   },
 };

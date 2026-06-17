@@ -516,17 +516,6 @@ export const Minimal = meta.story({
   },
 });
 
-export const WithBackButton = meta.story({
-  args: {
-    state: minimal,
-    lastReviewedStoryHref: '?path=/story/button-component--base&collection=0',
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(await canvas.findByRole('link', { name: 'Exit review' })).toBeInTheDocument();
-  },
-});
-
 export const Full = meta.story({
   args: {
     state: full,

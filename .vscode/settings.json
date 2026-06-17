@@ -11,9 +11,6 @@
   "[javascriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
-  "[typescript]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode"
-  },
   "[typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
@@ -29,7 +26,9 @@
   },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.fixAll.oxc": "explicit"
+    "source.fixAll.oxc": "explicit",
+    "source.organizeImports": "never",
+    "source.sortImports": "explicit"
   },
   "editor.tabSize": 2,
   "eslint.options": {

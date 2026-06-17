@@ -20,9 +20,7 @@ import { composeConfigs } from './composeConfigs.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
-vi.mock('@storybook/global', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@storybook/global')>()),
-}));
+vi.mock('@storybook/global', { spy: true });
 
 const id = 'id';
 const name = 'name';
@@ -747,12 +745,12 @@ describe('prepareStory', () => {
         {
           id,
           title,
-          argTypes: { backgroundColor: { control: 'color' } },
+          argTypes: { backgroundColor: { name: 'backgroundColor', control: 'color' } },
         },
         { render }
       );
 
-      expect(argTypes.backgroundColor).toEqual({ control: 'color' });
+      expect(argTypes.backgroundColor).toEqual({ name: 'backgroundColor', control: 'color' });
       expect(argTypes.size).toBeUndefined();
       expect(argTypes.label).toBeUndefined();
     });
@@ -768,12 +766,12 @@ describe('prepareStory', () => {
         {
           id,
           title,
-          argTypes: { size: { control: 'select' } },
+          argTypes: { size: { name: 'size', control: 'select' } },
         },
         { render }
       );
 
-      expect(argTypes.size).toEqual({ control: 'select' });
+      expect(argTypes.size).toEqual({ name: 'size', control: 'select' });
       expect(argTypes.size?.type).toBeUndefined();
     });
   });

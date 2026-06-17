@@ -28,7 +28,6 @@ export default defineProject({
     }),
     ...extraPlugins,
   ],
-  experimental: {},
   test: {
     name: 'storybook-ui',
     exclude: [

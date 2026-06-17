@@ -70,8 +70,17 @@ export const git = {
   check: () => {
     return {
       run: {
-        name: 'Ensure no changes pending',
-        command: 'git diff --exit-code',
+        name: 'Ensure no uncommitted changes',
+        command: [
+          'if [ -n "$(git status --porcelain)" ]; then',
+          '  echo ""',
+          '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`yarn task --task compile\` locally and commit them."',
+          '  echo ""',
+          '  git status --porcelain',
+          '  git diff',
+          '  exit 1',
+          'fi',
+        ].join('\n'),
       },
     };
   },
@@ -170,8 +179,9 @@ export const verdaccio = {
 export const workflow = {
   restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
     git.checkout(checkoutOpts),
+    // Downstream jobs should consume precomputed outputs exclusively from the
+    // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
-    cache.attach(CACHE_KEYS()),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),
@@ -232,7 +242,7 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v5-${platform}-node_modules`,
+    `v6-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

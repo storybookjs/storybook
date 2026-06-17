@@ -98,7 +98,7 @@ export type Template = {
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
-    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.3 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */
@@ -720,7 +720,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@latest'],
+      extraDependencies: ['@angular/forms@21.2.16'], // Move this to latest or 22 once ng new creates v22 projects
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -855,6 +855,10 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -882,6 +886,12 @@ export const baseTemplates = {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     initOptions: {

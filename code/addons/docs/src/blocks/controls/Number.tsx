@@ -28,6 +28,7 @@ const FormInput = styled(Form.Input)(({ theme }) => ({
 export const NumberControl: FC<NumberProps> = ({
   name,
   storyId,
+  controlsId,
   value,
   onChange,
   min,
@@ -103,7 +104,7 @@ export const NumberControl: FC<NumberProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
         disabled={readonly}
       >
@@ -116,7 +117,7 @@ export const NumberControl: FC<NumberProps> = ({
     <Wrapper>
       <FormInput
         ref={htmlElRef}
-        id={getControlId(name, storyId)}
+        id={getControlId(name, storyId, controlsId)}
         type="number"
         onChange={handleChange}
         size="flex"

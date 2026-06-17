@@ -231,7 +231,7 @@ const NoResults = styled.div(({ theme }) => ({
 
 const Footer = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
-  padding: '10px 10px 20px',
+  padding: '10px 10px 30px',
   fontSize: theme.typography.size.s2,
   textAlign: 'center',
   textWrap: 'balance',
@@ -352,6 +352,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <div>
           <CopyButton
             appearance="agentic"
+            padding="small"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
             content="Generate a Storybook review including my latest changes using the display-review tool."

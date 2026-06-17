@@ -28,7 +28,10 @@
 
 import * as v from 'valibot';
 
-import { OpenServiceRemoteCommandDisconnectedError } from '../../server-errors.ts';
+import {
+  OpenServiceRemoteCommandDisconnectedError,
+  OpenServiceRemoteCommandUnhandledError,
+} from '../../server-errors.ts';
 import {
   SERVICE_COMMAND_ACK,
   SERVICE_COMMAND_ERROR,
@@ -45,6 +48,7 @@ import {
   type ServiceChannel,
   type SyncStartPayload,
   type SyncStartReplyPayload,
+  commandAckSchema,
   commandErrorSchema,
   commandInvokeSchema,
   commandResultSchema,
@@ -58,6 +62,29 @@ import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
 type RuntimeCommand = (input: unknown) => Promise<unknown>;
+
+/**
+ * Window for a requester to receive a `services:command-ack` before rejecting as unhandled.
+ *
+ * Detection is timing-based, not presence-based: there is no peer registry, so "no peer implements
+ * this" is inferred from the absence of an ack. The budget covers one manager↔server (or
+ * manager↔preview-iframe) round trip; 300ms is comfortably above a healthy postMessage/websocket
+ * hop while still failing fast in a static build where no server peer exists at all.
+ *
+ * Trade-off: a peer that is merely slow (busy iframe, large payload, loaded CI) can ack past this
+ * window. The responder acks-then-executes ({@link connectCommandTransport} `onInvoke`), so in that
+ * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
+ * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
+ * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
+ */
+export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
+
+type PendingRemoteCommand = {
+  commandName: string;
+  resolve: (value: unknown) => void;
+  reject: (error: unknown) => void;
+  noAckTimer: ReturnType<typeof setTimeout>;
+};
 
 /** The shared bits both helpers need: which service, who we are, and our sync state. */
 interface RuntimeTransportContext {
@@ -283,20 +310,15 @@ export function connectCommandTransport(context: {
     context;
 
   // Requester bookkeeping: in-flight remote calls keyed by callId, settled by the first reply.
-  const pending = new Map<
-    string,
-    { resolve: (value: unknown) => void; reject: (error: unknown) => void }
-  >();
+  const pending = new Map<string, PendingRemoteCommand>();
 
-  const settle = (
-    callId: string,
-    apply: (entry: { resolve: (v: unknown) => void; reject: (e: unknown) => void }) => void
-  ): void => {
+  const settle = (callId: string, apply: (entry: PendingRemoteCommand) => void): void => {
     const entry = pending.get(callId);
     if (!entry) {
       return;
     }
     pending.delete(callId);
+    clearTimeout(entry.noAckTimer);
     apply(entry);
   };
 
@@ -357,15 +379,43 @@ export function connectCommandTransport(context: {
     settle(failure.output.callId, (entry) => entry.reject(deserializeError(failure.output.error)));
   };
 
+  const onAck = (payload: unknown): void => {
+    const ack = v.safeParse(commandAckSchema, payload);
+    if (!ack.success || ack.output.serviceId !== serviceId) {
+      return;
+    }
+
+    const entry = pending.get(ack.output.callId);
+    if (!entry) {
+      return;
+    }
+
+    clearTimeout(entry.noAckTimer);
+  };
+
   channel.on(SERVICE_COMMAND_INVOKE, onInvoke);
   channel.on(SERVICE_COMMAND_RESULT, onResult);
   channel.on(SERVICE_COMMAND_ERROR, onError);
+  channel.on(SERVICE_COMMAND_ACK, onAck);
 
   const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
     const callId = generateClientId();
 
     return new Promise<unknown>((resolve, reject) => {
-      pending.set(callId, { resolve, reject });
+      // Reject if no peer acknowledges in time. See REMOTE_COMMAND_ACK_TIMEOUT_MS for the
+      // best-effort semantics: a slow peer may still execute the command after we reject here.
+      const noAckTimer = setTimeout(() => {
+        settle(callId, (entry) =>
+          entry.reject(
+            new OpenServiceRemoteCommandUnhandledError({
+              serviceId,
+              commandName: entry.commandName,
+            })
+          )
+        );
+      }, REMOTE_COMMAND_ACK_TIMEOUT_MS);
+
+      pending.set(callId, { commandName, resolve, reject, noAckTimer });
       channel.emit(SERVICE_COMMAND_INVOKE, {
         serviceId,
         commandName,
@@ -389,9 +439,11 @@ export function connectCommandTransport(context: {
       channel.off(SERVICE_COMMAND_INVOKE, onInvoke);
       channel.off(SERVICE_COMMAND_RESULT, onResult);
       channel.off(SERVICE_COMMAND_ERROR, onError);
+      channel.off(SERVICE_COMMAND_ACK, onAck);
 
       // Fail any still-pending remote calls so awaiters don't hang forever past teardown.
       for (const [, entry] of pending) {
+        clearTimeout(entry.noAckTimer);
         entry.reject(new OpenServiceRemoteCommandDisconnectedError({ serviceId }));
       }
       pending.clear();

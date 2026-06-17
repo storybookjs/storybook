@@ -6,6 +6,7 @@ import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
@@ -205,6 +206,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
+        .filter(([, status]) => status.typeId !== REVIEW_STATUS_TYPE_ID)
         .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
         .map(([typeId, status]) => ({
           id: typeId,

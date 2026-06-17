@@ -3,7 +3,6 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 import ReviewChangesButton from './ReviewChangesButton.tsx';
-import ReviewCuratedStoriesButton from './ReviewCuratedStoriesButton.tsx';
 
 const Container = styled.div({
   display: 'flex',
@@ -15,10 +14,9 @@ const Container = styled.div({
   },
 });
 
-/** Quick-filter CTAs between the search field and story tree. */
+/** Quick-filter CTA between the search field and story tree. */
 const ReviewSidebarFilters = () => (
   <Container>
-    <ReviewCuratedStoriesButton />
     <ReviewChangesButton />
   </Container>
 );

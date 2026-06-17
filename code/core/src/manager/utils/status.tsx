@@ -4,6 +4,7 @@ import React from 'react';
 import type { StatusValue } from 'storybook/internal/types';
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
@@ -204,7 +205,8 @@ export function getSidebarVisibleStatus({
   const leafStatuses = Object.fromEntries(
     Object.entries(statusByType).filter(
       ([, status]) =>
-        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new'
+        status.typeId !== REVIEW_STATUS_TYPE_ID &&
+        (status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new')
     )
   );
   const leafStatus = getMostCriticalStatusValue(Object.values(leafStatuses).map((s) => s.value));
@@ -219,7 +221,10 @@ export function getChangeDetectionStatus(statuses: StatusByTypeId): {
     .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
     .map((status) => status.value);
   const testValues = Object.values(statuses)
-    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
+    .filter(
+      (status) =>
+        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID && status.typeId !== REVIEW_STATUS_TYPE_ID
+    )
     .map((status) => status.value);
   return {
     changeStatus: getMostCriticalStatusValue(changeValues),
@@ -249,7 +254,10 @@ export function getGroupStatus(
 
       const combinedStatus = getMostCriticalStatusValue(
         // @ts-expect-error (non strict)
-        leafs.flatMap((story) => Object.values(allStatuses[story.id] || {})).map((s) => s.value)
+        leafs
+          .flatMap((story) => Object.values(allStatuses[story.id] || {}))
+          .filter((s) => s.typeId !== REVIEW_STATUS_TYPE_ID)
+          .map((s) => s.value)
       );
 
       if (combinedStatus) {
@@ -288,7 +296,10 @@ export function getGroupDualStatus(
         .filter((s: { typeId: string }) => s.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
         .map((s: { value: StatusValue }) => s.value);
       const testValues = allDescendantStatuses
-        .filter((s: { typeId: string }) => s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
+        .filter(
+          (s: { typeId: string }) =>
+            s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID && s.typeId !== REVIEW_STATUS_TYPE_ID
+        )
         .map((s: { value: StatusValue }) => s.value);
 
       // @ts-expect-error (non strict)

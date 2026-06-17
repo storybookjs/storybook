@@ -16,7 +16,6 @@ export const getData = async (options: Options) => {
   const docsOptions = options.presets.apply('docs', {});
   const tagsOptions = options.presets.apply('tags', {});
   const template = readTemplate('template.ejs');
-  const htmlLang = options.presets.apply<string>('htmlLang');
   const customHead = options.presets.apply<string>('managerHead');
 
   // we await these, because crucially if these fail, we want to bail out asap
@@ -32,7 +31,6 @@ export const getData = async (options: Options) => {
     title,
     docsOptions,
     template,
-    htmlLang,
     customHead,
     instance,
     config,

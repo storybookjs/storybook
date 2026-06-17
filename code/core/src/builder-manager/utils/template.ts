@@ -45,8 +45,7 @@ export const renderHTML = async (
   docsOptions: Promise<DocsOptions>,
   tagsOptions: Promise<TagsOptions>,
   { versionCheck, previewUrl, configType, ignorePreview }: Options,
-  globals: Record<string, any>,
-  htmlLang?: Promise<string>
+  globals: Record<string, any>
 ) => {
   const titleRef = await title;
   const templateRef = await template;
@@ -57,7 +56,6 @@ export const renderHTML = async (
   );
 
   return render(templateRef, {
-    htmlLang: (await htmlLang) || 'en',
     title: titleRef ? `${titleRef} - Storybook` : 'Storybook',
     files: { js: jsFiles, css: cssFiles },
     favicon: customHeadHasFavicon(headRef) ? '' : await favicon,

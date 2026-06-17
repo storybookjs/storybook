@@ -681,8 +681,6 @@ export interface StorybookConfigRaw {
 
   previewMainTemplate?: string;
 
-  htmlLang?: string;
-
   managerHead?: string;
 
   tags?: TagsOptions;
@@ -784,19 +782,6 @@ export interface StorybookConfig {
    * ```
    */
   previewMainTemplate?: PresetValue<StorybookConfigRaw['previewMainTemplate']>;
-
-  /**
-   * Set the language attribute of the HTML document.
-   *
-   * @default 'en'
-   *
-   * @example
-   *
-   * ```ts
-   * htmlLang = 'ja';
-   * ```
-   */
-  htmlLang?: PresetValue<StorybookConfigRaw['htmlLang']>;
 
   /**
    * Programmatically modify the preview head/body HTML. The managerHead function accept a string,

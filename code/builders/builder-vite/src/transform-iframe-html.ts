@@ -8,7 +8,6 @@ export type PreviewHtml = string | undefined;
 export async function transformIframeHtml(html: string, options: Options) {
   const { configType, features, presets } = options;
   const build = await presets.apply('build');
-  const htmlLang = await presets.apply<string>('htmlLang');
   const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');
   const headHtmlSnippet = await presets.apply<PreviewHtml>('previewHead');
   const bodyHtmlSnippet = await presets.apply<PreviewHtml>('previewBody');
@@ -30,7 +29,6 @@ export async function transformIframeHtml(html: string, options: Options) {
   };
 
   const transformedHtml = html
-    .replace('[LANGUAGE HERE]', htmlLang || 'en')
     .replace('[CONFIG_TYPE HERE]', configType || '')
     .replace('[LOGLEVEL HERE]', logLevel || '')
     .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))

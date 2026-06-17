@@ -114,7 +114,11 @@ export const ReviewWidget = () => {
   const onOpen = () => {
     void (async () => {
       collapseReviewChrome(api);
-      await applyReviewingStoryFilter(api);
+      try {
+        await applyReviewingStoryFilter(api);
+      } catch {
+        // Best-effort filtering: still continue into the review route.
+      }
       api.navigate(REVIEW_SUMMARY_PATH);
     })();
   };

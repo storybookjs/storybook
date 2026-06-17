@@ -5,6 +5,16 @@ import type { Plugin } from 'vite';
 const ENV_KEY = 'STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON';
 
 /**
+ * Storybook renders Angular with the JIT compiler, so `@angular/compiler` must be registered before
+ * anything compiles a component. Under Vitest, addon-vitest's setup file imports the project
+ * annotations early — and on Angular toolchains where the linker no longer AOT-processes libraries
+ * like `@angular/common` (PlatformLocation), they fall back to JIT at that point. Importing
+ * `@angular/compiler` as a `setupFiles` entry runs early enough (a preview annotation does not), and
+ * the bare specifier resolves via Node so the framework needs no extra package export.
+ */
+const COMPILER_SETUP = '@angular/compiler';
+
+/**
  * Angular build options that influence how stories compile under Vitest.
  * Known keys give autocomplete; the index signature is NOT speculative — it
  * models Angular's genuinely open-ended builder-options surface (the framework's
@@ -57,5 +67,10 @@ export function storybookAngularVitest(options: AngularVitestOptions = {}): Plug
     process.env[ENV_KEY] = serialized;
   }
 
-  return { name: 'storybook:angular-vitest-options' };
+  return {
+    name: 'storybook:angular-vitest-options',
+    config() {
+      return { test: { setupFiles: [COMPILER_SETUP] } };
+    },
+  };
 }

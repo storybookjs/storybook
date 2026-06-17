@@ -80,6 +80,34 @@ describe('service runtime', () => {
       unsubscribe();
     });
 
+    it('emits detached snapshots when nested state changes', async () => {
+      const service = registerService(mutableRecordLookupServiceDef);
+      const calls: Array<Record<string, string> | null> = [];
+
+      const unsubscribe = service.queries.getRecordFields.subscribe(
+        { entryId: 'entry-a' },
+        (value) => {
+          calls.push(value);
+        }
+      );
+
+      await vi.waitFor(() => expect(calls).toEqual([null]));
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'first',
+      });
+      await service.commands.assignRecordField({
+        entryId: 'entry-a',
+        fieldKey: 'marker',
+        fieldValue: 'second',
+      });
+
+      expect(calls).toEqual([null, { marker: 'first' }, { marker: 'second' }]);
+      expect(calls[1]).not.toBe(calls[2]);
+      unsubscribe();
+    });
+
     it('stops notifying after unsubscribe', async () => {
       const service = registerService(mutableRecordLookupServiceDef);
       const calls: Array<Record<string, string> | null> = [];

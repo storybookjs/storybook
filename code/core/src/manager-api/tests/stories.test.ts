@@ -56,8 +56,12 @@ function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
   return {
     getState: vi.fn(() => state),
-    setState: vi.fn((s: typeof state) => {
-      state = { ...state, ...s };
+    setState: vi.fn((s: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+      if (typeof s === 'function') {
+        state = { ...state, ...s(state) };
+      } else {
+        state = { ...state, ...s };
+      }
       return Promise.resolve(state);
     }),
   } as any as Store;
@@ -1484,7 +1488,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      api.experimental_setFilter('myCustomFilter', () => true);
+      await api.experimental_setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({

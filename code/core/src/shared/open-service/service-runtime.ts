@@ -67,6 +67,8 @@ import {
   OpenServiceLoadedDrainExceededError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
+import { applyStatePatch } from './service-sync.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import { rethrowAsync, validateSchema, validateSchemaSync } from './service-validation.ts';
 import type {
   AnySchema,
@@ -109,6 +111,19 @@ export type ServiceRuntime<
   commands: ServiceInstance<TState, TQueries, TCommands>['commands'];
   queries: ServiceInstance<TState, TQueries, TCommands>['queries'];
   runLoadOnce(queryName: string, validatedInput: unknown): Promise<void>;
+  /**
+   * Installs the channel-routed command map produced once the runtime is wired to the channel.
+   *
+   * Load bodies use this map (not the raw local one) so a command implemented only on a peer — e.g. a
+   * server-only `extractDocgen` invoked from the manager's `getDocgen` load — is requested remotely
+   * instead of throwing `OpenServiceUnimplementedOperationError` locally. Command names not in
+   * `implementedCommandNames` are treated as remote and routed through this map even inside the
+   * stale-write-gated reactive load path (remote calls carry no local `setState` to gate).
+   */
+  attachChannelCommands(
+    commands: Record<string, (input: unknown) => Promise<unknown>>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void;
 };
 
 /** Max number of drain iterations before `.loaded()` gives up to avoid infinite oscillation. */
@@ -391,9 +406,16 @@ type QueryRuntimeRefs<TState> = {
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
   /**
+   * Returns the command map load bodies should call. After the runtime is wired to the channel this
+   * is the channel-routed map, so a load can invoke a peer-implemented (remote) command; before that
+   * (and in channel-free contexts like the static build) it is the raw local map.
+   */
+  getLoadCommands: () => CommandSelf<TState>['commands'];
+  /**
    * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
    * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
-   * produced by a newer run.
+   * produced by a newer run. Remote commands are routed through the channel map unchanged, since they
+   * carry no local `setState` to gate.
    */
   buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
 };
@@ -570,7 +592,7 @@ async function runLoadBody<TState>(
       return refs.state;
     },
     queries: wrappedQueries,
-    commands: refs.commandSelf.commands as LoadSelf<TState>['commands'],
+    commands: refs.getLoadCommands() as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
@@ -1082,7 +1104,7 @@ function subscribeToQuery<TState>(
         selector(output);
         return detachSnapshot(selector(validated));
       }
-      return validateQueryOutput(refs, queryName, queryDef, output);
+      return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));
     });
 
     let hasEmitted = false;
@@ -1120,6 +1142,53 @@ function subscribeToQuery<TState>(
   };
 }
 
+/**
+ * When a browser static loader is active, queries with `staticPath` fetch prebuilt JSON instead of
+ * running their authored `load` hook (which typically invokes server-only commands).
+ */
+function buildQueryDefinitionsWithStaticLoader<TState>(
+  serviceId: ServiceId,
+  queries: Record<string, RuntimeQueryDefinition<TState>>,
+  staticLoader: StaticLoader,
+  setState: CommandSelf<TState>['setState']
+): Map<string, RuntimeQueryDefinition<TState>> {
+  return new Map(
+    Object.entries(queries).map(([name, queryDef]) => {
+      if (!queryDef.staticPath) {
+        return [name, queryDef] as [string, RuntimeQueryDefinition<TState>];
+      }
+
+      const { staticPath } = queryDef;
+
+      return [
+        name,
+        {
+          ...queryDef,
+          load: async (input: unknown) => {
+            const logicalPath = resolveStaticPath(serviceId, name, { staticPath }, input);
+            const snapshot = await staticLoader(logicalPath, {
+              serviceId,
+              queryName: name,
+              input,
+            });
+
+            // Unlike reactive loads (which gate writes through `buildGatedCommands` so a superseded
+            // run cannot clobber a newer one), this write is ungated. Static snapshots are immutable
+            // and keyed per input via `staticPath(input)`, so re-running the same input produces
+            // identical data and `preserveMissingKeys: true` never erases a sibling input's state —
+            // there is no stale-write race to guard against.
+            setState((state) => {
+              applyStatePatch(state as Record<string, unknown>, snapshot, {
+                preserveMissingKeys: true,
+              });
+            });
+          },
+        },
+      ] as [string, RuntimeQueryDefinition<TState>];
+    })
+  );
+}
+
 /** Builds the runtime query map for one service runtime. */
 function buildQueries<TState>(
   refs: QueryRuntimeRefs<TState>
@@ -1146,6 +1215,7 @@ export function createServiceRuntime<
   def: ServiceDefinition<TState, TQueries, TCommands>,
   runtimeOptions: {
     registryApi: ServiceRegistryApi;
+    staticLoader?: StaticLoader;
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
@@ -1159,7 +1229,7 @@ export function createServiceRuntime<
   const state = deepSignal(rawState as object) as TState;
   const getStateSnapshot = (): TState => structuredClone(rawState);
   const commandSelf = createCommandSelf(state);
-  const { registryApi } = runtimeOptions;
+  const { registryApi, staticLoader } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: commandSelf,
     getService: registryApi.getService,
@@ -1172,9 +1242,24 @@ export function createServiceRuntime<
   >['commands'];
   commandSelf.commands = commands as CommandSelf<TState>['commands'];
 
-  const queryDefinitions = new Map<string, RuntimeQueryDefinition<TState>>(
-    Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
-  );
+  // The command map load bodies should call. Defaults to the raw local map (used by the static build
+  // and before the channel is wired); `attachChannelCommands` swaps in the channel-routed map so
+  // loads can invoke peer-implemented commands remotely. `remoteCommandNames` is the set of commands
+  // with no local handler in this runtime, which the gated reactive-load path routes through the
+  // channel map directly (they have no local `setState` to gate).
+  let loadCommands = commands as CommandSelf<TState>['commands'];
+  const remoteCommandNames = new Set<string>();
+
+  const queryDefinitions = staticLoader
+    ? buildQueryDefinitionsWithStaticLoader(
+        def.id,
+        def.queries as Record<string, RuntimeQueryDefinition<TState>>,
+        staticLoader,
+        commandSelf.setState
+      )
+    : new Map<string, RuntimeQueryDefinition<TState>>(
+        Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
+      );
   const defaultQueries: Record<string, Query<unknown, unknown>> = {};
 
   // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
@@ -1200,7 +1285,21 @@ export function createServiceRuntime<
       getService: registryApi.getService,
     }));
     gatedSelf.commands = gated as CommandSelf<TState>['commands'];
-    return gated as CommandSelf<TState>['commands'];
+
+    // Route remote commands through the channel map (so a reactive load can invoke a peer command);
+    // keep the gated local wrapper for locally-handled commands so stale-write protection holds.
+    if (remoteCommandNames.size === 0) {
+      return gated as CommandSelf<TState>['commands'];
+    }
+    const routed = Object.fromEntries(
+      Object.keys(def.commands).map((name) => [
+        name,
+        remoteCommandNames.has(name)
+          ? (loadCommands as Record<string, unknown>)[name]
+          : (gated as Record<string, unknown>)[name],
+      ])
+    );
+    return routed as CommandSelf<TState>['commands'];
   };
 
   const refs: QueryRuntimeRefs<TState> = {
@@ -1210,6 +1309,7 @@ export function createServiceRuntime<
     registryApi,
     queryDefinitions,
     defaultQueries,
+    getLoadCommands: () => loadCommands,
     buildGatedCommands,
   };
 
@@ -1274,6 +1374,19 @@ export function createServiceRuntime<
     await promise;
   };
 
+  const attachChannelCommands = (
+    channelCommands: Record<string, (input: unknown) => Promise<unknown>>,
+    implementedCommandNames: ReadonlySet<string>
+  ): void => {
+    loadCommands = channelCommands as CommandSelf<TState>['commands'];
+    remoteCommandNames.clear();
+    for (const name of Object.keys(def.commands)) {
+      if (!implementedCommandNames.has(name)) {
+        remoteCommandNames.add(name);
+      }
+    }
+  };
+
   return {
     getStateSnapshot,
     commandSelf,
@@ -1282,6 +1395,7 @@ export function createServiceRuntime<
     commands,
     queries,
     runLoadOnce,
+    attachChannelCommands,
   };
 }
 

@@ -1,5 +1,5 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
+import { getCoreAnnotations, hasCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -76,8 +76,12 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
+  // CSF4 previews (definePreview) already compose the core annotations into their `composed`
+  // result, which is what e.g. addon-vitest passes here via `getProjectAnnotations()`. Detect that
+  // marker and skip prepending core annotations so they are not applied twice.
+  const alreadyComposedWithCore = annotations.some((annotation) => hasCoreAnnotations(annotation));
   globalThis.globalProjectAnnotations = composeConfigs([
-    ...getCoreAnnotations(),
+    ...(alreadyComposedWithCore ? [] : getCoreAnnotations()),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);

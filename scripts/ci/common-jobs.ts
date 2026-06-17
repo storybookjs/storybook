@@ -32,7 +32,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     cache.attach(CACHE_KEYS()),
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
-    git.check(),
     npm.check(),
     {
       run: {
@@ -48,6 +47,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
         command: 'yarn local-registry --publish',
       },
     },
+    git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
@@ -111,6 +111,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
+    git.check(),
     verdaccio.start(),
     workspace.persist(
       [
@@ -175,7 +176,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'yarn storybook:ui',
+          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -183,6 +184,50 @@ export const internalStorybookE2e = defineJob(
         run: {
           name: 'Run internal Storybook E2E tests',
           command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+        },
+      },
+      artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+      artifact.persist(
+        join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+        'playwright-results'
+      ),
+      testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
+      ...workflow.reportOnFailure(workflowName),
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
+export const internalStorybookBuildE2e = defineJob(
+  'Internal storybook build E2E',
+  (workflowName) => ({
+    executor: {
+      name: 'sb_playwright',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Build internal storybook',
+          working_directory: 'code',
+          command: 'yarn storybook:ui:build',
+        },
+      },
+      {
+        run: {
+          name: 'Serve internal storybook static build',
+          working_directory: 'code',
+          background: true,
+          command: 'yarn http-server storybook-static --port 6006 -s',
+        },
+      },
+      server.wait(['6006']),
+      {
+        run: {
+          name: 'Run internal Storybook static E2E tests',
+          command:
+            'STORYBOOK_TYPE=static yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),

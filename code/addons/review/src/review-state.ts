@@ -38,8 +38,9 @@ export interface ReviewState {
    */
   stale?: boolean;
   /**
-   * Optional hint from the agent payload. Baseline availability is determined
-   * client-side by whether `/__review-baseline/index.json` loads successfully.
+   * Hint from the agent payload that a baseline exists. When set, the client
+   * attempts to load `/__review-baseline/index.json` and enables compare mode
+   * if it resolves; the fetch result remains the final authority.
    */
   hasBaseline?: boolean;
 }

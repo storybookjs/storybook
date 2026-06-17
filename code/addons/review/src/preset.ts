@@ -70,8 +70,10 @@ export function __resetCache(): void {
 
 function prepareReview(payload: ReviewState): ReviewState {
   // Staleness is server-authoritative (set by the file-watch handler), so a
-  // fresh push must never inherit a stale flag from the agent payload.
-  const { stale: _untrustedStale, hasBaseline: _hasBaselineHint, ...rest } = payload;
+  // fresh push must never inherit a stale flag from the agent payload. The
+  // hasBaseline hint is forwarded as-is: the client uses it to decide whether
+  // to attempt the baseline fetch.
+  const { stale: _untrustedStale, ...rest } = payload;
   return {
     ...rest,
     // Server-side timestamp is authoritative for "Created x minutes ago".

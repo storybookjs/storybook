@@ -208,6 +208,7 @@ export const OpenReview: Story = {
   },
   beforeEach: () => {
     eventListeners.clear();
+    sessionStorage.clear();
     navigateMock.mockClear();
     toggleNavMock.mockClear();
     togglePanelMock.mockClear();

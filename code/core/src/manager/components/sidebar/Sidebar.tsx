@@ -142,12 +142,12 @@ export const Sidebar = React.memo(function Sidebar({
   const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
   const reviewingStoryCount = useReviewingStoryCount();
-  const showReviewingCuratedButton = reviewingStoryCount > 0;
+  const showReviewWidget = reviewingStoryCount > 0;
   const showOnboardingChecklist =
     !isLoading &&
     global.CONFIG_TYPE === 'DEVELOPMENT' &&
     global.FEATURES?.sidebarOnboardingChecklist !== false &&
-    !showReviewingCuratedButton;
+    !showReviewWidget;
 
   return (
     <Container
@@ -173,7 +173,7 @@ export const Sidebar = React.memo(function Sidebar({
             />
             {!showOnboardingChecklist ? null : <ChecklistWidget />}
           </div>
-          {!isLoading && showReviewingCuratedButton ? <ReviewWidget /> : null}
+          {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}

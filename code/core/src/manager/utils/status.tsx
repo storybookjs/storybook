@@ -202,14 +202,11 @@ export function getSidebarVisibleStatus({
     return { icon: getStatus(theme, testStatus).icon, status: testStatus };
   }
 
-  const leafStatuses = Object.fromEntries(
-    Object.entries(statusByType).filter(
-      ([, status]) =>
-        status.typeId !== REVIEW_STATUS_TYPE_ID &&
-        (status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new')
-    )
+  const leafStatuses = statusesExcludingReview(Object.values(statusByType)).filter(
+    (status) =>
+      status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new'
   );
-  const leafStatus = getMostCriticalStatusValue(Object.values(leafStatuses).map((s) => s.value));
+  const leafStatus = getMostCriticalStatusValue(leafStatuses.map((s) => s.value));
   return { icon: getStatus(theme, leafStatus).icon, status: leafStatus };
 }
 
@@ -220,11 +217,8 @@ export function getChangeDetectionStatus(statuses: StatusByTypeId): {
   const changeValues = Object.values(statuses)
     .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
     .map((status) => status.value);
-  const testValues = Object.values(statuses)
-    .filter(
-      (status) =>
-        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID && status.typeId !== REVIEW_STATUS_TYPE_ID
-    )
+  const testValues = statusesExcludingReview(Object.values(statuses))
+    .filter((status) => status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
     .map((status) => status.value);
   return {
     changeStatus: getMostCriticalStatusValue(changeValues),
@@ -238,6 +232,10 @@ export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusV
     'status-value:unknown'
   );
 };
+
+/** Drop the review (reviewing) status type, which never contributes to sidebar/group rollups. */
+export const statusesExcludingReview = <T extends { typeId: string }>(statuses: T[]): T[] =>
+  statuses.filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID);
 
 export function getGroupStatus(
   collapsedData: {
@@ -253,16 +251,15 @@ export function getGroupStatus(
         .filter((i) => i.type === 'story');
 
       const combinedStatus = getMostCriticalStatusValue(
-        leafs
-          .flatMap(
+        statusesExcludingReview(
+          leafs.flatMap(
             (story) =>
               Object.values(allStatuses[story.id!] || {}) as Array<{
                 typeId: string;
                 value: StatusValue;
               }>
           )
-          .filter((s) => s.typeId !== REVIEW_STATUS_TYPE_ID)
-          .map((s) => s.value)
+        ).map((s) => s.value)
       );
 
       if (combinedStatus) {
@@ -300,11 +297,8 @@ export function getGroupDualStatus(
       const changeValues = allDescendantStatuses
         .filter((s: { typeId: string }) => s.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
         .map((s: { value: StatusValue }) => s.value);
-      const testValues = allDescendantStatuses
-        .filter(
-          (s: { typeId: string }) =>
-            s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID && s.typeId !== REVIEW_STATUS_TYPE_ID
-        )
+      const testValues = statusesExcludingReview(allDescendantStatuses)
+        .filter((s: { typeId: string }) => s.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID)
         .map((s: { value: StatusValue }) => s.value);
 
       // @ts-expect-error (non strict)

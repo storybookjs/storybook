@@ -13,7 +13,7 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { applyReviewingStoryFilter, collapseReviewChrome } from './review-chrome.ts';
+import { enterReviewMode } from './review-mode.ts';
 
 /** Matches `@storybook/addon-review` channel event names. */
 const REVIEW_ADDON_ID = 'storybook/addon-review';
@@ -100,6 +100,12 @@ export const ReviewWidget = () => {
   const api = useStorybookApi();
   const storyCount = useReviewingStoryCount();
   const reviewTitle = useActiveReviewTitle();
+  const {
+    includedStatusFilters = [],
+    excludedStatusFilters = [],
+    includedTagFilters = [],
+    excludedTagFilters = [],
+  } = useStorybookState();
 
   const emit = useChannel({});
 
@@ -113,11 +119,15 @@ export const ReviewWidget = () => {
 
   const onOpen = () => {
     void (async () => {
-      collapseReviewChrome(api);
       try {
-        await applyReviewingStoryFilter(api);
+        await enterReviewMode(api, {
+          includedStatusFilters,
+          excludedStatusFilters,
+          includedTagFilters,
+          excludedTagFilters,
+        });
       } catch {
-        // Best-effort filtering: still continue into the review route.
+        // Best-effort: still continue into the review route.
       }
       api.navigate(REVIEW_SUMMARY_PATH);
     })();

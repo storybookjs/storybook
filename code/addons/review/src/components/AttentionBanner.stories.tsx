@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview.tsx';
 import { AttentionBanner } from './AttentionBanner.tsx';
@@ -21,10 +21,10 @@ export const Stale = meta.story({
     await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
 
     await userEvent.click(
-      await canvas.findByRole('button', { name: 'Prompt to refresh stale review' })
+      await canvas.findByRole('button', { name: 'Ask your agent to refresh it.' })
     );
     await expect(
-      await canvas.findByRole('button', { name: 'Copy prompt to refresh this review' })
+      await screen.findByRole('button', { name: 'Copy prompt to refresh this review' })
     ).toBeInTheDocument();
   },
 });

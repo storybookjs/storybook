@@ -62,10 +62,10 @@ function cloneChild(
   byId: Map<string, AnyRoute>
 ): AnyRoute {
   const options = (oldRoute as any).options ?? {};
-  // Strip identity / parent-link options so the cloned route gets its identity
-  // derived from the new parent + path, and its parent linked to the cloned
-  // parent below. Keeping the original `id` would cause TanStack to register
-  // two routes with the same generated id (e.g. `__root__/about`).
+  // Strip parent-link options so the cloned route gets linked to the cloned
+  // parent below. Path routes derive identity from the new parent + path, then
+  // preserve the source file-route id after creation. Pathless layout routes
+  // are id-only, so giving them a path would turn the layout into a URL route.
   const { id: _id, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
 
@@ -73,11 +73,16 @@ function cloneChild(
   // registers the route in TanStack's global file-route registry by path, so
   // re-running the duplication on every story re-render registers a duplicate
   // and TanStack throws `Duplicate routeIds found: __root__`.
-  const cloned = createRoute({
+  let cloned = createRoute({
+    ...(options.id && options.path === undefined ? { id: options.id } : {}),
     ...rest,
     ...override,
     getParentRoute: () => parent as any,
   } as any);
+
+  if (options.id && options.path !== undefined) {
+    cloned = cloned.update({ id: options.id } as any);
+  }
 
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
@@ -109,18 +114,17 @@ export function duplicateRouteTree(
   initSourceTree(rootRoute, { i: 0 });
 
   const byId = new Map<string, AnyRoute>();
-  const rootOptions = (rootRoute as any).options ?? {};
   const rootOverride = getOverrideFor(overrides, '__root__');
 
   // Always build a fresh `RootRoute` instead of reusing / mutating the
   // caller's root. Reusing the same root across multiple story routers is
   // what causes TanStack to report a duplicated `__root__` id when more than
   // one story is mounted in the same browser session (e.g. HMR, navigation).
-  // We strip `id` from spread options so TanStack assigns the canonical
-  // `__root__` id itself.
-  const { id: _rootId, getParentRoute: _rootGetParent, ...restRoot } = rootOptions;
+  // Do not copy source root options into the duplicate: TanStack Start roots
+  // often render the full document (`html`, `head`, `body`), which is invalid
+  // inside Storybook's preview root. Storybook-specific root behavior can still
+  // be supplied with an explicit `routeOverrides.__root__` entry.
   const newRoot = createRootRouteWithContext()({
-    ...restRoot,
     ...rootOverride,
   } as any);
   byId.set('__root__', newRoot as unknown as AnyRoute);

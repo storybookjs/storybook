@@ -84,16 +84,24 @@ export const Link = ({
  */
 export function createFileRoute(path: string) {
   const normalizedPath = normalizeFileRoutePath(path);
+  const segments = path.split('/').filter(Boolean);
+  const lastSegment = segments[segments.length - 1];
+  const isPurePathlessLayoutRoute =
+    (lastSegment?.startsWith('_') ?? false) && normalizedPath === '/';
 
   return (options: any) => {
     return createRoute({
-      path: normalizedPath,
+      ...(isPurePathlessLayoutRoute ? { id: path } : { path: normalizedPath }),
       ...options,
       isRoot: false,
     }).update({
       id: path,
-      path: normalizedPath,
-      fullPath: normalizedPath,
+      ...(isPurePathlessLayoutRoute
+        ? {}
+        : {
+            path: normalizedPath,
+            fullPath: normalizedPath,
+          }),
       // any because tanstack router does that
     } as any);
   };

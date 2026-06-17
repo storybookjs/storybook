@@ -80,7 +80,9 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
       : {}
 );
 
-const ActionBar = styled(Bar)({
+// `lang` is a standard global HTML attribute forwarded by Bar to the DOM, but it is not part of
+// BarProps; declare it so the toolbar chrome can re-assert English under a non-en docs.lang region.
+const ActionBar = styled(Bar)<{ lang?: string }>({
   marginTop: -40,
   marginBottom: 40,
 });

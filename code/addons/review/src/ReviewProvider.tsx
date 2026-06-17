@@ -31,8 +31,6 @@ import {
   EVENTS,
   PREVIEW_MODE_SESSION_KEY,
   LAST_REVIEWED_STORY_SESSION_KEY,
-  RESTORE_NAV_SESSION_KEY,
-  RESTORE_PANEL_SESSION_KEY,
   RETURN_PATH_SESSION_KEY,
   REVIEW_CHANGES_URL,
   type CompareMode,
@@ -58,7 +56,7 @@ import {
   syncReviewStatuses,
 } from './review-status.ts';
 import { setReviewStatusFilters } from './review-status-filters.ts';
-import { openReviewSidebar } from './review-sidebar.ts';
+import { collapseReviewChrome, openReviewSidebar } from './review-sidebar.ts';
 import { sessionStore } from './session-store.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
@@ -81,9 +79,6 @@ const isReviewReturnSearch = (search: string) => {
   return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
 };
 
-/** Transient flag on DISPLAY_REVIEW after PUSH_REVIEW; not part of cached ReviewState. */
-type ReviewDisplayEvent = ReviewState & { collapseNavOnOpen?: boolean };
-
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
@@ -92,8 +87,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [lastReviewedStoryHref, setLastReviewedStoryHref] = useState<string | null>(() =>
     sessionStore.read(LAST_REVIEWED_STORY_SESSION_KEY)
   );
-  const [pendingNavCollapse, setPendingNavCollapse] = useState(false);
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
+  const wasInReviewSessionRef = useRef(false);
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -129,13 +124,9 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   const emit = useChannel({
-    [EVENTS.DISPLAY_REVIEW]: (next: ReviewDisplayEvent) => {
-      const { collapseNavOnOpen, ...review } = next;
-      setState(review);
-      setIsStale(!!review.stale);
-      if (collapseNavOnOpen) {
-        setPendingNavCollapse(true);
-      }
+    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
+      setState(next);
+      setIsStale(!!next.stale);
     },
     [EVENTS.REVIEW_STALE]: () => {
       setIsStale(true);
@@ -320,21 +311,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [isInReviewSession, viewMode, location?.search]);
 
-  // Collapse the sidebar and addon panel the first time a freshly pushed review summary is opened.
+  // Collapse the sidebar and addon panel when entering a review session.
   useEffect(() => {
-    if (!isSummaryVisible || !pendingNavCollapse) {
+    if (!isInReviewSession) {
+      wasInReviewSessionRef.current = false;
       return;
     }
-    if (sessionStore.read(RESTORE_NAV_SESSION_KEY) === null) {
-      sessionStore.write(RESTORE_NAV_SESSION_KEY, api.getIsNavShown() ? 'restore' : 'keep');
+    if (wasInReviewSessionRef.current) {
+      return;
     }
-    if (sessionStore.read(RESTORE_PANEL_SESSION_KEY) === null) {
-      sessionStore.write(RESTORE_PANEL_SESSION_KEY, api.getIsPanelShown() ? 'restore' : 'keep');
-    }
-    api.toggleNav(false);
-    api.togglePanel(false);
-    setPendingNavCollapse(false);
-  }, [api, isSummaryVisible, pendingNavCollapse]);
+    wasInReviewSessionRef.current = true;
+    collapseReviewChrome(api);
+  }, [api, isInReviewSession]);
 
   // Show the sidebar when leaving the review session.
   useEffect(() => {

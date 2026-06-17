@@ -5,6 +5,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Subtitle as PureSubtitle } from '../components';
+import { resolveDocsLang } from './docsLang';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
 import { withMdxComponentOverride } from './with-mdx-component-override';
@@ -47,9 +48,12 @@ const SubtitleImpl: FunctionComponent<SubtitleProps> = (props) => {
   }
 
   const content = children || docs?.subtitle || componentSubtitle;
+  const lang = resolveDocsLang(preparedMeta?.parameters);
 
   return content ? (
-    <PureSubtitle className="sbdocs-subtitle sb-unstyled">{content}</PureSubtitle>
+    <PureSubtitle className="sbdocs-subtitle sb-unstyled" lang={lang}>
+      {content}
+    </PureSubtitle>
   ) : null;
 };
 

@@ -5,6 +5,7 @@ import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ComponentTitle } from 'storybook/internal/types';
 
 import { Title as PureTitle } from '../components';
+import { resolveDocsLang } from './docsLang';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
 import { withMdxComponentOverride } from './with-mdx-component-override';
@@ -49,8 +50,13 @@ const TitleImpl: FunctionComponent<TitleProps> = (props) => {
   }
 
   const content = children || extractTitle(preparedMeta?.title || '');
+  const lang = resolveDocsLang(preparedMeta?.parameters);
 
-  return content ? <PureTitle className="sbdocs-title sb-unstyled">{content}</PureTitle> : null;
+  return content ? (
+    <PureTitle className="sbdocs-title sb-unstyled" lang={lang}>
+      {content}
+    </PureTitle>
+  ) : null;
 };
 
 export const Title = withMdxComponentOverride('Title', TitleImpl);

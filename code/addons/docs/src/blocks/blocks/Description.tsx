@@ -4,11 +4,12 @@ import React, { useContext } from 'react';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { DocsContext } from './DocsContext';
+import { resolveDocsLang } from './docsLang';
 import { Markdown } from './Markdown';
-import type { Of } from './useOf';
-import { useOf } from './useOf';
 import { useServiceDocgen } from './use-service-docgen.ts';
 import { useServiceStoryDoc } from './use-service-story-docs.ts';
+import type { Of } from './useOf';
+import { useOf } from './useOf';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
@@ -78,22 +79,30 @@ type ResolvedOf = ReturnType<typeof useOf>;
 const DescriptionBody: FC<{
   resolvedOf: ResolvedOf;
   serviceComponentDescription?: string;
+  lang?: string;
   storyDocsDescription?: string | null;
-}> = ({ resolvedOf, serviceComponentDescription, storyDocsDescription }) => {
+}> = ({ resolvedOf, serviceComponentDescription, lang, storyDocsDescription }) => {
   const markdown = getDescriptionFromResolvedOf(
     resolvedOf,
     serviceComponentDescription,
     storyDocsDescription
   );
 
-  return markdown ? <Markdown>{markdown}</Markdown> : null;
+  return markdown ? <Markdown lang={lang}>{markdown}</Markdown> : null;
 };
 
 const DescriptionStoryWithServices: FC<{ resolvedOf: Extract<ResolvedOf, { type: 'story' }> }> = ({
   resolvedOf,
 }) => {
   const storyDocsDescription = useServiceStoryDoc(resolvedOf.story.id).data?.description;
-  return <DescriptionBody resolvedOf={resolvedOf} storyDocsDescription={storyDocsDescription} />;
+  const lang = resolveDocsLang(resolvedOf.story.parameters);
+  return (
+    <DescriptionBody
+      resolvedOf={resolvedOf}
+      storyDocsDescription={storyDocsDescription}
+      lang={lang}
+    />
+  );
 };
 
 const DescriptionComponentWithServices: FC<{
@@ -101,10 +110,16 @@ const DescriptionComponentWithServices: FC<{
   componentId: string;
 }> = ({ resolvedOf, componentId }) => {
   const serviceComponentDescription = useServiceDocgen(componentId).data?.description || undefined;
+  const lang = resolveDocsLang(
+    resolvedOf.type === 'meta'
+      ? resolvedOf.preparedMeta.parameters
+      : resolvedOf.projectAnnotations.parameters
+  );
   return (
     <DescriptionBody
       resolvedOf={resolvedOf}
       serviceComponentDescription={serviceComponentDescription}
+      lang={lang}
     />
   );
 };
@@ -137,7 +152,14 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
     }
   }
 
-  return <DescriptionBody resolvedOf={resolvedOf} />;
+  const parameters =
+    resolvedOf.type === 'story'
+      ? resolvedOf.story.parameters
+      : resolvedOf.type === 'meta'
+        ? resolvedOf.preparedMeta.parameters
+        : resolvedOf.projectAnnotations.parameters;
+  const lang = resolveDocsLang(parameters);
+  return <DescriptionBody resolvedOf={resolvedOf} lang={lang} />;
 };
 
 export const Description = withMdxComponentOverride('Description', DescriptionImpl);

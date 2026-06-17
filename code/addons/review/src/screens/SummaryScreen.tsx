@@ -479,7 +479,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               <NoResults>
                 {showNewOnly && !search.trim()
                   ? 'No new stories found.'
-                  : `No collections match “${search.trim()}”.`}
+                  : search.trim()
+                    ? `No collections match “${search.trim()}”.`
+                    : 'No collections found.'}
               </NoResults>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {

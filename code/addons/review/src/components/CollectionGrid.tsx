@@ -466,6 +466,10 @@ const StoryPreviewCell: FC<{
             <NewBadge status="positive" compact>
               New
             </NewBadge>
+          ) : info.changeStatus === 'modified' ? (
+            <NewBadge status="neutral" compact>
+              Modified
+            </NewBadge>
           ) : null}
         </Label>
       </ActionBar>

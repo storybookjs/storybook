@@ -129,17 +129,6 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
-  if (key === 'angular-cli/vite-default-ts') {
-    // Pin rolldown to the version Vite bundles, otherwise @angular/build's
-    // mismatched rolldown (1.0.0-rc.4) wins and the differing rolldown copies
-    // break the build. Keep this in sync with Vite's bundled rolldown
-    // (Vite 8.0.x → rolldown 1.0.3).
-    additionalResolutions = {
-      ...additionalResolutions,
-      rolldown: '1.0.3',
-    };
-  }
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',

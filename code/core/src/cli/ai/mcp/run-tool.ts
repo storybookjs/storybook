@@ -1,6 +1,14 @@
 import { resolve } from 'node:path';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { invariant } from 'storybook/internal/common';
+
+import {
+  McpJsonRpcError,
+  type McpToolList,
+  callMcpTool,
+  listMcpTools,
+  listMcpToolsWithServerMetadata,
+} from './client.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
@@ -12,7 +20,40 @@ import type {
   ToolCallResult,
 } from './types.ts';
 
-export type AiToolRunResult = { exitCode: 0 | 1; output: string };
+/**
+ * Why an invocation failed before any command executed, for the `ai-command` telemetry event
+ * (storybookjs/storybook#35131). Extends the instance-resolution intercepts with the two CLI-level
+ * cases: arguments that never parsed, and command names the server does not provide.
+ */
+export type AiCommandInterceptReason = InterceptReason | 'invalid-arguments' | 'unknown-command';
+
+/**
+ * Telemetry-facing classification of a run. `help` marks lookups via `--help` flags, which are not
+ * command executions and are excluded from the `ai-command` event so they cannot skew command
+ * success rates. `error` carries failures from the server side (error results, transport
+ * failures, timeouts) for the standard sanitized error path.
+ */
+export type AiCommandOutcome =
+  | { kind: 'success' }
+  | { kind: 'help' }
+  | { kind: 'intercept'; reason: AiCommandInterceptReason }
+  | { kind: 'error'; error: unknown };
+
+export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiCommandOutcome };
+
+/**
+ * The server executed the command and reported an error result. The message is deliberately
+ * constant — the result text is arbitrary tool output (often containing project paths), and a
+ * constant message keeps the telemetry error hash stable and aggregatable. The tool's error text
+ * travels as `cause` instead, which the standard error path only uploads — path-sanitized — when
+ * the user opted into crash reports.
+ */
+class McpToolResultError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('The Storybook MCP server returned an error result', options);
+    this.name = 'McpToolResultError';
+  }
+}
 
 /** Injectable dependencies for tests. */
 export type AiToolRunDeps = {
@@ -46,7 +87,11 @@ export async function runAiTool(
     json: options.json,
   });
   if (!parsed.ok) {
-    return { exitCode: 1, output: parsed.error };
+    return {
+      exitCode: 1,
+      output: parsed.error,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    };
   }
   if (parsed.help) {
     return toolHelp(toolName, parsed.cwd, parsed.port, deps);
@@ -54,7 +99,11 @@ export async function runAiTool(
 
   const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
   if (resolution.kind === 'error') {
-    return { exitCode: 1, output: resolution.output };
+    return {
+      exitCode: 1,
+      output: resolution.output,
+      outcome: { kind: 'intercept', reason: resolution.reason },
+    };
   }
   const { record, matches } = resolution;
 
@@ -68,21 +117,45 @@ export async function runAiTool(
       // addon-mcp reports unknown tools as an error *result* rather than a JSON-RPC error.
       const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
       if (unknownTool) {
-        return { exitCode: 1, output: unknownTool };
+        return {
+          exitCode: 1,
+          output: unknownTool,
+          outcome: { kind: 'intercept', reason: 'unknown-command' },
+        };
       }
     }
     const siblings = matches.filter((r) => r !== record);
+    const toolOutput = formatToolResult(result);
     const sections = [
       ...(siblings.length > 0 ? [formatMultiInstanceWarning(record, siblings)] : []),
-      formatToolResult(result),
+      toolOutput,
     ];
-    return { exitCode: result.isError ? 1 : 0, output: sections.join('\n\n') };
+    const output = sections.join('\n\n');
+    if (result.isError) {
+      return {
+        exitCode: 1,
+        output,
+        outcome: { kind: 'error', error: new McpToolResultError({ cause: toolOutput }) },
+      };
+    }
+    return { exitCode: 0, output, outcome: { kind: 'success' } };
   } catch (error) {
     if (error instanceof McpJsonRpcError) {
       const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
-      return { exitCode: 1, output: unknownTool ?? error.message };
+      if (unknownTool) {
+        return {
+          exitCode: 1,
+          output: unknownTool,
+          outcome: { kind: 'intercept', reason: 'unknown-command' },
+        };
+      }
+      return { exitCode: 1, output: error.message, outcome: { kind: 'error', error } };
     }
-    return { exitCode: 1, output: formatServerUnreachable(record, error) };
+    return {
+      exitCode: 1,
+      output: formatServerUnreachable(record, error),
+      outcome: { kind: 'error', error },
+    };
   }
 }
 
@@ -108,12 +181,13 @@ export async function buildStorybookCommandsHelp(
   }
   const { record, matches } = resolution;
 
-  let tools: McpToolDescriptor[];
+  let toolList: McpToolList;
   try {
-    tools = await listMcpTools(record, deps.fetchImpl);
+    toolList = await listMcpToolsWithServerMetadata(record, deps.fetchImpl);
   } catch {
     return unavailable(`the Storybook at ${record.url} could not be reached`);
   }
+  const { tools, serverMetadata } = toolList;
   if (tools.length === 0) {
     return unavailable(`the Storybook at ${record.url} provides no commands`);
   }
@@ -132,9 +206,26 @@ export async function buildStorybookCommandsHelp(
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
+  const { instructions } = serverMetadata;
+  // Unreachable with a healthy addon-mcp: it gates instructions and tools on the same dev/test/docs
+  // toolsets (non-empty tools imply non-empty instructions), and the initialize handshake shares the
+  // request budget, so a slow server can't drop instructions while tools/list succeeds. Reaching here
+  // means the server returned commands but no instructions — a contract bug.
+  invariant(
+    instructions,
+    `The Storybook MCP server at ${record.url} exposed commands but no workflow instructions`
+  );
+
   return [
-    `Storybook commands (from the Storybook running at ${record.url}${version}):`,
+    `Storybook help from the Storybook running at ${record.url}${version}:`,
     ...siblingNote,
+    '',
+    '# Storybook workflow instructions',
+    '',
+    instructions,
+    '',
+    '# Storybook commands',
+    '',
     ...lines,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,
@@ -174,20 +265,23 @@ export async function runAiToolHelp(
 ): Promise<AiToolRunResult> {
   const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
   if (!parsed.ok) {
-    return { exitCode: 1, output: parsed.error };
+    return { exitCode: 1, output: parsed.error, outcome: { kind: 'help' } };
   }
   return toolHelp(toolName, parsed.cwd, parsed.port, deps);
 }
 
+/** All paths are help lookups, so every outcome is `help` regardless of success. */
 async function toolHelp(
   toolName: string,
   cwd: string | undefined,
   port: number | undefined,
   deps: AiToolRunDeps
 ): Promise<AiToolRunResult> {
+  const outcome: AiCommandOutcome = { kind: 'help' };
+
   const resolution = await resolveReadyInstance(cwd, port, deps);
   if (resolution.kind === 'error') {
-    return { exitCode: 1, output: resolution.output };
+    return { exitCode: 1, output: resolution.output, outcome };
   }
   const { record } = resolution;
 
@@ -195,14 +289,14 @@ async function toolHelp(
   try {
     tools = await listMcpTools(record, deps.fetchImpl);
   } catch (error) {
-    return { exitCode: 1, output: formatServerUnreachable(record, error) };
+    return { exitCode: 1, output: formatServerUnreachable(record, error), outcome };
   }
 
   const tool = tools.find((candidate) => candidate.name === toolName);
   if (!tool) {
-    return { exitCode: 1, output: formatUnknownTool(toolName, tools, record) };
+    return { exitCode: 1, output: formatUnknownTool(toolName, tools, record), outcome };
   }
-  return { exitCode: 0, output: formatToolHelp(tool) };
+  return { exitCode: 0, output: formatToolHelp(tool), outcome };
 }
 
 function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown): string {

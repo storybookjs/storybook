@@ -16,6 +16,17 @@ const storyData = {
   initialArgs: { label: 'Submit' },
   argTypes: { label: { name: 'label', control: { type: 'text' } } },
 };
+const serviceStoryData = {
+  type: 'story',
+  prepared: true,
+  id: 'example-button--primary',
+  args: { variant: 'primary' },
+  initialArgs: { variant: 'primary' },
+  // Custom argTypes reach the panel via the STORY_PREPARED channel (read through `useArgTypes`),
+  // and are merged with the service's extracted component docgen.
+  argTypes: { variant: { name: 'variant', control: { type: 'radio' } } },
+  parameters: { __isArgsStory: true },
+};
 
 // Reproduces the #34553 condition: the story comes from a composed ref, so the host's
 // global `previewInitialized` stays false while the ref's own flag is true.
@@ -40,6 +51,47 @@ const managerContext: any = {
   },
 };
 
+const serviceManagerContext: any = {
+  ...managerContext,
+  state: {
+    ...managerContext.state,
+    path: serviceStoryData.id,
+    previewInitialized: true,
+  },
+  api: {
+    ...managerContext.api,
+    getCurrentStoryData: fn(() => serviceStoryData).mockName('api::getCurrentStoryData'),
+  },
+};
+
+const serviceGetDocgen = Object.assign(
+  fn((_input?: { id: string }) => ({
+    id: 'example-button',
+    name: 'Button',
+    path: './Button.stories.tsx',
+    jsDocTags: {},
+    stories: [],
+    argTypes: {
+      variant: {
+        name: 'variant',
+        description: 'Visual style',
+        type: { name: 'enum', value: ['primary', 'secondary'] },
+      },
+    },
+  })).mockName('docgenService::getDocgen'),
+  {
+    subscribe: fn((_input: { id: string }, callback: (value: unknown) => void) => {
+      callback(serviceGetDocgen(_input));
+      return fn();
+    }).mockName('docgenService::getDocgen.subscribe'),
+    loaded: fn((input: { id: string }) => Promise.resolve(serviceGetDocgen(input))).mockName(
+      'docgenService::getDocgen.loaded'
+    ),
+  }
+);
+
+const docgenService: any = { queries: { getDocgen: serviceGetDocgen } };
+
 const meta = {
   component: ControlsPanel,
   args: { saveStory: fn(), createStory: fn() },
@@ -61,5 +113,18 @@ type Story = StoryObj<typeof meta>;
 export const RefStoryControlsLoad: Story = {
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('label')).toBeInTheDocument();
+  },
+};
+
+export const ServiceDocgenControlsLoad: Story = {
+  args: { docgenService },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={serviceManagerContext}>{storyFn()}</ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+    await expect(serviceGetDocgen).toHaveBeenCalledWith({ id: 'example-button' });
   },
 };

@@ -1,7 +1,10 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
+import { HandledError, JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
-import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import {
+  experimental_loadStorybook,
+  getStoriesPathsFromConfig,
+} from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
@@ -19,6 +22,8 @@ import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import { type UpgradeOptions } from './upgrade.ts';
+
+export { getStoriesPathsFromConfig };
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -782,48 +787,4 @@ export const getEvaluatedStoryPaths = async (
     configDir,
     workingDir,
   });
-};
-
-/**
- * Gets story file paths from a Storybook configuration directory
- *
- * @example
- *
- * ```typescript
- * const storiesPaths = await getStoriesPathsFromConfigWithoutEvaluating({
- *   stories: ['src\/**\/*.stories.tsx'],
- *   configDir: '/path/to/.storybook',
- *   workingDir: '/path/to/project',
- * });
- * ```
- */
-export const getStoriesPathsFromConfig = async ({
-  stories,
-  configDir,
-  workingDir,
-}: {
-  stories: StorybookConfigRaw['stories'];
-  configDir: string;
-  workingDir: string;
-}) => {
-  if (stories.length === 0) {
-    return [];
-  }
-
-  const normalizedStories = normalizeStories(stories, {
-    configDir,
-    workingDir,
-  });
-
-  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
-    normalizedStories,
-    workingDir,
-    true
-  );
-
-  const storiesPaths = matchingStoryFiles.flatMap(([specifier, cache]) => {
-    return StoryIndexGenerator.storyFileNames(new Map([[specifier, cache]]));
-  });
-
-  return storiesPaths;
 };

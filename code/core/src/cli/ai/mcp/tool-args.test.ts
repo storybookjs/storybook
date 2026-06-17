@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolArgs } from './tool-args.ts';
+import { parseToolArgs, scanCwdToken } from './tool-args.ts';
 
 function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
   const result = parseToolArgs(tokens, defaults);
@@ -168,5 +168,29 @@ describe('parseToolArgs', () => {
 
   it('errors on `--=value`', () => {
     expect(error(['--=x'])).toContain('Invalid flag');
+  });
+});
+
+describe('scanCwdToken', () => {
+  it('finds `--cwd value` and `--cwd=value`', () => {
+    expect(scanCwdToken(['--cwd', '/x'])).toBe('/x');
+    expect(scanCwdToken(['--cwd=/x'])).toBe('/x');
+  });
+
+  it('returns undefined without a --cwd token or without its value', () => {
+    expect(scanCwdToken([])).toBeUndefined();
+    expect(scanCwdToken(['--id', 'x'])).toBeUndefined();
+    expect(scanCwdToken(['--cwd'])).toBeUndefined();
+    expect(scanCwdToken(['--cwd', '--id'])).toBeUndefined();
+  });
+
+  it('lets the last occurrence win, matching the full parser', () => {
+    expect(scanCwdToken(['--cwd', '/a', '--cwd=/b'])).toBe('/b');
+  });
+
+  it('tolerates tokens the full parser rejects', () => {
+    expect(parseToolArgs(['positional', '--cwd', '/x'])).toMatchObject({ ok: false });
+    expect(scanCwdToken(['positional', '--cwd', '/x'])).toBe('/x');
+    expect(scanCwdToken(['--cwd', '/x', '--json', '{bad'])).toBe('/x');
   });
 });

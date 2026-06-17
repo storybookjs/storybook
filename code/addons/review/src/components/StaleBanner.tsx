@@ -71,6 +71,7 @@ export const StaleBanner: FC = () => (
               <Prompt>{REFRESH_PROMPT}</Prompt>
               <CopyButton
                 appearance="agentic"
+                padding="small"
                 ariaLabel="Copy prompt to refresh this review"
                 ariaLabelOnCopy="Prompt copied to clipboard"
                 content={REFRESH_PROMPT}

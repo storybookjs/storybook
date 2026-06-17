@@ -286,6 +286,15 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     return this.componentStoriesValue;
   };
 
+  getComponentId = (component: Renderer['component']) => {
+    for (const csfFile of new Set(this.exportsToCSFFile.values())) {
+      if (csfFile.meta.component === component) {
+        return csfFile.meta.id;
+      }
+    }
+    return undefined;
+  };
+
   componentStoriesFromCSFFile = (csfFile: CSFFile<TRenderer>) => {
     return this.store.componentStoriesFromCSFFile({ csfFile });
   };

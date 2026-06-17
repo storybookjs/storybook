@@ -16,6 +16,7 @@ import {
 import {
   awaitedPreloadValueServiceDef,
   createSharedStaticFileServiceDef,
+  type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
 
@@ -114,7 +115,7 @@ describe('server static builds', () => {
             input: v.undefined(),
             output: v.undefined(),
             handler: async (_input, ctx) => {
-              const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+              const source = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
               const record = source.queries.getRecordFields({

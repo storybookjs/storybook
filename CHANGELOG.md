@@ -1,3 +1,24 @@
+## 10.4.6
+
+- CSF: Allow partial globals overrides in story and meta annotations - [#34985](https://github.com/storybookjs/storybook/pull/34985), thanks @TheSeydiCharyyev!
+- Dependencies: Upgrade esbuild - [#35157](https://github.com/storybookjs/storybook/pull/35157), thanks @Kakadus!
+
+## 10.4.5
+
+- Core: Rework AI checklist feature gate - [#35053](https://github.com/storybookjs/storybook/pull/35053), thanks @Sidnioulz!
+- Preview: Stop mixed CSF3+4 stories getting core annotations injected twice - [#35094](https://github.com/storybookjs/storybook/pull/35094), thanks @JReinhold!
+
+## 10.4.4
+
+- Telemetry: Add timeout to event-log POST to prevent build hang - [#35085](https://github.com/storybookjs/storybook/pull/35085), thanks @badams!
+
+## 10.4.3
+
+- Addon Docs: Fix Primary and Controls blocks not rendering in custom MDX pages - [#34496](https://github.com/storybookjs/storybook/pull/34496), thanks @NYCU-Chung!
+- Core: Respect !dev tag on MDX docs in sidebar - [#35031](https://github.com/storybookjs/storybook/pull/35031), thanks @JReinhold!
+- React: Add support for resolving subcomponents attached as properties of a parent component - [#34967](https://github.com/storybookjs/storybook/pull/34967), thanks @yatishgoel!
+- UI: Prevent docs page scroll reset on HMR re-render - [#35021](https://github.com/storybookjs/storybook/pull/35021), thanks @LongTangGithub!
+
 ## 10.4.2
 
 - Bug: Fix Windows command resolution for non-Node package managers - [#33534](https://github.com/storybookjs/storybook/pull/33534), thanks @copilot-swe-agent!

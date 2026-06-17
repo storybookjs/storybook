@@ -54,6 +54,7 @@ Heuristics:
 - Part of a larger project that gets holistic QA (not per-PR) → `qa:skip`
 - Touches paths, filesystem, or anything that could break on Windows → `qa:needed`
 - Complex change spanning multiple areas that must work together → `qa:needed`
+- Small change in central/shared code with high side-effect risk (e.g. layout CSS in shared UI) → `qa:needed`
 - Simple, straightforward change → `qa:skip`
 - Unsure → ask the user whether manual QA before minor release is necessary
 
@@ -73,6 +74,7 @@ Each step should be:
 - Copy-pasteable shell commands where applicable
 - Explicit about what behavior to inspect (expected outcome, not just "check it works")
 - Linked to specific stories for UI changes, or to build artifacts when relevant
+- Lists areas most likely to regress and worth extra scrutiny
 
 **Verify your own steps first** — run through them locally before opening the PR.
 
@@ -81,7 +83,7 @@ When useful, link to published Chromatic Storybooks (CI must finish first; links
 - Internal UI: `https://<branch>--635781f3500dd2c49e189caf.chromatic.com/?path=/story/<story_id>`
 - React Vite TS: `https://<branch>--630511d655df72125520f051.chromatic.com/?path=/story/<story_id>`
 
-Replace `<branch>` with the PR branch name and `<story_id>` with the story path (e.g. `example-button--primary`).
+Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e.g. `feature/foo` → `feature-foo`) and `<story_id>` with the story path (e.g. `example-button--primary`).
 
 ## Command
 

@@ -147,6 +147,10 @@ function registerExtractionService<
     const payload = await provider({ entry });
 
     if (!payload) {
+      ctx.self.setState((state) => {
+        delete state.components[id];
+      });
+      extractedComponentIds.delete(id);
       return undefined;
     }
 

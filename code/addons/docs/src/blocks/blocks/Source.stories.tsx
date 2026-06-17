@@ -229,8 +229,7 @@ export const OfStorySnippetFromStoryDocsService: Story = {
     import: SERVICE_IMPORT,
     snippet: SERVICE_SNIPPET,
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas }) => {
     await waitFor(() => {
       expect(canvas.getByText(SERVICE_IMPORT, { exact: false })).toBeInTheDocument();
       expect(canvas.getByText(SERVICE_SNIPPET, { exact: false })).toBeInTheDocument();

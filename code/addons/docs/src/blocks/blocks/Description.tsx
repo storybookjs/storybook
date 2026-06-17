@@ -8,7 +8,7 @@ import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
 import { useServiceDocgen } from './useServiceDocgen';
-import { useServiceStoryDoc } from './use-service-story-docs';
+import { useServiceStoryDoc } from './use-service-story-docs.ts';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
@@ -33,7 +33,8 @@ const getDescriptionFromResolvedOf = (
 ): string | null => {
   switch (resolvedOf.type) {
     case 'story': {
-      return resolvedOf.story.parameters.docs?.description?.story || storyDocsDescription || null;
+      const storyDescription = resolvedOf.story.parameters.docs?.description?.story;
+      return storyDescription !== undefined ? storyDescription : (storyDocsDescription ?? null);
     }
     case 'meta': {
       const { parameters, component } = resolvedOf.preparedMeta;

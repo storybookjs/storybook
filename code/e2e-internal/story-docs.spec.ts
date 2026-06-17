@@ -143,7 +143,7 @@ test.describe('story-docs open service', () => {
       originalCodePanelStorySource = await readFile(codePanelStoryPath, 'utf8');
     });
 
-    test.afterAll(async () => {
+    test.afterEach(async () => {
       if (originalCodePanelStorySource) {
         await restoreFile(codePanelStoryPath, originalCodePanelStorySource);
       }
@@ -164,33 +164,26 @@ test.describe('story-docs open service', () => {
 
       await gotoAutodocsPage(page);
 
-      try {
-        const current = await readFile(codePanelStoryPath, 'utf8');
-        await writeFile(
-          codePanelStoryPath,
-          current.replace(defaultArgsLine, hotUpdateArgsLine),
-          'utf8'
-        );
+      const current = await readFile(codePanelStoryPath, 'utf8');
+      await writeFile(
+        codePanelStoryPath,
+        current.replace(defaultArgsLine, hotUpdateArgsLine),
+        'utf8'
+      );
 
-        await expectAutodocsDefaultSourceToContainLabel(
-          page,
-          E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER
-        );
-        await expectAutodocsDefaultSourceNotToContainLabel(
-          page,
-          E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
-        );
+      await expectAutodocsDefaultSourceToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER);
+      await expectAutodocsDefaultSourceNotToContainLabel(
+        page,
+        E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
+      );
 
-        await gotoCodePanelStory(page);
-        await openCodePanel(page);
-        await expectPreviewButtonLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER);
-        await expectCodePanelToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER);
-        await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
-          E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
-        );
-      } finally {
-        await restoreFile(codePanelStoryPath, originalCodePanelStorySource!);
-      }
+      await gotoCodePanelStory(page);
+      await openCodePanel(page);
+      await expectPreviewButtonLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER);
+      await expectCodePanelToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER);
+      await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
+        E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
+      );
     });
   });
 

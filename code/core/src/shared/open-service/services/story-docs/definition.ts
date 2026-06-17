@@ -54,7 +54,9 @@ export const storyDocsServiceDef = defineService({
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
       handler: (input, ctx) =>
-        input.id in ctx.self.state.components ? ctx.self.state.components[input.id] : undefined,
+        Object.hasOwn(ctx.self.state.components, input.id)
+          ? ctx.self.state.components[input.id]
+          : undefined,
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

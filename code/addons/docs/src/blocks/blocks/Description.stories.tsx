@@ -8,9 +8,9 @@ import * as DefaultButtonStories from '../examples/Button.stories';
 import * as ButtonStoriesWithMetaDescriptionAsBoth from '../examples/ButtonWithMetaDescriptionAsBoth.stories';
 import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWithMetaDescriptionAsComment.stories';
 import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
-import * as ParametersStories from '../examples/SourceParameters.stories';
+import * as ParametersStories from '../examples/SourceParameters.stories.tsx';
 import { Description } from './Description';
-import { storyDocsServiceStoryBeforeEach } from './mock-story-docs-service';
+import { storyDocsServiceStoryBeforeEach } from './mock-story-docs-service.ts';
 
 vi.mock('storybook/preview-api', { spy: true });
 

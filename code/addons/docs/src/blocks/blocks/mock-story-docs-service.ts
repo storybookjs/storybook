@@ -4,7 +4,7 @@ import type { StoryDocsService } from 'storybook/open-service';
 import * as previewApi from 'storybook/preview-api';
 import { vi } from 'vitest';
 
-import type { DocsContextProps } from './DocsContext';
+import type { DocsContextProps } from './DocsContext.ts';
 
 export function createMockStoryDocsService(
   payloads: Record<string, StoryDocsPayload>

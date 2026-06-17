@@ -274,6 +274,15 @@ test('manifests generates correct id, name, description and examples ', async ()
       "v": 0,
     }
   `);
+
+  // pretty-format (used by inline snapshots) sorts object keys alphabetically; assert runtime/JSON
+  // insertion order explicitly so MCP consumers can rely on CSF source order for "top N" stories.
+  expect(Object.keys(components.components['example-button'].stories)).toEqual([
+    'example-button--primary',
+    'example-button--secondary',
+    'example-button--large',
+    'example-button--small',
+  ]);
 });
 
 async function getManifestForStory(code: string) {

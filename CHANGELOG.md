@@ -1,6 +1,11 @@
+## 9.1.21
+
+- Dependencies: Upgrade ESBuild
+
 ## 9.1.20
 
 - Add request validation
+
 
 ## 9.1.19
 

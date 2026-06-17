@@ -70,6 +70,7 @@ export class WebView implements View<HTMLElement> {
   prepareForStory(story: PreparedStory<any>) {
     this.showStory();
     this.applyLayout(story.parameters.layout);
+    this.applyHtmlLang(story.parameters.htmlLang);
 
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
@@ -85,6 +86,7 @@ export class WebView implements View<HTMLElement> {
     this.showMain();
     this.showDocs();
     this.applyLayout('fullscreen');
+    this.applyHtmlLang('en');
 
     // Only reset scroll when navigating to a new docs page, not on HMR re-renders.
     // Without this guard, hot-reloading a story file while scrolled down on a docs page
@@ -116,6 +118,10 @@ export class WebView implements View<HTMLElement> {
     document.body.classList.remove(this.currentLayoutClass!);
     document.body.classList.add(layoutClass);
     this.currentLayoutClass = layoutClass;
+  }
+
+  applyHtmlLang(lang: string = 'en') {
+    document.documentElement.lang = lang;
   }
 
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {

@@ -1,4 +1,4 @@
-import { expect, fn, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -12,6 +12,7 @@ import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, RESTORE_PANEL_SESSION_KEY } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
+import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { sessionStore } from './session-store.ts';
@@ -97,6 +98,13 @@ const reviewState: ReviewState = {
   ],
 };
 
+const updatedReviewState: ReviewState = {
+  ...reviewState,
+  title: 'Updated manager settings polish',
+  description: 'Refreshed review after more changes.',
+  createdAt: reviewState.createdAt! + 60_000,
+};
+
 const baselineIndex = {
   v: 5,
   entries: {
@@ -134,6 +142,7 @@ const applyReviewState = () => {
 
 const ReviewHarness = () => (
   <ReviewProvider>
+    <ReviewToolbarHeader />
     <ReviewSummaryPortal />
   </ReviewProvider>
 );
@@ -215,5 +224,89 @@ export const StoryLinksUseCollectionParam = meta.story({
       })
     );
     expect(link.getAttribute('href')).toContain(`${REVIEW_COLLECTION_QUERY_PARAM}=0`);
+  },
+});
+
+export const PendingUpdateDeferred = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Switch' })).toBeInTheDocument();
+    expect(canvas.getByText('Manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByText('Updated manager settings polish')).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateAccept = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Switch' }));
+
+    await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByText('An updated review is available.')).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    await expect(await canvas.findByRole('button', { name: 'Open story list' })).toHaveTextContent(
+      '2/3'
+    );
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Switch' }));
+
+    await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
+    expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
+  },
+});
+
+export const PendingUpdateSupersedesStale = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
+
+    applyReviewState();
+    emitMock(EVENTS.REVIEW_STALE);
+    await expect(
+      await canvas.findByText('This review may be stale. Ask your agent to refresh it.')
+    ).toBeInTheDocument();
+
+    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Switch' })).toBeInTheDocument();
+    expect(
+      canvas.queryByText('This review may be stale. Ask your agent to refresh it.')
+    ).not.toBeInTheDocument();
   },
 });

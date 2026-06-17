@@ -7,7 +7,7 @@ import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storyboo
 
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
 import { ReviewHeader } from './components/ReviewHeader.tsx';
-import { StaleBanner } from './components/StaleBanner.tsx';
+import { AttentionBanner } from './components/AttentionBanner.tsx';
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
@@ -76,6 +76,8 @@ export const ReviewToolbarHeader: FC = () => {
   const {
     state,
     isStale,
+    hasPendingUpdate,
+    onAcceptPendingUpdate,
     storyInfo,
     flattenedEntries,
     newlyAddedStoryIds,
@@ -143,7 +145,11 @@ export const ReviewToolbarHeader: FC = () => {
 
   return (
     <Root data-testid="review-toolbar-header">
-      {isStale ? <StaleBanner /> : null}
+      {hasPendingUpdate ? (
+        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
+      ) : isStale ? (
+        <AttentionBanner kind="stale" />
+      ) : null}
       <HeaderWrap>
         <ProgressBar
           role="progressbar"

@@ -38,6 +38,7 @@ import {
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
+  buildReviewChangesSummaryHref,
   isReviewSessionPath,
   isReviewSummaryPath,
   isStoryInReview,
@@ -79,8 +80,15 @@ const isReviewReturnSearch = (search: string) => {
   return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
 };
 
+const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState): boolean =>
+  current !== null &&
+  current.createdAt !== undefined &&
+  next.createdAt !== undefined &&
+  current.createdAt !== next.createdAt;
+
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
+  const [pendingReview, setPendingReview] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
   const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
   const [compareMode, setCompareModeState] = useState<CompareMode>(readCompareMode);
@@ -89,6 +97,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const wasInReviewSessionRef = useRef(false);
+  const displayedReviewRef = useRef<ReviewState | null>(null);
+  displayedReviewRef.current = state;
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -125,6 +135,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
+      const current = displayedReviewRef.current;
+      if (isDeferredReviewUpdate(current, next)) {
+        setPendingReview(next);
+        return;
+      }
+      setPendingReview(null);
       setState(next);
       setIsStale(!!next.stale);
     },
@@ -136,6 +152,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       previousReviewStoryIdsRef.current = new Set();
       void setReviewStatusFilters(api, [], []);
       setState(null);
+      setPendingReview(null);
       setIsStale(false);
       setBaselineStoryIds(null);
       navigateToReturn(returnSearch);
@@ -146,6 +163,16 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const returnSearch = sessionStore.read(RETURN_PATH_SESSION_KEY);
     emit(EVENTS.DISMISS_REVIEW, returnSearch);
   }, [emit]);
+
+  const acceptPendingReview = useCallback(() => {
+    if (!pendingReview) {
+      return;
+    }
+    setState(pendingReview);
+    setIsStale(!!pendingReview.stale);
+    setPendingReview(null);
+    navigate(buildReviewChangesSummaryHref(), { plain: true });
+  }, [navigate, pendingReview]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
@@ -336,6 +363,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     () => ({
       state,
       isStale,
+      hasPendingUpdate: pendingReview !== null,
+      onAcceptPendingUpdate: acceptPendingReview,
       storyInfo,
       flattenedEntries,
       newlyAddedStoryIds,
@@ -353,6 +382,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [
       state,
       isStale,
+      pendingReview,
+      acceptPendingReview,
       storyInfo,
       flattenedEntries,
       newlyAddedStoryIds,

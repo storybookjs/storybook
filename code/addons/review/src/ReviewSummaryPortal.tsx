@@ -98,6 +98,8 @@ export const ReviewSummaryPortal: FC = () => {
     state,
     storyInfo,
     isStale,
+    hasPendingUpdate,
+    onAcceptPendingUpdate,
     getStoryPreviewHref,
     flattenedEntries,
     dismissReview,
@@ -149,7 +151,9 @@ export const ReviewSummaryPortal: FC = () => {
             state={state}
             storyInfo={storyInfo}
             getStoryPreviewHref={getStoryPreviewHref}
-            isStale={isStale}
+            isStale={isStale && !hasPendingUpdate}
+            hasPendingUpdate={hasPendingUpdate}
+            onAcceptPendingUpdate={onAcceptPendingUpdate}
             previewsPaused={!overlayShown}
             onDismiss={dismissReview}
             lastReviewedStoryHref={lastReviewedStoryHref}

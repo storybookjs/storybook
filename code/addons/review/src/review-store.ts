@@ -8,6 +8,8 @@ import type { ReviewState } from './review-state.ts';
 export interface ReviewStoreState {
   state: ReviewState | null;
   isStale: boolean;
+  hasPendingUpdate: boolean;
+  onAcceptPendingUpdate: () => void;
   storyInfo: Record<string, StoryInfo>;
   flattenedEntries: ReviewNavEntry[];
   newlyAddedStoryIds: Set<string>;
@@ -27,6 +29,8 @@ export interface ReviewStoreState {
 const emptyStore: ReviewStoreState = {
   state: null,
   isStale: false,
+  hasPendingUpdate: false,
+  onAcceptPendingUpdate: () => {},
   storyInfo: {},
   flattenedEntries: [],
   newlyAddedStoryIds: new Set(),

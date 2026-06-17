@@ -8,13 +8,7 @@ import {
   type State,
   internal_fullStatusStore,
 } from 'storybook/manager-api';
-import {
-  MemoryRouter,
-  parsePath,
-  queryFromLocation,
-  resolvePathQueryParam,
-  useLocation,
-} from 'storybook/internal/router';
+import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
 
 import preview from '../../../.storybook/preview.tsx';
 import { EVENTS, RESTORE_NAV_SESSION_KEY, RESTORE_PANEL_SESSION_KEY } from './constants.ts';
@@ -176,27 +170,33 @@ const ManagerStateSync = ({
 }: {
   children: ReactNode;
   parameters?: { managerState?: Partial<State> };
-}) => {
-  const location = useLocation();
-  const query = queryFromLocation(location);
-  const path = resolvePathQueryParam(location.search, String(query.path ?? ''));
-  const customQueryParams: Record<string, string> = {};
-  if (query[REVIEW_COLLECTION_QUERY_PARAM] !== undefined) {
-    customQueryParams[REVIEW_COLLECTION_QUERY_PARAM] = String(query[REVIEW_COLLECTION_QUERY_PARAM]);
-  }
+}) => (
+  <Location>
+    {({ location, path }) => {
+      const query = queryFromLocation(location);
+      const customQueryParams: Record<string, string> = {};
+      if (query[REVIEW_COLLECTION_QUERY_PARAM] !== undefined) {
+        customQueryParams[REVIEW_COLLECTION_QUERY_PARAM] = String(
+          query[REVIEW_COLLECTION_QUERY_PARAM]
+        );
+      }
 
-  const state = {
-    ...managerState,
-    ...(parameters?.managerState ?? {}),
-    path,
-    viewMode: deriveViewMode(path),
-    customQueryParams,
-  } as State;
+      const state = {
+        ...managerState,
+        ...(parameters?.managerState ?? {}),
+        path,
+        viewMode: deriveViewMode(path),
+        customQueryParams,
+      } as State;
 
-  return (
-    <ManagerContext.Provider value={{ state, api: managerApi }}>{children}</ManagerContext.Provider>
-  );
-};
+      return (
+        <ManagerContext.Provider value={{ state, api: managerApi }}>
+          {children}
+        </ManagerContext.Provider>
+      );
+    }}
+  </Location>
+);
 
 const meta = preview.meta({
   component: ReviewHarness,

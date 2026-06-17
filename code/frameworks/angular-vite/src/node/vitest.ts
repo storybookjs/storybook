@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Plugin } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 
 const ENV_KEY = 'STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON';
 
@@ -69,8 +69,8 @@ export function storybookAngularVitest(options: AngularVitestOptions = {}): Plug
 
   return {
     name: 'storybook:angular-vitest-options',
-    config() {
-      return { test: { setupFiles: [COMPILER_SETUP] } };
-    },
+    // Vitest augments Vite's `UserConfig` with `test`; assert the shape here rather than import
+    // Vitest's types, which would pull its whole type graph into the framework's d.ts build.
+    config: () => ({ test: { setupFiles: [COMPILER_SETUP] } }) as unknown as UserConfig,
   };
 }

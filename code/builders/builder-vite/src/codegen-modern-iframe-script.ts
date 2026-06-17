@@ -35,11 +35,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
       return params.get('freeze') === 'finished' && (params.get('viewMode') ?? 'story') === 'story';
     })();
 
-    if (import.meta.hot && __storybookShouldFreezePreview__) {
-      import.meta.hot.on('vite:beforeFullReload', (payload) => {
-        payload.preventDefault();
-      });
-    } else if (import.meta.hot) {
+    if (import.meta.hot && !__storybookShouldFreezePreview__) {
       import.meta.hot.on('vite:afterUpdate', () => {
         window.__STORYBOOK_PREVIEW__.channel.emit('${STORY_HOT_UPDATED}');
       });

@@ -80,6 +80,19 @@ describe('DocsContent', () => {
       });
     });
 
+    it('forwards the lang attribute to the content region for docs prose', () => {
+      const { container } = render(
+        <ThemeProvider theme={convert(themes.light)}>
+          <DocsContent lang="de">
+            <p>Beschreibung</p>
+          </DocsContent>
+        </ThemeProvider>
+      );
+
+      const content = container.querySelector('[lang]');
+      expect(content?.getAttribute('lang')).toBe('de');
+    });
+
     it('should not underline anchor position markers (a.anchor)', () => {
       const { container } = render(
         <ThemedDocsContent>

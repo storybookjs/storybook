@@ -10,6 +10,7 @@ import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { resolveDocsLang } from './docsLang';
 import { createDocsSlugger, DocsSluggerContext } from './DocsSluggerContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
@@ -28,14 +29,20 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
 }) => {
   const slugger = useMemo(() => createDocsSlugger(), []);
   let toc;
+  let metaParameters;
 
   try {
     const meta = context.resolveOf('meta', ['meta']);
-    toc = meta.preparedMeta.parameters?.docs?.toc;
+    metaParameters = meta.preparedMeta.parameters;
+    toc = metaParameters?.docs?.toc;
   } catch (err) {
     // No meta, falling back to project annotations
     toc = context?.projectAnnotations?.parameters?.docs?.toc;
   }
+
+  // Language the docs prose region (descriptions, ArgTypes description cells, free MDX prose).
+  // Storybook chrome re-asserts lang="en" where needed; the docs document root stays en.
+  const lang = resolveDocsLang(metaParameters, context?.projectAnnotations?.parameters);
 
   useEffect(() => {
     let url;
@@ -61,6 +68,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
         <SourceContainer channel={context.channel}>
           <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
             <DocsPageWrapper
+              lang={lang}
               toc={
                 toc ? (
                   <TableOfContents

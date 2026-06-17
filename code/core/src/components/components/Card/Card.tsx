@@ -14,9 +14,6 @@ const getColor = (theme: StorybookTheme, color?: ThemeColor) => {
   }
 };
 const getBorderColor = (theme: StorybookTheme, color?: ThemeColor) => {
-  if (color && color in theme.borderColor) {
-    return theme.borderColor[color as keyof typeof theme.borderColor];
-  }
   if (color && color in theme.color) {
     return theme.color[color as keyof typeof theme.color];
   }

@@ -1,10 +1,12 @@
 import picocolors from 'picocolors';
 import semver from 'semver';
 
-import type { PullRequestInfo } from './get-github-info.ts';
-import { getPullInfoFromCommit } from './get-github-info.ts';
+import {
+  getLatestMergedPrsFromCommits,
+  type CommitWithPr,
+} from '../../utils/github/associated-prs.ts';
 import { getLatestTag, git } from './git-client.ts';
-import { getUnpickedPRs } from './github-client.ts';
+import { getUnpickedPRs } from './get-unpicked-prs.ts';
 
 export const RELEASED_LABELS = {
   'BREAKING CHANGE': '❗ Breaking Change',
@@ -24,6 +26,32 @@ export const LABELS_BY_IMPORTANCE = {
   ...RELEASED_LABELS,
   ...UNRELEASED_LABELS,
 } as const;
+
+/**
+ * Lean changelog entry. Built from `CommitWithPr` (the github-side shape) +
+ * a fallback commit message. Renderers compute the markdown link strings
+ * from the raw URLs and identifiers — keeps the type small and avoids the
+ * legacy "stringly-typed" `.links.{commit,pull,user}` markdown bag.
+ */
+export interface Change {
+  commit: string;
+  commitUrl: string | null;
+  prId: string | null;
+  prNumber: number | null;
+  prUrl: string | null;
+  user: string | null;
+  userUrl: string | null;
+  title: string;
+  labels: string[];
+}
+
+/** `[#42](https://…)` markdown for the PR ref. */
+export const prMarkdown = (change: Change): string | null =>
+  change.prNumber !== null && change.prUrl ? `[#${change.prNumber}](${change.prUrl})` : null;
+
+/** `` [`abc1234`](https://…) `` markdown for the commit ref (with link when available). */
+export const commitMarkdown = (change: Change): string =>
+  change.commitUrl ? `[\`${change.commit}\`](${change.commitUrl})` : `\`${change.commit}\``;
 
 const getCommitAt = async (id: string, verbose?: boolean) => {
   if (!semver.valid(id)) {
@@ -117,71 +145,55 @@ export const getRepo = async (verbose?: boolean): Promise<string> => {
   return repo;
 };
 
-export const getPullInfoFromCommits = async ({
-  repo,
-  commits,
-  verbose,
-}: {
-  repo: string;
-  commits: readonly { hash: string }[];
-  verbose?: boolean;
-}): Promise<PullRequestInfo[]> => {
-  const pullRequests = await Promise.all(
-    commits.map((commit) =>
-      getPullInfoFromCommit({
-        repo,
-        commit: commit.hash,
-      })
-    )
-  );
-  if (verbose) {
-    console.log(`🔍 Found pull requests:`);
-    console.dir(pullRequests, { depth: null, colors: true });
-  }
-  return pullRequests;
-};
-
-export type Change = PullRequestInfo;
+/** Compose a `Change` from a github-side `CommitWithPr` + the original commit object. */
+function toChange(it: CommitWithPr, message: string | undefined): Change {
+  const user = it.pr?.author ?? it.commitAuthor;
+  return {
+    commit: it.commit,
+    commitUrl: it.commitUrl,
+    prId: it.pr?.id ?? null,
+    prNumber: it.pr?.number ?? null,
+    prUrl: it.pr?.url ?? null,
+    user: user?.login ?? null,
+    userUrl: user?.url ?? null,
+    title: it.pr?.title || message || '',
+    labels: it.pr?.labels ?? [],
+  };
+}
 
 export const mapToChanges = ({
   commits,
-  pullRequests,
+  commitsWithPrs,
   unpickedPatches,
   verbose,
 }: {
   commits: readonly { hash: string; message?: string }[];
-  pullRequests: PullRequestInfo[];
+  commitsWithPrs: readonly CommitWithPr[];
   unpickedPatches?: boolean;
   verbose?: boolean;
 }): Change[] => {
-  if (pullRequests.length !== commits.length) {
-    // not all commits are associated with a pull request, but the pullRequests array should still contain those commits
-    console.error('Pull requests and commits are not the same length, this should not happen');
-    console.error(`Pull Requests: ${pullRequests.length}`);
-    console.dir(pullRequests, { depth: null, colors: true });
+  if (commitsWithPrs.length !== commits.length) {
+    console.error('commitsWithPrs and commits are not the same length, this should not happen');
+    console.error(`commitsWithPrs: ${commitsWithPrs.length}`);
+    console.dir(commitsWithPrs, { depth: null, colors: true });
     console.error(`Commits: ${commits.length}`);
     console.dir(commits, { depth: null, colors: true });
-    throw new Error('Pull requests and commits are not the same length, this should not happen');
+    throw new Error('commitsWithPrs and commits are not the same length, this should not happen');
   }
-  const allEntries = pullRequests.map((pr, index) => {
-    return {
-      ...pr,
-      title: pr.title || commits[index].message,
-    };
-  });
+  const allEntries = commitsWithPrs.map((it, index) => toChange(it, commits[index].message));
 
   const changes: Change[] = [];
-  allEntries.forEach((entry) => {
-    // filter out any duplicate entries, eg. when multiple commits are associated with the same pull request
-    if (entry.pull && changes.findIndex((existing) => entry.pull === existing.pull) !== -1) {
-      return;
+  for (const entry of allEntries) {
+    // Skip duplicate PRs (one PR, multiple commits).
+    if (entry.prNumber !== null && changes.some((c) => c.prNumber === entry.prNumber)) {
+      continue;
     }
-    // filter out any entries that are not patches if unpickedPatches is set. this will also filter out direct commits
-    if (unpickedPatches && !entry.labels?.includes('patch:yes')) {
-      return;
+    // Patches mode also drops direct commits and non-patch-labelled PRs.
+    if (unpickedPatches && !entry.labels.includes('patch:yes')) {
+      continue;
     }
     changes.push(entry);
-  });
+  }
 
   if (verbose) {
     console.log(`📝 Generated changelog entries:`);
@@ -199,20 +211,11 @@ export const getChangelogText = ({
 }): string => {
   const heading = `## ${version}`;
   const formattedEntries = changes
-    .filter((entry) => {
-      // don't include direct commits that are not from pull requests
-      if (!entry.pull) {
-        return false;
-      }
-      // only include PRs that with labels listed in LABELS_FOR_CHANGELOG
-      return entry.labels?.some((label) => Object.keys(RELEASED_LABELS).includes(label));
-    })
+    .filter((entry) => entry.prNumber !== null)
+    .filter((entry) => entry.labels.some((label) => Object.keys(RELEASED_LABELS).includes(label)))
     .map((entry) => {
-      const { title, user, links } = entry;
-      const { pull, commit } = links;
-      return pull
-        ? `- ${title} - ${pull}, thanks @${user}!`
-        : `- ⚠️ _Direct commit_ ${title} - ${commit} by @${user}`;
+      const userPart = entry.user ? `, thanks @${entry.user}!` : '';
+      return `- ${entry.title} - ${prMarkdown(entry)}${userPart}`;
     })
     .sort();
   const text = [heading, '', ...formattedEntries].join('\n');
@@ -250,18 +253,23 @@ export const getChanges = async ({
   }
 
   const repo = await getRepo(verbose);
-  const pullRequests = await getPullInfoFromCommits({ repo, commits, verbose }).catch((err) => {
+  const commitsWithPrs = await getLatestMergedPrsFromCommits({
+    repo,
+    commits: commits.map((c) => c.hash),
+  }).catch((err) => {
     console.error(
       `🚨 Could not get pull requests from commits, this is usually because you have unpushed commits, or you haven't set the GH_TOKEN environment variable`
     );
     console.error(err);
     throw err;
   });
-  const changes = mapToChanges({ commits, pullRequests, unpickedPatches, verbose });
-  const changelogText = getChangelogText({
-    changes,
-    version,
-  });
+  if (verbose) {
+    console.log(`🔍 Found pull requests:`);
+    console.dir(commitsWithPrs, { depth: null, colors: true });
+  }
+
+  const changes = mapToChanges({ commits, commitsWithPrs, unpickedPatches, verbose });
+  const changelogText = getChangelogText({ changes, version });
 
   return { changes, changelogText };
 };

@@ -12,89 +12,71 @@ describe('Generate PR Description', () => {
   const changes: Change[] = [
     {
       user: 'JReinhold',
-      id: 'pr-id-42',
+      userUrl: 'https://github.com/JReinhold',
       title: 'Some PR title for a bug',
       labels: ['bug', 'build', 'other label', 'patch:yes'],
       commit: 'abc123',
-      pull: 42,
-      state: 'MERGED',
-      links: {
-        commit: '[abc123](https://github.com/storybookjs/storybook/commit/abc123)',
-        pull: '[#42](https://github.com/storybookjs/storybook/pull/42)',
-        user: '[@JReinhold](https://github.com/JReinhold)',
-      },
+      commitUrl: 'https://github.com/storybookjs/storybook/commit/abc123',
+      prId: 'pr-id-42',
+      prNumber: 42,
+      prUrl: 'https://github.com/storybookjs/storybook/pull/42',
     },
     {
-      // this Bump version commit should be ignored
-      id: null,
+      // bump version commit — filtered out by title-ignore regex
       user: 'storybook-bot',
-      pull: null,
-      state: null,
-      commit: '012b58140c3606efeacbe99c0c410624b0a1ed1f',
+      userUrl: 'https://github.com/storybook-bot',
       title: 'Bump version on `next`: preminor (alpha) from 7.2.0 to 7.3.0-alpha.0',
-      labels: null,
-      links: {
-        commit:
-          '[`012b58140c3606efeacbe99c0c410624b0a1ed1f`](https://github.com/storybookjs/storybook/commit/012b58140c3606efeacbe99c0c410624b0a1ed1f)',
-        pull: null,
-        user: '[@storybook-bot](https://github.com/storybook-bot)',
-      },
+      labels: [],
+      commit: '012b58140c3606efeacbe99c0c410624b0a1ed1f',
+      commitUrl:
+        'https://github.com/storybookjs/storybook/commit/012b58140c3606efeacbe99c0c410624b0a1ed1f',
+      prId: null,
+      prNumber: null,
+      prUrl: null,
     },
     {
-      id: null,
       user: 'shilman',
+      userUrl: 'https://github.com/shilman',
       title: 'Some title for a "direct commit"',
-      labels: null,
-      state: null,
+      labels: [],
       commit: '22bb11',
-      pull: null,
-      links: {
-        commit: '[22bb11](https://github.com/storybookjs/storybook/commit/22bb11)',
-        pull: null,
-        user: '[@shilman](https://github.com/shilman)',
-      },
+      commitUrl: 'https://github.com/storybookjs/storybook/commit/22bb11',
+      prId: null,
+      prNumber: null,
+      prUrl: null,
     },
     {
-      id: 'pr-id-11',
       user: 'shilman',
+      userUrl: 'https://github.com/shilman',
       title: 'Another PR `title` for docs',
       labels: ['another label', 'documentation', 'patch:yes'],
       commit: 'ddd222',
-      state: 'MERGED',
-      pull: 11,
-      links: {
-        commit: '[ddd222](https://github.com/storybookjs/storybook/commit/ddd222)',
-        pull: '[#11](https://github.com/storybookjs/storybook/pull/11)',
-        user: '[@shilman](https://github.com/shilman)',
-      },
+      commitUrl: 'https://github.com/storybookjs/storybook/commit/ddd222',
+      prId: 'pr-id-11',
+      prNumber: 11,
+      prUrl: 'https://github.com/storybookjs/storybook/pull/11',
     },
     {
-      id: 'pr-id-48',
       user: 'JReinhold',
+      userUrl: 'https://github.com/JReinhold',
       title: "Some PR title for a 'new' feature",
       labels: ['feature request', 'other label'],
       commit: 'wow1337',
-      pull: 48,
-      state: 'MERGED',
-      links: {
-        commit: '[wow1337](https://github.com/storybookjs/storybook/commit/wow1337)',
-        pull: '[#48](https://github.com/storybookjs/storybook/pull/48)',
-        user: '[@JReinhold](https://github.com/JReinhold)',
-      },
+      commitUrl: 'https://github.com/storybookjs/storybook/commit/wow1337',
+      prId: 'pr-id-48',
+      prNumber: 48,
+      prUrl: 'https://github.com/storybookjs/storybook/pull/48',
     },
     {
-      id: 'pr-id-77',
       user: 'JReinhold',
+      userUrl: 'https://github.com/JReinhold',
       title: 'Some PR title with a missing label',
       labels: ['incorrect label', 'other label'],
       commit: 'bad999',
-      state: 'MERGED',
-      pull: 77,
-      links: {
-        commit: '[bad999](https://github.com/storybookjs/storybook/commit/bad999)',
-        pull: '[#77](https://github.com/storybookjs/storybook/pull/77)',
-        user: '[@JReinhold](https://github.com/JReinhold)',
-      },
+      commitUrl: 'https://github.com/storybookjs/storybook/commit/bad999',
+      prId: 'pr-id-77',
+      prNumber: 77,
+      prUrl: 'https://github.com/storybookjs/storybook/pull/77',
     },
   ];
   describe('mapToChangelist', () => {
@@ -102,7 +84,7 @@ describe('Generate PR Description', () => {
       expect(mapToChangelist({ changes, unpickedPatches: true })).toMatchInlineSnapshot(`
         "- [ ] **🐛 Bug**: Some PR title for a bug [#42](https://github.com/storybookjs/storybook/pull/42)
         - [ ] **✨ Feature Request**: Some PR title for a 'new' feature [#48](https://github.com/storybookjs/storybook/pull/48)
-        - [ ] **⚠️ Direct commit**: Some title for a "direct commit" [22bb11](https://github.com/storybookjs/storybook/commit/22bb11)
+        - [ ] **⚠️ Direct commit**: Some title for a "direct commit" [\`22bb11\`](https://github.com/storybookjs/storybook/commit/22bb11)
         - [ ] **📝 Documentation**: Another PR \`title\` for docs [#11](https://github.com/storybookjs/storybook/pull/11)
         - [ ] **❔ Missing Label**: Some PR title with a missing label [#77](https://github.com/storybookjs/storybook/pull/77)"
       `);
@@ -111,7 +93,7 @@ describe('Generate PR Description', () => {
       expect(mapToChangelist({ changes, unpickedPatches: false })).toMatchInlineSnapshot(`
         "- [ ] **🐛 Bug**: Some PR title for a bug [#42](https://github.com/storybookjs/storybook/pull/42) (will also be patched)
         - [ ] **✨ Feature Request**: Some PR title for a 'new' feature [#48](https://github.com/storybookjs/storybook/pull/48)
-        - [ ] **⚠️ Direct commit**: Some title for a "direct commit" [22bb11](https://github.com/storybookjs/storybook/commit/22bb11)
+        - [ ] **⚠️ Direct commit**: Some title for a "direct commit" [\`22bb11\`](https://github.com/storybookjs/storybook/commit/22bb11)
         - [ ] **📝 Documentation**: Another PR \`title\` for docs [#11](https://github.com/storybookjs/storybook/pull/11) (will also be patched)
         - [ ] **❔ Missing Label**: Some PR title with a missing label [#77](https://github.com/storybookjs/storybook/pull/77)"
       `);

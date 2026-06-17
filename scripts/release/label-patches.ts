@@ -4,9 +4,12 @@ import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
 import { esMain } from '../utils/esmain.ts';
-import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
+import { getLatestMergedPrsFromCommits } from '../utils/github/associated-prs.ts';
+import { getGithubClient, RELEASE_SCOPES } from '../utils/github/client.ts';
+import { getLabelIds } from '../utils/github/labels.ts';
+import { getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
-import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
+import { getUnpickedPRs } from './utils/get-unpicked-prs.ts';
 
 program
   .name('label-patches')
@@ -18,7 +21,7 @@ program
   );
 
 async function labelPR(id: string, labelId: string) {
-  await githubGraphQlClient(
+  await getGithubClient(RELEASE_SCOPES).graphql(
     `
       mutation ($input: AddLabelsToLabelableInput!) {
         addLabelsToLabelable(input: $input) {
@@ -47,25 +50,24 @@ async function getPullRequestsFromLog({ repo }: { repo: string }) {
     spinner2.fail('No cherry pick commits found to label.');
     return [];
   }
-  const pullRequests = (
-    await getPullInfoFromCommits({
-      repo,
-      commits: cherryPicked.map((hash) => ({ hash })),
-    })
-  ).filter((it) => it.id != null);
+  const commitsWithPrs = (
+    await getLatestMergedPrsFromCommits({ repo, commits: cherryPicked })
+  ).filter((it): it is typeof it & { pr: NonNullable<typeof it.pr> } => it.pr !== null);
 
-  if (pullRequests.length === 0) {
+  if (commitsWithPrs.length === 0) {
     spinner2.fail(
       `Found picks: ${cherryPicked.join(', ')}, but no associated pull request found to label.`
     );
-    return pullRequests;
+    return commitsWithPrs;
   }
 
-  const commitWithPr = pullRequests.map((pr) => `Commit: ${pr.commit}\n PR: ${pr.links.pull}`);
+  const lines = commitsWithPrs.map(
+    (it) => `Commit: ${it.commit}\n PR: [#${it.pr.number}](${it.pr.url})`
+  );
 
-  spinner2.succeed(`Found the following picks 🍒:\n ${commitWithPr.join('\n')}`);
+  spinner2.succeed(`Found the following picks 🍒:\n ${lines.join('\n')}`);
 
-  return pullRequests;
+  return commitsWithPrs;
 }
 
 export const run = async (options: unknown) => {
@@ -76,19 +78,17 @@ export const run = async (options: unknown) => {
   const repo = await getRepo();
   const labelAll = typeof options === 'object' && 'all' in options && Boolean(options.all);
 
-  const pullRequestsToLabel = labelAll
-    ? await getUnpickedPRs('next')
-    : await getPullRequestsFromLog({ repo });
-  if (pullRequestsToLabel.length === 0) {
+  const idsToLabel: string[] = labelAll
+    ? (await getUnpickedPRs('next')).map((p) => p.id)
+    : (await getPullRequestsFromLog({ repo })).map((c) => c.pr.id);
+  if (idsToLabel.length === 0) {
     return;
   }
 
-  const spinner3 = ora(
-    `Labeling ${pullRequestsToLabel.length} PRs with the patch:done label...`
-  ).start();
+  const spinner3 = ora(`Labeling ${idsToLabel.length} PRs with the patch:done label...`).start();
   try {
     const labelToId = await getLabelIds({ repo, labelNames: ['patch:done'] });
-    await Promise.all(pullRequestsToLabel.map((pr) => labelPR(pr.id, labelToId['patch:done'])));
+    await Promise.all(idsToLabel.map((id) => labelPR(id, labelToId['patch:done'])));
     spinner3.succeed(`Successfully labeled all PRs with the patch:done label.`);
   } catch (e) {
     spinner3.fail(`Something went wrong when labelling the PRs.`);

@@ -6,7 +6,7 @@ import { program } from 'commander';
 import picocolors from 'picocolors';
 
 import { esMain } from '../utils/esmain.ts';
-import { getPullInfoFromCommit } from './utils/get-github-info.ts';
+import { getLatestMergedPrsFromCommits } from '../utils/github/associated-prs.ts';
 import { git } from './utils/git-client.ts';
 
 program
@@ -73,15 +73,17 @@ export const run = async (options: unknown) => {
 
   const repo = await getRepo(verbose);
 
-  const pullRequest = await getPullInfoFromCommit({ repo, commit }).catch((err) => {
-    console.error(`🚨 Could not get pull requests from commit: ${commit}`);
-    console.error(err);
-    throw err;
-  });
+  const [result] = await getLatestMergedPrsFromCommits({ repo, commits: [commit] }).catch(
+    (err) => {
+      console.error(`🚨 Could not get pull requests from commit: ${commit}`);
+      console.error(err);
+      throw err;
+    }
+  );
   console.log(`🔍 Found pull request:
-  ${JSON.stringify(pullRequest, null, 2)}`);
+  ${JSON.stringify(result, null, 2)}`);
 
-  if (pullRequest.state !== 'OPEN') {
+  if (result?.pr?.state !== 'OPEN') {
     console.log('❌ The pull request is already closed, ignoring it');
     if (process.env.GITHUB_ACTIONS === 'true') {
       setOutput('frozen', false);
@@ -89,7 +91,7 @@ export const run = async (options: unknown) => {
     return false;
   }
 
-  const isFrozen = pullRequest.labels?.includes('freeze');
+  const isFrozen = result.pr.labels.includes('freeze');
   if (process.env.GITHUB_ACTIONS === 'true') {
     setOutput('frozen', isFrozen);
   }

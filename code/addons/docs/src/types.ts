@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
-import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+import type { Args, Renderer, StoryContext } from 'storybook/internal/csf';
+import type { ModuleExport, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
 import type { ThemeVars } from 'storybook/theming';
 
@@ -29,6 +30,17 @@ type StoryBlockParameters = {
    * attached, the primary (first) story will be rendered.
    */
   of: ModuleExport;
+};
+
+type StoriesBlockParameters = {
+  /** Filter which stories are rendered by the Stories block */
+  filter?: (story: PreparedStory<Renderer>, context: StoryContext<Renderer, Args>) => boolean;
+  /** When rendering stories, whether the first story should be included */
+  includePrimaryStory?: boolean;
+  /** Whether to force initial args when rendering stories */
+  forceInitialArgs?: boolean;
+  /** The title displayed above the stories list */
+  title?: string;
 };
 
 type ControlsBlockParameters = {
@@ -221,6 +233,13 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
     story?: Partial<StoryBlockParameters>;
+
+    /**
+     * Stories configuration
+     *
+     * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-stories
+     */
+    stories?: StoriesBlockParameters;
 
     /**
      * The subtitle displayed when shown in docs page

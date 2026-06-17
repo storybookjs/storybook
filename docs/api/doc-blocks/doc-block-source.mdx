@@ -138,3 +138,15 @@ Specifies how the source code is rendered.
 Note that dynamic snippets will only work if the story uses [`args`](../../writing-stories/args.mdx) and the [`Story` block](./doc-block-story.mdx) for that story is rendered along with the `Source` block.
 
 </Callout>
+
+<If renderer="react">
+
+## Sorting props in dynamic snippets
+
+For the React renderer, dynamic snippets are generated with [`react-element-to-jsx-string`](https://www.npmjs.com/package/react-element-to-jsx-string), which sorts props alphabetically by default. To preserve the order in which the props (args) are defined in your story, set `parameters.jsx.sortProps` to `false`:
+
+<CodeSnippets path="api-doc-block-source-sort-props.md" />
+
+This parameter is passed directly to `react-element-to-jsx-string`. It can be applied at the [project](../../writing-stories/parameters.mdx#global-parameters), [component](../../writing-stories/parameters.mdx#component-parameters) (meta), or [story](../../writing-stories/parameters.mdx#story-parameters) level.
+
+</If>

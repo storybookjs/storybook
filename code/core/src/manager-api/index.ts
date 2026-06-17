@@ -25,6 +25,13 @@ export {
 
 export { Tag } from '../shared/constants/tags.ts';
 
+export {
+  enterReviewMode,
+  exitReviewMode,
+  isReviewModeActive,
+  type ReviewModeFilters,
+} from '../manager/components/sidebar/review-mode.ts';
+
 /** OPEN SERVICE API (manager relay hub + React hooks; types on `storybook/open-service`) */
 export {
   registerService,

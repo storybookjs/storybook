@@ -183,7 +183,8 @@ export const manifests: PresetPropertyFn<
 > = async (existingManifests = {}, { manifestEntries, presets }) => {
   const startPerformance = performance.now();
   const features = await presets?.apply?.('features');
-  const useMdxService = features?.experimentalDocgenServer === true;
+  const useMdxService =
+    features?.experimentalDocgenServer === true && features?.componentsManifest === true;
 
   const docsEntries = manifestEntries.filter(
     (entry): entry is DocsIndexEntry => entry.type === 'docs'

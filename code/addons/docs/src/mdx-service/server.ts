@@ -83,9 +83,22 @@ export function registerMdxService({
           const index = await getIndex();
           const grouped = groupMdxEntriesByComponent(index);
 
-          await Promise.all(
-            Object.keys(grouped).map((id) => ctx.self.commands._extractMdxForComponent({ id }))
+          const extracted = await Promise.all(
+            Object.entries(grouped).map(async ([id, entries]) => {
+              const payload = await provider({ componentId: id, entries });
+              return payload ? ([id, payload] as const) : undefined;
+            })
           );
+
+          ctx.self.setState((state) => {
+            for (const result of extracted) {
+              if (!result) {
+                continue;
+              }
+              const [id, payload] = result;
+              state.components[id] = payload;
+            }
+          });
         },
       },
     },

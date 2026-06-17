@@ -887,7 +887,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -1133,7 +1133,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1147,7 +1147,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`

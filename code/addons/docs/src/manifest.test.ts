@@ -237,7 +237,10 @@ describe('experimental_manifests', () => {
       {
         manifestEntries,
         presets: {
-          apply: vi.fn().mockResolvedValue({ experimentalDocgenServer: true }),
+          apply: vi.fn().mockResolvedValue({
+            experimentalDocgenServer: true,
+            componentsManifest: true,
+          }),
         },
       } as any
     )) as ManifestResult;
@@ -279,7 +282,10 @@ describe('experimental_manifests', () => {
     const result = (await manifests(undefined, {
       manifestEntries,
       presets: {
-        apply: vi.fn().mockResolvedValue({ experimentalDocgenServer: true }),
+        apply: vi.fn().mockResolvedValue({
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        }),
       },
     } as any)) as ManifestResult;
 

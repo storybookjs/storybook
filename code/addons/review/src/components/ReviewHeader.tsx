@@ -20,7 +20,7 @@ const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   flexDirection: 'row',
   alignItems: 'center',
   gap: 8,
-  padding: $variant === 'toolbar' ? '16px 10px 8px 10px' : '16px',
+  padding: $variant === 'toolbar' ? '16px 16px 8px 16px' : '16px',
   minHeight: 40,
 }));
 

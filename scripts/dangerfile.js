@@ -177,6 +177,7 @@ const checkManualTestingSection = (body) => {
  * - Renaming freeform commits that are missing a changelog category
  * - Cherry-picking PRs with conflicts
  * - Any other task you choose to add during the release process!
+ * @param {string} body
  */
 const checkReleaseChecklist = (body) => {
   if (!isReleasePr) {

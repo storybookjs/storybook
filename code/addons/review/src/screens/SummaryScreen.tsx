@@ -16,7 +16,7 @@ import {
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
-import { StaleBanner } from '../components/StaleBanner.tsx';
+import { AttentionBanner } from '../components/AttentionBanner.tsx';
 import { buildReviewChangesDetailHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 
@@ -212,6 +212,10 @@ export interface SummaryScreenProps {
   getStoryPreviewHref: (storyId: string) => string;
   /** When true, render the "this review may be stale" banner at the top. */
   isStale?: boolean;
+  /** When true, render the "updated review available" banner at the top. */
+  hasPendingUpdate?: boolean;
+  /** Accepts the pending review and navigates to the summary screen. */
+  onAcceptPendingUpdate?: () => void;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -219,6 +223,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   storyInfo = {},
   getStoryPreviewHref,
   isStale = false,
+  hasPendingUpdate = false,
+  onAcceptPendingUpdate,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
@@ -318,7 +324,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   return (
     <Page>
-      {isStale ? <StaleBanner /> : null}
+      {hasPendingUpdate && onAcceptPendingUpdate ? (
+        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
+      ) : isStale ? (
+        <AttentionBanner kind="stale" />
+      ) : null}
       <ReviewHeader
         title={state.title}
         subtitle={

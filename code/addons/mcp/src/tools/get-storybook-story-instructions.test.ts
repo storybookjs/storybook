@@ -3,6 +3,7 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { getAddonVitestConstants } from './run-story-tests.ts';
 import { addGetUIBuildingInstructionsTool } from './get-storybook-story-instructions.ts';
+import { getReviewStatus } from '../utils/is-review-available.ts';
 import type { AddonContext } from '../types.ts';
 import {
 	PREVIEW_STORIES_TOOL_NAME,
@@ -14,6 +15,10 @@ vi.mock('./run-story-tests.ts', () => ({
 	getAddonVitestConstants: vi.fn(),
 }));
 
+vi.mock('../utils/is-review-available.ts', () => ({
+	getReviewStatus: vi.fn(),
+}));
+
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;
 
@@ -21,6 +26,12 @@ describe('getUIBuildingInstructionsTool', () => {
 		vi.mocked(getAddonVitestConstants).mockResolvedValue({
 			TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
 			TRIGGER_TEST_RUN_RESPONSE: 'TRIGGER_TEST_RUN_RESPONSE',
+		});
+
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: false,
+			hasFeatureFlag: false,
+			hasAddon: false,
 		});
 
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -204,6 +215,95 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
 		expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
 		expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
+		expect(instructions).not.toContain('{{FINAL_LINKS_GUIDANCE}}');
+	});
+
+	// Regression: the story-instructions output must agree with the server
+	// instructions about how to present links. It previously told the agent to
+	// list the review page AND the preview URLs together, contradicting the
+	// "show one set of links — never both" server rule.
+	it('tells the agent to show only the review section when review is enabled', async () => {
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: true,
+			hasFeatureFlag: true,
+			hasAddon: true,
+		});
+
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
+			},
+		};
+
+		const response = await server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
+			},
+			{
+				sessionId: 'test-session',
+				custom: {
+					origin: 'http://localhost:6006',
+					options: mockOptions as any,
+					disableTelemetry: true,
+				},
+			},
+		);
+
+		const instructions = response.result?.content[0].text as string;
+
+		expect(instructions).toContain('show one set of links — never both');
+		expect(instructions).toContain('## 👀 Review your changes');
+		expect(instructions).toContain('Never also list the individual story or preview URLs');
+		// The old contradictory instruction must be gone.
+		expect(instructions).not.toContain('present links in this order');
+	});
+
+	it('tells the agent to include preview URLs when review is disabled', async () => {
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: false,
+			hasFeatureFlag: true,
+			hasAddon: false,
+		});
+
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
+			},
+		};
+
+		const response = await server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
+			},
+			{
+				sessionId: 'test-session',
+				custom: {
+					origin: 'http://localhost:6006',
+					options: mockOptions as any,
+					disableTelemetry: true,
+				},
+			},
+		);
+
+		const instructions = response.result?.content[0].text as string;
+
+		expect(instructions).toContain('include every returned preview URL');
+		expect(instructions).not.toContain('## 👀 Review your changes');
+		expect(instructions).not.toContain('present links in this order');
 	});
 
 	it('should not mention changed stories workflow when change detection is disabled', async () => {

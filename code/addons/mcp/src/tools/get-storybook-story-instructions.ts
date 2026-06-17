@@ -1,6 +1,8 @@
 import type { McpServer } from 'tmcp';
 import { getAddonVitestConstants } from './run-story-tests.ts';
 import { collectTelemetry } from '../telemetry.ts';
+import { getFinalLinksGuidance } from '../instructions/build-server-instructions.ts';
+import { getReviewStatus } from '../utils/is-review-available.ts';
 import storyInstructionsTemplate from '../instructions/storybook-story-instructions.md';
 import storyTestingInstructionsTemplate from '../instructions/story-testing-instructions.md';
 import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
@@ -79,6 +81,8 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 				const frameworkPreset = await options.presets.apply('framework');
 				const featuresPreset = await options.presets.apply('features', {});
 				const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
+				const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
+				const reviewEnabled = reviewStatus.available;
 				const framework =
 					typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
@@ -86,13 +90,14 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 					? `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
 					: `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
 				const changedStoryFallbackLinkGuidance = changeDetectionEnabled
-					? `If you do not share all changed story links, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
-					: `When linking only a subset of stories, mention that additional relevant stories may exist in Storybook.`;
+					? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
+					: `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
 
 				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
 					.replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
+					.replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
 					.replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 
 				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available

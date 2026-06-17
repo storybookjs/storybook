@@ -11,8 +11,6 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { UserEventObject } from 'storybook/test';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
@@ -23,9 +21,7 @@ import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
 vi.mock('@storybook/global', async (importOriginal) => ({
-  global: {
-    ...(await importOriginal<typeof import('@storybook/global')>()),
-  },
+  ...(await importOriginal<typeof import('@storybook/global')>()),
 }));
 
 const id = 'id';
@@ -618,8 +614,13 @@ describe('prepareStory', () => {
 
   describe('with `FEATURES.argTypeTargetsV7`', () => {
     beforeEach(() => {
-      global.FEATURES = { argTypeTargetsV7: true };
+      vi.stubGlobal('FEATURES', { argTypeTargetsV7: true });
     });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it('filters out targeted args', () => {
       const renderMock = vi.fn();
       const firstStory = prepareStory(
@@ -728,11 +729,11 @@ describe('prepareStory', () => {
 
   describe('with `FEATURES.experimentalDocgenServer`', () => {
     beforeEach(() => {
-      global.FEATURES = { experimentalDocgenServer: true };
+      vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
     });
 
     afterEach(() => {
-      global.FEATURES = {};
+      vi.unstubAllGlobals();
     });
 
     it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {

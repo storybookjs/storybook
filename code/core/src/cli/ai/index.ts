@@ -7,9 +7,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import { ProjectTypeService } from '../../../create-storybook/src/services/ProjectTypeService.ts';
-
-import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
+import { detectLanguage } from '../detectLanguage.ts';
+import { getStorybookData } from '../getStorybookData.ts';
 import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
 import type { ProjectInfo, AiSetupOptions } from './types.ts';
 
@@ -35,8 +34,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       ? parseMajorVersion(data.versionInstalled)
       : undefined;
 
-    const projectTypeService = new ProjectTypeService(data.packageManager);
-    const detectedLanguage = await projectTypeService.detectLanguage();
+    const detectedLanguage = await detectLanguage(data.packageManager, data.workingDir);
     const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
 
     const needsUserOnboarding = await cache.get<boolean>('onboarding-pending', false);

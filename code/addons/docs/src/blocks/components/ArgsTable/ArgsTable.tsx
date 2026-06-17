@@ -441,7 +441,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
           {...{ compact, inAddonPanel, inTabPanel }}
           className="docblock-argstable sb-unstyled"
         >
-          <thead className="docblock-argstable-head">
+          <thead className="docblock-argstable-head" lang="en">
             <tr>
               <th>
                 <span>Name</span>

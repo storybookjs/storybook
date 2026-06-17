@@ -100,7 +100,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
 
   return (
     <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <StyledTd expandable={expandable ?? false}>
+      <StyledTd expandable={expandable ?? false} lang="en">
         <Name>{name}</Name>
         {required ? <Required title="Required">*</Required> : null}
       </StyledTd>

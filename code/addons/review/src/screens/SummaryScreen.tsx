@@ -470,7 +470,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <SummaryCard color="agentic">
               <WandIcon />
               <SummaryContent>
-                <Markdown>{'**Summary:** ' + state.description}</Markdown>
+                <Markdown options={{ disableParsingRawHTML: true }}>
+                  {'**Summary:** ' + state.description}
+                </Markdown>
               </SummaryContent>
             </SummaryCard>
             {visibleCollections.length === 0 ? (

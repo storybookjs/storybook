@@ -109,4 +109,12 @@ export class TelemetryService {
       cliIntegration,
     });
   }
+
+  async trackPromptCancel(prompt: string): Promise<void> {
+    await telemetry(
+      'canceled',
+      { eventType: 'init', prompt },
+      { stripMetadata: true, immediate: true }
+    );
+  }
 }

@@ -51,8 +51,23 @@ sb.mock(import('lodash-es/sum'));
 sb.mock(import('uuid'));
 /* eslint-enable depend/ban-dependencies */
 
+import '../core/src/shared/open-service/sync-test/preview.ts';
+
 const { document } = global;
-globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+
+// The internal Storybook's manager stories (sidebar context menu, onboarding guide, …) demonstrate
+// DEVELOPMENT-only UI, so they must render as if in development even though this Storybook is itself
+// built and served statically (`yarn storybook:ui`, Chromatic, Vitest portable stories). In Vitest the
+// preview builder never injects CONFIG_TYPE (it is undefined); in Chromatic it is injected as PRODUCTION.
+// The one exception is the open-service static-load E2E, which serves a plain production build to
+// exercise the real static-loading path — there CONFIG_TYPE is PRODUCTION and Chromatic is not driving
+// the browser, so we leave the injected value untouched.
+// TODO(open-service): #29743 added an unconditional `CONFIG_TYPE = 'DEVELOPMENT'` here with no rationale.
+// Ask Norbert why the internal Storybook needs to force development mode rather than the stories opting
+// in per-story; if it can be removed, this gate should go with it.
+if (isChromatic() || globalThis.CONFIG_TYPE !== 'PRODUCTION') {
+  globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+}
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {

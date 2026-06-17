@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1957,6 +1958,39 @@ describe('StoryIndexGenerator', () => {
         `);
       });
 
+      it('uses the explicit id prop on <Meta> for standalone mdx docs', async () => {
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './docs-id-generation/Standalone.docs.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {
+              "custom-standalone-id--docs": {
+                "id": "custom-standalone-id--docs",
+                "importPath": "./docs-id-generation/Standalone.docs.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "unattached-mdx",
+                ],
+                "title": "Standalone Page Title",
+                "type": "docs",
+              },
+            },
+            "v": 5,
+          }
+        `);
+      });
+
       it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/*.stories.(js|ts)',
@@ -1997,6 +2031,28 @@ describe('StoryIndexGenerator', () => {
     });
 
     describe('warnings', () => {
+      it('does not match directories that have story-like names', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.tsx',
+          options
+        );
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+        const storyLikeDirectory = join(
+          options.workingDir,
+          './src/__screenshots__/Button.stories.tsx'
+        );
+        const storyLikeDirectoryFile = join(storyLikeDirectory, 'Primary.png');
+
+        expect(existsSync(storyLikeDirectoryFile)).toBe(true);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectory);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectoryFile);
+      });
+
       it('when entries do not match any files', async () => {
         const generator = new StoryIndexGenerator(
           [normalizeStoriesEntry('./src/docs2/wrong.js', options)],

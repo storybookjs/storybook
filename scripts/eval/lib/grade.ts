@@ -322,7 +322,7 @@ export async function collectGhostStoriesGrade(
 
     const rawReport = JSON.parse(await readFile(outputFile, 'utf8'));
     const parsed = parseVitestResults(rawReport);
-    const emptyRenders = parsed.summary?.runPassedButEmptyRender ?? 0;
+    const emptyRenders = parsed.summary?.passedButEmptyRender ?? 0;
 
     // Suite-level: each file either loaded and rendered or it didn't.
     const total: number = rawReport.numTotalTestSuites ?? 0;

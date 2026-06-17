@@ -110,6 +110,7 @@ export const DocsContent = styled.div(({ theme }) => {
     maxWidth: 1000,
     width: '100%',
     minWidth: 0,
+    flex: 1,
     [toGlobalSelector('a')]: {
       ...reset,
       fontSize: 'inherit',
@@ -440,7 +441,7 @@ export const DocsWrapper = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row-reverse',
   justifyContent: 'center',
-  padding: '4rem 20px',
+  padding: '4rem 40px',
   minHeight: '100vh',
   boxSizing: 'border-box',
   gap: '3rem',

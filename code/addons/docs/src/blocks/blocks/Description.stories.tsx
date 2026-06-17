@@ -1,7 +1,10 @@
+import type { ModuleExport, StoryContext, StoryDocsPayload } from 'storybook/internal/types';
+import { registerService } from 'storybook/preview-api';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect } from 'storybook/test';
-import { vi } from 'vitest';
+import invariant from 'tiny-invariant';
 
 import { Button as ButtonComponent } from '../examples/Button';
 import * as DefaultButtonStories from '../examples/Button.stories';
@@ -10,9 +13,69 @@ import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWi
 import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
 import * as ParametersStories from '../examples/SourceParameters.stories.tsx';
 import { Description } from './Description';
-import { storyDocsServiceStoryBeforeEach } from './mock-story-docs-service.ts';
+import type { DocsContextProps } from './DocsContext.ts';
+import { storyDocsServiceDef } from '../../../../../core/src/shared/open-service/services/story-docs/definition.ts';
+import { unregisterService } from '../../../../../core/src/shared/open-service/service-registry.ts';
 
-vi.mock('storybook/preview-api', { spy: true });
+type StoryDocsMockData = {
+  description?: string;
+};
+
+function createStoryDocsPayload(
+  docsContext: DocsContextProps,
+  of: ModuleExport,
+  data: StoryDocsMockData
+): StoryDocsPayload {
+  const { story } = docsContext.resolveOf(of, ['story']);
+  const componentId = story.id.split('--')[0]!;
+
+  return {
+    id: componentId,
+    name: componentId,
+    path: './example.stories.tsx',
+    stories: {
+      [story.id]: {
+        id: story.id,
+        name: story.name,
+        ...(data.description ? { description: data.description } : {}),
+      },
+    },
+  };
+}
+
+function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockData) {
+  return async (context: StoryContext) => {
+    const docsContext = context.loaded?.docsContext as DocsContextProps | undefined;
+    invariant(docsContext, 'docsContext is required to mock story-docs for docs block stories');
+
+    const payload = createStoryDocsPayload(docsContext, of, data);
+    unregisterService('core/story-docs');
+    const service = registerService(storyDocsServiceDef, {
+      commands: {
+        extractStoryDocs: {
+          handler: (input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[input.id] = payload;
+            });
+            return payload;
+          },
+        },
+        extractAllStoryDocs: {
+          handler: (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[payload.id] = payload;
+            });
+          },
+        },
+      },
+    });
+    await service.commands.extractStoryDocs({ id: payload.id });
+
+    return () => {
+      unregisterService('core/story-docs');
+    };
+  };
+}
 
 const SERVICE_STORY_DESCRIPTION = 'Description from the story-docs service';
 

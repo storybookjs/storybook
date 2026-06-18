@@ -269,11 +269,6 @@ export class ModuleGraphEngine {
           this.refreshInFlight = false;
         });
     }
-    // Index invalidation does not bump the graph revision on its own. Any change that consumers
-    // care about already flows through a precise `onUpdate`: a story-file content edit (including a
-    // story renamed within a file) arrives as a builder file-change event, and a story that entered
-    // or left the index is replayed as an add/unlink by `refreshStoryFiles` above. A blanket bump
-    // here would only add an untargeted revision and clobber the latest changed-story set.
   }
 
   /**

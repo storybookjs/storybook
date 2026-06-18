@@ -23,3 +23,4 @@ description: Evaluate a PR's title and description against its actual implementa
 - Don't rewrite a description that's already accurate.
 - Update the state of checkboxes where appropriate.
 - Remove section placeholders/reminders when filling out a section.
+- Do not remove the canary release section.

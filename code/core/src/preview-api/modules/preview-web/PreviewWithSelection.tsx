@@ -450,7 +450,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       invariant(!!render.story);
       this.storyRenders.push(render as StoryRender<TRenderer>);
       (this.currentRender as StoryRender<TRenderer>).renderToElement(
-        this.view.prepareForStory(render.story)
+        this.view.prepareForStory(render.story, {
+          scrollReset: storyIdChanged || viewModeChanged,
+        })
       );
     } else {
       this.currentRender.renderToElement(

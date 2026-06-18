@@ -67,12 +67,20 @@ export class WebView implements View<HTMLElement> {
   }
 
   // Get ready to render a story, returning the element to render to
-  prepareForStory(story: PreparedStory<any>) {
+  prepareForStory(
+    story: PreparedStory<any>,
+    { scrollReset = true }: { scrollReset?: boolean } = {}
+  ) {
     this.showStory();
     this.applyLayout(story.parameters.layout);
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    // Only reset scroll when navigating to a new story or switching view modes, not on HMR
+    // re-renders. Without this guard, hot-reloading a story file while scrolled down on a
+    // tall story causes the page to jump back to the top.
+    if (scrollReset) {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    }
 
     return this.storyRoot();
   }

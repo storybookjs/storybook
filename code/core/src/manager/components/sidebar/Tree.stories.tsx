@@ -13,6 +13,9 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
+import { storeOptions } from '../../../../../addons/vitest/src/constants.ts';
+import { TestProviderRender } from '../../../../../addons/vitest/src/components/TestProviderRender.tsx';
+
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
@@ -33,6 +36,13 @@ const managerContext: any = {
     emit: fn().mockName('api::emit'),
     getShortcutKeys: fn().mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
+    getDocsUrl: fn(
+      ({ subpath }: { subpath: string }) => `https://storybook.js.org/docs/${subpath}`
+    ).mockName('api::getDocsUrl'),
+    findAllLeafStoryIds: fn((entryId: string) => [entryId]).mockName('api::findAllLeafStoryIds'),
+    selectStory: fn().mockName('api::selectStory'),
+    setSelectedPanel: fn().mockName('api::setSelectedPanel'),
+    togglePanel: fn().mockName('api::togglePanel'),
     getElements: fn(
       () =>
         ({
@@ -40,7 +50,33 @@ const managerContext: any = {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
             id: 'component-tests',
             render: () => 'Component tests',
-            sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
+            sidebarContextMenu: ({ context }: { context: any }) => {
+              if (context.type === 'root') return null;
+              return (
+                <TestProviderRender
+                  api={managerContext.api as any}
+                  entry={context}
+                  testProviderState="test-provider-state:pending"
+                  componentTestStatusValueToStoryIds={{
+                    'status-value:error': [],
+                    'status-value:success': [],
+                    'status-value:pending': [],
+                    'status-value:warning': [],
+                    'status-value:unknown': [],
+                  }}
+                  a11yStatusValueToStoryIds={{
+                    'status-value:error': [],
+                    'status-value:success': [],
+                    'status-value:pending': [],
+                    'status-value:warning': [],
+                    'status-value:unknown': [],
+                  }}
+                  storeState={storeOptions.initialState}
+                  setStoreState={fn()}
+                  isSettingsUpdated={false}
+                />
+              );
+            },
           },
           'visual-tests': {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
@@ -322,7 +358,7 @@ export const WithContextContent: Story = {
 
     const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
-    expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+    expect(popover).toHaveTextContent('Run component tests');
   },
 };
 
@@ -391,6 +427,17 @@ const rootMenuData = {
 } as unknown as IndexHash;
 
 const rootContextMenuBase: Story = {
+  // The context menu is gated on CONFIG_TYPE === 'DEVELOPMENT'. In a static
+  // Storybook build (Chromatic URL viewed manually, storybook:ui:build) the
+  // builder injects 'PRODUCTION', so preview.tsx leaves it untouched and the
+  // button never renders. Force it here so the stories work everywhere.
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
   args: {
     docsMode: false,
     isBrowsing: true,
@@ -522,7 +569,7 @@ export const StoryContextMenuWithStatusAndProvider: Story = {
     // Status link — comes from allStatuses (sidebarContextMenu not false)
     await expect(within(dialog).getByText('Vitest')).toBeInTheDocument();
     // Provider item — comes from the registered component-tests test provider
-    await expect(within(dialog).getByText('TEST_PROVIDER_CONTEXT_CONTENT')).toBeInTheDocument();
+    await expect(within(dialog).getByText('Run component tests')).toBeInTheDocument();
   },
 };
 

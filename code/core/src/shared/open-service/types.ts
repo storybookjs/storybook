@@ -94,37 +94,99 @@ export type CommandFunctions<
 };
 
 /**
+ * Coarse lifecycle of a query's `load`, modeled after TanStack Query's `status`.
+ *
+ * - `pending` — no successful load has completed yet (and none has failed). The query may still
+ *   expose `data` (the synchronous "current best" handler result), but nothing has been loaded.
+ * - `error` — the most recent attempt (load rejection, or a synchronous handler / validation throw)
+ *   failed. `data` keeps the last successful value, if any.
+ * - `success` — a load has completed (or the query has no `load`, so there is nothing to load).
+ */
+export type QueryStatus = 'pending' | 'error' | 'success';
+
+/**
+ * Whether a `load` is currently running, modeled after TanStack Query's `fetchStatus` — but named
+ * with our own `load` vocabulary because open-service "loads" are any slow async work (computation,
+ * extraction, I/O), not specifically remote fetching.
+ *
+ * - `loading` — a `load` is in flight (the first load, or a reactive background re-load).
+ * - `idle` — no `load` is currently running.
+ */
+export type LoadStatus = 'loading' | 'idle';
+
+/**
+ * The reactive state of a subscribed query: its current `data` plus the lifecycle of its `load`.
+ *
+ * `data` and `status` are independent. `data` is the synchronous handler result ("current best
+ * effort") and holds the last successful value (or `undefined` before the first success / when a
+ * handler throws), while `status`/`loadStatus`/`error` describe the asynchronous `load` lifecycle
+ * tracked per subscription. A query with no `load` is `success`/`idle` from its first emission.
+ *
+ * `isLoading` is intentionally "any load in flight" (TanStack's `isFetching`), and
+ * `isInitialLoading` is "the first load, no data yet" (TanStack's `isLoading`); the names follow our
+ * `load` vocabulary rather than TanStack's `fetch`/`load` split.
+ */
+export type QueryState<TData> = {
+  /** Last successfully produced value; `undefined` before the first success. */
+  data: TData | undefined;
+  /** The failure that produced `status: 'error'`, otherwise `undefined`. */
+  error: Error | undefined;
+  status: QueryStatus;
+  loadStatus: LoadStatus;
+  /** `status === 'pending'`. */
+  isPending: boolean;
+  /** `status === 'success'`. */
+  isSuccess: boolean;
+  /** `status === 'error'`. */
+  isError: boolean;
+  /** `loadStatus === 'loading'` — any load in flight, foreground or background. */
+  isLoading: boolean;
+  /** `isPending && isLoading` — the first-ever load, before any data exists. */
+  isInitialLoading: boolean;
+  /** `isLoading && !isPending` — a background re-load while data is already shown. */
+  isRefreshing: boolean;
+};
+
+/**
  * Public runtime shape of a query.
  *
- * The primary call returns the handler result synchronously. Calling it also triggers `load` in
- * the background, deduped while another load for the same input is already in flight. Use
- * `.loaded(input)` when the caller wants to await the full load (including transitive dependencies)
- * before reading. Use `.subscribe(input, callback)` to receive the current value immediately
- * (synchronously) and again after the background `load` settles (deduped while in-flight), plus
- * further emissions whenever tracked state changes.
+ * - `.get(input)` reads synchronously: it validates input, runs the handler against current state,
+ *   and returns the validated result. It does **not** fire the query's `load` — it is a pure
+ *   "current best effort" read. (Reads of *other* queries from inside a handler or `load` body still
+ *   participate in dependency tracking, so `.loaded()` and subscriptions trigger those dependency
+ *   loads; a bare consumer `.get()` does not.)
+ * - `.loaded(input)` awaits the full load — this query's `load` plus every transitively read
+ *   dependency — before resolving with the validated result.
+ * - `.subscribe(input, callback)` invokes `callback` synchronously with the current {@link QueryState}
+ *   and again whenever tracked state or the load lifecycle changes (deduped on the whole state).
+ *   Subscribing is what fires the query's reactive `load`.
+ *
+ * There is intentionally no bare-call form: a previous `query(input)` that returned synchronously
+ * *and* fired the `load` behind the scenes was removed because the implicit background load was
+ * confusing. Read with `.get(input)`, await with `.loaded(input)`, observe with `.subscribe(...)`.
  *
  * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
- * zero arguments: `query()` and `query.loaded()`.
+ * zero arguments: `query.get()`, `query.loaded()`.
  */
 type InputQuery<TInput, TOutput> = {
-  (input: TInput): TOutput;
+  get(input: TInput): TOutput;
   loaded(input: TInput): Promise<TOutput>;
-  subscribe(input: TInput, callback: (value: TOutput) => void): () => void;
+  subscribe(input: TInput, callback: (state: QueryState<TOutput>) => void): () => void;
   subscribe<TSelected>(
     input: TInput,
     selector: (value: TOutput) => TSelected,
-    callback: (selected: TSelected) => void
+    callback: (state: QueryState<TSelected>) => void
   ): () => void;
 };
 
 /** Zero-argument overloads merged into {@link Query} when the input schema is void. */
 type VoidQuery<TOutput> = {
-  (): TOutput;
+  get(): TOutput;
   loaded(): Promise<TOutput>;
-  subscribe(callback: (value: TOutput) => void): () => void;
+  subscribe(callback: (state: QueryState<TOutput>) => void): () => void;
   subscribe<TSelected>(
     selector: (value: TOutput) => TSelected,
-    callback: (selected: TSelected) => void
+    callback: (state: QueryState<TSelected>) => void
   ): () => void;
 };
 
@@ -133,15 +195,46 @@ export type Query<TInput, TOutput> = undefined extends TInput
   : InputQuery<TInput, TOutput>;
 
 /**
+ * Runtime query map derived directly from the inferred query schema maps.
+ *
+ * The query counterpart to {@link CommandFunctions}: it preserves each sibling query's exact
+ * input/output types on the read-only `self.queries` handle, so a handler or `load` can call
+ * `self.queries.someQuery.get(input)` without manual casts. `defineService` computes this map from
+ * the inferred query schema maps and threads it into the handler/load contexts as their `TQueries`;
+ * the erased {@link AnyQueryFunctions} bound is used everywhere the concrete map is not known.
+ */
+export type QueryFunctions<
+  TQueryInputSchemas extends OperationInputSchemas,
+  TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
+> = {
+  [TKey in keyof TQueryInputSchemas]: Query<
+    InferSchemaInput<TQueryInputSchemas[TKey]>,
+    InferSchemaOutput<TQueryOutputSchemas[TKey]>
+  >;
+};
+
+/**
+ * Permissive bound for a `self.queries` handle.
+ *
+ * Every {@link Query} — input or void — structurally satisfies {@link InputQuery} (the void
+ * overloads are additive), so this is the supertype that any concrete {@link QueryFunctions} map is
+ * assignable to. It is the bound (and erased default) for the `TQueries` parameter below, which lets
+ * the precise per-service map flow into handler contexts while still erasing cleanly into the
+ * structural `AnyQueryDefinition` storage constraint. Using `Query<unknown, unknown>` here instead
+ * would wrongly demand the void zero-arg overloads from input queries.
+ */
+export type AnyQueryFunctions = Record<string, InputQuery<unknown, unknown>>;
+
+/**
  * Read-only service handle exposed to query handlers.
  *
  * Query handlers are strict readers: they can read state and call sibling queries, but they cannot
  * mutate state and cannot invoke commands. Mutations belong in commands; load-side preparation
  * belongs in `load`.
  */
-export type QuerySelf<TState = unknown> = {
+export type QuerySelf<TState = unknown, TQueries extends AnyQueryFunctions = AnyQueryFunctions> = {
   readonly state: TState;
-  queries: Record<string, Query<unknown, unknown>>;
+  queries: TQueries;
 };
 
 /**
@@ -156,7 +249,8 @@ export type LoadSelf<
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
-> = QuerySelf<TState> & {
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
+> = QuerySelf<TState, TQueries> & {
   commands: CommandFunctions<TCommandInputSchemas, TCommandOutputSchemas>;
 };
 
@@ -171,7 +265,8 @@ export type CommandSelf<
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
-> = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas> & {
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
+> = LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries> & {
   setState(mutate: (state: TState) => void): void;
 };
 
@@ -199,8 +294,8 @@ export type ServiceDescriptor = {
 };
 
 /** Context passed to query handlers. */
-export type QueryCtx<TState> = {
-  self: QuerySelf<TState>;
+export type QueryCtx<TState, TQueries extends AnyQueryFunctions = AnyQueryFunctions> = {
+  self: QuerySelf<TState, TQueries>;
   getService: ServiceRegistryApi['getService'];
 };
 
@@ -210,8 +305,9 @@ export type LoadCtx<
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
 > = {
-  self: LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  self: LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>;
   getService: ServiceRegistryApi['getService'];
 };
 
@@ -227,8 +323,9 @@ export type CommandCtx<
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
 > = {
-  self: CommandSelf<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  self: CommandSelf<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>;
   getService: ServiceRegistryApi['getService'];
 };
 
@@ -236,8 +333,9 @@ export type CommandCtx<
  * Declarative definition for one query.
  *
  * Queries validate caller input synchronously, run a synchronous read-only handler, and validate
- * the resolved output. The optional `load` hook is fired in the background on each query call
- * (deduped while in flight) so subscribers and `.loaded()` callers see fully populated state.
+ * the resolved output. The optional `load` hook is fired by subscriptions (reactively) and by
+ * `.loaded()` callers (drained to completion), deduped per `(service, query, input)` while one is
+ * already in flight — a bare `.get()` read never fires it.
  *
  * Queries that participate in static JSON generation declare `staticPath` at definition time.
  * `staticInputs` may also be declared here when the input list has no runtime dependencies; inputs
@@ -250,6 +348,7 @@ export type QueryDefinition<
   TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
     MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
 > = {
   description?: string;
   /**
@@ -267,13 +366,13 @@ export type QueryDefinition<
     InferSchemaInput<TInputSchema>[] | Promise<InferSchemaInput<TInputSchema>[]>
   >;
   handler?: BivariantCallback<
-    [input: InferSchemaOutput<TInputSchema>, ctx: QueryCtx<TState>],
+    [input: InferSchemaOutput<TInputSchema>, ctx: QueryCtx<TState, TQueries>],
     InferSchemaInput<TOutputSchema>
   >;
   load?: BivariantCallback<
     [
       input: InferSchemaOutput<TInputSchema>,
-      ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas>,
+      ctx: LoadCtx<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>,
     ],
     void | Promise<void>
   >;
@@ -288,6 +387,10 @@ export type CommandDefinition<
   TState,
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
+  TCommandInputSchemas extends OperationInputSchemas = OperationInputSchemas,
+  TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas> =
+    MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueries extends AnyQueryFunctions = AnyQueryFunctions,
 > = {
   description?: string;
   /**
@@ -298,7 +401,10 @@ export type CommandDefinition<
   input: TInputSchema;
   output: TOutputSchema;
   handler?: BivariantCallback<
-    [input: InferSchemaOutput<TInputSchema>, ctx: CommandCtx<TState>],
+    [
+      input: InferSchemaOutput<TInputSchema>,
+      ctx: CommandCtx<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>,
+    ],
     InferSchemaInput<TOutputSchema> | Promise<InferSchemaInput<TOutputSchema>>
   >;
 };

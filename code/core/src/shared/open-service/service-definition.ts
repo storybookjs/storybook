@@ -3,6 +3,7 @@ import type {
   MatchingOutputSchemas,
   OperationInputSchemas,
   QueryDefinition,
+  QueryFunctions,
   ServiceDefinition,
   ServiceId,
   ServiceState,
@@ -43,7 +44,8 @@ type DefinedQueries<
     TQueryInputSchemas[TKey],
     TQueryOutputSchemas[TKey],
     TCommandInputSchemas,
-    TCommandOutputSchemas
+    TCommandOutputSchemas,
+    QueryFunctions<TQueryInputSchemas, TQueryOutputSchemas>
   > &
     InternalOperationNaming<TKey>;
 } & {
@@ -63,11 +65,16 @@ type DefinedCommands<
   TState,
   TCommandInputSchemas extends OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueryInputSchemas extends OperationInputSchemas,
+  TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
 > = {
   [TKey in keyof TCommandInputSchemas]: CommandDefinition<
     TState,
     TCommandInputSchemas[TKey],
-    TCommandOutputSchemas[TKey]
+    TCommandOutputSchemas[TKey],
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    QueryFunctions<TQueryInputSchemas, TQueryOutputSchemas>
   > &
     InternalOperationNaming<TKey>;
 } & {
@@ -105,7 +112,13 @@ export const defineService = <
     TCommandInputSchemas,
     TCommandOutputSchemas
   >;
-  commands: DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  commands: DefinedCommands<
+    TState,
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    TQueryInputSchemas,
+    TQueryOutputSchemas
+  >;
 }): ServiceDefinition<
   TState,
   DefinedQueries<
@@ -115,5 +128,11 @@ export const defineService = <
     TCommandInputSchemas,
     TCommandOutputSchemas
   >,
-  DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>
+  DefinedCommands<
+    TState,
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    TQueryInputSchemas,
+    TQueryOutputSchemas
+  >
 > => def;

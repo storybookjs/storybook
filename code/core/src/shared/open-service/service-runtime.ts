@@ -7,14 +7,15 @@
  *
  * ## Mental model in one paragraph
  *
- * A query call is synchronous: it validates input, calls the handler against current state, and
- * returns the result immediately. If the query declares a `load` hook, that hook is fired
- * **fire-and-forget** at the same time so state is gradually populated in the background and
- * later sync calls (or subscribers) see fresher results. The async sugar `query.loaded(input)`
- * is the "wait until fully loaded" form — it must guarantee that **every dependency the handler
- * transitively reads is settled** before returning, even though those dependencies are not
- * declared statically anywhere. That guarantee is what the drain machinery in this file exists
- * to provide.
+ * `query.get(input)` is a synchronous, pure read: it validates input, calls the handler against
+ * current state, and returns the result immediately. It does **not** fire the query's `load` — a
+ * read never starts background work. Loads fire only through `query.subscribe(...)` (reactively,
+ * re-firing as tracked state changes) and `query.loaded(input)` (the "wait until fully loaded"
+ * form). `.loaded()` must guarantee that **every dependency the handler transitively reads is
+ * settled** before returning, even though those dependencies are not declared statically anywhere.
+ * That guarantee is what the drain machinery in this file exists to provide. When a handler or load
+ * body reads a *dependency* via `.get()` inside a `.loaded()` drain or a load body, that read still
+ * triggers and awaits the dependency's load; a bare consumer `.get()` does not.
  *
  * ## Dependency-tracking algorithm
  *
@@ -58,7 +59,7 @@
  * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
  * and stable for the duration of a sync handler call.
  */
-import { batch, computed, effect, untracked } from '@preact/signals-core';
+import { batch, computed, effect, signal, untracked } from '@preact/signals-core';
 import { deepSignal } from 'deepsignal/core';
 import { isEqual } from 'es-toolkit/predicate';
 
@@ -67,9 +68,11 @@ import {
   OpenServiceLoadedDrainExceededError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
+import { buildQueryState, toError } from './query-state.ts';
+import type { QueryLifecycle } from './query-state.ts';
 import { applyStatePatch } from './service-sync.ts';
-import type { StaticLoader } from './static-fetch.ts';
 import { rethrowAsync, validateSchema, validateSchemaSync } from './service-validation.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import type {
   AnySchema,
   Command,
@@ -83,6 +86,7 @@ import type {
   QueryCtx,
   QueryDefinition,
   QuerySelf,
+  QueryState,
   RuntimeService,
   ServiceDefinition,
   ServiceId,
@@ -91,6 +95,9 @@ import type {
 } from './types.ts';
 
 type RuntimeQueryDefinition<TState> = QueryDefinition<TState, AnySchema, AnySchema>;
+
+/** The runtime's concrete query object, with input/output erased to `unknown`. */
+type RuntimeQuery = Query<unknown, unknown>;
 
 /**
  * Internal runtime object returned while a service instance is being assembled.
@@ -406,6 +413,12 @@ type QueryRuntimeRefs<TState> = {
   queryDefinitions: Map<string, RuntimeQueryDefinition<TState>>;
   defaultQueries: Record<string, Query<unknown, unknown>>;
   /**
+   * Fire-and-forget query wrappers used inside reactive subscription load bodies so reading a
+   * dependency keeps its load warm. Populated once the default queries exist (see
+   * {@link buildReactiveLoadQueries}).
+   */
+  reactiveLoadQueries: Record<string, Query<unknown, unknown>>;
+  /**
    * Returns the command map load bodies should call. After the runtime is wired to the channel this
    * is the channel-routed map, so a load can invoke a peer-implemented (remote) command; before that
    * (and in channel-free contexts like the static build) it is the raw local map.
@@ -510,9 +523,9 @@ function runHandlerSync<TState>(
  * Service exposes queries `a` and `b`; `a.load` reads `b`, `b.load` reads `a`.
  *
  * 1. `a.loaded()` → `triggerLoad(a, parentChain={})` → body runs with chain `{a}`.
- * 2. `a.load` body calls `ctx.self.queries.b(...)` → wrapper calls
+ * 2. `a.load` body calls `ctx.self.queries.b.get(...)` → wrapper calls
  *    `triggerLoad(b, parentChain={a})` → body runs with chain `{a, b}`.
- * 3. `b.load` body calls `ctx.self.queries.a(...)` → wrapper calls
+ * 3. `b.load` body calls `ctx.self.queries.a.get(...)` → wrapper calls
  *    `triggerLoad(a, parentChain={a, b})`. `a` is already in flight, so the existing promise is
  *    reused. But the wrapper sees `aKey ∈ ancestorChain` and **skips** adding it to b's local
  *    collector — `b` does not wait on `a`'s promise.
@@ -629,12 +642,68 @@ async function runReactiveLoad<TState>(
     get state() {
       return refs.state;
     },
-    queries: refs.defaultQueries,
+    // Reactive-load reads must keep dependency loads warm. `.get()` on a default query is a pure
+    // read and never fires a load, so the body sees fire-and-forget wrappers instead: reading a
+    // dependency triggers its load (deduped while in flight) without awaiting a drain.
+    queries: refs.reactiveLoadQueries,
     commands: refs.buildGatedCommands(isCurrent) as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
   await Promise.resolve(queryDef.load(validatedInput, loadCtx));
+}
+
+/**
+ * Builds the `ctx.self.queries` map used inside a *reactive subscription load* body.
+ *
+ * `.get()` here fires the dependency's `load` fire-and-forget (deduped via {@link inFlightLoads}),
+ * mirroring how a bare query call used to warm dependencies — but scoped to the reactive-load
+ * context only, so a plain consumer `.get()` stays a pure read. There is no drain: a subscription
+ * does not await its dependencies, it re-fires reactively when their tracked state changes.
+ */
+function buildReactiveLoadQueries<TState>(
+  refs: QueryRuntimeRefs<TState>
+): Record<string, Query<unknown, unknown>> {
+  const wrappedQueries: Record<string, Query<unknown, unknown>> = {};
+
+  for (const [name, queryDef] of refs.queryDefinitions) {
+    const defaultQuery = refs.defaultQueries[name] as RuntimeQuery;
+    const get = function get(input?: unknown) {
+      const validatedInput = validateQueryInput(
+        refs,
+        name,
+        queryDef,
+        arguments.length === 0 ? undefined : input
+      );
+
+      if (queryDef.load) {
+        const loadKey = makeLoadKey(refs.serviceId, name, validatedInput);
+        triggerLoad(refs, name, queryDef, validatedInput, loadKey, EMPTY_SET).catch(rethrowAsync);
+      }
+
+      return validateQueryOutput(
+        refs,
+        name,
+        queryDef,
+        runHandlerSync(
+          refs,
+          name,
+          queryDef,
+          validatedInput,
+          wrappedQueries,
+          refs.registryApi.getService
+        )
+      );
+    };
+
+    wrappedQueries[name] = {
+      get,
+      loaded: defaultQuery.loaded,
+      subscribe: defaultQuery.subscribe,
+    } as RuntimeQuery;
+  }
+
+  return wrappedQueries;
 }
 
 /**
@@ -678,8 +747,8 @@ function buildLoadWrappedQueries<TState>(
   const wrappedQueries: Record<string, Query<unknown, unknown>> = {};
 
   for (const [name, queryDef] of refs.queryDefinitions) {
-    const defaultQuery = refs.defaultQueries[name];
-    const wrapped = ((input?: unknown) => {
+    const defaultQuery = refs.defaultQueries[name] as RuntimeQuery;
+    const get = function get(input?: unknown) {
       const validatedInput = validateQueryInput(
         refs,
         name,
@@ -709,18 +778,22 @@ function buildLoadWrappedQueries<TState>(
           refs.registryApi.getService
         )
       );
-    }) as Query<unknown, unknown>;
-
-    wrapped.loaded = function loaded(input?: unknown) {
-      return runLoaded(
-        refs,
-        name,
-        queryDef,
-        arguments.length === 0 ? undefined : input,
-        ancestorChain
-      ) as Promise<unknown>;
     };
-    wrapped.subscribe = defaultQuery.subscribe;
+
+    const wrapped = {
+      get,
+      loaded(input?: unknown) {
+        return runLoaded(
+          refs,
+          name,
+          queryDef,
+          arguments.length === 0 ? undefined : input,
+          ancestorChain
+        ) as Promise<unknown>;
+      },
+      subscribe: defaultQuery.subscribe,
+    } as RuntimeQuery;
+
     wrappedQueries[name] = wrapped;
   }
 
@@ -766,7 +839,7 @@ function buildLoadWrappedQueries<TState>(
  *   to fire (`bar.load` is undefined).
  * - **Iteration 1**:
  *   - Inner drain: collector is empty, skip.
- *   - Discovery pass: handler runs, reads `ctx.self.queries.foo(...)`. The default `foo` query
+ *   - Discovery pass: handler runs, reads `ctx.self.queries.foo.get(...)`. The default `foo` query
  *     sees `activeHandlerLoadSession === session`, sees that `fooKey` is neither in
  *     `ancestorChain` nor in `settledKeys`, and fires + registers foo's load into
  *     `session.collector`. The handler returns (possibly with stale state).
@@ -892,73 +965,55 @@ async function runLoaded<TState>(
 }
 
 /**
- * Creates the default query function exposed on the service runtime as `service.queries.foo`.
+ * Creates the default query object exposed on the service runtime as `service.queries.foo`.
  *
- * The returned function is what consumers call directly **and** what handlers see in
+ * The returned object is what consumers use directly **and** what handlers see in
  * `ctx.self.queries.foo` (load bodies see a different, wrapped version — see
- * {@link buildLoadWrappedQueries}). It behaves as follows:
+ * {@link buildLoadWrappedQueries}). Its surface:
  *
- * 1. Validate input synchronously. Throws on validation failure.
- * 2. If this query has a `load` hook, decide whether to fire it and where to register the
- *    promise:
- *    - If we're inside a `.loaded()` discovery pass (`activeHandlerLoadSession` set) and the
- *      load key is either on the ancestor chain (cycle protection) **or** already in
- *      `settledKeys` (already settled this session, do not refire), **skip** entirely.
- *    - Otherwise, call {@link triggerLoad} to either start a fresh load or join an in-flight one.
- *    - Then, if a session is active, push the promise into `session.collector` so the outer
- *      drain loop awaits it. If no session is active (ordinary consumer call), attach a
- *      `.catch(rethrowAsync)` so the fire-and-forget rejection still surfaces.
- * 3. Run the handler synchronously with the runtime's default queries, validate output, return.
- *
- * The synchronous return is the core API improvement — callers who want "current best" pay no
- * latency, callers who want "fully loaded" use `.loaded()`, and subscribers see emissions as
- * state changes.
+ * - **`get(input)`** validates input synchronously, runs the handler against current state, and
+ *   returns the validated result. It does **not** fire this query's `load` for an ordinary consumer
+ *   read — that was the confusing implicit-background-load behavior of the old bare call, now
+ *   removed. The one exception is dependency tracking: when a `.get()` runs inside a `.loaded()`
+ *   discovery pass (`activeHandlerLoadSession` set), it fires + registers the load into the session
+ *   collector so the outer drain awaits it (skipping cycles and already-settled keys). Reactive
+ *   subscription loads warm dependencies through {@link buildReactiveLoadQueries} instead.
+ * - **`loaded(input)`** drives the full `.loaded()` drain.
+ * - **`subscribe(...)`** sets up a reactive subscription (this is what fires the reactive `load`).
  */
 function createDefaultQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>
-): Query<unknown, unknown> {
+): RuntimeQuery {
   const resolveInput = (input: unknown, argsLength: number) =>
     argsLength === 0 ? undefined : input;
 
-  const query = ((input?: unknown) => {
+  const get = function get(input?: unknown) {
     const validatedInput = validateQueryInput(
       refs,
       queryName,
       queryDef,
       resolveInput(input, arguments.length)
     );
-    const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
 
     if (queryDef.load) {
+      // A bare `.get()` never fires the load. The only firing path here is a `.loaded()` discovery
+      // pass: register the dependency's load into the session collector so the drain awaits it,
+      // unless the key is on the ancestor chain (cycle) or already settled this session.
       const session = activeHandlerLoadSession;
-      // Three cases where we skip firing/registering:
-      //   - session set and key on ancestor chain: cycle, would deadlock
-      //   - session set and key in settledKeys: already loaded this session, refiring would
-      //     prevent the discovery loop from ever converging
-      //   - (the no-session case is *not* a skip — we still want fire-and-forget below)
-      const skip = session
-        ? session.ancestorChain.has(loadKey) || session.settledKeys.has(loadKey)
-        : false;
-
-      if (!skip) {
-        const promise = triggerLoad(
-          refs,
-          queryName,
-          queryDef,
-          validatedInput,
-          loadKey,
-          session?.ancestorChain ?? EMPTY_SET
-        );
-
-        if (session) {
-          // Inside a `.loaded()` discovery pass: register so the outer drain awaits us.
+      if (session) {
+        const loadKey = makeLoadKey(refs.serviceId, queryName, validatedInput);
+        if (!session.ancestorChain.has(loadKey) && !session.settledKeys.has(loadKey)) {
+          const promise = triggerLoad(
+            refs,
+            queryName,
+            queryDef,
+            validatedInput,
+            loadKey,
+            session.ancestorChain
+          );
           session.collector.add({ key: loadKey, promise });
-        } else {
-          // Ordinary consumer call: fire-and-forget. Surface rejections via the global handler
-          // so a buggy load doesn't fail silently.
-          promise.catch(rethrowAsync);
         }
       }
     }
@@ -978,12 +1033,9 @@ function createDefaultQuery<TState>(
         refs.registryApi.getService
       )
     );
-  }) as Query<unknown, unknown>;
-
-  query.loaded = function loaded(input?: unknown) {
-    return runLoaded(refs, queryName, queryDef, resolveInput(input, arguments.length));
   };
-  query.subscribe = ((...args: unknown[]): (() => void) => {
+
+  const subscribe = ((...args: unknown[]): (() => void) => {
     if (args.length === 1 && typeof args[0] === 'function') {
       return subscribeToQuery(
         refs,
@@ -991,7 +1043,7 @@ function createDefaultQuery<TState>(
         queryDef,
         undefined,
         undefined,
-        args[0] as (value: unknown) => void
+        args[0] as (state: QueryState<unknown>) => void
       );
     }
 
@@ -1002,7 +1054,7 @@ function createDefaultQuery<TState>(
         queryDef,
         undefined,
         args[0] as (value: unknown) => unknown,
-        args[1] as (value: unknown) => void
+        args[1] as (state: QueryState<unknown>) => void
       );
     }
 
@@ -1014,31 +1066,46 @@ function createDefaultQuery<TState>(
       queryDef,
       input,
       maybeCallback ? (selectorOrCallback as (value: unknown) => unknown) : undefined,
-      (maybeCallback ?? selectorOrCallback) as (value: unknown) => void
+      (maybeCallback ?? selectorOrCallback) as (state: QueryState<unknown>) => void
     );
-  }) as Query<unknown, unknown>['subscribe'];
+  }) as RuntimeQuery['subscribe'];
 
-  return query;
+  return {
+    get,
+    loaded(input?: unknown) {
+      return runLoaded(refs, queryName, queryDef, resolveInput(input, arguments.length));
+    },
+    subscribe,
+  } as RuntimeQuery;
 }
 
 /**
  * Subscribes to a query by running its handler inside a deep-signal-aware `computed()` and
- * notifying through an `effect()`.
+ * notifying through an `effect()`. The callback receives a {@link QueryState} combining the current
+ * `data` (the synchronous handler result, or the selected slice) with the per-subscription `load`
+ * lifecycle (`status` / `loadStatus` / `error`).
  *
- * The first emission is deferred to a microtask so callers always receive their unsubscribe handle
- * before the callback fires. The runtime kicks `load` off in the background but does not wait for
- * it — subscribers see the current state immediately and a follow-up emission once the load settles
- * and tracked state changes.
+ * The first emission is **synchronous**: `subscribe()` invokes the callback once with the current
+ * {@link QueryState} before it returns the unsubscribe handle. The runtime kicks `load` off in the
+ * background but does not wait for it — subscribers see the current state immediately (a load-backed
+ * query already reads `loading`, since the reactive-load effect runs synchronously here) and
+ * follow-up emissions as the load settles (or re-fires) and tracked state changes.
  *
- * Two layers keep emissions precise:
+ * Three layers keep emissions precise:
  *
  * 1. **Fine-grained reads** — the handler (and the optional `selector`) read through the deep-signal
  *    proxy, so the computed only re-runs when the exact fields it touched change. A write to an
  *    unrelated key or field never re-runs the handler.
- * 2. **Value dedup** — the emitted value is detached into a plain snapshot and compared with the
- *    previously emitted snapshot via `isEqual`. A re-run that produces a deeply-equal value (e.g. a
- *    load that rewrites an equal payload) does not fire the callback. With a `selector`, only the
- *    selected slice is snapshotted and compared, so subscribers depend on exactly the data they use.
+ * 2. **Lifecycle signal** — a separate per-subscription signal carries `status`/`loadStatus`/`error`,
+ *    updated by the reactive-load effect. The emit effect reads both it and the data computed, so a
+ *    status change (e.g. a background re-load) fires the callback even when the selected slice is
+ *    unchanged.
+ * 3. **Object dedup** — the whole emitted `QueryState` is compared with the previously emitted one via
+ *    `isEqual`; a re-run that produces a deeply-equal state (e.g. a load rewriting an equal payload
+ *    with no status change) does not fire the callback.
+ *
+ * Error sources all surface as `status: 'error'` (keeping the last successful `data`): input
+ * validation failure, a synchronous handler / output-validation throw, and a `load` rejection.
  */
 function subscribeToQuery<TState>(
   refs: QueryRuntimeRefs<TState>,
@@ -1046,98 +1113,145 @@ function subscribeToQuery<TState>(
   queryDef: RuntimeQueryDefinition<TState>,
   rawInput: unknown,
   selector: ((value: unknown) => unknown) | undefined,
-  callback: (value: unknown) => void
+  callback: (state: QueryState<unknown>) => void
 ): () => void {
   let active = true;
-  let teardown: (() => void) | undefined;
-  let loadTeardown: (() => void) | undefined;
 
-  Promise.resolve().then(() => {
+  let validatedInput: unknown;
+  try {
+    validatedInput = validateQueryInput(refs, queryName, queryDef, rawInput);
+  } catch (error) {
+    // Bad input is a programmer error, but surfacing it as an error state is more debuggable than
+    // a silently dead subscription. The subscription still "exists", reporting the failure.
+    callback(
+      buildQueryState(undefined, { status: 'error', error: toError(error), loadStatus: 'idle' })
+    );
+    return () => {
+      active = false;
+    };
+  }
+
+  // Per-subscription lifecycle. A query with no `load` has nothing to load, so it starts (and
+  // stays) `success`/`idle` unless its synchronous handler throws; a query with a `load` starts
+  // `pending` and flips to `loading` as soon as the reactive-load effect fires below.
+  const lifecycle = signal<QueryLifecycle>({
+    status: queryDef.load ? 'pending' : 'success',
+    error: undefined,
+    loadStatus: 'idle',
+  });
+
+  let loadTeardown: (() => void) | undefined;
+  if (queryDef.load) {
+    // Reactive load: run the load inside an effect so the external signals it reads synchronously
+    // are tracked. When they change, the effect re-runs and the load re-fires, keeping an
+    // asynchronously-produced value fresh. `epoch` gates writes so a superseded run can't clobber
+    // a newer one (the lifecycle updates below are gated the same way). Loads with no external
+    // synchronous reads (the existing ones) track nothing and therefore fire exactly once. Because
+    // this effect runs synchronously now, the first emission already reads `loading`.
+    let epoch = 0;
+    loadTeardown = effect(() => {
+      const myEpoch = ++epoch;
+      const isCurrent = () => myEpoch === epoch;
+
+      // Mark this run in flight, preserving the current `status` (so the first load reads
+      // `pending` → `isInitialLoading`, while a re-load over existing data reads `success` →
+      // `isRefreshing`). Read untracked so the load effect does not depend on its own writes.
+      const previous = untracked(() => lifecycle.value);
+      lifecycle.value = {
+        status: previous.status,
+        error: previous.error,
+        loadStatus: 'loading',
+      };
+
+      runReactiveLoad(refs, queryName, queryDef, validatedInput, isCurrent).then(
+        () => {
+          if (!isCurrent()) {
+            return;
+          }
+          lifecycle.value = { status: 'success', error: undefined, loadStatus: 'idle' };
+        },
+        (error) => {
+          if (!isCurrent()) {
+            return;
+          }
+          lifecycle.value = { status: 'error', error: toError(error), loadStatus: 'idle' };
+        }
+      );
+    });
+  }
+
+  // The output is always validated, but the computed's dependency footprint must match only what
+  // the subscriber consumes:
+  //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
+  //     does not register dependencies), and only the selected fields the selector reads are
+  //     tracked. A sibling field the selector ignores never re-runs this computed.
+  //   - Without a selector, validation runs tracked: reading the whole value is the correct
+  //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
+  //     what a direct `.get()` / `.loaded()` pull returns).
+  const comp = computed(() => {
+    const output = runHandlerSync(
+      refs,
+      queryName,
+      queryDef,
+      validatedInput,
+      refs.defaultQueries,
+      refs.registryApi.getService
+    );
+    if (selector) {
+      const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
+      // Read the live handler output so the selector's field accesses stay on the reactive
+      // proxy; validation returns a plain parsed value that cannot carry those dependencies.
+      selector(output);
+      return detachSnapshot(selector(validated));
+    }
+    return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));
+  });
+
+  let hasEmitted = false;
+  let lastEmitted: QueryState<unknown> | undefined;
+  // Last successfully produced `data`, retained so an error (load rejection or handler throw)
+  // keeps the most recent good value visible instead of dropping it.
+  let lastData: unknown;
+  // Creating the effect runs it synchronously, so the first callback fires before `subscribe`
+  // returns its unsubscribe handle.
+  const teardown = effect(() => {
+    // Read the lifecycle first so a status-only change (e.g. a background re-load over an
+    // unchanged selected slice) still re-runs this effect and re-emits.
+    const life = lifecycle.value;
+
+    let data: unknown;
+    let status = life.status;
+    let error = life.error;
+    try {
+      data = comp.value;
+      lastData = data;
+    } catch (handlerError) {
+      // A synchronous handler / output-validation throw becomes an error state while keeping the
+      // last good data; this also covers no-`load` queries whose handler throws.
+      data = lastData;
+      status = 'error';
+      error = toError(handlerError);
+    }
+
     if (!active) {
       return;
     }
 
-    let validatedInput: unknown;
-    try {
-      validatedInput = validateQueryInput(refs, queryName, queryDef, rawInput);
-    } catch (error) {
-      rethrowAsync(error);
+    const state = buildQueryState(data, { status, error, loadStatus: life.loadStatus });
+
+    // Skip re-runs that produced a deeply-equal state (data and lifecycle both unchanged).
+    if (hasEmitted && isEqual(state, lastEmitted)) {
       return;
     }
 
-    if (queryDef.load) {
-      // Reactive load: run the load inside an effect so the external signals it reads synchronously
-      // are tracked. When they change, the effect re-runs and the load re-fires, keeping an
-      // asynchronously-produced value fresh. `epoch` gates writes so a superseded run can't clobber
-      // a newer one. Loads with no external synchronous reads (the existing ones) track nothing and
-      // therefore fire exactly once, so this is non-breaking.
-      let epoch = 0;
-      loadTeardown = effect(() => {
-        const myEpoch = ++epoch;
-        runReactiveLoad(refs, queryName, queryDef, validatedInput, () => myEpoch === epoch).catch(
-          rethrowAsync
-        );
-      });
-    }
-
-    // The output is always validated, but the computed's dependency footprint must match only what
-    // the subscriber consumes:
-    //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
-    //     does not register dependencies), and only the selected fields the selector reads are
-    //     tracked. A sibling field the selector ignores never re-runs this computed.
-    //   - Without a selector, validation runs tracked: reading the whole value is the correct
-    //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
-    //     what a direct `query()` / `.loaded()` pull returns).
-    const comp = computed(() => {
-      const output = runHandlerSync(
-        refs,
-        queryName,
-        queryDef,
-        validatedInput,
-        refs.defaultQueries,
-        refs.registryApi.getService
-      );
-      if (selector) {
-        const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
-        // Read the live handler output so the selector's field accesses stay on the reactive
-        // proxy; validation returns a plain parsed value that cannot carry those dependencies.
-        selector(output);
-        return detachSnapshot(selector(validated));
-      }
-      return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));
-    });
-
-    let hasEmitted = false;
-    let lastEmitted: unknown;
-    teardown = effect(() => {
-      let value: unknown;
-      try {
-        value = comp.value;
-      } catch (error) {
-        rethrowAsync(error);
-        return;
-      }
-
-      if (!active) {
-        return;
-      }
-
-      // Skip re-runs that did not change the (selected) value. The computed already gates on
-      // fine-grained reads; this gates on the rarer case where tracked state changed but the
-      // emitted value is deeply equal (e.g. a load rewriting an equal payload).
-      if (hasEmitted && isEqual(value, lastEmitted)) {
-        return;
-      }
-
-      hasEmitted = true;
-      lastEmitted = value;
-      callback(value);
-    });
+    hasEmitted = true;
+    lastEmitted = state;
+    callback(state);
   });
 
   return () => {
     active = false;
-    teardown?.();
+    teardown();
     loadTeardown?.();
   };
 }
@@ -1261,6 +1375,9 @@ export function createServiceRuntime<
         Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
       );
   const defaultQueries: Record<string, Query<unknown, unknown>> = {};
+  // Populated after the default queries exist (their wrappers reference the default `getState` /
+  // `loaded` / `subscribe`). See `buildReactiveLoadQueries`.
+  const reactiveLoadQueries: Record<string, Query<unknown, unknown>> = {};
 
   // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
   // run has started (`isCurrent()` returns false), so superseded loads cannot clobber fresh state.
@@ -1309,6 +1426,7 @@ export function createServiceRuntime<
     registryApi,
     queryDefinitions,
     defaultQueries,
+    reactiveLoadQueries,
     getLoadCommands: () => loadCommands,
     buildGatedCommands,
   };
@@ -1317,6 +1435,10 @@ export function createServiceRuntime<
   const builtQueries = buildQueries(refs);
   for (const [name, query] of Object.entries(builtQueries)) {
     defaultQueries[name] = query;
+  }
+  // Reactive-load wrappers reference the default queries, so build them once those exist.
+  for (const [name, query] of Object.entries(buildReactiveLoadQueries(refs))) {
+    reactiveLoadQueries[name] = query;
   }
   commandSelf.queries = defaultQueries;
 

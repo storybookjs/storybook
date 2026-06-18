@@ -297,6 +297,40 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Collect the dependency override/resolution entries declared across the project's package.json
+   * files, normalizing the three package-manager dialects into a single map:
+   *
+   * - Npm: `overrides`
+   * - Pnpm: `pnpm.overrides`
+   * - Yarn: `resolutions`
+   *
+   * Only top-level, string-valued entries are returned (nested override objects are skipped), as a
+   * flat `name -> spec` map. Later package.json files win on key collisions, matching the merge
+   * order of {@link getAllDependencies}.
+   */
+  getOverrides(): Record<string, string> {
+    const overrides: Record<string, string> = {};
+
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const maps = [packageJson.overrides, packageJson.pnpm?.overrides, packageJson.resolutions];
+
+      for (const map of maps) {
+        if (!map) {
+          continue;
+        }
+        for (const [name, spec] of Object.entries(map)) {
+          if (typeof spec === 'string') {
+            overrides[name] = spec;
+          }
+        }
+      }
+    }
+
+    return overrides;
+  }
+
+  /**
    * Add dependencies to a project using `yarn add` or `npm install`.
    *
    * @example

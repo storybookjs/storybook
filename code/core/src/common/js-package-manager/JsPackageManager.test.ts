@@ -22,6 +22,50 @@ describe('JsPackageManager', () => {
     vi.clearAllMocks();
   });
 
+  describe('getOverrides method', () => {
+    const mockPackageJson = (
+      packageJson: Record<string, unknown>,
+      packageJsonPath = '/fake/package.json'
+    ) => {
+      jsPackageManager.packageJsonPaths = [packageJsonPath];
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockReturnValue(packageJson as any);
+    };
+
+    it('reads npm `overrides`', () => {
+      mockPackageJson({
+        overrides: { vitest: 'npm:@voidzero-dev/vite-plus-test@latest', foo: '1.0.0' },
+      });
+
+      expect(jsPackageManager.getOverrides()).toEqual({
+        vitest: 'npm:@voidzero-dev/vite-plus-test@latest',
+        foo: '1.0.0',
+      });
+    });
+
+    it('reads Yarn `resolutions` and pnpm `pnpm.overrides`', () => {
+      mockPackageJson({
+        resolutions: { foo: '2.0.0' },
+        pnpm: { overrides: { bar: '3.0.0' } },
+      });
+
+      expect(jsPackageManager.getOverrides()).toEqual({ foo: '2.0.0', bar: '3.0.0' });
+    });
+
+    it('skips nested (object-valued) override entries', () => {
+      mockPackageJson({
+        overrides: { foo: '1.0.0', bar: { baz: '2.0.0' } },
+      });
+
+      expect(jsPackageManager.getOverrides()).toEqual({ foo: '1.0.0' });
+    });
+
+    it('returns an empty object when no overrides are declared', () => {
+      mockPackageJson({ dependencies: { react: '18.0.0' } });
+
+      expect(jsPackageManager.getOverrides()).toEqual({});
+    });
+  });
+
   describe('getVersionedPackages method', () => {
     it('should return the latest stable release version when current version is the latest stable release', async () => {
       mockLatestVersion.mockResolvedValue('8.3.0');

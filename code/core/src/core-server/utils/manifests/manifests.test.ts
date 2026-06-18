@@ -910,14 +910,22 @@ describe('manifests', () => {
         };
 
         registerTestModuleGraphService();
-        registerDocgenService({
+        registerDocgenServices({
           getIndex: () => mockGenerator.getIndex(),
-          provider: async () => ({
+          docgenProvider: async () => ({
             id: 'button',
             name: 'Button',
             path: './button.stories.tsx',
             jsDocTags: {},
             stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+          }),
+          storyDocsProvider: async () => ({
+            id: 'button',
+            name: 'Button',
+            path: './button.stories.tsx',
+            stories: {
+              'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+            },
           }),
         });
         registerTestMdxService({

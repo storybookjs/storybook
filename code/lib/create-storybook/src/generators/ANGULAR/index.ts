@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
+import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
@@ -150,10 +151,16 @@ export default defineGeneratorModule({
         : '@angular/platform-browser-dynamic',
     ];
 
-    const nodeMajorVersion = parseInt(process.versions.node.split('.')[0], 10);
+    // pnpm's strict isolation hides transitively-installed `@types/node`, so a fresh Angular
+    // project fails to resolve the `node` type definitions its tsconfig references. We pin to the
+    // lowest Node major Storybook supports rather than the version that happens to run `init`:
+    // the floor is deterministic across machines and guarantees the types never claim APIs newer
+    // than what Storybook itself relies on. If the project already declares `@types/node`,
+    // baseGenerator skips this entry, so users on newer runtimes keep their own version.
+    const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
 
     const extraPackages = [
-      `@types/node@^${nodeMajorVersion}`,
+      `@types/node@^${minNodeMajor}`,
       ...extraAngularDeps,
       ...(isVite
         ? [

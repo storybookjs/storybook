@@ -1,4 +1,10 @@
-import { parse as oxcRawParse } from 'oxc-parser';
+import {
+  parseSync as oxcRawParseSync,
+  type Class,
+  type Declaration,
+  type Function,
+  type VariableDeclaration,
+} from 'oxc-parser';
 
 import { oxcParse } from './parse.ts';
 import type { ImportEdge, ReExportEntry } from './types.ts';
@@ -52,9 +58,9 @@ export { disposeOxcParsePool };
  * is not added as a fallback dep (which would cause false-positive change signals).
  */
 export async function parseBarrelInfo(filePath: string, source: string): Promise<BarrelInfo> {
-  let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
-    parseResult = await oxcRawParse(filePath, source);
+    parseResult = oxcRawParseSync(filePath, source);
   } catch {
     return { named: new Map(), wildcards: [] };
   }
@@ -91,8 +97,10 @@ export async function parseBarrelInfo(filePath: string, source: string): Promise
 }
 
 /** Adds the binding name(s) introduced by a top-level declaration node to `names`. */
-function collectDeclaredNames(declaration: unknown, names: Set<string>): void {
-  const node = declaration as { type?: string; id?: { name?: string }; declarations?: unknown[] };
+function collectDeclaredNames(
+  node: VariableDeclaration | Class | Function | Declaration,
+  names: Set<string>
+): void {
   if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') {
     if (node.id?.name) {
       names.add(node.id.name);
@@ -101,7 +109,7 @@ function collectDeclaredNames(declaration: unknown, names: Set<string>): void {
   }
   if (node.type === 'VariableDeclaration' && Array.isArray(node.declarations)) {
     for (const declarator of node.declarations) {
-      const id = (declarator as { id?: { type?: string; name?: string } }).id;
+      const { id } = declarator;
       // Only simple identifier bindings are referenceable by name (skip destructuring patterns).
       if (id?.type === 'Identifier' && id.name) {
         names.add(id.name);
@@ -120,9 +128,9 @@ function collectDeclaredNames(declaration: unknown, names: Set<string>): void {
  * safely target a name without producing a reference to an undefined binding.
  */
 export async function parseLocalBindings(filePath: string, source: string): Promise<Set<string>> {
-  let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
-    parseResult = await oxcRawParse(filePath, source);
+    parseResult = oxcRawParseSync(filePath, source);
   } catch {
     return new Set();
   }
@@ -134,7 +142,7 @@ export async function parseLocalBindings(filePath: string, source: string): Prom
   const names = new Set<string>();
 
   for (const statement of body) {
-    const node = statement as { type?: string; declaration?: unknown; source?: unknown };
+    const node = statement;
     if (
       node.type === 'VariableDeclaration' ||
       node.type === 'FunctionDeclaration' ||
@@ -155,9 +163,9 @@ export async function parseReExports(
   filePath: string,
   source: string
 ): Promise<Map<string, ReExportEntry>> {
-  let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
-    parseResult = await oxcRawParse(filePath, source);
+    parseResult = oxcRawParseSync(filePath, source);
   } catch {
     return new Map();
   }

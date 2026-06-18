@@ -50,7 +50,7 @@ export function parseToolArgs(
     }
 
     if (token === '-c') {
-      if (i >= tokens.length || tokens[i].startsWith('-')) {
+      if (i >= tokens.length || tokens[i].startsWith('--')) {
         return { ok: false, error: '`-c, --config-dir` requires a value.' };
       }
       configDir = tokens[i];
@@ -180,7 +180,7 @@ export function scanConfigDirToken(tokens: string[]): string | undefined {
   let configDir: string | undefined;
   for (let i = 0; i < tokens.length; i += 1) {
     const token = tokens[i];
-    if (token === '-c' && i + 1 < tokens.length && !tokens[i + 1].startsWith('-')) {
+    if (token === '-c' && i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
       configDir = tokens[i + 1];
       i += 1;
       continue;

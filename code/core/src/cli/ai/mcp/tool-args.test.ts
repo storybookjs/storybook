@@ -148,6 +148,15 @@ describe('parseToolArgs', () => {
     it.each(['--config-dir', '-c'])('errors when %s has no value', (flag) => {
       expect(error([flag])).toContain('`-c, --config-dir` requires a value');
     });
+
+    it('treats a single-dash value after -c as the config dir', () => {
+      expect(args(['-c', '-storybook', '--id', 'x'])).toMatchObject({
+        ok: true,
+        configDir: '-storybook',
+        args: { id: 'x' },
+      });
+      expect(error(['-c', '--port', '6006'])).toContain('`-c, --config-dir` requires a value');
+    });
   });
 
   describe('--port', () => {
@@ -264,5 +273,9 @@ describe('scanConfigDirToken', () => {
   it('ignores config-dir tokens without a value', () => {
     expect(scanConfigDirToken(['--config-dir', '--json', '{bad'])).toBeUndefined();
     expect(scanConfigDirToken(['-c', '--json', '{bad'])).toBeUndefined();
+  });
+
+  it('accepts single-dash config-dir values after -c', () => {
+    expect(scanConfigDirToken(['-c', '-storybook', '--json', '{bad'])).toBe('-storybook');
   });
 });

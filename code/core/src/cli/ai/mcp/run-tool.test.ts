@@ -57,7 +57,7 @@ describe('runAiTool', () => {
     });
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: undefined,
+      configDir: '/projects/foo/.storybook',
     });
   });
 
@@ -132,7 +132,7 @@ describe('runAiTool', () => {
     expect(result.output).toBe('custom config instructions');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: 'config/storybook',
+      configDir: '/projects/foo/config/storybook',
     });
     expect(readRegistry).not.toHaveBeenCalled();
   });
@@ -417,7 +417,7 @@ describe('runAiTool', () => {
     // Constant message keeps the telemetry error hash aggregatable; the tool's error text only
     // travels as `cause` (uploaded path-sanitized, and only with crash-reports consent).
     const error = (result.outcome as { error: Error }).error;
-    expect(error.message).toBe('The Storybook MCP server returned an error result');
+    expect(error.message).toBe('The Storybook AI command returned an error result');
     expect(error.cause).toBe('tests failed');
   });
 
@@ -552,14 +552,15 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('provides no commands');
   });
 
-  it('degrades to a note when commands are exposed without workflow instructions', async () => {
+  it('still lists commands when workflow instructions are absent', async () => {
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
       instructions: '   ',
     });
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Storybook commands: (unavailable');
-    expect(section).toContain('exposed commands but no workflow instructions');
+    expect(section).toContain('# Storybook commands');
+    expect(section).toContain('get-documentation');
+    expect(section).not.toContain('# Storybook workflow instructions');
   });
 
   it('ignores --port on the serverless help path', async () => {
@@ -568,7 +569,7 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('list-all-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: undefined,
+      configDir: '/projects/foo/.storybook',
     });
   });
 
@@ -586,7 +587,7 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('get-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: 'config/storybook',
+      configDir: '/projects/foo/config/storybook',
     });
   });
 });
@@ -661,7 +662,7 @@ describe('runAiToolHelp', () => {
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: 'config/storybook',
+      configDir: '/projects/foo/config/storybook',
     });
   });
 
@@ -727,7 +728,7 @@ describe('runAiToolHelp', () => {
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',
-      configDir: 'config/storybook',
+      configDir: '/projects/foo/config/storybook',
     });
   });
 

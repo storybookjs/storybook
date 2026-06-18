@@ -30,8 +30,7 @@ export type AiCommandInterceptReason = InterceptReason | 'invalid-arguments' | '
 /**
  * Telemetry-facing classification of a run. `help` marks lookups via `--help` flags, which are not
  * command executions and are excluded from the `ai-command` event so they cannot skew command
- * success rates. `error` carries failures from the server side (error results, transport
- * failures, timeouts) for the standard sanitized error path.
+ * success rates. `error` carries command failures for the standard sanitized error path.
  */
 export type AiCommandOutcome =
   | { kind: 'success' }
@@ -42,7 +41,7 @@ export type AiCommandOutcome =
 export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiCommandOutcome };
 
 /**
- * The server executed the command and reported an error result. The message is deliberately
+ * The command executed and reported an error result. The message is deliberately
  * constant — the result text is arbitrary tool output (often containing project paths), and a
  * constant message keeps the telemetry error hash stable and aggregatable. The tool's error text
  * travels as `cause` instead, which the standard error path only uploads — path-sanitized — when
@@ -50,7 +49,7 @@ export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiComm
  */
 class McpToolResultError extends Error {
   constructor(options?: ErrorOptions) {
-    super('The Storybook MCP server returned an error result', options);
+    super('The Storybook AI command returned an error result', options);
     this.name = 'McpToolResultError';
   }
 }
@@ -109,15 +108,17 @@ export async function runAiTool(
   }
 
   const toolLookup = await lookupAiTool(toolName, parsed.cwd, parsed.configDir, deps);
-  if (toolLookup.kind === 'local') {
-    return runLocalAiTool(toolLookup.localTool, parsed.args);
-  }
-  if (
-    toolLookup.kind === 'metadata-error' ||
-    toolLookup.kind === 'metadata-missing' ||
-    toolLookup.kind === 'unknown'
-  ) {
-    return toolLookup.result;
+  switch (toolLookup.kind) {
+    case 'local':
+      return runLocalAiTool(toolLookup.localTool, parsed.args);
+    case 'result':
+      return toolLookup.result;
+    case 'runtime':
+      break;
+    default: {
+      const exhaustive: never = toolLookup;
+      return exhaustive;
+    }
   }
 
   const parsedPort = parsePort(parsed.port);
@@ -213,19 +214,15 @@ export async function buildStorybookCommandsHelp(
 
   const metadataResult = await loadLocalMetadata(parsed.cwd, parsed.configDir, deps);
   if (metadataResult.kind === 'error') {
-    const detail =
-      metadataResult.error instanceof Error
-        ? `: ${metadataResult.error.message}`
-        : `: ${String(metadataResult.error)}`;
     return unavailable(
-      `the Storybook config at ${metadataResult.configDir} could not be loaded${detail}`
+      `the Storybook config at ${metadataResult.configDir} could not be loaded: ${formatErrorMessage(
+        metadataResult.error
+      )}`
     );
   }
   const { metadata, configDir } = metadataResult;
   if (!metadata) {
-    return unavailable(
-      `the Storybook config at ${configDir} does not expose AI command metadata — install or upgrade \`@storybook/addon-mcp\``
-    );
+    return unavailable(formatMetadataMissingHelp(configDir));
   }
   const { tools } = metadata;
   if (tools.length === 0) {
@@ -241,19 +238,12 @@ export async function buildStorybookCommandsHelp(
   });
   const { instructions } = metadata;
   const trimmedInstructions = instructions?.trim();
-  if (!trimmedInstructions) {
-    return unavailable(
-      `the Storybook config at ${configDir} exposed commands but no workflow instructions`
-    );
+  const sections = [`Storybook help from the Storybook configuration at ${configDir}:`, ''];
+  if (trimmedInstructions) {
+    sections.push('# Storybook workflow instructions', '', trimmedInstructions, '');
   }
 
-  return [
-    `Storybook help from the Storybook configuration at ${configDir}:`,
-    '',
-    '# Storybook workflow instructions',
-    '',
-    trimmedInstructions,
-    '',
+  sections.push(
     '# Storybook commands',
     '',
     ...lines,
@@ -261,8 +251,9 @@ export async function buildStorybookCommandsHelp(
     '[local] commands run from configuration metadata without a running Storybook.',
     '[requires Storybook] commands are forwarded to the running Storybook server.',
     '',
-    `Run 'storybook ai <command> --help' for a command's description and arguments.`,
-  ].join('\n');
+    `Run 'storybook ai <command> --help' for a command's description and arguments.`
+  );
+  return sections.join('\n');
 }
 
 /** Show the description and arguments of a single command (`storybook ai <command> --help`). */
@@ -293,23 +284,11 @@ async function toolHelp(
 
   const metadataResult = await loadLocalMetadata(cwd, configDir, deps);
   if (metadataResult.kind === 'error') {
-    return {
-      exitCode: 1,
-      output: `Storybook command metadata is unavailable for ${metadataResult.configDir}: ${
-        metadataResult.error instanceof Error
-          ? metadataResult.error.message
-          : String(metadataResult.error)
-      }`,
-      outcome,
-    };
+    return metadataLoadFailureResult(metadataResult, outcome);
   }
   const { metadata } = metadataResult;
   if (!metadata) {
-    return {
-      exitCode: 1,
-      output: `Storybook command metadata is unavailable for ${metadataResult.configDir}. Install or upgrade \`@storybook/addon-mcp\`.`,
-      outcome,
-    };
+    return metadataMissingResult(metadataResult.configDir, outcome);
   }
   const { tools } = metadata;
 
@@ -333,9 +312,7 @@ type StorybookAiLocalTool = NonNullable<StorybookAiMetadata['localTools']>[strin
 type AiToolLookup =
   | { kind: 'local'; localTool: StorybookAiLocalTool }
   | { kind: 'runtime' }
-  | { kind: 'metadata-error'; result: AiToolRunResult }
-  | { kind: 'metadata-missing'; result: AiToolRunResult }
-  | { kind: 'unknown'; result: AiToolRunResult };
+  | { kind: 'result'; result: AiToolRunResult };
 
 async function lookupAiTool(
   toolName: string,
@@ -346,38 +323,29 @@ async function lookupAiTool(
   const metadataResult = await loadLocalMetadata(cwd, configDir, deps);
   if (metadataResult.kind === 'error') {
     return {
-      kind: 'metadata-error',
-      result: {
-        exitCode: 1,
-        output: `Storybook command metadata is unavailable for ${metadataResult.configDir}: ${
-          metadataResult.error instanceof Error
-            ? metadataResult.error.message
-            : String(metadataResult.error)
-        }`,
-        outcome: {
-          kind: 'error',
-          error: new LocalAiToolError({ cause: metadataResult.error }),
-        },
-      },
+      kind: 'result',
+      result: metadataLoadFailureResult(metadataResult, {
+        kind: 'error',
+        error: new LocalAiToolError({ cause: metadataResult.error }),
+      }),
     };
   }
 
   const { metadata } = metadataResult;
   if (!metadata) {
     return {
-      kind: 'metadata-missing',
-      result: {
-        exitCode: 1,
-        output: `Storybook command metadata is unavailable for ${metadataResult.configDir}. Install or upgrade \`@storybook/addon-mcp\`.`,
-        outcome: { kind: 'intercept', reason: 'addon-missing' },
-      },
+      kind: 'result',
+      result: metadataMissingResult(metadataResult.configDir, {
+        kind: 'intercept',
+        reason: 'addon-missing',
+      }),
     };
   }
 
   const visibleTool = metadata.tools.find((tool) => tool.name === toolName);
   if (!visibleTool) {
     return {
-      kind: 'unknown',
+      kind: 'result',
       result: {
         exitCode: 1,
         output: formatUnknownMetadataTool(toolName, metadata.tools, metadataResult.configDir),
@@ -434,10 +402,7 @@ async function loadLocalMetadata(
   cwd: string | undefined,
   configDir: string | undefined,
   deps: AiToolRunDeps
-): Promise<
-  | { kind: 'ok'; cwd: string; configDir: string; metadata: StorybookAiMetadata | undefined }
-  | { kind: 'error'; cwd: string; configDir: string; error: unknown }
-> {
+): Promise<LocalMetadataResult> {
   const resolvedCwd = resolve(cwd ?? process.cwd());
   const resolvedConfigDir = resolveStorybookConfigDir({ cwd: resolvedCwd, configDir });
   const loadMetadata = deps.loadStorybookAiMetadata ?? loadStorybookAiMetadata;
@@ -446,11 +411,44 @@ async function loadLocalMetadata(
       kind: 'ok',
       cwd: resolvedCwd,
       configDir: resolvedConfigDir,
-      metadata: await loadMetadata({ cwd: resolvedCwd, configDir }),
+      metadata: await loadMetadata({ cwd: resolvedCwd, configDir: resolvedConfigDir }),
     };
   } catch (error) {
     return { kind: 'error', cwd: resolvedCwd, configDir: resolvedConfigDir, error };
   }
+}
+
+type LocalMetadataResult =
+  | { kind: 'ok'; cwd: string; configDir: string; metadata: StorybookAiMetadata | undefined }
+  | { kind: 'error'; cwd: string; configDir: string; error: unknown };
+
+function metadataLoadFailureResult(
+  metadataResult: Extract<LocalMetadataResult, { kind: 'error' }>,
+  outcome: AiCommandOutcome
+): AiToolRunResult {
+  return {
+    exitCode: 1,
+    output: `Storybook command metadata is unavailable for ${
+      metadataResult.configDir
+    }: ${formatErrorMessage(metadataResult.error)}`,
+    outcome,
+  };
+}
+
+function metadataMissingResult(configDir: string, outcome: AiCommandOutcome): AiToolRunResult {
+  return {
+    exitCode: 1,
+    output: `Storybook command metadata is unavailable for ${configDir}. Install or upgrade \`@storybook/addon-mcp\`.`,
+    outcome,
+  };
+}
+
+function formatMetadataMissingHelp(configDir: string): string {
+  return `the Storybook config at ${configDir} does not expose AI command metadata — install or upgrade \`@storybook/addon-mcp\``;
+}
+
+function formatErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown): string {
@@ -465,7 +463,6 @@ type InstanceResolution =
       kind: 'error';
       output: string;
       reason: InterceptReason;
-      records: StorybookInstanceRecord[];
     };
 
 /**
@@ -488,7 +485,6 @@ async function resolveReadyInstance(
       kind: 'error',
       output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
       reason: resolution.reason,
-      records: resolution.records ?? [],
     };
   }
 

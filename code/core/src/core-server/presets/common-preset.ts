@@ -43,6 +43,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { initReviewChannel } from '../server-channel/review-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -289,6 +290,7 @@ export const experimental_serverChannel = async (
   initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
+  initReviewChannel(channel);
   initTelemetryChannel(channel);
 
   return channel;

@@ -693,6 +693,8 @@ export default {
     'CoreWebpackCompiler',
     'Feature',
     'NON_AGGREGATED_STATUS_TYPE_IDS',
+    'REVIEW_EVENTS',
+    'REVIEW_NAMESPACE',
     'REVIEW_STATUS_TYPE_ID',
     'SupportedBuilder',
     'SupportedFramework',

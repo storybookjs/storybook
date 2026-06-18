@@ -31,8 +31,7 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",

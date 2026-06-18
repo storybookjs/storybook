@@ -1,10 +1,9 @@
 import type { Channel } from 'storybook/internal/channels';
-import type { Options } from 'storybook/internal/types';
 
-import type { ModuleGraphService } from 'storybook/internal/core-server';
-
-import { EVENTS } from './constants.ts';
-import type { ReviewState } from './review-state.ts';
+import { getService } from '../../shared/open-service/server.ts';
+import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
+import { REVIEW_EVENTS } from '../../shared/review/events.ts';
+import type { ReviewState } from '../../shared/review/review-state.ts';
 
 /**
  * Window after a review's `createdAt` during which graph changes are ignored.
@@ -20,18 +19,18 @@ type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
  * Default subscription to the `core/module-graph` open service. The review goes
  * stale when any file in the story module graph changes (the service's revision
  * only advances for in-graph changes, so unrelated file edits never trip it).
- * The service is imported lazily so merely loading this preset (e.g. in unit
- * tests) does not pull in core-server; if the service is unavailable (e.g. a
- * builder without module-graph support), staleness simply never triggers.
+ * The lookup is deferred a microtask so the service has a chance to register
+ * during dev-server startup; if it's unavailable (e.g. a builder without
+ * module-graph support), staleness simply never triggers.
  */
 const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
   let unsubscribe: () => void = () => {};
   let cancelled = false;
-  void import('storybook/internal/core-server')
-    .then(({ getService }) => {
-      if (cancelled) {
-        return;
-      }
+  void Promise.resolve().then(() => {
+    if (cancelled) {
+      return;
+    }
+    try {
       const service = getService<ModuleGraphService>('core/module-graph');
       // Omit the input to watch the entire graph. The initial emission carries
       // revision 0 (or the current revision at subscribe time); only subsequent
@@ -41,25 +40,19 @@ const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onC
           onChange();
         }
       });
-    })
-    .catch(() => {
+    } catch {
       // Module graph unavailable (e.g. builder without support); no staleness.
-    });
+    }
+  });
   return () => {
     cancelled = true;
     unsubscribe();
   };
 };
 
-// Server-side cache for the agent-pushed review. Storybook's dev server is
-// long-lived; this single slot survives across reconnecting browser tabs and
-// is what REQUEST_REVIEW replays. It is intentionally not persisted to disk —
-// a dev-server restart wipes the slate.
-let cached: ReviewState | undefined;
-
-/** Test-only: reset the module-level cache between cases. */
-export function __resetCache(): void {
-  cached = undefined;
+export interface ReviewChannelOptions {
+  /** Override the module-graph-change subscription. Used by tests. */
+  subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
 }
 
 function prepareReview(payload: ReviewState): ReviewState {
@@ -73,43 +66,39 @@ function prepareReview(payload: ReviewState): ReviewState {
   };
 }
 
-export interface ServerChannelOptions {
-  /** Override the module-graph-change subscription. Used by tests. */
-  subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
-}
-
 /**
- * Storybook's preset hook that hands us the long-lived dev-server channel.
+ * Owns the server-side review cache and staleness tracking.
  *
- * Responsibilities:
- * - PUSH_REVIEW (from @storybook/addon-mcp): stamp the server createdAt,
+ * - PUSH_REVIEW (from `@storybook/addon-mcp`): stamp the server createdAt,
  *   cache, broadcast as DISPLAY_REVIEW so any open tab updates.
  * - REQUEST_REVIEW (from a tab that just mounted): re-broadcast the cached
  *   payload as DISPLAY_REVIEW so the late tab catches up.
+ * - DISMISS_REVIEW: clear the cache and broadcast REVIEW_DISMISSED.
+ *
+ * The cache is a single in-memory slot scoped to this dev-server channel; it is
+ * intentionally not persisted, so a restart wipes the slate.
  */
-export const experimental_serverChannel = async (
-  channel: Channel,
-  _options: Options,
-  serverOptions: ServerChannelOptions = {}
-) => {
+export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}) {
   const subscribeToModuleGraphChanges =
-    serverOptions.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
+    options.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
 
-  channel.on(EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
+  let cached: ReviewState | undefined;
+
+  channel.on(REVIEW_EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
     // A fresh review starts non-stale; its new createdAt re-anchors staleness.
     cached = prepareReview(payload);
-    channel.emit(EVENTS.DISPLAY_REVIEW, cached);
+    channel.emit(REVIEW_EVENTS.DISPLAY_REVIEW, cached);
   });
 
-  channel.on(EVENTS.REQUEST_REVIEW, () => {
+  channel.on(REVIEW_EVENTS.REQUEST_REVIEW, () => {
     if (cached) {
-      channel.emit(EVENTS.DISPLAY_REVIEW, cached);
+      channel.emit(REVIEW_EVENTS.DISPLAY_REVIEW, cached);
     }
   });
 
-  channel.on(EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
+  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
     cached = undefined;
-    channel.emit(EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
+    channel.emit(REVIEW_EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
   });
 
   // Mark the cached review stale on the first module-graph change that lands
@@ -123,8 +112,8 @@ export const experimental_serverChannel = async (
       return;
     }
     cached = { ...cached, stale: true };
-    channel.emit(EVENTS.REVIEW_STALE);
+    channel.emit(REVIEW_EVENTS.REVIEW_STALE);
   });
 
   return channel;
-};
+}

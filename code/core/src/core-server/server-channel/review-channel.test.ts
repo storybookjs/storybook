@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from 'storybook/internal/channels';
-import type { Options } from 'storybook/internal/types';
 
-import { EVENTS } from './constants.ts';
-import type { ReviewState } from './review-state.ts';
-import { __resetCache, experimental_serverChannel } from './preset.ts';
+import { REVIEW_EVENTS } from '../../shared/review/events.ts';
+import type { ReviewState } from '../../shared/review/review-state.ts';
+import { initReviewChannel } from './review-channel.ts';
 
 function createMockSubscribe() {
   let captured: (() => void) | undefined;
@@ -60,11 +59,10 @@ const sampleReview: ReviewState = {
   ],
 };
 
-describe('addon-review experimental_serverChannel', () => {
+describe('initReviewChannel', () => {
   const NOW = 1_700_000_000_000;
 
   beforeEach(() => {
-    __resetCache();
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
   });
 
@@ -75,12 +73,12 @@ describe('addon-review experimental_serverChannel', () => {
   it('on PUSH_REVIEW, stamps createdAt, caches, and broadcasts DISPLAY_REVIEW', async () => {
     const { channel, emitted } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {});
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+    initReviewChannel(channel);
+    await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
     expect(emitted).toEqual([
       {
-        event: EVENTS.DISPLAY_REVIEW,
+        event: REVIEW_EVENTS.DISPLAY_REVIEW,
         payload: { ...sampleReview, createdAt: NOW },
       },
     ]);
@@ -90,12 +88,12 @@ describe('addon-review experimental_serverChannel', () => {
     const { channel, emitted } = createMockChannel();
     const payloadWithStale: ReviewState = { ...sampleReview, stale: true };
 
-    await experimental_serverChannel(channel, {} as Options, {});
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, payloadWithStale);
+    initReviewChannel(channel);
+    await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, payloadWithStale);
 
     expect(emitted).toEqual([
       {
-        event: EVENTS.DISPLAY_REVIEW,
+        event: REVIEW_EVENTS.DISPLAY_REVIEW,
         payload: { ...sampleReview, createdAt: NOW },
       },
     ]);
@@ -105,8 +103,8 @@ describe('addon-review experimental_serverChannel', () => {
   it('on REQUEST_REVIEW with no cached state, emits nothing', async () => {
     const { channel, emitted } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {});
-    await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+    initReviewChannel(channel);
+    await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
 
     expect(emitted).toEqual([]);
   });
@@ -114,60 +112,60 @@ describe('addon-review experimental_serverChannel', () => {
   it('on REQUEST_REVIEW after a PUSH_REVIEW, replays the cached payload', async () => {
     const { channel, emitted } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {});
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+    initReviewChannel(channel);
+    await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
     emitted.length = 0;
-    await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+    await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
 
     expect(emitted).toEqual([
-      { event: EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
+      { event: REVIEW_EVENTS.DISPLAY_REVIEW, payload: { ...sampleReview, createdAt: NOW } },
     ]);
   });
 
   it('registers exactly one listener per cross-repo event', async () => {
     const { channel } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {
+    initReviewChannel(channel, {
       subscribeToModuleGraphChanges: vi.fn(() => () => {}),
     });
 
-    expect(channel.on).toHaveBeenCalledWith(EVENTS.PUSH_REVIEW, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(EVENTS.DISMISS_REVIEW, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.PUSH_REVIEW, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.REQUEST_REVIEW, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.DISMISS_REVIEW, expect.any(Function));
     expect(channel.on).toHaveBeenCalledTimes(3);
   });
 
   it('on DISMISS_REVIEW, clears cache and emits REVIEW_DISMISSED with return search', async () => {
     const { channel, emitted } = createMockChannel();
 
-    await experimental_serverChannel(channel, {} as Options, {});
-    await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+    initReviewChannel(channel);
+    await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
     emitted.length = 0;
-    await (channel as any).fire(EVENTS.DISMISS_REVIEW, '?path=/story/foo');
+    await (channel as any).fire(REVIEW_EVENTS.DISMISS_REVIEW, '?path=/story/foo');
 
-    expect(emitted).toEqual([{ event: EVENTS.REVIEW_DISMISSED, payload: '?path=/story/foo' }]);
+    expect(emitted).toEqual([
+      { event: REVIEW_EVENTS.REVIEW_DISMISSED, payload: '?path=/story/foo' },
+    ]);
 
     emitted.length = 0;
-    await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+    await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
     expect(emitted).toEqual([]);
   });
 
   describe('staleness', () => {
-    const setup = async () => {
+    const setup = () => {
       const { channel, emitted } = createMockChannel();
       const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
-      await experimental_serverChannel(channel, {} as Options, {
-        subscribeToModuleGraphChanges,
-      });
+      initReviewChannel(channel, { subscribeToModuleGraphChanges });
       return { channel, emitted, fireChange };
     };
 
     const staleOf = (emitted: Array<{ event: string; payload: unknown }>) =>
-      emitted.filter((e) => e.event === EVENTS.REVIEW_STALE);
+      emitted.filter((e) => e.event === REVIEW_EVENTS.REVIEW_STALE);
 
     it('marks the cached review stale and emits REVIEW_STALE after the grace window', async () => {
-      const { channel, emitted, fireChange } = await setup();
-      await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+      const { channel, emitted, fireChange } = setup();
+      await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
       // Past the grace window relative to createdAt (NOW).
       vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
@@ -177,10 +175,10 @@ describe('addon-review experimental_serverChannel', () => {
 
       // Replay to a late tab carries the staleness on the cached state.
       emitted.length = 0;
-      await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+      await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
       expect(emitted).toEqual([
         {
-          event: EVENTS.DISPLAY_REVIEW,
+          event: REVIEW_EVENTS.DISPLAY_REVIEW,
           payload: {
             ...sampleReview,
             createdAt: NOW,
@@ -191,20 +189,20 @@ describe('addon-review experimental_serverChannel', () => {
     });
 
     it('ignores source changes within the grace window', async () => {
-      const { channel, emitted, fireChange } = await setup();
-      await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+      const { channel, emitted, fireChange } = setup();
+      await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
       // Date.now is still NOW (mocked in beforeEach) → within grace.
       fireChange();
 
       expect(staleOf(emitted)).toHaveLength(0);
       emitted.length = 0;
-      await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+      await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
       expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
     });
 
-    it('ignores source changes when no review is cached', async () => {
-      const { emitted, fireChange } = await setup();
+    it('ignores source changes when no review is cached', () => {
+      const { emitted, fireChange } = setup();
 
       vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
       fireChange();
@@ -213,8 +211,8 @@ describe('addon-review experimental_serverChannel', () => {
     });
 
     it('emits REVIEW_STALE only once across multiple changes', async () => {
-      const { channel, emitted, fireChange } = await setup();
-      await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+      const { channel, emitted, fireChange } = setup();
+      await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
       vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
       fireChange();
@@ -225,17 +223,17 @@ describe('addon-review experimental_serverChannel', () => {
     });
 
     it('resets staleness when a new review is pushed', async () => {
-      const { channel, emitted, fireChange } = await setup();
-      await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+      const { channel, emitted, fireChange } = setup();
+      await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
       vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
       fireChange();
       expect(staleOf(emitted)).toHaveLength(1);
 
       // A fresh push re-anchors createdAt and clears stale.
-      await (channel as any).fire(EVENTS.PUSH_REVIEW, sampleReview);
+      await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
       emitted.length = 0;
-      await (channel as any).fire(EVENTS.REQUEST_REVIEW);
+      await (channel as any).fire(REVIEW_EVENTS.REQUEST_REVIEW);
       expect((emitted[0].payload as ReviewState).stale).toBeUndefined();
     });
   });

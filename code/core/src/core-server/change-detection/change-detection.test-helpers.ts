@@ -5,6 +5,23 @@ import { getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
+import type { QueryState } from '../../shared/open-service/types.ts';
+
+/** Wraps a value as a settled `success`/`idle` {@link QueryState}, mirroring a real subscription emission. */
+function toSuccessState<TData>(data: TData): QueryState<TData> {
+  return {
+    data,
+    error: undefined,
+    status: 'success',
+    loadStatus: 'idle',
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    isLoading: false,
+    isInitialLoading: false,
+    isRefreshing: false,
+  };
+}
 import {
   errorToErrorLike,
   toStoryIndexPath,
@@ -30,13 +47,13 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
   let graphRevision = 0;
   let latestChangedStoryFiles: string[] = [];
-  const statusSubscribers = new Set<(next: ModuleGraphStatus) => void>();
-  const revisionSubscribers = new Set<(next: number) => void>();
+  const statusSubscribers = new Set<(next: QueryState<ModuleGraphStatus>) => void>();
+  const revisionSubscribers = new Set<(next: QueryState<number>) => void>();
   const emitStatus = () => {
-    statusSubscribers.forEach((subscriber) => subscriber(status));
+    statusSubscribers.forEach((subscriber) => subscriber(toSuccessState(status)));
   };
   const emitRevision = () => {
-    revisionSubscribers.forEach((subscriber) => subscriber(graphRevision));
+    revisionSubscribers.forEach((subscriber) => subscriber(toSuccessState(graphRevision)));
   };
   const getStoriesForFiles = ({ files }: { files: string[] }) =>
     files.map((file) => {
@@ -49,36 +66,39 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
 
   vi.mocked(getService).mockReturnValue({
     queries: {
-      getStatus: Object.assign(() => status, {
+      getStatus: {
+        get: () => status,
         loaded: async () => {
           await engine.whenSettled();
           return status;
         },
-        subscribe: vi.fn((_input: undefined, callback: (next: ModuleGraphStatus) => void) => {
-          statusSubscribers.add(callback);
-          callback(status);
-          return () => statusSubscribers.delete(callback);
-        }),
-      }),
-      getStoriesForFiles: Object.assign(getStoriesForFiles, {
+        subscribe: vi.fn(
+          (_input: undefined, callback: (next: QueryState<ModuleGraphStatus>) => void) => {
+            statusSubscribers.add(callback);
+            callback(toSuccessState(status));
+            return () => statusSubscribers.delete(callback);
+          }
+        ),
+      },
+      getStoriesForFiles: {
+        get: getStoriesForFiles,
         loaded: async (input: { files: string[] }) => {
           await engine.whenSettled();
           return getStoriesForFiles(input);
         },
-      }),
-      getGraphRevision: Object.assign(() => 0, {
-        subscribe: vi.fn((_input: undefined, callback: (next: number) => void) => {
+      },
+      getGraphRevision: {
+        get: () => 0,
+        subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
           revisionSubscribers.add(callback);
-          callback(graphRevision);
+          callback(toSuccessState(graphRevision));
           return () => revisionSubscribers.delete(callback);
         }),
-      }),
-      getLatestStoryChanges: Object.assign(
-        () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
-        {
-          subscribe: vi.fn(() => () => undefined),
-        }
-      ),
+      },
+      getLatestStoryChanges: {
+        get: () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
+        subscribe: vi.fn(() => () => undefined),
+      },
     },
   } as unknown as ModuleGraphService);
 

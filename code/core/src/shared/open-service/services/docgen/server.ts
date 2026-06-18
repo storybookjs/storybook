@@ -63,49 +63,48 @@ function subscribeExtractionServiceRefresh(
     );
   };
 
-  moduleGraph.queries.getLatestStoryChanges.subscribe(
-    undefined,
-    async ({ revision, storyFiles }) => {
-      if (revision === 0) {
-        return;
-      }
-
-      const componentEntries = selectComponentEntriesByComponentId(
-        Object.values((await options.getIndex()).entries)
-      );
-
-      if (storyFiles.length === 0) {
-        await refreshExtracted(componentEntries.keys());
-        return;
-      }
-
-      const componentEntryCandidates = Array.from(componentEntries)
-        .map(([id, entry]) => {
-          const storyFilePath = getStoryImportPathFromEntry(entry);
-          if (!storyFilePath) {
-            return undefined;
-          }
-          return {
-            id,
-            storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
-          };
-        })
-        .filter((candidate) => candidate !== undefined);
-
-      const bumpedComponentIds = new Set<string>();
-      for (const storyFile of storyFiles) {
-        const componentEntry = componentEntryCandidates.find(
-          (candidate) => candidate.storyIndexPath === storyFile
-        );
-        if (!componentEntry) {
-          continue;
-        }
-        bumpedComponentIds.add(componentEntry.id);
-      }
-
-      await refreshExtracted(bumpedComponentIds);
+  moduleGraph.queries.getLatestStoryChanges.subscribe(undefined, async ({ data }) => {
+    if (!data || data.revision === 0) {
+      return;
     }
-  );
+
+    const { storyFiles } = data;
+
+    const componentEntries = selectComponentEntriesByComponentId(
+      Object.values((await options.getIndex()).entries)
+    );
+
+    if (storyFiles.length === 0) {
+      await refreshExtracted(componentEntries.keys());
+      return;
+    }
+
+    const componentEntryCandidates = Array.from(componentEntries)
+      .map(([id, entry]) => {
+        const storyFilePath = getStoryImportPathFromEntry(entry);
+        if (!storyFilePath) {
+          return undefined;
+        }
+        return {
+          id,
+          storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
+        };
+      })
+      .filter((candidate) => candidate !== undefined);
+
+    const bumpedComponentIds = new Set<string>();
+    for (const storyFile of storyFiles) {
+      const componentEntry = componentEntryCandidates.find(
+        (candidate) => candidate.storyIndexPath === storyFile
+      );
+      if (!componentEntry) {
+        continue;
+      }
+      bumpedComponentIds.add(componentEntry.id);
+    }
+
+    await refreshExtracted(bumpedComponentIds);
+  });
 }
 
 /**

@@ -16,7 +16,8 @@ export function registerRemoteCommandSyncService() {
 
   let previousValue: string | undefined;
 
-  service.queries.getValue.subscribe(undefined, (value) => {
+  service.queries.getValue.subscribe(undefined, ({ data }) => {
+    const value = data ?? '';
     if (previousValue === undefined) {
       console.log(
         `[open-service-remote-command-sync-demo] initial value: ${JSON.stringify(value)}`

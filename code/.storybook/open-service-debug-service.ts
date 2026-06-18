@@ -129,9 +129,9 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          const summary = (await ctx.self.queries.getStoryIndexSummary({
+          const summary = ctx.self.queries.getStoryIndexSummary.get({
             includeSampleIds: false,
-          })) as { entryCount: number; sampleIds: string[] };
+          });
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
           logger.warn(
@@ -169,8 +169,8 @@ export async function registerOpenServiceDebugService(
 
   const unsubscribe = service.queries.getPreloadedValue.subscribe(
     { entryId: 'startup' },
-    (value) => {
-      logger.warn(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
+    ({ data }) => {
+      logger.warn(`[open-service debug] subscription getPreloadedValue(startup) => ${data}`);
     }
   );
 
@@ -179,8 +179,8 @@ export async function registerOpenServiceDebugService(
     // the command, query, load, and subscription paths without extra manual setup.
     await service.commands.syncStoryIndex({ reason: 'services-preset' });
     await service.commands.addActivity({ message: 'registered via services preset' });
-    service.queries.getActivity({ limit: 10 });
-    service.queries.getStoryIndexSummary({ includeSampleIds: true });
+    service.queries.getActivity.get({ limit: 10 });
+    service.queries.getStoryIndexSummary.get({ includeSampleIds: true });
     await service.queries.getPreloadedValue.loaded({ entryId: 'startup' });
     await new Promise<void>((resolve) => queueMicrotask(resolve));
   } finally {

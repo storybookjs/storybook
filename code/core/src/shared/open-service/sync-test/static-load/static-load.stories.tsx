@@ -91,15 +91,15 @@ const meta = {
   beforeEach: () => {
     let active = true;
     const initialValue: StaticLoadSnapshot = {
-      alpha: staticLoadSyncService.queries.getEntry({ id: 'alpha' }),
-      beta: staticLoadSyncService.queries.getEntry({ id: 'beta' }),
+      alpha: staticLoadSyncService.queries.getEntry.get({ id: 'alpha' }),
+      beta: staticLoadSyncService.queries.getEntry.get({ id: 'beta' }),
       unbackedStatus: 'pending',
     };
     store.set(initialValue);
 
     const unsubscribeAlpha = staticLoadSyncService.queries.getEntry.subscribe(
       { id: 'alpha' },
-      (alpha) => {
+      ({ data: alpha }) => {
         if (active) {
           store.set({ ...store.get(), alpha });
         }
@@ -107,17 +107,19 @@ const meta = {
     );
     const unsubscribeBeta = staticLoadSyncService.queries.getEntry.subscribe(
       { id: 'beta' },
-      (beta) => {
+      ({ data: beta }) => {
         if (active) {
           store.set({ ...store.get(), beta });
         }
       }
     );
-    const unsubscribeUnbacked = staticLoadSyncService.queries.getUnbacked.subscribe((unbacked) => {
-      if (active && unbacked !== null) {
-        store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+    const unsubscribeUnbacked = staticLoadSyncService.queries.getUnbacked.subscribe(
+      ({ data: unbacked }) => {
+        if (active && unbacked != null) {
+          store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+        }
       }
-    });
+    );
 
     void staticLoadSyncService.queries.getUnbacked
       .loaded()

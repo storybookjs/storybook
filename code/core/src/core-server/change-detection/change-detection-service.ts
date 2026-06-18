@@ -233,12 +233,16 @@ export class ChangeDetectionService {
     const moduleGraph = this.getModuleGraph();
     this.unsubscribeModuleGraphStatus = moduleGraph.queries.getStatus.subscribe(
       undefined,
-      (status) => this.onModuleGraphStatus(status as ModuleGraphStatus)
+      ({ data }) => {
+        if (data !== undefined) {
+          this.onModuleGraphStatus(data as ModuleGraphStatus);
+        }
+      }
     );
     this.unsubscribeModuleGraphRevision = moduleGraph.queries.getGraphRevision.subscribe(
       undefined,
-      (revision) => {
-        if (revision > 0) {
+      ({ data }) => {
+        if ((data ?? 0) > 0) {
           this.onGraphChange();
         }
       }

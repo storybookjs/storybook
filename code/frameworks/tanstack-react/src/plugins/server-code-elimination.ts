@@ -406,6 +406,15 @@ function collectReferencedIdentifiers(
       }
       referenced.add(node.name);
     },
+    JSXOpeningElement(path) {
+      let name: import('@babel/types').JSXOpeningElement['name'] = path.node.name;
+      while (t.isJSXMemberExpression(name)) {
+        name = name.object;
+      }
+      if (t.isJSXIdentifier(name)) {
+        referenced.add(name.name);
+      }
+    },
   });
   return referenced;
 }

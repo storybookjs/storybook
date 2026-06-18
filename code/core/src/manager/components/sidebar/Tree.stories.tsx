@@ -1,80 +1,76 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
   type StatusesByStoryIdAndTypeId,
-} from "storybook/internal/types";
+} from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from "storybook/actions";
-import {
-  type ComponentEntry,
-  type IndexHash,
-  ManagerContext,
-} from "storybook/manager-api";
-import { expect, fn, screen, userEvent, within } from "storybook/test";
+import { action } from 'storybook/actions';
+import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
-import { IconSymbols } from "./IconSymbols.tsx";
-import { DEFAULT_REF_ID } from "./Sidebar.tsx";
-import { Tree } from "./Tree.tsx";
-import { index } from "./mockdata.large.ts";
+import { IconSymbols } from './IconSymbols.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { Tree } from './Tree.tsx';
+import { index } from './mockdata.large.ts';
 
 const managerContext: any = {
   state: {
     docsOptions: {
-      defaultName: "Docs",
-      autodocs: "tag",
+      defaultName: 'Docs',
+      autodocs: 'tag',
       docsMode: false,
     },
   },
   api: {
-    on: fn().mockName("api::on"),
-    off: fn().mockName("api::off"),
-    once: fn().mockName("api::once"),
-    emit: fn().mockName("api::emit"),
-    getShortcutKeys: fn().mockName("api::getShortcutKeys"),
-    getCurrentStoryData: fn().mockName("api::getCurrentStoryData"),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
+    emit: fn().mockName('api::emit'),
+    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
         ({
-          "component-tests": {
+          'component-tests': {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-            id: "component-tests",
-            render: () => "Component tests",
+            id: 'component-tests',
+            render: () => 'Component tests',
             sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
           },
-          "visual-tests": {
+          'visual-tests': {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-            id: "visual-tests",
-            render: () => "Visual tests",
+            id: 'visual-tests',
+            render: () => 'Visual tests',
             sidebarContextMenu: () => null,
           },
-        }) satisfies Addon_Collection<Addon_TestProviderType>,
+        }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
-    getData: fn().mockName("api::getData"),
+    getData: fn().mockName('api::getData'),
   },
 };
 
 const meta = {
   component: Tree,
-  title: "Sidebar/Tree",
+  title: 'Sidebar/Tree',
   excludeStories: /.*Data$/,
   globals: {
-    sb_theme: "light",
-    viewport: { value: "sized" },
+    sb_theme: 'light',
+    viewport: { value: 'sized' },
   },
   parameters: {
-    layout: "fullscreen",
+    layout: 'fullscreen',
     viewport: {
       options: {
         sized: {
-          name: "Sized",
+          name: 'Sized',
           styles: {
-            width: "380px",
-            height: "90%",
+            width: '380px',
+            height: '90%',
           },
         },
       },
@@ -94,7 +90,7 @@ const meta = {
 export default meta;
 
 // @ts-expect-error (non strict)
-const storyId = Object.values(index).find((story) => story.type === "story").id;
+const storyId = Object.values(index).find((story) => story.type === 'story').id;
 
 type Story = StoryObj<typeof meta>;
 
@@ -104,7 +100,7 @@ export const Full: Story = {
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action("setHighlightedItemId"),
+    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState(storyId);
@@ -123,7 +119,7 @@ export const Full: Story = {
 };
 export const Dark: Story = {
   ...Full,
-  globals: { sb_theme: "dark" },
+  globals: { sb_theme: 'dark' },
 };
 
 export const SingleStoryComponents: Story = {
@@ -132,12 +128,10 @@ export const SingleStoryComponents: Story = {
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action("setHighlightedItemId"),
+    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
-    const [selectedId, setSelectedId] = useState(
-      "tooltip-tooltipbuildlist--default",
-    );
+    const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree
         {...args}
@@ -145,48 +139,48 @@ export const SingleStoryComponents: Story = {
         data={{
           ...{
             single: {
-              type: "component",
-              name: "Single",
-              id: "single",
+              type: 'component',
+              name: 'Single',
+              id: 'single',
               parent: null,
               depth: 0,
-              children: ["single--single"],
+              children: ['single--single'],
               renderLabel: () => <span>🔥 Single</span>,
             },
-            "single--single": {
-              type: "story",
-              subtype: "story",
-              id: "single--single",
-              title: "Single",
-              name: "Single",
+            'single--single': {
+              type: 'story',
+              subtype: 'story',
+              id: 'single--single',
+              title: 'Single',
+              name: 'Single',
               tags: [],
               prepared: true,
               args: {},
               argTypes: {},
               initialArgs: {},
               depth: 1,
-              parent: "single",
+              parent: 'single',
               renderLabel: () => <span>🔥 Single</span>,
-              importPath: "./single.stories.js",
+              importPath: './single.stories.js',
             },
           },
           ...Object.keys(index).reduce((acc, key) => {
-            if (key === "tooltip-tooltipselect--default") {
-              acc["tooltip-tooltipselect--tooltipselect"] = {
+            if (key === 'tooltip-tooltipselect--default') {
+              acc['tooltip-tooltipselect--tooltipselect'] = {
                 ...index[key],
-                id: "tooltip-tooltipselect--tooltipselect",
-                name: "TooltipSelect",
+                id: 'tooltip-tooltipselect--tooltipselect',
+                name: 'TooltipSelect',
               };
               return acc;
             }
-            if (key === "tooltip-tooltipselect") {
+            if (key === 'tooltip-tooltipselect') {
               acc[key] = {
                 ...(index[key] as ComponentEntry),
-                children: ["tooltip-tooltipselect--tooltipselect"],
+                children: ['tooltip-tooltipselect--tooltipselect'],
               };
               return acc;
             }
-            if (key.startsWith("tooltip")) {
+            if (key.startsWith('tooltip')) {
               acc[key] = index[key];
             }
             return acc;
@@ -204,9 +198,7 @@ export const SingleStoryComponents: Story = {
 
 export const DocsOnlySingleStoryComponents = {
   render: () => {
-    const [selectedId, setSelectedId] = useState(
-      "tooltip-tooltipbuildlist--default",
-    );
+    const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree
         docsMode={false}
@@ -217,42 +209,42 @@ export const DocsOnlySingleStoryComponents = {
         data={{
           ...{
             single: {
-              type: "component",
-              name: "Single",
-              id: "single",
+              type: 'component',
+              name: 'Single',
+              id: 'single',
               parent: null,
               depth: 0,
-              children: ["single--docs"],
+              children: ['single--docs'],
             },
-            "single--docs": {
-              type: "docs",
-              id: "single--docs",
-              title: "Single",
-              name: "Single",
+            'single--docs': {
+              type: 'docs',
+              id: 'single--docs',
+              title: 'Single',
+              name: 'Single',
               tags: [],
               prepared: true,
               depth: 1,
-              parent: "single",
-              importPath: "./single.stories.js",
+              parent: 'single',
+              importPath: './single.stories.js',
             },
           },
           ...Object.keys(index).reduce((acc, key) => {
-            if (key === "tooltip-tooltipselect--default") {
-              acc["tooltip-tooltipselect--tooltipselect"] = {
+            if (key === 'tooltip-tooltipselect--default') {
+              acc['tooltip-tooltipselect--tooltipselect'] = {
                 ...index[key],
-                id: "tooltip-tooltipselect--tooltipselect",
-                name: "TooltipSelect",
+                id: 'tooltip-tooltipselect--tooltipselect',
+                name: 'TooltipSelect',
               };
               return acc;
             }
-            if (key === "tooltip-tooltipselect") {
+            if (key === 'tooltip-tooltipselect') {
               acc[key] = {
                 ...(index[key] as ComponentEntry),
-                children: ["tooltip-tooltipselect--tooltipselect"],
+                children: ['tooltip-tooltipselect--tooltipselect'],
               };
               return acc;
             }
-            if (key.startsWith("tooltip")) {
+            if (key.startsWith('tooltip')) {
               acc[key] = index[key];
             }
             return acc;
@@ -261,7 +253,7 @@ export const DocsOnlySingleStoryComponents = {
         highlightedRef={{
           current: { itemId: selectedId, refId: DEFAULT_REF_ID },
         }}
-        setHighlightedItemId={action("setHighlightedItemId")}
+        setHighlightedItemId={action('setHighlightedItemId')}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -277,21 +269,21 @@ export const SkipToCanvasLinkFocused: Story = {
     viewport: {
       options: {
         desktop: {
-          name: "Desktop",
+          name: 'Desktop',
           styles: {
-            width: "100%",
-            height: "100%",
+            width: '100%',
+            height: '100%',
           },
         },
       },
     },
   },
   globals: {
-    viewport: { value: "desktop" },
+    viewport: { value: 'desktop' },
   },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);
-    const link = await screen.findByText("Skip to content");
+    const link = await screen.findByText('Skip to content');
 
     await link.focus();
 
@@ -307,30 +299,30 @@ export const WithContextContent: Story = {
     viewport: {
       options: {
         desktop: {
-          name: "Desktop",
+          name: 'Desktop',
           styles: {
-            width: "100%",
-            height: "100%",
+            width: '100%',
+            height: '100%',
           },
         },
       },
     },
   },
   globals: {
-    viewport: { value: "desktop" },
+    viewport: { value: 'desktop' },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const link = await canvas.findByText("TooltipBuildList");
+    const link = await canvas.findByText('TooltipBuildList');
     await userEvent.hover(link);
 
-    const contextButton = await canvas.findAllByTestId("context-menu");
+    const contextButton = await canvas.findAllByTestId('context-menu');
     await userEvent.click(contextButton[0]);
 
-    const popover = screen.getByRole("dialog");
+    const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
-    expect(popover).toHaveTextContent("TEST_PROVIDER_CONTEXT_CONTENT");
+    expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
   },
 };
 
@@ -339,57 +331,57 @@ export const WithContextContent: Story = {
 // This lets us verify that "Expand all" reveals Input's child and "Collapse all"
 // hides it again.
 const rootMenuData = {
-  "ui-components": {
-    type: "root",
-    name: "UI Components",
-    id: "ui-components",
+  'ui-components': {
+    type: 'root',
+    name: 'UI Components',
+    id: 'ui-components',
     depth: 0,
-    children: ["ui-components-button", "ui-components-input"],
+    children: ['ui-components-button', 'ui-components-input'],
   },
-  "ui-components-button": {
-    type: "component",
-    name: "Button",
-    id: "ui-components-button",
-    title: "UI Components/Button",
+  'ui-components-button': {
+    type: 'component',
+    name: 'Button',
+    id: 'ui-components-button',
+    title: 'UI Components/Button',
     depth: 1,
-    parent: "ui-components",
-    children: ["ui-components-button--primary"],
-    importPath: "./button.stories.tsx",
+    parent: 'ui-components',
+    children: ['ui-components-button--primary'],
+    importPath: './button.stories.tsx',
   },
-  "ui-components-button--primary": {
-    type: "story",
-    subtype: "story",
-    id: "ui-components-button--primary",
-    name: "Primary",
-    title: "UI Components/Button",
+  'ui-components-button--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-button--primary',
+    name: 'Primary',
+    title: 'UI Components/Button',
     depth: 2,
-    parent: "ui-components-button",
-    importPath: "./button.stories.tsx",
+    parent: 'ui-components-button',
+    importPath: './button.stories.tsx',
     tags: [],
     prepared: true,
     args: {},
     argTypes: {},
     initialArgs: {},
   },
-  "ui-components-input": {
-    type: "component",
-    name: "Input",
-    id: "ui-components-input",
-    title: "UI Components/Input",
+  'ui-components-input': {
+    type: 'component',
+    name: 'Input',
+    id: 'ui-components-input',
+    title: 'UI Components/Input',
     depth: 1,
-    parent: "ui-components",
-    children: ["ui-components-input--empty"],
-    importPath: "./input.stories.tsx",
+    parent: 'ui-components',
+    children: ['ui-components-input--empty'],
+    importPath: './input.stories.tsx',
   },
-  "ui-components-input--empty": {
-    type: "story",
-    subtype: "story",
-    id: "ui-components-input--empty",
-    name: "Empty",
-    title: "UI Components/Input",
+  'ui-components-input--empty': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-input--empty',
+    name: 'Empty',
+    title: 'UI Components/Input',
     depth: 2,
-    parent: "ui-components-input",
-    importPath: "./input.stories.tsx",
+    parent: 'ui-components-input',
+    importPath: './input.stories.tsx',
     tags: [],
     prepared: true,
     args: {},
@@ -404,12 +396,10 @@ const rootContextMenuBase: Story = {
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action("setHighlightedItemId"),
+    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
-    const [selectedId, setSelectedId] = useState(
-      "ui-components-button--primary",
-    );
+    const [selectedId, setSelectedId] = useState('ui-components-button--primary');
     return (
       <Tree
         {...args}
@@ -432,17 +422,15 @@ export const RootContextMenuOpen: Story = {
   ...rootContextMenuBase,
   parameters: { chromatic: { viewports: [380] } },
   play: async ({ canvasElement }) => {
-    const rootEl = canvasElement.querySelector(
-      '[data-nodetype="root"]',
-    ) as HTMLElement;
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
     await userEvent.hover(rootEl);
 
-    const contextButton = await within(rootEl).findByTestId("context-menu");
+    const contextButton = await within(rootEl).findByTestId('context-menu');
     await userEvent.click(contextButton);
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await expect(within(dialog).getByText("Expand all")).toBeInTheDocument();
+    await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
   },
 };
 
@@ -455,18 +443,16 @@ export const RootContextMenuExpandAll: Story = {
   ...rootContextMenuBase,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const rootEl = canvasElement.querySelector(
-      '[data-nodetype="root"]',
-    ) as HTMLElement;
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
 
-    expect(canvas.queryByText("Empty")).toBeNull();
+    expect(canvas.queryByText('Empty')).toBeNull();
 
     await userEvent.hover(rootEl);
-    const contextButton = await within(rootEl).findByTestId("context-menu");
+    const contextButton = await within(rootEl).findByTestId('context-menu');
     await userEvent.click(contextButton);
-    await userEvent.click(screen.getByText("Expand all"));
+    await userEvent.click(screen.getByText('Expand all'));
 
-    await expect(await canvas.findByText("Empty")).toBeInTheDocument();
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
   },
 };
 
@@ -476,23 +462,21 @@ export const RootContextMenuExpandAll: Story = {
 export const RootContextMenuCollapseAll: Story = {
   ...rootContextMenuBase,
   play: async ({ canvasElement }) => {
-    const rootEl = canvasElement.querySelector(
-      '[data-nodetype="root"]',
-    ) as HTMLElement;
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
 
     // Expand all first so the tree is fully expanded
     await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId("context-menu"));
-    await userEvent.click(screen.getByText("Expand all"));
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+    await userEvent.click(screen.getByText('Expand all'));
 
     // Close the popover, then re-open — should now offer "Collapse all"
-    await userEvent.keyboard("{Escape}");
+    await userEvent.keyboard('{Escape}');
     await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId("context-menu"));
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await expect(within(dialog).getByText("Collapse all")).toBeInTheDocument();
+    await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
   },
 };
 
@@ -509,13 +493,13 @@ export const StoryContextMenuWithStatusAndProvider: Story = {
   args: {
     ...rootContextMenuBase.args,
     allStatuses: {
-      "ui-components-button--primary": {
-        "storybook/vitest": {
-          storyId: "ui-components-button--primary",
-          typeId: "storybook/vitest",
-          value: "status-value:error",
-          title: "Vitest",
-          description: "Test failed",
+      'ui-components-button--primary': {
+        'storybook/vitest': {
+          storyId: 'ui-components-button--primary',
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
           // sidebarContextMenu intentionally omitted — not false means it
           // renders as a link in the context menu alongside provider items
         },
@@ -524,22 +508,20 @@ export const StoryContextMenuWithStatusAndProvider: Story = {
   },
   play: async ({ canvasElement }) => {
     const storyRow = canvasElement.querySelector(
-      '[data-item-id="ui-components-button--primary"]',
+      '[data-item-id="ui-components-button--primary"]'
     ) as HTMLElement;
     await userEvent.hover(storyRow);
 
-    const contextButton = await within(storyRow).findByTestId("context-menu");
+    const contextButton = await within(storyRow).findByTestId('context-menu');
     await userEvent.click(contextButton);
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
     // Status link — comes from allStatuses (sidebarContextMenu not false)
-    await expect(within(dialog).getByText("Vitest")).toBeInTheDocument();
+    await expect(within(dialog).getByText('Vitest')).toBeInTheDocument();
     // Provider item — comes from the registered component-tests test provider
-    await expect(
-      within(dialog).getByText("TEST_PROVIDER_CONTEXT_CONTENT"),
-    ).toBeInTheDocument();
+    await expect(within(dialog).getByText('TEST_PROVIDER_CONTEXT_CONTENT')).toBeInTheDocument();
   },
 };
 
@@ -567,7 +549,7 @@ const dualSlotData: IndexHash = {
 
 function makeDualSlotStory(
   allStatuses: StatusesByStoryIdAndTypeId,
-  contextOverride?: { state?: Record<string, unknown> },
+  contextOverride?: { state?: Record<string, unknown> }
 ): Story {
   return {
     args: {
@@ -575,7 +557,7 @@ function makeDualSlotStory(
       isBrowsing: true,
       isMain: true,
       refId: DEFAULT_REF_ID,
-      setHighlightedItemId: action("setHighlightedItemId"),
+      setHighlightedItemId: action('setHighlightedItemId'),
       allStatuses,
     },
     decorators: contextOverride
@@ -612,12 +594,12 @@ function makeDualSlotStory(
 
 export const WithChangeDetectionOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
-    "storybook/change-detection": {
+    'storybook/change-detection': {
       storyId: dualSlotStoryId,
-      typeId: "storybook/change-detection",
-      value: "status-value:new",
-      title: "Change Detection",
-      description: "Story is new",
+      typeId: 'storybook/change-detection',
+      value: 'status-value:new',
+      title: 'Change Detection',
+      description: 'Story is new',
       sidebarContextMenu: false,
     },
   },
@@ -626,36 +608,36 @@ export const WithChangeDetectionOnly: Story = makeDualSlotStory({
 export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
   {
     [dualSlotStoryId]: {
-      "storybook/change-detection": {
+      'storybook/change-detection': {
         storyId: dualSlotStoryId,
-        typeId: "storybook/change-detection",
-        value: "status-value:modified",
-        title: "Change Detection",
-        description: "Story is modified",
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
         sidebarContextMenu: false,
       },
-      "storybook/vitest": {
+      'storybook/vitest': {
         storyId: dualSlotStoryId,
-        typeId: "storybook/vitest",
-        value: "status-value:error",
-        title: "Vitest",
-        description: "Test failed",
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
       },
     },
   },
   // Modified branch icon only renders when the modified status filter is
   // active; activate it so the dual-slot design (change + test) is visible.
-  { state: { includedStatusFilters: ["status-value:modified"] } },
+  { state: { includedStatusFilters: ['status-value:modified'] } }
 );
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
-    "storybook/vitest": {
+    'storybook/vitest': {
       storyId: dualSlotStoryId,
-      typeId: "storybook/vitest",
-      value: "status-value:warning",
-      title: "Vitest",
-      description: "Test warning",
+      typeId: 'storybook/vitest',
+      value: 'status-value:warning',
+      title: 'Vitest',
+      description: 'Test warning',
     },
   },
 });
@@ -663,12 +645,12 @@ export const WithTestStatusOnly: Story = makeDualSlotStory({
 export const WithRelatedStatus: Story = {
   ...makeDualSlotStory({
     [dualSlotStoryId]: {
-      "storybook/change-detection": {
+      'storybook/change-detection': {
         storyId: dualSlotStoryId,
-        typeId: "storybook/change-detection",
-        value: "status-value:affected",
-        title: "Change Detection",
-        description: "Story is related",
+        typeId: 'storybook/change-detection',
+        value: 'status-value:affected',
+        title: 'Change Detection',
+        description: 'Story is related',
         sidebarContextMenu: false,
       },
     },
@@ -676,26 +658,26 @@ export const WithRelatedStatus: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // affected status is always hidden — no change-status icon should render
-    await expect(canvas.queryByTestId("tree-change-status-button")).toBeNull();
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeNull();
   },
 };
 
 export const BranchWithChangeDetectionPriority: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
-    "storybook/change-detection": {
+    'storybook/change-detection': {
       storyId: dualSlotStoryId,
-      typeId: "storybook/change-detection",
-      value: "status-value:new",
-      title: "Change Detection",
-      description: "Story is new",
+      typeId: 'storybook/change-detection',
+      value: 'status-value:new',
+      title: 'Change Detection',
+      description: 'Story is new',
       sidebarContextMenu: false,
     },
-    "storybook/vitest": {
+    'storybook/vitest': {
       storyId: dualSlotStoryId,
-      typeId: "storybook/vitest",
-      value: "status-value:error",
-      title: "Vitest",
-      description: "Test failed",
+      typeId: 'storybook/vitest',
+      value: 'status-value:error',
+      title: 'Vitest',
+      description: 'Test failed',
     },
   },
 });
@@ -723,22 +705,22 @@ export const WithModified: Story = {
   ...makeDualSlotStory(
     {
       [dualSlotStoryId]: {
-        "storybook/change-detection": {
+        'storybook/change-detection': {
           storyId: dualSlotStoryId,
-          typeId: "storybook/change-detection",
-          value: "status-value:modified",
-          title: "Change Detection",
-          description: "Story is modified",
+          typeId: 'storybook/change-detection',
+          value: 'status-value:modified',
+          title: 'Change Detection',
+          description: 'Story is modified',
           sidebarContextMenu: false,
         },
       },
     },
-    { state: { includedStatusFilters: ["status-value:modified"] } },
+    { state: { includedStatusFilters: ['status-value:modified'] } }
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // modified filter is active — icon should be visible at story leaf and parent branch
-    const buttons = await canvas.findAllByTestId("tree-change-status-button");
+    const buttons = await canvas.findAllByTestId('tree-change-status-button');
     await expect(buttons.length).toBeGreaterThanOrEqual(1);
   },
 };
@@ -750,12 +732,12 @@ export const WithModified: Story = {
 export const WithNew: Story = {
   ...makeDualSlotStory({
     [dualSlotStoryId]: {
-      "storybook/change-detection": {
+      'storybook/change-detection': {
         storyId: dualSlotStoryId,
-        typeId: "storybook/change-detection",
-        value: "status-value:new",
-        title: "Change Detection",
-        description: "Story is new",
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: 'Story is new',
         sidebarContextMenu: false,
       },
     },
@@ -763,7 +745,7 @@ export const WithNew: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // new status is always shown at both leaf and branch levels
-    const buttons = await canvas.findAllByTestId("tree-change-status-button");
+    const buttons = await canvas.findAllByTestId('tree-change-status-button');
     await expect(buttons.length).toBeGreaterThanOrEqual(1);
   },
 };

@@ -25,13 +25,14 @@
  * consumers never declare it, read it, or subscribe to it — whole-state-per-service LWW is a
  * documented semantic of the protocol, not a field anyone has to think about.
  *
- * ## 2. `deepReconcile` — structural merge
+ * ## 2. `applyStatePatch` — structural merge
  *
- * Applies a received snapshot onto the live state object in place so that deep-signal subscriptions
- * only re-fire for the fields that actually changed. Keys absent from the source are deleted (so
- * deletions propagate), arrays are replaced wholesale, primitives are assigned only when changed,
- * and the dangerous `__proto__`/`constructor`/`prototype` keys are skipped on both read and delete
- * so a hostile channel payload cannot pollute the prototype chain.
+ * Applies incoming state onto the live state object in place so that deep-signal subscriptions only
+ * re-fire for the fields that actually changed. Full peer snapshots delete keys absent from the
+ * source so deletions propagate; partial static snapshots preserve missing keys. Arrays are replaced
+ * wholesale, primitives are assigned only when changed, and the dangerous
+ * `__proto__`/`constructor`/`prototype` keys are skipped on both read and delete so hostile payloads
+ * cannot pollute the prototype chain.
  */
 
 /** Per-service last-write-wins stamp carried alongside every synced snapshot. */
@@ -65,29 +66,40 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Deep-merges `source` onto `target` in place.
+ * Applies `source` onto `target` in place while preserving object identity for unchanged branches.
  *
- * - Recurses into plain objects so nested deep-signal subscriptions stay intact and only changed
- *   leaves notify.
- * - Deletes keys present in `target` but absent from `source` so deletions propagate between peers
- *   (the old additive-only merge could never remove a key).
- * - Replaces arrays wholesale and assigns primitives directly, writing only when the value actually
- *   changed to avoid spurious signal invalidation.
- * - Skips `__proto__`/`constructor`/`prototype` on both the delete and the assign pass so a
- *   malicious payload cannot walk up the prototype chain.
+ * Open-service runtimes expose their state through deep-signal proxies. Replacing the whole state
+ * object for every incoming snapshot would invalidate all subscriptions, even when only one nested
+ * field changed. This helper instead walks both objects and mutates `target` only where values differ:
+ *
+ * - Recurses into plain objects so nested deep-signal subscriptions stay attached.
+ * - Replaces arrays wholesale, matching the sync contract that arrays are values rather than maps.
+ * - Assigns primitives only when changed to avoid spurious signal invalidation.
+ * - Skips `__proto__`, `constructor`, and `prototype` on both delete and assign paths so untrusted
+ *   channel payloads and static files cannot pollute prototypes.
+ *
+ * The `preserveMissingKeys` mode selects the source contract:
+ *
+ * - `false` means `source` is a full peer snapshot. Keys missing from `source` are deleted from
+ *   `target`, allowing deletions to propagate through cross-peer sync.
+ * - `true` means `source` is a partial static snapshot. Keys missing from `source` are left alone so
+ *   snapshots for one static query input do not erase state populated by other inputs.
  */
-export function deepReconcile(
+export function applyStatePatch(
   target: Record<string, unknown>,
-  source: Record<string, unknown>
+  source: Record<string, unknown>,
+  options: { preserveMissingKeys: boolean }
 ): void {
-  // Remove keys the source no longer carries (deletion propagation).
-  for (const key of Object.keys(target)) {
-    if (FORBIDDEN_KEYS.has(key)) {
-      continue;
-    }
+  if (!options.preserveMissingKeys) {
+    // Remove keys the source no longer carries (deletion propagation).
+    for (const key of Object.keys(target)) {
+      if (FORBIDDEN_KEYS.has(key)) {
+        continue;
+      }
 
-    if (!Object.prototype.hasOwnProperty.call(source, key)) {
-      delete target[key];
+      if (!Object.prototype.hasOwnProperty.call(source, key)) {
+        delete target[key];
+      }
     }
   }
 
@@ -101,7 +113,7 @@ export function deepReconcile(
     const targetValue = target[key];
 
     if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
-      deepReconcile(targetValue, sourceValue);
+      applyStatePatch(targetValue, sourceValue, options);
     } else if (targetValue !== sourceValue) {
       target[key] = sourceValue;
     }
@@ -165,7 +177,7 @@ export function createSnapshotReconciler(options: {
       }
 
       localStamp = { version: incoming.version, clientId: incoming.clientId };
-      setState((current) => deepReconcile(current, state));
+      setState((current) => applyStatePatch(current, state, { preserveMissingKeys: false }));
 
       return true;
     },

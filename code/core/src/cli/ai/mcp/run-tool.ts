@@ -1,6 +1,14 @@
 import { resolve } from 'node:path';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { invariant } from 'storybook/internal/common';
+
+import {
+  McpJsonRpcError,
+  type McpToolList,
+  callMcpTool,
+  listMcpTools,
+  listMcpToolsWithServerMetadata,
+} from './client.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
@@ -173,12 +181,13 @@ export async function buildStorybookCommandsHelp(
   }
   const { record, matches } = resolution;
 
-  let tools: McpToolDescriptor[];
+  let toolList: McpToolList;
   try {
-    tools = await listMcpTools(record, deps.fetchImpl);
+    toolList = await listMcpToolsWithServerMetadata(record, deps.fetchImpl);
   } catch {
     return unavailable(`the Storybook at ${record.url} could not be reached`);
   }
+  const { tools, serverMetadata } = toolList;
   if (tools.length === 0) {
     return unavailable(`the Storybook at ${record.url} provides no commands`);
   }
@@ -197,9 +206,26 @@ export async function buildStorybookCommandsHelp(
     return `  ${tool.name.padEnd(width)}${summary}`;
   });
   const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
+  const { instructions } = serverMetadata;
+  // Unreachable with a healthy addon-mcp: it gates instructions and tools on the same dev/test/docs
+  // toolsets (non-empty tools imply non-empty instructions), and the initialize handshake shares the
+  // request budget, so a slow server can't drop instructions while tools/list succeeds. Reaching here
+  // means the server returned commands but no instructions — a contract bug.
+  invariant(
+    instructions,
+    `The Storybook MCP server at ${record.url} exposed commands but no workflow instructions`
+  );
+
   return [
-    `Storybook commands (from the Storybook running at ${record.url}${version}):`,
+    `Storybook help from the Storybook running at ${record.url}${version}:`,
     ...siblingNote,
+    '',
+    '# Storybook workflow instructions',
+    '',
+    instructions,
+    '',
+    '# Storybook commands',
+    '',
     ...lines,
     '',
     `Run 'storybook ai <command> --help' for a command's description and arguments.`,

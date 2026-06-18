@@ -56,8 +56,12 @@ function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
   return {
     getState: vi.fn(() => state),
-    setState: vi.fn((s: typeof state) => {
-      state = { ...state, ...s };
+    setState: vi.fn((s: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+      if (typeof s === 'function') {
+        state = { ...state, ...s(state) };
+      } else {
+        state = { ...state, ...s };
+      }
       return Promise.resolve(state);
     }),
   } as any as Store;
@@ -1484,7 +1488,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      api.experimental_setFilter('myCustomFilter', () => true);
+      await api.experimental_setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1587,37 +1591,38 @@ describe('stories API', () => {
       ]);
 
       await vi.waitFor(() => {
-        expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
-          {
-            "a": {
-              "children": [
-                "a--1",
-              ],
-              "depth": 0,
-              "id": "a",
-              "importPath": "./a.ts",
-              "name": "a",
-              "parent": undefined,
-              "renderLabel": undefined,
-              "tags": [],
-              "type": "component",
-            },
-            "a--1": {
-              "depth": 1,
-              "id": "a--1",
-              "importPath": "./a.ts",
-              "name": "1",
-              "parent": "a",
-              "prepared": false,
-              "renderLabel": undefined,
-              "subtype": "story",
-              "tags": [],
-              "title": "a",
-              "type": "story",
-            },
-          }
-        `);
+        expect(Object.keys(store.getState().filteredIndex ?? {})).toHaveLength(2);
       });
+      expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
+        {
+          "a": {
+            "children": [
+              "a--1",
+            ],
+            "depth": 0,
+            "id": "a",
+            "importPath": "./a.ts",
+            "name": "a",
+            "parent": undefined,
+            "renderLabel": undefined,
+            "tags": [],
+            "type": "component",
+          },
+          "a--1": {
+            "depth": 1,
+            "id": "a--1",
+            "importPath": "./a.ts",
+            "name": "1",
+            "parent": "a",
+            "prepared": false,
+            "renderLabel": undefined,
+            "subtype": "story",
+            "tags": [],
+            "title": "a",
+            "type": "story",
+          },
+        }
+      `);
     });
 
     it('persists filter when index is updated', async () => {

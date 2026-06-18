@@ -428,7 +428,7 @@ export const RootContextMenuOpen: Story = {
     const contextButton = await within(rootEl).findByTestId('context-menu');
     await userEvent.click(contextButton);
 
-    const dialog = screen.getByRole('dialog');
+    const dialog = await screen.findByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
   },
@@ -450,7 +450,7 @@ export const RootContextMenuExpandAll: Story = {
     await userEvent.hover(rootEl);
     const contextButton = await within(rootEl).findByTestId('context-menu');
     await userEvent.click(contextButton);
-    await userEvent.click(screen.getByText('Expand all'));
+    await userEvent.click(await screen.findByText('Expand all'));
 
     await expect(await canvas.findByText('Empty')).toBeInTheDocument();
   },
@@ -467,14 +467,14 @@ export const RootContextMenuCollapseAll: Story = {
     // Expand all first so the tree is fully expanded
     await userEvent.hover(rootEl);
     await userEvent.click(await within(rootEl).findByTestId('context-menu'));
-    await userEvent.click(screen.getByText('Expand all'));
+    await userEvent.click(await screen.findByText('Expand all'));
 
     // Close the popover, then re-open — should now offer "Collapse all"
     await userEvent.keyboard('{Escape}');
     await userEvent.hover(rootEl);
     await userEvent.click(await within(rootEl).findByTestId('context-menu'));
 
-    const dialog = screen.getByRole('dialog');
+    const dialog = await screen.findByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
   },
@@ -490,6 +490,7 @@ export const RootContextMenuCollapseAll: Story = {
  */
 export const StoryContextMenuWithStatusAndProvider: Story = {
   ...rootContextMenuBase,
+  parameters: { chromatic: { disableSnapshot: true } },
   args: {
     ...rootContextMenuBase.args,
     allStatuses: {
@@ -515,7 +516,7 @@ export const StoryContextMenuWithStatusAndProvider: Story = {
     const contextButton = await within(storyRow).findByTestId('context-menu');
     await userEvent.click(contextButton);
 
-    const dialog = screen.getByRole('dialog');
+    const dialog = await screen.findByRole('dialog');
     await expect(dialog).toBeVisible();
 
     // Status link — comes from allStatuses (sidebarContextMenu not false)

@@ -15,8 +15,8 @@
  *
  * const service = registerService(myServiceDef);
  *
- * service.queries.getColor.subscribe(undefined, (color) => {
- *   document.body.style.background = color;
+ * service.queries.getColor.subscribe(undefined, ({ data }) => {
+ *   document.body.style.background = data ?? 'transparent';
  * });
  * ```
  */

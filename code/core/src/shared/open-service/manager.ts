@@ -12,9 +12,9 @@
  * const service = registerService(myServiceDef);
  *
  * function MyTool() {
- *   const value = useServiceQuery(service, 'getValue');
+ *   const { data } = useServiceQuery(service.queries.getValue);
  *   const setValue = useServiceCommand(service, 'setValue');
- *   return <button onClick={() => setValue({ value: 'new' })}>{value}</button>;
+ *   return <button onClick={() => setValue({ value: 'new' })}>{data}</button>;
  * }
  * ```
  */

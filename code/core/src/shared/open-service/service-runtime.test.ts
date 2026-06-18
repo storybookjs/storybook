@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit/predicate';
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,6 +6,7 @@ import { defineService } from './service-definition.ts';
 import { serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { clearRegistry, registerService } from './server.ts';
+import type { QueryState } from './types.ts';
 import {
   type RebuiltValue,
   awaitedPreloadValueServiceDef,
@@ -19,12 +21,28 @@ afterEach(() => {
   clearRegistry();
 });
 
+/**
+ * Records the `data` of each emitted {@link QueryState}, deduping consecutive equal values.
+ *
+ * Subscriptions now emit a `QueryState`, and a load-backed query emits extra status-only transitions
+ * (e.g. `loading` → `idle`) that repeat the same `data`. These tests assert the *data* sequence, so
+ * collapsing consecutive equal data keeps them focused on value changes; lifecycle transitions are
+ * asserted explicitly in the dedicated 'query state lifecycle' suite.
+ */
+function collectData<T>(target: T[]): (state: QueryState<T>) => void {
+  return (state) => {
+    if (target.length === 0 || !isEqual(target[target.length - 1], state.data)) {
+      target.push(state.data as T);
+    }
+  };
+}
+
 describe('service runtime', () => {
   describe('direct query calls', () => {
     it('returns the initial record lookup value synchronously', () => {
       const service = registerService(mutableRecordLookupServiceDef);
 
-      expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toBeNull();
+      expect(service.queries.getRecordFields.get({ entryId: 'entry-a' })).toBeNull();
     });
 
     it('reflects state after a mutating command', async () => {
@@ -36,7 +54,7 @@ describe('service runtime', () => {
         fieldValue: 'match',
       });
 
-      expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
+      expect(service.queries.getRecordFields.get({ entryId: 'entry-a' })).toEqual({
         marker: 'match',
       });
     });
@@ -49,12 +67,59 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null]));
+      unsubscribe();
+    });
+
+    it('emits the first state synchronously, before subscribe returns', () => {
+      const service = registerService(mutableRecordLookupServiceDef);
+      const states: Array<QueryState<unknown>> = [];
+      // Flipped to true only once subscribe() has returned. The callback asserts it is still false,
+      // proving the first emission ran mid-call rather than on a later microtask (a deferred emission
+      // would see it already true). `emissionsInsideSubscribe` then guards that the callback — and so
+      // its inner assertion — actually ran, instead of the test passing vacuously.
+      let subscribeReturned = false;
+      let emissionsInsideSubscribe = 0;
+
+      const unsubscribe = service.queries.getRecordFields.subscribe(
+        { entryId: 'entry-a' },
+        (state) => {
+          expect(subscribeReturned).toBe(false);
+          emissionsInsideSubscribe += 1;
+          states.push(state);
+        }
+      );
+      subscribeReturned = true;
+
+      expect(emissionsInsideSubscribe).toBe(1);
+      expect(states).toHaveLength(1);
+      expect(states[0]).toMatchObject({ data: null, status: 'success', loadStatus: 'idle' });
+      unsubscribe();
+    });
+
+    it('emits a synchronous pending/loading first state for a load-backed query', () => {
+      const service = registerService(awaitedPreloadValueServiceDef);
+      const states: Array<QueryState<unknown>> = [];
+
+      // The reactive-load effect runs synchronously during subscribe, so the synchronous first
+      // emission already reports the initial load in flight.
+      const unsubscribe = service.queries.getPreloadedValue.subscribe(
+        { entryId: 'entry-a' },
+        (state) => {
+          states.push(state);
+        }
+      );
+
+      expect(states).toHaveLength(1);
+      expect(states[0]).toMatchObject({
+        data: null,
+        status: 'pending',
+        loadStatus: 'loading',
+        isInitialLoading: true,
+      });
       unsubscribe();
     });
 
@@ -64,9 +129,7 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null]));
@@ -86,9 +149,7 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null]));
@@ -114,9 +175,7 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null]));
@@ -142,15 +201,11 @@ describe('service runtime', () => {
 
       const unsubscribeA = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          callsA.push(value);
-        }
+        collectData(callsA)
       );
       const unsubscribeB = service.queries.getRecordFields.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          callsB.push(value);
-        }
+        collectData(callsB)
       );
 
       await vi.waitFor(() => expect(callsA).toEqual([null]));
@@ -206,9 +261,7 @@ describe('service runtime', () => {
       const service = registerService(delayedQueryServiceDef);
       const calls: Array<string | null> = [];
 
-      const unsubscribe = service.queries.getValue.subscribe(undefined, (value) => {
-        calls.push(value);
-      });
+      const unsubscribe = service.queries.getValue.subscribe(undefined, collectData(calls));
 
       await vi.waitFor(() => expect(loadStarted).toBe(true));
       await vi.waitFor(() => expect(calls).toEqual([null]));
@@ -219,72 +272,82 @@ describe('service runtime', () => {
       expect(calls).toEqual([null]);
     });
 
-    it('rethrows subscription input validation failures through queueMicrotask', async () => {
-      const queuedCallbacks: Array<() => void> = [];
-      const queueMicrotaskSpy = vi
-        .spyOn(globalThis, 'queueMicrotask')
-        .mockImplementation((callback: VoidFunction) => {
-          queuedCallbacks.push(callback);
-        });
+    it('surfaces subscription input validation failure as an error state', () => {
       const service = registerService(mutableRecordLookupServiceDef);
+      const states: Array<QueryState<unknown>> = [];
 
-      service.queries.getRecordFields.subscribe({} as unknown as { entryId: string }, () => {});
+      service.queries.getRecordFields.subscribe({} as unknown as { entryId: string }, (state) => {
+        states.push(state);
+      });
 
-      await vi.waitFor(() => expect(queuedCallbacks).toHaveLength(1));
-      try {
-        try {
-          queuedCallbacks[0]();
-          expect.unreachable('Expected queued validation error to be thrown');
-        } catch (error) {
-          expect(error).toMatchObject({
-            fromStorybook: true,
-            code: 5,
-            message:
-              'Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
-          });
-        }
-      } finally {
-        queueMicrotaskSpy.mockRestore();
-      }
+      // Bad input is a programmer error, but surfacing it as an error state (instead of a thrown,
+      // silently-dead subscription) keeps the subscription reporting the failure to its consumer.
+      // Input is validated synchronously inside subscribe(), so the error state is emitted before
+      // subscribe() returns — no waitFor needed.
+      expect(states).toHaveLength(1);
+      expect(states[0]).toMatchObject({
+        data: undefined,
+        status: 'error',
+        isError: true,
+        loadStatus: 'idle',
+      });
+      expect(states[0].error).toMatchObject({
+        fromStorybook: true,
+        code: 5,
+        message:
+          'Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":\nentryId: Invalid key: Expected "entryId" but received undefined',
+      });
     });
 
     // A `selector` narrows the reactive footprint but must not skip output validation: the handler
-    // output is still validated (untracked) before the selector runs.
-    it('still validates query output for a subscriber that passes a selector', async () => {
-      const queuedCallbacks: Array<() => void> = [];
-      const queueMicrotaskSpy = vi
-        .spyOn(globalThis, 'queueMicrotask')
-        .mockImplementation((callback: VoidFunction) => {
-          queuedCallbacks.push(callback);
-        });
+    // output is still validated (untracked) before the selector runs, so an invalid output surfaces
+    // as an error state rather than slipping through.
+    it('surfaces invalid query output as an error state for a subscriber that passes a selector', async () => {
       const service = registerService(createInvalidQueryOutputServiceDef());
+      const states: Array<QueryState<unknown>> = [];
 
-      try {
-        service.queries.getBrokenValue.subscribe(
-          undefined,
-          (value) => value,
-          () => {}
-        );
+      service.queries.getBrokenValue.subscribe(
+        undefined,
+        (value) => value,
+        (state) => {
+          states.push(state);
+        }
+      );
 
-        await vi.waitFor(() => expect(queuedCallbacks).toHaveLength(1));
-        expect(() => queuedCallbacks[0]()).toThrow(
-          'Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue"'
-        );
-      } finally {
-        queueMicrotaskSpy.mockRestore();
-      }
+      await vi.waitFor(() => expect(states).toHaveLength(1));
+      expect(states[0]).toMatchObject({ status: 'error', isError: true });
+      expect(states[0].error?.message).toContain(
+        'Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue"'
+      );
     });
   });
 
   describe('background load', () => {
-    it('returns the current value synchronously and triggers load in the background', async () => {
+    it('returns the current value synchronously from .get() without ever firing the load', async () => {
+      const loadSpy = vi.spyOn(awaitedPreloadValueServiceDef.queries.getPreloadedValue, 'load');
+      try {
+        const service = registerService(awaitedPreloadValueServiceDef);
+
+        // .get() is a pure read: it returns current state and never fires the load. Repeated reads
+        // therefore stay null forever — nothing populates state until .loaded()/.subscribe() run.
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+        service.queries.getPreloadedValue.get({ entryId: 'entry-a' });
+        service.queries.getPreloadedValue.get({ entryId: 'entry-a' });
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        expect(loadSpy).not.toHaveBeenCalled();
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+      } finally {
+        loadSpy.mockRestore();
+      }
+    });
+
+    it('populates state for a .get() read once .loaded() has run', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
 
-      expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
-
-      await vi.waitFor(() =>
-        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded')
-      );
+      expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+      await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+      expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBe('preloaded');
     });
 
     it('does not call the load command twice for concurrent in-flight calls', async () => {
@@ -314,9 +377,7 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getPreloadedValue.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
@@ -334,9 +395,7 @@ describe('service runtime', () => {
       const firstCalls: Array<RebuiltValue | null> = [];
       const unsubscribeFirst = service.queries.getRebuiltValue.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          firstCalls.push(value);
-        }
+        collectData(firstCalls)
       );
       await vi.waitFor(() => expect(firstCalls).toEqual([null, { marker: 'stable', count: 1 }]));
       unsubscribeFirst();
@@ -347,9 +406,7 @@ describe('service runtime', () => {
       const secondCalls: Array<RebuiltValue | null> = [];
       const unsubscribeSecond = service.queries.getRebuiltValue.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          secondCalls.push(value);
-        }
+        collectData(secondCalls)
       );
 
       await vi.waitFor(() => expect(secondCalls).toEqual([{ marker: 'stable', count: 1 }]));
@@ -380,9 +437,7 @@ describe('service runtime', () => {
         const callsA: Array<Record<string, string> | null> = [];
         const unsubscribe = service.queries.getRecordFields.subscribe(
           { entryId: 'entry-a' },
-          (value) => {
-            callsA.push(value);
-          }
+          collectData(callsA)
         );
         await vi.waitFor(() => expect(callsA).toEqual([{ marker: 'match' }]));
         const handlerRunsAfterSubscribe = handlerSpy.mock.calls.length;
@@ -423,9 +478,7 @@ describe('service runtime', () => {
         const unsubscribe = service.queries.getRecordFields.subscribe(
           { entryId: 'entry-a' },
           (record) => record?.selected,
-          (selected) => {
-            selectedCalls.push(selected);
-          }
+          collectData(selectedCalls)
         );
         await vi.waitFor(() => expect(selectedCalls).toEqual(['first']));
         const handlerRunsAfterSubscribe = handlerSpy.mock.calls.length;
@@ -462,15 +515,11 @@ describe('service runtime', () => {
 
       const unsubscribeA = service.queries.getPreloadedValue.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          callsA.push(value);
-        }
+        collectData(callsA)
       );
       const unsubscribeB = service.queries.getPreloadedValue.subscribe(
         { entryId: 'entry-b' },
-        (value) => {
-          callsB.push(value);
-        }
+        collectData(callsB)
       );
 
       await vi.waitFor(() => expect(callsA).toEqual([null, 'preloaded']));
@@ -507,7 +556,7 @@ describe('service runtime', () => {
       }
     });
 
-    it('fires background load on every sync call but dedupes while in flight', async () => {
+    it('never fires the load from repeated .get() reads (no implicit background load)', async () => {
       const service = registerService(fireAndForgetPreloadValueServiceDef);
       const preloadValueSpy = vi.spyOn(
         fireAndForgetPreloadValueServiceDef.commands.preloadValue,
@@ -515,15 +564,15 @@ describe('service runtime', () => {
       );
 
       try {
-        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
-        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
-        expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBeNull();
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
+        await new Promise((resolve) => setTimeout(resolve, 30));
 
-        await vi.waitFor(() =>
-          expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded')
-        );
-
-        expect(preloadValueSpy).toHaveBeenCalledTimes(1);
+        // The old bare call fired the load fire-and-forget on every read; .get() never does, so the
+        // command that the load would have invoked is never called.
+        expect(preloadValueSpy).not.toHaveBeenCalled();
+        expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBeNull();
       } finally {
         preloadValueSpy.mockRestore();
       }
@@ -535,9 +584,7 @@ describe('service runtime', () => {
 
       const unsubscribe = service.queries.getPreloadedValue.subscribe(
         { entryId: 'entry-a' },
-        (value) => {
-          calls.push(value);
-        }
+        collectData(calls)
       );
 
       await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
@@ -600,9 +647,7 @@ describe('service runtime', () => {
       const service = registerService(createReactiveDerivedServiceDef());
       const calls: Array<number | null> = [];
 
-      const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
-        calls.push(value);
-      });
+      const unsubscribe = service.queries.getDerived.subscribe(undefined, collectData(calls));
 
       await vi.waitFor(() => expect(calls).toEqual([null, 10]));
       await service.commands.setSource(5);
@@ -642,7 +687,7 @@ describe('service runtime', () => {
             output: v.nullable(v.number()),
             handler: (_input, ctx) => ctx.self.state.derived,
             load: async (_input, ctx) => {
-              const value = ctx.getService(sourceDef.id).queries.getValue(undefined) as number;
+              const value = ctx.getService(sourceDef.id).queries.getValue.get(undefined) as number;
               await Promise.resolve();
               await ctx.self.commands.setDerived(value * 10);
             },
@@ -664,9 +709,10 @@ describe('service runtime', () => {
       const derivedService = registerService(derivedDef);
       const calls: Array<number | null> = [];
 
-      const unsubscribe = derivedService.queries.getDerived.subscribe(undefined, (value) => {
-        calls.push(value);
-      });
+      const unsubscribe = derivedService.queries.getDerived.subscribe(
+        undefined,
+        collectData(calls)
+      );
 
       await vi.waitFor(() => expect(calls).toEqual([null, 10]));
       await sourceService.commands.setValue(5);
@@ -682,9 +728,7 @@ describe('service runtime', () => {
         const service = registerService(def);
         const calls: Array<number | null> = [];
 
-        const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
-          calls.push(value);
-        });
+        const unsubscribe = service.queries.getDerived.subscribe(undefined, collectData(calls));
 
         await vi.waitFor(() => expect(calls).toEqual([null, 10]));
         await new Promise((resolve) => setTimeout(resolve, 40));
@@ -707,9 +751,7 @@ describe('service runtime', () => {
         const service = registerService(def);
         const calls: Array<number | null> = [];
 
-        const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
-          calls.push(value);
-        });
+        const unsubscribe = service.queries.getDerived.subscribe(undefined, collectData(calls));
         await vi.waitFor(() => expect(calls).toEqual([null, 10]));
         expect(loadSpy).toHaveBeenCalledTimes(1);
 
@@ -773,9 +815,7 @@ describe('service runtime', () => {
 
       const service = registerService(def);
       const calls: Array<number | null> = [];
-      const unsubscribe = service.queries.getDerived.subscribe(undefined, (value) => {
-        calls.push(value);
-      });
+      const unsubscribe = service.queries.getDerived.subscribe(undefined, collectData(calls));
 
       // Initial load (source 0) settles first.
       await vi.waitFor(() => expect(calls).toEqual([null]));
@@ -796,20 +836,20 @@ describe('service runtime', () => {
       unsubscribe();
     });
 
-    it('does not re-fire load for non-subscription query() calls', async () => {
+    it('never fires the load from .get() reads and sets up no reactivity', async () => {
       const def = createReactiveDerivedServiceDef();
       const loadSpy = vi.spyOn(def.queries.getDerived, 'load');
       try {
         const service = registerService(def);
 
-        // A plain query() call fires load once (fire-and-forget) and never sets up reactivity.
-        service.queries.getDerived(undefined);
-        await vi.waitFor(() => expect(loadSpy).toHaveBeenCalledTimes(1));
-
+        // A plain .get() read does not fire the load and does not set up reactivity, so a later
+        // dependency change cannot re-fire anything either.
+        service.queries.getDerived.get(undefined);
+        service.queries.getDerived.get(undefined);
         await service.commands.setSource(9);
         await new Promise((resolve) => setTimeout(resolve, 40));
 
-        expect(loadSpy).toHaveBeenCalledTimes(1);
+        expect(loadSpy).not.toHaveBeenCalled();
       } finally {
         loadSpy.mockRestore();
       }
@@ -823,9 +863,7 @@ describe('service runtime', () => {
 
         const unsubscribe = service.queries.getPreloadedValue.subscribe(
           { entryId: 'entry-a' },
-          (value) => {
-            calls.push(value);
-          }
+          collectData(calls)
         );
 
         await vi.waitFor(() => expect(calls).toEqual([null, 'preloaded']));
@@ -839,6 +877,78 @@ describe('service runtime', () => {
         loadSpy.mockRestore();
       }
     });
+
+    // A reactive subscription load that reads a dependency via `.get()` must still warm that
+    // dependency's load — even though a bare consumer `.get()` never fires a load. The dependency's
+    // freshly-loaded value then flows back through the reactive re-fire.
+    it('warms a dependency load read from inside a reactive subscription load body', async () => {
+      // Nested-object payloads (rather than bare strings) on purpose: `collectData` dedups emissions
+      // by deep equality, so an object value exercises that path and would expose a runtime that
+      // mutates state in place instead of propagating a fresh value — a class of bug primitives can
+      // never reveal. If propagation works for a nested object, it trivially works for primitives.
+      type Payload = { payload: { tag: string } };
+      const payloadSchema = v.object({ payload: v.object({ tag: v.string() }) });
+      const def = defineService({
+        id: 'internal-fixture/reactive-dependency-warming',
+        initialState: { inner: null as Payload | null, outer: null as Payload | null },
+        queries: {
+          getInner: {
+            input: v.void(),
+            output: v.nullable(payloadSchema),
+            handler: (_input, ctx) => ctx.self.state.inner,
+            load: async (_input, ctx) => {
+              await ctx.self.commands.setInner({ payload: { tag: 'inner-ready' } });
+            },
+          },
+          getOuter: {
+            input: v.void(),
+            output: v.nullable(payloadSchema),
+            handler: (_input, ctx) => ctx.self.state.outer,
+            load: async (_input, ctx) => {
+              // Reading the dependency must fire its load (fire-and-forget). The read of
+              // `state.inner` it performs is tracked, so this load re-fires once inner is ready.
+              ctx.self.queries.getInner.get(undefined);
+              await Promise.resolve();
+              await ctx.self.commands.setOuter(ctx.self.state.inner);
+            },
+          },
+        },
+        commands: {
+          setInner: {
+            input: payloadSchema,
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.inner = next;
+              }),
+          },
+          setOuter: {
+            input: v.nullable(payloadSchema),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.outer = next;
+              }),
+          },
+        },
+      });
+      const innerLoadSpy = vi.spyOn(def.queries.getInner, 'load');
+      try {
+        const service = registerService(def);
+        const calls: Array<Payload | null> = [];
+
+        const unsubscribe = service.queries.getOuter.subscribe(undefined, collectData(calls));
+
+        // The dependency's load fired purely because the outer reactive load read it via `.get()`,
+        // and its value propagated back into `outer` through the reactive re-fire.
+        await vi.waitFor(() => expect(calls).toEqual([null, { payload: { tag: 'inner-ready' } }]));
+        expect(innerLoadSpy).toHaveBeenCalled();
+
+        unsubscribe();
+      } finally {
+        innerLoadSpy.mockRestore();
+      }
+    });
   });
 
   describe('cross-service query composition', () => {
@@ -846,7 +956,7 @@ describe('service runtime', () => {
       const sourceService = registerService(mutableRecordLookupServiceDef);
       const derivedService = registerService(createDerivedBooleanFromChildQueryServiceDef());
 
-      expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
+      expect(derivedService.queries.isEntryMarked.get({ entryId: 'entry-a' })).toBe(false);
 
       await sourceService.commands.assignRecordField({
         entryId: 'entry-a',
@@ -854,7 +964,7 @@ describe('service runtime', () => {
         fieldValue: 'match',
       });
 
-      expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(true);
+      expect(derivedService.queries.isEntryMarked.get({ entryId: 'entry-a' })).toBe(true);
     });
   });
 
@@ -870,7 +980,7 @@ describe('service runtime', () => {
             input: v.object({ entryId: v.string() }),
             output: v.number(),
             handler: (input) => {
-              const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
+              const value = sourceService.queries.getPreloadedValue.get({ entryId: input.entryId });
               return value === null ? 0 : value.length;
             },
           },
@@ -896,7 +1006,7 @@ describe('service runtime', () => {
             input: v.object({ entryId: v.string() }),
             output: v.number(),
             handler: (input) => {
-              const value = sourceService.queries.getPreloadedValue({ entryId: input.entryId });
+              const value = sourceService.queries.getPreloadedValue.get({ entryId: input.entryId });
               return value === null ? 0 : value.length;
             },
           },
@@ -981,7 +1091,7 @@ describe('service runtime', () => {
             load: async (_input, ctx) => {
               // Reading b inside a's load would normally also await b's load — but since b's load
               // would in turn read a (the running ancestor), the runtime must break the cycle.
-              ctx.self.queries.b(undefined);
+              ctx.self.queries.b.get(undefined);
               await ctx.self.commands.markA(undefined);
             },
           },
@@ -990,7 +1100,7 @@ describe('service runtime', () => {
             output: v.boolean(),
             handler: (_input, ctx) => ctx.self.state.bDone,
             load: async (_input, ctx) => {
-              ctx.self.queries.a(undefined);
+              ctx.self.queries.a.get(undefined);
               await ctx.self.commands.markB(undefined);
             },
           },
@@ -1019,7 +1129,7 @@ describe('service runtime', () => {
       const service = registerService(cycleDef);
 
       await expect(service.queries.a.loaded(undefined)).resolves.toBe(true);
-      expect(service.queries.b(undefined)).toBe(true);
+      expect(service.queries.b.get(undefined)).toBe(true);
     });
 
     it('throws OpenServiceLoadedDrainExceededError on persistent oscillation', async () => {
@@ -1034,7 +1144,7 @@ describe('service runtime', () => {
             handler: (_input, ctx) => {
               // Each discovery pass produces a fresh input key, so the runtime can never observe
               // a stable set of dependencies — the drain loop hits its iteration cap.
-              ctx.self.queries.dynamic({ tick: ctx.self.state.counter });
+              ctx.self.queries.dynamic.get({ tick: ctx.self.state.counter });
               return ctx.self.state.counter;
             },
           },
@@ -1099,7 +1209,7 @@ describe('service runtime', () => {
             load: async (_input, ctx) => {
               loadBodySpy();
               // Mirrors static snapshot loads: sync handler read before the first await.
-              ctx.self.queries[queryName](undefined);
+              ctx.self.queries[queryName].get(undefined);
               await ctx.self.commands.bump(undefined);
             },
           },
@@ -1128,6 +1238,224 @@ describe('service runtime', () => {
       expect(buildRuntime.getStateSnapshot().count).toBe(1);
       expect(loadBodySpy).toHaveBeenCalledTimes(1);
       expect(bumpCommandSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // The `subscriptions`/`reactive load` suites assert the emitted *data* sequence (via collectData).
+  // This suite asserts the orthogonal axis: the per-subscription `QueryState` lifecycle that wraps
+  // that data (status / loadStatus / error and the derived booleans).
+  describe('query state lifecycle', () => {
+    it('reports success/idle immediately for a query with no load', () => {
+      const service = registerService(mutableRecordLookupServiceDef);
+      const states: Array<QueryState<unknown>> = [];
+
+      const unsubscribe = service.queries.getRecordFields.subscribe(
+        { entryId: 'entry-a' },
+        (state) => {
+          states.push(state);
+        }
+      );
+
+      // A no-load query emits its success/idle state synchronously during subscribe() — no waitFor.
+      expect(states).toHaveLength(1);
+      expect(states[0]).toMatchObject({
+        data: null,
+        error: undefined,
+        status: 'success',
+        loadStatus: 'idle',
+        isSuccess: true,
+        isPending: false,
+        isError: false,
+        isLoading: false,
+        isInitialLoading: false,
+        isRefreshing: false,
+      });
+
+      unsubscribe();
+    });
+
+    it('transitions pending → success as a load settles', async () => {
+      const service = registerService(awaitedPreloadValueServiceDef);
+      const states: Array<QueryState<unknown>> = [];
+
+      const unsubscribe = service.queries.getPreloadedValue.subscribe(
+        { entryId: 'entry-a' },
+        (state) => {
+          states.push(state);
+        }
+      );
+
+      // The first emission, before the load settles, is the initial load over no data yet. It is
+      // emitted synchronously during subscribe() (the reactive-load effect runs synchronously and
+      // the first emission already reads `loading`), so it is observable without waiting.
+      expect(states).toHaveLength(1);
+      expect(states[0]).toMatchObject({
+        data: null,
+        status: 'pending',
+        loadStatus: 'loading',
+        isPending: true,
+        isInitialLoading: true,
+        isRefreshing: false,
+      });
+
+      // Once the load resolves, the subscription is success/idle with the loaded data.
+      await vi.waitFor(() => {
+        const last = states[states.length - 1];
+        expect(last).toMatchObject({
+          data: 'preloaded',
+          status: 'success',
+          loadStatus: 'idle',
+          isSuccess: true,
+          isLoading: false,
+          isInitialLoading: false,
+        });
+      });
+
+      unsubscribe();
+    });
+
+    it('transitions to error when the load rejects, keeping the last data', async () => {
+      const failingDef = defineService({
+        id: 'internal-fixture/lifecycle-load-reject',
+        description:
+          'Loads successfully once, then rejects on a re-load to exercise error-state data retention.',
+        initialState: { value: null as string | null, failNext: false },
+        queries: {
+          getValue: {
+            input: v.undefined(),
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
+              // Tracked read: flipping `failNext` re-fires this load, which then rejects.
+              if (ctx.self.state.failNext) {
+                throw new Error('boom');
+              }
+              await ctx.self.commands.setValue('loaded');
+            },
+          },
+        },
+        commands: {
+          setValue: {
+            input: v.nullable(v.string()),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.value = next;
+              }),
+          },
+          setFailNext: {
+            input: v.boolean(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.failNext = next;
+              }),
+          },
+        },
+      });
+      const service = registerService(failingDef);
+      const states: Array<QueryState<unknown>> = [];
+
+      const unsubscribe = service.queries.getValue.subscribe(undefined, (state) => {
+        states.push(state);
+      });
+
+      // The first load succeeds and populates the data.
+      await vi.waitFor(() => {
+        const last = states[states.length - 1];
+        expect(last).toMatchObject({ data: 'loaded', status: 'success', loadStatus: 'idle' });
+      });
+
+      // Flipping the tracked dependency re-fires the load, which now rejects. The resulting error
+      // state must retain the previously-loaded `data` rather than dropping it to undefined/null.
+      await service.commands.setFailNext(true);
+      await vi.waitFor(() => {
+        const last = states[states.length - 1];
+        expect(last.status).toBe('error');
+      });
+      const last = states[states.length - 1];
+      expect(last).toMatchObject({
+        data: 'loaded',
+        status: 'error',
+        loadStatus: 'idle',
+        isError: true,
+        isLoading: false,
+      });
+      expect(last.error?.message).toBe('boom');
+
+      unsubscribe();
+    });
+
+    it('reports isRefreshing on a background re-load over existing data', async () => {
+      const reactiveDef = defineService({
+        id: 'internal-fixture/lifecycle-reactive-refresh',
+        initialState: { source: 1, derived: null as number | null },
+        queries: {
+          getDerived: {
+            input: v.void(),
+            output: v.nullable(v.number()),
+            handler: (_input, ctx) => ctx.self.state.derived,
+            load: async (_input, ctx) => {
+              const source = ctx.self.state.source;
+              await Promise.resolve();
+              await ctx.self.commands.setDerived(source * 10);
+            },
+          },
+        },
+        commands: {
+          setSource: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.source = next;
+              }),
+          },
+          setDerived: {
+            input: v.number(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.derived = next;
+              }),
+          },
+        },
+      });
+      const service = registerService(reactiveDef);
+      const states: Array<QueryState<unknown>> = [];
+
+      const unsubscribe = service.queries.getDerived.subscribe(undefined, (state) => {
+        states.push(state);
+      });
+
+      // Wait for the initial load to settle to success.
+      await vi.waitFor(() => {
+        const last = states[states.length - 1];
+        expect(last).toMatchObject({ data: 10, status: 'success', loadStatus: 'idle' });
+      });
+
+      // Changing the load's dependency re-fires it over the existing data: status stays success
+      // while loadStatus flips to loading — a background refresh, not an initial load.
+      await service.commands.setSource(5);
+      await vi.waitFor(() =>
+        expect(
+          states.some(
+            (state) =>
+              state.isRefreshing &&
+              state.status === 'success' &&
+              state.loadStatus === 'loading' &&
+              state.isInitialLoading === false
+          )
+        ).toBe(true)
+      );
+
+      // The refresh settles back to success/idle with the new value.
+      await vi.waitFor(() => {
+        const last = states[states.length - 1];
+        expect(last).toMatchObject({ data: 50, status: 'success', loadStatus: 'idle' });
+      });
+
+      unsubscribe();
     });
   });
 });

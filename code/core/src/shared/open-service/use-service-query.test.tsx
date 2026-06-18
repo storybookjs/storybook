@@ -4,8 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearChannel, installNoopChannel } from '../../channels/channel-slot.ts';
 
-import { mutableRecordLookupServiceDef, undefinedOutputQueryServiceDef } from './fixtures.ts';
+import {
+  awaitedPreloadValueServiceDef,
+  mutableRecordLookupServiceDef,
+  undefinedOutputQueryServiceDef,
+} from './fixtures.ts';
 import { clearRegistry, registerService } from './service-registry.ts';
+import type { Query, QueryState } from './types.ts';
 import { useServiceQuery } from './use-service-query.ts';
 
 beforeEach(() => {
@@ -18,24 +23,41 @@ afterEach(() => {
 });
 
 describe('useServiceQuery', () => {
-  it('returns the initial synchronous query result', () => {
+  it('returns the initial synchronous query result as data', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
+      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
     );
 
-    expect(result.current).toBeNull();
+    expect(result.current.data).toBeNull();
+    expect(result.current.isError).toBe(false);
+  });
+
+  it('shows pending with the synchronous get() data while a load-backed query loads', async () => {
+    const service = registerService(awaitedPreloadValueServiceDef);
+
+    const { result } = renderHook(() =>
+      useServiceQuery(service.queries.getPreloadedValue, { entryId: 'a' })
+    );
+
+    // A load-backed query stays `pending` until its load settles. `data` is the synchronous
+    // `get()` value (null here, before the load has populated state).
+    expect(result.current.status).toBe('pending');
+    expect(result.current.isPending).toBe(true);
+    expect(result.current.data).toBeNull();
+
+    await waitFor(() => expect(result.current.data).toBe('preloaded'));
   });
 
   it('re-renders when the query result changes after a command', async () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
+      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
     );
 
-    expect(result.current).toBeNull();
+    expect(result.current.data).toBeNull();
 
     await service.commands.assignRecordField({
       entryId: 'a',
@@ -44,7 +66,7 @@ describe('useServiceQuery', () => {
     });
 
     await waitFor(() => {
-      expect(result.current).toEqual({ color: 'red' });
+      expect(result.current.data).toEqual({ color: 'red' });
     });
   });
 
@@ -54,7 +76,7 @@ describe('useServiceQuery', () => {
 
     renderHook(() => {
       renderCount++;
-      return useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+      return useServiceQuery(service.queries.getRecordFields, { entryId: 'a' });
     });
 
     const countAfterMount = renderCount;
@@ -83,34 +105,34 @@ describe('useServiceQuery', () => {
 
     let currentEntryId = 'b';
     const { result, rerender } = renderHook(() =>
-      useServiceQuery(service, 'getRecordFields', { entryId: currentEntryId })
+      useServiceQuery(service.queries.getRecordFields, { entryId: currentEntryId })
     );
 
-    expect(result.current).toBeNull();
+    expect(result.current.data).toBeNull();
 
     currentEntryId = 'a';
     rerender();
 
-    expect(result.current).toEqual({ k: 'v' });
+    expect(result.current.data).toEqual({ k: 'v' });
   });
 
   it('accumulates incremental updates', async () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service, 'getRecordFields', { entryId: 'a' })
+      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
     );
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'x', fieldValue: '1' });
 
     await waitFor(() => {
-      expect(result.current).toEqual({ x: '1' });
+      expect(result.current.data).toEqual({ x: '1' });
     });
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'y', fieldValue: '2' });
 
     await waitFor(() => {
-      expect(result.current).toEqual({ x: '1', y: '2' });
+      expect(result.current.data).toEqual({ x: '1', y: '2' });
     });
   });
 
@@ -121,47 +143,74 @@ describe('useServiceQuery', () => {
     // hook would resubscribe each time.
     const subscribeSpy = vi.spyOn(service.queries.getNothing, 'subscribe');
 
-    const { result, rerender } = renderHook(() => useServiceQuery(service, 'getNothing'));
+    const { result, rerender } = renderHook(() => useServiceQuery(service.queries.getNothing));
 
-    expect(result.current).toBeUndefined();
+    expect(result.current.data).toBeUndefined();
 
     const subscribeCallsAfterMount = subscribeSpy.mock.calls.length;
 
     rerender();
     rerender();
 
-    expect(result.current).toBeUndefined();
+    expect(result.current.data).toBeUndefined();
     expect(subscribeSpy.mock.calls.length).toBe(subscribeCallsAfterMount);
   });
 
-  it('uses emitted snapshots without deep-equal output filtering', async () => {
-    const subscribers: Array<(value: { k: string }) => void> = [];
-    const getRecordFields = Object.assign(
-      vi.fn(() => ({ k: 'v' })),
-      {
-        subscribe: vi.fn(
-          (_input: { entryId: string }, callback: (value: { k: string }) => void) => {
-            subscribers.push(callback);
-            return () => {};
-          }
-        ),
-      }
-    );
-    const service = { queries: { getRecordFields } };
+  it('re-renders on every emission (no hook-level dedup) and reflects the latest state', async () => {
+    const subscribers: Array<(queryState: QueryState<{ k: string }>) => void> = [];
+    const successState = (data: { k: string }): QueryState<{ k: string }> => ({
+      data,
+      error: undefined,
+      status: 'success',
+      loadStatus: 'idle',
+      isPending: false,
+      isSuccess: true,
+      isError: false,
+      isLoading: false,
+      isInitialLoading: false,
+      isRefreshing: false,
+    });
+    const getRecordFields = {
+      get: vi.fn(() => ({ k: 'v' })),
+      subscribe: vi.fn(
+        (
+          _input: { entryId: string },
+          callback: (queryState: QueryState<{ k: string }>) => void
+        ) => {
+          subscribers.push(callback);
+          return () => {};
+        }
+      ),
+    } as unknown as Query<{ entryId: string }, { k: string }>;
+
     let renderCount = 0;
     const { result } = renderHook(() => {
       renderCount++;
-      return useServiceQuery(service, 'getRecordFields', { entryId: 'a' }) as { k: string };
+      return useServiceQuery(getRecordFields, { entryId: 'a' });
     });
 
-    const firstRef = result.current;
-    const countAfterMount = renderCount;
+    // The first render is the synthetic `pending` seed built from `get()`.
+    expect(result.current.isPending).toBe(true);
+    expect(result.current.data).toEqual({ k: 'v' });
 
     await waitFor(() => expect(subscribers).toHaveLength(1));
-    subscribers[0]({ k: 'v' });
 
-    await waitFor(() => expect(renderCount).toBe(countAfterMount + 1));
-    expect(result.current).toEqual(firstRef);
-    expect(result.current).not.toBe(firstRef);
+    // The first real emission transitions the seed (`pending`) to `success`, so it re-renders.
+    const countBeforeSuccess = renderCount;
+    subscribers[0](successState({ k: 'v' }));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(renderCount).toBe(countBeforeSuccess + 1);
+
+    // The hook does not dedup: even a new-reference, deeply-equal emission re-renders. (The runtime
+    // dedups its own emissions; the hook deliberately trusts that rather than re-checking equality,
+    // which previously masked mutations of deeply-nested state.)
+    const countAfterSuccess = renderCount;
+    subscribers[0](successState({ k: 'v' }));
+    await waitFor(() => expect(renderCount).toBe(countAfterSuccess + 1));
+
+    // A genuinely different state is reflected too.
+    subscribers[0](successState({ k: 'changed' }));
+    await waitFor(() => expect(result.current.data).toEqual({ k: 'changed' }));
+    expect(renderCount).toBe(countAfterSuccess + 2);
   });
 });

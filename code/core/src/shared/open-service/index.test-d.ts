@@ -30,6 +30,14 @@ const openServiceDef = defineService({
         // @ts-expect-error queries only receive a read-only self handle
         ctx.self.setState(() => {});
 
+        expectTypeOf(ctx.self.queries.getValue.get).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(ctx.self.queries.getValue.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.getCount.get).returns.toEqualTypeOf<number>();
+        // @ts-expect-error getValue requires an entryId object, not a number
+        ctx.self.queries.getValue.get(1);
+
         return ctx.self.state.count;
       },
     },
@@ -50,6 +58,18 @@ const openServiceDef = defineService({
         }>();
         expectTypeOf(ctx.self.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
         await ctx.self.commands.preloadValue(input);
+
+        // `load` reads sibling queries with their inferred types too, synchronously via `.get()`
+        // or awaiting their own load via `.loaded()`.
+        expectTypeOf(ctx.self.queries.getValue.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.getCount.get()).toEqualTypeOf<number>();
+        expectTypeOf(ctx.self.queries.getValue.loaded).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(await ctx.self.queries.getValue.loaded(input)).toEqualTypeOf<string | null>();
+        expectTypeOf(await ctx.self.queries.getCount.loaded()).toEqualTypeOf<number>();
+        // @ts-expect-error getValue.loaded requires an entryId object, not a number
+        await ctx.self.queries.getValue.loaded(1);
 
         // @ts-expect-error preloadValue requires an entryId object
         await ctx.self.commands.preloadValue({ entryId: 1 });
@@ -84,6 +104,10 @@ const openServiceDef = defineService({
           expectTypeOf(state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
           state.valuesById[input.entryId] = 'ready';
         });
+
+        // Command handlers also see sibling queries and commands with their inferred types.
+        expectTypeOf(ctx.self.queries.getValue.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
       },
     },
   },
@@ -93,8 +117,8 @@ const openService = registerService(openServiceDef);
 
 describe('open-service type inference', () => {
   it('infers runtime query and command signatures from inline schemas', () => {
-    expectTypeOf(openService.queries.getCount).parameter(0).toEqualTypeOf<undefined>();
-    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
+    expectTypeOf(openService.queries.getCount.get).parameter(0).toEqualTypeOf<undefined>();
+    expectTypeOf(openService.queries.getCount.get).returns.toEqualTypeOf<number>();
     expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
 
     const voidService = registerService(
@@ -111,14 +135,14 @@ describe('open-service type inference', () => {
         commands: {},
       })
     );
-    expectTypeOf(voidService.queries.getAll).returns.toEqualTypeOf<number>();
-    expectTypeOf(voidService.queries.getAll()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll.get).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.getAll.get()).toEqualTypeOf<number>();
     expectTypeOf(voidService.queries.getAll.loaded()).toEqualTypeOf<Promise<number>>();
 
-    expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
+    expectTypeOf(openService.queries.getValue.get).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(openService.queries.getValue.get).returns.toEqualTypeOf<string | null>();
     expectTypeOf(openService.queries.getValue.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
@@ -134,7 +158,7 @@ describe('open-service type inference', () => {
 
   it('rejects invalid runtime call signatures', () => {
     // @ts-expect-error getValue requires an entryId string
-    openService.queries.getValue({});
+    openService.queries.getValue.get({});
 
     // @ts-expect-error increment requires a numeric payload
     openService.commands.increment(undefined);

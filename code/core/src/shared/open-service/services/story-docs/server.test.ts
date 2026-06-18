@@ -75,7 +75,7 @@ describe('story-docs open service', () => {
     });
 
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
-    expect(service.queries.getStoryDocs({ id: 'button' })).toEqual(payload);
+    expect(service.queries.getStoryDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 

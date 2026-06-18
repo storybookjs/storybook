@@ -44,7 +44,7 @@ describe('service validation', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
-      () => service.queries.getRecordFields({} as unknown as { entryId: string }),
+      () => service.queries.getRecordFields.get({} as unknown as { entryId: string }),
       dedent`
         Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":
         entryId: Invalid key: Expected "entryId" but received undefined
@@ -56,7 +56,7 @@ describe('service validation', () => {
     const service = registerService(createInvalidQueryOutputServiceDef());
 
     await expectValidationMessage(
-      () => service.queries.getBrokenValue(undefined),
+      () => service.queries.getBrokenValue.get(undefined),
       dedent`
         Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue":
         Invalid type: Expected string but received 42
@@ -134,7 +134,7 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getBrokenTree(undefined),
+      () => service.queries.getBrokenTree.get(undefined),
       dedent`
         Invalid output for query "internal-fixture/nested-query-output.getBrokenTree":
         items[0].name: Invalid type: Expected string but received 1
@@ -161,7 +161,7 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getGreeting({ name: 'x' }),
+      () => service.queries.getGreeting.get({ name: 'x' }),
       dedent`
         Invalid input for query "internal-fixture/zod-query-input.getGreeting":
         name: Name must be at least 2 characters
@@ -173,7 +173,7 @@ describe('service validation', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     expect(
-      service.queries.getRecordFields({
+      service.queries.getRecordFields.get({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
@@ -196,7 +196,7 @@ describe('service validation', () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(service.queries.getRecordFields({ entryId: 'entry-a' })).toEqual({
+    expect(service.queries.getRecordFields.get({ entryId: 'entry-a' })).toEqual({
       marker: 'match',
     });
   });

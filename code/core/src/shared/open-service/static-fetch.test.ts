@@ -207,8 +207,8 @@ describe('static loader in service runtime', () => {
     await runtime.queries.getEntry.loaded({ id: 'alpha' });
     await runtime.queries.getEntry.loaded({ id: 'beta' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('static-alpha');
-    expect(runtime.queries.getEntry({ id: 'beta' })).toBe('static-beta');
+    expect(runtime.queries.getEntry.get({ id: 'alpha' })).toBe('static-alpha');
+    expect(runtime.queries.getEntry.get({ id: 'beta' })).toBe('static-beta');
     expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/alpha.json', {
       serviceId: staticFetchServiceDef.id,
       queryName: 'getEntry',
@@ -272,6 +272,6 @@ describe('static loader in service runtime', () => {
 
     await runtime.queries.getEntry.loaded({ id: 'alpha' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('live');
+    expect(runtime.queries.getEntry.get({ id: 'alpha' })).toBe('live');
   });
 });

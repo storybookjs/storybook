@@ -31,13 +31,15 @@ describe('module-graph open service', () => {
     it('starts not-ready with empty indexes and zeroed counters', () => {
       const runtime = registerBareModuleGraph();
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({ value: 'booting' });
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
       });
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([[]]);
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
+        [],
+      ]);
     });
   });
 
@@ -51,14 +53,14 @@ describe('module-graph open service', () => {
         },
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'ready' });
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({ value: 'ready' });
       // The snapshot is the baseline, not a change, so the revision stays at 0.
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
       });
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
     });
@@ -73,10 +75,12 @@ describe('module-graph open service', () => {
         },
       });
 
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
+      expect(
+        runtime.queries.getGraphRevision.get({ storyFiles: ['./src/Button.stories.tsx'] })
+      ).toBe(0);
+      expect(runtime.queries.getGraphRevision.get({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(
         0
       );
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
     });
 
     it('replaces (not merges) the reverse index on a subsequent snapshot', async () => {
@@ -89,11 +93,11 @@ describe('module-graph open service', () => {
         storiesByFile: { './src/B.tsx': { './src/B.stories.tsx': 0 } },
       });
 
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/A.tsx'] })).toEqual([[]]);
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/B.tsx'] })).toEqual([
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/A.tsx'] })).toEqual([[]]);
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/B.tsx'] })).toEqual([
         [{ storyFile: './src/B.stories.tsx', depth: 0 }],
       ]);
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(0);
     });
   });
 
@@ -106,7 +110,7 @@ describe('module-graph open service', () => {
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({
         value: 'error',
         error: { message: 'graph build blew up', name: 'ModuleGraphFailureError' },
       });
@@ -121,7 +125,7 @@ describe('module-graph open service', () => {
         error: { message: 'adapter missing' },
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({
         value: 'unavailable',
         reason: 'builder does not support change detection',
         error: { message: 'adapter missing' },
@@ -142,7 +146,7 @@ describe('module-graph open service', () => {
         },
       });
 
-      const result = runtime.queries.getStoriesForFiles({
+      const result = runtime.queries.getStoriesForFiles.get({
         files: ['/repo/src/Button.tsx', '/repo/src/Unknown.tsx', '/repo/src/Card.tsx'],
       });
 
@@ -163,7 +167,7 @@ describe('module-graph open service', () => {
       });
 
       expect(
-        runtime.queries.getStoriesForFiles({
+        runtime.queries.getStoriesForFiles.get({
           files: ['/repo/src/../src/Button.tsx', './src/Button.tsx', 'src/Button.tsx'],
         })
       ).toEqual([
@@ -180,7 +184,7 @@ describe('module-graph open service', () => {
       });
 
       expect(
-        runtime.queries.getStoriesForFiles({
+        runtime.queries.getStoriesForFiles.get({
           files: ['C:\\repo\\src\\Button.tsx', '.\\src\\Button.tsx', 'src\\Button.tsx'],
         })
       ).toEqual([
@@ -192,7 +196,7 @@ describe('module-graph open service', () => {
 
     it('returns an empty array for an empty input list', () => {
       const runtime = registerBareModuleGraph();
-      expect(runtime.queries.getStoriesForFiles({ files: [] })).toEqual([]);
+      expect(runtime.queries.getStoriesForFiles.get({ files: [] })).toEqual([]);
     });
   });
 
@@ -212,12 +216,12 @@ describe('module-graph open service', () => {
       });
 
       // Snapshot left the revision at 0; this is the first real change.
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 1,
         storyFiles: ['./src/Button.stories.tsx'],
       });
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Icon.tsx'] })).toEqual([
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/Icon.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 2 }],
       ]);
     });
@@ -239,11 +243,13 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/Button.stories.tsx'],
       });
 
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Button.stories.tsx'] })).toBe(
-        1
-      );
+      expect(
+        runtime.queries.getGraphRevision.get({ storyFiles: ['./src/Button.stories.tsx'] })
+      ).toBe(1);
       // Card was not bumped, so its scoped revision stays at the seeded 0.
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(0);
+      expect(runtime.queries.getGraphRevision.get({ storyFiles: ['./src/Card.stories.tsx'] })).toBe(
+        0
+      );
     });
 
     it('replaces latest story changes with the newest revision payload', async () => {
@@ -258,11 +264,11 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./a.stories.tsx'],
       });
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 2,
         storyFiles: ['./a.stories.tsx'],
       });
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(2);
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(2);
     });
 
     it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
@@ -276,8 +282,8 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: [],
       });
 
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
       });
@@ -288,7 +294,7 @@ describe('module-graph open service', () => {
     it('returns the current graph revision paired with the latest bumped story files', async () => {
       const runtime = registerBareModuleGraph();
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
       });
@@ -298,7 +304,7 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 1,
         storyFiles: ['./src/Button.stories.tsx', './src/Card.stories.tsx'],
       });
@@ -316,7 +322,7 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./c.stories.tsx'],
       });
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 2,
         storyFiles: ['./c.stories.tsx'],
       });
@@ -334,7 +340,7 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: [],
       });
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 1,
         storyFiles: ['./src/Button.stories.tsx'],
       });
@@ -351,7 +357,7 @@ describe('module-graph open service', () => {
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
       });
 
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 1,
         storyFiles: [],
       });
@@ -360,8 +366,10 @@ describe('module-graph open service', () => {
     it('notifies subscribers when the latest change set updates', async () => {
       const runtime = registerBareModuleGraph();
       const seen: Array<{ revision: number; storyFiles: string[] }> = [];
-      runtime.queries.getLatestStoryChanges.subscribe(undefined, (value) => {
-        seen.push(value);
+      runtime.queries.getLatestStoryChanges.subscribe(undefined, ({ data }) => {
+        if (data) {
+          seen.push(data);
+        }
       });
 
       await runtime.commands._applyGraphUpdate({
@@ -392,13 +400,13 @@ describe('module-graph open service', () => {
       });
 
       // Watch-all sees the bump.
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(1);
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(1);
       // Watch nothing.
-      expect(runtime.queries.getGraphRevision({ storyFiles: [] })).toBe(0);
+      expect(runtime.queries.getGraphRevision.get({ storyFiles: [] })).toBe(0);
       // Unknown story contributes 0.
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['./src/Unknown.stories.tsx'] })).toBe(
-        0
-      );
+      expect(
+        runtime.queries.getGraphRevision.get({ storyFiles: ['./src/Unknown.stories.tsx'] })
+      ).toBe(0);
     });
 
     it('accepts absolute and relative scope paths', async () => {
@@ -413,11 +421,13 @@ describe('module-graph open service', () => {
 
       // The query handler normalizes scope paths against the service workingDir.
       expect(
-        runtime.queries.getGraphRevision({
+        runtime.queries.getGraphRevision.get({
           storyFiles: ['/repo/src/Button.stories.tsx'],
         })
       ).toBe(1);
-      expect(runtime.queries.getGraphRevision({ storyFiles: ['src/Button.stories.tsx'] })).toBe(1);
+      expect(runtime.queries.getGraphRevision.get({ storyFiles: ['src/Button.stories.tsx'] })).toBe(
+        1
+      );
     });
   });
 
@@ -425,8 +435,10 @@ describe('module-graph open service', () => {
     it('notifies subscribers when the graph changes', async () => {
       const runtime = registerBareModuleGraph();
       const seen: number[] = [];
-      runtime.queries.getGraphRevision.subscribe(undefined, (revision) => {
-        seen.push(revision);
+      runtime.queries.getGraphRevision.subscribe(undefined, ({ data }) => {
+        if (data !== undefined) {
+          seen.push(data);
+        }
       });
 
       await runtime.commands._applyGraphSnapshot({ storiesByFile: {} });
@@ -451,8 +463,10 @@ describe('module-graph open service', () => {
       const seen: number[] = [];
       runtime.queries.getGraphRevision.subscribe(
         { storyFiles: ['./src/Button.stories.tsx'] },
-        (revision) => {
-          seen.push(revision);
+        ({ data }) => {
+          if (data !== undefined) {
+            seen.push(data);
+          }
         }
       );
 
@@ -488,7 +502,7 @@ describe('module-graph open service', () => {
       });
 
       expect(channel.on).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED, expect.any(Function));
-      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({ value: 'booting' });
     });
 
     // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
@@ -522,15 +536,15 @@ describe('module-graph open service', () => {
         workingDir: '/repo',
       });
 
-      expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'booting' });
+      expect(runtime.queries.getStatus.get(undefined)).toEqual({ value: 'booting' });
 
       resolveChangeDetectionAdapter(adapter);
 
       await vi.waitFor(() => {
-        expect(runtime.queries.getStatus(undefined)).toEqual({ value: 'ready' });
+        expect(runtime.queries.getStatus.get(undefined)).toEqual({ value: 'ready' });
       });
 
-      expect(runtime.queries.getStoriesForFiles({ files: ['/repo/src/Button.tsx'] })).toEqual([
+      expect(runtime.queries.getStoriesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
         [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
       ]);
 
@@ -543,8 +557,8 @@ describe('module-graph open service', () => {
       // (no untargeted bump, no clobbered change set).
       invalidate!();
       await runtime.commands._waitForSettledEngine(undefined);
-      expect(runtime.queries.getGraphRevision(undefined)).toBe(0);
-      expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+      expect(runtime.queries.getGraphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
       });
@@ -552,7 +566,7 @@ describe('module-graph open service', () => {
       // A newly-indexed story is reconciled and reported as a targeted change.
       invalidate!();
       await vi.waitFor(() => {
-        expect(runtime.queries.getLatestStoryChanges(undefined)).toEqual({
+        expect(runtime.queries.getLatestStoryChanges.get(undefined)).toEqual({
           revision: 1,
           storyFiles: ['./src/Card.stories.tsx'],
         });

@@ -118,7 +118,7 @@ describe('server static builds', () => {
               const source = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
-              const record = source.queries.getRecordFields({
+              const record = source.queries.getRecordFields.get({
                 entryId: 'entry-a',
               });
 

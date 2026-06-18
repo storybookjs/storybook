@@ -256,7 +256,7 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
           const source = ctx.getService<MutableRecordLookupService>(
             mutableRecordLookupServiceDef.id
           );
-          const record = source.queries.getRecordFields({
+          const record = source.queries.getRecordFields.get({
             entryId: input.entryId,
           });
 

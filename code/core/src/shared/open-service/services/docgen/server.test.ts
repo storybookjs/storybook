@@ -77,7 +77,7 @@ describe('docgen open service', () => {
       const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toEqual(payload);
-      expect(service.queries.getDocgen({ id: 'button' })).toEqual(payload);
+      expect(service.queries.getDocgen.get({ id: 'button' })).toEqual(payload);
 
       expect(provider).toHaveBeenCalledTimes(1);
       expect(provider.mock.calls[0][0]).toEqual({ entry });
@@ -116,7 +116,7 @@ describe('docgen open service', () => {
       const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toBeUndefined();
-      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
+      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
     });
 
     it('throws when no entry exists for the component id', async () => {
@@ -184,7 +184,7 @@ describe('docgen open service', () => {
         provider: async () => makeDocgenPayload(),
       });
 
-      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
+      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
     });
 
     it('.loaded() drives the load body which calls extractDocgen', async () => {
@@ -403,7 +403,7 @@ describe('docgen open service', () => {
       });
 
       await service.commands.extractDocgen({ id: 'button' });
-      expect(service.queries.getDocgen({ id: 'button' })).toBeUndefined();
+      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
     });
   });
 });

@@ -103,7 +103,7 @@ describe('service registration', () => {
       })
     );
 
-    expect(() => service.queries.getValue(undefined)).toThrow(
+    expect(() => service.queries.getValue.get(undefined)).toThrow(
       'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
     );
   });
@@ -112,7 +112,7 @@ describe('service registration', () => {
     const sourceService = registerService(mutableRecordLookupServiceDef);
     const derivedService = registerService(createDerivedBooleanFromChildQueryServiceDef());
 
-    expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(false);
+    expect(derivedService.queries.isEntryMarked.get({ entryId: 'entry-a' })).toBe(false);
 
     await sourceService.commands.assignRecordField({
       entryId: 'entry-a',
@@ -120,7 +120,7 @@ describe('service registration', () => {
       fieldValue: 'match',
     });
 
-    expect(derivedService.queries.isEntryMarked({ entryId: 'entry-a' })).toBe(true);
+    expect(derivedService.queries.isEntryMarked.get({ entryId: 'entry-a' })).toBe(true);
   });
 
   it('allows server registration to provide handlers that are omitted from the definition', async () => {
@@ -142,7 +142,7 @@ describe('service registration', () => {
 
             await lookup.commands.assignRecordField(input);
 
-            const record = lookup.queries.getRecordFields({
+            const record = lookup.queries.getRecordFields.get({
               entryId: input.entryId,
             });
             ctx.self.setState((state) => {
@@ -154,17 +154,17 @@ describe('service registration', () => {
     });
 
     await service.commands.increment(undefined);
-    expect(service.queries.getCount(undefined)).toBe(1);
+    expect(service.queries.getCount.get(undefined)).toBe(1);
 
     await service.commands.assignFromLookup({
       entryId: 'entry-a',
       fieldKey: 'marker',
       fieldValue: 'match',
     });
-    expect(service.queries.getCount(undefined)).toBe(1);
+    expect(service.queries.getCount.get(undefined)).toBe(1);
 
     expect(
-      getService('internal-fixture/mutable-record-lookup').queries.getRecordFields({
+      getService('internal-fixture/mutable-record-lookup').queries.getRecordFields.get({
         entryId: 'entry-a',
       })
     ).toEqual({ marker: 'match' });
@@ -228,7 +228,7 @@ describe('service registration', () => {
     });
 
     expect(
-      getService('internal-fixture/registration-only-static-build').queries.getValue({
+      getService('internal-fixture/registration-only-static-build').queries.getValue.get({
         build: 'once',
       })
     ).toBe(null);
@@ -251,9 +251,9 @@ describe('service registration', () => {
     expect(Object.keys(descriptor.queries)).toEqual(['getValue']);
     expect(Object.keys(descriptor.commands)).toEqual(['setValue']);
 
-    expect(service.queries._getInternalValue(undefined)).toBe(0);
+    expect(service.queries._getInternalValue.get(undefined)).toBe(0);
     await service.commands._reset(undefined);
-    expect(service.queries.getValue(undefined)).toBe(0);
+    expect(service.queries.getValue.get(undefined)).toBe(0);
   });
 
   it('omits internal services from listServices while keeping runtime access', async () => {
@@ -283,7 +283,9 @@ describe('service registration', () => {
       commands: {},
     });
 
-    expect(getService('internal-fixture/hidden-service').queries.getSecret(undefined)).toBe(true);
+    expect(getService('internal-fixture/hidden-service').queries.getSecret.get(undefined)).toBe(
+      true
+    );
   });
 
   it('still builds static snapshots for internal queries', async () => {

@@ -28,9 +28,10 @@ import type {
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
+  StoryDocsProvider,
 } from 'storybook/internal/types';
 
-import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
@@ -347,21 +348,18 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const provider = await options.presets.apply<DocgenProvider>(
-      'experimental_docgenProvider',
-      /**
-       * Seed provider for the experimental_docgenProvider middleware chain.
-       *
-       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
-       * provider can either replace this with its own payload, return its own undefined, or call
-       * `nextDocgen` and merge with downstream output.
-       */
-      async () => undefined
-    );
+    const [docgenProvider, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+      options.presets.apply<StoryDocsProvider>(
+        'experimental_storyDocsProvider',
+        async () => undefined
+      ),
+    ]);
 
-    registerDocgenService({
+    registerDocgenServices({
       getIndex: () => storyIndexGenerator.getIndex(),
-      provider,
+      docgenProvider,
+      storyDocsProvider,
       workingDir: process.cwd(),
     });
   }

@@ -80,10 +80,9 @@ describe('story-docs open service', () => {
   });
 
   describe('module graph hot refresh', () => {
-    // Snippets come from the story file's own source, and a story-file save fires a
-    // story-index invalidation that bumps the revision with an empty change set. Already-extracted
-    // components must still re-extract so snippets stay fresh after the edit.
-    it('re-extracts already-extracted components on an empty-change-set revision bump', async () => {
+    // Snippets come from the story file's own source. Already-extracted components must re-extract
+    // when their story file changes so snippets stay fresh after the edit.
+    it('re-extracts already-extracted components when their story file changes', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       const service = registerStoryDocsService({
@@ -95,7 +94,10 @@ describe('story-docs open service', () => {
       expect(provider).toHaveBeenCalledTimes(1);
 
       const moduleGraph = getService<ModuleGraphService>('core/module-graph');
-      await moduleGraph.commands._bumpGraphRevision(undefined);
+      await moduleGraph.commands._applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
 
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
     });
@@ -108,9 +110,12 @@ describe('story-docs open service', () => {
       });
 
       const moduleGraph = getService<ModuleGraphService>('core/module-graph');
-      await moduleGraph.commands._bumpGraphRevision(undefined);
+      await moduleGraph.commands._applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
 
-      // Nothing was extracted, so the empty-change-set bump has no component to refresh.
+      // Nothing was extracted, so the story-file update has no component to refresh.
       await expect(vi.waitFor(() => expect(provider).toHaveBeenCalled())).rejects.toThrow();
     });
   });

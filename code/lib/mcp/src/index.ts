@@ -11,10 +11,19 @@ import serverInstructions from './instructions.md';
 export { serverInstructions as STORYBOOK_MCP_INSTRUCTIONS };
 
 // Export tools for reuse by addon-mcp
-export { addListAllDocumentationTool, LIST_TOOL_NAME } from './tools/list-all-documentation.ts';
-export { addGetDocumentationTool, GET_TOOL_NAME } from './tools/get-documentation.ts';
+export {
+	addListAllDocumentationTool,
+	getListAllDocumentationToolMetadata,
+	LIST_TOOL_NAME,
+} from './tools/list-all-documentation.ts';
+export {
+	addGetDocumentationTool,
+	getDocumentationToolMetadata,
+	GET_TOOL_NAME,
+} from './tools/get-documentation.ts';
 export {
 	addGetStoryDocumentationTool,
+	getStoryDocumentationToolMetadata,
 	GET_STORY_TOOL_NAME,
 } from './tools/get-documentation-for-story.ts';
 

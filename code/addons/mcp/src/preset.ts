@@ -6,17 +6,16 @@ import { getToolAvailability } from './utils/get-tool-availability.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import {
-	CompositionAuth,
 	STORYBOOK_MCP_PROXY_HEADER,
 	extractBearerToken,
 	isStorybookMcpProxyRequest as hasStorybookMcpProxyHeader,
-	type ComposedRef,
 	type ManifestProvider,
 } from './auth/index.ts';
+import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
 import { logger } from 'storybook/internal/node-logger';
-import type { Source } from '@storybook/mcp';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
 
 const STORYBOOK_MCP_PROXY_HEADER_KEY = STORYBOOK_MCP_PROXY_HEADER.toLowerCase();
 
@@ -41,24 +40,16 @@ export const experimental_devServer: PresetPropertyFn<
 	const origin = `http://localhost:${options.port}`;
 	const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
-	// Get composed Storybook refs from config
-	const refs = await getRefsFromConfig(options);
-	const compositionAuth = new CompositionAuth();
-
-	// Build sources and manifest provider
-	let sources: Source[] | undefined;
+	const { refs, compositionAuth, sources } = await resolveCompositionSources(options);
 	let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
 
 	if (refs.length > 0) {
-		logger.info(`Initializing composition with ${refs.length} remote Storybook(s)`);
-		await compositionAuth.initialize(refs);
+		logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
 		if (compositionAuth.requiresAuth) {
 			logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
 		}
 
-		// Build sources array (local + refs)
-		sources = compositionAuth.buildSources();
-		logger.info(`Sources: ${sources.map((s) => s.id).join(', ')}`);
+		logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
 
 		// Create manifest provider that handles multi-source
 		createManifestProvider = (req) =>
@@ -216,6 +207,13 @@ export const experimental_devServer: PresetPropertyFn<
 	return app;
 };
 
+export const experimental_storybookAi = async (
+	existingMetadata: StorybookAiMetadata | undefined,
+	options: Parameters<typeof buildStorybookAiMetadata>[0],
+): Promise<StorybookAiMetadata> => {
+	return buildStorybookAiMetadata(options, existingMetadata);
+};
+
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
 	return {
 		...existingFeatures,
@@ -227,30 +225,4 @@ function isStorybookMcpProxyHttpRequest(req: IncomingMessage): boolean {
 	const headerValue =
 		req.headers[STORYBOOK_MCP_PROXY_HEADER_KEY] ?? req.headers[STORYBOOK_MCP_PROXY_HEADER];
 	return hasStorybookMcpProxyHeader(headerValue);
-}
-
-/**
- * Get composed Storybook refs from Storybook config.
- * See: https://storybook.js.org/docs/sharing/storybook-composition
- */
-async function getRefsFromConfig(options: any): Promise<ComposedRef[]> {
-	try {
-		// Get refs from Storybook presets
-		const refs = await options.presets.apply('refs', {});
-
-		if (!refs || typeof refs !== 'object') {
-			return [];
-		}
-
-		// Convert refs object to array, using the config key as the stable ID
-		return Object.entries(refs)
-			.map(([key, value]: [string, any]) => ({
-				id: key,
-				title: value.title || key,
-				url: value.url,
-			}))
-			.filter((ref) => ref.url); // Only include refs with URLs
-	} catch {
-		return [];
-	}
 }

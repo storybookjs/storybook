@@ -12,7 +12,9 @@
  * mirror them here; keep them in sync with `core/module-graph` if it changes.
  */
 
+import { importModule } from 'storybook/internal/common';
 import type { Query } from 'storybook/internal/core-server';
+import type { Builder, CoreConfig, Options } from 'storybook/internal/types';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
 
@@ -71,6 +73,24 @@ async function probe(): Promise<GetServiceFn | null> {
  */
 export async function isModuleGraphSupported(): Promise<boolean> {
 	return (await getModuleGraphService()) !== undefined;
+}
+
+export async function isModuleGraphSupportedByBuilder(
+	options: Pick<Options, 'presets'>,
+): Promise<boolean> {
+	const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
+	const builder = core?.builder;
+	const builderName = typeof builder === 'string' ? builder : builder?.name;
+	if (!builderName) {
+		return false;
+	}
+
+	try {
+		const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
+		return typeof previewBuilder.changeDetectionAdapter === 'function';
+	} catch {
+		return false;
+	}
 }
 
 /**

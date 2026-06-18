@@ -2,17 +2,7 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import { addPreviewStoriesTool } from './tools/preview-stories.ts';
-import { addGetChangedStoriesTool } from './tools/get-changed-stories.ts';
-import { addGetStoriesByComponentTool } from './tools/get-stories-by-component.ts';
-import { addDisplayReviewTool } from './tools/display-review.ts';
-import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
-import {
-	addListAllDocumentationTool,
-	addGetDocumentationTool,
-	addGetStoryDocumentationTool,
-	type Source,
-} from '@storybook/mcp';
+import type { Source } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
@@ -20,11 +10,11 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getToolAvailability } from './utils/get-tool-availability.ts';
-import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -80,34 +70,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 		});
 	}
 
-	// Register dev addon tools
-	await addPreviewStoriesTool(server);
-	await addGetUIBuildingInstructionsTool(server);
-
-	if (availability.changeDetectionEnabled) {
-		await addGetChangedStoriesTool(server);
-	}
-
-	// get-stories-by-component only needs the module graph, not the status pipeline.
-	if (availability.moduleGraphSupported) {
-		await addGetStoriesByComponentTool(server);
-	}
-
-	if (availability.reviewEnabled) {
-		await addDisplayReviewTool(server);
-	}
-
-	// Register test addon tools
-	await addRunStoryTestsTool(server, { a11yEnabled });
-
-	// Only register the additional tools if the component manifest feature is enabled
-	if (availability.docsEnabled) {
-		logger.info('Experimental components manifest feature detected - registering component tools');
-		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
-		await addListAllDocumentationTool(server, contextAwareEnabled);
-		await addGetDocumentationTool(server, contextAwareEnabled, { multiSource });
-		await addGetStoryDocumentationTool(server, contextAwareEnabled, { multiSource });
-	}
+	await registerAddonMcpTools(server, { availability, multiSource });
 
 	transport = new HttpTransport(server, { path: null });
 

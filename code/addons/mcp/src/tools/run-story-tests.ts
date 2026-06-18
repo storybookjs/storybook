@@ -32,7 +32,7 @@ export async function getAddonVitestConstants() {
 	}
 }
 
-const RunStoryTestsInput = v.object({
+export const RunStoryTestsInput = v.object({
 	stories: v.optional(
 		v.pipe(
 			StoryInputArray,
@@ -56,6 +56,29 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 		true,
 	),
 });
+
+export function getRunStoryTestsToolDescription(a11yEnabled: boolean) {
+	return (
+		`Run story tests.
+Provide stories for focused runs (faster while iterating),
+or omit stories to run all tests for full-project verification.
+Use this continuously to monitor test results as you work on your UI components and stories.
+Results will include passing/failing status` +
+		(a11yEnabled
+			? `, and accessibility violation reports.
+For visual/design accessibility violations (for example color contrast), ask the user before changing styles.`
+			: '.')
+	);
+}
+
+export function getRunStoryTestsToolMetadata({ a11yEnabled }: { a11yEnabled: boolean }) {
+	return {
+		name: RUN_STORY_TESTS_TOOL_NAME,
+		title: 'Storybook Tests',
+		description: getRunStoryTestsToolDescription(a11yEnabled),
+		schema: RunStoryTestsInput,
+	};
+}
 
 /**
  * Creates a queue that ensures concurrent calls are executed in sequence.
@@ -92,32 +115,20 @@ function createAsyncQueue() {
 export async function addRunStoryTestsTool(
 	server: McpServer<any, AddonContext>,
 	{ a11yEnabled }: { a11yEnabled: boolean },
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.test ?? true,
 ) {
 	const addonVitestConstants = await getAddonVitestConstants();
 	const testRunQueue = createAsyncQueue();
 
-	const description =
-		`Run story tests.
-Provide stories for focused runs (faster while iterating),
-or omit stories to run all tests for full-project verification.
-Use this continuously to monitor test results as you work on your UI components and stories.
-Results will include passing/failing status` +
-		(a11yEnabled
-			? `, and accessibility violation reports.
-For visual/design accessibility violations (for example color contrast), ask the user before changing styles.`
-			: '.');
-
 	server.tool(
 		{
-			name: RUN_STORY_TESTS_TOOL_NAME,
-			title: 'Storybook Tests',
-			description,
-			schema: RunStoryTestsInput,
+			...getRunStoryTestsToolMetadata({ a11yEnabled }),
 			enabled: () => {
 				if (!addonVitestConstants) {
 					return false;
 				}
-				return server.ctx.custom?.toolsets?.test ?? true;
+				return typeof enabled === 'function' ? enabled() : enabled;
 			},
 		},
 		async (input: v.InferInput<typeof RunStoryTestsInput>) => {

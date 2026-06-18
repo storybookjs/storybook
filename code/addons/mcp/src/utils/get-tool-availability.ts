@@ -30,6 +30,12 @@ export interface GetToolAvailabilityOptions {
 	 * risking a different snapshot than the caller already resolved.
 	 */
 	features?: { changeDetection?: boolean } | undefined;
+	/**
+	 * Pre-resolved module-graph support. The live MCP server should omit this so it
+	 * probes the registered open service. Serverless metadata can pass a builder-level
+	 * capability check because no dev-server service exists in that process.
+	 */
+	moduleGraphSupported?: boolean | undefined;
 }
 
 /**
@@ -44,7 +50,7 @@ export interface GetToolAvailabilityOptions {
  */
 export async function getToolAvailability(
 	options: Options,
-	{ features }: GetToolAvailabilityOptions = {},
+	{ features, moduleGraphSupported: moduleGraphSupportedOverride }: GetToolAvailabilityOptions = {},
 ): Promise<ToolAvailability> {
 	const resolvedFeatures =
 		features ??
@@ -52,7 +58,7 @@ export async function getToolAvailability(
 
 	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
 		await Promise.all([
-			isModuleGraphSupported(),
+			moduleGraphSupportedOverride ?? isModuleGraphSupported(),
 			getReviewStatus(options, { features: resolvedFeatures }),
 			getManifestStatus(options),
 			getAddonVitestConstants(),

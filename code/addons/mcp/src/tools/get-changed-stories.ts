@@ -12,6 +12,8 @@ import {
 } from '../utils/detect-unreachable-changes.ts';
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
 
+export const GET_CHANGED_STORIES_TOOL_DESCRIPTION = `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).`;
+
 const CHANGE_DETECTION_TYPE = 'storybook/change-detection';
 const INCLUDED_STATUS_VALUES = new Set<StatusValue>([
 	'status-value:new',
@@ -55,13 +57,23 @@ function statusPriority(statusValue: StatusValue): number {
 	return 2;
 }
 
-export async function addGetChangedStoriesTool(server: McpServer<any, AddonContext>) {
+export function getChangedStoriesToolMetadata() {
+	return {
+		name: GET_CHANGED_STORIES_TOOL_NAME,
+		title: 'Get changed stories metadata',
+		description: GET_CHANGED_STORIES_TOOL_DESCRIPTION,
+	};
+}
+
+export async function addGetChangedStoriesTool(
+	server: McpServer<any, AddonContext>,
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.dev ?? true,
+) {
 	server.tool(
 		{
-			name: GET_CHANGED_STORIES_TOOL_NAME,
-			title: 'Get changed stories metadata',
-			description: `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).`,
-			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
+			...getChangedStoriesToolMetadata(),
+			enabled,
 		},
 		async () => {
 			try {

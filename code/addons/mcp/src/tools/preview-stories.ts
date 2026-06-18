@@ -13,8 +13,10 @@ import fs from 'node:fs/promises';
 import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
+export const PREVIEW_STORIES_TOOL_DESCRIPTION = `Use this tool to get one or more Storybook preview URLs.
+Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.`;
 
-const PreviewStoriesInput = v.object({
+export const PreviewStoriesInput = v.object({
 	stories: v.pipe(
 		StoryInputArray,
 		v.description(
@@ -26,7 +28,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
 	),
 });
 
-const PreviewStoriesOutput = v.object({
+export const PreviewStoriesOutput = v.object({
 	stories: v.array(
 		v.union([
 			v.object({
@@ -47,10 +49,25 @@ const PreviewStoriesOutput = v.object({
 	),
 });
 
-type PreviewStoriesInput = v.InferOutput<typeof PreviewStoriesInput>;
+export type PreviewStoriesInput = v.InferOutput<typeof PreviewStoriesInput>;
 export type PreviewStoriesOutput = v.InferOutput<typeof PreviewStoriesOutput>;
 
-export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>) {
+export function getPreviewStoriesToolMetadata() {
+	return {
+		name: PREVIEW_STORIES_TOOL_NAME,
+		title: 'Get story preview URLs',
+		description: PREVIEW_STORIES_TOOL_DESCRIPTION,
+		schema: PreviewStoriesInput,
+		outputSchema: PreviewStoriesOutput,
+		_meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } },
+	};
+}
+
+export async function addPreviewStoriesTool(
+	server: McpServer<any, AddonContext>,
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.dev ?? true,
+) {
 	const previewStoryAppScript = await fs.readFile(
 		url.fileURLToPath(
 			import.meta.resolve('@storybook/addon-mcp/internal/preview-stories-app-script'),
@@ -95,14 +112,8 @@ export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>
 
 	server.tool(
 		{
-			name: PREVIEW_STORIES_TOOL_NAME,
-			title: 'Get story preview URLs',
-			description: `Use this tool to get one or more Storybook preview URLs.
-Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.`,
-			schema: PreviewStoriesInput,
-			outputSchema: PreviewStoriesOutput,
-			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
-			_meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } },
+			...getPreviewStoriesToolMetadata(),
+			enabled,
 		},
 		async (input) => {
 			try {

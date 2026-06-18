@@ -337,6 +337,7 @@ export default {
     'experimental_useStatusStore',
     'experimental_useTestProviderStore',
     'experimental_useUniversalStore',
+    'getService',
     'internal_checklistStore',
     'internal_fullStatusStore',
     'internal_fullTestProviderStore',
@@ -662,6 +663,8 @@ export default {
   ],
   'storybook/internal/manager-errors': [
     'Category',
+    'OpenServiceStaticSnapshotInvalidError',
+    'OpenServiceStaticSnapshotLoadError',
     'ProviderDoesNotExtendBaseProviderError',
     'StatusTypeIdMismatchError',
     'UncaughtManagerError',

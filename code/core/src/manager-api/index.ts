@@ -34,6 +34,7 @@ export {
 
 /** OPEN SERVICE API (manager relay hub + React hooks; types on `storybook/open-service`) */
 export {
+  getService,
   registerService,
   useServiceCommand,
   useServiceQuery,

@@ -684,7 +684,6 @@ export default {
     'getMatch',
     'parsePath',
     'queryFromLocation',
-    'resolvePathQueryParam',
     'stringifyQuery',
     'useNavigate',
   ],

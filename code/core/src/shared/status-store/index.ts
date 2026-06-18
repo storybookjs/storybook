@@ -72,7 +72,7 @@ export interface Status {
 }
 
 export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
-export const REVIEW_STATUS_TYPE_ID = 'storybook/addon-review';
+export const REVIEW_STATUS_TYPE_ID = 'storybook/review';
 
 /**
  * Status types that are quality/meta signals rather than test results, so they're excluded from the

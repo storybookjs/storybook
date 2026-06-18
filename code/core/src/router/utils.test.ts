@@ -1,13 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  DEEPLY_EQUAL,
-  buildArgsParam,
-  deepDiff,
-  getMatch,
-  parsePath,
-  resolvePathQueryParam,
-} from './utils.ts';
+import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
@@ -251,17 +244,5 @@ describe('buildArgsParam', () => {
       );
       expect(param).toEqual('obj.nested[1].three:3');
     });
-  });
-});
-
-describe('resolvePathQueryParam', () => {
-  it('returns the sole path query param', () => {
-    expect(resolvePathQueryParam('?path=/review/')).toBe('/review/');
-  });
-
-  it('prefers story paths when duplicate path params exist', () => {
-    expect(resolvePathQueryParam('?path=/story/button-component--sizes&path=/review/=')).toBe(
-      '/story/button-component--sizes'
-    );
   });
 });

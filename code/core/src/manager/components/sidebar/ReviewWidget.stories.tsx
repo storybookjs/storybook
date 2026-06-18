@@ -9,7 +9,7 @@ import { expect, fn, userEvent } from 'storybook/test';
 
 import { ReviewWidget } from './ReviewWidget.tsx';
 
-const REVIEW_ADDON_ID = 'storybook/addon-review';
+const REVIEW_ADDON_ID = 'storybook/review';
 const DISPLAY_REVIEW = `${REVIEW_ADDON_ID}/display-review`;
 const REQUEST_REVIEW = `${REVIEW_ADDON_ID}/request-review`;
 const DISMISS_REVIEW = `${REVIEW_ADDON_ID}/dismiss-review`;

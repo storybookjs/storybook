@@ -119,6 +119,35 @@ describe('initial state', () => {
         rightPanelWidth: 0,
       });
     });
+
+    it('keeps layout params out of customQueryParams, passing through only custom params', () => {
+      const navigate = vi.fn();
+      const location = {
+        search:
+          '?' +
+          new URLSearchParams({
+            // every layout key consumed by the manager (the full LAYOUT_QUERY_PARAM_KEYS set)
+            full: '1',
+            panel: 'right',
+            nav: '0',
+            shortcuts: '0',
+            addonPanel: 'controls',
+            tabs: '0',
+            path: '/story/button--primary',
+            // genuinely custom params that must survive
+            collection: '2',
+            tags: 'a11y',
+          }).toString(),
+      };
+
+      const {
+        state: { customQueryParams },
+      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+
+      // Layout params (full/panel/nav/...) are consumed by the manager and must not leak into the
+      // params forwarded to the preview iframe; only genuinely custom params remain.
+      expect(customQueryParams).toEqual({ collection: '2', tags: 'a11y' });
+    });
   });
 });
 

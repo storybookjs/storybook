@@ -5,30 +5,26 @@ import { keyframes, styled } from 'storybook/theming';
 
 type ThemeColor = keyof StorybookTheme['color'] | keyof StorybookTheme['fgColor'];
 
-const getColor = (theme: StorybookTheme, color?: ThemeColor) => {
-  if (color && color in theme.fgColor) {
-    return theme.fgColor[color as keyof typeof theme.fgColor];
-  }
-  if (color && color in theme.color) {
-    return theme.color[color as keyof typeof theme.color];
-  }
-};
+// A ThemeColor may live in any of theme.color / fgColor / bgColor / borderColor, which don't share
+// a key space, so each lookup is a presence check rather than a direct index. Returning undefined
+// when absent is intentional: it lets the CSS property fall back to inherit/default.
+const resolveThemeColor = (
+  colors: Partial<Record<string, string>>,
+  key?: ThemeColor
+): string | undefined => (key && key in colors ? colors[key] : undefined);
 
-const getBorderColor = (theme: StorybookTheme, color?: ThemeColor, outlineColor?: ThemeColor) => {
-  if (color && color in theme.borderColor) {
-    return theme.borderColor[color as keyof typeof theme.borderColor];
-  }
-  if (outlineColor && outlineColor in theme.color) {
-    return theme.color[outlineColor as keyof typeof theme.color];
-  }
-};
+const getColor = (theme: StorybookTheme, color?: ThemeColor): string | undefined =>
+  resolveThemeColor(theme.fgColor, color) ?? resolveThemeColor(theme.color, color);
 
-const getBackgroundColor = (theme: StorybookTheme, color?: ThemeColor) => {
-  if (color && color in theme.bgColor) {
-    return theme.bgColor[color as keyof typeof theme.bgColor];
-  }
-  return theme.background.content;
-};
+const getBorderColor = (
+  theme: StorybookTheme,
+  color?: ThemeColor,
+  outlineColor?: ThemeColor
+): string | undefined =>
+  resolveThemeColor(theme.borderColor, color) ?? resolveThemeColor(theme.color, outlineColor);
+
+const getBackgroundColor = (theme: StorybookTheme, color?: ThemeColor): string =>
+  resolveThemeColor(theme.bgColor, color) ?? theme.background.content;
 
 const fadeInOut = keyframes({
   '0%': { opacity: 0 },

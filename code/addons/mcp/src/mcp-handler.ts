@@ -9,7 +9,10 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
-import { getToolAvailability } from './utils/get-tool-availability.ts';
+import {
+	getEffectiveToolAvailability,
+	getToolAvailability,
+} from './utils/get-tool-availability.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
@@ -32,7 +35,8 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	// Shares one source of truth with the browser landing page (see get-tool-availability.ts)
 	// so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
 	// already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
-	const availability = await getToolAvailability(options, { features });
+	const rawAvailability = await getToolAvailability(options, { features });
+	const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
 	a11yEnabled = availability.a11yEnabled;
 
 	let server: McpServer<any, AddonContext>;

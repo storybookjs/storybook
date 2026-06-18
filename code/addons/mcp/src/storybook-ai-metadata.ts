@@ -10,7 +10,10 @@ import {
 	type StorybookAiLocalTool,
 	type ToolMetadata,
 } from './tools/tool-registry.ts';
-import { getToolAvailability } from './utils/get-tool-availability.ts';
+import {
+	getEffectiveToolAvailability,
+	getToolAvailability,
+} from './utils/get-tool-availability.ts';
 import { isModuleGraphSupportedByBuilder } from './utils/module-graph.ts';
 
 type StorybookAiMetadataPresetOptions = Options & AddonOptionsInput;
@@ -55,8 +58,8 @@ export async function buildStorybookAiMetadata(
 	const multiSource = docsToolsetEnabled
 		? (await resolveServerlessCompositionSources(options)).multiSource
 		: false;
-	const docsEnabled = docsToolsetEnabled && (availability.docsEnabled || multiSource);
-	const registryAvailability = { ...availability, docsEnabled };
+	const registryAvailability = getEffectiveToolAvailability(availability, { multiSource });
+	const docsEnabled = docsToolsetEnabled && registryAvailability.docsEnabled;
 	const registryContext = { availability: registryAvailability, multiSource, toolsets };
 	const toolMetadata = getAddonToolMetadata(registryContext);
 	const localTools: Record<string, StorybookAiLocalTool> = {

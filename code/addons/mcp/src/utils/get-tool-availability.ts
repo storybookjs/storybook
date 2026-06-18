@@ -38,6 +38,22 @@ export interface GetToolAvailabilityOptions {
 	moduleGraphSupported?: boolean | undefined;
 }
 
+export function getEffectiveToolAvailability(
+	availability: ToolAvailability,
+	{ multiSource = false }: { multiSource?: boolean } = {},
+): ToolAvailability {
+	if (!multiSource) {
+		return availability;
+	}
+
+	return {
+		...availability,
+		docsEnabled: true,
+		docsHasManifests: true,
+		docsFeatureEnabled: true,
+	};
+}
+
 /**
  * Single source of truth for the runtime gates that decide whether each tool is
  * registered (and how the landing page badges it).

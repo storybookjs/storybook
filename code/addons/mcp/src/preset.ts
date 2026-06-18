@@ -2,7 +2,10 @@ import { mcpServerHandler } from './mcp-handler.ts';
 import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
-import { getToolAvailability } from './utils/get-tool-availability.ts';
+import {
+	getEffectiveToolAvailability,
+	getToolAvailability,
+} from './utils/get-tool-availability.ts';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import {
@@ -101,6 +104,7 @@ export const experimental_devServer: PresetPropertyFn<
 
 	// Same gates the MCP server uses to register these tools, so the page can't
 	// claim a tool is available when it isn't (and vice versa).
+	const multiSource = sources?.some((source) => !!source.url) ?? false;
 	const {
 		moduleGraphSupported,
 		changeDetectionEnabled,
@@ -110,7 +114,7 @@ export const experimental_devServer: PresetPropertyFn<
 		docsFeatureEnabled,
 		testSupported,
 		a11yEnabled,
-	} = await getToolAvailability(options);
+	} = getEffectiveToolAvailability(await getToolAvailability(options), { multiSource });
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
 	const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);

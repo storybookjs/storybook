@@ -17,7 +17,10 @@ import {
 	RUN_STORY_TESTS_TOOL_NAME,
 } from './tools/tool-names.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
-import type { ToolAvailability } from './utils/get-tool-availability.ts';
+import {
+	getEffectiveToolAvailability,
+	type ToolAvailability,
+} from './utils/get-tool-availability.ts';
 
 vi.mock('./utils/module-graph.ts', () => ({
 	isModuleGraphSupported: vi.fn(),
@@ -281,10 +284,24 @@ describe('buildStorybookAiMetadata', () => {
 		});
 
 		const metadata = await buildStorybookAiMetadata(options);
+		const liveTools = await listRegisteredTools(options, {
+			availability: getEffectiveToolAvailability(
+				createAvailability({
+					docsEnabled: false,
+					docsHasManifests: false,
+				}),
+				{ multiSource: true },
+			),
+			multiSource: true,
+		});
 
 		const getDocumentationTool = metadata.tools.find((tool) => tool.name === GET_TOOL_NAME);
 		expect(getDocumentationTool?.inputSchema.properties).toHaveProperty('storybookId');
 		expect(metadata.instructions).toContain('## Documentation Workflow');
+		expect(metadata.tools.map((tool) => tool.name)).toEqual(
+			liveTools.map((tool: { name: string }) => tool.name),
+		);
+		expect(simplifyTools(metadata.tools)).toEqual(simplifyTools(liveTools));
 	});
 
 	it('does not run registration side effects for statically disabled toolsets', async () => {

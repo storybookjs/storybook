@@ -63,7 +63,8 @@ Internal tests and implementation code may import from the individual modules di
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
-- [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
+- [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
+- [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
@@ -226,6 +227,8 @@ handler: (input, ctx) => {
 };
 ```
 
+`getService` is a cheap synchronous registry lookup and always returns the same instance for a given id for the lifetime of the registration. Do not wrap it in `useMemo` — call it directly in render (or in a handler/effect when that is clearer). Memoize inputs and selectors passed to `useServiceQuery` / `useQuerySubscription` instead; those are what drive re-subscription.
+
 Guidelines:
 
 - Import the source definition **type-only** when it is only needed for the generic parameter
@@ -312,11 +315,11 @@ When any runtime registers a service definition:
 
 ## In-flight Load Registry
 
-`service-runtime.ts` owns one process-global in-flight load registry keyed by `${serviceId}::${queryName}::${stableHash(parsedInput)}`. The hash uses stable JSON (sorted keys) computed from the post-validation parsed input, so inputs are expected to be JSON-safe. Two concurrent callers for the same key share one load; once it settles, the entry is removed so future calls can refire it. There is no caller-facing invalidation API.
+`query-runtime.ts` owns one process-global in-flight load registry keyed by `${serviceId}::${queryName}::${stableHash(parsedInput)}`. The hash uses stable JSON (sorted keys) computed from the post-validation parsed input, so inputs are expected to be JSON-safe. Two concurrent callers for the same key share one load; once it settles, the entry is removed so future calls can refire it. There is no caller-facing invalidation API.
 
 ## `.loaded()` Drain
 
-`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler transitively reads are fully populated. Implementation lives in `runLoaded` in [service-runtime.ts](./service-runtime.ts).
+`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler transitively reads are fully populated. Implementation lives in `runLoaded` in [query-runtime.ts](./query-runtime.ts).
 
 ### Algorithm
 
@@ -403,7 +406,7 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 
 ## Subscription Flow
 
-Subscriptions are implemented in [service-runtime.ts](./service-runtime.ts):
+Subscriptions are implemented in [query-runtime.ts](./query-runtime.ts):
 
 1. `subscribe(input, callback)` (or `subscribe(input, selector, callback)`) runs synchronously and emits the first `QueryState` **before it returns** — there is no microtask deferral. Callers that need to react only to *later* changes must ignore the first synchronous emission themselves.
 2. Setup validates the input synchronously. If the query has a `load`, it is run inside its own `effect()` so the external signals it reads synchronously are tracked: when they change, the effect re-runs and the load re-fires (see "Load"). Writes from a superseded run are dropped (each run carries an epoch; `setState` is gated on it), so a slow stale load can't clobber a newer result. The effect is torn down with the subscription.
@@ -808,7 +811,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 
 ## Agent Notes
 
-- If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
+- If you need to change runtime assembly (state, commands, static loader), start in [service-runtime.ts](./service-runtime.ts); for query reads, loads, the drain, or subscriptions, start in [query-runtime.ts](./query-runtime.ts).
 - If you need to change registration or the registry (any runtime), start in [service-registry.ts](./service-registry.ts).
 - If you need to change static snapshot building or writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).

@@ -2,7 +2,6 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
 
-import type { StoryDocsService } from 'storybook/open-service';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import { selectSnippetForStory } from './snippet.ts';
@@ -21,9 +20,9 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     return;
   }
 
-  let service: StoryDocsService;
+  let service;
   try {
-    service = getService<StoryDocsService>('core/story-docs');
+    service = getService('core/story-docs');
   } catch {
     return;
   }

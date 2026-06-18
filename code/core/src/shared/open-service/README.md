@@ -245,6 +245,33 @@ Guidelines:
 The exported `ServiceInstanceOf<typeof sourceDef>` alias is available for named handle types when
 a service is referenced from many call sites.
 
+### Core service typing
+
+Core services under `services/` are typed at the module-level `getService` entrypoints
+(`storybook/manager-api`, `storybook/preview-api`, and the server import). Known ids such as
+`getService('core/docgen')` resolve to the correct instance type without an explicit generic;
+unknown ids still fall back to `RuntimeService`, and addon services can keep using
+`getService<MyService>('my-addon/service')`.
+
+Each core service registers in a runtime-specific file next to its definition:
+
+- `services/<name>/manager.tsx` — manager registration
+- `services/<name>/preview.ts` — preview registration
+- `services/<name>/server.ts` — dev-server registration
+
+When you add a new core service or register an existing one in a new runtime, you must:
+
+1. Add or update the registrar file for that runtime (`manager.tsx`, `preview.ts`, or `server.ts`).
+2. Add the service definition to the matching list in `core-service-types.ts`
+   (`managerCoreServiceDefs`, `previewCoreServiceDefs`, or `serverCoreServiceDefs`).
+
+Those def lists are the single source of truth: the `getService` overload types
+(`ManagerCoreServices`, `PreviewCoreServices`, `ServerCoreServices`) derive their ids from each
+definition, so there is no separate id list to keep in sync. A unit test in
+`core-service-types.test.ts` compares the lists to the registrar files and fails with actionable
+guidance when they drift apart. Handler-context `ctx.getService(...)` is unchanged and still requires
+an explicit generic when full typing is needed.
+
 ### Validation
 
 Every query and command must declare:

@@ -3,7 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
 import { type MutableRecordLookupService, mutableRecordLookupServiceDef } from './fixtures.ts';
-import { registerService } from './server.ts';
+import { getService, registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
 const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -161,5 +161,29 @@ describe('open-service registration types', () => {
         commands: {},
       })
     );
+  });
+});
+
+describe('typed core getService (server)', () => {
+  it('types known core service ids without an explicit generic', () => {
+    expectTypeOf(getService('core/docgen').queries.getDocgen.get).parameter(0).toEqualTypeOf<{
+      id: string;
+    }>();
+    expectTypeOf(getService('core/story-docs').queries.getStoryDocs.get)
+      .parameter(0)
+      .toEqualTypeOf<{
+        id: string;
+      }>();
+    expectTypeOf(
+      getService('core/module-graph').queries.getLatestStoryChanges.subscribe
+    ).toBeFunction();
+  });
+
+  it('falls back to RuntimeService for unknown ids', () => {
+    expectTypeOf(getService('addon-docs/mdx')).toEqualTypeOf<RuntimeService>();
+  });
+
+  it('honors an explicit generic over a known core id', () => {
+    expectTypeOf(getService<RuntimeService>('core/docgen')).toEqualTypeOf<RuntimeService>();
   });
 });

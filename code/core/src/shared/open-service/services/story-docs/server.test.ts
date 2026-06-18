@@ -1,26 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { registerDocgenServices } from '../docgen/server.ts';
 import { clearRegistry, getService } from '../../server.ts';
-import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
+import { registerStoryDocsService } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
-
-/** Registers only the `core/story-docs` service (the docgen service is left out of these tests). */
-function registerStoryDocsService(options: {
-  getIndex: () => Promise<StoryIndex>;
-  provider: StoryDocsProvider;
-}) {
-  const { storyDocs } = registerDocgenServices({
-    getIndex: options.getIndex,
-    storyDocsProvider: options.provider,
-  });
-  if (!storyDocs) {
-    throw new Error('story-docs service was not registered');
-  }
-  return storyDocs;
-}
 
 beforeEach(() => {
   registerTestModuleGraphService();
@@ -71,7 +55,7 @@ describe('story-docs open service', () => {
 
     const service = registerStoryDocsService({
       getIndex: makeGetIndex([entry]),
-      provider,
+      storyDocsProvider: provider,
     });
 
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
@@ -87,13 +71,13 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       const service = registerStoryDocsService({
         getIndex: makeGetIndex([entry]),
-        provider,
+        storyDocsProvider: provider,
       });
 
       await service.queries.getStoryDocs.loaded({ id: 'button' });
       expect(provider).toHaveBeenCalledTimes(1);
 
-      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
@@ -106,10 +90,10 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       registerStoryDocsService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider,
+        storyDocsProvider: provider,
       });
 
-      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],

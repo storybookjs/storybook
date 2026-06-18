@@ -1,6 +1,6 @@
 import type { DocgenPayload } from 'storybook/internal/types';
 
-import { type DocgenService, type QueryState } from 'storybook/open-service';
+import { type QueryState } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -19,6 +19,6 @@ import { useQuerySubscription } from './use-query-subscription.ts';
  * {@link useQuerySubscription}.
  */
 export function useServiceDocgen(id: string): QueryState<DocgenPayload | undefined> {
-  const service = getService<DocgenService>('core/docgen');
+  const service = getService('core/docgen');
   return useQuerySubscription(id, service.queries.getDocgen, { id });
 }

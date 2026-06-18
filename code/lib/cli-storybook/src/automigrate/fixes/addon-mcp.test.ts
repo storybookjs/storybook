@@ -44,15 +44,15 @@ describe('addon-mcp', () => {
       expect(result).toBeNull();
     });
 
-    it('returns the agent name when an agent is detected and addon-mcp is missing', async () => {
+    it('returns isInstalled: false when an agent is detected and addon-mcp is missing', async () => {
       detectAgent.mockReturnValue({ name: 'claude' });
 
       const result = await addonMcp.check(baseCheckOptions);
 
-      expect(result).toEqual({ agentName: 'claude' });
+      expect(result).toEqual({ agentName: 'claude', isInstalled: false });
     });
 
-    it('returns null when addon-mcp is already configured', async () => {
+    it('returns isInstalled: true when addon-mcp is already configured (force update)', async () => {
       detectAgent.mockReturnValue({ name: 'claude' });
 
       const result = await addonMcp.check({
@@ -63,10 +63,10 @@ describe('addon-mcp', () => {
         } as StorybookConfigRaw,
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ agentName: 'claude', isInstalled: true });
     });
 
-    it('returns null when addon-mcp is configured as an object', async () => {
+    it('detects addon-mcp when configured as an object', async () => {
       detectAgent.mockReturnValue({ name: 'cursor' });
 
       const result = await addonMcp.check({
@@ -77,30 +77,42 @@ describe('addon-mcp', () => {
         } as StorybookConfigRaw,
       });
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ agentName: 'cursor', isInstalled: true });
     });
   });
 
   describe('run phase', () => {
-    it('installs @storybook/addon-mcp without a redundant install', async () => {
+    const addArgs = {
+      configDir: '.storybook',
+      packageManager: 'npm',
+      skipInstall: true,
+      skipPostinstall: true,
+      yes: true,
+    };
+
+    it('installs @storybook/addon-mcp when it is missing', async () => {
       await addonMcp.run?.({
-        result: { agentName: 'claude' },
+        result: { agentName: 'claude', isInstalled: false },
         packageManager: mockPackageManager,
         configDir: '.storybook',
       } as RunOptions<AddonMcpOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', {
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
+    });
+
+    it('force-updates @storybook/addon-mcp to latest when it is already installed', async () => {
+      await addonMcp.run?.({
+        result: { agentName: 'claude', isInstalled: true },
+        packageManager: mockPackageManager,
         configDir: '.storybook',
-        packageManager: 'npm',
-        skipInstall: true,
-        skipPostinstall: true,
-        yes: true,
-      });
+      } as RunOptions<AddonMcpOptions>);
+
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
     });
 
     it('does nothing in dry run mode', async () => {
       await addonMcp.run?.({
-        result: { agentName: 'claude' },
+        result: { agentName: 'claude', isInstalled: false },
         packageManager: mockPackageManager,
         configDir: '.storybook',
         dryRun: true,

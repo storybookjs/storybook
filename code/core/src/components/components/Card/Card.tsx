@@ -13,11 +13,16 @@ const getColor = (theme: StorybookTheme, color?: ThemeColor) => {
     return theme.color[color as keyof typeof theme.color];
   }
 };
-const getBorderColor = (theme: StorybookTheme, color?: ThemeColor) => {
-  if (color && color in theme.color) {
-    return theme.color[color as keyof typeof theme.color];
+
+const getBorderColor = (theme: StorybookTheme, color?: ThemeColor, outlineColor?: ThemeColor) => {
+  if (color && color in theme.borderColor) {
+    return theme.borderColor[color as keyof typeof theme.borderColor];
+  }
+  if (outlineColor && outlineColor in theme.color) {
+    return theme.color[outlineColor as keyof typeof theme.color];
   }
 };
+
 const getBackgroundColor = (theme: StorybookTheme, color?: ThemeColor) => {
   if (color && color in theme.bgColor) {
     return theme.bgColor[color as keyof typeof theme.bgColor];
@@ -66,7 +71,7 @@ const CardOutline = styled.div<{
   overflow: 'hidden',
   backgroundColor: getBackgroundColor(theme, color),
   borderRadius: theme.appBorderRadius + 1,
-  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && outlineColor && getBorderColor(theme, outlineColor)) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
+  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && getBorderColor(theme, color, outlineColor)) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
 
   '@supports (interpolate-size: allow-keywords)': {

@@ -896,7 +896,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     experimental_setFilter: async (id, filterFunction) => {
-      await store.setState({ filters: { ...store.getState().filters, [id]: filterFunction } });
+      await store.setState((state) => ({ filters: { ...state.filters, [id]: filterFunction } }));
 
       const { internal_index: index } = store.getState();
 

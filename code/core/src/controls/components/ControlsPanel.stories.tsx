@@ -2,8 +2,10 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { global } from '@storybook/global';
+
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 
 import { ControlsPanel } from './ControlsPanel.tsx';
 
@@ -126,5 +128,87 @@ export const ServiceDocgenControlsLoad: Story = {
   play: async ({ canvas }) => {
     await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
     await expect(serviceGetDocgen).toHaveBeenCalledWith({ id: 'example-button' });
+  },
+};
+
+// A panel with more controls than fit, plus one edited arg so the "save from controls" bar
+// renders. The bar is absolutely positioned at the bottom of the panel, so the scrollable
+// content must reserve room for it — otherwise the last control sits under the bar (#34531).
+const PROP_COUNT = 12;
+const overlapArgTypes = Object.fromEntries(
+  Array.from({ length: PROP_COUNT }, (_, i) => [
+    `prop${i + 1}`,
+    { name: `prop${i + 1}`, control: { type: 'text' } },
+  ])
+);
+const overlapStoryData = {
+  type: 'story',
+  id: `${refId}_example-button--primary`,
+  refId,
+  argTypes: overlapArgTypes,
+  initialArgs: Object.fromEntries(
+    Array.from({ length: PROP_COUNT }, (_, i) => [`prop${i + 1}`, ''])
+  ),
+  // The first arg differs from its initial value, so the panel is in the "unsaved changes" state.
+  args: Object.fromEntries(
+    Array.from({ length: PROP_COUNT }, (_, i) => [`prop${i + 1}`, i === 0 ? 'edited' : ''])
+  ),
+};
+const overlapContext: any = {
+  state: {
+    path: overlapStoryData.id,
+    previewInitialized: false,
+    refs: { [refId]: { id: refId, previewInitialized: true } },
+  },
+  api: { ...managerContext.api, getCurrentStoryData: fn(() => overlapStoryData) },
+};
+
+/**
+ * Regression test for #34531: when the controls overflow the panel, the "save from controls"
+ * bar must not cover the last control. The save bar only renders in development, with unsaved
+ * arg changes — reproduced here inside a short, scrollable host that mimics the addon panel.
+ */
+export const SaveBarDoesNotCoverLastControl: Story = {
+  // The save bar only renders in development builds; set it for this story and restore after,
+  // so the mutation can't leak into other stories.
+  beforeEach: () => {
+    const original = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      global.CONFIG_TYPE = original;
+    };
+  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={overlapContext}>
+        {/* relative parent = the bar's positioning context; inner div = the scroll container */}
+        <div style={{ position: 'relative', height: 200 }}>
+          <div data-testid="panel-scroll" style={{ height: '100%', overflowY: 'auto' }}>
+            {storyFn()}
+          </div>
+        </div>
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(`prop${PROP_COUNT}`);
+
+    const scroller = canvasElement.querySelector<HTMLElement>('[data-testid="panel-scroll"]');
+    const saveBar = canvasElement.querySelector<HTMLElement>('#save-from-controls');
+    await expect(scroller).not.toBeNull();
+    await expect(saveBar).not.toBeNull();
+
+    // Scroll to the very bottom, where the last control would sit under the bar without the fix.
+    scroller!.scrollTop = scroller!.scrollHeight;
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+    const rows = canvasElement.querySelectorAll('.docblock-argstable tbody tr');
+    const lastRow = rows[rows.length - 1];
+    const lastRowRect = lastRow.getBoundingClientRect();
+    const barRect = saveBar!.getBoundingClientRect();
+
+    // The last control's bottom must clear the top of the save bar.
+    await expect(lastRowRect.bottom).toBeLessThanOrEqual(barRect.top + 1);
   },
 };

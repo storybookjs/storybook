@@ -118,6 +118,23 @@ describe('buildStorybookAiMetadata', () => {
 		expect(metadata.localTools).toEqual({});
 	});
 
+	it('uses the shared effective availability rule for composed-source docs', () => {
+		const localOnlyAvailability = createAvailability({
+			docsEnabled: false,
+			docsHasManifests: false,
+			docsFeatureEnabled: false,
+		});
+
+		expect(getEffectiveToolAvailability(localOnlyAvailability)).toBe(localOnlyAvailability);
+		expect(
+			getEffectiveToolAvailability(localOnlyAvailability, { multiSource: true }),
+		).toMatchObject({
+			docsEnabled: true,
+			docsHasManifests: true,
+			docsFeatureEnabled: true,
+		});
+	});
+
 	it.each([
 		['dev disabled', { dev: false, docs: true, test: true }],
 		['docs disabled', { dev: true, docs: false, test: true }],

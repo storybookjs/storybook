@@ -38,6 +38,12 @@ export interface GetToolAvailabilityOptions {
 	moduleGraphSupported?: boolean | undefined;
 }
 
+/**
+ * Composed Storybooks with component manifests can back docs tools even when the
+ * local Storybook has no component manifest. Use this before feeding
+ * availability into the shared tool registry so live MCP registration and
+ * serverless AI metadata make the same docs-tool decision.
+ */
 export function getEffectiveToolAvailability(
 	availability: ToolAvailability,
 	{ multiSource = false }: { multiSource?: boolean } = {},

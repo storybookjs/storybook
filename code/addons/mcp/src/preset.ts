@@ -105,6 +105,7 @@ export const experimental_devServer: PresetPropertyFn<
 	// Same gates the MCP server uses to register these tools, so the page can't
 	// claim a tool is available when it isn't (and vice versa).
 	const multiSource = sources?.some((source) => !!source.url) ?? false;
+	const rawAvailability = await getToolAvailability(options);
 	const {
 		moduleGraphSupported,
 		changeDetectionEnabled,
@@ -114,7 +115,7 @@ export const experimental_devServer: PresetPropertyFn<
 		docsFeatureEnabled,
 		testSupported,
 		a11yEnabled,
-	} = getEffectiveToolAvailability(await getToolAvailability(options), { multiSource });
+	} = getEffectiveToolAvailability(rawAvailability, { multiSource });
 
 	const isDevEnabled = addonOptions.toolsets?.dev ?? true;
 	const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
@@ -201,7 +202,7 @@ export const experimental_devServer: PresetPropertyFn<
 			.replace('{{TEST_NOTICE}}', testNotice)
 			.replace(
 				'{{MANIFEST_DEBUGGER_LINK}}',
-				docsEnabled
+				rawAvailability.docsEnabled
 					? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
 					: '',
 			)

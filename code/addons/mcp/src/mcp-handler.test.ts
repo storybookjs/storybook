@@ -521,7 +521,7 @@ describe('mcpServerHandler', () => {
 		expect(toolNames).toContain('get-documentation-for-story');
 	});
 
-	it('registers docs tools for composed refs with manifests when local manifests are unavailable', async () => {
+	it('registers docs tools for composed sources when local manifests are unavailable', async () => {
 		const mockOptions = createMockOptions({
 			port: 6012,
 			presets: {

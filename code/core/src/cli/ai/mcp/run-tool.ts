@@ -369,7 +369,7 @@ async function lookupAiTool(
       result: {
         exitCode: 1,
         output: `Storybook command metadata is unavailable for ${metadataResult.configDir}. Install or upgrade \`@storybook/addon-mcp\`.`,
-        outcome: { kind: 'intercept', reason: 'unknown-command' },
+        outcome: { kind: 'intercept', reason: 'addon-missing' },
       },
     };
   }

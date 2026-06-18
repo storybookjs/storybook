@@ -279,7 +279,7 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Storybook command metadata is unavailable');
     expect(result.output).toContain('@storybook/addon-mcp');
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'addon-missing' });
     expect(readRegistry).not.toHaveBeenCalled();
     expect(callMcpTool).not.toHaveBeenCalled();
   });

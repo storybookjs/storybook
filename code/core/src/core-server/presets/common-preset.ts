@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -18,12 +22,17 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
+  StoryDocsProvider,
 } from 'storybook/internal/types';
+
+import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
@@ -221,7 +230,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {
@@ -308,6 +317,52 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  if (globalThis.STORYBOOK_SERVICES_LOADED) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
+  // generator, not a promise.
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  registerModuleGraphService({
+    channel: options.channel,
+    getIndex: () => storyIndexGenerator.getIndex(),
+    workingDir: process.cwd(),
+    presets: options.presets,
+  });
+
+  const features = await options.presets.apply('features');
+
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+    const [docgenProvider, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+      options.presets.apply<StoryDocsProvider>(
+        'experimental_storyDocsProvider',
+        async () => undefined
+      ),
+    ]);
+
+    registerDocgenServices({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      docgenProvider,
+      storyDocsProvider,
+      workingDir: process.cwd(),
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

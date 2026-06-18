@@ -14,15 +14,13 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const LoggedIn: Story = {
-  loaders: [
-    async ({ parameters }) => {
-      const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
-      qc?.setQueryData(['currentUser'], {
-        id: 'user-1',
-        name: 'Ada Lovelace',
-      });
-    },
-  ],
+  beforeEach: async ({ parameters }) => {
+    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
+    qc?.setQueryData(['currentUser'], {
+      id: 'user-1',
+      name: 'Ada Lovelace',
+    });
+  },
 };
 ```
 
@@ -40,16 +38,12 @@ const meta = preview.meta({
 export const Default = meta.story();
 
 export const LoggedIn = meta.story({
-  loaders: [
-    async ({ parameters }) => {
-      const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
-      qc?.setQueryData(['currentUser'], {
-        id: 'user-1',
-        name: 'Ada Lovelace',
-      });
-    },
-  ],
+  beforeEach: async ({ parameters }) => {
+    const qc: QueryClient = parameters.tanstack?.router?.context?.queryClient;
+    qc?.setQueryData(['currentUser'], {
+      id: 'user-1',
+      name: 'Ada Lovelace',
+    });
+  },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->

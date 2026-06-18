@@ -239,10 +239,30 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
     | 'inputsClass'
     | 'outputsClass';
 
+  // Detect Angular `model()` signals. compodoc emits no `model()` marker: a
+  // `model()` lands under the same bare name in BOTH `inputsClass` and
+  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in
+  // both arrays is the only version-tolerant discriminator.
+  const inputClassNames = new Set<string>(
+    (((componentData as any).inputsClass as Property[]) || []).map((item) => item.name)
+  );
+  const modelProperties: Property[] = (
+    ((componentData as any).outputsClass as Property[]) || []
+  ).filter((item) => inputClassNames.has(item.name));
+  const modelPropertyNames = new Set<string>(modelProperties.map((item) => item.name));
+
   compodocClasses.forEach((key: COMPODOC_CLASS) => {
     const data = (componentData as any)[key] || [];
     data.forEach((item: Method | Property) => {
       const section = mapItemToSection(key, item);
+
+      // Suppress compodoc's spurious bare-name `outputsClass` duplicate of a
+      // `model()`. The model surfaces as an INPUT control (from `inputsClass`); its
+      // output is the synthesized `${name}Change` added below.
+      if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
+        return;
+      }
+
       const defaultValue = isMethod(item) ? undefined : extractDefaultValue(item as Property);
 
       const type: SBType =
@@ -271,6 +291,33 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
       }
       sectionToItems[section].push(argType);
     });
+  });
+
+  // Synthesize the `${name}Change` output compodoc never emits. Runs after the
+  // loop so it is unaffected by `FEATURES.angularFilterNonInputControls`.
+  modelProperties.forEach((item) => {
+    const changeName = `${item.name}Change`;
+
+    // This is an OUTPUT, not the model INPUT it derives from: omit `defaultValue`
+    // and render the type as the emitted-payload handler signature.
+    const argType = {
+      name: changeName,
+      description: item.rawdescription || item.description,
+      type: { name: 'other', value: 'void' } as SBType,
+      action: changeName,
+      table: {
+        category: 'outputs',
+        type: {
+          summary: `(e: ${item.type}) => void`,
+          required: !item.optional,
+        },
+      },
+    };
+
+    if (!sectionToItems.outputs) {
+      sectionToItems.outputs = [];
+    }
+    sectionToItems.outputs.push(argType);
   });
 
   const SECTIONS = [

@@ -131,6 +131,7 @@ const localAlias = {
   'storybook/actions': join(CORE_ROOT_DIR, 'src', 'actions'),
   'storybook/preview-api': join(CORE_ROOT_DIR, 'src', 'preview-api'),
   'storybook/manager-api': join(CORE_ROOT_DIR, 'src', 'manager-api'),
+  'storybook/open-service': join(CORE_ROOT_DIR, 'src', 'shared', 'open-service'),
   storybook: join(CORE_ROOT_DIR, 'src'),
 };
 async function generateExportsFile(): Promise<void> {

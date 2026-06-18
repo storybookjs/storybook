@@ -22,6 +22,8 @@ import { cache } from 'storybook/internal/common';
 interface ProjectScopedFlag {
   timestamp: number;
   configDir: string;
+  // only on ai-init-opt-in
+  answer?: boolean;
   // only on ai-setup-ran
   runId?: string;
 }
@@ -47,9 +49,14 @@ async function readProjectScopedFlag(
   } catch {}
 }
 
-/** Written by `storybook init` when the user accepted the AI feature. */
+/** Written by `storybook init` when the user accepted the AI feature and in legacy inits where the question was not asked.
+ * Due to regressions with unsupported frameworks, and the computational complexity of plugging framework feature support
+ * into this part of the app, we've decided to revert the flag to treat the user as opting out from init when the flag
+ * isn't found.
+ */
 export async function hasAiInitOptIn(configDir: string): Promise<boolean> {
-  return !!(await readProjectScopedFlag('ai-init-opt-in', configDir));
+  const flag = await readProjectScopedFlag('ai-init-opt-in', configDir);
+  return flag?.answer === true;
 }
 
 /** Written by `storybook ai setup` when the prompt CLI ran in this project. */

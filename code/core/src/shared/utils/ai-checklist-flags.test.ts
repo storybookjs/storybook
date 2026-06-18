@@ -34,15 +34,6 @@ describe('ai-checklist-flags', () => {
       expect(await hasAiInitOptIn('/some/project/.storybook')).toBe(false);
     });
 
-    it('returns true when the cached configDir matches the resolved input', async () => {
-      mockCacheStore.set('ai-init-opt-in', {
-        timestamp: Date.now(),
-        configDir: resolve('/repo/apps/web/.storybook'),
-      });
-      const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
-      expect(await hasAiInitOptIn('/repo/apps/web/.storybook')).toBe(true);
-    });
-
     it('returns false when the cached configDir is for a different project', async () => {
       mockCacheStore.set('ai-init-opt-in', {
         timestamp: Date.now(),
@@ -58,6 +49,28 @@ describe('ai-checklist-flags', () => {
       mockCacheStore.set('ai-init-opt-in', { timestamp: Date.now() });
       const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
       expect(await hasAiInitOptIn('/any/project/.storybook')).toBe(false);
+    });
+
+    it('returns true when the cached configDir matches the resolved input', async () => {
+      mockCacheStore.set('ai-init-opt-in', {
+        timestamp: Date.now(),
+        configDir: resolve('/repo/apps/web/.storybook'),
+        answer: true,
+      });
+      const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
+      expect(await hasAiInitOptIn('/repo/apps/web/.storybook')).toBe(true);
+    });
+
+    it('returns false when the cached entry is for this project and indicates user opt-out', async () => {
+      // Defensive — should never happen in practice because the CLI always
+      // writes configDir, but a corrupted cache shouldn't unlock this flag.
+      mockCacheStore.set('ai-init-opt-in', {
+        timestamp: Date.now(),
+        configDir: resolve('/repo/apps/web/.storybook'),
+        answer: false,
+      });
+      const { hasAiInitOptIn } = await import('./ai-checklist-flags.ts');
+      expect(await hasAiInitOptIn('/repo/apps/web/.storybook')).toBe(false);
     });
   });
 

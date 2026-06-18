@@ -1,12 +1,16 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { ProjectType } from 'storybook/internal/cli';
+import {
+  ProjectType,
+  detectIncompatiblePackageVersions,
+  detectLanguage,
+} from 'storybook/internal/cli';
 import { HandledError, getProjectRoot } from 'storybook/internal/common';
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
-import { SupportedLanguage } from 'storybook/internal/types';
+import type { SupportedLanguage } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import semver from 'semver';
@@ -84,8 +88,9 @@ export class ProjectTypeService {
       {
         preset: ProjectType.REACT_NATIVE,
         dependencies: ['react-native', 'react-native-scripts', 'expo'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
+        peerDependencies: ['react-native', 'react-native-scripts', 'expo'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -146,8 +151,9 @@ export class ProjectTypeService {
       {
         preset: ProjectType.REACT,
         dependencies: ['react'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.every(Boolean) ?? true;
+        peerDependencies: ['react'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
     ];
@@ -205,64 +211,12 @@ export class ProjectTypeService {
   }
 
   async detectLanguage(): Promise<SupportedLanguage> {
-    let language = SupportedLanguage.JAVASCRIPT;
+    return detectLanguage(this.jsPackageManager);
+  }
 
-    if (existsSync('jsconfig.json')) {
-      return language;
-    }
-
-    const isTypescriptDirectDependency = !!this.jsPackageManager.getAllDependencies().typescript;
-
-    const getModulePackageJSONVersion = async (pkg: string) => {
-      return (await this.jsPackageManager.getModulePackageJSON(pkg))?.version ?? null;
-    };
-
-    const [
-      typescriptVersion,
-      prettierVersion,
-      babelPluginTransformTypescriptVersion,
-      typescriptEslintParserVersion,
-      eslintPluginStorybookVersion,
-    ] = await Promise.all([
-      getModulePackageJSONVersion('typescript'),
-      getModulePackageJSONVersion('prettier'),
-      getModulePackageJSONVersion('@babel/plugin-transform-typescript'),
-      getModulePackageJSONVersion('@typescript-eslint/parser'),
-      getModulePackageJSONVersion('eslint-plugin-storybook'),
-    ]);
-
-    const satisfies = (version: string | null, range: string) => {
-      if (!version) {
-        return false;
-      }
-      return semver.satisfies(version, range, { includePrerelease: true });
-    };
-
-    if (isTypescriptDirectDependency && typescriptVersion) {
-      if (
-        satisfies(typescriptVersion, '>=4.9.0') &&
-        (!prettierVersion || semver.gte(prettierVersion, '2.8.0')) &&
-        (!babelPluginTransformTypescriptVersion ||
-          satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')) &&
-        (!typescriptEslintParserVersion || satisfies(typescriptEslintParserVersion, '>=5.44.0')) &&
-        (!eslintPluginStorybookVersion || satisfies(eslintPluginStorybookVersion, '>=0.6.8'))
-      ) {
-        language = SupportedLanguage.TYPESCRIPT;
-      } else {
-        logger.warn(
-          'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
-        );
-      }
-    } else {
-      // No direct dependency on TypeScript, but could be a transitive dependency
-      // This is eg the case for Nuxt projects, which support a recent version of TypeScript
-      // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-      if (existsSync('tsconfig.json')) {
-        language = SupportedLanguage.TYPESCRIPT;
-      }
-    }
-
-    return language;
+  /** Check installed tooling versions for TypeScript compatibility constraints */
+  async detectIncompatiblePackageVersions(): Promise<string[]> {
+    return detectIncompatiblePackageVersions(this.jsPackageManager);
   }
 
   private eqMajor(versionRange: string, major: number) {

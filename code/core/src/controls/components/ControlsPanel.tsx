@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import type { ArgTypes, DocgenPayload } from 'storybook/internal/types';
+import type { ArgTypes } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -157,37 +157,16 @@ function ServiceControlsPanel({
   const api = useStorybookApi();
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
-  const [docgenReady, setDocgenReady] = useState(false);
   // Custom argTypes (project + meta + story, already inferred) for the selected story arrive over
   // the channel via STORY_PREPARED — the same source the legacy panel reads. The service only needs
   // to contribute server-extracted component props.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
-  // `useServiceQuery` mis-infers its types for services with more than one query (it unifies across
-  // queries, breaking both the argument and the result). Cast until the hook's generics are fixed.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const docgenPayload = useServiceQuery(docgenService as any, 'getDocgen', { id }) as
-    | DocgenPayload
-    | undefined;
+  const { data: docgenPayload, isInitialLoading } = useServiceQuery(
+    docgenService.queries.getDocgen,
+    { id }
+  );
   const isStoryPrepared = storyData.type === 'story' ? storyData.prepared : true;
-
-  useEffect(() => {
-    let active = true;
-    setDocgenReady(false);
-
-    docgenService.queries.getDocgen
-      .loaded({ id })
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) {
-          setDocgenReady(true);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [docgenService, id]);
 
   // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a
   // docs-blocks-only feature, so this intentionally ignores `payload.subcomponents` to match the
@@ -206,7 +185,9 @@ function ServiceControlsPanel({
     [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
   );
 
-  return <ControlsPanelTable {...props} rows={rows} isLoading={!isStoryPrepared || !docgenReady} />;
+  return (
+    <ControlsPanelTable {...props} rows={rows} isLoading={!isStoryPrepared || isInitialLoading} />
+  );
 }
 
 export const ControlsPanel = ({ docgenService, ...props }: ControlsPanelProps) => {

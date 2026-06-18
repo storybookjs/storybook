@@ -7,6 +7,8 @@ import { global } from '@storybook/global';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, within } from 'storybook/test';
 
+import { buildQueryState } from '../../shared/open-service/query-state.ts';
+import type { QueryState } from '../../shared/open-service/types.ts';
 import { ControlsPanel } from './ControlsPanel.tsx';
 
 const refId = 'my-ref';
@@ -82,8 +84,17 @@ const serviceGetDocgen = Object.assign(
     },
   })).mockName('docgenService::getDocgen'),
   {
-    subscribe: fn((_input: { id: string }, callback: (value: unknown) => void) => {
-      callback(serviceGetDocgen(_input));
+    get: fn((input?: { id: string }) => serviceGetDocgen(input)).mockName(
+      'docgenService::getDocgen.get'
+    ),
+    subscribe: fn((_input: { id: string }, callback: (state: QueryState<unknown>) => void) => {
+      callback(
+        buildQueryState(serviceGetDocgen(_input), {
+          status: 'success',
+          error: undefined,
+          loadStatus: 'idle',
+        })
+      );
       return fn();
     }).mockName('docgenService::getDocgen.subscribe'),
     loaded: fn((input: { id: string }) => Promise.resolve(serviceGetDocgen(input))).mockName(

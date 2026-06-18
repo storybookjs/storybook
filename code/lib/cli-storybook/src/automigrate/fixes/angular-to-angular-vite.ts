@@ -323,7 +323,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     packageManager,
     storybookVersion,
     yes,
-    addonsToConfigure,
+    addonsToPostinstall,
   }) {
     if (!result) {
       return;
@@ -506,7 +506,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           // Add to package.json + main.ts now, but defer the postinstall: dependencies are
           // installed in a single batch at the end of automigrate, so the addon isn't on disk
           // yet and its postinstall hook can't be resolved here. The runner configures it after
-          // install (see `addonsToConfigure`), mirroring CLI init's install-then-configure order.
+          // install (see `addonsToPostinstall`), mirroring CLI init's install-then-configure order.
           await add('@storybook/addon-vitest', {
             packageManager: packageManager.type,
             configDir,
@@ -514,7 +514,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             skipPostinstall: true,
             yes: !!yes,
           });
-          addonsToConfigure?.push('@storybook/addon-vitest');
+          addonsToPostinstall?.push('@storybook/addon-vitest');
         } catch (err) {
           logger.warn(`Could not set up @storybook/addon-vitest automatically: ${err}`);
           logger.warn('Run `npx storybook add @storybook/addon-vitest` manually to set it up.');
@@ -538,7 +538,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             skipPostinstall: true,
             yes: !!yes,
           });
-          addonsToConfigure?.push('@storybook/addon-a11y');
+          addonsToPostinstall?.push('@storybook/addon-a11y');
         } catch (err) {
           logger.warn(`Could not set up @storybook/addon-a11y automatically: ${err}`);
           logger.warn('Run `npx storybook add @storybook/addon-a11y` manually to set it up.');

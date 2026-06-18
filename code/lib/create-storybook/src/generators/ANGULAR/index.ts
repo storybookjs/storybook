@@ -21,10 +21,7 @@ export default defineGeneratorModule({
         : SupportedFramework.ANGULAR;
     },
     builderOverride: async ({ options }) => {
-      // In non-interactive contexts (--yes, CI, or no TTY) default to Vite without prompting,
-      // matching Phase 2 of #34012 ("Set default framework option for new Angular projects
-      // using Vite"). Interactive runs still get a prompt so users can opt into the legacy
-      // webpack builder.
+      // In non-interactive contexts (--yes, CI, or no TTY) default to Vite without prompting.
       const isInteractive =
         !options.yes && !process.env.CI && !!process.stdout.isTTY && !!process.stdin.isTTY;
 

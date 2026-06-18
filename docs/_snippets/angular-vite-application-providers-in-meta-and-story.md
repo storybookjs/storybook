@@ -15,9 +15,9 @@ const meta: Meta<ChipsModule> = {
       providers: [
         // ...
         // Import application-wide providers from a module
-        importProvidersFrom(BrowserAnimationsModule)
+        importProvidersFrom(BrowserAnimationsModule),
         // Or use provide-style functions if available instead, e.g.
-        provideAnimations()
+        provideAnimations(),
       ],
     }),
   ],
@@ -31,10 +31,12 @@ export const WithCustomApplicationProvider: Story = {
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [/* ... */],
-    }
-  })
-}
+      providers: [
+        /* ... */
+      ],
+    },
+  }),
+};
 ```
 
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
@@ -56,9 +58,9 @@ const meta = preview.type<{ args: ChipsModule }>().meta({
       providers: [
         // ...
         // Import application-wide providers from a module
-        importProvidersFrom(BrowserAnimationsModule)
+        importProvidersFrom(BrowserAnimationsModule),
         // Or use provide-style functions if available instead, e.g.
-        provideAnimations()
+        provideAnimations(),
       ],
     }),
   ],
@@ -69,8 +71,10 @@ export const WithCustomApplicationProvider = meta.story({
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [/* ... */],
-    }
-  })
+      providers: [
+        /* ... */
+      ],
+    },
+  }),
 });
 ```

@@ -10,8 +10,6 @@ import {
   buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
   getAdjacentReviewEntries,
-  isReviewModeRoute,
-  isReviewStoryRoute,
   isReviewSummaryPath,
   parseCollectionIndex,
   parseReviewStoryHref,
@@ -121,15 +119,6 @@ describe('path helpers', () => {
     expect(parseCollectionIndex('nope')).toBeUndefined();
     expect(parseCollectionIndex('')).toBeUndefined();
     expect(parseCollectionIndex('   ')).toBeUndefined();
-  });
-
-  it('detects review-mode routes from path and collection', () => {
-    expect(isReviewModeRoute('/review/', undefined)).toBe(true);
-    expect(isReviewModeRoute('/review', undefined)).toBe(true);
-    expect(isReviewStoryRoute('/story/foo--bar', 0)).toBe(true);
-    expect(isReviewStoryRoute('/story/foo--bar', undefined)).toBe(false);
-    expect(isReviewModeRoute('/story/foo--bar', 1)).toBe(true);
-    expect(isReviewModeRoute('/story/foo--bar', undefined)).toBe(false);
   });
 
   it('builds the summary href', () => {

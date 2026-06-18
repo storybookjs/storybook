@@ -81,7 +81,7 @@ describe('addon-review experimental_serverChannel', () => {
     expect(emitted).toEqual([
       {
         event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+        payload: { ...sampleReview, createdAt: NOW },
       },
     ]);
   });
@@ -96,7 +96,7 @@ describe('addon-review experimental_serverChannel', () => {
     expect(emitted).toEqual([
       {
         event: EVENTS.DISPLAY_REVIEW,
-        payload: { ...sampleReview, createdAt: NOW, collapseNavOnOpen: true },
+        payload: { ...sampleReview, createdAt: NOW },
       },
     ]);
     expect((emitted[0].payload as ReviewState).stale).toBeUndefined();

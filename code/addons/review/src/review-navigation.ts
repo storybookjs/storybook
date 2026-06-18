@@ -9,10 +9,6 @@ export const prettifyComponentId = (componentId: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
-/** Preview iframe URL for a story thumbnail. */
-export const storyPreviewUrl = (storyId: string, { freeze = false }: { freeze?: boolean } = {}) =>
-  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story${freeze ? '&freeze=finished' : ''}`;
-
 /** A single navigable slot in the flattened review list (duplicates allowed). */
 export interface ReviewNavEntry {
   storyId: string;
@@ -73,18 +69,6 @@ export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] =
 
 export const isReviewSummaryPath = (path: string): boolean =>
   path === REVIEW_CHANGES_URL || path === '/review';
-
-/** True when the manager route is a review story (`/story/...` with `collection`). */
-export const isReviewStoryRoute = (path: string, collectionIndex: number | undefined): boolean =>
-  parseStoryIdFromPath(path) !== null && collectionIndex !== undefined;
-
-/**
- * True for the review summary or an in-review story URL. A pure routing helper —
- * review *mode* is interaction-driven and never inferred from the route (see
- * docs/adr/0001-interaction-driven-review-mode.md).
- */
-export const isReviewModeRoute = (path: string, collectionIndex: number | undefined): boolean =>
-  isReviewSummaryPath(path) || isReviewStoryRoute(path, collectionIndex);
 
 /** True when a manager search string points back at a review route (not a canvas). */
 export const isReviewReturnSearch = (search: string): boolean => {

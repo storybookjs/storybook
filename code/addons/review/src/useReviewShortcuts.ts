@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import { useNavigate } from 'storybook/internal/router';
-import { type ReviewModeFilters, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import type { StatusValue } from 'storybook/internal/types';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { ADDON_ID } from './constants.ts';
 import { navigateToReviewEntry, navigateToReviewSummary } from './review-actions.ts';
@@ -12,6 +11,7 @@ import {
   type ReviewShortcutHrefs,
 } from './review-navigation.ts';
 import { useReview } from './review-store.ts';
+import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
 /**
  * Register review navigation as customizable addon shortcuts and keep their
@@ -21,22 +21,8 @@ export const useReviewShortcuts = () => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { state, flattenedEntries, activeEntry, activeIndex } = useReview();
-  const { includedStatusFilters, excludedStatusFilters, includedTagFilters, excludedTagFilters } =
-    useStorybookState();
   const shortcutHrefsRef = useRef<ReviewShortcutHrefs | null>(null);
-
-  const filtersRef = useRef<ReviewModeFilters>({
-    includedStatusFilters: [],
-    excludedStatusFilters: [],
-    includedTagFilters: [],
-    excludedTagFilters: [],
-  });
-  filtersRef.current = {
-    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
-    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
-    includedTagFilters: includedTagFilters ?? [],
-    excludedTagFilters: excludedTagFilters ?? [],
-  };
+  const filtersRef = useReviewFiltersRef();
 
   const navigateToShortcut = useCallback(
     (target: keyof ReviewShortcutHrefs) => {
@@ -56,7 +42,7 @@ export const useReviewShortcuts = () => {
       }
       navigateToReviewEntry(api, navigate, entry, filtersRef.current);
     },
-    [api, navigate]
+    [api, navigate, filtersRef]
   );
 
   useEffect(() => {

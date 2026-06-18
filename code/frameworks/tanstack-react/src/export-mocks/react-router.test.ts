@@ -1,16 +1,29 @@
-import { describe, expect, it, vi } from 'vitest';
 import { createRootRoute } from '@tanstack/react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('storybook/test', () => ({
-  fn: (implementation: unknown) => ({
+const storybookTestMock = vi.hoisted(() => ({
+  fn: vi.fn<(implementation: unknown) => { mockName: () => unknown }>(),
+}));
+const previewApiMock = vi.hoisted(() => ({
+  useEffect: vi.fn<() => undefined>(),
+}));
+
+// @ts-expect-error Vitest supports factory mocks with spy options, but the pinned types only expose the two-argument overload.
+vi.mock('storybook/test', () => storybookTestMock, { spy: true });
+// @ts-expect-error Vitest supports factory mocks with spy options, but the pinned types only expose the two-argument overload.
+vi.mock('storybook/internal/preview-api', () => previewApiMock, { spy: true });
+
+let createFileRoute: typeof import('./react-router.ts').createFileRoute;
+
+beforeEach(async () => {
+  vi.resetModules();
+  vi.mocked(storybookTestMock.fn).mockImplementation((implementation: unknown) => ({
     mockName: () => implementation,
-  }),
-}));
-vi.mock('storybook/internal/preview-api', () => ({
-  useEffect: () => undefined,
-}));
+  }));
+  vi.mocked(previewApiMock.useEffect).mockImplementation(() => undefined);
 
-import { createFileRoute } from './react-router.ts';
+  ({ createFileRoute } = await import('./react-router.ts'));
+});
 
 const build = (path: string) => {
   const root = createRootRoute();

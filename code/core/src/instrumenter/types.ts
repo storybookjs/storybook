@@ -1,6 +1,6 @@
 import type { StoryId } from 'storybook/internal/types';
 
-import type { RenderPhase } from '../preview-api/modules/preview-web/render/StoryRender';
+import type { RenderPhase } from '../preview-api/modules/preview-web/render/StoryRender.ts';
 
 export type { RenderPhase };
 

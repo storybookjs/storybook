@@ -9,13 +9,13 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand } from '../utils/command';
-import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import type { PackageJson } from './PackageJson';
-import type { InstallationMetadata, PackageMetadata } from './types';
-import { parsePackageData } from './util';
+import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { executeCommand } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import type { PackageJson } from './PackageJson.ts';
+import type { InstallationMetadata, PackageMetadata } from './types.ts';
+import { parsePackageData } from './util.ts';
 
 type Yarn1ListItem = {
   name: string;
@@ -46,8 +46,16 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
+  getCommandName(): string {
+    return 'yarn';
+  }
+
   getRunCommand(command: string): string {
     return `yarn ${command}`;
+  }
+
+  getInstallCommand(deps: string[], dev: boolean): string {
+    return `yarn add ${dev ? '-D ' : ''}${deps.join(' ')}`;
   }
 
   getPackageCommand(args: string[]): string {
@@ -244,19 +252,5 @@ export class Yarn1Proxy extends JsPackageManager {
     }
 
     throw new Error('Something went wrong while parsing yarn output');
-  }
-
-  public parseErrorFromLogs(logs: string): string {
-    let finalMessage = 'YARN1 error';
-    const match = logs.match(YARN1_ERROR_REGEX);
-
-    if (match) {
-      const errorMessage = match[0]?.replace(/^error\s(.*)$/, '$1');
-      if (errorMessage) {
-        finalMessage = `${finalMessage}: ${errorMessage}`;
-      }
-    }
-
-    return finalMessage.trim();
   }
 }

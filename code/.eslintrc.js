@@ -201,7 +201,7 @@ module.exports = {
       },
     },
     {
-      files: ['./e2e-tests/*.ts'],
+      files: ['./e2e-sandbox/*.ts', './e2e-internal/*.ts'],
       extends: ['plugin:playwright/recommended'],
       rules: {
         'playwright/no-skipped-test': [
@@ -227,6 +227,32 @@ module.exports = {
       files: ['**/renderers/**/*.stories.*', '**/core/template/**/*.stories.*'],
       rules: {
         'storybook/no-renderer-packages': 'off',
+      },
+    },
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      excludedFiles: [
+        '**/*.d.ts',
+        '**/docs/**/*',
+        '**/template/**/*',
+        '**/templates/**/*',
+        '**/__testfixtures__/**/*',
+        '**/__mocks-ng-workspace__/**/*',
+      ],
+      rules: {
+        'import-x/extensions': [
+          'error',
+          'always',
+          {
+            ignorePackages: true,
+            checkTypeImports: true,
+            fix: true,
+            pathGroupOverrides: [
+              { pattern: 'storybook/**', action: 'ignore' },
+              { pattern: '@storybook/**', action: 'ignore' },
+            ],
+          },
+        ],
       },
     },
   ],

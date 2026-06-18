@@ -1,10 +1,10 @@
 import { readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import type { Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
+import type { Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
 const amountOfVCPUs = 2;

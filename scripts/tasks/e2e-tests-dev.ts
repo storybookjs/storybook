@@ -1,5 +1,5 @@
-import { PORT } from './dev';
-import { e2eTestsBuild } from './e2e-tests-build';
+import { PORT } from './dev.ts';
+import { e2eTestsBuild } from './e2e-tests-build.ts';
 
 export const e2eTestsDev: typeof e2eTestsBuild = {
   ...e2eTestsBuild,

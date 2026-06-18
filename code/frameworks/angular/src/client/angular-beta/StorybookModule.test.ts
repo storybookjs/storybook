@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import type { ICollection } from '../types';
-import { getApplication } from './StorybookModule';
-import { storyPropsProvider } from './StorybookProvider';
-import { PropertyExtractor } from './utils/PropertyExtractor';
+import type { ICollection } from '../types.ts';
+import { getApplication } from './StorybookModule.ts';
+import { storyPropsProvider } from './StorybookProvider.ts';
+import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 describe('StorybookModule', () => {
   describe('getStorybookModuleMetadata', () => {

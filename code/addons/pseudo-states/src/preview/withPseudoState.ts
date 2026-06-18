@@ -12,9 +12,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { addons, useEffect, useMemo, useRef } from 'storybook/preview-api';
 
-import { PSEUDO_STATES } from '../constants';
-import type { PseudoParameter, PseudoState, PseudoStateConfig } from '../types';
-import { rewriteStyleSheet } from './rewriteStyleSheet';
+import { PSEUDO_STATES } from '../constants.ts';
+import type { PseudoParameter, PseudoState, PseudoStateConfig } from '../types.ts';
+import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
 
 const channel = addons.getChannel();
 const shadowHosts = new Set<Element>();

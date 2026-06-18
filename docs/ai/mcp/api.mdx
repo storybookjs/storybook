@@ -4,11 +4,13 @@ sidebar:
   order: 2
   title: API
 ---
-  
-<Callout variant="info" icon="🧪">
-  While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and MCP server) are currently only supported for [React](?renderer=react) projects.
 
-  Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+<Callout variant="info" icon="🧪">
+
+While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and MCP server) are currently only supported for [React](?renderer=react) projects.
+
+Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+
 </Callout>
 
 <If renderer={['react']}>
@@ -31,7 +33,7 @@ Type:
 }
 ```
 
-Default: 
+Default:
 
 ```ts
 {
@@ -49,7 +51,7 @@ Type: `boolean`
 
 Default: `true`
 
-The development toolset includes the [`get-storybook-story-instructions`](./overview.mdx#get-storybook-story-instructions) and [`preview-stories`](./overview.mdx#preview-stories) tools.
+The development toolset includes the [`get-changed-stories`](./overview.mdx#get-changed-stories), [`get-storybook-story-instructions`](./overview.mdx#get-storybook-story-instructions), and [`preview-stories`](./overview.mdx#preview-stories) tools.
 
 #### `docs`
 
@@ -72,6 +74,7 @@ The testing toolset includes the [`run-story-tests`](./overview.mdx#run-story-te
 
 **More AI resources**
 
+- [Agentic setup](../setup.mdx)
 - [MCP server overview](./overview.mdx)
 - [Sharing your MCP server](./sharing.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

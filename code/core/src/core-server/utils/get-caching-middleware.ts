@@ -1,4 +1,4 @@
-import type { Middleware } from '../../types';
+import type { Middleware } from '../../types/index.ts';
 
 export function getCachingMiddleware(): Middleware {
   return (req, res, next) => {

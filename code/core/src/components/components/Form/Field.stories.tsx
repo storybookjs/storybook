@@ -3,10 +3,10 @@ import React from 'react';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { Field as FieldComponent } from './Field';
-import { Input as InputComponent } from './Input';
-import { Select as SelectComponent } from './Select';
-import { Textarea as TextareaComponent } from './Textarea';
+import { Field as FieldComponent } from './Field.tsx';
+import { Input as InputComponent } from './Input.tsx';
+import { Select as SelectComponent } from './Select.tsx';
+import { Textarea as TextareaComponent } from './Textarea.tsx';
 
 const Flexed = styled(FieldComponent)({ display: 'flex' });
 

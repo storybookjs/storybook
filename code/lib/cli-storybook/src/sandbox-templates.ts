@@ -1,8 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
 
-import { ProjectType } from '../../../core/src/cli/projectTypes';
-import { SupportedBuilder } from '../../../core/src/types/modules/builders';
+import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
+import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
 
 export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type AllTemplatesKey = keyof typeof allTemplates;
@@ -98,7 +98,7 @@ export type Template = {
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
-    // Some sandboxes (e.g. Angular) rely on Node 22.22.1 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
+    // Some sandboxes (e.g. Angular) rely on Node 22.22.3 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */
@@ -246,6 +246,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -343,6 +344,7 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
       extraDependencies: ['server-only', 'vite', 'prop-types'],
@@ -385,6 +387,7 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          changeDetection: true,
         },
       },
     },
@@ -522,6 +525,46 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
+  'tanstack-react-router/default-ts': {
+    name: 'TanStack React Router Latest (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types'],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['bench'],
+  },
+  'tanstack-react-start/default-ts': {
+    name: 'TanStack React Start Latest (Vite | TypeScript)',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
+    expected: {
+      framework: '@storybook/tanstack-react',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types'],
+      mainConfig: {
+        framework: '@storybook/tanstack-react',
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['bench'],
   },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
@@ -677,7 +720,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@latest'],
+      extraDependencies: ['@angular/forms@21.2.16'], // Move this to latest or 22 once ng new creates v22 projects
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -812,6 +855,10 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -839,6 +886,12 @@ export const baseTemplates = {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
+      // `prop-types`. Every other React-renderer sandbox declares it explicitly via
+      // extraDependencies; this template was missing it.
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     initOptions: {
@@ -1031,6 +1084,8 @@ export const normal: TemplateKey[] = [
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
   'react-rsbuild/default-ts',
+  'tanstack-react-router/default-ts',
+  'tanstack-react-start/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

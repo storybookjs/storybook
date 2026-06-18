@@ -45,35 +45,35 @@ import type {
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import { createContext } from './context';
-import getInitialState from './initial-state';
-import { types } from './lib/addons';
-import { noArrayMerge } from './lib/merge';
-import type { ModuleFn } from './lib/types';
-import * as addons from './modules/addons';
-import * as channel from './modules/channel';
-import * as globals from './modules/globals';
-import * as layout from './modules/layout';
-import * as notifications from './modules/notifications';
-import * as openInEditor from './modules/open-in-editor';
-import * as provider from './modules/provider';
-import * as refs from './modules/refs';
-import * as settings from './modules/settings';
-import * as shortcuts from './modules/shortcuts';
-import * as stories from './modules/stories';
-import * as url from './modules/url';
-import * as version from './modules/versions';
-import * as whatsnew from './modules/whatsnew';
-import type { Options } from './store';
-import Store from './store';
+import { createContext } from './context.ts';
+import getInitialState from './initial-state.ts';
+import { types } from './lib/addons.ts';
+import { noArrayMerge } from './lib/merge.ts';
+import type { ModuleFn } from './lib/types.tsx';
+import * as addons from './modules/addons.ts';
+import * as channel from './modules/channel.ts';
+import * as globals from './modules/globals.ts';
+import * as layout from './modules/layout.ts';
+import * as notifications from './modules/notifications.ts';
+import * as openInEditor from './modules/open-in-editor.tsx';
+import * as provider from './modules/provider.ts';
+import * as refs from './modules/refs.ts';
+import * as settings from './modules/settings.ts';
+import * as shortcuts from './modules/shortcuts.ts';
+import * as stories from './modules/stories.ts';
+import * as url from './modules/url.ts';
+import * as version from './modules/versions.ts';
+import * as whatsnew from './modules/whatsnew.tsx';
+import type { Options } from './store.ts';
+import Store from './store.ts';
 
-export * from './lib/request-response';
-export * from './lib/platform';
-export * from './lib/shortcut';
+export * from './lib/request-response.ts';
+export * from './lib/platform.ts';
+export * from './lib/shortcut.ts';
 
 const { ActiveTabs } = layout;
 
-export { default as merge } from './lib/merge';
+export { default as merge } from './lib/merge.ts';
 export type { Options as StoreOptions, Listener as ChannelListener };
 export { ActiveTabs };
 
@@ -194,6 +194,10 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
     this.state = state;
     this.api = api;
+
+    // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
+    // listeners (e.g. open-service) exist before preview JS can emit sync-start.
+    props.provider.handleAPI(this.api);
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {
@@ -503,7 +507,7 @@ export function useArgTypes(): ArgTypes {
   return (current?.type === 'story' && current.argTypes) || {};
 }
 
-export { addons } from './lib/addons';
+export { addons } from './lib/addons.ts';
 
 // We need to rename this so it's not compiled to a straight re-export
 // Our globalization plugin can't handle an import and export of the same name in different lines
@@ -512,4 +516,4 @@ const typesX = types;
 export { typesX as types };
 
 /* deprecated */
-export { mockChannel, type Addon, type AddonStore } from './lib/addons';
+export { mockChannel, type Addon, type AddonStore } from './lib/addons.ts';

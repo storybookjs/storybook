@@ -23,8 +23,8 @@
  */
 import type ts from 'typescript';
 
-import type { ComponentRef, ResolvedComponentTarget } from '../types';
-import { groupBy } from '../utils';
+import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
+import { groupBy } from '../utils.ts';
 
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape
@@ -237,26 +237,13 @@ function resolveComponentSymbol(
 // Story-based prop extraction (probe-free)
 // ---------------------------------------------------------------------------
 
-/**
- * Resolves the selected component symbol and props type by finding JSX usage of the target
- * component in a story file.
- *
- * Story files already contain JSX like `<Button />` that TypeScript has resolved. This function
- * walks the story AST to find a JSX element matching the target component and extracts the props
- * type via `getResolvedSignature()` — the same mechanism as autocomplete and the former probe
- * approach.
- *
- * @param importSpecifier - The import specifier as written in the story file (e.g., './Button',
- *   '@mantine/core')
- * @param importName - The export name of the component (e.g., 'Button', 'default')
- * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
- */
-export function resolvePropsFromStoryFile(
+/** Finds the story-local import binding for a {@link ComponentRef}. */
+export function findImportSymbolInStoryFile(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   storySourceFile: ts.SourceFile,
   componentRef: ComponentRef
-): ResolvedComponentTarget | undefined {
+): ts.Symbol | undefined {
   const importSpecifier = componentRef.importId;
   const importName = componentRef.importName;
   const memberAccess = componentRef.member;
@@ -266,7 +253,6 @@ export function resolvePropsFromStoryFile(
 
   // Step 1: Find the import binding symbol in the story file.
   // This is the local symbol that the story uses in JSX (e.g., `Button` from `import { Button } from './Button'`).
-  let importSymbol: ts.Symbol | undefined;
 
   for (const stmt of storySourceFile.statements) {
     if (!typescript.isImportDeclaration(stmt)) {
@@ -284,6 +270,8 @@ export function resolvePropsFromStoryFile(
     if (!clause) {
       continue;
     }
+
+    let importSymbol: ts.Symbol | undefined;
 
     if (importName === 'default') {
       // Default import: import Button from '...'
@@ -304,15 +292,13 @@ export function resolvePropsFromStoryFile(
           }
         }
       }
-    } else {
+    } else if (clause.namedBindings && typescript.isNamedImports(clause.namedBindings)) {
       // Named import: import { Button } from '...' or import { Button as Btn } from '...'
-      if (clause.namedBindings && typescript.isNamedImports(clause.namedBindings)) {
-        for (const spec of clause.namedBindings.elements) {
-          const originalName = (spec.propertyName ?? spec.name).text;
-          if (originalName === importName) {
-            importSymbol = checker.getSymbolAtLocation(spec.name);
-            break;
-          }
+      for (const spec of clause.namedBindings.elements) {
+        const originalName = (spec.propertyName ?? spec.name).text;
+        if (originalName === importName) {
+          importSymbol = checker.getSymbolAtLocation(spec.name);
+          break;
         }
       }
     }
@@ -330,9 +316,75 @@ export function resolvePropsFromStoryFile(
     }
 
     if (importSymbol) {
-      break;
+      return importSymbol;
     }
   }
+
+  return undefined;
+}
+
+/** Returns whether `componentRef` is the story meta's `component`, not a declared subcomponent. */
+export function metaComponentMatchesRef(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  storySourceFile: ts.SourceFile,
+  componentRef: ComponentRef,
+  metaComponentInitializer: ts.Expression
+): boolean {
+  const refSymbol = findImportSymbolInStoryFile(typescript, checker, storySourceFile, componentRef);
+  const metaSymbol = resolveComponentSymbolFromNode(typescript, checker, metaComponentInitializer);
+
+  // Plain symbol equality only when the ref is not a member expression — otherwise
+  // `Button.Aligner` would match `meta.component: Button` because both resolve to the Button import.
+  if (refSymbol && metaSymbol && !componentRef.member) {
+    return (
+      resolveAliasedSymbol(typescript, checker, refSymbol) ===
+      resolveAliasedSymbol(typescript, checker, metaSymbol)
+    );
+  }
+
+  if (typescript.isIdentifier(metaComponentInitializer)) {
+    return componentRef.componentName === metaComponentInitializer.text;
+  }
+
+  if (
+    typescript.isPropertyAccessExpression(metaComponentInitializer) &&
+    typescript.isIdentifier(metaComponentInitializer.expression)
+  ) {
+    const metaName = `${metaComponentInitializer.expression.text}.${metaComponentInitializer.name.text}`;
+    return componentRef.componentName === metaName;
+  }
+
+  return false;
+}
+
+/**
+ * Resolves the selected component symbol and props type by finding JSX usage of the target
+ * component in a story file.
+ *
+ * Story files already contain JSX like `<Button />` that TypeScript has resolved. This function
+ * walks the story AST to find a JSX element matching the target component and extracts the props
+ * type via `getResolvedSignature()` — the same mechanism as autocomplete and the former probe
+ * approach.
+ *
+ * @param importSpecifier - The import specifier as written in the story file (e.g., './Button',
+ *   '@mantine/core')
+ * @param importName - The export name of the component (e.g., 'Button', 'default')
+ * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
+ */
+export function resolvePropsFromStoryFile(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  storySourceFile: ts.SourceFile,
+  componentRef: ComponentRef
+): ResolvedComponentTarget | undefined {
+  const memberAccess = componentRef.member;
+  const importSymbol = findImportSymbolInStoryFile(
+    typescript,
+    checker,
+    storySourceFile,
+    componentRef
+  );
 
   if (!importSymbol) {
     return undefined;
@@ -460,6 +512,81 @@ export function resolvePropsFromComponentType(
   return undefined;
 }
 
+/**
+ * Path 3 fallback: resolve props from the component module export directly.
+ *
+ * Used for declared subcomponents that only appear in `meta.subcomponents` and have no JSX in the
+ * story file. Without this, Path 2 would incorrectly reuse `meta.component`'s props for every
+ * batch entry.
+ */
+export function resolvePropsFromComponentExport(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  componentSourceFile: ts.SourceFile,
+  componentRef: ComponentRef
+): ResolvedComponentTarget | undefined {
+  const moduleSymbol = checker.getSymbolAtLocation(componentSourceFile);
+  if (!moduleSymbol) {
+    return undefined;
+  }
+
+  const exports = checker.getExportsOfModule(checker.getMergedSymbol(moduleSymbol));
+  const exportName = componentRef.importName ?? componentRef.componentName.split('.').at(-1);
+  if (!exportName) {
+    return undefined;
+  }
+
+  let exportSymbol: ts.Symbol | undefined;
+  let componentType: ts.Type | undefined;
+
+  if (componentRef.namespace && componentRef.member) {
+    // `import * as UI` — importName is the module export, not the local namespace alias.
+    const namespaceExportName = componentRef.importName ?? componentRef.member;
+    exportSymbol =
+      namespaceExportName === 'default'
+        ? exports.find((symbol) => symbol.getName() === 'default')
+        : exports.find((symbol) => symbol.getName() === namespaceExportName);
+
+    if (!exportSymbol) {
+      return undefined;
+    }
+
+    componentType = checker.getTypeOfSymbol(exportSymbol);
+  } else {
+    exportSymbol =
+      exportName === 'default'
+        ? exports.find((symbol) => symbol.getName() === 'default')
+        : exports.find((symbol) => symbol.getName() === exportName);
+
+    if (!exportSymbol) {
+      return undefined;
+    }
+
+    componentType = checker.getTypeOfSymbol(exportSymbol);
+
+    if (componentRef.member) {
+      const memberSymbol = componentType.getProperty(componentRef.member);
+      if (!memberSymbol) {
+        return undefined;
+      }
+      exportSymbol = memberSymbol;
+      componentType = checker.getTypeOfSymbol(memberSymbol);
+    }
+  }
+
+  const propsType = resolvePropsFromComponentType(typescript, checker, componentType);
+  const contextNode = exportSymbol ? getSymbolContextNode(exportSymbol) : undefined;
+  if (!propsType || !exportSymbol || !contextNode) {
+    return undefined;
+  }
+
+  return {
+    componentRef,
+    propsType,
+    symbol: resolveComponentSymbol(typescript, checker, exportSymbol, contextNode),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Parent / source info per property
 // ---------------------------------------------------------------------------
@@ -570,6 +697,16 @@ function serializeType(
     const nonUndefinedTypes = type.types.filter(
       (t) => !(t.getFlags() & typescript.TypeFlags.Undefined)
     );
+
+    // `boolean` is modeled as the union `true | false`. For optional props the implicit
+    // `| undefined` keeps this a union, so `typeToString` would yield `boolean | undefined`
+    // (mapped to `other` downstream). Collapse the boolean-literal pair back to `boolean`.
+    const booleanLiterals = nonUndefinedTypes.filter(
+      (t) => t.getFlags() & typescript.TypeFlags.BooleanLiteral
+    );
+    if (booleanLiterals.length === 2 && booleanLiterals.length === nonUndefinedTypes.length) {
+      return { name: 'boolean' };
+    }
 
     const literalMembers = nonUndefinedTypes.filter(isLiteralType);
 

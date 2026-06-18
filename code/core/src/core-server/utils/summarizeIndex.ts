@@ -1,8 +1,8 @@
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
-import { Tag } from '../../shared/constants/tags';
-import { isMdxEntry } from './StoryIndexGenerator';
+import { Tag } from '../../shared/constants/tags.ts';
+import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 
 const PAGE_REGEX = /(page|screen)/i;
 

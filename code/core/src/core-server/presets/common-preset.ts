@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -18,6 +22,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
@@ -25,22 +30,26 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../shared/utils/module';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel';
-import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
-import { initTelemetryChannel } from '../server-channel/telemetry-channel';
-import { initializeChecklist } from '../utils/checklist';
-import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { parseStaticDir } from '../utils/server-statics';
-import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
-import { getWsToken } from './wsToken';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
+import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
+import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
+import { initializeChecklist } from '../utils/checklist.ts';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
+import { initializeSaveStory } from '../utils/save-story/save-story.ts';
+import { parseStaticDir } from '../utils/server-statics.ts';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
+import { getWsToken } from './wsToken.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -176,12 +185,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   const packageManager = JsPackageManagerFactory.getPackageManager({
     configDir: options.configDir,
   });
-  if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
-      await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, { ...opts, packageManager });
-    };
-  }
+  removeAddon = async (id: string, opts: RemoveAddonOptions) => {
+    await telemetry('remove', { addon: id, source: 'api' });
+    return removeAddonBase(id, { ...opts, packageManager });
+  };
   return { ...extension, removeAddon };
 };
 
@@ -197,7 +204,8 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     ...(existing?.channelOptions ?? {}),
     ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
   },
-  disableTelemetry: options.disableTelemetry === true,
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -207,8 +215,8 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   actions: true,
   argTypeTargetsV7: true,
   backgrounds: true,
-  changeDetection: false,
-  componentsManifest: true,
+  changeDetection: true,
+  componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   highlight: true,
@@ -221,7 +229,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {
@@ -272,17 +280,15 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  initializeChecklist();
-  initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
-
-  initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
-  initOpenInEditorChannel(channel, options, coreOptions);
-  initTelemetryChannel(channel, options);
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
+  initializeWhatsNew(channel, options);
+  initializeSaveStory(channel, options);
+  initFileSearchChannel(channel, options);
+  initCreateNewStoryChannel(channel, options);
+  initGhostStoriesChannel(channel, options);
+  initOpenInEditorChannel(channel);
+  initTelemetryChannel(channel);
 
   return channel;
 };
@@ -310,6 +316,55 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  if (globalThis.STORYBOOK_SERVICES_LOADED) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
+  // generator, not a promise.
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  registerModuleGraphService({
+    channel: options.channel,
+    getIndex: () => storyIndexGenerator.getIndex(),
+    workingDir: process.cwd(),
+    presets: options.presets,
+  });
+
+  const features = await options.presets.apply('features');
+
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+    const provider = await options.presets.apply<DocgenProvider>(
+      'experimental_docgenProvider',
+      /**
+       * Seed provider for the experimental_docgenProvider middleware chain.
+       *
+       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
+       * provider can either replace this with its own payload, return its own undefined, or call
+       * `nextDocgen` and merge with downstream output.
+       */
+      async () => undefined
+    );
+
+    registerDocgenService({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      provider,
+      workingDir: process.cwd(),
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

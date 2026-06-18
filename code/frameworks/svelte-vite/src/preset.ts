@@ -1,8 +1,8 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
-import { svelteDocgen } from './plugins/svelte-docgen';
-import type { FrameworkOptions, StorybookConfig } from './types';
-import { handleSvelteKit } from './utils';
+import { svelteDocgen } from './plugins/svelte-docgen.ts';
+import type { FrameworkOptions, StorybookConfig } from './types.ts';
+import { handleSvelteKit } from './utils.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),

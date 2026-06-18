@@ -1,4 +1,4 @@
-import type { NormalizedToolbarArgType, ToolbarArgType, ToolbarItem } from '../types';
+import type { NormalizedToolbarArgType, ToolbarArgType, ToolbarItem } from '../types.ts';
 
 const defaultItemValues: ToolbarItem = {
   type: 'item',

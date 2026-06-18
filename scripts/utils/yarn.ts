@@ -2,10 +2,10 @@ import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { exec } from './exec';
+import storybookVersions from '../../code/core/src/common/versions.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { exec } from './exec.ts';
 
 export type YarnOptions = {
   cwd: string;
@@ -63,6 +63,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     `yarn set version berry`,
     `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
+    // Yarn 4.15.0 defaults `npmMinimalAgeGate` to 1d, which quarantines freshly
+    // published Storybook packages from the local Verdaccio registry. Disable
+    // the gate inside sandboxes so installs aren't blocked.
+    `yarn config set npmMinimalAgeGate 0`,
   ];
 
   if (!pnpApiExists) {

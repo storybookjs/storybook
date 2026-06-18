@@ -1,12 +1,12 @@
-import { convert } from '../convert';
-import type { JsDocParsingResult } from '../jsdocParser';
-import { createSummaryValue } from '../utils';
-import type { JsDocParam, PropDefaultValue } from './PropDef';
-import { createFlowPropDef } from './flow/createPropDef';
-import { createTsPropDef } from './typeScript/createPropDef';
-import type { DocgenInfo, DocgenPropDefaultValue, DocgenType, PropDef } from './types';
-import { TypeSystem } from './types';
-import { isDefaultValueBlacklisted } from './utils/defaultValue';
+import { convert } from '../convert/index.ts';
+import type { JsDocParsingResult } from '../jsdocParser.ts';
+import { createSummaryValue } from '../utils.ts';
+import type { JsDocParam, PropDefaultValue } from './PropDef.ts';
+import { createFlowPropDef } from './flow/createPropDef.ts';
+import { createTsPropDef } from './typeScript/createPropDef.ts';
+import type { DocgenInfo, DocgenPropDefaultValue, DocgenType, PropDef } from './types.ts';
+import { TypeSystem } from './types.ts';
+import { isDefaultValueBlacklisted } from './utils/defaultValue.ts';
 
 export type PropDefFactory = (
   propName: string,

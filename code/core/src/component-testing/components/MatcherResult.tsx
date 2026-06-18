@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled, typography } from 'storybook/theming';
 
-import { useAnsiToHtmlFilter } from '../utils';
-import { Node } from './MethodCall';
+import { useAnsiToHtmlFilter } from '../utils.ts';
+import { Node } from './MethodCall.tsx';
 
 const getParams = (line: string, fromIndex = 0): string => {
   for (let i = fromIndex, depth = 1; i < line.length; i += 1) {

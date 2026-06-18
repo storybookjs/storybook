@@ -1,9 +1,13 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useContext } from 'react';
 
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+
+import { DocsContext } from './DocsContext';
 import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
+import { useServiceDocgen } from './useServiceDocgen';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
@@ -21,7 +25,10 @@ interface DescriptionProps {
   of?: Of;
 }
 
-const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): string | null => {
+const getDescriptionFromResolvedOf = (
+  resolvedOf: ReturnType<typeof useOf>,
+  serviceComponentDescription?: string
+): string | null => {
   switch (resolvedOf.type) {
     case 'story': {
       return resolvedOf.story.parameters.docs?.description?.story || null;
@@ -36,7 +43,9 @@ const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): str
         parameters.docs?.extractComponentDescription?.(component, {
           component,
           parameters,
-        }) || null
+        }) ||
+        serviceComponentDescription ||
+        null
       );
     }
     case 'component': {
@@ -48,7 +57,9 @@ const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): str
         parameters?.docs?.extractComponentDescription?.(component, {
           component,
           parameters,
-        }) || null
+        }) ||
+        serviceComponentDescription ||
+        null
       );
     }
     default: {
@@ -59,14 +70,38 @@ const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): str
   }
 };
 
+/**
+ * Resolves the component-level description from the `core/docgen` service when
+ * `experimentalDocgenServer` is enabled. In that mode the renderer no longer injects `__docgenInfo`,
+ * so `extractComponentDescription` can't read the component's leading comment — the service payload
+ * carries it instead. Story- and meta-parameter descriptions are unaffected and keep their sources.
+ */
+const useServiceComponentDescription = (
+  resolvedOf: ReturnType<typeof useOf>
+): string | undefined => {
+  const context = useContext(DocsContext);
+
+  let componentId: string | undefined;
+  if (globalThis.FEATURES?.experimentalDocgenServer) {
+    if (resolvedOf.type === 'meta') {
+      componentId = resolvedOf.preparedMeta.componentId;
+    } else if (resolvedOf.type === 'component') {
+      componentId = context.getComponentId(resolvedOf.component);
+    }
+  }
+
+  return useServiceDocgen(componentId)?.description || undefined;
+};
+
 const DescriptionImpl: FC<DescriptionProps> = (props) => {
   const { of } = props;
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
   const resolvedOf = useOf(of || 'meta');
-  const markdown = getDescriptionFromResolvedOf(resolvedOf);
+  const serviceComponentDescription = useServiceComponentDescription(resolvedOf);
+  const markdown = getDescriptionFromResolvedOf(resolvedOf, serviceComponentDescription);
 
   return markdown ? <Markdown>{markdown}</Markdown> : null;
 };

@@ -1,4 +1,4 @@
-import { Channel } from 'storybook/internal/channels';
+import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -8,12 +8,13 @@ import {
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
 import { global } from '@storybook/global';
 
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -30,6 +31,10 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
+  setChannel(channel);
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -48,10 +53,6 @@ export async function loadStorybook(
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
-
-  // no-op channel, as it's only relevant in dev mode
-  const channel = new Channel({});
-
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
@@ -94,6 +95,8 @@ export async function loadStorybook(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+
+  await applyServicesPresetOnce(presets);
 
   return {
     ...options,

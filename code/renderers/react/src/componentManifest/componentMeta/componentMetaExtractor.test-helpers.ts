@@ -1,14 +1,15 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 
+import { vol } from 'memfs';
 import ts from 'typescript';
 
-import { findMatchingComponent } from '../generator';
-import { type StoryRef, getComponents } from '../getComponentImports';
-import { ComponentMetaProject } from './ComponentMetaProject';
-import { createTempProject, writeFiles } from './test-helpers';
+import { type StoryRef, getComponents } from '../getComponentImports.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
+import { extractDeclaredSubcomponents } from '../subcomponents.ts';
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
+import { createTempProject, writeFiles } from './test-helpers.ts';
 
 /**
  * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First
@@ -29,17 +30,56 @@ const sharedProject = new ComponentMetaProject(
   fsFileSnapshots
 );
 
+/** Reads a project file from the in-memory mirror populated by {@link withProject}. */
+export function readProjectFile(filePath: string): string {
+  return vol.readFileSync(filePath, 'utf-8') as string;
+}
+
+/** Resets the memfs mirror between tests. */
+export function resetProjectVolume(): void {
+  vol.reset();
+}
+
 /** Write files into the shared project, invalidate caches, and run a callback. */
 export async function withProject<T>(
   files: Record<string, string>,
   fn: (project: ComponentMetaProject, filePaths: Record<string, string>) => T | Promise<T>
 ): Promise<T> {
+  vol.reset();
   const filePaths = writeFiles(projectDir, files);
+  vol.fromNestedJSON(
+    Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
+  );
   for (const fp of Object.values(filePaths)) {
     fsFileSnapshots.delete(fp);
   }
   (sharedProject as any).projectVersion++;
   return fn(sharedProject, filePaths);
+}
+
+/** Parses a story file and resolves declared subcomponents for extraction tests. */
+export async function loadDeclaredSubcomponentComponents({
+  filePaths,
+  storyFileName,
+  title,
+}: {
+  filePaths: Record<string, string>;
+  storyFileName: string;
+  title: string;
+}) {
+  const storyPath = filePaths[storyFileName];
+  const csf = loadCsf(readProjectFile(storyPath), { makeTitle: () => title }).parse();
+  const declaredSubcomponents = extractDeclaredSubcomponents(csf);
+  const components = await getComponents({
+    csf,
+    storyFilePath: storyPath,
+    docgenEngine: 'react-component-meta',
+    additionalComponentNames: declaredSubcomponents.map(
+      (subcomponent) => subcomponent.componentName
+    ),
+  });
+
+  return { storyPath, csf, declaredSubcomponents, components };
 }
 
 /**
@@ -54,7 +94,7 @@ export async function extractFromStory(
   return withProject(files, async (project, filePaths) => {
     const storyPath = filePaths[storyFileName];
     const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
-    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), {
+    const csf = loadCsf(readProjectFile(storyPath), {
       makeTitle: () => title,
     }).parse();
 

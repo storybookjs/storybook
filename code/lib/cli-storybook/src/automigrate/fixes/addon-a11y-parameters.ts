@@ -9,8 +9,8 @@ import { dedent } from 'ts-dedent';
 import {
   transformPreviewA11yParameters,
   transformStoryA11yParameters,
-} from '../helpers/addon-a11y-parameters';
-import type { Fix, RunOptions } from '../types';
+} from '../helpers/addon-a11y-parameters.ts';
+import type { Fix, RunOptions } from '../types.ts';
 
 interface A11yOptions {
   storyFilesToUpdate: string[];

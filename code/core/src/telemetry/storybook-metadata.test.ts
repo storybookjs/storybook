@@ -14,27 +14,35 @@ import {
 
 import { detect } from 'package-manager-detector';
 
-import { type Settings, globalSettings } from '../cli/globalSettings';
-import { getApplicationFileCount } from '../telemetry/get-application-file-count';
-import { analyzeEcosystemPackages } from '../telemetry/get-known-packages';
-import { getMonorepoType } from '../telemetry/get-monorepo-type';
-import { getPackageManagerInfo } from '../telemetry/get-package-manager-info';
-import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage';
+import { type Settings, globalSettings } from '../cli/globalSettings.ts';
+import { detectAgent } from './detect-agent.ts';
+import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
+import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
+import { getPackageManagerInfo } from '../telemetry/get-package-manager-info.ts';
+import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage.ts';
 import {
   getActualPackageJson,
   getActualPackageVersion,
   getActualPackageVersions,
-} from './package-json';
-import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
+} from './package-json.ts';
+import {
+  computeStorybookMetadata,
+  metaFrameworks,
+  sanitizeAddonName,
+} from './storybook-metadata.ts';
 
-vi.mock(import('../cli/globalSettings'), { spy: true });
-vi.mock(import('./package-json'), { spy: true });
-vi.mock(import('./get-monorepo-type'), { spy: true });
-vi.mock(import('./get-framework-info'), { spy: true });
-vi.mock(import('./get-package-manager-info'), { spy: true });
-vi.mock(import('./get-portable-stories-usage'), { spy: true });
-vi.mock(import('./get-application-file-count'), { spy: true });
-vi.mock(import('./get-known-packages'), { spy: true });
+vi.mock(import('../cli/globalSettings.ts'), { spy: true });
+vi.mock('./detect-agent.ts', () => ({
+  detectAgent: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock(import('./package-json.ts'), { spy: true });
+vi.mock(import('../shared/utils/get-monorepo-type.ts'), { spy: true });
+vi.mock(import('./get-framework-info.ts'), { spy: true });
+vi.mock(import('./get-package-manager-info.ts'), { spy: true });
+vi.mock(import('./get-portable-stories-usage.ts'), { spy: true });
+vi.mock(import('./get-application-file-count.ts'), { spy: true });
+vi.mock(import('./get-known-packages.ts'), { spy: true });
 vi.mock(import('package-manager-detector'), { spy: true });
 vi.mock(import('storybook/internal/common'), { spy: true });
 
@@ -558,7 +566,7 @@ describe('storybook-metadata', () => {
       expect(res.userSince).toEqual(1717334400000);
     });
 
-    it('should not detect userSince info in CI', async () => {
+    it('should not detect userSince info in CI when agent is not detected', async () => {
       vi.mocked(isCI).mockImplementation(() => true);
       vi.mocked(globalSettings).mockResolvedValue({} as Settings);
 
@@ -571,6 +579,26 @@ describe('storybook-metadata', () => {
 
       expect(globalSettings).not.toHaveBeenCalled();
       expect(res.userSince).not.toBeDefined();
+    });
+
+    it('should detect userSince info in CI when agent is detected', async () => {
+      vi.mocked(isCI).mockImplementation(() => true);
+      vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+      vi.mocked(globalSettings).mockResolvedValue({
+        value: {
+          userSince: 1717334400000,
+        },
+      } as Settings);
+
+      const res = await computeStorybookMetadata({
+        configDir: '.storybook',
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(globalSettings).toHaveBeenCalled();
+      expect(res.userSince).toEqual(1717334400000);
     });
 
     it('should include knownPackages in metadata', async () => {

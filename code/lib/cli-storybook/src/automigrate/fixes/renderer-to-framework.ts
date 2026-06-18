@@ -8,7 +8,7 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { PackageJson } from 'storybook/internal/types';
 
-import type { Fix, RunOptions } from '../types';
+import type { Fix, RunOptions } from '../types.ts';
 
 interface MigrationResult {
   frameworks: string[];

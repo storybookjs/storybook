@@ -12,18 +12,23 @@ import type { Args } from 'storybook/internal/csf';
 import { FailedIcon, PassedIcon } from '@storybook/icons';
 
 import { dequal as deepEqual } from 'dequal';
-import { addons, experimental_requestResponse, types } from 'storybook/manager-api';
+import { addons, experimental_requestResponse, getService, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import { ControlsPanel } from './components/ControlsPanel';
-import { Title } from './components/Title';
-import { ADDON_ID, PARAM_KEY } from './constants';
-import { trySelectStory } from '../manager/utils/trySelectStory';
-import { stringifyArgs } from './stringifyArgs';
+import type { DocgenService } from 'storybook/open-service';
+
+import { ControlsPanel } from './components/ControlsPanel.tsx';
+import { Title } from './components/Title.tsx';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { trySelectStory } from '../manager/utils/trySelectStory.ts';
+import { stringifyArgs } from './stringifyArgs.tsx';
 
 export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.controls) {
     const channel = addons.getChannel();
+    const docgenService = globalThis.FEATURES?.experimentalDocgenServer
+      ? getService<DocgenService>('core/docgen')
+      : undefined;
 
     const saveStory = async () => {
       const data = api.getCurrentStoryData();
@@ -124,7 +129,11 @@ export default addons.register(ADDON_ID, (api) => {
         }
         return (
           <AddonPanel active={active} hasHorizontalScrollbar hasScrollbar>
-            <ControlsPanel saveStory={saveStory} createStory={createStory} />
+            <ControlsPanel
+              saveStory={saveStory}
+              createStory={createStory}
+              docgenService={docgenService}
+            />
           </AddonPanel>
         );
       },

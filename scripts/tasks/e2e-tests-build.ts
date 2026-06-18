@@ -1,11 +1,11 @@
 import { dedent } from 'ts-dedent';
 import waitOn from 'wait-on';
 
-import { getPort } from '../sandbox/utils/getPort';
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
-import { isNxTaskExecution } from '../utils/nx';
-import { PORT } from './serve';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { PORT } from './serve.ts';
 
 const testFileRegex = /(test|spec)\.(js|ts|mjs)$/;
 
@@ -35,7 +35,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
 
     const playwrightCommand = process.env.DEBUG
       ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
-      : `yarn playwright test ${testFiles.join(' ')}`;
+      : `yarn playwright test --project=chromium ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

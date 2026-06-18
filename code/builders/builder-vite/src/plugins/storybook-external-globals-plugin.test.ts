@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 
 vi.mock('storybook/internal/preview/globals', { spy: true });
 
-import { rewriteImport } from './storybook-external-globals-plugin';
+import { rewriteImport } from './storybook-external-globals-plugin.ts';
 
 const packageName = '@storybook/package';
 const globals = { [packageName]: '_STORYBOOK_PACKAGE_' };

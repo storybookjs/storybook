@@ -11,8 +11,11 @@ import * as esbuild from 'esbuild';
 import { format } from 'oxfmt';
 import { dedent } from 'ts-dedent';
 
-import { getWorkspace } from '../../../scripts/utils/tools';
-import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/environments-support';
+import { getWorkspace } from '../../../scripts/utils/tools.ts';
+import {
+  BROWSER_TARGETS,
+  SUPPORTED_FEATURES,
+} from '../src/shared/constants/environments-support.ts';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -128,6 +131,7 @@ const localAlias = {
   'storybook/actions': join(CORE_ROOT_DIR, 'src', 'actions'),
   'storybook/preview-api': join(CORE_ROOT_DIR, 'src', 'preview-api'),
   'storybook/manager-api': join(CORE_ROOT_DIR, 'src', 'manager-api'),
+  'storybook/open-service': join(CORE_ROOT_DIR, 'src', 'shared', 'open-service'),
   storybook: join(CORE_ROOT_DIR, 'src'),
 };
 async function generateExportsFile(): Promise<void> {

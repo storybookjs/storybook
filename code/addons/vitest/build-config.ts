@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -15,6 +15,16 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/setup-file'],
         entryPoint: './src/vitest-plugin/setup-file.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./internal/setup-file.browser.3'],
+        entryPoint: './src/vitest-plugin/setup-file.browser.3.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./internal/setup-file.browser.4'],
+        entryPoint: './src/vitest-plugin/setup-file.browser.4.ts',
         dts: false,
       },
       {

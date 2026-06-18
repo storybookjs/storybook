@@ -1,5 +1,5 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
+import { getCoreAnnotations, hasCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -23,20 +23,20 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { HooksContext } from '../../../addons';
+import { HooksContext } from '../../../addons.ts';
 import {
   isTestEnvironment,
   pauseAnimations,
   waitForAnimations,
-} from '../../preview-web/render/animation-utils';
-import { ReporterAPI } from '../reporter-api';
-import { composeConfigs } from './composeConfigs';
-import { getCsfFactoryAnnotations } from './csf-factory-utils';
-import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { normalizeStory } from './normalizeStory';
-import { prepareContext, prepareStory } from './prepareStory';
+} from '../../preview-web/render/animation-utils.ts';
+import { ReporterAPI } from '../reporter-api.ts';
+import { composeConfigs } from './composeConfigs.ts';
+import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
+import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
+import { normalizeStory } from './normalizeStory.ts';
+import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
@@ -76,8 +76,12 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
+  // CSF4 previews (definePreview) already compose the core annotations into their `composed`
+  // result, which is what e.g. addon-vitest passes here via `getProjectAnnotations()`. Detect that
+  // marker and skip prepending core annotations so they are not applied twice.
+  const alreadyComposedWithCore = annotations.some((annotation) => hasCoreAnnotations(annotation));
   globalThis.globalProjectAnnotations = composeConfigs([
-    ...getCoreAnnotations(),
+    ...(alreadyComposedWithCore ? [] : getCoreAnnotations()),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);

@@ -5,7 +5,7 @@ import { type StorybookTheme, useTheme } from 'storybook/theming';
 // eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
-import { PARAM_KEY } from './constants';
+import { PARAM_KEY } from './constants.ts';
 
 export function isInteractionsDisabled(parameters: API_StoryEntry['parameters']): boolean {
   return !!parameters?.[PARAM_KEY]?.disable;

@@ -9,8 +9,8 @@ import {
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   storeOptions,
-} from './constants';
-import type { StoreEvent, StoreState } from './types';
+} from './constants.ts';
+import type { StoreEvent, StoreState } from './types.ts';
 
 export const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
   ...storeOptions,

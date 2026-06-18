@@ -9,6 +9,7 @@ export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
 export { mapStaticDir } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
 export { generateStoryFile } from './utils/generate-story.ts';
 export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story.ts';
 export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
@@ -17,6 +18,30 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
+export { defineService as experimental_defineService } from '../shared/open-service/index.ts';
+export type {
+  Command,
+  CommandCtx,
+  CommandDefinition,
+  OperationDescriptor,
+  Query,
+  QueryCtx,
+  QueryDefinition,
+  RuntimeService,
+  SchemaDescriptor,
+  ServiceDefinition,
+  ServiceDescriptor,
+  ServiceInstance,
+  ServiceRegistrationOptions,
+  ServiceSummary,
+  ServerServiceRegistration,
+} from '../shared/open-service/index.ts';
+export {
+  describeService,
+  getService,
+  listServices,
+  registerService as experimental_registerService,
+} from '../shared/open-service/server.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
@@ -26,23 +51,25 @@ export {
   universalStatusStore as internal_universalStatusStore,
 } from './stores/status.ts';
 export {
-  getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
-  type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
   ChangeDetectionFailureError,
   ChangeDetectionUnavailableError,
-} from './change-detection/index.ts';
+} from './change-detection/errors.ts';
+export {
+  getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
+  type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
+} from './change-detection/readiness.ts';
 export type {
   ChangeDetectionAdapter,
   FileChangeEvent,
   ModuleResolveConfig,
-} from './change-detection/index.ts';
+} from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
 export type {
   ImportEdge,
   ImportParser,
   ImportParserContext,
   ParseFileArgs,
-} from './change-detection/index.ts';
-export { ChangeDetectionService } from './change-detection/ChangeDetectionService.ts';
+} from '../shared/open-service/services/module-graph/engine/parser-registry/types.ts';
+export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

@@ -20,6 +20,7 @@ import {
   type DuplicatedTree,
 } from './duplicate-tree.ts';
 import { isRoute } from './utils.ts';
+import { normalizeFileRoutePath } from './path-utils.ts';
 
 interface TanStackRouterStoryProps {
   Story: ComponentType;
@@ -87,11 +88,15 @@ function createStoryRouter({
   // Infer the initial path for the router. The priority is:
   // 1. `parameters.tanstack.router.path` (explicit path override)
   // 2. `leaf.fullPath` (the full path of the resolved leaf route, if it has one)
-  // 3. The full path of the first child of the route tree, if it exists (e.g. the Story's parent route)
-  // 4. `/` as a last resort
+  // 3. The normalized `leaf.id` (defensive fallback: a leaf may carry an unnormalized id
+  //    like `/(group)/page` with an empty `fullPath`, which would otherwise silently
+  //    coerce to `/`).
+  // 4. The full path of the first child of the route tree, if it exists (e.g. the Story's parent route)
+  // 5. `/` as a last resort
   const inferredPath =
     routerParameters?.path ||
     leaf.fullPath ||
+    (leaf.id ? normalizeFileRoutePath(leaf.id) : undefined) ||
     (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
     '/';
 
@@ -196,13 +201,22 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
 
   // No route instance — build a synthetic root + child from plain options.
   const plainOptions = routerParameterRoute ?? {};
+  const {
+    path: plainRoutePath,
+    id: plainRouteId,
+    ...plainRouteRest
+  } = plainOptions as Record<string, unknown>;
+  const syntheticRouteId = plainRoutePath
+    ? undefined
+    : ((plainRouteId as string | undefined) ?? 'storybook-story');
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
   const syntheticChild = createRoute({
     component: () => <Story />,
-    id: 'storybook-story',
-    ...plainOptions,
+    id: syntheticRouteId,
+    path: plainRoutePath as string | undefined,
+    ...plainRouteRest,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);

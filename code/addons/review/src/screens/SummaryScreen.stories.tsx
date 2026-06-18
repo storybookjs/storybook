@@ -29,18 +29,18 @@ const full: ReviewState = {
   title: 'Primary button visual refresh',
   createdAt: Date.now() - 14 * 60 * 1000,
   description:
-    'Made the primary/solid Button bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
+    'Made the primary/solid `Button` bolder: font-weight 700 → 800 and larger padding. Outline and ghost variants are unchanged. Start with Variants and Sizes/Paddings, then sanity-check ToggleButton and ReviewChangesButton.',
   changedFiles: ['code/core/src/components/components/Button/Button.tsx'],
   collections: [
     {
       title: 'Core Button — primary/solid variant',
-      rationale: 'Render the solid variant directly; best show the heavier weight and padding.',
+      rationale: 'Render the **solid variant** directly; best show the heavier weight and padding.',
       kind: 'atomic',
       storyIds: ['button-component--variants', 'button-component--base', 'button-component--sizes'],
     },
     {
       title: 'Related Button-based components',
-      rationale: 'ToggleButton and ReviewChangesButton build on the same Button primitive.',
+      rationale: '`ToggleButton` and `ReviewChangesButton` build on the same `Button` primitive.',
       kind: 'transitive',
       storyIds: ['components-togglebutton--variants', 'components-togglebutton--sizes'],
     },

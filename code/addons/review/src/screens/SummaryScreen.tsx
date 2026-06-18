@@ -33,6 +33,27 @@ import {
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 
+const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
+  color: theme.color.defaultText,
+  p: {
+    margin: 0,
+  },
+  'p + p': {
+    marginTop: 10,
+  },
+  code: {
+    color: 'inherit',
+    verticalAlign: 'text-bottom',
+    fontSize: '0.85em',
+    margin: 0,
+    padding: '0 4px',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
+    borderRadius: theme.appBorderRadius,
+  },
+}));
+
 // `100dvh` fills the manager's page cell and also works in the addon's own
 // fullscreen stories, where #storybook-root has no height. The card list below
 // the fixed header is the single scroll container.
@@ -149,29 +170,10 @@ const SummaryCard = styled(Card)({
   },
 });
 
-const SummaryContent = styled(DocumentWrapper)(({ theme }) => ({
+const SummaryContent = styled(MarkdownWrapper)({
   flex: 1,
   minWidth: 0,
-  fontSize: theme.typography.size.s2,
-  color: theme.color.defaultText,
-  p: {
-    margin: 0,
-  },
-  'p + p': {
-    marginTop: 10,
-  },
-  code: {
-    color: theme.fgColor.agentic,
-    fontSize: theme.typography.size.s2 - 1,
-    lineHeight: '1.5em',
-    margin: 0,
-    padding: '0 4px',
-    background: theme.background.content,
-    border: 'none',
-    boxShadow: `inset 0 0 0 1px ${theme.borderColor.agentic}`,
-    borderRadius: theme.appBorderRadius,
-  },
-}));
+});
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
@@ -218,7 +220,7 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
-const CardRationale = styled.p(({ theme }) => ({
+const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 12px',
 }));
@@ -518,7 +520,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                       }
                     >
                       {collection.rationale ? (
-                        <CardRationale>{collection.rationale}</CardRationale>
+                        <CardRationale>
+                          <Markdown options={{ disableParsingRawHTML: true }}>
+                            {collection.rationale}
+                          </Markdown>
+                        </CardRationale>
                       ) : null}
                       <CollectionGrid
                         storyIds={storyIds}

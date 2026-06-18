@@ -137,12 +137,7 @@ function getSearchRegExp(packageName: string) {
   const staticKeys = [...replacementMap.keys()].map(escapeKeys);
   const packageNameLiteral = `.${packageName}.`;
   const dynamicImportExpression = `await import\\(.${packageName}.\\)`;
-  const lookup = [
-    defaultImportRegExp,
-    ...staticKeys,
-    packageNameLiteral,
-    dynamicImportExpression,
-  ];
+  const lookup = [defaultImportRegExp, ...staticKeys, packageNameLiteral, dynamicImportExpression];
   return new RegExp(`(${lookup.join('|')})`, 'g');
 }
 

@@ -2,9 +2,7 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { reviewCompareTool } from './ReviewCompareTool.tsx';
 import { ReviewProvider } from './ReviewProvider.tsx';
-import { reviewPreviewWrapper } from './ReviewPreviewWrapper.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import { ADDON_ID, PAGE_ID, REVIEW_CHANGES_URL, EVENTS } from './constants.ts';
@@ -46,7 +44,4 @@ addons.register(ADDON_ID, (api) => {
     match: ({ viewMode }) => viewMode === 'story',
     render: () => <ReviewToolbarHeader />,
   });
-
-  addons.add('storybook/addon-review/compare', reviewCompareTool);
-  addons.add('storybook/addon-review/preview', reviewPreviewWrapper);
 });

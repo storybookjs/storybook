@@ -45,7 +45,6 @@ const setAddonShortcutMock = fn();
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  hasBaseline: true,
   createdAt: Date.now(),
   collections: [
     {
@@ -59,36 +58,6 @@ const reviewState: ReviewState = {
     },
   ],
 };
-
-const baselineIndex = {
-  v: 5,
-  entries: {
-    'manager-settings-guidepage--default': {
-      type: 'story',
-      id: 'manager-settings-guidepage--default',
-      title: 'Manager/Settings/Guide Page',
-      name: 'Default',
-    },
-    'manager-settings-aboutscreen--default': {
-      type: 'story',
-      id: 'manager-settings-aboutscreen--default',
-      title: 'Manager/Settings/About Screen',
-      name: 'Default',
-    },
-  },
-};
-
-const originalFetch = globalThis.fetch;
-const fetchMock = fn(async (input: RequestInfo | URL): Promise<Response> => {
-  const url = typeof input === 'string' ? input : input.toString();
-  if (url.includes('/__review-baseline/index.json')) {
-    return new Response(JSON.stringify(baselineIndex), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  return new Response(null, { status: 404 });
-});
 
 const applyReviewState = () => {
   expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
@@ -167,13 +136,8 @@ const meta = preview.meta({
     emitMock.mockReset();
     toggleNavMock.mockReset();
     setAddonShortcutMock.mockReset();
-    fetchMock.mockClear();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
-    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
-    return () => {
-      globalThis.fetch = originalFetch;
-    };
   },
 });
 
@@ -241,6 +205,18 @@ export const NewStory = meta.story({
       viewMode: 'story',
       customQueryParams: { collection: '0' },
     },
+  },
+  // A story is "newly added" when change detection reports it as new.
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'manager-settings-checklist--default',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

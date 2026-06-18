@@ -29,27 +29,3 @@ Event names live in `src/constants.ts` and are the cross-repo contract with
 See `src/review-state.ts`. It is a duplicate of the canonical valibot schema
 that lives in the MCP addon; this side only renders, so it needs the type, not
 the validator.
-
-## Baseline comparison
-
-While viewing a reviewed story, the preview can render side-by-side against a
-baseline Storybook. The baseline source is configured with a single environment
-variable:
-
-```sh
-STORYBOOK_REVIEW_BASELINE=...
-```
-
-It accepts either of:
-
-- **A project-relative path to a static build** (e.g. `storybook-static`). The
-  directory is served directly. Paths must stay inside the project — absolute
-  paths and paths that escape the working directory via `..` are rejected.
-- **A remote origin URL** (e.g. `https://my-app.chromatic.com`). Requests are
-  proxied to that origin.
-
-The dev server exposes the baseline under an internal proxy path, so baseline
-previews and the baseline index load from the same origin as Storybook. If the
-variable is unset, or is neither a valid relative path nor a valid URL, no
-baseline is served (a warning is logged for invalid values) and the comparison
-controls stay hidden.

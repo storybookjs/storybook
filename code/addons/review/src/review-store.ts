@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
 import type { StoryInfo } from './components/CollectionGrid.tsx';
-import type { CompareMode } from './constants.ts';
 import type { ReviewNavEntry } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 
@@ -17,10 +16,7 @@ export interface ReviewStoreState {
   activeIndex: number;
   isInReviewMode: boolean;
   isSummaryVisible: boolean;
-  compareMode: CompareMode;
-  showCompare: boolean;
   getStoryPreviewHref: (storyId: string) => string;
-  setCompareMode: (mode: CompareMode) => void;
   dismissReview: () => void;
 }
 
@@ -36,10 +32,7 @@ const emptyStore: ReviewStoreState = {
   activeIndex: -1,
   isInReviewMode: false,
   isSummaryVisible: false,
-  compareMode: 'latest',
-  showCompare: false,
   getStoryPreviewHref: () => '',
-  setCompareMode: () => {},
   dismissReview: () => {},
 };
 

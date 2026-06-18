@@ -1,15 +1,9 @@
-import { existsSync, statSync } from 'node:fs';
-import { isAbsolute, relative, resolve } from 'node:path';
-
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import sirv from 'sirv';
 import type { Channel } from 'storybook/internal/channels';
-import { logger } from 'storybook/internal/node-logger';
-import type { Middleware, Options, ServerApp } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { ModuleGraphService } from 'storybook/internal/core-server';
 
-import { BASELINE_PROXY_PATH, EVENTS } from './constants.ts';
+import { EVENTS } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
 
 /**
@@ -70,9 +64,7 @@ export function __resetCache(): void {
 
 function prepareReview(payload: ReviewState): ReviewState {
   // Staleness is server-authoritative (set by the file-watch handler), so a
-  // fresh push must never inherit a stale flag from the agent payload. The
-  // hasBaseline hint is forwarded as-is: the client uses it to decide whether
-  // to attempt the baseline fetch.
+  // fresh push must never inherit a stale flag from the agent payload.
   const { stale: _untrustedStale, ...rest } = payload;
   return {
     ...rest,
@@ -135,108 +127,4 @@ export const experimental_serverChannel = async (
   });
 
   return channel;
-};
-
-// The deployed baseline Storybook to compare against. A single env var that is
-// either a project-relative static-build directory (served directly) or a remote
-// origin URL (proxied). There is no default — without it, no baseline is served.
-const BASELINE = process.env.STORYBOOK_REVIEW_BASELINE;
-
-/**
- * Resolve a `STORYBOOK_REVIEW_BASELINE` value to a project-relative static dir.
- * Returns the absolute path when the value is a relative path that stays inside
- * the cwd; returns undefined for URL-like values, absolute paths, or paths that
- * escape the cwd via `..` — those are not treated as a local static dir.
- */
-const resolveBaselineStaticDir = (value: string): string | undefined => {
-  if (/^[a-zA-Z][\w+.-]*:\/\//.test(value) || isAbsolute(value)) {
-    return undefined;
-  }
-  const root = process.cwd();
-  const resolved = resolve(root, value);
-  if (relative(root, resolved).startsWith('..')) {
-    return undefined;
-  }
-  return resolved;
-};
-
-const isValidBaselineOrigin = (value: string): boolean => {
-  try {
-    const { protocol } = new URL(value);
-    return protocol === 'http:' || protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Storybook preset hook that serves the review baseline on the dev server.
- *
- * The review UI compares the current story against a baseline Storybook in a
- * side-by-side iframe. That baseline must be reachable from the same origin as
- * the dev server (otherwise the iframe is blocked). This hook mounts it at
- * `/__review-baseline` when `STORYBOOK_REVIEW_BASELINE` is set:
- *
- * - A project-relative static-build directory is served directly via sirv.
- * - An `http:`/`https:` URL is proxied so a deployed Storybook can be used
- *   without a local build.
- *
- * When the env var is unset or invalid, the hook is a no-op — review still
- * works, but baseline comparison is unavailable.
- */
-export const experimental_devServer = (app: ServerApp) => {
-  if (!BASELINE) {
-    return app;
-  }
-
-  // A safe relative path is served directly as a local static build…
-  const staticDir = resolveBaselineStaticDir(BASELINE);
-  if (staticDir) {
-    if (!existsSync(staticDir) || !statSync(staticDir).isDirectory()) {
-      logger.warn(
-        `[addon-review] STORYBOOK_REVIEW_BASELINE "${BASELINE}" is not an existing directory; ignoring.`
-      );
-      return app;
-    }
-    app.use(
-      BASELINE_PROXY_PATH,
-      sirv(staticDir, { dev: true, etag: true, extensions: [] }) as unknown as Middleware
-    );
-    return app;
-  }
-
-  // …otherwise a valid URL is proxied as a remote origin.
-  if (!isValidBaselineOrigin(BASELINE)) {
-    logger.warn(
-      `[addon-review] STORYBOOK_REVIEW_BASELINE "${BASELINE}" is neither a valid relative path nor a valid URL; ignoring.`
-    );
-    return app;
-  }
-
-  const proxyRequest = createProxyMiddleware({
-    target: BASELINE,
-    changeOrigin: true,
-    // The baseline origin is a remote server that can be slow or unreachable.
-    // Bound the wait and respond deterministically so a dead connection fails
-    // fast instead of hanging the review UI's baseline iframe.
-    timeout: 30_000,
-    proxyTimeout: 30_000,
-    pathRewrite: (path) =>
-      path.startsWith(BASELINE_PROXY_PATH) ? path.slice(BASELINE_PROXY_PATH.length) || '/' : path,
-    on: {
-      error: (_error, _req, res) => {
-        // `res` is a net.Socket on WebSocket upgrades; only HTTP responses
-        // carry a status code.
-        if ('writeHead' in res) {
-          if (!res.headersSent) {
-            res.writeHead(502, { 'Content-Type': 'text/plain' });
-          }
-          res.end('Baseline preview is unavailable.');
-        }
-      },
-    },
-  }) as unknown as Middleware;
-
-  app.use(BASELINE_PROXY_PATH, proxyRequest);
-  return app;
 };

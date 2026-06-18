@@ -720,7 +720,7 @@ export abstract class JsPackageManager {
       // When vite-plus is used, packages like vite and vitest are vendored and their node_modules entries report the vite-plus wrapper version (e.g. 0.1.16) instead of the actual vendored version.
       // Check vite-plus first so we always get the real version when it's available.
       let version: string | null = null;
-      const vitePlusVersions = await getVitePlusVersions();
+      const vitePlusVersions = await getVitePlusVersions(this.cwd);
       if (vitePlusVersions?.[packageName]) {
         version = vitePlusVersions[packageName]!;
       }

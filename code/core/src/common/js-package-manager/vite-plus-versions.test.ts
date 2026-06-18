@@ -49,6 +49,39 @@ describe('getVitePlusVersions', () => {
     vi.doUnmock('vite-plus/versions');
   });
 
+  // Regression: during `npx storybook init` the CLI runs from the npx cache, so the project's
+  // vite-plus must be resolved from the target `cwd` rather than from the CLI's own location.
+  // A non-existent cwd has no resolvable vite-plus, and the bare-import fallback isn't mocked here,
+  // so the result must be null rather than throwing.
+  it('resolves vite-plus relative to the provided cwd', async () => {
+    clearVitePlusCache();
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    clearVitePlusCache();
+
+    await expect(fn('/non/existent/project')).resolves.toBeNull();
+  });
+
+  it('caches results per cwd', async () => {
+    vi.doMock('vite-plus/versions', () => ({
+      versions: { vite: '6.1.0', vitest: '3.2.0' },
+    }));
+
+    clearVitePlusCache();
+    const { getVitePlusVersions: fn } = await import('./vite-plus-versions.ts');
+    clearVitePlusCache();
+
+    // The bare-import fallback (mocked here) is hit when the cwd has no resolvable vite-plus.
+    const fromA = await fn('/project/a');
+    const fromB = await fn('/project/b');
+
+    expect(fromA?.vite).toBe('6.1.0');
+    expect(fromB?.vite).toBe('6.1.0');
+    // A repeated call for the same cwd returns the cached reference.
+    expect(await fn('/project/a')).toBe(fromA);
+
+    vi.doUnmock('vite-plus/versions');
+  });
+
   it('caches results across calls', async () => {
     vi.doMock('vite-plus/versions', () => ({
       versions: { vite: '6.1.0', vitest: '3.2.0' },

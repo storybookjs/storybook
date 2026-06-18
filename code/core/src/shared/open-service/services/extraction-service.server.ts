@@ -18,14 +18,25 @@ import { toStoryIndexPath } from './module-graph/types.ts';
 /** Extraction services key provider-extracted payloads by component id under `components`. */
 type ExtractionServiceState = { components: Record<string, unknown> };
 
+/**
+ * The component-keyed query whose synchronous `.get({ id })` reports whether a payload is currently
+ * stored: it returns the payload, or `undefined` when nothing has been extracted for that id. `.get()`
+ * never fires the query's `load`, so reading it cannot trigger a behind-the-scenes extraction.
+ */
+type ComponentPayloadQuery = { get(input: { id: string }): unknown };
+
 type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
 
-export type RegisterExtractionServiceOptions<TPayload> = {
+export type RegisterExtractionServiceOptions<TPayload, TQueries> = {
   workingDir: string;
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
-  /** Query whose `staticInputs` enumerate the eligible component ids. */
-  queryName: string;
+  /**
+   * Query whose `staticInputs` enumerate the eligible component ids, and whose `.get({ id })` the
+   * hot-refresh subscription reads to decide which components are already extracted. Typed as a key
+   * of the service's queries so the runtime query handle resolves without a cast.
+   */
+  queryName: keyof TQueries & string;
   /** Command that extracts and stores one component's payload. */
   extractCommand: string;
   /** Command that extracts every component in the story index. */
@@ -45,12 +56,14 @@ function subscribeExtractionServiceRefresh(
   options: {
     workingDir: string;
     getIndex: () => Promise<StoryIndex>;
-    hasExtractedPayload: (componentId: string) => boolean;
+    query: ComponentPayloadQuery;
     refreshComponent: (componentId: string) => Promise<unknown>;
   }
 ) {
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter((id) => options.hasExtractedPayload(id));
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => options.query.get({ id }) !== undefined
+    );
     if (idsToRefresh.length === 0) {
       return;
     }
@@ -121,10 +134,9 @@ export function registerExtractionService<
   TCommands extends Commands<TState>,
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  options: RegisterExtractionServiceOptions<TState['components'][string]>
+  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries>
 ) {
   const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
-  const extractedComponentIds = new Set<string>();
 
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
@@ -145,14 +157,12 @@ export function registerExtractionService<
       ctx.self.setState((state) => {
         delete state.components[id];
       });
-      extractedComponentIds.delete(id);
       return undefined;
     }
 
     ctx.self.setState((state) => {
       state.components[id] = payload;
     });
-    extractedComponentIds.add(id);
     return payload;
   };
 
@@ -183,7 +193,7 @@ export function registerExtractionService<
   subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
     getIndex,
-    hasExtractedPayload: (id) => extractedComponentIds.has(id),
+    query: runtime.queries[queryName],
     refreshComponent: (id) =>
       (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
         extractCommand

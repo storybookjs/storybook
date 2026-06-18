@@ -90,20 +90,28 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
  * `JSON.stringify`'s defaults and may produce ambiguous keys.
  */
 function stableHash(value: unknown): string {
-  return JSON.stringify(value, (_key, raw) => {
+  // Tag undefined and objects with a discriminator rather than substituting a sentinel string:
+  // a bare sentinel (e.g. `'__undefined__'`) would alias an actual string input of the same value,
+  // and the tag on objects keeps an object that happens to mirror the undefined marker distinct.
+  // Sorting object keys makes `{a,b}` and `{b,a}` hash identically.
+  const encode = (raw: unknown): unknown => {
     if (raw === undefined) {
-      // `JSON.stringify` would otherwise drop `undefined` from object values silently.
-      return '__undefined__';
+      return { __t: 'undefined' };
     }
-    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-      const sorted: Record<string, unknown> = {};
-      for (const k of Object.keys(raw as Record<string, unknown>).sort()) {
-        sorted[k] = (raw as Record<string, unknown>)[k];
-      }
-      return sorted;
+    if (raw === null || typeof raw !== 'object') {
+      return raw;
     }
-    return raw;
-  });
+    if (Array.isArray(raw)) {
+      return raw.map(encode);
+    }
+    const sorted: Record<string, unknown> = {};
+    for (const k of Object.keys(raw as Record<string, unknown>).sort()) {
+      sorted[k] = encode((raw as Record<string, unknown>)[k]);
+    }
+    return { __t: 'object', value: sorted };
+  };
+
+  return JSON.stringify(encode(value));
 }
 
 export function makeLoadKey(

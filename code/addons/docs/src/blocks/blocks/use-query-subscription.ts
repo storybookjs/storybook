@@ -15,9 +15,12 @@ import { type Query, type QueryState, seedQueryState } from 'storybook/open-serv
  *   frame, and
  * - the subscription forces a re-render whenever the query emits a new {@link QueryState}.
  *
- * `cacheKey` must uniquely identify the `(input, selector)` pair: it gates both the synchronous
- * re-seed and the effect's re-subscription. `input`/`selector` are read through refs so the effect's
- * dependency list stays on the stable `cacheKey` rather than per-render object/closure identities.
+ * `cacheKey` must uniquely identify the `input` (a stringifiable identity for the value the query is
+ * read with); it gates the synchronous re-seed and re-subscription. `input` itself is read through a
+ * ref so an inline object literal that is structurally stable under one `cacheKey` does not force a
+ * re-subscribe every render. A `selector` cannot be folded into a string key, so it is tracked by
+ * reference as a real dependency: changing it re-seeds and re-subscribes so the selected slice can
+ * never lag behind the current selector.
  */
 export function useQuerySubscription<TInput, TOutput>(
   cacheKey: string,
@@ -37,31 +40,34 @@ export function useQuerySubscription<TInput, TOutput, TSelected>(
   selector?: (value: TOutput) => TSelected
 ): QueryState<TOutput | TSelected> {
   const [, forceRender] = useReducer((tick: number) => tick + 1, 0);
-  const cache = useRef<{ key: string; state: QueryState<TOutput | TSelected> }>(undefined);
+  const cache = useRef<{
+    key: string;
+    selector: ((value: TOutput) => TSelected) | undefined;
+    state: QueryState<TOutput | TSelected>;
+  }>(undefined);
 
-  if (cache.current?.key !== cacheKey) {
+  if (cache.current?.key !== cacheKey || cache.current.selector !== selector) {
     cache.current = {
       key: cacheKey,
+      selector,
       state: selector ? seedQueryState(query, input, selector) : seedQueryState(query, input),
     };
   }
 
   const inputRef = useRef(input);
-  const selectorRef = useRef(selector);
   inputRef.current = input;
-  selectorRef.current = selector;
 
   useEffect(() => {
     const onState = (state: QueryState<TOutput | TSelected>) => {
-      cache.current = { key: cacheKey, state };
+      cache.current = { key: cacheKey, selector, state };
       forceRender();
     };
-    const currentSelector = selectorRef.current;
-    return currentSelector
-      ? query.subscribe(inputRef.current, currentSelector, onState)
+    return selector
+      ? query.subscribe(inputRef.current, selector, onState)
       : query.subscribe(inputRef.current, onState);
-    // `cacheKey` encodes the (input, selector) identity; the refs supply their freshest values.
-  }, [query, cacheKey]);
+    // `cacheKey` encodes the input identity; `selector` is a real subscription dependency. `input`
+    // stays in a ref so its per-render object identity does not re-subscribe under a stable key.
+  }, [query, cacheKey, selector]);
 
   return cache.current.state;
 }

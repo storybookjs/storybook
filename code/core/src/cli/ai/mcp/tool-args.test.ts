@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolArgs, scanCwdToken } from './tool-args.ts';
+import { parsePort, parseToolArgs, scanConfigDirToken, scanCwdToken } from './tool-args.ts';
 
-function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
+function args(
+  tokens: string[],
+  defaults?: {
+    cwd?: string;
+    configDir?: string;
+    port?: string;
+    json?: string;
+  }
+) {
   const result = parseToolArgs(tokens, defaults);
   if (!result.ok) {
     throw new Error(`expected ok, got error: ${result.error}`);
@@ -10,7 +18,15 @@ function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?:
   return result;
 }
 
-function error(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
+function error(
+  tokens: string[],
+  defaults?: {
+    cwd?: string;
+    configDir?: string;
+    port?: string;
+    json?: string;
+  }
+) {
   const result = parseToolArgs(tokens, defaults);
   if (result.ok) {
     throw new Error(`expected error, got ok: ${JSON.stringify(result.args)}`);
@@ -20,7 +36,14 @@ function error(tokens: string[], defaults?: { cwd?: string; port?: string; json?
 
 describe('parseToolArgs', () => {
   it('returns empty args for no tokens', () => {
-    expect(args([])).toEqual({ ok: true, cwd: undefined, port: undefined, help: false, args: {} });
+    expect(args([])).toEqual({
+      ok: true,
+      cwd: undefined,
+      configDir: undefined,
+      port: undefined,
+      help: false,
+      args: {},
+    });
   });
 
   it('consumes --help and -h as a help request instead of forwarding them', () => {
@@ -83,6 +106,7 @@ describe('parseToolArgs', () => {
       expect(args(['--cwd', '/projects/foo', '--id', 'x'])).toEqual({
         ok: true,
         cwd: '/projects/foo',
+        configDir: undefined,
         port: undefined,
         help: false,
         args: { id: 'x' },
@@ -102,27 +126,45 @@ describe('parseToolArgs', () => {
     });
   });
 
-  describe('--port', () => {
-    it('consumes --port as a number instead of forwarding it', () => {
-      expect(args(['--port', '6006', '--id', 'x'])).toEqual({
+  describe('--config-dir', () => {
+    it.each(['--config-dir', '-c'])('consumes %s instead of forwarding it', (flag) => {
+      expect(args([flag, 'config/storybook', '--id', 'x'])).toEqual({
         ok: true,
         cwd: undefined,
-        port: 6006,
+        configDir: 'config/storybook',
+        port: undefined,
         help: false,
         args: { id: 'x' },
       });
     });
 
     it('uses the commander-parsed default and lets a token override it', () => {
-      expect(args(['--id', 'x'], { port: '6006' }).port).toBe(6006);
-      expect(args(['--port', '6007'], { port: '6006' }).port).toBe(6007);
+      expect(args(['--id', 'x'], { configDir: 'config/a' }).configDir).toBe('config/a');
+      expect(args(['--config-dir', 'config/b'], { configDir: 'config/a' }).configDir).toBe(
+        'config/b'
+      );
     });
 
-    it('errors on non-numeric or out-of-range ports', () => {
-      expect(error(['--port', 'abc'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '0'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '65536'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '6006.5'])).toContain('`--port` must be a port number');
+    it.each(['--config-dir', '-c'])('errors when %s has no value', (flag) => {
+      expect(error([flag])).toContain('`-c, --config-dir` requires a value');
+    });
+  });
+
+  describe('--port', () => {
+    it('consumes --port as a raw value instead of forwarding it', () => {
+      expect(args(['--port', '6006', '--id', 'x'])).toEqual({
+        ok: true,
+        cwd: undefined,
+        configDir: undefined,
+        port: '6006',
+        help: false,
+        args: { id: 'x' },
+      });
+    });
+
+    it('uses the commander-parsed default and lets a token override it', () => {
+      expect(args(['--id', 'x'], { port: '6006' }).port).toBe('6006');
+      expect(args(['--port', '6007'], { port: '6006' }).port).toBe('6007');
     });
 
     it('errors when --port has no value', () => {
@@ -171,6 +213,23 @@ describe('parseToolArgs', () => {
   });
 });
 
+describe('parsePort', () => {
+  it('returns undefined when no port is provided', () => {
+    expect(parsePort(undefined)).toEqual({ ok: true, port: undefined });
+  });
+
+  it('parses valid port values', () => {
+    expect(parsePort('6006')).toEqual({ ok: true, port: 6006 });
+  });
+
+  it('rejects non-numeric or out-of-range ports', () => {
+    expect(parsePort('abc')).toMatchObject({ ok: false });
+    expect(parsePort('0')).toMatchObject({ ok: false });
+    expect(parsePort('65536')).toMatchObject({ ok: false });
+    expect(parsePort('6006.5')).toMatchObject({ ok: false });
+  });
+});
+
 describe('scanCwdToken', () => {
   it('finds `--cwd value` and `--cwd=value`', () => {
     expect(scanCwdToken(['--cwd', '/x'])).toBe('/x');
@@ -192,5 +251,18 @@ describe('scanCwdToken', () => {
     expect(parseToolArgs(['positional', '--cwd', '/x'])).toMatchObject({ ok: false });
     expect(scanCwdToken(['positional', '--cwd', '/x'])).toBe('/x');
     expect(scanCwdToken(['--cwd', '/x', '--json', '{bad'])).toBe('/x');
+  });
+});
+
+describe('scanConfigDirToken', () => {
+  it('returns the last config-dir token value without validating the remaining args', () => {
+    expect(
+      scanConfigDirToken(['--config-dir', 'config/storybook', '--json', '{bad', '-c', 'alt'])
+    ).toBe('alt');
+  });
+
+  it('ignores config-dir tokens without a value', () => {
+    expect(scanConfigDirToken(['--config-dir', '--json', '{bad'])).toBeUndefined();
+    expect(scanConfigDirToken(['-c', '--json', '{bad'])).toBeUndefined();
   });
 });

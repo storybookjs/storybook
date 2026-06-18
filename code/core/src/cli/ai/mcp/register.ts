@@ -16,7 +16,8 @@ import {
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
-import { scanCwdToken } from './tool-args.ts';
+import { resolveStorybookConfigDir } from './local-metadata.ts';
+import { scanConfigDirToken, scanCwdToken } from './tool-args.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -28,11 +29,14 @@ export function isAiCliFeatureEnabled(env: NodeJS.ProcessEnv = process.env): boo
 
 const CWD_DESCRIPTION =
   'Project directory of the target Storybook (defaults to the current working directory)';
+const CONFIG_DIR_DESCRIPTION =
+  'Directory where to load Storybook configuration from for help and local commands';
 const PORT_DESCRIPTION =
-  'Port of the target Storybook, to address one specific instance when several run at the same cwd';
+  'Port of the target Storybook for runtime commands when several instances run at the same cwd';
 
 type AiPassthroughOptions = {
   cwd?: string;
+  configDir?: string;
   port?: string;
   json?: string;
   output?: string;
@@ -50,13 +54,14 @@ export type CommandFailureHandler = (
 
 /**
  * Register the passthrough on the `ai` command: a generic `[command] [args...]` argument pair that
- * forwards any command to the running Storybook's server (MCP under the hood, but that is an
- * implementation detail — user-facing copy says "commands"). `passThroughOptions` hands every
- * token after the command name to the command untouched, which requires positional options on the
- * program.
+ * runs commands exposed by the target Storybook. Help and serverless local commands are loaded from
+ * Storybook configuration metadata; runtime-bound commands forward to the running Storybook's
+ * server (MCP under the hood, but that is an implementation detail — user-facing copy says
+ * "commands"). `passThroughOptions` hands every token after the command name to the command
+ * untouched, which requires positional options on the program.
  *
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
- * output can include the commands fetched from the running Storybook.
+ * output can include the commands loaded from Storybook configuration.
  */
 export function registerAiMcpPassthrough(
   program: Command,
@@ -68,18 +73,22 @@ export function registerAiMcpPassthrough(
   aiCommand
     .helpOption(false)
     .usage('[options] [command] [args...]')
-    .argument('[command]', 'A command provided by the running Storybook')
+    .argument('[command]', 'A command loaded from the target Storybook configuration')
     .argument(
       '[args...]',
       'Command arguments as `--key value` flags; values are JSON-parsed when possible'
     )
     .option('--cwd <path>', CWD_DESCRIPTION)
+    .option('-c, --config-dir <dir-name>', CONFIG_DIR_DESCRIPTION)
     .option('--port <number>', PORT_DESCRIPTION)
     .option(
       '--json <object>',
       'Raw JSON object with the command arguments (escape hatch for complex values)'
     )
-    .option('-h, --help', 'Show help, including the commands provided by the running Storybook')
+    .option(
+      '-h, --help',
+      'Show help, including commands loaded from the target Storybook configuration'
+    )
     .passThroughOptions()
     .action(
       async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) => {
@@ -92,7 +101,11 @@ export function registerAiMcpPassthrough(
           'ai-command',
           { cliOptions, fallbackTelemetryState: true },
           async () => {
-            const target = { cwd: options.cwd, port: options.port };
+            const target = {
+              cwd: options.cwd,
+              configDir: options.configDir,
+              port: options.port,
+            };
             if (options.help && command) {
               await printResult(await runAiToolHelp(command, target), options.output);
               return;
@@ -129,10 +142,11 @@ export function registerAiMcpPassthrough(
  */
 function pickCliOptions(options: AiPassthroughOptions, commandArgs: string[]): CLIOptions {
   const targetCwd = scanCwdToken(commandArgs) ?? options.cwd ?? process.cwd();
+  const targetConfigDir = scanConfigDirToken(commandArgs) ?? options.configDir;
   return {
     disableTelemetry: options.disableTelemetry,
     logfile: options.logfile,
-    configDir: resolve(targetCwd, '.storybook'),
+    configDir: resolveStorybookConfigDir({ cwd: targetCwd, configDir: targetConfigDir }),
   };
 }
 

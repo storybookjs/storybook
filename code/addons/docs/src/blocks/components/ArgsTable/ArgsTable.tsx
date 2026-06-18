@@ -430,7 +430,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
               padding="small"
               onClick={handleResetClick}
               disabled={isResetting}
-              ariaLabel="Reset controls"
+              ariaLabel={isResetting ? 'Resetting controls...' : 'Reset controls'}
             >
               <UndoIcon />
             </StyledButton>

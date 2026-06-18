@@ -118,7 +118,6 @@ describe('service runtime', () => {
         data: null,
         status: 'pending',
         loadStatus: 'loading',
-        isInitialLoading: true,
       });
       unsubscribe();
     });
@@ -1294,7 +1293,6 @@ describe('service runtime', () => {
         status: 'pending',
         loadStatus: 'loading',
         isPending: true,
-        isInitialLoading: true,
         isRefreshing: false,
       });
 
@@ -1312,6 +1310,72 @@ describe('service runtime', () => {
       });
 
       unsubscribe();
+    });
+
+    it('reports isInitialLoading only while there is no data yet, not over cached data', async () => {
+      // Models a real load-backed query (like docgen/story-docs): the handler returns `undefined`
+      // until the load populates state, and the populated value persists in state afterwards.
+      const cachedDef = defineService({
+        id: 'internal-fixture/lifecycle-initial-loading',
+        description:
+          'Load-backed query whose handler returns undefined until the load populates it.',
+        initialState: { value: undefined as string | undefined },
+        queries: {
+          getValue: {
+            input: v.undefined(),
+            output: v.optional(v.string()),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (_input, ctx) => {
+              await ctx.self.commands.setValue('loaded');
+            },
+          },
+        },
+        commands: {
+          setValue: {
+            input: v.string(),
+            output: v.void(),
+            handler: (next, ctx) =>
+              ctx.self.setState((state) => {
+                state.value = next;
+              }),
+          },
+        },
+      });
+      const service = registerService(cachedDef);
+
+      // First subscription: no data yet, so the in-flight first load is a genuine initial load.
+      const firstStates: Array<QueryState<unknown>> = [];
+      const unsubscribeFirst = service.queries.getValue.subscribe(undefined, (state) => {
+        firstStates.push(state);
+      });
+      expect(firstStates[0]).toMatchObject({
+        data: undefined,
+        status: 'pending',
+        loadStatus: 'loading',
+        isInitialLoading: true,
+      });
+      await vi.waitFor(() => {
+        expect(firstStates[firstStates.length - 1]).toMatchObject({
+          data: 'loaded',
+          status: 'success',
+          isInitialLoading: false,
+        });
+      });
+      unsubscribeFirst();
+
+      // Second subscription, now that the value is cached: the per-subscription lifecycle still
+      // starts pending/loading, but `data` is already present from the first emission, so this must
+      // NOT report an initial load — consumers must not flash a skeleton over already-available data.
+      const secondStates: Array<QueryState<unknown>> = [];
+      const unsubscribeSecond = service.queries.getValue.subscribe(undefined, (state) => {
+        secondStates.push(state);
+      });
+      expect(secondStates[0]).toMatchObject({
+        data: 'loaded',
+        loadStatus: 'loading',
+        isInitialLoading: false,
+      });
+      unsubscribeSecond();
     });
 
     it('transitions to error when the load rejects, keeping the last data', async () => {

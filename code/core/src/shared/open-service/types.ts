@@ -123,8 +123,10 @@ export type LoadStatus = 'loading' | 'idle';
  * tracked per subscription. A query with no `load` is `success`/`idle` from its first emission.
  *
  * `isLoading` is intentionally "any load in flight" (TanStack's `isFetching`), and
- * `isInitialLoading` is "the first load, no data yet" (TanStack's `isLoading`); the names follow our
- * `load` vocabulary rather than TanStack's `fetch`/`load` split.
+ * `isInitialLoading` is "a load is in flight and there is nothing to show yet"; the names follow our
+ * `load` vocabulary rather than TanStack's `fetch`/`load` split. Unlike TanStack Query, a
+ * subscription here can attach to a query whose `data` is already cached in service state, so
+ * `isInitialLoading` additionally requires `data === undefined` — it never flags over cached data.
  */
 export type QueryState<TData> = {
   /** Last successfully produced value; `undefined` before the first success. */
@@ -141,7 +143,7 @@ export type QueryState<TData> = {
   isError: boolean;
   /** `loadStatus === 'loading'` — any load in flight, foreground or background. */
   isLoading: boolean;
-  /** `isPending && isLoading` — the first-ever load, before any data exists. */
+  /** `isPending && isLoading && data === undefined` — a first load with nothing to show yet. */
   isInitialLoading: boolean;
   /** `isLoading && !isPending` — a background re-load while data is already shown. */
   isRefreshing: boolean;

@@ -13,7 +13,13 @@ export type QueryLifecycle = {
  * The single source of truth for the derived booleans, shared by the runtime's subscription
  * emissions and `useServiceQuery`'s first-render seed so they can never drift apart. The booleans
  * intentionally follow our `load` vocabulary: `isLoading` is "any load in flight" (TanStack's
- * `isFetching`) and `isInitialLoading` is "the first load, no data yet" (TanStack's `isLoading`).
+ * `isFetching`) and `isInitialLoading` is "the first load with nothing to show yet".
+ *
+ * Unlike TanStack Query, a subscription here can attach to a query whose `data` is already cached in
+ * service state (e.g. revisiting an already-extracted component): its per-subscription lifecycle
+ * still starts `pending`/`loading`, but `data` is present from the first emission. `isInitialLoading`
+ * therefore also requires `data === undefined`, so consumers gate a "nothing yet" skeleton on it
+ * without flashing it over already-available data while a background (re)load runs.
  */
 export function buildQueryState<TData>(
   data: TData | undefined,
@@ -30,7 +36,7 @@ export function buildQueryState<TData>(
     isSuccess: lifecycle.status === 'success',
     isError: lifecycle.status === 'error',
     isLoading,
-    isInitialLoading: isPending && isLoading,
+    isInitialLoading: isPending && isLoading && data === undefined,
     isRefreshing: isLoading && !isPending,
   };
 }

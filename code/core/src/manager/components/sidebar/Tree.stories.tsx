@@ -320,6 +320,203 @@ export const WithContextContent: Story = {
   },
 };
 
+// Minimal tree with one root containing two components, each with one story.
+// Button is the selected component (starts expanded); Input starts collapsed.
+// This lets us verify that "Expand all" reveals Input's child and "Collapse all"
+// hides it again.
+const rootMenuData = {
+  'ui-components': {
+    type: 'root',
+    name: 'UI Components',
+    id: 'ui-components',
+    depth: 0,
+    children: ['ui-components-button', 'ui-components-input'],
+  },
+  'ui-components-button': {
+    type: 'component',
+    name: 'Button',
+    id: 'ui-components-button',
+    title: 'UI Components/Button',
+    depth: 1,
+    parent: 'ui-components',
+    children: ['ui-components-button--primary'],
+    importPath: './button.stories.tsx',
+  },
+  'ui-components-button--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-button--primary',
+    name: 'Primary',
+    title: 'UI Components/Button',
+    depth: 2,
+    parent: 'ui-components-button',
+    importPath: './button.stories.tsx',
+    tags: [],
+    prepared: true,
+    args: {},
+    argTypes: {},
+    initialArgs: {},
+  },
+  'ui-components-input': {
+    type: 'component',
+    name: 'Input',
+    id: 'ui-components-input',
+    title: 'UI Components/Input',
+    depth: 1,
+    parent: 'ui-components',
+    children: ['ui-components-input--empty'],
+    importPath: './input.stories.tsx',
+  },
+  'ui-components-input--empty': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-input--empty',
+    name: 'Empty',
+    title: 'UI Components/Input',
+    depth: 2,
+    parent: 'ui-components-input',
+    importPath: './input.stories.tsx',
+    tags: [],
+    prepared: true,
+    args: {},
+    argTypes: {},
+    initialArgs: {},
+  },
+} as unknown as IndexHash;
+
+const rootContextMenuBase: Story = {
+  args: {
+    docsMode: false,
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+    setHighlightedItemId: action('setHighlightedItemId'),
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState('ui-components-button--primary');
+    return (
+      <Tree
+        {...args}
+        data={rootMenuData}
+        selectedStoryId={selectedId}
+        onSelectStoryId={setSelectedId}
+        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+      />
+    );
+  },
+};
+
+/**
+ * Hover the root heading to reveal its context menu, then open it.
+ * Verifies the "Expand all" action is shown (Input is collapsed initially).
+ */
+export const RootContextMenuOpen: Story = {
+  ...rootContextMenuBase,
+  parameters: { chromatic: { viewports: [380] } },
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+    await userEvent.hover(rootEl);
+
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * Clicking "Expand all" in the root context menu expands all collapsed
+ * component nodes. Input starts collapsed; after expand all its "Empty"
+ * story should appear.
+ */
+export const RootContextMenuExpandAll: Story = {
+  ...rootContextMenuBase,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    expect(canvas.queryByText('Empty')).toBeNull();
+
+    await userEvent.hover(rootEl);
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+    await userEvent.click(screen.getByText('Expand all'));
+
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
+  },
+};
+
+/**
+ * After expanding all, the root context menu switches to "Collapse all".
+ */
+export const RootContextMenuCollapseAll: Story = {
+  ...rootContextMenuBase,
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    // Expand all first so the tree is fully expanded
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+    await userEvent.click(screen.getByText('Expand all'));
+
+    // Close the popover, then re-open — should now offer "Collapse all"
+    await userEvent.keyboard('{Escape}');
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * A story node carrying a Vitest error status where sidebarContextMenu is not
+ * set to false. Opens the context menu and asserts that both the status link
+ * (from allStatuses) and the test provider item (from registered test
+ * providers) appear together. This is the only story that exercises the
+ * combined case; every other status story sets sidebarContextMenu: false,
+ * which suppresses the status from the menu.
+ */
+export const StoryContextMenuWithStatusAndProvider: Story = {
+  ...rootContextMenuBase,
+  args: {
+    ...rootContextMenuBase.args,
+    allStatuses: {
+      'ui-components-button--primary': {
+        'storybook/vitest': {
+          storyId: 'ui-components-button--primary',
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
+          // sidebarContextMenu intentionally omitted — not false means it
+          // renders as a link in the context menu alongside provider items
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const storyRow = canvasElement.querySelector(
+      '[data-item-id="ui-components-button--primary"]',
+    ) as HTMLElement;
+    await userEvent.hover(storyRow);
+
+    const contextButton = await within(storyRow).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    // Status link — comes from allStatuses (sidebarContextMenu not false)
+    await expect(within(dialog).getByText('Vitest')).toBeInTheDocument();
+    // Provider item — comes from the registered component-tests test provider
+    await expect(within(dialog).getByText('TEST_PROVIDER_CONTEXT_CONTENT')).toBeInTheDocument();
+  },
+};
+
 const dualSlotStoryId = storyId;
 const dualSlotParentId = (index[dualSlotStoryId] as any).parent as string;
 

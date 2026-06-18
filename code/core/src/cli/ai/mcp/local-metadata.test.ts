@@ -31,7 +31,7 @@ describe('loadStorybookAiMetadata', () => {
       ],
       localTools: {
         'get-storybook-story-instructions': {
-          call: vi.fn(),
+          call: vi.fn().mockResolvedValue({ content: [] }),
         },
       },
     });
@@ -68,7 +68,7 @@ describe('loadStorybookAiMetadata', () => {
   });
 
   it('normalizes optional metadata fields and hides descriptor-less local tools', async () => {
-    const call = vi.fn();
+    const call = vi.fn().mockResolvedValue({ content: [] });
     mockLoadedStorybook(
       vi.fn().mockResolvedValue({
         instructions: 123,

@@ -480,7 +480,7 @@ describe('buildStorybookCommandsHelp', () => {
       ],
       localTools: {
         'get-storybook-story-instructions': {
-          call: vi.fn(),
+          call: vi.fn().mockResolvedValue({ content: [] }),
         },
       },
       instructions: 'Follow the story workflow.',
@@ -622,7 +622,7 @@ describe('runAiToolHelp', () => {
       tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance.' }],
       localTools: {
         'get-storybook-story-instructions': {
-          call: vi.fn(),
+          call: vi.fn().mockResolvedValue({ content: [] }),
         },
       },
     });

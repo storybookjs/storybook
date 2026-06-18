@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { GET_TOOL_NAME } from '@storybook/mcp';
+import { logger } from 'storybook/internal/node-logger';
 import { buildStorybookAiMetadata } from './storybook-ai-metadata.ts';
 import { getAddonVitestConstants } from './tools/run-story-tests.ts';
 import type { AddonContext } from './types.ts';
@@ -42,6 +43,7 @@ vi.mock('./tools/run-story-tests.ts', async (importActual) => ({
 
 describe('buildStorybookAiMetadata', () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
 		vi.stubGlobal('fetch', vi.fn(mockManifestFetch(true)));
 		vi.mocked(isModuleGraphSupported).mockResolvedValue(true);
 		vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(true);
@@ -63,7 +65,9 @@ describe('buildStorybookAiMetadata', () => {
 	});
 
 	afterEach(() => {
+		vi.clearAllMocks();
 		vi.unstubAllGlobals();
+		vi.useRealTimers();
 	});
 
 	it('builds the same all-enabled tool descriptors as tmcp tools/list', async () => {
@@ -167,6 +171,50 @@ describe('buildStorybookAiMetadata', () => {
 		);
 	});
 
+	it('skips malformed refs without dropping valid refs', async () => {
+		const fetchMock = vi.fn(mockManifestFetch(true));
+		vi.stubGlobal('fetch', fetchMock);
+		const options = createOptions({
+			refs: {
+				missingUrl: { title: 'Missing URL' },
+				nullRef: null,
+				valid: { title: 'Valid', url: 'https://example.com/storybook' },
+			},
+		});
+
+		const metadata = await buildStorybookAiMetadata(options);
+
+		const getDocumentationTool = metadata.tools.find((tool) => tool.name === GET_TOOL_NAME);
+		expect(getDocumentationTool?.inputSchema.properties).toHaveProperty('storybookId');
+		expect(fetchMock.mock.calls.map(([input]) => getFetchUrl(input))).toEqual([
+			'https://example.com/storybook/manifests/components.json',
+		]);
+	});
+
+	it('bounds serverless manifest probe latency', async () => {
+		vi.useFakeTimers();
+		const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+			return new Promise<Response>((_resolve, reject) => {
+				init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+			});
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		const metadataPromise = buildStorybookAiMetadata(
+			createOptions({
+				refs: {
+					remote: { title: 'Remote', url: 'https://example.com/storybook' },
+				},
+			}),
+		);
+
+		await vi.advanceTimersByTimeAsync(3_000);
+		const metadata = await metadataPromise;
+
+		const getDocumentationTool = metadata.tools.find((tool) => tool.name === GET_TOOL_NAME);
+		expect(getDocumentationTool?.inputSchema.properties).not.toHaveProperty('storybookId');
+		expect(fetchMock).toHaveBeenCalledOnce();
+	});
+
 	it('enables multi-source docs schemas for authenticated refs without calling /mcp', async () => {
 		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
 			const url = getFetchUrl(input);
@@ -218,6 +266,42 @@ describe('buildStorybookAiMetadata', () => {
 		);
 
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it('enables docs metadata for serverless refs even when local docs are unavailable', async () => {
+		vi.mocked(getManifestStatus).mockResolvedValue({
+			available: false,
+			hasManifests: false,
+			hasFeatureFlag: true,
+		});
+		const options = createOptions({
+			refs: {
+				remote: { title: 'Remote', url: 'https://example.com/storybook' },
+			},
+		});
+
+		const metadata = await buildStorybookAiMetadata(options);
+
+		const getDocumentationTool = metadata.tools.find((tool) => tool.name === GET_TOOL_NAME);
+		expect(getDocumentationTool?.inputSchema.properties).toHaveProperty('storybookId');
+		expect(metadata.instructions).toContain('## Documentation Workflow');
+	});
+
+	it('does not run registration side effects for statically disabled toolsets', async () => {
+		const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+		try {
+			await listRegisteredTools(createOptions(), {
+				toolsets: { dev: true, docs: false, test: true },
+				gateRegistrationWithToolsets: true,
+			});
+
+			expect(loggerSpy).not.toHaveBeenCalledWith(
+				'Experimental components manifest feature detected - registering component tools',
+			);
+		} finally {
+			loggerSpy.mockRestore();
+		}
 	});
 
 	it('deduplicates existing preset metadata by tool name and instruction text', async () => {
@@ -315,7 +399,7 @@ function createOptions({
 	builder?: string | null;
 	features?: Record<string, unknown>;
 	framework?: string;
-	refs?: Record<string, { title?: string; url?: string }>;
+	refs?: Record<string, unknown>;
 	toolsets?: { dev?: boolean; docs?: boolean; test?: boolean };
 } = {}) {
 	return {
@@ -362,10 +446,12 @@ async function listRegisteredTools(
 		availability = createAvailability(),
 		multiSource = false,
 		toolsets = { dev: true, docs: true, test: true },
+		gateRegistrationWithToolsets = false,
 	}: {
 		availability?: ToolAvailability;
 		multiSource?: boolean;
 		toolsets?: AddonContext['toolsets'];
+		gateRegistrationWithToolsets?: boolean;
 	} = {},
 ) {
 	const adapter = new ValibotJsonSchemaAdapter();
@@ -400,7 +486,11 @@ async function listRegisteredTools(
 		},
 	);
 
-	await registerAddonMcpTools(server, { availability, multiSource });
+	await registerAddonMcpTools(server, {
+		availability,
+		multiSource,
+		...(gateRegistrationWithToolsets ? { toolsets } : {}),
+	});
 
 	const response = await server.receive(
 		{

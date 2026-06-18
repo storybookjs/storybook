@@ -51,11 +51,13 @@ export async function buildStorybookAiMetadata(
 		moduleGraphSupported,
 	});
 	const testEnabled = (toolsets?.test ?? true) && availability.testSupported;
-	const docsEnabled = (toolsets?.docs ?? true) && availability.docsEnabled;
-	const multiSource = docsEnabled
+	const docsToolsetEnabled = toolsets?.docs ?? true;
+	const multiSource = docsToolsetEnabled
 		? (await resolveServerlessCompositionSources(options)).multiSource
 		: false;
-	const registryContext = { availability, multiSource, toolsets };
+	const docsEnabled = docsToolsetEnabled && (availability.docsEnabled || multiSource);
+	const registryAvailability = { ...availability, docsEnabled };
+	const registryContext = { availability: registryAvailability, multiSource, toolsets };
 	const toolMetadata = getAddonToolMetadata(registryContext);
 	const localTools: Record<string, StorybookAiLocalTool> = {
 		...existingMetadata?.localTools,

@@ -4,6 +4,8 @@ import * as v from 'valibot';
 import { CompositionAuth, type ComposedRef } from './composition-auth.ts';
 import { getRefsFromConfig } from './get-refs-from-config.ts';
 
+const MANIFEST_PROBE_TIMEOUT_MS = 3_000;
+
 export type ResolvedCompositionSources = {
 	refs: ComposedRef[];
 	compositionAuth: CompositionAuth;
@@ -60,10 +62,17 @@ export async function resolveServerlessCompositionSources(
 }
 
 async function hasServerlessComponentManifestSource(refUrl: string): Promise<boolean> {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), MANIFEST_PROBE_TIMEOUT_MS);
+
 	try {
-		const response = await fetch(`${refUrl}/manifests/components.json`, {
-			headers: { Accept: 'application/json' },
-		});
+		const response = await fetch(
+			new URL('manifests/components.json', `${refUrl.replace(/\/$/, '')}/`),
+			{
+				headers: { Accept: 'application/json' },
+				signal: controller.signal,
+			},
+		);
 		if (response.status === 401 && hasOAuthResourceMetadataChallenge(response)) {
 			return true;
 		}
@@ -74,6 +83,8 @@ async function hasServerlessComponentManifestSource(refUrl: string): Promise<boo
 		return v.safeParse(v.pipe(v.string(), v.parseJson(), ComponentManifestMap), text).success;
 	} catch {
 		return false;
+	} finally {
+		clearTimeout(timeout);
 	}
 }
 

@@ -211,7 +211,10 @@ export async function registerAddonMcpTools(
 	context: AddonToolRegistryContext,
 ) {
 	for (const definition of addonToolDefinitions) {
-		if (isToolAvailable(definition, context)) {
+		if (
+			isToolsetEnabled(definition.toolset, context.toolsets) &&
+			isToolAvailable(definition, context)
+		) {
 			await definition.register(server, context, createToolsetEnabled(server, definition.toolset));
 		}
 	}

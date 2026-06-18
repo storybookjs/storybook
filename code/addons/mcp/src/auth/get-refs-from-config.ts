@@ -13,13 +13,24 @@ export async function getRefsFromConfig(options: Options): Promise<ComposedRef[]
 			return [];
 		}
 
-		return Object.entries(refs as Record<string, { title?: string; url?: string }>)
-			.map(([key, value]) => ({
-				id: key,
-				title: value.title || key,
-				url: value.url,
-			}))
-			.filter((ref): ref is ComposedRef => !!ref.url);
+		return Object.entries(refs as Record<string, unknown>).flatMap(([key, value]) => {
+			if (!value || typeof value !== 'object') {
+				return [];
+			}
+
+			const { title, url } = value as { title?: unknown; url?: unknown };
+			if (typeof url !== 'string' || url.length === 0) {
+				return [];
+			}
+
+			return [
+				{
+					id: key,
+					title: typeof title === 'string' && title.length > 0 ? title : key,
+					url,
+				},
+			];
+		});
 	} catch {
 		return [];
 	}

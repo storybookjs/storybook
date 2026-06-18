@@ -411,7 +411,7 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     'CircleCI completion',
     () => ({
       executor: {
-        name: 'sb_node_22_classic',
+        name: 'sb_barebones',
         class: 'small',
       },
       steps: [

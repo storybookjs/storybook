@@ -27,6 +27,12 @@ export const Spinning = meta.story(() => (
   </Card>
 ));
 
+export const SpinningAgentic = meta.story(() => (
+  <Card outlineAnimation="spin" outlineColor="agentic">
+    <Contents>Spinning agentic</Contents>
+  </Card>
+));
+
 export const Agentic = meta.story(() => (
   <Card color="agentic">
     <Contents>Agentic</Contents>

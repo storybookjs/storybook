@@ -141,7 +141,7 @@ export const ReviewWidget = () => {
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
 
   return (
-    <Card color="agentic" id="storybook-review-widget">
+    <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
       <ActionList as="div">
         <ActionList.Item as="div">
           <HeaderContent>

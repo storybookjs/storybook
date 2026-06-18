@@ -39,11 +39,11 @@ const fadeInOut = keyframes({
 
 const spin = keyframes({
   '0%': { transform: 'rotate(0deg)' },
-  '10%': { transform: 'rotate(10deg)' },
+  '10%': { transform: 'rotate(20deg)' },
   '40%': { transform: 'rotate(170deg)' },
   '50%': { transform: 'rotate(180deg)' },
   '60%': { transform: 'rotate(190deg)' },
-  '90%': { transform: 'rotate(350deg)' },
+  '90%': { transform: 'rotate(340deg)' },
   '100%': { transform: 'rotate(360deg)' },
 });
 
@@ -108,12 +108,15 @@ const CardOutline = styled.div<{
       marginTop: 'calc(max(100vw, 100vh) * -0.5)',
       height: 'max(100vw, 100vh)',
       width: 'max(100vw, 100vh)',
-      animation: `${spin} 3s linear infinite`,
+      animation: `${spin} 5s linear infinite`,
+      // Hardcoded colors to prevent themes from messing with them
+      // (orange+gold, lavender+pink, secondary+seafoam)
       backgroundImage:
         outlineColor === 'negative'
-          ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
-            `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
-          : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+          ? `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
+          : outlineColor === 'agentic'
+            ? `conic-gradient(#e1d2ef 90deg, #b6a7ff 150deg, #d8aeff 210deg, #e1d2ef 270deg)`
+            : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
     }),
   },
 }));

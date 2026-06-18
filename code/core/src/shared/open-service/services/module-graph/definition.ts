@@ -257,19 +257,6 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    _bumpGraphRevision: {
-      internal: true,
-      description:
-        'Bumps the graph revision when the story index invalidates without an immediate graph snapshot/update.',
-      input: noInputSchema,
-      output: v.void(),
-      handler: async (_input, ctx) => {
-        ctx.self.setState((state) => {
-          state.graphRevision += 1;
-          state.latestChangedStoryFiles = [];
-        });
-      },
-    },
     _setStatus: {
       internal: true,
       description:

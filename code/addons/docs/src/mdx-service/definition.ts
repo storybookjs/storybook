@@ -39,12 +39,10 @@ export type MdxServiceState = {
 
 export const mdxServiceDef = defineService({
   id: MDX_SERVICE_ID,
-  description: 'MDX docs source content keyed by component id.',
+  internal: true, // this service really only ensures that the MDX docs are available in manifests, so there is no need to expose it to the public API
   initialState: { components: {} } as MdxServiceState,
   queries: {
     getMdxForComponent: {
-      description:
-        'Returns MDX docs for one component id, or undefined when no MDX docs have been loaded.',
       input: mdxInputSchema,
       output: mdxOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.id],
@@ -54,7 +52,6 @@ export const mdxServiceDef = defineService({
       staticPath: (input) => mdxQueryStaticPath(input.id),
     },
     getMdxForAllComponents: {
-      description: 'Returns MDX docs for every MDX component id in the story index.',
       input: v.void(),
       output: v.record(v.string(), mdxPayloadSchema),
       handler: (_input, ctx) => ctx.self.state.components,
@@ -65,14 +62,11 @@ export const mdxServiceDef = defineService({
   },
   commands: {
     _extractMdxForComponent: {
-      description:
-        'Reads MDX docs for one component id, writes the payload into service state, and returns it.',
       internal: true,
       input: mdxInputSchema,
       output: mdxOutputSchema,
     },
     _extractAllMdx: {
-      description: 'Extracts MDX docs for every MDX component id in the story index.',
       internal: true,
       input: v.undefined(),
       output: v.void(),

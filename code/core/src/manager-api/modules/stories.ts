@@ -325,14 +325,14 @@ export interface SubAPI {
   experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
-  resetTagFilters(): void;
+  resetTagFilters(): Promise<void>;
   /**
    * Replaces all tag filters in the sidebar with the provided included and excluded lists.
    *
    * @param included The tags to include in the filtered stories list
    * @param excluded The tags to filter out (exclude) from the stories list
    */
-  setAllTagFilters(included: Tag[], excluded: Tag[]): void;
+  setAllTagFilters(included: Tag[], excluded: Tag[]): Promise<void>;
   /**
    * Adds tag filters to the included or excluded filter lists. Included filters are included in the
    * stories list, whereas excluded filters are filtered out.
@@ -340,36 +340,36 @@ export interface SubAPI {
    * @param tags The tags to add as filters.
    * @param excluded Whether to add the tags to the include or exclude filter list.
    */
-  addTagFilters(tags: Tag[], excluded: boolean): void;
+  addTagFilters(tags: Tag[], excluded: boolean): Promise<void>;
   /**
    * Removes tag filters from both the included and excluded filter lists.
    *
    * @param tags The tags to remove from filters.
    */
-  removeTagFilters(tags: Tag[]): void;
+  removeTagFilters(tags: Tag[]): Promise<void>;
 
   /** Resets status filters in the sidebar (clears both included and excluded). */
-  resetStatusFilters(): void;
+  resetStatusFilters(): Promise<void>;
   /**
    * Replaces all status filters in the sidebar with the provided included and excluded lists.
    *
    * @param included The status values to include in the filtered stories list
    * @param excluded The status values to filter out (exclude) from the stories list
    */
-  setAllStatusFilters(included: StatusValue[], excluded: StatusValue[]): void;
+  setAllStatusFilters(included: StatusValue[], excluded: StatusValue[]): Promise<void>;
   /**
    * Adds status filters to the included or excluded filter lists.
    *
    * @param statuses The status values to add as filters.
    * @param excluded Whether to add to the include or exclude filter list.
    */
-  addStatusFilters(statuses: StatusValue[], excluded: boolean): void;
+  addStatusFilters(statuses: StatusValue[], excluded: boolean): Promise<void>;
   /**
    * Removes status filters from both the included and excluded filter lists.
    *
    * @param statuses The status values to remove from filters.
    */
-  removeStatusFilters(statuses: StatusValue[]): void;
+  removeStatusFilters(statuses: StatusValue[]): Promise<void>;
 }
 
 const removedOptions = ['enableShortcuts', 'theme', 'showRoots'];
@@ -896,7 +896,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     experimental_setFilter: async (id, filterFunction) => {
-      await store.setState({ filters: { ...store.getState().filters, [id]: filterFunction } });
+      await store.setState((state) => ({ filters: { ...state.filters, [id]: filterFunction } }));
 
       const { internal_index: index } = store.getState();
 
@@ -920,18 +920,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         excludedTagFilters: s.defaultExcludedTagFilters,
       }));
 
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
     },
 
     setAllTagFilters: async (included: Tag[], excluded: Tag[]) => {
       await persistFilters({ includedTagFilters: included, excludedTagFilters: excluded });
 
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
     },
 
     addTagFilters: async (tags: Tag[], excluded: boolean) => {
       await addFilters('tag', tags, excluded);
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
       if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
@@ -943,7 +943,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     removeTagFilters: async (tags: Tag[]) => {
       await removeFilters('tag', tags);
-      recomputeTagsFilter();
+      await recomputeTagsFilter();
       if (tags.length === 1 && BUILT_IN_TAG_IDS.has(tags[0])) {
         emitFilterTelemetry('interaction', {
           filterType: 'tag',
@@ -955,7 +955,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     resetStatusFilters: async () => {
       await persistFilters({ includedStatusFilters: [], excludedStatusFilters: [] });
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
     },
 
     setAllStatusFilters: async (included: StatusValue[], excluded: StatusValue[]) => {
@@ -966,7 +966,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const nextExcluded = new Set(excluded);
 
       await persistFilters({ includedStatusFilters: included, excludedStatusFilters: excluded });
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
 
       const changedIds = new Set<StatusValue>([
         ...prevIncluded,
@@ -1000,7 +1000,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     addStatusFilters: async (statuses: StatusValue[], excluded: boolean) => {
       await addFilters('status', statuses, excluded);
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
       if (statuses.length === 1) {
         emitFilterTelemetry('interaction', {
           filterType: 'status',
@@ -1012,7 +1012,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     removeStatusFilters: async (statuses: StatusValue[]) => {
       await removeFilters('status', statuses);
-      recomputeStatusFilter();
+      await recomputeStatusFilter();
       if (statuses.length === 1) {
         emitFilterTelemetry('interaction', {
           filterType: 'status',
@@ -1025,7 +1025,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
-    api.experimental_setFilter(
+    return api.experimental_setFilter(
       TAGS_FILTER,
       computeTagsFilterFn(includedTagFilters, excludedTagFilters)
     );
@@ -1033,7 +1033,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
   const recomputeStatusFilter = () => {
     const { includedStatusFilters, excludedStatusFilters } = store.getState();
-    api.experimental_setFilter(
+    return api.experimental_setFilter(
       STATUS_FILTER,
       computeStatusFilterFn(includedStatusFilters ?? [], excludedStatusFilters ?? [])
     );

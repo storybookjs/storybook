@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.7",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -52,6 +52,8 @@
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
     "./internal/setup-file-with-project-annotations": "./dist/vitest-plugin/setup-file-with-project-annotations.js",
+    "./internal/setup-file.browser.3": "./dist/vitest-plugin/setup-file.browser.3.js",
+    "./internal/setup-file.browser.4": "./dist/vitest-plugin/setup-file.browser.4.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
@@ -81,6 +83,7 @@
   },
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
+    "@storybook/builder-vite": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

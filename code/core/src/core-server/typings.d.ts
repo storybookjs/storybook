@@ -7,3 +7,4 @@ declare module 'watchpack';
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;
+declare var STORYBOOK_SERVICES_LOADED: boolean;

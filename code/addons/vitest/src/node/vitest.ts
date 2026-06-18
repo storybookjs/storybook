@@ -7,6 +7,8 @@ import {
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
@@ -48,6 +50,7 @@ new TestManager({
   storybookOptions: {
     configDir: process.env.STORYBOOK_CONFIG_DIR || '',
   } as any,
+  configLoader: process.env.STORYBOOK_CONFIG_LOADER as BuilderOptions['configLoader'],
 });
 
 const exit = (code = 0) => {

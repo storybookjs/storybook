@@ -1,4 +1,11 @@
-import { getEnvConfig, optionalEnvToBoolean, parseList } from 'storybook/internal/common';
+import {
+  HandledError,
+  PackageManagerName,
+  getEnvConfig,
+  optionalEnvToBoolean,
+  parseList,
+} from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -7,6 +14,8 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
+import { aiSetup } from '../cli/ai/index.ts';
+import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
@@ -23,6 +32,7 @@ process.env.STORYBOOK = 'true';
  * - `dev`: Start the Storybook development server
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
+ * - `ai`: AI agent helpers (always bundled so agent invocations never download an extra package)
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
@@ -220,6 +230,53 @@ command('index')
       packageJson,
     }).catch(() => process.exit(1));
   });
+
+// Like `handleCommandFailure`, but curried and surfacing the error, matching the signature the
+// `ai` command handlers expect.
+const handleAiCommandFailure =
+  (logFilePath: string | boolean | undefined) =>
+  async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
+    return handleCommandFailure(logFilePath ?? false);
+  };
+
+const aiCommand = command('ai')
+  .description('AI agent helpers for Storybook')
+  .option(
+    '-o, --output <path>',
+    'Write the prompt output to a file instead of printing it to stdout'
+  );
+
+aiCommand
+  .command('setup')
+  .description('Generate setup instructions to write stories for real components')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
+  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
+  .action(async (options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    const runId = Math.random().toString(36);
+    const mergedOptions = { ...parentOptions, ...options, runId };
+    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
+      await aiSetup(mergedOptions);
+    }).catch(handleAiCommandFailure(mergedOptions.logfile));
+  });
+
+// Show available subcommands when `storybook ai` is run without arguments
+aiCommand.action(() => {
+  aiCommand.outputHelp();
+});
+
+// Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
+// (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
+if (isAiCliFeatureEnabled()) {
+  registerAiMcpPassthrough(program, aiCommand, handleAiCommandFailure);
+}
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

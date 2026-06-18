@@ -95,6 +95,7 @@ export abstract class StorybookError extends Error {
     category: string;
     code: number;
     message: string;
+    cause?: unknown;
     documentation?: boolean | string | string[];
     isHandledError?: boolean;
     name: string;
@@ -104,7 +105,10 @@ export abstract class StorybookError extends Error {
      */
     subErrors?: StorybookError[];
   }) {
-    super(StorybookError.getFullMessage(props));
+    super(
+      StorybookError.getFullMessage(props),
+      props.cause === undefined ? undefined : { cause: props.cause }
+    );
     this.category = props.category;
     this.documentation = props.documentation ?? false;
     this.code = props.code;

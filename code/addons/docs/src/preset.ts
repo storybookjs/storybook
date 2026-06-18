@@ -49,7 +49,9 @@ async function webpack(
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
-      providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
+      providerImportSource: fileURLToPath(
+        import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+      ),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
         ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
@@ -223,3 +225,4 @@ const optimizeViteDeps = [
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
+export { experimental_docgenProvider } from './docgen';

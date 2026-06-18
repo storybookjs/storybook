@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "10.4.0-alpha.17",
+  "version": "10.5.0-alpha.7",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -42,6 +42,11 @@
       "types": "./dist/export-mocks/headers/index.d.ts",
       "code": "./src/export-mocks/headers/index.ts",
       "default": "./dist/export-mocks/headers/index.js"
+    },
+    "./link.mock": {
+      "types": "./dist/export-mocks/link/index.d.ts",
+      "code": "./src/export-mocks/link/index.tsx",
+      "default": "./dist/export-mocks/link/index.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
@@ -87,7 +92,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^3.2.4"
+    "vite-plugin-storybook-nextjs": "^3.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

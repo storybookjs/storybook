@@ -223,6 +223,34 @@ export const queryFromLocation = (location?: Partial<Location>) => {
   return queryFromString(location?.search ? location.search.slice(1) : '');
 };
 
+/**
+ * Read the active Storybook route from the `path` query param. When duplicate
+ * `path` keys exist (a malformed URL), prefer canvas routes over review pages.
+ */
+export const resolvePathQueryParam = (search?: string, fallback = ''): string => {
+  if (!search) {
+    return fallback;
+  }
+  const query = search.startsWith('?') ? search.slice(1) : search;
+  const paths = new URLSearchParams(query).getAll('path');
+  if (paths.length === 0) {
+    return fallback;
+  }
+  if (paths.length === 1) {
+    return paths[0] ?? fallback;
+  }
+  return (
+    paths.find(
+      (candidate) =>
+        candidate.startsWith('/story/') ||
+        candidate.startsWith('/docs/') ||
+        candidate.startsWith('/settings/')
+    ) ??
+    paths[0] ??
+    fallback
+  );
+};
+
 export const stringifyQuery = (query: Query) => {
   const queryStr = stringify(query);
   return queryStr ? '?' + queryStr : '';

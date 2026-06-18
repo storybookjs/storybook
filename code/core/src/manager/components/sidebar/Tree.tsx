@@ -6,6 +6,7 @@ import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
@@ -34,6 +35,7 @@ import {
   getGroupDualStatus,
   getGroupStatus,
   getMostCriticalStatusValue,
+  getSidebarVisibleStatus,
   getStatus,
   statusPriority,
 } from '../../utils/status.tsx';
@@ -204,6 +206,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
+        .filter(([, status]) => status.typeId !== REVIEW_STATUS_TYPE_ID)
         .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
         .map(([typeId, status]) => ({
           id: typeId,
@@ -221,7 +224,19 @@ const Node = React.memo<NodeProps>(function Node(props) {
     return [];
   }, [item.id, item.type, onSelectStoryId, statuses, theme]);
 
-  let contextMenu = useContextMenu(item, statusLinks, api);
+  const visibleStatus = useMemo(
+    () =>
+      getSidebarVisibleStatus({
+        theme,
+        item,
+        statuses,
+        groupDualStatus,
+        isModifiedFilterActive,
+      }),
+    [theme, item, statuses, groupDualStatus, isModifiedFilterActive]
+  );
+
+  let contextMenu = useContextMenu(item, statusLinks, api, visibleStatus);
   if (refId !== 'storybook_internal') {
     contextMenu = { node: null, onMouseEnter: () => {} };
   }

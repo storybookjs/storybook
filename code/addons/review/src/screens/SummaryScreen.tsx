@@ -1,24 +1,58 @@
-import React, { useEffect, useMemo, useState, type FC } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
 
-import { Button, Card, Collapsible, IconButton, ScrollArea } from 'storybook/internal/components';
+import {
+  Button,
+  Card,
+  Collapsible,
+  DocumentWrapper,
+  IconButton,
+  ScrollArea,
+} from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
   CheckIcon,
   ChevronSmallDownIcon,
-  CollapseIcon,
-  ExpandAltIcon,
+  ChevronSmallLeftIcon,
+  CloseIcon,
+  CopyIcon,
   SearchIcon,
   StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
 
+import Markdown from 'markdown-to-jsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
-import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';
-import { buildReviewChangesDetailHref } from '../review-navigation.ts';
+import { ReviewHeader } from '../components/ReviewHeader.tsx';
+import {
+  REVIEW_SUMMARY_BACK_ATTR,
+  buildReviewStoryHref,
+  buildSummaryBackHref,
+} from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
+
+const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
+  color: theme.color.defaultText,
+  p: {
+    margin: 0,
+  },
+  'p + p': {
+    marginTop: 10,
+  },
+  code: {
+    color: 'inherit',
+    verticalAlign: 'text-bottom',
+    fontSize: '0.85em',
+    margin: 0,
+    padding: '0 4px',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
+    borderRadius: theme.appBorderRadius,
+  },
+}));
 
 // `100dvh` fills the manager's page cell and also works in the addon's own
 // fullscreen stories, where #storybook-root has no height. The card list below
@@ -62,6 +96,11 @@ const SearchField = styled.div(({ theme }) => ({
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   padding: 2,
   paddingLeft: 6,
+  '@container review-header (max-width: 480px)': {
+    flex: '1 1 100%',
+    width: 'auto',
+    maxWidth: 'none',
+  },
   // Mirror the sidebar search field: the wrapper owns the focus ring while the
   // inner input stays outline-less, so the whole field reads as focused.
   '&:has(input:focus), &:has(input:active)': {
@@ -120,6 +159,22 @@ const List = styled.div({
   },
 });
 
+const SummaryCard = styled(Card)({
+  display: 'flex',
+  alignItems: 'flex-start',
+  padding: '9px 12px',
+  gap: 10,
+  svg: {
+    flexShrink: 0,
+    marginTop: 4,
+  },
+});
+
+const SummaryContent = styled(MarkdownWrapper)({
+  flex: 1,
+  minWidth: 0,
+});
+
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
 // accessible control is the chevron <IconButton> inside, which carries the
@@ -165,7 +220,7 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
-const CardRationale = styled.p(({ theme }) => ({
+const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 12px',
 }));
@@ -174,6 +229,14 @@ const NoResults = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: 16,
   fontSize: 14,
+}));
+
+const Footer = styled.div(({ theme }) => ({
+  color: theme.textMutedColor,
+  padding: '10px 10px 30px',
+  fontSize: theme.typography.size.s2,
+  textAlign: 'center',
+  textWrap: 'balance',
 }));
 
 // A story matches the search if its id, component title, or story name
@@ -197,11 +260,13 @@ const storyMatchesQuery = (
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
   if (elapsedMs < 60_000) {
-    return 'Created just now.';
+    return 'just now';
   }
   const elapsedMinutes = Math.floor(elapsedMs / 60_000);
-  const minuteLabel = elapsedMinutes === 1 ? 'minute' : 'minutes';
-  return `Created ${elapsedMinutes} ${minuteLabel} ago.`;
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}m ago`;
+  }
+  return `${Math.floor(elapsedMinutes / 60)}h ago`;
 };
 
 export interface SummaryScreenProps {
@@ -216,6 +281,12 @@ export interface SummaryScreenProps {
   hasPendingUpdate?: boolean;
   /** Accepts the pending review and navigates to the summary screen. */
   onAcceptPendingUpdate?: () => void;
+  /** Keep summary preview iframes mounted while the overlay is hidden. */
+  previewsPaused?: boolean;
+  /** Clears the active review (if any) and returns to the pre-review canvas. */
+  onDismiss: () => void;
+  /** Pre-review canvas search, or root when none is recorded yet. */
+  returnSearch?: string | null;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -225,18 +296,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   isStale = false,
   hasPendingUpdate = false,
   onAcceptPendingUpdate,
+  previewsPaused = false,
+  onDismiss,
+  returnSearch = null,
 }) => {
   const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
+  const [showNewOnly, setShowNewOnly] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
-
-  const storybookRootHref = useMemo(() => {
-    const rootUrl = new URL(window.location.href);
-    rootUrl.searchParams.delete('path');
-    rootUrl.searchParams.set('statuses', 'modified;new;related');
-    return rootUrl.toString();
-  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -245,7 +313,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     return () => window.clearInterval(intervalId);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!state) {
       setExpandedCollections(new Set());
       setShowAllCollections(new Set());
@@ -255,12 +323,45 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     setShowAllCollections(new Set());
   }, [state]);
 
+  // Must be computed before the early return — hooks cannot be called conditionally.
+  const newStoryCount = useMemo(
+    () =>
+      new Set(
+        (state?.collections ?? [])
+          .flatMap((c) => c.storyIds)
+          .filter((id) => storyInfo[id]?.isNewlyAdded)
+      ).size,
+    [state, storyInfo]
+  );
+
+  const normalizedQuery = search.trim().toLowerCase();
+  const visibleCollections = useMemo(
+    () =>
+      (state?.collections ?? [])
+        .map((collection, index) => {
+          const titleMatch =
+            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
+          let storyIds = titleMatch
+            ? collection.storyIds
+            : collection.storyIds.filter((storyId) =>
+                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
+              );
+          if (showNewOnly) {
+            storyIds = storyIds.filter((id) => storyInfo[id]?.isNewlyAdded);
+          }
+          return { collection, index, storyIds };
+        })
+        .filter((entry) => entry.storyIds.length > 0),
+    [state?.collections, normalizedQuery, showNewOnly, storyInfo]
+  );
+
   if (!state) {
     return (
       <Empty>
         <span>Waiting for the agent to display a review…</span>
         <div>
           <CopyButton
+            appearance="agentic"
             padding="small"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
@@ -271,13 +372,12 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </>
             }
           >
-            <WandIcon /> Copy prompt
+            <CopyIcon />
+            Copy prompt
           </CopyButton>
-          <Button padding="small" asChild>
-            <a href={storybookRootHref}>
-              <StorybookIcon />
-              View Storybook
-            </a>
+          <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
+            <CloseIcon />
+            Close
           </Button>
         </div>
       </Empty>
@@ -286,7 +386,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const createdAgo = state.createdAt ? formatCreatedAgo(state.createdAt, nowMs) : null;
-  const areAllExpanded = state.collections.every((_, index) => expandedCollections.has(index));
 
   const toggleCollection = (index: number) => {
     setExpandedCollections((previous) => {
@@ -305,23 +404,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     );
   };
 
-  const normalizedQuery = search.trim().toLowerCase();
-  // Search narrows to the story level: a collection whose title matches keeps
-  // all its stories, otherwise only the matching stories are shown. The
-  // original index is kept so expand state and detail links stay correct.
-  const visibleCollections = state.collections
-    .map((collection, index) => {
-      const titleMatch =
-        !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-      const storyIds = titleMatch
-        ? collection.storyIds
-        : collection.storyIds.filter((storyId) =>
-            storyMatchesQuery(storyId, storyInfo, normalizedQuery)
-          );
-      return { collection, index, storyIds };
-    })
-    .filter((entry) => entry.storyIds.length > 0);
-
   return (
     <Page>
       {hasPendingUpdate && onAcceptPendingUpdate ? (
@@ -330,23 +412,43 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <AttentionBanner kind="stale" />
       ) : null}
       <ReviewHeader
-        title={state.title}
-        subtitle={
-          <span>
-            Showing {storyCount} agent-curated {storyCount === 1 ? 'story' : 'stories'} for quick
-            review.{createdAgo ? ` ${createdAgo}` : ''}
-          </span>
-        }
-        actions={
-          <Button padding="small" asChild>
-            <a href={storybookRootHref} target="_blank" rel="noreferrer">
+        leading={
+          <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
+            <a href={buildSummaryBackHref(returnSearch)} {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}>
+              <ChevronSmallLeftIcon />
               <StorybookIcon />
-              View Storybook
             </a>
           </Button>
         }
-        secondRow={
+        title={state.title}
+        subtitle={
           <>
+            <span>
+              Showing {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
+            </span>
+            {createdAgo ? (
+              <>
+                <span>&bull;</span>
+                <span>{createdAgo}</span>
+              </>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
+            {newStoryCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                active={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                {newStoryCount} new
+              </Button>
+            ) : null}
             <SearchField>
               <SearchIconWrap>
                 <SearchIcon />
@@ -359,20 +461,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 onChange={(event) => setSearch(event.target.value)}
               />
             </SearchField>
-            <IconButton
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel={areAllExpanded ? 'Collapse all collections' : 'Expand all collections'}
-              style={{ marginLeft: 'auto' }}
-              onClick={() => {
-                setExpandedCollections(
-                  new Set(areAllExpanded ? [] : state.collections.map((_, index) => index))
-                );
-              }}
-            >
-              {areAllExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-            </IconButton>
           </>
         }
       />
@@ -380,8 +468,22 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       <ListScroll>
         <ScrollArea vertical>
           <List>
+            <SummaryCard color="agentic">
+              <WandIcon />
+              <SummaryContent>
+                <Markdown options={{ disableParsingRawHTML: true }}>
+                  {'**Summary:** ' + state.description}
+                </Markdown>
+              </SummaryContent>
+            </SummaryCard>
             {visibleCollections.length === 0 ? (
-              <NoResults>No collections match “{search.trim()}”.</NoResults>
+              <NoResults>
+                {showNewOnly && !search.trim()
+                  ? 'No new stories found.'
+                  : search.trim()
+                    ? `No collections match “${search.trim()}”.`
+                    : 'No collections found.'}
+              </NoResults>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
@@ -418,7 +520,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                       }
                     >
                       {collection.rationale ? (
-                        <CardRationale>{collection.rationale}</CardRationale>
+                        <CardRationale>
+                          <Markdown options={{ disableParsingRawHTML: true }}>
+                            {collection.rationale}
+                          </Markdown>
+                        </CardRationale>
                       ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
@@ -427,15 +533,21 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         storyInfo={storyInfo}
                         query={search}
                         getStoryHref={(storyId) =>
-                          buildReviewChangesDetailHref({ collectionIndex: index, storyId })
+                          buildReviewStoryHref({ collectionIndex: index, storyId })
                         }
                         getStoryPreviewHref={getStoryPreviewHref}
+                        previewsPaused={previewsPaused}
                       />
                     </Collapsible>
                   </Card>
                 );
               })
             )}
+            <Footer>
+              This review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
+              relevant for you to spot-check right now. Because this is AI-curated, results may be
+              inaccurate or incomplete.
+            </Footer>
           </List>
         </ScrollArea>
       </ListScroll>

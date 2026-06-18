@@ -41,6 +41,9 @@
     "*.d.ts",
     "!src/**/*"
   ],
+  "dependencies": {
+    "markdown-to-jsx": "^7.7.2"
+  },
   "devDependencies": {
     "http-proxy-middleware": "^4.0.0",
     "react": "^18.2.0",

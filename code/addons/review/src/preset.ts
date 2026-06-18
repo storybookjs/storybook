@@ -70,7 +70,9 @@ export function __resetCache(): void {
 
 function prepareReview(payload: ReviewState): ReviewState {
   // Staleness is server-authoritative (set by the file-watch handler), so a
-  // fresh push must never inherit a stale flag from the agent payload.
+  // fresh push must never inherit a stale flag from the agent payload. The
+  // hasBaseline hint is forwarded as-is: the client uses it to decide whether
+  // to attempt the baseline fetch.
   const { stale: _untrustedStale, ...rest } = payload;
   return {
     ...rest,
@@ -104,13 +106,18 @@ export const experimental_serverChannel = async (
   channel.on(EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
     // A fresh review starts non-stale; its new createdAt re-anchors staleness.
     cached = prepareReview(payload);
-    channel.emit(EVENTS.DISPLAY_REVIEW, cached);
+    channel.emit(EVENTS.DISPLAY_REVIEW, { ...cached, collapseNavOnOpen: true });
   });
 
   channel.on(EVENTS.REQUEST_REVIEW, () => {
     if (cached) {
       channel.emit(EVENTS.DISPLAY_REVIEW, cached);
     }
+  });
+
+  channel.on(EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
+    cached = undefined;
+    channel.emit(EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
   });
 
   // Mark the cached review stale on the first module-graph change that lands

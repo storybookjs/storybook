@@ -8323,6 +8323,7 @@ __metadata:
   resolution: "@storybook/addon-review@workspace:code/addons/review"
   dependencies:
     http-proxy-middleware: "npm:^4.0.0"
+    markdown-to-jsx: "npm:^7.7.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     sirv: "npm:^2.0.4"
@@ -11315,11 +11316,11 @@ __metadata:
   linkType: hard
 
 "@valibot/to-json-schema@npm:^1.3.0":
-  version: 1.7.0
-  resolution: "@valibot/to-json-schema@npm:1.7.0"
+  version: 1.7.1
+  resolution: "@valibot/to-json-schema@npm:1.7.1"
   peerDependencies:
     valibot: ^1.4.0
-  checksum: 10c0/d354217270f5855ceea547bcf696546e30075b04016757603c9e826b4395aefecbd0f8a79bea4431838b28960e09a2b7543aa5c5f8672c9abb2ab7d39354f533
+  checksum: 10c0/15ef472fae3229ab0dc6860325e5c6d21e724e4edbb1794ec603bc3881925bcaf5db44b30536925141758abea155b33b640129dcbb0ddfb47414cb967a6eeae1
   languageName: node
   linkType: hard
 
@@ -31897,14 +31898,14 @@ __metadata:
   linkType: hard
 
 "valibot@npm:^1.1.0, valibot@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "valibot@npm:1.4.0"
+  version: 1.4.1
+  resolution: "valibot@npm:1.4.1"
   peerDependencies:
     typescript: ">=5"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9eb9f02c1a4d685e0a76c312ae898b0012c2bdea24f75968c133fcf6019cde80c4d1d7e41f52e9a1189dde76a923baee05506fb412a0811d8d482d597bcfb4b9
+  checksum: 10c0/8a492d9c6d21032abea4fa29eafa355e5c31f1df6a3ba4b207abf20433c00b66b30884f60b225c3348113a327f20bb19e01e9b7771663e462cf94398ff39d233
   languageName: node
   linkType: hard
 

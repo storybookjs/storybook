@@ -7,10 +7,9 @@ import {
   useCopyButton,
 } from 'storybook/internal/components';
 
-export type CopyButtonProps = Omit<ButtonProps, 'children' | 'onClick' | 'ariaLabel'> &
+export type CopyButtonProps = Omit<ButtonProps, 'children' | 'onClick' | 'ariaLabel' | 'theme'> &
   UseCopyButtonOptions<ReactNode>;
 
-/** Button that copies text to the clipboard and shows a copied state. */
 export function CopyButton({
   children,
   childrenOnCopy,

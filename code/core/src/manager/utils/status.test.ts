@@ -233,6 +233,16 @@ describe('dual-slot status splitting', () => {
     expect(testStatus).toBe('status-value:warning');
   });
 
+  it('ignores reviewing status for sidebar test slot', () => {
+    const statuses = {
+      'storybook/addon-review': makeStatus('storybook/addon-review', 'status-value:reviewing'),
+      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:success'),
+    };
+    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
+    expect(changeStatus).toBe('status-value:unknown');
+    expect(testStatus).toBe('status-value:success');
+  });
+
   it('priority within change-detection slot: new beats modified beats affected', () => {
     const statuses = {
       first: makeStatus('storybook/change-detection', 'status-value:affected'),

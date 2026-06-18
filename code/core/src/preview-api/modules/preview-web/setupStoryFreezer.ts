@@ -262,8 +262,8 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
       trackedRafs.clear();
 
       finishAndPauseAnimations(documentRef);
-      addFreezeStyles(documentRef);
       stripScriptElements(documentRef);
+      addFreezeStyles(documentRef);
       stripInlineEventHandlers(documentRef);
       blockInteractions(documentRef);
     } finally {

@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { STORY_RENDERED } from 'storybook/internal/core-events';
 
@@ -49,7 +49,11 @@ export const useBaselineComparison = (
   const baselinePreviewSrcRef = useRef(baselinePreviewSrc);
 
   const baselineFrameRef = useRef<HTMLIFrameElement>(null);
-  const latestFrameRef = useRef<HTMLIFrameElement>(null);
+  const latestFrameRef = useRef<HTMLIFrameElement | null>(
+    typeof document !== 'undefined'
+      ? (document.getElementById('storybook-preview-iframe') as HTMLIFrameElement | null)
+      : null
+  );
   const cleanupScrollSyncRef = useRef<(() => void) | null>(null);
   const cleanupBaselineStoryRenderedRef = useRef<(() => void) | null>(null);
   const syncingTargetRef = useRef<ComparePane | null>(null);
@@ -129,6 +133,15 @@ export const useBaselineComparison = (
   useEffect(() => {
     setBaselinePreviewSrc(toBaselinePreviewUrl(latestPreviewSrc));
   }, [latestPreviewSrc]);
+
+  useLayoutEffect(() => {
+    const latestIframe = document.getElementById(
+      'storybook-preview-iframe'
+    ) as HTMLIFrameElement | null;
+    if (latestIframe && latestFrameRef.current !== latestIframe) {
+      latestFrameRef.current = latestIframe;
+    }
+  }, [showBaseline]);
 
   useEffect(() => {
     const baselineFrame = baselineFrameRef.current;

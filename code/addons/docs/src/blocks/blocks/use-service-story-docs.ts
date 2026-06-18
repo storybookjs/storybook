@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
   type StoryDocsService,
-  seedQueryState,
   selectSnippetForStory,
   selectStoryDoc,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
+
+import { useQuerySubscription } from './use-query-subscription.ts';
 
 /**
  * Subscribes docs blocks to one story in the preview's local `core/story-docs` runtime.
@@ -20,21 +21,15 @@ import { getService } from 'storybook/preview-api';
  * (`isInitialLoading`, `isError`, etc.) — so blocks can react to loading and error states.
  *
  * Requires a concrete story id and a registered `core/story-docs` service. Callers whose service may
- * be absent must guard at a parent and conditionally render a child that calls this hook.
- *
- * Deliberately does NOT reuse the manager-side `useServiceQuery` (built on the React 18-only
- * `useSyncExternalStore`): the preview-side docs blocks must keep working on React 16/17. This is a
- * small, query-specific subscription instead — the selected slice is seeded synchronously during
- * render and the subscription forces a re-render whenever that slice changes.
+ * be absent must guard at a parent and conditionally render a child that calls this hook. The React
+ * 16/17-safe subscription mechanics live in {@link useQuerySubscription}.
  */
 export function useServiceStory<TSelected>(
   storyId: string,
   selector: (payload: StoryDocsPayload | undefined, storyId: string) => TSelected
 ): QueryState<TSelected> {
   const componentId = storyId.split('--')[0]!;
-  const service = useMemo(() => getService<StoryDocsService>('core/story-docs'), []);
-  const [, forceRender] = useReducer((tick: number) => tick + 1, 0);
-  const cache = useRef<{ storyId: string; state: QueryState<TSelected> }>(undefined);
+  const service = getService<StoryDocsService>('core/story-docs');
 
   // Kept stable (selectors are compared by reference on the subscription) so we don't re-subscribe
   // every render.
@@ -43,21 +38,14 @@ export function useServiceStory<TSelected>(
     [selector, storyId]
   );
 
-  if (cache.current?.storyId !== storyId) {
-    cache.current = {
-      storyId,
-      state: seedQueryState(service.queries.getStoryDocs, { id: componentId }, boundSelector),
-    };
-  }
-
-  useEffect(() => {
-    return service.queries.getStoryDocs.subscribe({ id: componentId }, boundSelector, (state) => {
-      cache.current = { storyId, state };
-      forceRender();
-    });
-  }, [service, componentId, storyId, boundSelector]);
-
-  return cache.current.state;
+  // Keyed on `storyId` (not `componentId`): the selected slice is per-story, so switching between
+  // sibling stories in the same component must re-seed and re-subscribe with the new selector.
+  return useQuerySubscription(
+    storyId,
+    service.queries.getStoryDocs,
+    { id: componentId },
+    boundSelector
+  );
 }
 
 /** Convenience hook for the common case: the story-docs entry for one story. */

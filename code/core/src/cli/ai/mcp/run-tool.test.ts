@@ -471,8 +471,7 @@ describe('runAiTool', () => {
     expect(result.output).toContain('upstream result');
   });
 
-  it('only warns about instances in the selected agent bucket', async () => {
-    vi.stubEnv('AI_AGENT', 'claude');
+  describe('when multiple instances exist in the selected agent bucket', () => {
     const olderPreview = {
       ...record,
       agent: 'claude-preview',
@@ -500,22 +499,28 @@ describe('runAiTool', () => {
       startedAt: '2026-06-09T12:00:00.000Z',
       url: 'http://localhost:6009',
     };
-    vi.mocked(readRegistry).mockResolvedValue([olderPreview, selectedPreview, newerCodex]);
 
-    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+    beforeEach(() => {
+      vi.stubEnv('AI_AGENT', 'claude');
+      vi.mocked(readRegistry).mockResolvedValue([olderPreview, selectedPreview, newerCodex]);
+    });
 
-    expect(callMcpTool).toHaveBeenCalledWith(
-      selectedPreview,
-      { name: 'list-all-documentation', arguments: {} },
-      undefined
-    );
-    expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple matching Storybook instances');
-    expect(result.output).toContain('Matching instances at `/projects/foo`');
-    expect(result.output).toContain('pid `2`');
-    expect(result.output).toContain('pid `3`');
-    expect(result.output).not.toContain('pid `4`');
-    expect(result.output).not.toContain('http://localhost:6009');
+    it('only warns about instances in the selected agent bucket', async () => {
+      const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+
+      expect(callMcpTool).toHaveBeenCalledWith(
+        selectedPreview,
+        { name: 'list-all-documentation', arguments: {} },
+        undefined
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain('Multiple matching Storybook instances');
+      expect(result.output).toContain('Matching instances at `/projects/foo`');
+      expect(result.output).toContain('pid `2`');
+      expect(result.output).toContain('pid `3`');
+      expect(result.output).not.toContain('pid `4`');
+      expect(result.output).not.toContain('http://localhost:6009');
+    });
   });
 });
 

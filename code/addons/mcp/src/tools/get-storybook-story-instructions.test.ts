@@ -31,7 +31,6 @@ describe('getUIBuildingInstructionsTool', () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
 			hasFeatureFlag: false,
-			hasAddon: false,
 		});
 
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -226,7 +225,6 @@ describe('getUIBuildingInstructionsTool', () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: true,
 			hasFeatureFlag: true,
-			hasAddon: true,
 		});
 
 		const mockOptions = {
@@ -268,8 +266,7 @@ describe('getUIBuildingInstructionsTool', () => {
 	it('tells the agent to include preview URLs when review is disabled', async () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
-			hasFeatureFlag: true,
-			hasAddon: false,
+			hasFeatureFlag: false,
 		});
 
 		const mockOptions = {

@@ -9,7 +9,7 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.12+` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
+- **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **CI environment**: Linux and Windows
@@ -254,11 +254,25 @@ For unit tests that touch `node:fs` / `node:fs/promises`, use [`memfs`](https://
 
 Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async factory mock unless a test file already standardizes on the spy redirect pattern above.
 
+### Globals in tests: never assign `globalThis.*` directly
+
+> [!IMPORTANT]
+> Under no circumstances may a test mutate a global by assigning it directly (e.g. `globalThis.FEATURES = {...}`, `globalThis.window = ...`, `global.fetch = ...`). Direct assignment leaks across tests and files — Vitest does not restore it — so it silently changes behavior in unrelated tests and creates order-dependent flakiness.
+
+Use Vitest's global stubbing instead, which is tracked and restorable:
+
+- Set a global with `vi.stubGlobal('FEATURES', { experimentalDocgenServer: true })`.
+- Restore in `afterEach(() => vi.unstubAllGlobals())` (or enable `unstubGlobals: true` in the Vitest config so it resets before each test automatically).
+- For a value used by every test in a file, stub it in `beforeEach` and unstub in `afterEach`; for a one-off override, call `vi.stubGlobal` inside that single test.
+- Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` + `vi.unstubAllGlobals()` does this correctly, including deleting keys that did not previously exist.
+
+This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `document`, `navigator`, `fetch`, `IS_REACT_ACT_ENVIRONMENT`).
+
 ## Quality and Logging
 
 After changing files:
 
-1. Format with `yarn fmt:write` (run from the repo root)
+1. **Always** format with `yarn fmt:write`, run from the `code/` directory (`cd code && yarn fmt:write`), once you are done editing. The repo uses `oxfmt`, so hand-written formatting will frequently be wrong — do not skip this step.
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
@@ -284,12 +298,12 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 ## Environment Variables
 
-| Variable                      | Purpose                     |
-| ----------------------------- | --------------------------- |
-| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
-| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
-| `DEBUG`                       | Enable debug logging        |
+| Variable                      | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation                     |
+| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry                               |
+| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
+| `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid

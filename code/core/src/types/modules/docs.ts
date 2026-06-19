@@ -81,6 +81,15 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
   /** Syncronously find all stories of the component referenced by the CSF file. */
   componentStories: () => PreparedStory<TRenderer>[];
 
+  /**
+   * Resolve the component id (the CSF title id) for a component object referenced by a docs entry.
+   *
+   * Returns the id of the first referenced CSF file whose `meta.component` is the given component,
+   * or `undefined` when no referenced CSF file declares it. Used by blocks like `<ArgTypes
+   * of={Component} />` to key service lookups that are addressed by component id.
+   */
+  getComponentId: (component: TRenderer['component']) => string | undefined;
+
   /** Syncronously find all stories by CSF file. */
   componentStoriesFromCSFFile: (csfFile: CSFFile<TRenderer>) => PreparedStory<TRenderer>[];
 

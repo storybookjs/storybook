@@ -1,3 +1,4 @@
+import type { StrictArgTypes } from '../../../../types/modules/csf.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
@@ -13,7 +14,7 @@ export interface DocgenProviderInput {
   entry: IndexEntry;
 }
 
-/** Free-form error attached to a payload, subcomponent, or story snippet. */
+/** Free-form error attached to a payload or subcomponent. */
 export interface DocgenError {
   name: string;
   message: string;
@@ -22,21 +23,11 @@ export interface DocgenError {
 /** Compact JSDoc tag map: tag name → list of tag values (e.g. `@example a` → `{ example: ['a'] }`). */
 export type DocgenJsDocTags = Record<string, string[]>;
 
-/** Snippet + metadata for one story under a component. */
-export interface DocgenStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  error?: DocgenError;
-}
-
 /**
  * Docgen payload returned by `core/docgen`'s `getDocgen` query.
  *
- * Aligns with {@link ComponentManifest} plus integration-specific keys (for example
- * `reactComponentMeta`, `reactDocgen`, `reactDocgenTypescript`) via the index signature.
+ * Component-only fields (props, descriptions, subcomponents). Story snippets and file-level
+ * imports live in `core/story-docs` when `experimentalDocgenServer` is enabled.
  */
 export interface DocgenPayload {
   id: string;
@@ -44,11 +35,10 @@ export interface DocgenPayload {
   /** CSF story file import path from the index entry (same as component manifest `path`). */
   path: string;
   description?: string;
-  /** Suggested import statement(s) for the component (same as component manifest `import`). */
-  import?: string;
   summary?: string;
   jsDocTags: DocgenJsDocTags;
-  stories: DocgenStory[];
+  /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
+  argTypes?: StrictArgTypes;
   subcomponents?: Record<string, DocgenSubcomponent>;
   error?: DocgenError;
   [key: string]: unknown;
@@ -62,6 +52,8 @@ export interface DocgenSubcomponent {
   summary?: string;
   import?: string;
   jsDocTags: DocgenJsDocTags;
+  /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
+  argTypes?: StrictArgTypes;
   error?: DocgenError;
   [key: string]: unknown;
 }

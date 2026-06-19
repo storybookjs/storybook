@@ -7,6 +7,15 @@
  */
 export { defineService } from './service-definition.ts';
 
+export type { DocgenService } from './services/docgen/definition.ts';
+export type { DocgenPayload } from './services/docgen/types.ts';
+export type { StoryDocsService } from './services/story-docs/definition.ts';
+export {
+  prependImportToSnippet,
+  selectSnippetForStory,
+  selectStoryDoc,
+} from './services/story-docs/snippet.ts';
+
 export type {
   AnyServiceDefinition,
   Command,

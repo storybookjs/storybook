@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "projects": {
+    "foo-project": {
+      "root": "",
+      "architect": {
+        "build": {
+          "options": {
+            "assets": []
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "foo-project"
+}

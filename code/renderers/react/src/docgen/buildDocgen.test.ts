@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe('buildDocgenPayload', () => {
   it(
-    'extracts name, description, props, and a snippet for one component',
+    'extracts name, description, props, argTypes, and a snippet for one component',
     { timeout: 30_000 },
     async () => {
       tempDir = createTempDir('docgen-build');
@@ -84,12 +84,14 @@ describe('buildDocgenPayload', () => {
       const meta = payload!.reactComponentMeta as ComponentDoc | undefined;
       expect(Object.keys(meta?.props ?? {}).sort()).toEqual(['disabled', 'label']);
       expect(meta?.props.label.required).toBe(true);
-      expect(payload!.stories).toHaveLength(1);
-      expect(payload!.stories?.[0]).toMatchObject({
-        id: expect.stringMatching(/--primary$/),
-        name: 'Primary',
+      expect(payload!.argTypes?.label).toMatchObject({
+        name: 'label',
+        type: { name: 'string', required: true },
       });
-      expect(payload!.stories?.[0].snippet).toMatch(/<Button label="hi"/);
+      expect(payload!.argTypes?.disabled).toMatchObject({
+        name: 'disabled',
+        type: { name: 'boolean', required: false },
+      });
     }
   );
 
@@ -155,5 +157,9 @@ describe('buildDocgenPayload', () => {
       | ComponentDoc
       | undefined;
     expect(Object.keys(cardHeaderMeta?.props ?? {})).toContain('level');
+    expect(payload!.subcomponents?.CardHeader.argTypes?.level).toMatchObject({
+      name: 'level',
+      type: { name: 'number', required: false },
+    });
   });
 });

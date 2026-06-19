@@ -21,7 +21,8 @@
  * ```
  */
 
-import { registerService as registerServiceCore } from './service-registry.ts';
+import { getService, registerService as registerServiceCore } from './service-registry.ts';
+import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
   Queries,
@@ -30,6 +31,8 @@ import type {
   ServiceRegistrationOptions,
   ServiceRegistryApi,
 } from './types.ts';
+
+export { getService };
 
 /**
  * Registers a service in the preview and returns its runtime surface.
@@ -45,5 +48,7 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  return registerServiceCore(definition, registration);
+  return registerServiceCore(definition, registration, {
+    staticLoader: createBrowserStaticLoader(),
+  });
 }

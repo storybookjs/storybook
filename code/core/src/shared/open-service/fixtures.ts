@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from './service-definition.ts';
+import type { ServiceInstanceOf } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -52,6 +53,8 @@ export const mutableRecordLookupServiceDef = defineService({
     },
   },
 });
+
+export type MutableRecordLookupService = ServiceInstanceOf<typeof mutableRecordLookupServiceDef>;
 
 export type PreloadedValueState = Record<string, string | undefined>;
 
@@ -250,7 +253,7 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
         input: entryIdInputSchema,
         output: booleanOutputSchema,
         handler: (input, ctx) => {
-          const source = ctx.getService<typeof mutableRecordLookupServiceDef>(
+          const source = ctx.getService<MutableRecordLookupService>(
             mutableRecordLookupServiceDef.id
           );
           const record = source.queries.getRecordFields({
@@ -342,3 +345,176 @@ export function createInvalidStaticInputServiceDef() {
     commands: {},
   });
 }
+
+/** Leaves handlers undefined so registration tests can supply them later. */
+export const unimplementedOperationsServiceDef = defineService({
+  id: 'internal-fixture/unimplemented-operations',
+  description: 'Leaves handlers undefined so registration can supply them later.',
+  initialState: {} as Record<string, never>,
+  queries: {
+    getValue: {
+      description: 'Reads a value that is not implemented in this environment.',
+      input: v.undefined(),
+      output: v.string(),
+    },
+  },
+  commands: {
+    run: {
+      description: 'Runs a command that is not implemented in this environment.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type RegisteredCommandOverrideState = { count: number };
+
+/** Provides commands whose handlers are supplied at registration time. */
+export const registeredCommandOverrideServiceDef = defineService({
+  id: 'internal-fixture/registered-command-override',
+  description: 'Provides a command handler at registration time.',
+  initialState: { count: 0 } satisfies RegisteredCommandOverrideState,
+  queries: {
+    getCount: {
+      description: 'Reads the current count.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.count,
+    },
+  },
+  commands: {
+    increment: {
+      description: 'Increments the current count.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+    assignFromLookup: {
+      description: 'Reads another service and mirrors whether a marker exists.',
+      input: assignEntryFieldInputSchema,
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type RegistrationOnlyStaticBuildState = { value: string | null };
+
+/** Declares staticPath in the definition; load and handlers may be supplied at registration. */
+export const registrationOnlyStaticBuildServiceDef = defineService({
+  id: 'internal-fixture/registration-only-static-build',
+  description: 'Declares staticPath in the definition and load at registration.',
+  initialState: { value: null } as RegistrationOnlyStaticBuildState,
+  queries: {
+    getValue: {
+      description: 'Returns one statically built value.',
+      input: v.object({ build: v.literal('once') }),
+      output: v.nullable(v.string()),
+      handler: (_input, ctx) => ctx.self.state.value,
+      staticPath: () => 'state.json',
+      staticInputs: async () => [{ build: 'once' as const }],
+    },
+  },
+  commands: {
+    setValue: {
+      description: 'Stores one value during static load.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type MixedVisibilityState = { value: number };
+
+/** Exposes one public and one internal operation per family for discovery tests. */
+export const mixedVisibilityServiceDef = defineService({
+  id: 'internal-fixture/mixed-visibility',
+  description: 'Exposes one public and one internal operation per family.',
+  initialState: { value: 0 } satisfies MixedVisibilityState,
+  queries: {
+    getValue: {
+      description: 'Public query.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.value,
+    },
+    _getInternalValue: {
+      internal: true,
+      description: 'Internal query.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.value,
+    },
+  },
+  commands: {
+    setValue: {
+      description: 'Public command.',
+      input: v.number(),
+      output: voidOutputSchema,
+      handler: (input, ctx) => {
+        ctx.self.setState((draft) => {
+          draft.value = input;
+        });
+      },
+    },
+    _reset: {
+      internal: true,
+      description: 'Internal command.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((draft) => {
+          draft.value = 0;
+        });
+      },
+    },
+  },
+});
+
+export type HiddenServiceState = { secret: boolean };
+
+/** Hidden from listServices while remaining reachable through getService. */
+export const hiddenServiceDef = defineService({
+  id: 'internal-fixture/hidden-service',
+  internal: true,
+  description: 'Hidden from listServices.',
+  initialState: { secret: true } satisfies HiddenServiceState,
+  queries: {
+    getSecret: {
+      description: 'Returns the secret flag.',
+      input: v.undefined(),
+      output: v.boolean(),
+      handler: (_input, ctx) => ctx.self.state.secret,
+    },
+  },
+  commands: {},
+});
+
+export type InternalStaticBuildState = { value: string | null };
+
+/** Internal query participates in static builds. */
+export const internalStaticBuildServiceDef = defineService({
+  id: 'internal-fixture/internal-static-build',
+  description: 'Internal query participates in static builds.',
+  initialState: { value: null } as InternalStaticBuildState,
+  queries: {
+    _getValue: {
+      internal: true,
+      description: 'Internal statically built query.',
+      input: v.object({ build: v.literal('once') }),
+      output: v.nullable(v.string()),
+      handler: (_input, ctx) => ctx.self.state.value,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._setValue(undefined);
+      },
+      staticPath: () => 'state.json',
+      staticInputs: async () => [{ build: 'once' as const }],
+    },
+  },
+  commands: {
+    _setValue: {
+      internal: true,
+      description: 'Internal command used during static load.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});

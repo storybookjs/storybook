@@ -9,8 +9,10 @@ import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
 import { clearRegistry } from '../../../shared/open-service/server.ts';
-import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
+import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
+import { registerDocgenServices } from '../../../shared/open-service/services/docgen/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsProvider } from '../../../shared/open-service/services/story-docs/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import { registerManifests, writeManifests } from './manifests.ts';
 
@@ -111,6 +113,32 @@ describe('manifests', () => {
       const files = vol.toJSON();
       expect(files['/output/manifests/custom.json']).toBe(JSON.stringify({ data: 'value' }));
       expect(files['/output/manifests/another.json']).toBe(JSON.stringify({ items: [1, 2, 3] }));
+    });
+
+    it('writes legacy inline components.json with array-shaped stories when experimentalDocgenServer is disabled', async () => {
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './Button.stories.tsx',
+              stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+              jsDocTags: {},
+            },
+          },
+        },
+      };
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      expect(componentsJson.v).toBe(0);
+      expect(componentsJson.components.button.stories).toEqual([
+        { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      ]);
     });
 
     it('should write HTML file when components manifest exists', async () => {
@@ -318,18 +346,28 @@ describe('manifests', () => {
         },
       };
 
-      const provider = vi.fn<DocgenProvider>(async () => ({
+      const docgenProvider = vi.fn<DocgenProvider>(async () => ({
         id: 'button',
         name: 'Button',
         path: './button.stories.tsx',
         description: 'A button',
         jsDocTags: {},
-        stories: [],
       }));
 
-      registerDocgenService({
+      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+        id: 'button',
+        name: 'Button',
+        path: './button.stories.tsx',
+        stories: {
+          'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        },
+      }));
+
+      registerTestModuleGraphService();
+      registerDocgenServices({
         getIndex: () => mockGenerator.getIndex(),
-        provider,
+        docgenProvider,
+        storyDocsProvider,
       });
 
       vol.fromNestedJSON({
@@ -341,7 +379,22 @@ describe('manifests', () => {
               path: './button.stories.tsx',
               description: 'A button',
               jsDocTags: {},
-              stories: [],
+            },
+          },
+        }),
+        '/output/services/core/story-docs/button.json': JSON.stringify({
+          components: {
+            button: {
+              id: 'button',
+              name: 'Button',
+              path: './button.stories.tsx',
+              stories: {
+                'button--primary': {
+                  id: 'button--primary',
+                  name: 'Primary',
+                  snippet: '<Button />',
+                },
+              },
             },
           },
         }),
@@ -357,13 +410,20 @@ describe('manifests', () => {
         name: 'Button',
         description: 'A button',
         docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+        stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+      });
+      const storyDocsJson = JSON.parse(
+        files['/output/services/core/story-docs/button.json'] as string
+      );
+      expect(storyDocsJson.components.button.stories).toEqual({
+        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
       });
       expect(files['/output/manifests/docs.json']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('Button');
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
       // Both components.json and the HTML come from the on-disk snapshot, so the build must not
       // re-extract docgen from the live service.
-      expect(provider).not.toHaveBeenCalled();
+      expect(docgenProvider).not.toHaveBeenCalled();
     });
   });
 

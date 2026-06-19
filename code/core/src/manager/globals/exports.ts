@@ -693,6 +693,7 @@ export default {
     'CHANGE_DETECTION_STATUS_TYPE_ID',
     'CoreWebpackCompiler',
     'Feature',
+    'NON_AGGREGATED_STATUS_TYPE_IDS',
     'REVIEW_STATUS_TYPE_ID',
     'SupportedBuilder',
     'SupportedFramework',

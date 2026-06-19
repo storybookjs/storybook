@@ -37,6 +37,7 @@ import {
   getMostCriticalStatusValue,
   getSidebarVisibleStatus,
   getStatus,
+  shouldShowChangeStatus,
   statusPriority,
 } from '../../utils/status.tsx';
 import {
@@ -252,12 +253,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
 
     const { changeStatus, testStatus } = getChangeDetectionStatus(statuses || {});
-    const leafChangeIcon =
-      changeStatus === 'status-value:unknown' ||
-      changeStatus === 'status-value:affected' ||
-      (changeStatus === 'status-value:modified' && !isModifiedFilterActive)
-        ? null
-        : getStatus(theme, changeStatus).icon;
+    const leafChangeIcon = shouldShowChangeStatus(changeStatus, isModifiedFilterActive)
+      ? getStatus(theme, changeStatus).icon
+      : null;
     const { icon: testIcon } = getStatus(theme, testStatus);
     const overallStoryStatus = getMostCriticalStatusValue([changeStatus, testStatus]);
     const { textColor } = getStatus(theme, overallStoryStatus);
@@ -409,11 +407,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
     const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
 
-    const shouldShowBranchChangeIcon =
-      branchChange !== 'status-value:unknown' &&
-      branchChange !== 'status-value:affected' &&
-      (branchChange !== 'status-value:modified' || isModifiedFilterActive);
-    const branchChangeIcon = shouldShowBranchChangeIcon
+    const branchChangeIcon = shouldShowChangeStatus(branchChange, isModifiedFilterActive)
       ? getStatus(theme, branchChange).icon
       : null;
     const branchTestIcon = getStatus(theme, branchTest).icon;

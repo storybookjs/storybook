@@ -69,7 +69,11 @@ export function watchStorySpecifiers(
     // to watch. Convert to an import path so we can run against the specifiers.
     const importPath = toImportPath(absolutePath);
 
-    const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
+    const matchingSpecifier = specifiers.find(
+      (ns) =>
+        ns.importPathMatcher.exec(importPath) &&
+        (!ns.pathFilterMatcher || ns.pathFilterMatcher.exec(importPath))
+    );
     if (matchingSpecifier) {
       onInvalidate(importPath, removed);
       return;
@@ -107,7 +111,10 @@ export function watchStorySpecifiers(
             addedFiles.forEach((filePath: Path) => {
               const fileImportPath = toImportPath(filePath);
 
-              if (specifier.importPathMatcher.exec(fileImportPath)) {
+              if (
+                specifier.importPathMatcher.exec(fileImportPath) &&
+                (!specifier.pathFilterMatcher || specifier.pathFilterMatcher.exec(fileImportPath))
+              ) {
                 onInvalidate(fileImportPath, removed);
               }
             });

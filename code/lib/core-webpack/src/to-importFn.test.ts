@@ -212,6 +212,22 @@ describe('toImportFn - webpackIncludeRegexp', () => {
     expect(isNotMatchedForValidPaths).toEqual([]);
     expect(isMatchedForInvalidPaths).toEqual([]);
   });
+
+  it('intersects story globs with path filters', () => {
+    const regex = webpackIncludeRegexp(
+      Object.assign(
+        normalizeStoriesEntry('../src/**/*.stories.tsx', {
+          configDir: '/Users/user/code/.storybook',
+          workingDir: '/Users/user/code/',
+        }),
+        { pathFilters: ['src/payments/**'] }
+      )
+    );
+
+    expect(regex.test('/Users/user/code/src/payments/Button.stories.tsx')).toBe(true);
+    expect(regex.test('/Users/user/code/src/accounts/Profile.stories.tsx')).toBe(false);
+    expect(regex.test('/Users/user/code/src/payments/Button.tsx')).toBe(false);
+  });
 });
 
 describe('toImportFn - generated code', () => {
@@ -274,5 +290,24 @@ describe('toImportFn - generated code', () => {
     // Should have multiple async functions in the importers array
     expect(generated).toContain('const importers = [');
     expect(generated.match(/async \(path\) =>/g)?.length).toBe(2);
+  });
+
+  it('guards generated imports with path filters', () => {
+    const generated = toImportFn([
+      Object.assign(
+        normalizeStoriesEntry('../src/**/*.stories.tsx', {
+          configDir: '/Users/user/code/.storybook',
+          workingDir: '/Users/user/code/',
+        }),
+        {
+          pathFilterMatcher: /(?:^src\/payments\/)|(?:^\.[\\/]src\/payments[\\/])/,
+          pathFilters: ['src/payments/**'],
+        }
+      ),
+    ]);
+
+    expect(generated).toContain('if (!');
+    expect(generated).toContain('src\\/payments');
+    expect(generated).toContain('return;');
   });
 });

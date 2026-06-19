@@ -20,16 +20,18 @@ export const getStoriesPathsFromConfig = async ({
   stories,
   configDir,
   workingDir,
+  pathFilters,
 }: {
   stories: StorybookConfigRaw['stories'];
   configDir: string;
   workingDir: string;
+  pathFilters?: string[];
 }) => {
   if (stories.length === 0) {
     return [];
   }
 
-  const normalizedStories = normalizeStories(stories, { configDir, workingDir });
+  const normalizedStories = normalizeStories(stories, { configDir, workingDir, pathFilters });
 
   const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
     normalizedStories,

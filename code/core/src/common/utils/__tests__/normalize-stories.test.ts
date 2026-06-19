@@ -316,4 +316,42 @@ describe('normalizeStories', () => {
   it('should throw InvalidStoriesEntryError for empty entries', () => {
     expect(() => normalizeStories([], options)).toThrow(InvalidStoriesEntryError);
   });
+
+  it('adds path filters without replacing configured story matching', () => {
+    const [specifier] = normalizeStories(['../**/*.stories.jsx'], {
+      ...options,
+      pathFilters: ['src/payments/**'],
+    });
+
+    expect(specifier).toEqual(
+      expect.objectContaining({
+        directory: '.',
+        files: '**/*.stories.jsx',
+        pathFilters: ['src/payments/**'],
+      })
+    );
+
+    expect(specifier.importPathMatcher).toMatchPaths([
+      './src/payments/Button.stories.jsx',
+      './src/accounts/Profile.stories.jsx',
+    ]);
+    expect(specifier.pathFilterMatcher).toMatchPaths([
+      'src/payments/Button.stories.jsx',
+      './src/payments/Button.stories.jsx',
+    ]);
+    expect(specifier.pathFilterMatcher).not.toMatchPaths([
+      'src/accounts/Profile.stories.jsx',
+      './src/accounts/Profile.stories.jsx',
+    ]);
+  });
+
+  it('normalizes windows path filters', () => {
+    const [specifier] = normalizeStories(['../**/*.stories.jsx'], {
+      ...options,
+      pathFilters: ['src\\payments\\**'],
+    });
+
+    expect(specifier.pathFilters).toEqual(['src/payments/**']);
+    expect(specifier.pathFilterMatcher).toMatchPaths(['./src/payments/Button.stories.jsx']);
+  });
 });

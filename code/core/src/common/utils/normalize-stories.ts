@@ -37,7 +37,12 @@ export const getDirectoryFromWorkingDir = ({
 
 export const normalizeStoriesEntry = (
   entry: StoriesEntry,
-  { configDir, workingDir, defaultFilesPattern = DEFAULT_FILES_PATTERN }: NormalizeOptions
+  {
+    configDir,
+    workingDir,
+    defaultFilesPattern = DEFAULT_FILES_PATTERN,
+    pathFilters,
+  }: NormalizeOptions
 ): NormalizedStoriesSpecifier => {
   let specifierWithoutMatcher: Omit<NormalizedStoriesSpecifier, 'importPathMatcher'>;
 
@@ -91,11 +96,15 @@ export const normalizeStoriesEntry = (
 
   // Now make the importFn matcher.
   const importPathMatcher = globToRegexp(`${directory}/${files}`);
+  const pathFilterMatcher = toPathFilterRegexp(pathFilters);
 
   return {
     ...specifierWithoutMatcher,
     directory,
     importPathMatcher,
+    ...(pathFilterMatcher
+      ? { pathFilterMatcher, pathFilters: pathFilters?.map(normalizePathFilter) }
+      : {}),
   };
 };
 
@@ -103,7 +112,23 @@ interface NormalizeOptions {
   configDir: string;
   workingDir: string;
   defaultFilesPattern?: string;
+  pathFilters?: string[];
 }
+
+const normalizePathFilter = (pathFilter: string) => slash(pathFilter).replace(/^\.\//, '');
+
+const toPathFilterRegexp = (pathFilters?: string[]) => {
+  if (!pathFilters?.length) {
+    return undefined;
+  }
+
+  const regexps = pathFilters.flatMap((pathFilter) => {
+    const normalized = normalizePathFilter(pathFilter);
+    return [globToRegexp(normalized), globToRegexp(`./${normalized}`)];
+  });
+
+  return new RegExp(regexps.map((regexp) => `(?:${regexp.source})`).join('|'));
+};
 
 export const normalizeStories = (entries: StoriesEntry[], options: NormalizeOptions) => {
   if (!entries || (Array.isArray(entries) && entries.length === 0)) {

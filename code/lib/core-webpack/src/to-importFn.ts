@@ -36,16 +36,41 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
     ? globToRegexp(webpackIncludeGlob)
     : adjustRegexToExcludeNodeModules(globToRegexp(webpackIncludeGlob));
   // picomatch is creating an exact match, but we are only matching the end of the filename
-  return new RegExp(webpackIncludeRegexpWithCaret.source.replace(/^\^/, ''));
+  const storyFilesRegexp = new RegExp(webpackIncludeRegexpWithCaret.source.replace(/^\^/, ''));
+
+  if (!specifier.pathFilters?.length) {
+    return storyFilesRegexp;
+  }
+
+  const filterRegexps = specifier.pathFilters.map((pathFilter) => {
+    const filterWithoutLeadingDots = pathFilter.replace(/^(\.+\/)+/, '/');
+    const filterGlob = filterWithoutLeadingDots.startsWith('/')
+      ? filterWithoutLeadingDots
+      : `/${filterWithoutLeadingDots}`;
+    return globToRegexp(filterGlob).source.replace(/^\^/, '');
+  });
+
+  return new RegExp(
+    `(?=${storyFilesRegexp.source})(?:${filterRegexps.map((source) => `(?:${source})`).join('|')})`
+  );
 }
 
 export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
-  const { directory, importPathMatcher } = specifier;
+  const { directory, importPathMatcher, pathFilterMatcher } = specifier;
 
   return dedent`
       async (path) => {
         if (!${importPathMatcher}.exec(path)) {
           return;
+        }
+        ${
+          pathFilterMatcher
+            ? dedent`
+              if (!${pathFilterMatcher}.exec(path)) {
+                return;
+              }
+            `
+            : ''
         }
 
         const pathRemainder = path.substring(${directory.length + 1});

@@ -130,6 +130,7 @@ export class StoryIndexGenerator {
     return JSON.stringify({
       directory: specifier.directory,
       files: specifier.files,
+      pathFilterMatcher: specifier.pathFilterMatcher?.source,
       workingDir,
       ignoreWarnings,
     });
@@ -170,15 +171,27 @@ export class StoryIndexGenerator {
       onlyFiles: true,
     });
 
-    if (files.length === 0 && !ignoreWarnings) {
+    const filteredFiles = specifier.pathFilterMatcher
+      ? files.filter((absolutePath) => {
+          const relativePath = relative(workingDir, absolutePath);
+          const importPath = slash(normalizeStoryPath(relativePath));
+          return specifier.pathFilterMatcher?.exec(importPath);
+        })
+      : files;
+
+    if (filteredFiles.length === 0 && !ignoreWarnings) {
       once.warn(
-        `No story files found for the specified pattern: ${picocolors.blue(
-          join(specifier.directory, specifier.files)
-        )}`
+        specifier.pathFilters?.length
+          ? `No story files found for the specified path filter: ${picocolors.blue(
+              specifier.pathFilters.join(', ')
+            )}`
+          : `No story files found for the specified pattern: ${picocolors.blue(
+              join(specifier.directory, specifier.files)
+            )}`
       );
     }
 
-    files.sort().forEach((absolutePath: Path) => {
+    filteredFiles.sort().forEach((absolutePath: Path) => {
       const ext = extname(absolutePath);
       if (ext === '.storyshot') {
         const relativePath = relative(workingDir, absolutePath);
@@ -805,8 +818,10 @@ export class StoryIndexGenerator {
 
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
-    const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
-      ns.importPathMatcher.exec(importPath)
+    const specifier = Array.from(this.specifierToCache.keys()).find(
+      (ns) =>
+        ns.importPathMatcher.exec(importPath) &&
+        (!ns.pathFilterMatcher || ns.pathFilterMatcher.exec(importPath))
     );
     if (!specifier) {
       // not a story file

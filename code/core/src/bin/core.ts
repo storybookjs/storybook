@@ -9,7 +9,7 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
-import { Option, program } from 'commander';
+import { InvalidArgumentError, Option, program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
@@ -93,6 +93,24 @@ const command = (name: string) =>
       }
     });
 
+const pathOption = () =>
+  new Option('--path <glob>', 'Only load stories matching a project-root-relative glob').argParser(
+    (value: string, previous?: string) => {
+      if (previous) {
+        throw new InvalidArgumentError('The --path option accepts a single glob in this release.');
+      }
+      return value;
+    }
+  );
+
+const withPathFilters = <T extends { path?: string }>(options: T) => {
+  const { path, ...rest } = options;
+  return {
+    ...rest,
+    ...(path ? { pathFilters: [path] } : {}),
+  };
+};
+
 command('dev')
   .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
   .option('-h, --host <string>', 'Host to run Storybook')
@@ -130,6 +148,7 @@ command('dev')
     '--initial-path [path]',
     'URL path to be appended when visiting Storybook for the first time'
   )
+  .addOption(pathOption())
   .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
     const { default: packageJson } = await import('storybook/package.json', {
@@ -152,7 +171,7 @@ command('dev')
       options.port = parseInt(`${options.port}`, 10);
     }
 
-    await dev({ ...options, packageJson }).catch(() => {
+    await dev(withPathFilters(options)).catch(() => {
       handleCommandFailure(options.logfile);
     });
   });
@@ -174,6 +193,7 @@ command('build')
   .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
+  .addOption(pathOption())
   .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
     const { env } = process;
@@ -194,7 +214,7 @@ command('build')
     });
 
     await build({
-      ...options,
+      ...withPathFilters(options),
       packageJson,
       test: !!options.test || optionalEnvToBoolean(process.env.SB_TESTBUILD),
     }).catch(() => {
@@ -209,6 +229,7 @@ command('index')
   .option('-o, --output-file <file-name>', 'JSON file to output index')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--quiet', 'Suppress verbose build output')
+  .addOption(pathOption())
   .action(async (options) => {
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
@@ -227,7 +248,7 @@ command('index')
     });
 
     await index({
-      ...options,
+      ...withPathFilters(options),
       packageJson,
     }).catch(() => process.exit(1));
   });

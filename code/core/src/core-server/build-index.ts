@@ -22,6 +22,7 @@ export const buildIndex = async (options: BuildIndexOptions) => {
   const directories = {
     configDir,
     workingDir,
+    pathFilters: options.pathFilters,
   };
   const normalizedStories = normalizeStories(stories, directories);
 

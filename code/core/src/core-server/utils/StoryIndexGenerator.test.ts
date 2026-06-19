@@ -60,6 +60,31 @@ describe('StoryIndexGenerator', () => {
     getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
+
+  it('filters matched files before passing them into the indexer', async () => {
+    const createIndex = vi.fn(async (absolutePath: string) => [
+      {
+        type: 'story' as const,
+        exportName: 'Default',
+        name: 'Default',
+        title: absolutePath.includes('A.stories') ? 'A' : 'Other',
+      },
+    ]);
+    const specifier = normalizeStoriesEntry('./src/*.stories.@(ts|js)', {
+      ...options,
+      pathFilters: ['src/A.stories.js'],
+    });
+    const generator = new StoryIndexGenerator([specifier], {
+      ...options,
+      indexers: [{ test: /\.(stories|story)\.[tj]s$/, createIndex }],
+    });
+
+    await generator.initialize();
+
+    expect(createIndex).toHaveBeenCalledTimes(1);
+    expect(createIndex.mock.calls[0]?.[0]).toMatch(/src[/\\]A\.stories\.js$/);
+  });
+
   describe('extraction', () => {
     const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
       './src/A.stories.(ts|js|mjs|jsx)',

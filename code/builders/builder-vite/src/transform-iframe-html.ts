@@ -19,9 +19,16 @@ export async function transformIframeHtml(html: string, options: Options) {
   const stories = normalizeStories(await options.presets.apply('stories', [], options), {
     configDir: options.configDir,
     workingDir: process.cwd(),
+    pathFilters: options.pathFilters,
   }).map((specifier) => ({
-    ...specifier,
+    directory: specifier.directory,
+    files: specifier.files,
+    titlePrefix: specifier.titlePrefix,
     importPathMatcher: specifier.importPathMatcher.source,
+    ...(specifier.pathFilters ? { pathFilters: specifier.pathFilters } : {}),
+    ...(specifier.pathFilterMatcher
+      ? { pathFilterMatcher: specifier.pathFilterMatcher.source }
+      : {}),
   }));
 
   const otherGlobals = {

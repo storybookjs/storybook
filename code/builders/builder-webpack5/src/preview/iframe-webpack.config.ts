@@ -78,6 +78,7 @@ export default async (
   const stories = normalizeStories(nonNormalizedStories, {
     configDir: options.configDir,
     workingDir,
+    pathFilters: options.pathFilters,
   });
 
   const builderOptions = await getBuilderOptions<BuilderOptions>(options);

@@ -23,7 +23,9 @@ stories in sync with every frontend component you create, modify, or delete.
 
 ## Prerequisites
 
-- Storybook must be installed in the project. If it is not installed and if this skill is not explicitly invoked by the user, silently ignore this skill.
+ - Storybook must be installed in the project. If it is not installed:
+   - If this skill is not explicitly invoked by the user, silently ignore this skill.
+   - Otherwise, follow the instructions in "When Storybook is not installed" below.
 - Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
   installed, invoke the **upgrade** skill to upgrade it before
   proceeding.

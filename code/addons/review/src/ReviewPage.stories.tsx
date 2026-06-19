@@ -88,7 +88,6 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  hasBaseline: true,
   createdAt: Date.now(),
   collections: [
     {
@@ -109,36 +108,6 @@ const updatedReviewState: ReviewState = {
   description: 'Refreshed review after more changes.',
   createdAt: reviewState.createdAt! + 60_000,
 };
-
-const baselineIndex = {
-  v: 5,
-  entries: {
-    'manager-settings-guidepage--default': {
-      type: 'story',
-      id: 'manager-settings-guidepage--default',
-      title: 'Manager/Settings/Guide Page',
-      name: 'Default',
-    },
-    'manager-settings-aboutscreen--default': {
-      type: 'story',
-      id: 'manager-settings-aboutscreen--default',
-      title: 'Manager/Settings/About Screen',
-      name: 'Default',
-    },
-  },
-};
-
-const originalFetch = globalThis.fetch;
-const fetchMock = fn(async (input: RequestInfo | URL): Promise<Response> => {
-  const url = typeof input === 'string' ? input : input.toString();
-  if (url.includes('/__review-baseline/index.json')) {
-    return new Response(JSON.stringify(baselineIndex), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  return new Response(null, { status: 404 });
-});
 
 const applyReviewState = () => {
   expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
@@ -225,13 +194,22 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
-    fetchMock.mockClear();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
-    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    // Mark one reviewed story as newly added (via change detection) so the
+    // summary shows the "New" badge.
+    internal_fullStatusStore.set([
+      {
+        storyId: 'manager-settings-checklist--default',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
     document.getElementById('storybook-review-summary-portal')?.remove();
     return () => {
-      globalThis.fetch = originalFetch;
+      internal_fullStatusStore.unset();
       document.getElementById('storybook-review-summary-portal')?.remove();
     };
   },

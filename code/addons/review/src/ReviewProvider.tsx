@@ -30,13 +30,9 @@ import {
 } from './components/CollectionGrid.tsx';
 import {
   AUTO_ENTERED_SESSION_KEY,
-  BASELINE_INDEX_URL,
-  DEFAULT_COMPARE_MODE,
   EVENTS,
-  PREVIEW_MODE_SESSION_KEY,
   PRE_REVIEW_RETURN_KEY,
   REVIEW_CHANGES_URL,
-  type CompareMode,
 } from './constants.ts';
 import { navigateOutOfReview } from './review-actions.ts';
 import {
@@ -57,18 +53,6 @@ import { sessionStore } from './session-store.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
 
-const readCompareMode = (): CompareMode => {
-  const stored = sessionStore.read(PREVIEW_MODE_SESSION_KEY);
-  if (stored === 'split' || stored === 'baseline' || stored === 'latest') {
-    return stored;
-  }
-  // Migrate legacy detail-screen values.
-  if (stored === '2up') {
-    return 'split';
-  }
-  return DEFAULT_COMPARE_MODE;
-};
-
 const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState): boolean =>
   current !== null &&
   current.createdAt !== undefined &&
@@ -79,8 +63,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
   const [pendingReview, setPendingReview] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
-  const [baselineStoryIds, setBaselineStoryIds] = useState<Set<string> | null>(null);
-  const [compareMode, setCompareModeState] = useState<CompareMode>(readCompareMode);
   const [isInReviewMode, setIsInReviewMode] = useState(() => isReviewModeActive());
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const displayedReviewRef = useRef<ReviewState | null>(null);
@@ -121,11 +103,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setIsInReviewMode(true);
   }, [api]);
 
-  const setCompareMode = useCallback((mode: CompareMode) => {
-    setCompareModeState(mode);
-    sessionStore.write(PREVIEW_MODE_SESSION_KEY, mode);
-  }, []);
-
   const getStoryPreviewHref = useCallback(
     (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,
     [api]
@@ -154,7 +131,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setState(null);
       setPendingReview(null);
       setIsStale(false);
-      setBaselineStoryIds(null);
       setIsInReviewMode(false);
       navigateOutOfReview(api, navigate, returnSearch);
     },
@@ -195,32 +171,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     );
   }, [state]);
 
-  const reviewCreatedAt = state?.createdAt;
-  useEffect(() => {
-    if (reviewCreatedAt === undefined || !state?.hasBaseline) {
-      setBaselineStoryIds(null);
-      return undefined;
-    }
-    let cancelled = false;
-    setBaselineStoryIds(null);
-    fetch(BASELINE_INDEX_URL)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { entries?: Record<string, unknown>; stories?: Record<string, unknown> }) => {
-        if (cancelled || !data) {
-          return;
-        }
-        const entries = data.entries ?? data.stories;
-        if (!entries || typeof entries !== 'object') {
-          return;
-        }
-        setBaselineStoryIds(new Set(Object.keys(entries)));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [reviewCreatedAt, state?.hasBaseline]);
-
   const flattenedEntries = useMemo(() => (state ? buildFlattenedNavEntries(state) : []), [state]);
 
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
@@ -235,14 +185,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       );
     for (const collection of state.collections) {
       for (const storyId of collection.storyIds) {
-        const absentFromBaseline = baselineStoryIds !== null && !baselineStoryIds.has(storyId);
-        if (isChangeDetectedNew(storyId) || absentFromBaseline) {
+        if (isChangeDetectedNew(storyId)) {
           ids.add(storyId);
         }
       }
     }
     return ids;
-  }, [allStatuses, baselineStoryIds, state]);
+  }, [allStatuses, state]);
 
   const storyInfo = useMemo(() => {
     const info: Record<string, StoryInfo> = {};
@@ -300,11 +249,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const isSummaryVisible = isReviewSummaryPath(path);
 
-  const showCompare =
-    baselineStoryIds !== null &&
-    activeEntry !== null &&
-    !newlyAddedStoryIds.has(activeEntry.storyId);
-
   // Re-sync the persisted review-mode flag on every navigation. Enter/exit
   // performed by the nav interceptor and shortcuts toggle it out of band before
   // navigating, so a route change is the signal to re-read it.
@@ -353,9 +297,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       activeIndex,
       isInReviewMode,
       isSummaryVisible,
-      compareMode,
-      setCompareMode,
-      showCompare,
       getStoryPreviewHref,
       dismissReview,
     }),
@@ -371,15 +312,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       activeIndex,
       isInReviewMode,
       isSummaryVisible,
-      compareMode,
-      setCompareMode,
-      showCompare,
       getStoryPreviewHref,
       dismissReview,
     ]
   );
 
-  // Sync before paint so toolbar/compare surfaces read current route on first frame.
+  // Sync before paint so toolbar surfaces read current route on first frame.
   useLayoutEffect(() => {
     reviewStore.setState(value);
   }, [value]);

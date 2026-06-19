@@ -37,10 +37,4 @@ export interface ReviewState {
    * review so REQUEST_REVIEW replays it to late/refreshed tabs.
    */
   stale?: boolean;
-  /**
-   * Hint from the agent payload that a baseline exists. When set, the client
-   * attempts to load `/__review-baseline/index.json` and enables compare mode
-   * if it resolves; the fetch result remains the final authority.
-   */
-  hasBaseline?: boolean;
 }

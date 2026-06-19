@@ -363,6 +363,24 @@ describe('resolveInstance', () => {
     }
   });
 
+  it('falls back to latest-started behavior when no current agent is detected', () => {
+    const olderPreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance([olderPreview, newerCodex], '/Users/x/projects/foo');
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(newerCodex);
+      expect(result.matches).toEqual([newerCodex, olderPreview]);
+    }
+  });
+
   it('ignores port when it is not supplied (routes by cwd alone)', () => {
     const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
     const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });

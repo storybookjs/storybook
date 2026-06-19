@@ -1,9 +1,6 @@
 export type ParsedToolArgs =
   | {
       ok: true;
-      cwd: string | undefined;
-      configDir: string | undefined;
-      port: string | undefined;
       help: boolean;
       args: Record<string, unknown>;
     }
@@ -17,24 +14,18 @@ export type ParsedToolArgs =
  * - A bare `--key` (no value) becomes `true`.
  * - `--json '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
  *   flags override its entries.
- * - `--cwd <path>`, `--config-dir <path>`, `--port <number>` and `--help`/`-h` are consumed by
- *   the CLI itself and never forwarded to the tool.
+ * - `--help`/`-h` is consumed by the CLI itself and never forwarded to the tool.
  *
- * `defaults` carries `--cwd`/`--config-dir`/`--port`/`--json` values that commander already
- * parsed before the tool name; the same flags appearing after the tool name take precedence.
+ * Target-selection options (`--cwd`, `--config-dir`, `--port`) are commander-owned and must
+ * appear before the command name; the same-looking flags after the command name are normal tool
+ * arguments.
  */
 export function parseToolArgs(
   tokens: string[],
   defaults: {
-    cwd?: string;
-    configDir?: string;
-    port?: string;
     json?: string;
   } = {}
 ): ParsedToolArgs {
-  let cwd = defaults.cwd;
-  let configDir = defaults.configDir;
-  let rawPort = defaults.port;
   let rawJson = defaults.json;
   let help = false;
   const flagArgs: Record<string, unknown> = {};
@@ -46,15 +37,6 @@ export function parseToolArgs(
 
     if (token === '--help' || token === '-h') {
       help = true;
-      continue;
-    }
-
-    if (token === '-c') {
-      if (i >= tokens.length || tokens[i].startsWith('--')) {
-        return { ok: false, error: '`-c, --config-dir` requires a value.' };
-      }
-      configDir = tokens[i];
-      i += 1;
       continue;
     }
 
@@ -78,30 +60,6 @@ export function parseToolArgs(
 
     if (key === '') {
       return { ok: false, error: `Invalid flag \`${token}\`.` };
-    }
-
-    if (key === 'cwd') {
-      if (value === undefined) {
-        return { ok: false, error: '`--cwd` requires a value.' };
-      }
-      cwd = value;
-      continue;
-    }
-
-    if (key === 'config-dir') {
-      if (value === undefined) {
-        return { ok: false, error: '`-c, --config-dir` requires a value.' };
-      }
-      configDir = value;
-      continue;
-    }
-
-    if (key === 'port') {
-      if (value === undefined) {
-        return { ok: false, error: '`--port` requires a value.' };
-      }
-      rawPort = value;
-      continue;
     }
 
     if (key === 'json') {
@@ -135,7 +93,7 @@ export function parseToolArgs(
     jsonArgs = parsed as Record<string, unknown>;
   }
 
-  return { ok: true, cwd, configDir, port: rawPort, help, args: { ...jsonArgs, ...flagArgs } };
+  return { ok: true, help, args: { ...jsonArgs, ...flagArgs } };
 }
 
 export function parsePort(
@@ -152,49 +110,6 @@ export function parsePort(
     };
   }
   return { ok: true, port };
-}
-
-/**
- * Extract only the `--cwd` value from pass-through tokens, tolerating tokens that
- * {@link parseToolArgs} would reject. Telemetry opt-out resolution must locate the target project
- * even when the invocation itself fails as `invalid-arguments` — that intercept still fires an
- * event (storybookjs/storybook#35131). Mirrors the full parser's `--cwd` grammar: `--cwd value`
- * or `--cwd=value`, last occurrence wins.
- */
-export function scanCwdToken(tokens: string[]): string | undefined {
-  let cwd: string | undefined;
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    if (token === '--cwd' && i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
-      cwd = tokens[i + 1];
-      i += 1;
-    } else if (token.startsWith('--cwd=')) {
-      cwd = token.slice('--cwd='.length);
-    }
-  }
-  return cwd;
-}
-
-/** Same lenient scanner as {@link scanCwdToken}, but for `--config-dir`. */
-export function scanConfigDirToken(tokens: string[]): string | undefined {
-  let configDir: string | undefined;
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    if (token === '-c' && i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
-      configDir = tokens[i + 1];
-      i += 1;
-      continue;
-    }
-    if (token === '--config-dir' && i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
-      configDir = tokens[i + 1];
-      i += 1;
-      continue;
-    }
-    if (token.startsWith('--config-dir=')) {
-      configDir = token.slice('--config-dir='.length);
-    }
-  }
-  return configDir;
 }
 
 function coerceValue(raw: string): unknown {

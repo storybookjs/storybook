@@ -91,9 +91,6 @@ export async function runAiTool(
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
   const parsed = parseToolArgs(toolArgTokens, {
-    cwd: options.cwd,
-    configDir: options.configDir,
-    port: options.port,
     json: options.json,
   });
   if (!parsed.ok) {
@@ -104,10 +101,10 @@ export async function runAiTool(
     };
   }
   if (parsed.help) {
-    return toolHelp(toolName, parsed.cwd, parsed.configDir, deps);
+    return toolHelp(toolName, options.cwd, options.configDir, deps);
   }
 
-  const toolLookup = await lookupAiTool(toolName, parsed.cwd, parsed.configDir, deps);
+  const toolLookup = await lookupAiTool(toolName, options.cwd, options.configDir, deps);
   switch (toolLookup.kind) {
     case 'local':
       return runLocalAiTool(toolLookup.localTool, parsed.args);
@@ -121,7 +118,7 @@ export async function runAiTool(
     }
   }
 
-  const parsedPort = parsePort(parsed.port);
+  const parsedPort = parsePort(options.port);
   if (!parsedPort.ok) {
     return {
       exitCode: 1,
@@ -130,7 +127,7 @@ export async function runAiTool(
     };
   }
 
-  const resolution = await resolveReadyInstance(parsed.cwd, parsedPort.port, deps);
+  const resolution = await resolveReadyInstance(options.cwd, parsedPort.port, deps);
   if (resolution.kind === 'error') {
     return {
       exitCode: 1,
@@ -203,16 +200,7 @@ export async function buildStorybookCommandsHelp(
 ): Promise<string> {
   const unavailable = (note: string) => `Storybook commands: (unavailable — ${note})`;
 
-  const parsed = parseToolArgs([], {
-    cwd: options.cwd,
-    configDir: options.configDir,
-    port: options.port,
-  });
-  if (!parsed.ok) {
-    return unavailable(parsed.error);
-  }
-
-  const metadataResult = await loadLocalMetadata(parsed.cwd, parsed.configDir, deps);
+  const metadataResult = await loadLocalMetadata(options.cwd, options.configDir, deps);
   if (metadataResult.kind === 'error') {
     return unavailable(
       `the Storybook config at ${metadataResult.configDir} could not be loaded: ${formatErrorMessage(
@@ -262,15 +250,7 @@ export async function runAiToolHelp(
   options: AiToolOptions = {},
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
-  const parsed = parseToolArgs([], {
-    cwd: options.cwd,
-    configDir: options.configDir,
-    port: options.port,
-  });
-  if (!parsed.ok) {
-    return { exitCode: 1, output: parsed.error, outcome: { kind: 'help' } };
-  }
-  return toolHelp(toolName, parsed.cwd, parsed.configDir, deps);
+  return toolHelp(toolName, options.cwd, options.configDir, deps);
 }
 
 /** All paths are help lookups, so every outcome is `help` regardless of success. */

@@ -109,10 +109,7 @@ describe('runAiTool', () => {
     expect(callMcpTool).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['--config-dir', ['--config-dir', 'config/storybook']],
-    ['-c', ['-c', 'config/storybook']],
-  ])('loads known local tools from a custom config dir with %s', async (_label, tokens) => {
+  it('loads known local tools from a custom config dir option', async () => {
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
@@ -125,8 +122,9 @@ describe('runAiTool', () => {
       },
     });
 
-    const result = await runAiTool('get-storybook-story-instructions', tokens, {
+    const result = await runAiTool('get-storybook-story-instructions', [], {
       cwd: '/projects/foo',
+      configDir: 'config/storybook',
     });
 
     expect(result.output).toBe('custom config instructions');
@@ -287,8 +285,9 @@ describe('runAiTool', () => {
   it('routes to the instance on the requested --port when several share the cwd', async () => {
     const onOtherPort = { ...record, instanceId: 'inst-2', pid: 2, port: 6007 };
     vi.mocked(readRegistry).mockResolvedValue([record, onOtherPort]);
-    const result = await runAiTool('list-all-documentation', ['--port', '6007'], {
+    const result = await runAiTool('list-all-documentation', [], {
       cwd: '/projects/foo',
+      port: '6007',
     });
     expect(callMcpTool).toHaveBeenCalledWith(onOtherPort, expect.anything(), undefined);
     expect(result.exitCode).toBe(0);
@@ -306,8 +305,9 @@ describe('runAiTool', () => {
   });
 
   it('rejects an invalid --port without contacting the registry', async () => {
-    const result = await runAiTool('list-all-documentation', ['--port', 'abc'], {
+    const result = await runAiTool('list-all-documentation', [], {
       cwd: '/projects/foo',
+      port: 'abc',
     });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('`--port` must be a port number');
@@ -649,16 +649,15 @@ describe('runAiToolHelp', () => {
     expect(readRegistry).not.toHaveBeenCalled();
   });
 
-  it('honors --config-dir tokens on the help path after the tool name', async () => {
+  it('honors the config dir option on the help path after the tool name', async () => {
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [{ name: 'get-documentation', description: 'Get docs.' }],
     });
-    const result = await runAiTool(
-      'get-documentation',
-      ['--config-dir', 'config/storybook', '--help'],
-      { cwd: '/projects/foo' }
-    );
+    const result = await runAiTool('get-documentation', ['--help'], {
+      cwd: '/projects/foo',
+      configDir: 'config/storybook',
+    });
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
       cwd: '/projects/foo',

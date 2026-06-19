@@ -44,13 +44,13 @@ function buildProgram({ withPassthrough }: { withPassthrough: boolean }) {
   const setupAction = vi.fn();
   const helpAction = vi.fn();
   const failures: unknown[] = [];
-  const handleCommandFailure = vi.fn(
-    (_logFilePath: string | boolean | undefined) =>
-      async (error: unknown): Promise<never> => {
-        failures.push(error);
-        return undefined as never;
-      }
-  );
+  const handleCommandFailure = vi.fn((logFilePath: string | boolean | undefined) => {
+    void logFilePath;
+    return async (error: unknown): Promise<never> => {
+      failures.push(error);
+      return undefined as never;
+    };
+  });
 
   const aiCommand = program
     .command('ai')
@@ -160,29 +160,46 @@ describe('with the feature flag (passthrough registered)', () => {
     });
   });
 
-  it('parses --cwd, --port and --json before the tool name as CLI options', async () => {
+  it('parses target options before the tool name and leaves later tokens as command args', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, [
       'ai',
       '--cwd',
-      '/x',
+      '/repo',
+      '--config-dir',
+      'config/storybook',
       '--port',
-      '6006',
-      '--json',
-      '{"a":1}',
-      'get-documentation',
+      '6007',
+      'preview-stories',
+      '--storyIds',
+      '["button--primary"]',
     ]);
+    expect(runAiTool).toHaveBeenCalledWith(
+      'preview-stories',
+      ['--storyIds', '["button--primary"]'],
+      {
+        cwd: '/repo',
+        configDir: 'config/storybook',
+        port: '6007',
+        json: undefined,
+      }
+    );
+  });
+
+  it('parses --json before the tool name as the command argument escape hatch', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '--json', '{"a":1}', 'get-documentation']);
     expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], {
-      cwd: '/x',
+      cwd: undefined,
       configDir: undefined,
-      port: '6006',
+      port: undefined,
       json: '{"a":1}',
     });
   });
 
-  it('parses --config-dir before the tool name as a CLI option', async () => {
+  it('parses -c before the tool name as a config-dir CLI option', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', '--config-dir', 'config/storybook', 'get-documentation']);
+    await parse(program, ['ai', '-c', 'config/storybook', 'get-documentation']);
     expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], {
       cwd: undefined,
       configDir: 'config/storybook',
@@ -193,13 +210,28 @@ describe('with the feature flag (passthrough registered)', () => {
 
   it('passes tokens after the tool name through verbatim, even option-like ones', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', 'tool-x', '--cwd', '/y', '--output', 'z']);
-    expect(runAiTool).toHaveBeenCalledWith('tool-x', ['--cwd', '/y', '--output', 'z'], {
-      cwd: undefined,
-      configDir: undefined,
-      port: undefined,
-      json: undefined,
-    });
+    await parse(program, [
+      'ai',
+      'tool-x',
+      '--cwd',
+      '/y',
+      '--config-dir',
+      'config/storybook',
+      '--port',
+      '6007',
+      '--output',
+      'z',
+    ]);
+    expect(runAiTool).toHaveBeenCalledWith(
+      'tool-x',
+      ['--cwd', '/y', '--config-dir', 'config/storybook', '--port', '6007', '--output', 'z'],
+      {
+        cwd: undefined,
+        configDir: undefined,
+        port: undefined,
+        json: undefined,
+      }
+    );
   });
 
   it('writes the result to the file given via --output instead of stdout', async () => {
@@ -326,59 +358,10 @@ describe('ai-command telemetry', () => {
     );
   });
 
-  it.each([
-    ['before the command name', ['ai', '--cwd', '/target/project', 'tool-x']],
-    ['after the command name', ['ai', 'tool-x', '--cwd', '/target/project']],
-  ])(
-    'resolves the opt-out configDir from the target Storybook when --cwd is passed %s',
-    async (_position, argv) => {
-      const { program } = buildProgram({ withPassthrough: true });
-      await parse(program, argv);
-      // The target project's core.disableTelemetry must apply, not the invoking cwd's.
-      expect(withTelemetry).toHaveBeenCalledWith(
-        'ai-command',
-        expect.objectContaining({
-          cliOptions: expect.objectContaining({
-            configDir: resolve('/target/project', '.storybook'),
-          }),
-        }),
-        expect.any(Function)
-      );
-    }
-  );
-
-  it.each([
-    [
-      'before the command name',
-      ['ai', '--cwd', '/target/project', '--config-dir', 'config/storybook', 'tool-x'],
-    ],
-    [
-      'after the command name',
-      ['ai', 'tool-x', '--cwd', '/target/project', '--config-dir', 'config/storybook'],
-    ],
-    [
-      'after the command name with short flag',
-      ['ai', 'tool-x', '--cwd', '/target/project', '-c', 'config/storybook'],
-    ],
-  ])('resolves the opt-out configDir from --config-dir when passed %s', async (_position, argv) => {
+  it('resolves the opt-out configDir from pre-command --cwd', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, argv);
-    expect(withTelemetry).toHaveBeenCalledWith(
-      'ai-command',
-      expect.objectContaining({
-        cliOptions: expect.objectContaining({
-          configDir: resolve('/target/project', 'config/storybook'),
-        }),
-      }),
-      expect.any(Function)
-    );
-  });
-
-  it('honors the --cwd target opt-out even when the remaining args are malformed', async () => {
-    const { program } = buildProgram({ withPassthrough: true });
-    // `--json '{bad'` makes full arg parsing fail (invalid-arguments intercept), but the
-    // target project's core.disableTelemetry must still be the one consulted.
-    await parse(program, ['ai', 'tool-x', '--cwd', '/target/project', '--json', '{bad']);
+    await parse(program, ['ai', '--cwd', '/target/project', 'tool-x']);
+    // The target project's core.disableTelemetry must apply, not the invoking cwd's.
     expect(withTelemetry).toHaveBeenCalledWith(
       'ai-command',
       expect.objectContaining({
@@ -390,18 +373,75 @@ describe('ai-command telemetry', () => {
     );
   });
 
-  it.each([
-    ['long flag', '--config-dir'],
-    ['short flag', '-c'],
-  ])('honors --config-dir %s even when the remaining args are malformed', async (_label, flag) => {
+  it('resolves the opt-out configDir from pre-command --config-dir', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, [
+      'ai',
+      '--cwd',
+      '/target/project',
+      '--config-dir',
+      'config/storybook',
+      'tool-x',
+    ]);
+    expect(withTelemetry).toHaveBeenCalledWith(
+      'ai-command',
+      expect.objectContaining({
+        cliOptions: expect.objectContaining({
+          configDir: resolve('/target/project', 'config/storybook'),
+        }),
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('does not resolve the opt-out configDir from post-command target-looking flags', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, [
       'ai',
       'tool-x',
       '--cwd',
       '/target/project',
-      flag,
+      '--config-dir',
       'config/storybook',
+      '--port',
+      '6007',
+    ]);
+    expect(withTelemetry).toHaveBeenCalledWith(
+      'ai-command',
+      expect.objectContaining({
+        cliOptions: expect.objectContaining({
+          configDir: resolve(process.cwd(), '.storybook'),
+        }),
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('honors pre-command --cwd target opt-out even when the command args are malformed', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    // `--json '{bad'` makes full arg parsing fail (invalid-arguments intercept), but the
+    // target project's core.disableTelemetry must still be the one consulted.
+    await parse(program, ['ai', '--cwd', '/target/project', 'tool-x', '--json', '{bad']);
+    expect(withTelemetry).toHaveBeenCalledWith(
+      'ai-command',
+      expect.objectContaining({
+        cliOptions: expect.objectContaining({
+          configDir: resolve('/target/project', '.storybook'),
+        }),
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('honors pre-command --config-dir even when the command args are malformed', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, [
+      'ai',
+      '--cwd',
+      '/target/project',
+      '--config-dir',
+      'config/storybook',
+      'tool-x',
       '--json',
       '{bad',
     ]);

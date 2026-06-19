@@ -17,7 +17,6 @@ import {
   runAiToolHelp,
 } from './run-tool.ts';
 import { resolveStorybookConfigDir } from './local-metadata.ts';
-import { scanConfigDirToken, scanCwdToken } from './tool-args.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -27,12 +26,11 @@ export function isAiCliFeatureEnabled(env: NodeJS.ProcessEnv = process.env): boo
   return optionalEnvToBoolean(env.STORYBOOK_FEATURE_AI_CLI) === true;
 }
 
-const CWD_DESCRIPTION =
-  'Project directory of the target Storybook (defaults to the current working directory)';
+const CWD_DESCRIPTION = 'Project directory of the target Storybook; place before the command name';
 const CONFIG_DIR_DESCRIPTION =
-  'Directory where to load Storybook configuration from for help and local commands';
+  'Storybook config directory for help and local commands; place before the command name';
 const PORT_DESCRIPTION =
-  'Port of the target Storybook for runtime commands when several instances run at the same cwd';
+  'Port of the target Storybook for runtime commands; place before the command name';
 
 type AiPassthroughOptions = {
   cwd?: string;
@@ -61,7 +59,9 @@ export type CommandFailureHandler = (
  * untouched, which requires positional options on the program.
  *
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
- * output can include the commands loaded from Storybook configuration.
+ * output can include the commands loaded from Storybook configuration. Target-selection options
+ * (`--cwd`, `--config-dir`, `--port`) belong before the command name; after the command name,
+ * tokens are command arguments.
  */
 export function registerAiMcpPassthrough(
   program: Command,
@@ -92,7 +92,7 @@ export function registerAiMcpPassthrough(
     .passThroughOptions()
     .action(
       async (command: string | undefined, commandArgs: string[], options: AiPassthroughOptions) => {
-        const cliOptions = pickCliOptions(options, commandArgs);
+        const cliOptions = pickCliOptions(options);
         // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
         // from a cwd without a Storybook is the `no-instance` intercept this event exists to
         // measure. The explicit opt-outs (env var, flag, loadable `core.disableTelemetry`)
@@ -135,14 +135,14 @@ export function registerAiMcpPassthrough(
 /**
  * The cliOptions handed to the telemetry machinery. Only the opt-out tier is forwarded — the
  * passthrough's own options (cwd, port, json) may contain paths and are never sent in payloads.
- * `configDir` points at the default config location of the *target* Storybook so `withTelemetry`
- * resolves `core.disableTelemetry` from the project the command is aimed at (`--cwd` is accepted
- * both before and after the command name, and is scanned leniently so even invocations rejected
- * as `invalid-arguments` honor the target's opt-out); it is read locally, never sent.
+ * `configDir` points at the config location of the *target* Storybook so `withTelemetry` resolves
+ * `core.disableTelemetry` from the project the command is aimed at. Target-selection options are
+ * commander-owned and must appear before the command name; after the command name, tokens are tool
+ * arguments and do not affect telemetry opt-out resolution. It is read locally, never sent.
  */
-function pickCliOptions(options: AiPassthroughOptions, commandArgs: string[]): CLIOptions {
-  const targetCwd = scanCwdToken(commandArgs) ?? options.cwd ?? process.cwd();
-  const targetConfigDir = scanConfigDirToken(commandArgs) ?? options.configDir;
+function pickCliOptions(options: AiPassthroughOptions): CLIOptions {
+  const targetCwd = options.cwd ?? process.cwd();
+  const targetConfigDir = options.configDir;
   return {
     disableTelemetry: options.disableTelemetry,
     logfile: options.logfile,

@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(8);
+			expect(response.result.tools).toHaveLength(9);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -494,6 +494,96 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "title": "Get stories for component files",
+				  },
+				  {
+				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
+
+				## When to call
+				- **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Omit \`changedFiles\`.
+
+				## Hard rules
+				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
+				2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+				3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
+				4. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
+				5. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
+				6. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+
+				## Curating (Trigger 1)
+				Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
+
+				## Curating (Trigger 2)
+				Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "changedFiles": {
+				          "description": "Paths of the files you changed, most central first.",
+				          "items": {
+				            "type": "string",
+				          },
+				          "type": "array",
+				        },
+				        "collections": {
+				          "items": {
+				            "properties": {
+				              "rationale": {
+				                "description": "Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.",
+				                "type": "string",
+				              },
+				              "storyIds": {
+				                "description": "Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.",
+				                "items": {
+				                  "type": "string",
+				                },
+				                "type": "array",
+				              },
+				              "title": {
+				                "description": "Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.",
+				                "type": "string",
+				              },
+				            },
+				            "required": [
+				              "title",
+				              "rationale",
+				              "storyIds",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				        "description": {
+				          "description": "Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
+				          "type": "string",
+				        },
+				        "title": {
+				          "description": "Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.",
+				          "type": "string",
+				        },
+				      },
+				      "required": [
+				        "title",
+				        "description",
+				        "collections",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "display-review",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "reviewUrl": {
+				          "description": "URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.",
+				          "type": "string",
+				        },
+				      },
+				      "required": [
+				        "reviewUrl",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Display Storybook review",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -1019,6 +1109,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "get-storybook-story-instructions",
 				  "get-changed-stories",
 				  "get-stories-by-component",
+				  "display-review",
 				]
 			`);
 		});

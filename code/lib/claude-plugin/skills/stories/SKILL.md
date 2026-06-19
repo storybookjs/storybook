@@ -20,12 +20,6 @@ The Storybook CLI ai subcommands is the source of truth for _how_ to write stori
 is the **mandatory, ordered process** for working on them, and for keeping
 stories in sync with every frontend component you create, modify, or delete.
 
-This is a STRICT, GATED workflow. You MUST execute the steps below in order and
-satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
-batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
-complete. If a gate cannot be satisfied, STOP and report to the user instead of
-working around it. Treat any shortcut as a failure of this workflow.
-
 ## Absolute rules
 
 - Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
@@ -38,7 +32,7 @@ working around it. Treat any shortcut as a failure of this workflow.
   finished for every component you touched. A component change without
   matching, verified stories is not a deliverable.
 
-## Step 0 — Prerequisites
+## Prerequisites
 
 - Storybook must be installed in the project. If it is not, go to
   "When Storybook is not installed" below and stop here unless the user opts in.
@@ -86,7 +80,18 @@ dependencies, or invoke the setup skills unless the user has explicitly opted in
 this time. A recorded decline at either scope MUST be respected on every later
 invocation without re-prompting.
 
-## Step 1 — Open the preview browser up front
+## Load the rules (before touching any story file)
+
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options. This also gets the latest rules for how to write stories.
+  - Save the available subcommands and options in your working memory for reference.
+- Some subcommands are only available when Storybook is running. If you need to run a subcommand that requires Storybook, follow the instructions in "Opening the preview browser up front" below to start Storybook and open the preview browser.
+- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
+- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
+
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
+rather than guessing.
+
+### Opening the preview browser up front
 
 1. Inspect `.claude/launch.json` for a launch entry that starts this project's Storybook dev server.
    If:
@@ -97,18 +102,3 @@ invocation without re-prompting.
 2. Start Storybook by launching that `.claude/launch.json` entry through the Claude launcher (never via Bash/background, per the Absolute rules).
 3. Open the Storybook preview in the preview browser. If the launch entry uses `autoPort`, wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
 4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
-
-**Gate:** Do NOT proceed to Step 2 until the preview browser is open and has rendered the Storybook URL without
-error. If launch setup reports an error, surface it to the user and STOP.
-
-## Step 2 — Load the rules (before touching any story file)
-
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` to get all available subcommands and options.
-  - Save the available subcommands and options in your working memory for reference.
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <subcommand> --port <port>` to get the story-writing instructions.
-  - If the subcommand allows a port option, use the port you saved in Step 1.
-- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
-- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
-
-**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
-rather than guessing.

@@ -20,7 +20,6 @@ import {
   STORY_PREPARED,
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
-import { queryFromLocation } from 'storybook/internal/router';
 import type {
   API_ComponentEntry,
   API_ComposedRef,
@@ -206,8 +205,6 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     const pathChanged = state.path !== props.path;
 
     if (pathChanged || locationSearchChanged) {
-      const { path: _queryPath, ...customQueryParams } = queryFromLocation(props.location);
-
       return {
         ...state,
         location: props.location,
@@ -215,7 +212,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
         refId: props.refId,
         viewMode: props.viewMode,
         storyId: props.storyId!,
-        customQueryParams,
+        customQueryParams: url.getCustomQueryParams(props.location),
       };
     }
     return null!;

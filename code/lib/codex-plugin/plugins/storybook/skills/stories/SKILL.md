@@ -9,12 +9,6 @@ The Storybook CLI ai subcommands are the source of truth for _how_ to write stor
 is the **mandatory, ordered process** for working on them, and for keeping
 stories in sync with every frontend component you create, modify, or delete.
 
-This is a STRICT, GATED workflow. You MUST execute the steps below in order and
-satisfy each step's **Gate** before moving to the next. Do NOT skip, reorder, or
-batch steps. Do NOT write or edit any `*.stories.*` file until Steps 1 and 2 are
-complete. If a gate cannot be satisfied, STOP and report to the user instead of
-working around it. Treat any shortcut as a failure of this workflow.
-
 ## Absolute rules
 
 - Commands must be run with the variable `STORYBOOK_FEATURE_AI_CLI=1`
@@ -27,10 +21,9 @@ working around it. Treat any shortcut as a failure of this workflow.
   matching, verified stories is not a deliverable.
 - In sandboxed Codex environments, run any Storybook CLI command with `require_escalated` (sandbox/network permissions may otherwise prevent localhost access).
 
-## Step 0 — Prerequisites
+## Prerequisites
 
-- Storybook must be installed in the project. If it is not, go to
-  "When Storybook is not installed" below and stop here unless the user opts in.
+- Storybook must be installed in the project. If it is not, go to "When Storybook is not installed" below and stop here unless the user opts in.
 - Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
   installed, invoke the **upgrade** skill to upgrade it before
   proceeding.
@@ -75,7 +68,18 @@ dependencies, or invoke the setup skills unless the user has explicitly opted in
 this time. A recorded decline at either scope MUST be respected on every later
 invocation without re-prompting.
 
-## Step 1 — Guarantee a running preview browser
+## Load the rules (before touching any story file)
+
+- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` with `require_escalated` to get all available subcommands and options. This also gets the latest rules for how to write stories.
+  - Save the available subcommands and options in your working memory for reference.
+- Some subcommands are only available when Storybook is running. If you need to run a subcommand that requires Storybook, follow the instructions in "Guarantee a running preview browser" below to start Storybook and open the preview browser.
+- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
+- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
+
+**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
+rather than guessing.
+
+### Guarantee a running preview browser
 
 The Storybook preview MUST be running so the story can be verified.
 
@@ -95,17 +99,3 @@ If there is no running instance, start it with the steps below:
 3. Make the preview browser visible to the user.
 4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 5. Open the preview URL in the preview browser.
-
-**Gate:** Do NOT proceed to Step 2 until the preview browser is visible to the user and has rendered the Storybook URL without
-error.
-
-## Step 2 — Load the rules (before touching any story file)
-
-- Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` with `require_escalated` to get all available subcommands and options.
-  - Save the available subcommands and options in your working memory for reference.
-- Run the ai subcommand with `require_escalated` to get the story-writing instructions.
-- Follow the instructions in the output, which will include the exact imports, structure, and conventions to use for the story you are writing or editing. The instructions are the ONLY acceptable source for how to write the story; do NOT rely on memory or existing patterns.
-- Create or edit the story strictly following the instructions. When this skill runs for a component change, cover the affected surface: new components get stories, new props/variants/states get covered, renamed states get updated, and deleted components get their stories removed.
-
-**Gate:** Every story you touched must conform to the instruction output you received. If anything is unclear, re-read it
-rather than guessing.

@@ -273,6 +273,29 @@ describe('resolveInstance', () => {
     }
   });
 
+  it('reports errors from the preferred agent bucket instead of switching buckets', () => {
+    const erroredPreview = record('/Users/x/projects/foo', 'error', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const readyClaude = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [erroredPreview, readyClaude],
+      '/Users/x/projects/foo',
+      undefined,
+      'claude'
+    );
+
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('mcp-error');
+      expect(result.matches).toEqual([erroredPreview]);
+    }
+  });
+
   it('prefers records matching the current non-Claude agent', () => {
     const codex = record('/Users/x/projects/foo', 'ready', {
       agent: 'codex',

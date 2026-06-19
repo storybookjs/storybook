@@ -198,6 +198,21 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         if (unmount) {
           cleanups.push(unmount);
         }
+        // `hooks` is loosely typed (`unknown`) on the portable story context.
+        const hooks = context.hooks as HooksContext<TRenderer>;
+        // Register the hook teardown BEFORE flushing so a throwing effect can't skip it: `clean()`
+        // runs the effect destroy fns on the next run/explicit cleanup (mirroring
+        // `StoryStore.cleanupStory`), so the applied effects survive through play + the a11y
+        // `afterEach` of this run.
+        cleanups.push(() => hooks.clean());
+        // In the browser (PreviewWeb) path, preview-api `useEffect` callbacks registered during
+        // render are flushed when `StoryRender` emits `STORY_RENDERED`, whose listener also detaches
+        // the hooks context. The portable path never emits that event, so invoke the same listener
+        // directly here (after the render resolves, before play + the a11y `afterEach` observe the
+        // DOM): it triggers the effects (e.g. `@storybook/addon-themes` setting `data-theme` on
+        // `<html>`), clears the current context, and removes the now-stale render listener. (Effect-
+        // only decorators; preview-api state updates that re-render are a separate, unsupported case.)
+        hooks.renderListener(context.id);
       };
     }
 

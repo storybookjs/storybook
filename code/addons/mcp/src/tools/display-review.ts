@@ -9,7 +9,7 @@ import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 
-const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
+export const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
 
 ## When to call
 - **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
@@ -67,7 +67,7 @@ export const ReviewStateSchema = v.object({
 	description: v.pipe(
 		v.string(),
 		v.description(
-			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and \`code\` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
+			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
 		),
 	),
 	collections: v.array(ReviewCollectionSchema),
@@ -80,7 +80,7 @@ export const ReviewStateSchema = v.object({
 export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
 export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
-const DisplayReviewOutput = v.object({
+export const DisplayReviewOutput = v.object({
 	reviewUrl: v.pipe(
 		v.string(),
 		v.description(
@@ -124,6 +124,16 @@ export function buildReviewUrl(ctx: {
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 
+export function getDisplayReviewToolMetadata() {
+	return {
+		name: DISPLAY_REVIEW_TOOL_NAME,
+		title: 'Display Storybook review',
+		description: DISPLAY_REVIEW_TOOL_DESCRIPTION,
+		schema: withFriendlyErrors(ReviewStateSchema),
+		outputSchema: DisplayReviewOutput,
+	};
+}
+
 /**
  * Returns the storyIds the agent passed that don't resolve against the live
  * Storybook index. Order-preserving and deduplicated so the error message
@@ -155,15 +165,15 @@ function formatUnknownStoryIdsError(unknownIds: string[]): string {
 	return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
-export async function addDisplayReviewTool(server: McpServer<any, AddonContext>) {
+export async function addDisplayReviewTool(
+	server: McpServer<any, AddonContext>,
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.dev ?? true,
+) {
 	server.tool(
 		{
-			name: DISPLAY_REVIEW_TOOL_NAME,
-			title: 'Display Storybook review',
-			description: DISPLAY_REVIEW_TOOL_DESCRIPTION,
-			schema: withFriendlyErrors(ReviewStateSchema),
-			outputSchema: DisplayReviewOutput,
-			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
+			...getDisplayReviewToolMetadata(),
+			enabled,
 		},
 		async (input: ReviewState) => {
 			try {

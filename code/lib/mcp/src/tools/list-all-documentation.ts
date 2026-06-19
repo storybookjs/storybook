@@ -9,7 +9,7 @@ import {
 
 export const LIST_TOOL_NAME = 'list-all-documentation';
 
-const ListAllDocumentationInput = v.object({
+export const ListAllDocumentationInput = v.object({
 	withStoryIds: v.optional(
 		v.pipe(
 			v.boolean(),
@@ -21,16 +21,22 @@ const ListAllDocumentationInput = v.object({
 	),
 });
 
+export function getListAllDocumentationToolMetadata() {
+	return {
+		name: LIST_TOOL_NAME,
+		title: 'List All Documentation',
+		description: 'List all available UI components and documentation entries from the Storybook',
+		schema: ListAllDocumentationInput,
+	};
+}
+
 export async function addListAllDocumentationTool(
 	server: McpServer<any, StorybookContext>,
 	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 ) {
 	server.tool(
 		{
-			name: LIST_TOOL_NAME,
-			title: 'List All Documentation',
-			description: 'List all available UI components and documentation entries from the Storybook',
-			schema: ListAllDocumentationInput,
+			...getListAllDocumentationToolMetadata(),
 			enabled,
 		},
 		async (input) => {

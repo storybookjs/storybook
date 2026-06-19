@@ -15,8 +15,8 @@ import { styled } from 'storybook/theming';
 
 import { enterReviewMode } from './review-mode.ts';
 
-/** Matches `@storybook/addon-review` channel event names. */
-const REVIEW_ADDON_ID = 'storybook/addon-review';
+/** Matches the `storybook/review` channel event names owned by the review module. */
+const REVIEW_ADDON_ID = 'storybook/review';
 const REVIEW_EVENTS = {
   DISPLAY_REVIEW: `${REVIEW_ADDON_ID}/display-review`,
   REQUEST_REVIEW: `${REVIEW_ADDON_ID}/request-review`,

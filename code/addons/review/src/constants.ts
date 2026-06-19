@@ -1,4 +1,7 @@
-export const ADDON_ID = 'storybook/addon-review';
+// Core-owned namespace for the review ingest contract: channel events, session
+// keys, status type id, and page/route ids all live under `storybook/review/*`.
+// The external `@storybook/addon-mcp` producer must emit the same namespace.
+export const ADDON_ID = 'storybook/review';
 export const PAGE_ID = `${ADDON_ID}/page`;
 export const REVIEW_CHANGES_URL = '/review/';
 

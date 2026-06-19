@@ -1,8 +1,8 @@
 import type { API } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
 
-/** Matches `@storybook/addon-review` sessionStorage keys. */
-const REVIEW_ADDON_ID = 'storybook/addon-review';
+/** Matches the `storybook/review` sessionStorage keys owned by the review module. */
+const REVIEW_ADDON_ID = 'storybook/review';
 
 // Persisted flag marking the manager as being in review mode. Review mode is
 // interaction-driven (never inferred from the URL) and survives reloads via

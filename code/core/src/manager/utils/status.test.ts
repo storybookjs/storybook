@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
 import { mockDataset } from '../components/sidebar/mockdata.ts';
@@ -235,7 +236,7 @@ describe('dual-slot status splitting', () => {
 
   it('ignores reviewing status for sidebar test slot', () => {
     const statuses = {
-      'storybook/addon-review': makeStatus('storybook/addon-review', 'status-value:reviewing'),
+      [REVIEW_STATUS_TYPE_ID]: makeStatus(REVIEW_STATUS_TYPE_ID, 'status-value:reviewing'),
       'storybook/vitest': makeStatus('storybook/vitest', 'status-value:success'),
     };
     const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);

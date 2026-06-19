@@ -33,7 +33,7 @@ Exactly what the user asked for — **no more, no less**. Group logically or fol
  * Canonical schema for the agent-pushed review payload.
  *
  * Server-side state caching and git-branch enrichment live on the
- * `@storybook/addon-review` server preset, not here — this tool just
+ * core server preset, not here — this tool just
  * validates the agent's input and forwards it over the channel.
  */
 export const ReviewCollectionSchema = v.object({
@@ -204,7 +204,7 @@ export async function addDisplayReviewTool(
 					endpoint: customContext.endpoint,
 				});
 
-				// Hand the payload off to @storybook/addon-review
+				// Hand the payload off to core-server's review channel
 				server.ctx.custom?.options?.channel?.emit(PUSH_REVIEW_EVENT, input);
 
 				const collectionCount = input.collections.length;

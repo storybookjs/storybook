@@ -87,6 +87,10 @@ const command = (name: string) =>
           logger.outro(`Debug logs are written to: ${logFile}`);
         } catch {}
       }
+      // Exit explicitly so Node won't hang on Windows due to lingering file handles
+      if (command.name() === 'build') {
+        process.exit(0);
+      }
     });
 
 command('dev')

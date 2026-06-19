@@ -8,6 +8,7 @@ import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
 import { useServiceDocgen } from './useServiceDocgen';
+import { useServiceStoryDoc } from './use-service-story-docs.ts';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
@@ -27,11 +28,13 @@ interface DescriptionProps {
 
 const getDescriptionFromResolvedOf = (
   resolvedOf: ReturnType<typeof useOf>,
-  serviceComponentDescription?: string
+  serviceComponentDescription?: string,
+  storyDocsDescription?: string | null
 ): string | null => {
   switch (resolvedOf.type) {
     case 'story': {
-      return resolvedOf.story.parameters.docs?.description?.story || null;
+      const storyDescription = resolvedOf.story.parameters.docs?.description?.story;
+      return storyDescription !== undefined ? storyDescription : (storyDocsDescription ?? null);
     }
     case 'meta': {
       const { parameters, component } = resolvedOf.preparedMeta;
@@ -101,7 +104,14 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
   }
   const resolvedOf = useOf(of || 'meta');
   const serviceComponentDescription = useServiceComponentDescription(resolvedOf);
-  const markdown = getDescriptionFromResolvedOf(resolvedOf, serviceComponentDescription);
+  const storyDocsDescription = useServiceStoryDoc(
+    resolvedOf.type === 'story' ? resolvedOf.story.id : undefined
+  )?.description;
+  const markdown = getDescriptionFromResolvedOf(
+    resolvedOf,
+    serviceComponentDescription,
+    storyDocsDescription
+  );
 
   return markdown ? <Markdown>{markdown}</Markdown> : null;
 };

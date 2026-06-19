@@ -186,13 +186,134 @@ describe('resolveInstance', () => {
   });
 
   it('selects the instance matching BOTH cwd and port when a port is supplied', () => {
-    const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
-    const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo', 6007);
+    const a = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      pid: 100,
+      port: 6006,
+    });
+    const b = record('/Users/x/projects/foo', 'ready', { agent: 'codex', pid: 200, port: 6007 });
+    const result = resolveInstance([a, b], '/Users/x/projects/foo', 6007, 'claude');
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(b);
       expect(result.matches).toEqual([b]);
+    }
+  });
+
+  it('prefers Claude preview records for Claude CLI invocations', () => {
+    const genericClaude = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const claudePreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T12:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [genericClaude, claudePreview, newerCodex],
+      '/Users/x/projects/foo',
+      undefined,
+      'claude'
+    );
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(claudePreview);
+      expect(result.matches).toEqual([claudePreview]);
+    }
+  });
+
+  it('falls back to generic Claude records when no Claude preview record matches', () => {
+    const genericClaude = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [genericClaude, newerCodex],
+      '/Users/x/projects/foo',
+      undefined,
+      'claude'
+    );
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(genericClaude);
+      expect(result.matches).toEqual([genericClaude]);
+    }
+  });
+
+  it('prefers records matching the current non-Claude agent', () => {
+    const codex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerCursor = record('/Users/x/projects/foo', 'ready', {
+      agent: 'cursor',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [codex, newerCursor],
+      '/Users/x/projects/foo',
+      undefined,
+      'codex'
+    );
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(codex);
+      expect(result.matches).toEqual([codex]);
+    }
+  });
+
+  it('chooses the latest-started ready instance inside the selected agent bucket', () => {
+    const olderPreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerPreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const newestCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T12:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [olderPreview, newerPreview, newestCodex],
+      '/Users/x/projects/foo',
+      undefined,
+      'claude'
+    );
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(newerPreview);
+      expect(result.matches).toEqual([newerPreview, olderPreview]);
+    }
+  });
+
+  it('falls back to latest-started behavior when no record matches the current agent', () => {
+    const older = record('/Users/x/projects/foo', 'ready', {
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newer = record('/Users/x/projects/foo', 'ready', {
+      agent: 'cursor',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance([older, newer], '/Users/x/projects/foo', undefined, 'codex');
+
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(newer);
+      expect(result.matches).toEqual([newer, older]);
     }
   });
 

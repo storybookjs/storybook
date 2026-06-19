@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
@@ -37,6 +37,10 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue([{ name: 'list-all-documentation', description: 'List docs' }]);
   vi.mocked(loadStorybookAiMetadata).mockReset().mockResolvedValue(defaultRuntimeMetadata);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('runAiTool', () => {
@@ -464,6 +468,52 @@ describe('runAiTool', () => {
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
     expect(result.output).toContain('upstream result');
+  });
+
+  it('only warns about instances in the selected agent bucket', async () => {
+    vi.stubEnv('AI_AGENT', 'claude');
+    const olderPreview = {
+      ...record,
+      agent: 'claude-preview',
+      instanceId: 'inst-2',
+      pid: 2,
+      port: 6007,
+      startedAt: '2026-06-09T10:00:00.000Z',
+      url: 'http://localhost:6007',
+    };
+    const selectedPreview = {
+      ...record,
+      agent: 'claude-preview',
+      instanceId: 'inst-3',
+      pid: 3,
+      port: 6008,
+      startedAt: '2026-06-09T11:00:00.000Z',
+      url: 'http://localhost:6008',
+    };
+    const newerCodex = {
+      ...record,
+      agent: 'codex',
+      instanceId: 'inst-4',
+      pid: 4,
+      port: 6009,
+      startedAt: '2026-06-09T12:00:00.000Z',
+      url: 'http://localhost:6009',
+    };
+    vi.mocked(readRegistry).mockResolvedValue([olderPreview, selectedPreview, newerCodex]);
+
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+
+    expect(callMcpTool).toHaveBeenCalledWith(
+      selectedPreview,
+      { name: 'list-all-documentation', arguments: {} },
+      undefined
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Multiple Storybook instances');
+    expect(result.output).toContain('pid `2`');
+    expect(result.output).toContain('pid `3`');
+    expect(result.output).not.toContain('pid `4`');
+    expect(result.output).not.toContain('http://localhost:6009');
   });
 });
 

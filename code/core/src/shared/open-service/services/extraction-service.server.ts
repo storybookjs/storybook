@@ -1,3 +1,5 @@
+import invariant from 'tiny-invariant';
+
 import {
   getStoryImportPathFromEntry,
   selectComponentEntriesByComponentId,
@@ -27,7 +29,7 @@ type ComponentPayloadQuery = { get(input: { id: string }): unknown };
 
 type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
 
-export type RegisterExtractionServiceOptions<TPayload, TQueries> = {
+export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   workingDir: string;
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
@@ -37,10 +39,10 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries> = {
    * of the service's queries so the runtime query handle resolves without a cast.
    */
   queryName: keyof TQueries & string;
-  /** Command that extracts and stores one component's payload. */
-  extractCommand: string;
-  /** Command that extracts every component in the story index. */
-  extractAllCommand: string;
+  /** Command that extracts and stores one component's payload. Keyed against the service's commands. */
+  extractCommand: keyof TCommands & string;
+  /** Command that extracts every component in the story index. Keyed against the service's commands. */
+  extractAllCommand: keyof TCommands & string;
 };
 
 /**
@@ -134,9 +136,21 @@ export function registerExtractionService<
   TCommands extends Commands<TState>,
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries>
+  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
 ) {
   const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
+
+  // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
+  // which defeats TS's per-key checking. Assert the names exist on the definition so a typo fails here
+  // instead of silently registering nothing (and later calling an `undefined` command in the refresh).
+  invariant(
+    queryName in definition.queries,
+    `Extraction service "${definition.id}" has no query named "${queryName}".`
+  );
+  invariant(
+    extractCommand in definition.commands && extractAllCommand in definition.commands,
+    `Extraction service "${definition.id}" is missing command "${extractCommand}" or "${extractAllCommand}".`
+  );
 
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));

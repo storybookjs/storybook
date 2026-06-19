@@ -13,8 +13,10 @@ import type {
  *
  * These lists are the single source of truth: the `*CoreServices` types below derive their keys
  * from each definition's `id` (so `getService` typing follows the list), and
- * `core-service-types.test.ts` checks the lists against the per-runtime registrar files
- * (`services/<name>/<runtime>.{ts,tsx}`) so they cannot drift apart.
+ * `core-service-types.test.ts` checks the lists against the per-runtime registrar-file convention
+ * (a `services/<name>/<runtime>.{ts,tsx}` file exists for each listed service, and vice versa) to
+ * catch a service being added to one without the other. Note this guards the convention, not the
+ * actual call: a service can have a registrar file yet still not be wired up by its caller.
  *
  * Each list only references definitions already loaded in that runtime, and the runtime entrypoints
  * import the derived *types* (`import type`), so these value imports add no runtime cost to the

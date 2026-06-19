@@ -268,9 +268,11 @@ When you add a new core service or register an existing one in a new runtime, yo
 Those def lists are the single source of truth: the `getService` overload types
 (`ManagerCoreServices`, `PreviewCoreServices`, `ServerCoreServices`) derive their ids from each
 definition, so there is no separate id list to keep in sync. A unit test in
-`core-service-types.test.ts` compares the lists to the registrar files and fails with actionable
-guidance when they drift apart. Handler-context `ctx.getService(...)` is unchanged and still requires
-an explicit generic when full typing is needed.
+`core-service-types.test.ts` compares the lists against the registrar-file convention (every listed
+service has a matching `services/<name>/<runtime>.{ts,tsx}` file, and vice versa) and fails with
+actionable guidance when they drift apart. The test guards the convention, not the actual call site,
+so still confirm the registrar is invoked (e.g. from `common-preset.ts` on the server). Handler-context
+`ctx.getService(...)` is unchanged and still requires an explicit generic when full typing is needed.
 
 ### Validation
 

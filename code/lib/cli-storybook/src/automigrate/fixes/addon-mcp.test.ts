@@ -1,16 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { detectAgent } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { add } from '../../add.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import { type AddonMcpOptions, addonMcp } from './addon-mcp.ts';
 
-vi.mock('../../add');
-
-const { detectAgent } = vi.hoisted(() => ({ detectAgent: vi.fn() }));
-vi.mock('storybook/internal/telemetry', () => ({ detectAgent }));
+vi.mock('../../add', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 const mockPackageManager = { type: 'npm' } as JsPackageManager;
 
@@ -26,70 +27,70 @@ const baseCheckOptions: CheckOptions = {
   hasCsfFactoryPreview: false,
 };
 
+const addArgs = {
+  configDir: '.storybook',
+  packageManager: 'npm',
+  skipInstall: true,
+  skipPostinstall: true,
+  yes: true,
+};
+
 describe('addon-mcp', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    detectAgent.mockReset();
+    vi.mocked(add).mockResolvedValue(undefined);
   });
 
   describe('check phase', () => {
-    it('returns null when no AI agent is detected', async () => {
-      detectAgent.mockReturnValue(undefined);
-
-      const result = await addonMcp.check(baseCheckOptions);
-
-      expect(result).toBeNull();
-    });
-
-    it('returns isInstalled: false when an agent is detected and addon-mcp is missing', async () => {
-      detectAgent.mockReturnValue({ name: 'claude' });
-
-      const result = await addonMcp.check(baseCheckOptions);
-
-      expect(result).toEqual({ agentName: 'claude', isInstalled: false });
-    });
-
-    it('returns isInstalled: true when addon-mcp is already configured (force update)', async () => {
-      detectAgent.mockReturnValue({ name: 'claude' });
-
-      const result = await addonMcp.check({
-        ...baseCheckOptions,
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-links', '@storybook/addon-mcp'],
-        } as StorybookConfigRaw,
+    describe('when no AI agent is detected', () => {
+      beforeEach(() => {
+        vi.mocked(detectAgent).mockReturnValue(undefined);
       });
 
-      expect(result).toEqual({ agentName: 'claude', isInstalled: true });
+      it('returns null', async () => {
+        await expect(addonMcp.check(baseCheckOptions)).resolves.toBeNull();
+      });
     });
 
-    it('detects addon-mcp when configured as an object', async () => {
-      detectAgent.mockReturnValue({ name: 'cursor' });
-
-      const result = await addonMcp.check({
-        ...baseCheckOptions,
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: [{ name: '@storybook/addon-mcp' }],
-        } as StorybookConfigRaw,
+    describe('when an AI agent is detected', () => {
+      beforeEach(() => {
+        vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
       });
 
-      expect(result).toEqual({ agentName: 'cursor', isInstalled: true });
+      it('returns isInstalled: false when addon-mcp is missing', async () => {
+        await expect(addonMcp.check(baseCheckOptions)).resolves.toEqual({
+          agentName: 'claude',
+          isInstalled: false,
+        });
+      });
+
+      it('returns isInstalled: true when addon-mcp is configured as a string', async () => {
+        await expect(
+          addonMcp.check({
+            ...baseCheckOptions,
+            mainConfig: {
+              stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+              addons: ['@storybook/addon-links', '@storybook/addon-mcp'],
+            } as StorybookConfigRaw,
+          })
+        ).resolves.toEqual({ agentName: 'claude', isInstalled: true });
+      });
+
+      it('returns isInstalled: true when addon-mcp is configured as an object', async () => {
+        await expect(
+          addonMcp.check({
+            ...baseCheckOptions,
+            mainConfig: {
+              stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+              addons: [{ name: '@storybook/addon-mcp' }],
+            } as StorybookConfigRaw,
+          })
+        ).resolves.toEqual({ agentName: 'claude', isInstalled: true });
+      });
     });
   });
 
   describe('run phase', () => {
-    const addArgs = {
-      configDir: '.storybook',
-      packageManager: 'npm',
-      skipInstall: true,
-      skipPostinstall: true,
-      yes: true,
-    };
-
     it('installs @storybook/addon-mcp when it is missing', async () => {
       await addonMcp.run?.({
         result: { agentName: 'claude', isInstalled: false },

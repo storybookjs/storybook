@@ -1,9 +1,10 @@
 import { resolve } from 'node:path';
 
+import {
+  CLAUDE_AGENT_NAME,
+  CLAUDE_PREVIEW_AGENT_NAME,
+} from '../../../shared/constants/agent-provenance.ts';
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
-
-const CLAUDE_AGENT = 'claude';
-const CLAUDE_PREVIEW_AGENT = 'claude-preview';
 
 export type ResolveResult =
   | {
@@ -121,8 +122,8 @@ function selectCompetingBucket(
 
   // std-env reports Claude CLI as `claude`; preview-launched Storybooks record `claude-preview`.
   const agentBuckets =
-    currentAgent === CLAUDE_AGENT
-      ? [CLAUDE_PREVIEW_AGENT, CLAUDE_AGENT]
+    currentAgent === CLAUDE_AGENT_NAME
+      ? [CLAUDE_PREVIEW_AGENT_NAME, CLAUDE_AGENT_NAME]
       : currentAgent
         ? [currentAgent]
         : [];

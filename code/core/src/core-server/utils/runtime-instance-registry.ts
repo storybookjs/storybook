@@ -7,13 +7,13 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
+import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { detectAgent } from '../../telemetry/detect-agent.ts';
 
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
-const CLAUDE_PREVIEW_AGENT = 'claude-preview';
 
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
@@ -77,7 +77,7 @@ export function getMcpMetadataFromMainConfig(
 
 function detectRuntimeInstanceAgent() {
   if (process.env.CLAUDE_AGENT_SDK_VERSION && !process.env.AI_AGENT) {
-    return CLAUDE_PREVIEW_AGENT;
+    return CLAUDE_PREVIEW_AGENT_NAME;
   }
 
   return detectAgent()?.name;

@@ -1,8 +1,6 @@
 // @ts-ignore
 import a11yConfig from '../../../code/addons/a11y/build-config';
 // @ts-ignore
-import reviewConfig from '../../../code/addons/review/build-config';
-// @ts-ignore
 import docsConfig from '../../../code/addons/docs/build-config';
 // @ts-ignore
 import linksConfig from '../../../code/addons/links/build-config';
@@ -93,7 +91,6 @@ export const buildEntries = {
 
   // addons
   '@storybook/addon-a11y': a11yConfig,
-  '@storybook/addon-review': reviewConfig,
   '@storybook/addon-docs': docsConfig,
   '@storybook/addon-links': linksConfig,
   '@storybook/addon-onboarding': onboardingConfig,

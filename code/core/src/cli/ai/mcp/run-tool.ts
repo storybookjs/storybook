@@ -566,9 +566,9 @@ function formatMultiInstanceWarning(
     const marker = r === chosen ? ' (used)' : '';
     return `> - pid \`${r.pid}\` at ${r.url} (status: \`${r.mcp.status}\`)${marker}`;
   });
-  return `> Warning: Multiple Storybook instances are running at this cwd. This call was sent to pid \`${chosen.pid}\`.
+  return `> Warning: Multiple matching Storybook instances are running at this cwd. This call was sent to pid \`${chosen.pid}\`.
 >
-> Instances at \`${chosen.cwd}\`:
+> Matching instances at \`${chosen.cwd}\`:
 ${lines.join('\n')}
 >
 > If results look unexpected, ask the user whether they want to stop the other instance(s).`;

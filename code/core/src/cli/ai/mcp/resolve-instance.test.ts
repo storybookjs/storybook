@@ -250,6 +250,29 @@ describe('resolveInstance', () => {
     }
   });
 
+  it('stays in the preferred agent bucket even when another bucket is ready', () => {
+    const startingPreview = record('/Users/x/projects/foo', 'starting', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const readyCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const result = resolveInstance(
+      [startingPreview, readyCodex],
+      '/Users/x/projects/foo',
+      undefined,
+      'claude'
+    );
+
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('mcp-starting');
+      expect(result.matches).toEqual([startingPreview]);
+    }
+  });
+
   it('prefers records matching the current non-Claude agent', () => {
     const codex = record('/Users/x/projects/foo', 'ready', {
       agent: 'codex',

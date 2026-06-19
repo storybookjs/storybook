@@ -75,7 +75,7 @@ export function getMcpMetadataFromMainConfig(
   return { status: 'ready', endpoint };
 }
 
-export function detectRuntimeInstanceAgent() {
+function detectRuntimeInstanceAgent() {
   if (process.env.CLAUDE_AGENT_SDK_VERSION && !process.env.AI_AGENT) {
     return CLAUDE_PREVIEW_AGENT;
   }

@@ -538,6 +538,21 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
     expect(registration.record.agent).toBe('codex');
   });
 
+  it('prefers explicit AI_AGENT provenance over the Claude preview launcher signal', async () => {
+    vi.stubEnv('CLAUDE_AGENT_SDK_VERSION', '0.1.0');
+    vi.stubEnv('AI_AGENT', 'claude');
+
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir: makeTempDir(),
+      storybookVersion: '10.5.0-alpha.0',
+    });
+
+    expect(registration.record.agent).toBe('claude');
+  });
+
   it('cleans up the written instance record', async () => {
     const registryDir = makeTempDir();
     const registration = await writeStorybookRuntimeInstanceRecord({

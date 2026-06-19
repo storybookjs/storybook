@@ -463,7 +463,8 @@ describe('runAiTool', () => {
     vi.mocked(readRegistry).mockResolvedValue([record, sibling]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple Storybook instances');
+    expect(result.output).toContain('Multiple matching Storybook instances');
+    expect(result.output).toContain('Matching instances at `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
@@ -509,7 +510,8 @@ describe('runAiTool', () => {
       undefined
     );
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple Storybook instances');
+    expect(result.output).toContain('Multiple matching Storybook instances');
+    expect(result.output).toContain('Matching instances at `/projects/foo`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('pid `3`');
     expect(result.output).not.toContain('pid `4`');

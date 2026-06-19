@@ -2,6 +2,9 @@ import { resolve } from 'node:path';
 
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
+const CLAUDE_AGENT = 'claude';
+const CLAUDE_PREVIEW_AGENT = 'claude-preview';
+
 export type ResolveResult =
   | {
       kind: 'instance';
@@ -116,10 +119,14 @@ function selectCompetingBucket(
     return [...matches].sort(byMostRecentlyStarted);
   }
 
-  const agentBuckets = currentAgent === 'claude' ? ['claude-preview', 'claude'] : [currentAgent];
-  const selectedAgent = agentBuckets.find(
-    (agent): agent is string => agent != null && matches.some((r) => r.agent === agent)
-  );
+  // std-env reports Claude CLI as `claude`; preview-launched Storybooks record `claude-preview`.
+  const agentBuckets =
+    currentAgent === CLAUDE_AGENT
+      ? [CLAUDE_PREVIEW_AGENT, CLAUDE_AGENT]
+      : currentAgent
+        ? [currentAgent]
+        : [];
+  const selectedAgent = agentBuckets.find((agent) => matches.some((r) => r.agent === agent));
   const bucket = selectedAgent ? matches.filter((r) => r.agent === selectedAgent) : matches;
 
   return [...bucket].sort(byMostRecentlyStarted);

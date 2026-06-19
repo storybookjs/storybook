@@ -17,25 +17,35 @@ const BaseInput = {
 	id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
 };
 
+export const GET_DOCUMENTATION_TOOL_DESCRIPTION = `Get documentation for a UI component or docs entry.
+
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${GET_STORY_TOOL_NAME} tool to fetch the story documentation for the specific story variant you need.
+
+Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
+
+export function getDocumentationToolSchema(options?: { multiSource?: boolean }) {
+	return options?.multiSource
+		? v.object({ ...BaseInput, ...StorybookIdField })
+		: v.object(BaseInput);
+}
+
+export function getDocumentationToolMetadata(options?: { multiSource?: boolean }) {
+	return {
+		name: GET_TOOL_NAME,
+		title: 'Get Documentation',
+		description: GET_DOCUMENTATION_TOOL_DESCRIPTION,
+		schema: getDocumentationToolSchema(options),
+	};
+}
+
 export async function addGetDocumentationTool(
 	server: McpServer<any, StorybookContext>,
 	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 	options?: { multiSource?: boolean },
 ) {
-	const schema = options?.multiSource
-		? v.object({ ...BaseInput, ...StorybookIdField })
-		: v.object(BaseInput);
-
 	server.tool(
 		{
-			name: GET_TOOL_NAME,
-			title: 'Get Documentation',
-			description: `Get documentation for a UI component or docs entry.
-
-Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${GET_STORY_TOOL_NAME} tool to fetch the story documentation for the specific story variant you need.
-
-Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`,
-			schema,
+			...getDocumentationToolMetadata(options),
 			enabled,
 		},
 		async (input: { id: string; storybookId?: string }) => {

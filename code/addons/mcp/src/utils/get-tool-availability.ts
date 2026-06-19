@@ -30,6 +30,34 @@ export interface GetToolAvailabilityOptions {
 	 * risking a different snapshot than the caller already resolved.
 	 */
 	features?: { changeDetection?: boolean } | undefined;
+	/**
+	 * Pre-resolved module-graph support. The live MCP server should omit this so it
+	 * probes the registered open service. Serverless metadata can pass a builder-level
+	 * capability check because no dev-server service exists in that process.
+	 */
+	moduleGraphSupported?: boolean | undefined;
+}
+
+/**
+ * Composed Storybooks with component manifests can back docs tools even when the
+ * local Storybook has no component manifest. Use this before feeding
+ * availability into the shared tool registry so live MCP registration and
+ * serverless AI metadata make the same docs-tool decision.
+ */
+export function getEffectiveToolAvailability(
+	availability: ToolAvailability,
+	{ multiSource = false }: { multiSource?: boolean } = {},
+): ToolAvailability {
+	if (!multiSource) {
+		return availability;
+	}
+
+	return {
+		...availability,
+		docsEnabled: true,
+		docsHasManifests: true,
+		docsFeatureEnabled: true,
+	};
 }
 
 /**
@@ -44,7 +72,7 @@ export interface GetToolAvailabilityOptions {
  */
 export async function getToolAvailability(
 	options: Options,
-	{ features }: GetToolAvailabilityOptions = {},
+	{ features, moduleGraphSupported: moduleGraphSupportedOverride }: GetToolAvailabilityOptions = {},
 ): Promise<ToolAvailability> {
 	const resolvedFeatures =
 		features ??
@@ -52,7 +80,7 @@ export async function getToolAvailability(
 
 	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
 		await Promise.all([
-			isModuleGraphSupported(),
+			moduleGraphSupportedOverride ?? isModuleGraphSupported(),
 			getReviewStatus(options, { features: resolvedFeatures }),
 			getManifestStatus(options),
 			getAddonVitestConstants(),

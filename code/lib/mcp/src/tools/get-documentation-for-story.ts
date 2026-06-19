@@ -8,27 +8,37 @@ import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 
 export const GET_STORY_TOOL_NAME = 'get-documentation-for-story';
 
+export const GET_STORY_DOCUMENTATION_TOOL_DESCRIPTION =
+	'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.';
+
 const BaseInput = {
 	componentId: v.string(),
 	storyName: v.string(),
 };
+
+export function getStoryDocumentationToolSchema(options?: { multiSource?: boolean }) {
+	return options?.multiSource
+		? v.object({ ...BaseInput, ...StorybookIdField })
+		: v.object(BaseInput);
+}
+
+export function getStoryDocumentationToolMetadata(options?: { multiSource?: boolean }) {
+	return {
+		name: GET_STORY_TOOL_NAME,
+		title: 'Get Documentation for Story',
+		description: GET_STORY_DOCUMENTATION_TOOL_DESCRIPTION,
+		schema: getStoryDocumentationToolSchema(options),
+	};
+}
 
 export async function addGetStoryDocumentationTool(
 	server: McpServer<any, StorybookContext>,
 	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 	options?: { multiSource?: boolean },
 ) {
-	const schema = options?.multiSource
-		? v.object({ ...BaseInput, ...StorybookIdField })
-		: v.object(BaseInput);
-
 	server.tool(
 		{
-			name: GET_STORY_TOOL_NAME,
-			title: 'Get Documentation for Story',
-			description:
-				'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',
-			schema,
+			...getStoryDocumentationToolMetadata(options),
 			enabled,
 		},
 		async (input: { componentId: string; storyName: string; storybookId?: string }) => {

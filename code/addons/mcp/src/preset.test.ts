@@ -495,6 +495,54 @@ describe('experimental_devServer', () => {
 		);
 	});
 
+	it('does not show the local manifest debugger link when docs only come from composed refs', async () => {
+		const handlers: Record<string, any> = {};
+		mockApp.get = vi.fn((path: string, handler: any) => {
+			handlers[path] = handler;
+		});
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: true,
+				text: () => Promise.resolve('{"v":1,"components":{}}'),
+			}),
+		);
+
+		const remoteDocsOptions = {
+			...mockOptions,
+			port: 6006,
+			presets: {
+				apply: vi.fn((key: string) => {
+					if (key === 'refs') {
+						return Promise.resolve({
+							remote: { title: 'Remote', url: 'https://example.com/storybook' },
+						});
+					}
+					if (key === 'features') {
+						return Promise.resolve({ componentsManifest: true });
+					}
+					return Promise.resolve(undefined);
+				}),
+			},
+		} as unknown as Options;
+
+		await (experimental_devServer as any)(mockApp, remoteDocsOptions);
+		const getMcpHandler = handlers['/mcp'];
+		expect(getMcpHandler).toBeDefined();
+
+		const mockRes = {
+			writeHead: vi.fn(),
+			end: vi.fn(),
+		} as any;
+
+		await getMcpHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+		const html = mockRes.end.mock.calls[0][0];
+		expect(html).not.toContain('{{MANIFEST_DEBUGGER_LINK}}');
+		expect(html).not.toContain('/manifests/components.html');
+		expect(html).toContain('<span class="toolset-status enabled">enabled</span>');
+	});
+
 	it('should handle POST requests as MCP protocol', async () => {
 		await (experimental_devServer as any)(mockApp, mockOptions);
 

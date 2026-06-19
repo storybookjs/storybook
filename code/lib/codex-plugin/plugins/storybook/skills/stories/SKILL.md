@@ -82,11 +82,13 @@ The Storybook preview MUST be running so the story can be verified.
 Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand with `require_escalated` to check for running Storybook instances.
 
 If there is a running instance:
+
 - Note its port and save it in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 - Open the preview URL in the preview browser.
 - Make the preview browser visible to the user.
 
 If there is no running instance, start it with the steps below:
+
 1. Start the project's existing Storybook dev script as a background task from
    the Storybook invocation directory
 2. Wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.

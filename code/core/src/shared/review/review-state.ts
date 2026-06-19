@@ -12,13 +12,10 @@
  * `description` / `collections` in sync with that schema.
  */
 
-export type CollectionKind = 'atomic' | 'consumer' | 'transitive' | 'catch-all';
-
 export interface ReviewCollection {
   title: string;
   rationale: string;
   storyIds: string[];
-  kind?: CollectionKind;
 }
 
 export interface ReviewState {

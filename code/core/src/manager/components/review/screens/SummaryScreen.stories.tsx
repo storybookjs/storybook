@@ -35,13 +35,11 @@ const full: ReviewState = {
     {
       title: 'Core Button — primary/solid variant',
       rationale: 'Render the **solid variant** directly; best show the heavier weight and padding.',
-      kind: 'atomic',
       storyIds: ['button-component--variants', 'button-component--base', 'button-component--sizes'],
     },
     {
       title: 'Related Button-based components',
       rationale: '`ToggleButton` and `ReviewChangesButton` build on the same `Button` primitive.',
-      kind: 'transitive',
       storyIds: ['components-togglebutton--variants', 'components-togglebutton--sizes'],
     },
   ],
@@ -58,7 +56,6 @@ const largeCascade: ReviewState = {
       title: 'Storybook manager surfaces',
       rationale:
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
-      kind: 'consumer',
       storyIds: [
         'manager-main--default',
         'manager-main--about-page',
@@ -72,7 +69,6 @@ const largeCascade: ReviewState = {
       title: 'Sidebar density and search experience',
       rationale:
         'Sidebar layouts are sensitive to token updates in spacing and color contrast, especially in filtered states.',
-      kind: 'consumer',
       storyIds: [
         'manager-sidebar-sidebar--searching',
         'manager-sidebar-sidebar--statuses-open',
@@ -84,7 +80,6 @@ const largeCascade: ReviewState = {
       title: 'Settings and onboarding pages',
       rationale:
         'Settings pages use shared UI primitives and should be spot-checked for readability and alignment.',
-      kind: 'transitive',
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
@@ -96,7 +91,6 @@ const largeCascade: ReviewState = {
       title: 'Core UI primitives',
       rationale:
         'Primitive components amplify token regressions across addons and manager surfaces.',
-      kind: 'atomic',
       storyIds: [
         'components-tabs-tabsview--basic',
         'components-card--default',
@@ -108,7 +102,6 @@ const largeCascade: ReviewState = {
       title: 'Performance and analyzer tools',
       rationale:
         'Bench and diagnostics views exercise dense layouts where token changes are easy to miss.',
-      kind: 'catch-all',
       storyIds: [
         'bench--es-build-analyzer',
         'manager-sidebar-filesearchmodal--default',
@@ -154,7 +147,6 @@ const atomicChange: ReviewState = {
         'button-component--icon-only',
         'button-component--base',
       ],
-      kind: 'atomic',
     },
     {
       title: 'Toolbar, Tabs & Select — direct consumers',
@@ -168,7 +160,6 @@ const atomicChange: ReviewState = {
         'components-tabs--stateless-with-tools',
         'select-component--base',
       ],
-      kind: 'consumer',
     },
     {
       title: 'Modal & Popover — overlays with buttons',
@@ -180,7 +171,6 @@ const atomicChange: ReviewState = {
         'overlay-popover--with-hide-button',
         'overlay-popover--with-chrome',
       ],
-      kind: 'consumer',
     },
     {
       title: 'Docs blocks & Manager menu — transitive',
@@ -192,7 +182,6 @@ const atomicChange: ReviewState = {
         'manager-container-menu--with-shortcuts',
         'manager-container-menu--with-shortcuts-active',
       ],
-      kind: 'transitive',
     },
   ],
   changedFiles: ['core/src/components/components/Button/Button.tsx'],
@@ -206,13 +195,11 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 01 — Button core',
       rationale: 'Base button stories and primary variants.',
-      kind: 'atomic',
       storyIds: ['button-component--base', 'button-component--variants', 'button-component--sizes'],
     },
     {
       title: 'Collection 02 — Button details',
       rationale: 'Additional button states and icon usage.',
-      kind: 'atomic',
       storyIds: [
         'button-component--paddings',
         'button-component--pseudo-states',
@@ -222,7 +209,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 03 — Toggle and tabs',
       rationale: 'ToggleButton and tab view combinations.',
-      kind: 'consumer',
       storyIds: [
         'components-togglebutton--variants',
         'components-togglebutton--sizes',
@@ -232,7 +218,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 04 — Tabs and toolbar',
       rationale: 'Navigation/tab states with toolbar layouts.',
-      kind: 'consumer',
       storyIds: [
         'components-tabs--stateful-static',
         'components-tabs--stateless-with-tools',
@@ -242,7 +227,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 05 — Toolbar variants',
       rationale: 'Scrollable toolbar and abstract toolbar coverage.',
-      kind: 'consumer',
       storyIds: [
         'components-toolbar--scrollable',
         'components-abstracttoolbar--basic',
@@ -252,7 +236,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 06 — Surface primitives',
       rationale: 'Cards, bars, and collapsible primitives.',
-      kind: 'consumer',
       storyIds: [
         'components-card--default',
         'components-bar-bar--default',
@@ -262,7 +245,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 07 — Overlay modal',
       rationale: 'Modal base and interactive states.',
-      kind: 'consumer',
       storyIds: [
         'overlay-modal--base',
         'overlay-modal--interactive-mouse',
@@ -272,7 +254,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 08 — Overlay popover',
       rationale: 'Popover/chrome combinations and behavior.',
-      kind: 'consumer',
       storyIds: [
         'overlay-popover--with-chrome',
         'overlay-popover--with-hide-button',
@@ -282,13 +263,11 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 09 — Manager main',
       rationale: 'Main manager page states.',
-      kind: 'consumer',
       storyIds: ['manager-main--default', 'manager-main--about-page', 'manager-main--guide-page'],
     },
     {
       title: 'Collection 10 — Manager settings',
       rationale: 'Settings pages and checklist entry points.',
-      kind: 'consumer',
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
@@ -298,7 +277,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 11 — Guide variants',
       rationale: 'Guide page variations for state coverage.',
-      kind: 'consumer',
       storyIds: [
         'manager-settings-guidepage--all-done',
         'manager-settings-guidepage--ai-cta-open',
@@ -308,7 +286,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 12 — Guide + freeze stories',
       rationale: 'Guide and freeze test stories.',
-      kind: 'consumer',
       storyIds: [
         'manager-settings-guidepage--ai-cta-done',
         'manager-settings-freezebehavior--play-clicks-button',
@@ -318,7 +295,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 13 — Freeze loop and sidebar',
       rationale: 'Freeze animation loop and basic sidebar states.',
-      kind: 'consumer',
       storyIds: [
         'manager-settings-freezebehavior--continuous-loop-and-animation',
         'manager-sidebar-sidebar--simple',
@@ -328,7 +304,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 14 — Sidebar status/search',
       rationale: 'Search and status-focused sidebar views.',
-      kind: 'consumer',
       storyIds: [
         'manager-sidebar-sidebar--statuses-open',
         'manager-sidebar-sidebar--searching',
@@ -338,7 +313,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 15 — Sidebar file search',
       rationale: 'Sidebar file-search specific components.',
-      kind: 'consumer',
       storyIds: [
         'manager-sidebar-filesearchmodal--default',
         'manager-sidebar-filesearchlist--default',
@@ -348,7 +322,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 16 — Menu and viewport',
       rationale: 'Menu variants and preview viewport panel.',
-      kind: 'transitive',
       storyIds: [
         'manager-container-menu--with-shortcuts-active',
         'manager-components-preview-viewport--default',
@@ -358,7 +331,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 17 — Docs preview blocks',
       rationale: 'Docs block preview stories with toolbar/code.',
-      kind: 'transitive',
       storyIds: [
         'addons-docs-blocks-components-preview--with-toolbar',
         'addons-docs-blocks-components-preview--code-expanded',
@@ -368,7 +340,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 18 — Bench + docs mix',
       rationale: 'Heavier analyzer story plus docs previews.',
-      kind: 'catch-all',
       storyIds: [
         'bench--es-build-analyzer',
         'addons-docs-blocks-components-preview--with-toolbar',
@@ -378,7 +349,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 19 — Cross-manager mix',
       rationale: 'Mixed manager states to create dense list.',
-      kind: 'catch-all',
       storyIds: [
         'manager-main--default',
         'manager-settings-checklist--default',
@@ -388,7 +358,6 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 20 — Large mixed tail',
       rationale: 'Final mixed collection to reach 20 groups.',
-      kind: 'catch-all',
       storyIds: [
         'components-tabs-tabsview--basic',
         'manager-container-menu--with-shortcuts',

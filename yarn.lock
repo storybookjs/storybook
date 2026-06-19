@@ -31433,6 +31433,7 @@ __metadata:
     launch-editor: "npm:^2.13.2"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
+    markdown-to-jsx: "npm:^7.7.2"
     mdast-util-from-markdown: "npm:^2.0.0"
     mdast-util-mdx: "npm:^3.0.0"
     mdast-util-mdx-jsx: "npm:^3.2.0"

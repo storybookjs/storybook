@@ -10,7 +10,7 @@ import {
 } from 'storybook/manager-api';
 import { MemoryRouter } from 'storybook/internal/router';
 
-import preview from '../../../.storybook/preview.tsx';
+import preview from '../../../../../.storybook/preview.tsx';
 import { ADDON_ID, EVENTS } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
@@ -92,9 +92,12 @@ const managerApi: API = {
   off: offMock,
   emit: emitMock,
   getIsNavShown: () => true,
+  getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
+  togglePanel: fn().mockName('api::togglePanel'),
   setAddonShortcut: setAddonShortcutMock,
   setQueryParams: fn(),
+  setAllTagFilters: fn().mockName('api::setAllTagFilters'),
   setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
   resetStatusFilters: fn().mockName('api::resetStatusFilters'),
   addStatusFilters: fn().mockName('api::addStatusFilters'),

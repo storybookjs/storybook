@@ -1,47 +1,22 @@
 import type { API } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
 
-/** Matches the `storybook/review` sessionStorage keys owned by the review module. */
-const REVIEW_ADDON_ID = 'storybook/review';
+import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
+import { REVIEWING_STATUS_VALUE } from './review-status.ts';
+import { sessionStore } from './session-store.ts';
 
 // Persisted flag marking the manager as being in review mode. Review mode is
 // interaction-driven (never inferred from the URL) and survives reloads via
 // this key. See docs/adr/0001-interaction-driven-review-mode.md.
-const REVIEW_MODE_SESSION_KEY = `${REVIEW_ADDON_ID}/review-mode`;
+const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
 
 // Snapshot of the manager chrome (sidebar/addon panel visibility) taken when
 // review mode is entered, so the exact pre-review layout can be restored on exit.
-const CHROME_SNAPSHOT_SESSION_KEY = `${REVIEW_ADDON_ID}/chrome-snapshot`;
+const CHROME_SNAPSHOT_SESSION_KEY = `${REVIEW_NAMESPACE}/chrome-snapshot`;
 
 // Snapshot of the sidebar filters taken when review mode is entered, so the
 // pre-review filters can be restored on exit.
-const FILTERS_SNAPSHOT_SESSION_KEY = `${REVIEW_ADDON_ID}/filters-snapshot`;
-
-const REVIEWING = 'status-value:reviewing' as StatusValue;
-
-const sessionRead = (key: string): string | null => {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const sessionWrite = (key: string, value: string): void => {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {
-    // Storage unavailable.
-  }
-};
-
-const sessionRemove = (key: string): void => {
-  try {
-    sessionStorage.removeItem(key);
-  } catch {
-    // Storage unavailable.
-  }
-};
+const FILTERS_SNAPSHOT_SESSION_KEY = `${REVIEW_NAMESPACE}/filters-snapshot`;
 
 /** Sidebar filter snapshot preserved across a review-mode session. */
 export interface ReviewModeFilters {
@@ -51,23 +26,21 @@ export interface ReviewModeFilters {
   excludedTagFilters: string[];
 }
 
-type ReviewModeApi = Partial<
-  Pick<
-    API,
-    | 'toggleNav'
-    | 'togglePanel'
-    | 'getIsNavShown'
-    | 'getIsPanelShown'
-    | 'setAllStatusFilters'
-    | 'setAllTagFilters'
-  >
+type ReviewModeApi = Pick<
+  API,
+  | 'toggleNav'
+  | 'togglePanel'
+  | 'getIsNavShown'
+  | 'getIsPanelShown'
+  | 'setAllStatusFilters'
+  | 'setAllTagFilters'
 >;
 
 /** Whether the manager is currently in review mode (persisted across reloads). */
-export const isReviewModeActive = (): boolean => sessionRead(REVIEW_MODE_SESSION_KEY) === '1';
+export const isReviewModeActive = (): boolean => sessionStore.read(REVIEW_MODE_SESSION_KEY) === '1';
 
 const readJson = <T>(key: string): T | null => {
-  const raw = sessionRead(key);
+  const raw = sessionStore.read(key);
   if (raw === null) {
     return null;
   }
@@ -89,21 +62,21 @@ export const enterReviewMode = async (
   filters: ReviewModeFilters
 ): Promise<void> => {
   if (!isReviewModeActive()) {
-    sessionWrite(
+    sessionStore.write(
       CHROME_SNAPSHOT_SESSION_KEY,
       JSON.stringify({
-        nav: api.getIsNavShown?.() ?? true,
-        panel: api.getIsPanelShown?.() ?? true,
+        nav: api.getIsNavShown(),
+        panel: api.getIsPanelShown(),
       })
     );
-    sessionWrite(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
-    sessionWrite(REVIEW_MODE_SESSION_KEY, '1');
+    sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
+    sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
   }
 
-  api.toggleNav?.(false);
-  api.togglePanel?.(false);
-  await api.setAllTagFilters?.([], []);
-  await api.setAllStatusFilters?.([REVIEWING], []);
+  api.toggleNav(false);
+  api.togglePanel(false);
+  await api.setAllTagFilters([], []);
+  await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
 };
 
 /**
@@ -113,19 +86,19 @@ export const enterReviewMode = async (
 export const exitReviewMode = async (api: ReviewModeApi): Promise<void> => {
   const chrome = readJson<{ nav: boolean; panel: boolean }>(CHROME_SNAPSHOT_SESSION_KEY);
   if (chrome?.nav) {
-    api.toggleNav?.(true);
+    api.toggleNav(true);
   }
   if (chrome?.panel) {
-    api.togglePanel?.(true);
+    api.togglePanel(true);
   }
 
   const filters = readJson<ReviewModeFilters>(FILTERS_SNAPSHOT_SESSION_KEY);
   if (filters) {
-    await api.setAllTagFilters?.(filters.includedTagFilters, filters.excludedTagFilters);
-    await api.setAllStatusFilters?.(filters.includedStatusFilters, filters.excludedStatusFilters);
+    await api.setAllTagFilters(filters.includedTagFilters, filters.excludedTagFilters);
+    await api.setAllStatusFilters(filters.includedStatusFilters, filters.excludedStatusFilters);
   }
 
-  sessionRemove(CHROME_SNAPSHOT_SESSION_KEY);
-  sessionRemove(FILTERS_SNAPSHOT_SESSION_KEY);
-  sessionRemove(REVIEW_MODE_SESSION_KEY);
+  sessionStore.remove(CHROME_SNAPSHOT_SESSION_KEY);
+  sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);
+  sessionStore.remove(REVIEW_MODE_SESSION_KEY);
 };

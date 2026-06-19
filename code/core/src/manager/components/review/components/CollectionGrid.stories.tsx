@@ -2,8 +2,8 @@ import React from 'react';
 
 import { expect, within } from 'storybook/test';
 
-import { IconSymbols } from '../../../../core/src/manager/components/sidebar/IconSymbols.tsx';
-import preview from '../../../../.storybook/preview.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
+import preview from '../../../../../../.storybook/preview.tsx';
 import { CollectionGrid, type StoryInfo } from './CollectionGrid.tsx';
 
 // 40 unique story IDs drawn from real internal stories.

@@ -1,7 +1,7 @@
 import React, { type SyntheticEvent, useEffect, useMemo, useState } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
-import type { StatusValue, StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
@@ -13,20 +13,10 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { enterReviewMode } from './review-mode.ts';
-
-/** Matches the `storybook/review` channel event names owned by the review module. */
-const REVIEW_ADDON_ID = 'storybook/review';
-const REVIEW_EVENTS = {
-  DISPLAY_REVIEW: `${REVIEW_ADDON_ID}/display-review`,
-  REQUEST_REVIEW: `${REVIEW_ADDON_ID}/request-review`,
-  REVIEW_DISMISSED: `${REVIEW_ADDON_ID}/review-dismissed`,
-  DISMISS_REVIEW: `${REVIEW_ADDON_ID}/dismiss-review`,
-} as const;
-
-const REVIEW_SUMMARY_PATH = '/review/';
-
-const REVIEWING = 'status-value:reviewing' as StatusValue;
+import { REVIEW_EVENTS } from '../../../shared/review/index.ts';
+import { REVIEW_CHANGES_URL } from '../review/constants.ts';
+import { enterReviewMode } from '../review/review-mode.ts';
+import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
 
 type ReviewPayload = {
   title: string;
@@ -129,7 +119,7 @@ export const ReviewWidget = () => {
       } catch {
         // Best-effort: still continue into the review route.
       }
-      api.navigate(REVIEW_SUMMARY_PATH);
+      api.navigate(REVIEW_CHANGES_URL);
     })();
   };
 

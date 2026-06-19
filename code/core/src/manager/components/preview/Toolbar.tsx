@@ -126,19 +126,6 @@ export const Tools = React.memo<{ list: Addon_BaseType[] }>(function Tools({ lis
   );
 });
 
-export const ToolbarHeaders = React.memo<{ list: Addon_BaseType[] }>(function ToolbarHeaders({
-  list,
-}) {
-  return (
-    <>
-      {list.filter(Boolean).map(({ render: Render, id, ...t }, index) => (
-        // @ts-expect-error (Converted from ts-ignore)
-        <Render key={id || t.key || `header-${index}`} />
-      ))}
-    </>
-  );
-});
-
 function toolbarItemHasBeenExcluded(item: Partial<Addon_BaseType>, entry: LeafEntry | undefined) {
   const parameters = entry?.type === 'story' && entry?.prepared ? entry?.parameters : {};
   // @ts-expect-error (non strict)

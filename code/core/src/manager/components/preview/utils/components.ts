@@ -10,15 +10,6 @@ export const PreviewContainer = styled.div({
   overflow: 'hidden',
 });
 
-export const ToolbarHeaderStack = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  flexShrink: 0,
-  width: '100%',
-  background: theme.background.content,
-  zIndex: 4,
-}));
-
 export const FrameWrap = styled.main(({ theme }) => ({
   overflow: 'auto',
   width: '100%',

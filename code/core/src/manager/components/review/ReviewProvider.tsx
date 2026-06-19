@@ -10,10 +10,8 @@ import {
 } from 'react';
 
 import {
-  enterReviewMode,
   experimental_getStatusStore,
   experimental_useStatusStore,
-  isReviewModeActive,
   useChannel,
   useStorybookApi,
   useStorybookState,
@@ -33,6 +31,7 @@ import {
   PRE_REVIEW_RETURN_KEY,
   REVIEW_CHANGES_URL,
 } from './constants.ts';
+import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
 import { navigateOutOfReview } from './review-actions.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,

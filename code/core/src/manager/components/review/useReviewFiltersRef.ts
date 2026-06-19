@@ -1,7 +1,9 @@
 import { type MutableRefObject, useRef } from 'react';
 
-import { type ReviewModeFilters, useStorybookState } from 'storybook/manager-api';
+import { useStorybookState } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
+
+import { type ReviewModeFilters } from './review-mode.ts';
 
 /**
  * Keep the current sidebar filters in a ref so click/shortcut handlers can read

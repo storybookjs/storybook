@@ -28,7 +28,6 @@ export interface PreviewProps {
   tabs: Addon_BaseType[];
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
-  toolbarHeaders: Addon_BaseType[];
   tabId: string | undefined;
   wrappers: Addon_WrapperType[];
 }

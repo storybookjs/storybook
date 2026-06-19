@@ -1,8 +1,10 @@
-// The channel events are the core-owned ingest contract; re-export the single
-// source so the manager and the external `@storybook/addon-mcp` producer agree.
-export { REVIEW_EVENTS as EVENTS, REVIEW_NAMESPACE as ADDON_ID } from 'storybook/internal/types';
+// Import the core-owned ingest contract from its source module (a relative path,
+// not the `storybook/internal/types` self-package barrel) so the manager bundle
+// gets a live binding and avoids a circular self-import. Re-aliased here so the
+// manager and the external `@storybook/addon-mcp` producer agree on the names.
+import { REVIEW_EVENTS, REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 
-import { REVIEW_NAMESPACE } from 'storybook/internal/types';
+export { REVIEW_EVENTS as EVENTS, REVIEW_NAMESPACE as ADDON_ID };
 
 export const PAGE_ID = `${REVIEW_NAMESPACE}/page`;
 export const REVIEW_CHANGES_URL = '/review/';

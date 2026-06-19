@@ -3,13 +3,6 @@ import { fn } from 'storybook/test';
 export * from './root.tsx';
 export { Tag } from '../shared/constants/tags.ts';
 
-export {
-  enterReviewMode,
-  exitReviewMode,
-  isReviewModeActive,
-  type ReviewModeFilters,
-} from '../manager/components/sidebar/review-mode.ts';
-
 export const openInEditor = fn();
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';

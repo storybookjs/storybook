@@ -10,7 +10,7 @@ import {
 } from 'storybook/manager-api';
 import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
 
-import preview from '../../../.storybook/preview.tsx';
+import preview from '../../../../../.storybook/preview.tsx';
 import { EVENTS } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewSummaryPortal } from './ReviewSummaryPortal.tsx';
@@ -74,7 +74,10 @@ const managerApi: API = {
   off: offMock,
   emit: emitMock,
   getIsNavShown: () => true,
+  getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
+  togglePanel: fn().mockName('api::togglePanel'),
+  setAllTagFilters: fn().mockName('api::setAllTagFilters'),
   setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
   resetStatusFilters: fn().mockName('api::resetStatusFilters'),
   addStatusFilters: fn().mockName('api::addStatusFilters'),

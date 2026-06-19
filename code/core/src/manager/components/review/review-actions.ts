@@ -1,12 +1,8 @@
 import type { NavigateFunction } from 'storybook/internal/router';
-import {
-  type API,
-  type ReviewModeFilters,
-  enterReviewMode,
-  exitReviewMode,
-} from 'storybook/manager-api';
+import { type API } from 'storybook/manager-api';
 
 import { REVIEW_CHANGES_URL } from './constants.ts';
+import { type ReviewModeFilters, enterReviewMode, exitReviewMode } from './review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   type ReviewNavEntry,

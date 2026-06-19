@@ -16,7 +16,7 @@ export const vitestTests: Task = {
     // contexts at once and OOM-killing the CI container (exit 137). Run its files sequentially to
     // cap peak memory. Scoped to CI here rather than the framework config so users keep the default
     // parallelism; other templates are light enough to stay parallel.
-    const extraFlags = key === 'angular-cli/vite-default-ts' ? ' --no-file-parallelism' : '';
+    const extraFlags = key.startsWith('angular-vite/') ? ' --no-file-parallelism' : '';
 
     return exec(
       `yarn vitest run --testTimeout=15000${extraFlags}`,

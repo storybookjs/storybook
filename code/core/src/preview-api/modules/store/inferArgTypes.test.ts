@@ -157,6 +157,24 @@ describe('inferArgTypes', () => {
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
+  it('memoizes the inferred type across repeated references to the same toJSON arg', () => {
+    // Verifies the toJSON branch writes to the shared cache so repeated
+    // references to the same value reuse the previous inference instead of
+    // re-running toJSON() and walking the serialized output again.
+    const toJSON = vi.fn(() => ({ id: 1 }));
+    const shared = { foo: 'bar', toJSON };
+
+    vi.mocked(logger.warn).mockClear();
+    inferArgTypes({
+      initialArgs: {
+        a: shared,
+        b: shared,
+      },
+    } as any);
+    expect(toJSON).toHaveBeenCalledTimes(1);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
   it('falls back to cycle detection when toJSON returns the value itself', () => {
     // A toJSON that returns `this` must not cause infinite recursion; the
     // existing cycle path should still fire.

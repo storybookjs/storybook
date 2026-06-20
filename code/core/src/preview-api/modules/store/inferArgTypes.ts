@@ -49,7 +49,9 @@ const inferType = (
       try {
         const serialized = value.toJSON();
         if (serialized !== value) {
-          return inferType(serialized, name, visited, cache);
+          const inferred = inferType(serialized, name, visited, cache);
+          cache.set(value, inferred);
+          return inferred;
         }
       } catch {
         // A throwing toJSON falls through to the regular inference path.

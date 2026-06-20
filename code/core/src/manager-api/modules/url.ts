@@ -57,6 +57,11 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
+const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }): string => {
+  const resolved = new URL('iframe.html', baseUrl);
+  return absolute ? resolved.href : `${resolved.pathname}${resolved.search}${resolved.hash}`;
+};
+
 // Initialize the state based on the URL.
 // NOTE:
 //   Although we don't change the URL when you change the state, we do support setting initial state
@@ -256,10 +261,10 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
+      const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL ||
-          `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
+        : global.PREVIEW_URL || resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

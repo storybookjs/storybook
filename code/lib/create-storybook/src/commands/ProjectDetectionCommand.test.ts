@@ -107,6 +107,68 @@ describe('ProjectDetectionCommand', () => {
       expect(logger.debug).toHaveBeenCalledWith('Project type detected: vue3');
     });
 
+    it('should prompt for HTML when detection fails in interactive mode', async () => {
+      options.type = undefined;
+      options.yes = false;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+        ProjectType.UNDETECTED
+      );
+      vi.mocked(prompt.select).mockResolvedValue('html');
+
+      const result = await command.execute();
+
+      expect(result.projectType).toBe(ProjectType.HTML);
+      expect(prompt.select).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "We couldn't detect a supported framework. What would you like to do?",
+        }),
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
+    });
+
+    it('should prompt for a framework when detection fails and user chooses manual selection', async () => {
+      options.type = undefined;
+      options.yes = false;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+        ProjectType.UNDETECTED
+      );
+      vi.mocked(prompt.select)
+        .mockResolvedValueOnce('framework')
+        .mockResolvedValueOnce(ProjectType.REACT);
+
+      const result = await command.execute();
+
+      expect(result.projectType).toBe(ProjectType.REACT);
+      expect(prompt.select).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          message: "We couldn't detect a supported framework. What would you like to do?",
+        }),
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
+      expect(prompt.select).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          message: 'Choose a framework to install:',
+        }),
+        expect.objectContaining({ onCancel: expect.any(Function) })
+      );
+    });
+
+    it('should error in non-interactive mode when detection fails', async () => {
+      options.type = undefined;
+      options.yes = true;
+      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+        ProjectType.UNDETECTED
+      );
+
+      await expect(command.execute()).rejects.toThrow(HandledError);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Unable to initialize Storybook in this directory.')
+      );
+      expect(prompt.select).not.toHaveBeenCalled();
+    });
+
     it('should throw error for invalid provided type', async () => {
       options.type = ProjectType.UNSUPPORTED;
       const error = new HandledError('Unknown project type supplied: unsupported');

@@ -41,9 +41,13 @@ export class ProjectDetectionCommand {
       logger.step(`Installing Storybook for user specified project type: ${projectTypeProvided}`);
     } else {
       const detected = await this.projectTypeService.autoDetectProjectType(this.options);
-      projectType = detected;
-      if (detected === ProjectType.REACT_NATIVE && !this.options.yes) {
-        projectType = await this.promptReactNativeVariant();
+      if (detected === ProjectType.UNDETECTED) {
+        projectType = await this.handleUndetectedProjectType();
+      } else {
+        projectType = detected;
+        if (detected === ProjectType.REACT_NATIVE && !this.options.yes) {
+          projectType = await this.promptReactNativeVariant();
+        }
       }
       logger.debug(`Project type detected: ${projectType}`);
     }
@@ -95,6 +99,134 @@ export class ProjectDetectionCommand {
       createPromptCancelOptions(this.telemetryService, 'react-native-variant')
     );
     return manualType as ProjectType;
+  }
+
+  /** Handle the case where Storybook cannot auto-detect a project type */
+  private async handleUndetectedProjectType(): Promise<ProjectType> {
+    if (this.options.yes) {
+      this.reportUndetectedProjectType();
+    }
+
+    const choice = await prompt.select(
+      {
+        message: "We couldn't detect a supported framework. What would you like to do?",
+        options: [
+          {
+            label: `${picocolors.bold('HTML')}: install Storybook for a plain HTML project`,
+            value: 'html',
+          },
+          {
+            label: `${picocolors.bold('Select a framework')}: choose a supported framework manually`,
+            value: 'framework',
+          },
+          {
+            label: `${picocolors.bold('Abort')}: exit without installing Storybook`,
+            value: 'abort',
+          },
+        ],
+      },
+      createPromptCancelOptions(this.telemetryService, 'project-type-undetected')
+    );
+
+    if (choice === 'html') {
+      return ProjectType.HTML;
+    }
+
+    if (choice === 'framework') {
+      return this.promptFrameworkType();
+    }
+
+    logger.warn('Aborting Storybook initialization...');
+    return process.exit(0);
+  }
+
+  /** Prompt user to select a framework after auto-detection failed */
+  private async promptFrameworkType(): Promise<ProjectType> {
+    const manualType = await prompt.select(
+      {
+        message: 'Choose a framework to install:',
+        options: Object.values(ProjectType)
+          .filter(
+            (type) =>
+              ![
+                ProjectType.UNDETECTED,
+                ProjectType.UNSUPPORTED,
+                ProjectType.NX,
+                ProjectType.HTML,
+              ].includes(type)
+          )
+          .map((type) => ({
+            label: this.formatProjectTypeLabel(type),
+            value: type,
+          })),
+      },
+      createPromptCancelOptions(this.telemetryService, 'project-type-manual')
+    );
+
+    return manualType as ProjectType;
+  }
+
+  /** Emit the undetected project type error that non-interactive flows need */
+  private reportUndetectedProjectType(): never {
+    logger.error(dedent`
+      Unable to initialize Storybook in this directory.
+
+      Storybook couldn't detect a supported framework or configuration for your project.
+
+      If this is a plain HTML project, rerun Storybook with:
+        --type html
+
+      For example:
+        npm create storybook@latest -- --type html
+
+      Otherwise, make sure you're inside a framework project (for example React, Vue, Svelte, Angular, or Next.js) and that its dependencies are installed.
+    `);
+    throw new HandledError('Storybook failed to detect your project type');
+  }
+
+  private formatProjectTypeLabel(type: ProjectType) {
+    switch (type) {
+      case ProjectType.ANGULAR:
+        return 'Angular';
+      case ProjectType.EMBER:
+        return 'Ember';
+      case ProjectType.HTML:
+        return 'HTML';
+      case ProjectType.NEXTJS:
+        return 'Next.js';
+      case ProjectType.NUXT:
+        return 'Nuxt';
+      case ProjectType.PREACT:
+        return 'Preact';
+      case ProjectType.QWIK:
+        return 'Qwik';
+      case ProjectType.REACT:
+        return 'React';
+      case ProjectType.REACT_NATIVE:
+        return 'React Native';
+      case ProjectType.REACT_NATIVE_AND_RNW:
+        return 'React Native + React Native Web';
+      case ProjectType.REACT_NATIVE_WEB:
+        return 'React Native Web';
+      case ProjectType.REACT_SCRIPTS:
+        return 'React Scripts';
+      case ProjectType.SERVER:
+        return 'Server';
+      case ProjectType.SOLID:
+        return 'Solid';
+      case ProjectType.SVELTE:
+        return 'Svelte';
+      case ProjectType.SVELTEKIT:
+        return 'SvelteKit';
+      case ProjectType.TANSTACK_REACT:
+        return 'TanStack React';
+      case ProjectType.VUE3:
+        return 'Vue 3';
+      case ProjectType.WEB_COMPONENTS:
+        return 'Web Components';
+      default:
+        return type;
+    }
   }
 
   /** Check if Storybook is already installed and handle force option */

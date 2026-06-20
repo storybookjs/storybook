@@ -14,7 +14,6 @@ import type { SupportedLanguage } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import semver from 'semver';
-import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 
@@ -181,21 +180,6 @@ export class ProjectTypeService {
     try {
       const detectedType = await this.detectProjectType(options);
 
-      // prompting handled by command layer
-
-      if (detectedType === ProjectType.UNDETECTED || detectedType === null) {
-        logger.error(dedent`
-          Unable to initialize Storybook in this directory.
-
-          Storybook couldn't detect a supported framework or configuration for your project. Make sure you're inside a framework project (e.g., React, Vue, Svelte, Angular, Next.js) and that its dependencies are installed.
-
-          Tips:
-          - Run init in an empty directory or create a new framework app first.
-          - If this directory contains unrelated files, try a new directory for Storybook.
-        `);
-        throw new HandledError('Storybook failed to detect your project type');
-      }
-
       if (detectedType === ProjectType.NX) {
         throw new NxProjectDetectedError();
       }
@@ -227,7 +211,7 @@ export class ProjectTypeService {
     return false;
   }
 
-  private async detectProjectType(options: CommandOptions): Promise<ProjectType | null> {
+  private async detectProjectType(options: CommandOptions): Promise<ProjectType> {
     try {
       if (this.isNxProject()) {
         return ProjectType.NX;
@@ -242,7 +226,7 @@ export class ProjectTypeService {
     }
   }
 
-  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType | null {
+  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType {
     const result = [...this.getSupportedTemplates(), this.getUnsupportedTemplate()].find(
       (framework) => {
         return this.getProjectType(packageJson, framework) !== null;

@@ -141,12 +141,12 @@ Note that dynamic snippets will only work if the story uses [`args`](../../writi
 
 <If renderer="react">
 
-## Sorting props in dynamic snippets
+#### Overriding the default prop sorting behavior
 
-For the React renderer, dynamic snippets are generated with [`react-element-to-jsx-string`](https://www.npmjs.com/package/react-element-to-jsx-string), which sorts props alphabetically by default. To preserve the order in which the props (args) are defined in your story, set `parameters.jsx.sortProps` to `false`:
+For React-based frameworks, dynamic snippets are automatically sorted alphabetically by default. To override this behavior, set the `sortProps` option to `false` to preserve the original order of the props in which they were defined in the story.
 
 <CodeSnippets path="api-doc-block-source-sort-props.md" />
 
-This parameter is passed directly to `react-element-to-jsx-string`. It can be applied at the [project](../../writing-stories/parameters.mdx#global-parameters), [component](../../writing-stories/parameters.mdx#component-parameters) (meta), or [story](../../writing-stories/parameters.mdx#story-parameters) level.
+Similar to other parameters, you can define it at the project level in the `.storybook/preview.*` file, component level in the meta definition (or default export), or in the story itself.
 
 </If>

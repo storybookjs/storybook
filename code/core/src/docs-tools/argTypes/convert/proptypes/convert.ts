@@ -40,9 +40,21 @@ export const convert = (type: PTType): SBType | any => {
     case 'exact':
       const values = mapValues(value, (field) => convert(field));
       return { ...base, name: 'object', value: values };
-    case 'union':
-      return { ...base, name: 'union', value: value.map((v: PTType) => convert(v)) };
-    case 'instanceOf':
+    case 'union': {
+      const convertedValues = value.map((v: PTType) => convert(v));
+      const allEnum = convertedValues.every(
+        (v: any) => v?.name === 'enum' && Array.isArray(v.value)
+      );
+      if (allEnum && convertedValues.length > 0) {
+        return {
+          ...base,
+          name: 'enum',
+          value: convertedValues.flatMap((v: any) => v.value),
+        };
+      }
+      return { ...base, name: 'union', value: convertedValues };
+    }
+    case 'instanceOf'
     case 'element':
     case 'elementType':
     default: {
@@ -51,7 +63,7 @@ export const convert = (type: PTType): SBType | any => {
         // (like if a user has turned off shouldExtractValuesFromUnion) so here we
         // try to recover and construct one.
         try {
-          const literalValues = name.split('|').map((v: string) => JSON.parse(v));
+          const literalValues = name.split('|').map((v: string) => parseLiteral(v.trim()));
           return { ...base, name: 'enum', value: literalValues };
         } catch (err) {
           // fall through

@@ -54,7 +54,7 @@ export const convert = (type: PTType): SBType | any => {
       }
       return { ...base, name: 'union', value: convertedValues };
     }
-    case 'instanceOf'
+    case 'instanceOf':
     case 'element':
     case 'elementType':
     default: {

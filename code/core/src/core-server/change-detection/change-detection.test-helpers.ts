@@ -137,7 +137,6 @@ export function createWiredChangeDetection(
     workingDir: options.workingDir,
     onSnapshot: () => moduleGraphMockRef.current?.applySnapshot(),
     onUpdate: ({ bumpedStoryFiles }) => moduleGraphMockRef.current?.applyUpdate(bumpedStoryFiles),
-    onStoryIndexInvalidated: () => moduleGraphMockRef.current?.bumpGraphRevision(),
     onError: (error) => moduleGraphMockRef.current?.applyError(error),
     onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),
   });

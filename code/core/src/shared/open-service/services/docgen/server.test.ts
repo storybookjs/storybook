@@ -2,13 +2,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { buildStaticFiles, clearRegistry } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
+import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerDocgenService } from './server.ts';
+import { registerDocgenServices } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
 
+/** Registers only the `core/docgen` service (the story-docs service is left out of these tests). */
+function registerDocgenService(options: {
+  getIndex: () => Promise<StoryIndex>;
+  provider: DocgenProvider;
+}) {
+  const { docgen } = registerDocgenServices({
+    getIndex: options.getIndex,
+    docgenProvider: options.provider,
+  });
+  if (!docgen) {
+    throw new Error('docgen service was not registered');
+  }
+  return docgen;
+}
+
 beforeEach(() => {
-  // registerDocgenService subscribes to `core/module-graph` and fails hard when it is missing, so
+  // registerDocgenServices subscribes to `core/module-graph` and fails hard when it is missing, so
   // the dependency must be registered first (mirroring the dev-server, where it always is).
   registerTestModuleGraphService();
 });
@@ -34,7 +50,6 @@ function makeDocgenPayload(overrides: Partial<DocgenPayload> = {}): DocgenPayloa
     name: 'Button',
     path: './button.stories.tsx',
     jsDocTags: {},
-    stories: [],
     ...overrides,
   };
 }
@@ -195,6 +210,70 @@ describe('docgen open service', () => {
     });
   });
 
+  describe('module graph hot refresh', () => {
+    it('refreshes already-extracted components without loading every bumped component', async () => {
+      const buttonEntry = makeStoryEntry('button--primary', 'Button');
+      const cardEntry = makeStoryEntry('card--primary', 'Card');
+      const provider = vi.fn<DocgenProvider>(async ({ entry }) =>
+        makeDocgenPayload({
+          id: entry.id.split('--')[0],
+          name: entry.title,
+          path: entry.importPath,
+        })
+      );
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([buttonEntry, cardEntry]),
+        provider,
+      });
+
+      await service.queries.getDocgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      await moduleGraph.commands._applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./button.stories.tsx', './card.stories.tsx'],
+      });
+
+      await vi.waitFor(() =>
+        expect(provider.mock.calls.map(([input]) => input.entry.importPath)).toEqual([
+          './button.stories.tsx',
+          './button.stories.tsx',
+        ])
+      );
+    });
+
+    it('refreshes already-extracted components when their story file changes', async () => {
+      const buttonEntry = makeStoryEntry('button--primary', 'Button');
+      const cardEntry = makeStoryEntry('card--primary', 'Card');
+      const provider = vi.fn<DocgenProvider>(async ({ entry }) =>
+        makeDocgenPayload({
+          id: entry.id.split('--')[0],
+          name: entry.title,
+          path: entry.importPath,
+        })
+      );
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([buttonEntry, cardEntry]),
+        provider,
+      });
+
+      await service.queries.getDocgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      await moduleGraph.commands._applyGraphUpdate({
+        storiesByFile: {},
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() =>
+        expect(provider.mock.calls.map(([input]) => input.entry.importPath)).toEqual([
+          './button.stories.tsx',
+          './button.stories.tsx',
+        ])
+      );
+    });
+  });
+
   describe('static build', () => {
     it('does not request docgen for component ids that only exist on unattached docs entries', async () => {
       const storyEntry = makeStoryEntry('button--primary', 'Button');
@@ -254,7 +333,6 @@ describe('docgen open service', () => {
             path: './button.stories.tsx',
             description: 'from ./button.stories.tsx',
             jsDocTags: {},
-            stories: [],
           },
         },
       });

@@ -129,7 +129,7 @@ export const moduleGraphServiceDef = defineService({
       input: noInputSchema,
       output: moduleGraphStatusSchema,
       load: async (_input, ctx) => {
-        await ctx.self.commands.waitForSettledEngine(undefined);
+        await ctx.self.commands._waitForSettledEngine(undefined);
       },
       handler: (_input, ctx) => ctx.self.state.status,
     },
@@ -192,9 +192,10 @@ export const moduleGraphServiceDef = defineService({
     },
   },
   commands: {
-    applyGraphSnapshot: {
+    _applyGraphSnapshot: {
+      internal: true,
       description:
-        'Internal use only: replaces the reverse index after the initial graph build. Called by the graph engine, not by external consumers.',
+        'Replaces the reverse index after the initial graph build. Called by the graph engine, not by external consumers.',
       input: v.object({
         storiesByFile: v.pipe(
           storiesByFileSchema,
@@ -221,9 +222,10 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    applyGraphUpdate: {
+    _applyGraphUpdate: {
+      internal: true,
       description:
-        'Internal use only: replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
+        'Replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
       input: v.object({
         storiesByFile: v.pipe(
           storiesByFileSchema,
@@ -255,21 +257,10 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    bumpGraphRevision: {
+    _setStatus: {
+      internal: true,
       description:
-        'Internal use only: bumps the graph revision when the story index invalidates without an immediate graph snapshot/update.',
-      input: noInputSchema,
-      output: v.void(),
-      handler: async (_input, ctx) => {
-        ctx.self.setState((state) => {
-          state.graphRevision += 1;
-          state.latestChangedStoryFiles = [];
-        });
-      },
-    },
-    setStatus: {
-      description:
-        'Internal use only: sets the module graph lifecycle status after engine startup, failure, or adapter availability changes.',
+        'Sets the module graph lifecycle status after engine startup, failure, or adapter availability changes.',
       input: moduleGraphStatusSchema,
       output: v.void(),
       handler: async (input, ctx) => {
@@ -278,9 +269,10 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    waitForSettledEngine: {
+    _waitForSettledEngine: {
+      internal: true,
       description:
-        'Internal use only: waits for the module graph engine to finish its current build or patch cycle. Handler is supplied at server registration.',
+        'Waits for the module graph engine to finish its current build or patch cycle. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
     },

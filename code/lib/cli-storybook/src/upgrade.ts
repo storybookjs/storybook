@@ -33,6 +33,7 @@ import {
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
+import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
@@ -489,6 +490,24 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         logger.log(
           `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
         );
+      }
+    }
+
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
+    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
+    if (!options.dryRun && !options.skipInstall) {
+      for (const project of storybookProjects) {
+        const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
+        if (addonsToPostinstall?.length) {
+          await configureDeferredAddons(addonsToPostinstall, {
+            packageManager: project.packageManager.type,
+            configDir: project.configDir,
+            yes: options.yes,
+            logger,
+            prompt,
+          });
+        }
       }
     }
 

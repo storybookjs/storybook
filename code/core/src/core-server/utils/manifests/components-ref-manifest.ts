@@ -5,7 +5,12 @@ import {
   docgenStaticStorePath,
 } from '../../../shared/open-service/services/docgen/paths.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
-import type { ComponentsManifest } from '../../../types/modules/core-common.ts';
+import {
+  storyDocsManifestRef,
+  storyDocsStaticStorePath,
+} from '../../../shared/open-service/services/story-docs/paths.ts';
+import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 
 import { join } from 'pathe';
 
@@ -17,7 +22,8 @@ export type JsonRef = { $ref: string };
 /**
  * One component row in the ref-based `manifests/components.json` index.
  *
- * Summary fields are inlined for cheap listing; full docgen lives behind nested `docgen.$ref`.
+ * Summary fields are inlined for cheap listing; full docgen and story-docs live behind nested
+ * `$ref`s.
  */
 export type ComponentManifestIndexEntry = {
   id: string;
@@ -25,6 +31,7 @@ export type ComponentManifestIndexEntry = {
   description?: string;
   summary?: string;
   docgen?: JsonRef;
+  stories?: JsonRef;
 };
 
 export type ComponentsRefManifest = {
@@ -33,19 +40,41 @@ export type ComponentsRefManifest = {
   meta?: ComponentsManifest['meta'];
 };
 
-/** Reads one component's docgen payload out of a built snapshot document, if present. */
-function readSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
+export type ComponentManifestWithStoryDocs = Omit<ComponentManifest, 'stories'> & {
+  stories: StoryDocsPayload['stories'];
+};
+
+function readDocgenSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
   const payload = components?.[id];
   return payload !== null && typeof payload === 'object' ? (payload as DocgenPayload) : undefined;
 }
 
+function readStoryDocsSnapshotPayload(document: unknown, id: string): StoryDocsPayload | undefined {
+  const components = (document as { components?: Record<string, unknown> } | null)?.components;
+  const payload = components?.[id];
+  return payload !== null && typeof payload === 'object'
+    ? (payload as StoryDocsPayload)
+    : undefined;
+}
+
+/**
+ * Merges docgen and story-docs open-service payloads into the combined {@link ComponentManifest}
+ * shape expected by the HTML debugger.
+ */
+export function mergeManifestPayloads(
+  docgen: DocgenPayload,
+  storyDocs?: StoryDocsPayload
+): ComponentManifestWithStoryDocs {
+  return {
+    ...docgen,
+    stories: storyDocs?.stories ?? {},
+    ...(storyDocs?.import ? { import: storyDocs.import } : {}),
+  };
+}
+
 /**
  * Reads the built docgen service snapshots for the given component ids from disk.
- *
- * Returns only the ids with a readable payload; missing files and empty snapshots are skipped. The
- * same payloads back both `manifests/components.json` and the components HTML debugger, so the static
- * build reads docgen once instead of re-extracting it from the live service.
  */
 export async function loadDocgenPayloadsFromDisk(
   outputDir: string,
@@ -57,7 +86,31 @@ export async function loadDocgenPayloadsFromDisk(
 
       try {
         const document = JSON.parse(await readFile(snapshotPath, 'utf8')) as unknown;
-        const payload = readSnapshotPayload(document, id);
+        const payload = readDocgenSnapshotPayload(document, id);
+        return payload ? ([id, payload] as const) : null;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return Object.fromEntries(entries.filter((entry) => entry !== null));
+}
+
+/**
+ * Reads the built story-docs service snapshots for the given component ids from disk.
+ */
+export async function loadStoryDocsPayloadsFromDisk(
+  outputDir: string,
+  componentIds: string[]
+): Promise<Record<string, StoryDocsPayload>> {
+  const entries = await Promise.all(
+    componentIds.map(async (id) => {
+      const snapshotPath = join(outputDir, 'services', ...storyDocsStaticStorePath(id).split('/'));
+
+      try {
+        const document = JSON.parse(await readFile(snapshotPath, 'utf8')) as unknown;
+        const payload = readStoryDocsSnapshotPayload(document, id);
         return payload ? ([id, payload] as const) : null;
       } catch {
         return null;
@@ -70,18 +123,17 @@ export async function loadDocgenPayloadsFromDisk(
 
 /**
  * Builds `manifests/components.json` index rows for the given component ids.
- *
- * Components with a docgen payload get inlined summary fields plus a nested `docgen.$ref`; components
- * without one (no readable snapshot) get summary fields only.
  */
 export function toComponentManifestIndexEntries(
   componentIds: string[],
-  payloads: Record<string, DocgenPayload>
+  docgenPayloads: Record<string, DocgenPayload>,
+  storyDocsPayloads: Record<string, StoryDocsPayload> = {}
 ): Record<string, ComponentManifestIndexEntry> {
   const entries: Record<string, ComponentManifestIndexEntry> = {};
 
   for (const id of componentIds) {
-    const payload = payloads[id];
+    const payload = docgenPayloads[id];
+    const storyDocs = storyDocsPayloads[id];
     entries[id] = payload
       ? {
           id: payload.id ?? id,
@@ -89,6 +141,7 @@ export function toComponentManifestIndexEntries(
           ...(payload.description !== undefined ? { description: payload.description } : {}),
           ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
           docgen: { $ref: docgenManifestRef(id) },
+          ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
         }
       : { id, name: id };
   }

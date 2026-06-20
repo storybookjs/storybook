@@ -3,15 +3,86 @@ import React, { Profiler, memo, useCallback, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { SourceType } from 'storybook/internal/docs-tools';
+import type { ModuleExport, StoryContext, StoryDocsPayload } from 'storybook/internal/types';
+import { registerService } from 'storybook/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
+import invariant from 'tiny-invariant';
 
 import * as ParametersStories from '../examples/SourceParameters.stories';
 import { Source } from './Source';
 import { SourceContext, argsHash } from './SourceContainer';
+import type { DocsContextProps } from './DocsContext.ts';
+import { storyDocsServiceDef } from '../../../../../core/src/shared/open-service/services/story-docs/definition.ts';
+import { unregisterService } from '../../../../../core/src/shared/open-service/service-registry.ts';
+
+type StoryDocsMockData = {
+  snippet?: string;
+  import?: string;
+};
+
+function createStoryDocsPayload(
+  docsContext: DocsContextProps,
+  of: ModuleExport,
+  data: StoryDocsMockData
+): StoryDocsPayload {
+  const { story } = docsContext.resolveOf(of, ['story']);
+  const componentId = story.id.split('--')[0]!;
+
+  return {
+    id: componentId,
+    name: componentId,
+    path: './example.stories.tsx',
+    ...(data.import ? { import: data.import } : {}),
+    stories: {
+      [story.id]: {
+        id: story.id,
+        name: story.name,
+        ...(data.snippet ? { snippet: data.snippet } : {}),
+      },
+    },
+  };
+}
+
+function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockData) {
+  return async (context: StoryContext) => {
+    const docsContext = context.loaded?.docsContext as DocsContextProps | undefined;
+    invariant(docsContext, 'docsContext is required to mock story-docs for docs block stories');
+
+    const payload = createStoryDocsPayload(docsContext, of, data);
+    unregisterService('core/story-docs');
+    const service = registerService(storyDocsServiceDef, {
+      commands: {
+        extractStoryDocs: {
+          handler: (input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[input.id] = payload;
+            });
+            return payload;
+          },
+        },
+        extractAllStoryDocs: {
+          handler: (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[payload.id] = payload;
+            });
+          },
+        },
+      },
+    });
+    await service.commands.extractStoryDocs({ id: payload.id });
+
+    return () => {
+      unregisterService('core/story-docs');
+    };
+  };
+}
+
+const SERVICE_IMPORT = "import { EmptyExample } from './EmptyExample';";
+const SERVICE_SNIPPET = '<EmptyExample something="from-service" />';
 
 const meta: Meta<typeof Source> = {
   component: Source,
@@ -211,6 +282,24 @@ export const DefaultAttached = {};
 export const Of: Story = {
   args: {
     of: ParametersStories.NoParameters,
+  },
+};
+
+export const OfStorySnippetFromStoryDocsService: Story = {
+  args: {
+    of: ParametersStories.NoParameters,
+  },
+  beforeEach: storyDocsServiceStoryBeforeEach(ParametersStories.NoParameters, {
+    import: SERVICE_IMPORT,
+    snippet: SERVICE_SNIPPET,
+  }),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const text = canvasElement.textContent ?? '';
+      expect(text).toContain('EmptyExample');
+      expect(text).toContain('something=');
+      expect(text).not.toContain("const emitted = 'source';");
+    });
   },
 };
 

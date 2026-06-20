@@ -542,7 +542,7 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
   });
 
-  it('resolves to the parent directory at a subpath without a trailing slash (#34733)', () => {
+  it('resolves to the parent directory at a subpath without a trailing slash', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },

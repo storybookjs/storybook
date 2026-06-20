@@ -100,6 +100,79 @@ describe('inferArgTypes', () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
+  it('does not warn on cyclic args that define toJSON', () => {
+    // Repro from issue #35239: a Backbone-style collection holds a cyclic
+    // back-reference but defines toJSON, so its serialized output is finite.
+    const cyclic: any = { id: 1, name: 'item' };
+    cyclic.self = cyclic;
+    const collection = {
+      models: [cyclic],
+      toJSON() {
+        return [{ id: 1, name: 'item' }];
+      },
+    };
+
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          collection,
+        },
+      } as any)
+    ).toEqual({
+      collection: {
+        name: 'collection',
+        type: {
+          name: 'array',
+          value: { name: 'object', value: { id: { name: 'number' }, name: { name: 'string' } } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to normal inference when toJSON throws', () => {
+    const value = {
+      x: 1,
+      toJSON() {
+        throw new Error('serialization unavailable');
+      },
+    };
+
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: { a: value },
+      } as any)
+    ).toEqual({
+      a: {
+        name: 'a',
+        type: {
+          name: 'object',
+          // The `toJSON` method itself is walked as a function field.
+          value: { x: { name: 'number' }, toJSON: { name: 'function' } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to cycle detection when toJSON returns the value itself', () => {
+    // A toJSON that returns `this` must not cause infinite recursion; the
+    // existing cycle path should still fire.
+    const cyclic: any = {};
+    cyclic.foo = cyclic;
+    cyclic.toJSON = function () {
+      return this;
+    };
+
+    vi.mocked(logger.warn).mockClear();
+    inferArgTypes({
+      initialArgs: { a: cyclic },
+    } as any);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
   it('ensures names', () => {
     vi.mocked(logger.warn).mockClear();
     expect(

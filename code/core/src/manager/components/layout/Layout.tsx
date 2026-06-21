@@ -18,6 +18,7 @@ import { useLandmarkIndicator } from './useLandmarkIndicator.ts';
 
 interface InternalLayoutState {
   isDragging: boolean;
+  dragCursor: string;
 }
 
 interface ManagerLayoutState extends Pick<
@@ -69,6 +70,7 @@ const useLayoutSyncingState = ({
   const [internalDraggingSizeState, setInternalDraggingSizeState] = useState<LayoutState>({
     ...managerLayoutState,
     isDragging: false,
+    dragCursor: 'col-resize',
   });
 
   /** Sync FROM managerLayoutState to internalDraggingState if user is not dragging */
@@ -138,6 +140,7 @@ const useLayoutSyncingState = ({
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
+    dragCursor: internalDraggingSizeState.dragCursor,
   };
 };
 
@@ -160,6 +163,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelMaxSize,
     showPages,
     showPanel,
+    isDragging,
+    dragCursor,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.
@@ -214,9 +219,16 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
         )}
         {isMobile && <Notifications />}
       </>
+      {isDragging && <DragShield style={{ cursor: dragCursor }} />}
     </LayoutContainer>
   );
 };
+
+const DragShield = styled.div({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 10,
+});
 
 const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];

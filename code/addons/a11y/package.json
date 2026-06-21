@@ -59,11 +59,11 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^2.0.2",
     "axe-core": "^4.2.0"
   },
   "devDependencies": {
     "@radix-ui/react-tabs": "1.0.4",
-    "@storybook/icons": "^2.0.2",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.6.1",
     "react": "^18.2.0",
@@ -73,6 +73,8 @@
     "vitest-axe": "^0.1.0"
   },
   "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
   },
   "publishConfig": {

@@ -90,8 +90,6 @@
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/icons": "^2.0.2",
     "@storybook/react-dom-shim": "workspace:*",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
@@ -117,6 +115,8 @@
   },
   "peerDependencies": {
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {

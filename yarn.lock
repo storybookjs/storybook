@@ -9125,6 +9125,8 @@ __metadata:
     typescript: "npm:^5.9.3"
     vitest-axe: "npm:^0.1.0"
   peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -9180,6 +9182,8 @@ __metadata:
     vite: "npm:^7.0.4"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
     "@types/react":
@@ -9236,6 +9240,8 @@ __metadata:
     react-joyride: "npm:^2.8.2"
     typescript: "npm:^5.9.3"
   peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -9250,6 +9256,8 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.9.3"
   peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -9288,6 +9296,8 @@ __metadata:
     "@vitest/browser": ^3.0.0 || ^4.0.0
     "@vitest/browser-playwright": ^4.0.0
     "@vitest/runner": ^3.0.0 || ^4.0.0
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     vitest: ^3.0.0 || ^4.0.0
   peerDependenciesMeta:
@@ -31311,6 +31321,8 @@ __metadata:
     react-dom: "npm:^18.2.0"
     typescript: "npm:^5.9.3"
   peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft

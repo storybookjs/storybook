@@ -258,17 +258,20 @@ export const Preview: FC<PreviewProps> = ({
               </Button>
             </>
           )}
-          {additionalActionItems.map(({ title, className, onClick, disabled }, index: number) => (
-            <Button
-              key={index}
-              className={className}
-              onClick={onClick}
-              disabled={!!disabled}
-              variant="ghost"
-            >
-              {title}
-            </Button>
-          ))}
+          {additionalActionItems.map(
+            ({ title, ariaLabel, className, onClick, disabled }, index: number) => (
+              <Button
+                key={index}
+                ariaLabel={ariaLabel ?? false}
+                className={className}
+                onClick={onClick}
+                disabled={!!disabled}
+                variant="ghost"
+              >
+                {title}
+              </Button>
+            )
+          )}
         </ActionBar>
       )}
     </>

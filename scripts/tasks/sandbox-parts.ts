@@ -11,7 +11,7 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { babelParse, types as t } from '../../code/core/src/babel/index.ts';
+import { babelParse, traverse, types as t } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
@@ -90,6 +90,114 @@ async function pathExists(path: string) {
   } catch {
     return false;
   }
+}
+
+const propKey = (p: t.ObjectProperty) => {
+  if (t.isIdentifier(p.key)) {
+    return p.key.name;
+  }
+
+  if (t.isStringLiteral(p.key)) {
+    return p.key.value;
+  }
+
+  return null;
+};
+
+const makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
+  if (path.length === 0) {
+    return value;
+  }
+
+  const [first, ...rest] = path;
+  return t.objectExpression([
+    t.objectProperty(t.identifier(first), makeObjectExpression(rest, value)),
+  ]);
+};
+
+const updateObjectExpression = (
+  path: string[],
+  expr: t.Expression,
+  existing: t.ObjectExpression
+) => {
+  const [first, ...rest] = path;
+  const existingField = (existing.properties as t.ObjectProperty[]).find(
+    (p) => propKey(p) === first
+  ) as t.ObjectProperty;
+
+  if (!existingField) {
+    existing.properties.push(
+      t.objectProperty(t.identifier(first), makeObjectExpression(rest, expr))
+    );
+  } else if (t.isObjectExpression(existingField.value) && rest.length > 0) {
+    updateObjectExpression(rest, expr, existingField.value);
+  } else {
+    existingField.value = makeObjectExpression(rest, expr);
+  }
+};
+
+const findPluginCall = (name: string, ast: t.File): t.CallExpression | undefined => {
+  let call: t.CallExpression | undefined;
+  traverse(ast, {
+    CallExpression: {
+      enter(path) {
+        if (call) {
+          return;
+        }
+
+        const { callee } = path.node;
+        if (t.isIdentifier(callee) && callee.name === name) {
+          call = path.node;
+          path.stop();
+        }
+      },
+    },
+  });
+  return call;
+};
+
+function setPluginParam(
+  config: ConfigFile,
+  {
+    pluginName,
+    paramPos,
+    paramPath,
+    paramValue,
+  }: {
+    pluginName: string;
+    paramPos: number;
+    paramPath: string[];
+    paramValue: unknown;
+  }
+) {
+  const call = findPluginCall(pluginName, config._ast);
+  if (!call) {
+    throw new Error(`Could not find a call to the "${pluginName}" plugin in this file.`);
+  }
+
+  if (paramPos > call.arguments.length) {
+    throw new Error(
+      `Cannot set argument ${paramPos} of "${pluginName}" as the call only has ${call.arguments.length} argument(s).`
+    );
+  }
+
+  if (paramPos === call.arguments.length) {
+    call.arguments.push(t.objectExpression([]));
+  }
+
+  const param = call.arguments[paramPos];
+  if (!t.isObjectExpression(param)) {
+    throw new Error(
+      `Expected argument ${paramPos} of "${pluginName}" to be an object, got '${param.type}'.`
+    );
+  }
+
+  const valueNode = config.valueToNode(paramValue);
+  if (!valueNode) {
+    throw new Error(`Unexpected value ${JSON.stringify(paramValue)}`);
+  }
+
+  updateObjectExpression(paramPath, valueNode, param);
 }
 
 const logger = console;
@@ -180,7 +288,11 @@ export const init: Task['run'] = async (
       extra = { type: 'server' };
       break;
     case '@storybook/svelte':
-      await prepareSvelteSandbox(cwd);
+      if (template.expected.framework === '@storybook/sveltekit') {
+        await prepareSvelteKitSandbox(cwd);
+      } else {
+        await prepareSvelteSandbox(cwd);
+      }
       break;
   }
 
@@ -226,6 +338,7 @@ export const init: Task['run'] = async (
 
   switch (template.expected.framework) {
     case '@storybook/angular':
+    case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:
@@ -446,9 +559,16 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
+  // Angular sandboxes need `yarn docs:json` to run before any preview-evaluating
+  // task so `.storybook/preview.ts`'s static `import docJson from "../documentation.json"`
+  // resolves real compodoc data. `prepareAngularSandbox` already wires this into
+  // the `storybook` and `build-storybook` scripts; do the same for `vitest` when
+  // the script exists (added only by the Angular template path).
+  const vitestCmd = 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000';
+  const hasDocsJson = !!packageJson.scripts?.['docs:json'];
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+    vitest: hasDocsJson ? `yarn docs:json && ${vitestCmd}` : vitestCmd,
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode
@@ -475,17 +595,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
 
-  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to plugins
-  // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
-  fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
-    let replacement = `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+  // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to
+  // plugins. Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }]). Anchored
+  // on the `plugins:` key (injecting before it) instead of matching the whole array: plugin code
+  // may contain `]` (e.g. the regex literal in the sveltekit template), which a bracket-counting
+  // regex like `\[[^\]]*\]` would cut short, splicing the injection into the middle of it.
+  fileContent = fileContent.replace(/^([ \t]*)plugins\s*:/m, (match, indent) => {
+    let injected = `${indent}resolve: {\n${indent}  preserveSymlinks: true\n${indent}},\n`;
 
     // In linked mode, also add server.fs.allow to allow Vite to serve files from the monorepo root
     if (options.link) {
-      replacement += `\n  server: {\n    fs: {\n      allow: ['../../..']\n    }\n  },`;
+      injected += `${indent}server: {\n${indent}  fs: {\n${indent}    allow: ['../../..']\n${indent}  }\n${indent}},\n`;
     }
 
-    return replacement;
+    return `${injected}${match}`;
   });
 
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
@@ -896,34 +1019,52 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   }
 }
 
-async function prepareSvelteSandbox(cwd: string) {
-  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
-  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+async function getConfigFile(names: string[], cwd: string) {
+  const firstPath = await findFirstPath(names, { cwd });
 
-  // Check which config file exists
-  const configPath = (await pathExists(svelteConfigTsPath))
-    ? svelteConfigTsPath
-    : (await pathExists(svelteConfigJsPath))
-      ? svelteConfigJsPath
-      : null;
-
-  if (!configPath) {
-    throw new Error(
-      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
-    );
+  if (!firstPath) {
+    throw new Error(`No ${names.join(' or ')} found in sandbox: ${cwd}, cannot modify config.`);
   }
 
+  // findFirstPath returns a path relative to `cwd`; resolve it so readConfig
+  // does not resolve it against the script's own working directory.
+  return join(cwd, firstPath);
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const configPath = await getConfigFile(['svelte.config.ts', 'svelte.config.js'], cwd);
   const svelteConfig = await csfReadConfig(configPath);
 
   // Enable async components
   // see https://svelte.dev/docs/svelte/await-expressions
   svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
 
+  await writeConfig(svelteConfig);
+}
+
+async function prepareSvelteKitSandbox(cwd: string) {
+  const configPath = await getConfigFile(['vite.config.ts', 'vite.config.js'], cwd);
+  const viteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  setPluginParam(viteConfig, {
+    pluginName: 'sveltekit',
+    paramPos: 0,
+    paramPath: ['compilerOptions', 'experimental', 'async'],
+    paramValue: true,
+  });
+
   // Enable remote functions
   // see https://svelte.dev/docs/kit/remote-functions
-  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+  setPluginParam(viteConfig, {
+    pluginName: 'sveltekit',
+    paramPos: 0,
+    paramPath: ['experimental', 'remoteFunctions'],
+    paramValue: true,
+  });
 
-  await writeConfig(svelteConfig);
+  await writeConfig(viteConfig);
 }
 
 /**
@@ -969,14 +1110,6 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
     /**
-     * Sets compodoc option in angular.json projects to false. We have to generate compodoc manually
-     * to avoid symlink issues related to the template-stories folder. In a second step a docs:json
-     * script is placed into the package.json to generate the Compodoc documentation.json, which
-     * respects symlinks
-     */
-    angularJson.projects[projectName].architect.storybook.options.compodoc = false;
-    angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
-    /**
      * Sets preserveSymlinks option in angular.json projects to true. This is necessary to respect
      * symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
      */
@@ -1014,6 +1147,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
+    // @analogjs/vite-plugin-angular only compiles files referenced by the
+    // tsconfig program. Template renderer components (e.g. pre.component.ts)
+    // are symlinked into `template-stories/components` and must be part of the
+    // program too — otherwise @Input/@Output decorators are stripped and
+    // bindings never resolve at runtime.
+    '../template-stories/components/**/*.ts',
     // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];

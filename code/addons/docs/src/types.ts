@@ -1,6 +1,13 @@
 import type { ComponentType } from 'react';
 
-import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+import type {
+  Args,
+  DocsContextProps,
+  ModuleExport,
+  ModuleExports,
+  PreparedStory,
+  Renderer,
+} from 'storybook/internal/types';
 
 import type { ThemeVars } from 'storybook/theming';
 
@@ -29,6 +36,16 @@ type StoryBlockParameters = {
    * attached, the primary (first) story will be rendered.
    */
   of: ModuleExport;
+};
+
+type StoriesBlockParameters = {
+  /**
+   * Custom filter function for determining which stories to include in a <Stories> block
+   */
+  filter?: <TRenderer extends Renderer = Renderer, TArgs = Args>(
+    Story: PreparedStory<TRenderer>,
+    Context: ReturnType<DocsContextProps['getStoryContext']>
+  ) => boolean;
 };
 
 type ControlsBlockParameters = {
@@ -69,6 +86,7 @@ type CanvasBlockParameters = {
    * buttons that do anything you specify in the onClick function.
    */
   additionalActions?: {
+    ariaLabel?: string;
     className?: string;
     disabled?: boolean;
     onClick: () => void;
@@ -215,11 +233,18 @@ export interface DocsParameters {
     source?: Partial<SourceBlockParameters>;
 
     /**
-     * Story configuration
+     * Story block configuration
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
     story?: Partial<StoryBlockParameters>;
+
+    /**
+     * Stories block configuration
+     *
+     * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-stories
+     */
+    stories?: Partial<StoriesBlockParameters>;
 
     /**
      * The subtitle displayed when shown in docs page

@@ -26,6 +26,7 @@ export const StorybookInstanceRecordSchema = v.object({
   cwd: v.string(),
   url: v.string(),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
+  agent: v.optional(v.string()),
   storybookVersion: v.optional(v.string()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),

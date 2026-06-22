@@ -27,25 +27,21 @@ const docgenErrorSchema = v.object({
 
 const docgenJsDocTagsSchema = v.record(v.string(), v.array(v.string()));
 
-const docgenStorySchema = v.object({
-  id: v.string(),
-  name: v.string(),
-  snippet: v.optional(v.string()),
-  description: v.optional(v.string()),
-  summary: v.optional(v.string()),
-  error: v.optional(docgenErrorSchema),
-});
-
-/** Shared docgen fields on component and subcomponent docgen entries. */
-const docgenEntryBaseFields = {
+/** Shared docgen fields on top-level component docgen entries. */
+const docgenComponentFields = {
   name: v.string(),
   path: v.string(),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
-  import: v.optional(v.string()),
   jsDocTags: docgenJsDocTagsSchema,
   argTypes: v.optional(argTypesSchema),
   error: v.optional(docgenErrorSchema),
+};
+
+/** Shared docgen fields on subcomponent docgen entries (includes per-subcomponent import). */
+const docgenSubcomponentFields = {
+  ...docgenComponentFields,
+  import: v.optional(v.string()),
 };
 
 /**
@@ -54,7 +50,7 @@ const docgenEntryBaseFields = {
  * Uses {@link v.looseObject} so provider-specific docgen engine output (for example
  * `reactComponentMeta`) validates without listing every framework integration field in core.
  */
-const docgenSubcomponentSchema = v.looseObject(docgenEntryBaseFields);
+const docgenSubcomponentSchema = v.looseObject(docgenSubcomponentFields);
 
 /**
  * Top-level component docgen payload schema.
@@ -64,9 +60,8 @@ const docgenSubcomponentSchema = v.looseObject(docgenEntryBaseFields);
  */
 const docgenPayloadSchema = v.looseObject({
   id: v.string(),
-  ...docgenEntryBaseFields,
+  ...docgenComponentFields,
   subcomponents: v.optional(v.record(v.string(), docgenSubcomponentSchema)),
-  stories: v.array(docgenStorySchema),
 });
 
 const docgenOutputSchema = v.optional(docgenPayloadSchema);

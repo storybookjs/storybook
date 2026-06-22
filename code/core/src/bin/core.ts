@@ -20,6 +20,7 @@ import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -131,7 +132,7 @@ command('dev')
     'URL path to be appended when visiting Storybook for the first time'
   )
   .option('--preview-only', 'Use the preview without the manager UI')
-  .action(async (options) => {
+  .action(async (options, cmd) => {
     const { default: packageJson } = await import('storybook/package.json', {
       with: { type: 'json' },
     });
@@ -148,11 +149,17 @@ command('dev')
       ci: 'CI',
     });
 
-    if (parseInt(`${options.port}`, 10)) {
-      options.port = parseInt(`${options.port}`, 10);
+    let resolvedOptions;
+    try {
+      resolvedOptions = resolveDevCommandOptions(options, {
+        portWasProvidedByCli: cmd.getOptionValueSource('port') === 'cli',
+      });
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      return handleCommandFailure(options.logfile);
     }
 
-    await dev({ ...options, packageJson }).catch(() => {
+    await dev({ ...resolvedOptions, packageJson }).catch(() => {
       handleCommandFailure(options.logfile);
     });
   });

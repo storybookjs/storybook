@@ -133,7 +133,11 @@ export const ReviewWidget = () => {
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
   const remaining = Math.max(0, storyCount - reviewedCount);
   const isComplete = remaining === 0;
-  const progressText = isComplete ? 'Review complete' : `${remaining} left to review`;
+  const progressText = isComplete
+    ? 'Review complete'
+    : reviewedCount === 0
+      ? `Review ${storyCount} ${storyLabel}`
+      : `${remaining} ${remaining === 1 ? 'story' : 'stories'} left to review`;
 
   return (
     <Card
@@ -155,20 +159,14 @@ export const ReviewWidget = () => {
       <ActionList>
         <ActionList.Item>
           <ActionList.Action
-            ariaLabel={
-              reviewTitle
-                ? `Review ${storyCount} ${storyLabel}: ${reviewTitle}`
-                : `Review ${storyCount} ${storyLabel}`
-            }
+            ariaLabel={reviewTitle ? `${progressText}: ${reviewTitle}` : progressText}
             disableAllTooltips
             appearance="agentic"
             onClick={onOpen}
           >
             <ActionList.Text>
-              <strong>
-                Review {storyCount} {storyLabel}
-              </strong>
-              <small>{progressText}</small>
+              <strong>{progressText}</strong>
+              {reviewTitle ? <small>{reviewTitle}</small> : null}
             </ActionList.Text>
           </ActionList.Action>
         </ActionList.Item>

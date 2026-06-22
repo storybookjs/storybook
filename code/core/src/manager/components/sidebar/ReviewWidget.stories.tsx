@@ -166,7 +166,7 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Quick review')).toBeVisible();
     await expect(canvas.getByText('Review 12 stories')).toBeVisible();
-    await expect(canvas.getByText('12 left to review')).toBeVisible();
+    await expect(canvas.getByText('Button style changes on Shop screen')).toBeVisible();
   },
 };
 
@@ -183,8 +183,7 @@ export const PartialProgress: Story = {
     return setReviewingStatuses(storyIds);
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText('Review 12 stories')).toBeVisible();
-    await expect(canvas.getByText('7 left to review')).toBeVisible();
+    await expect(canvas.getByText('7 stories left to review')).toBeVisible();
   },
 };
 
@@ -201,7 +200,6 @@ export const Complete: Story = {
     return setReviewingStatuses(storyIds);
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText('Review 12 stories')).toBeVisible();
     await expect(canvas.getByText('Review complete')).toBeVisible();
   },
 };
@@ -220,7 +218,6 @@ export const SingleStory: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Review 1 story')).toBeVisible();
-    await expect(canvas.getByText('1 left to review')).toBeVisible();
   },
 };
 

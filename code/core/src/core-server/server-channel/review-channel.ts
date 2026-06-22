@@ -11,7 +11,7 @@ import type { ReviewState } from '../../shared/review/review-state.ts';
  * file-system events may land a few milliseconds after the review is cached,
  * preventing a freshly-pushed review from being marked stale immediately.
  */
-const STALE_GRACE_MS = 1000;
+const STALE_GRACE_MS = 10_000;
 
 type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 

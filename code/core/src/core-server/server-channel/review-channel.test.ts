@@ -167,7 +167,7 @@ describe('initReviewChannel', () => {
       await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
       // Past the grace window relative to createdAt (NOW).
-      vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
+      vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
       fireChange();
 
       expect(staleOf(emitted)).toHaveLength(1);
@@ -203,7 +203,7 @@ describe('initReviewChannel', () => {
     it('ignores source changes when no review is cached', () => {
       const { emitted, fireChange } = setup();
 
-      vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
+      vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
       fireChange();
 
       expect(emitted).toEqual([]);
@@ -213,7 +213,7 @@ describe('initReviewChannel', () => {
       const { channel, emitted, fireChange } = setup();
       await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
-      vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
+      vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
       fireChange();
       fireChange();
       fireChange();
@@ -225,7 +225,7 @@ describe('initReviewChannel', () => {
       const { channel, emitted, fireChange } = setup();
       await (channel as any).fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
-      vi.spyOn(Date, 'now').mockReturnValue(NOW + 2000);
+      vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
       fireChange();
       expect(staleOf(emitted)).toHaveLength(1);
 

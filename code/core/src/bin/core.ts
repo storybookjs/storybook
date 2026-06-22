@@ -152,7 +152,11 @@ command('dev')
     let resolvedOptions;
     try {
       resolvedOptions = resolveDevCommandOptions(options, {
-        portSource: cmd.getOptionValueSource('port') === 'cli' ? '`--port`' : 'SBCONFIG_PORT',
+        portSource: process.env.SBCONFIG_PORT
+          ? 'sbconfig'
+          : cmd.getOptionValueSource('port') === 'cli'
+            ? 'cli'
+            : undefined,
       });
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));

@@ -11,7 +11,7 @@ describe('resolveDevCommandOptions', () => {
 
   it('keeps explicit --port precedence over PORT', () => {
     expect(
-      resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' }, portSource: '`--port`' })
+      resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' }, portSource: 'cli' })
     ).toMatchObject({
       port: 7007,
     });
@@ -23,6 +23,10 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
+  it('does not add new validation to invalid SBCONFIG_PORT values', () => {
+    expect(() => resolveDevCommandOptions({ port: 'not-a-port' })).not.toThrow();
+  });
+
   it('fails clearly when PORT is not a port number', () => {
     expect(() => resolveDevCommandOptions({}, { env: { PORT: 'not-a-port' } })).toThrow(
       'PORT must be a valid port number'
@@ -31,8 +35,8 @@ describe('resolveDevCommandOptions', () => {
 
   it('does not treat --port placeholders as PORT interpolation', () => {
     expect(() =>
-      resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' }, portSource: '`--port`' })
-    ).toThrow('`--port` must be a valid port number from 1 to 65535, received "$PORT"');
+      resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' }, portSource: 'cli' })
+    ).toThrow('--port must be a valid port number from 1 to 65535, received "$PORT"');
   });
 
   it('defaults browser opening to false for Claude preview launches', () => {

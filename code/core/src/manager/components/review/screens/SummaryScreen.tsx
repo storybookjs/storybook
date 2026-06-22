@@ -221,6 +221,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 }) => {
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
+  const [showNewOnly, setShowNewOnly] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -241,12 +242,27 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   }, [state]);
 
   // Must be computed before the early return — hooks cannot be called conditionally.
+  const newStoryCount = useMemo(
+    () =>
+      new Set(
+        (state?.collections ?? [])
+          .flatMap((c) => c.storyIds)
+          .filter((id) => storyInfo[id]?.isNewlyAdded)
+      ).size,
+    [state, storyInfo]
+  );
+
   const visibleCollections = useMemo(
     () =>
       (state?.collections ?? [])
-        .map((collection, index) => ({ collection, index, storyIds: collection.storyIds }))
+        .map((collection, index) => {
+          const storyIds = showNewOnly
+            ? collection.storyIds.filter((id) => storyInfo[id]?.isNewlyAdded)
+            : collection.storyIds;
+          return { collection, index, storyIds };
+        })
         .filter((entry) => entry.storyIds.length > 0),
-    [state?.collections]
+    [state?.collections, showNewOnly, storyInfo]
   );
 
   if (!state) {
@@ -328,6 +344,21 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             ) : null}
           </>
         }
+        actions={
+          newStoryCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="small"
+              padding="small"
+              ariaLabel={false}
+              tooltip="Toggle filtering of new stories"
+              active={showNewOnly}
+              onClick={() => setShowNewOnly((v) => !v)}
+            >
+              {newStoryCount} new
+            </Button>
+          ) : null
+        }
       />
 
       <ListScroll>
@@ -340,7 +371,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </SummaryContent>
             </SummaryCard>
             {visibleCollections.length === 0 ? (
-              <Footer>No collections found.</Footer>
+              <Footer>{showNewOnly ? 'No new stories found.' : 'No collections found.'}</Footer>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);

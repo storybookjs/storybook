@@ -54,7 +54,6 @@ const sampleReview: ReviewState = {
       title: 'Button',
       rationale: 'The directly changed component.',
       storyIds: ['button--primary'],
-      kind: 'atomic',
     },
   ],
 };

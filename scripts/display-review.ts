@@ -87,10 +87,10 @@ const BADGE_A11Y_REPORT: Array<{ importPaths: string[]; storyNames: string[] }> 
   },
 ];
 
-/** Review addon surfaces that render Badge for story status. */
+/** Review surfaces that render Badge for story status. */
 const BADGE_REVIEW_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
   {
-    importPaths: ['./addons/review/src/ReviewToolbarHeader.stories.tsx'],
+    importPaths: ['./core/src/manager/components/review/ReviewToolbarHeader.stories.tsx'],
     storyNames: ['New Story'],
   },
 ];

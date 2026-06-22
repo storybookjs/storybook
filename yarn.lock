@@ -9240,19 +9240,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-review@workspace:*, @storybook/addon-review@workspace:code/addons/review":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-review@workspace:code/addons/review"
-  dependencies:
-    markdown-to-jsx: "npm:^7.7.2"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    typescript: "npm:^5.9.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
@@ -9522,7 +9509,6 @@ __metadata:
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-mcp": "npm:*"
     "@storybook/addon-onboarding": "workspace:*"
-    "@storybook/addon-review": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"

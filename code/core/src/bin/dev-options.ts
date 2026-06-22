@@ -4,14 +4,14 @@ import { isClaudePreviewLaunch, type AgentEnvironment } from '../shared/utils/ag
 
 type DevCommandEnvironment = AgentEnvironment & {
   PORT?: string;
+  SBCONFIG_PORT?: string;
 };
 
 type DevCommandOptions = {
   open?: boolean;
   port?: number | string;
+  [key: string]: unknown;
 };
-
-type PortSource = 'cli' | 'sbconfig';
 
 const parseStrictPort = (value: number | string, source: string) => {
   const port = typeof value === 'number' ? value : /^\d+$/.test(value) ? Number(value) : Number.NaN;
@@ -29,21 +29,17 @@ const parseLegacyPort = (value: number | string) => {
   return port || value;
 };
 
-export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
-  options: TOptions,
-  {
-    env = process.env,
-    portSource = 'sbconfig',
-  }: { env?: DevCommandEnvironment; portSource?: PortSource } = {}
+export function resolveDevCommandOptions(
+  options: DevCommandOptions,
+  { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
   const resolvedOptions = { ...options };
 
-  if (resolvedOptions.port != null) {
-    resolvedOptions.port =
-      portSource === 'cli'
-        ? parseStrictPort(resolvedOptions.port, '--port')
-        : parseLegacyPort(resolvedOptions.port);
-  } else if (env.PORT !== undefined) {
+  if (env.SBCONFIG_PORT) {
+    resolvedOptions.port = parseLegacyPort(env.SBCONFIG_PORT);
+  } else if (resolvedOptions.port != null) {
+    resolvedOptions.port = parseStrictPort(resolvedOptions.port, '--port');
+  } else if (env.PORT?.trim()) {
     resolvedOptions.port = parseStrictPort(env.PORT, 'PORT');
   }
 

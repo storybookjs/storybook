@@ -132,7 +132,7 @@ command('dev')
     'URL path to be appended when visiting Storybook for the first time'
   )
   .option('--preview-only', 'Use the preview without the manager UI')
-  .action(async (options, cmd) => {
+  .action(async (options) => {
     const { default: packageJson } = await import('storybook/package.json', {
       with: { type: 'json' },
     });
@@ -142,7 +142,6 @@ command('dev')
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
     getEnvConfig(options, {
-      port: 'SBCONFIG_PORT',
       host: 'SBCONFIG_HOSTNAME',
       staticDir: 'SBCONFIG_STATIC_DIR',
       configDir: 'SBCONFIG_CONFIG_DIR',
@@ -151,13 +150,7 @@ command('dev')
 
     let resolvedOptions;
     try {
-      resolvedOptions = resolveDevCommandOptions(options, {
-        portSource: process.env.SBCONFIG_PORT
-          ? 'sbconfig'
-          : cmd.getOptionValueSource('port') === 'cli'
-            ? 'cli'
-            : undefined,
-      });
+      resolvedOptions = resolveDevCommandOptions(options);
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
       return handleCommandFailure(options.logfile);

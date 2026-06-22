@@ -2,18 +2,18 @@ import type { ReactNode } from 'react';
 
 import { expect, fn, within } from 'storybook/test';
 
+import { MemoryRouter } from 'storybook/internal/router';
 import {
   ManagerContext,
+  internal_fullStatusStore,
   type API,
   type State,
-  internal_fullStatusStore,
 } from 'storybook/manager-api';
-import { MemoryRouter } from 'storybook/internal/router';
 
 import preview from '../../../../../.storybook/preview.tsx';
-import { ADDON_ID, EVENTS } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
+import { ADDON_ID, EVENTS } from './constants.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
 import { writeReviewProgress } from './review-progress.ts';
 import type { ReviewState } from './review-state.ts';
@@ -150,7 +150,47 @@ const ReviewShortcutsHarness = ({ children }: { children: ReactNode }) => {
   return children;
 };
 
-export const OnReviewedStory = meta.story({
+// On the first story, flagged as newly added: the "New" badge shows and, with
+// later stories still unreviewed, the forward control is a solid "Next".
+export const FirstStory = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-checklist--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-checklist--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  // A story is "newly added" when change detection reports it as new.
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 'manager-settings-checklist--default',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+    ]);
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    await expect(await canvas.findByText('New')).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Next' })).toHaveAttribute(
+      'href',
+      buildReviewStoryHref({
+        collectionIndex: 0,
+        storyId: 'manager-settings-guidepage--default',
+      })
+    );
+  },
+});
+
+// On a middle story: the baseline toolbar chrome — counter, story-list picker,
+// keyboard shortcut, heading and back-to-summary link, no "New" badge.
+export const MiddleStory = meta.story({
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {
@@ -181,7 +221,9 @@ export const OnReviewedStory = meta.story({
   },
 });
 
-export const Progress = meta.story({
+// On the last story: the positional progress bar is full and the forward control
+// becomes "Done" (back to summary) instead of advancing.
+export const LastStory = meta.story({
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-aboutscreen--default&collection=0'],
     managerState: {
@@ -198,60 +240,6 @@ export const Progress = meta.story({
     await expect(counter).toHaveTextContent('3/3');
     const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
     await expect(Math.round(parseFloat(fill.style.width))).toBe(100);
-  },
-});
-
-export const NewStory = meta.story({
-  parameters: {
-    routerInitialEntries: ['/?path=/story/manager-settings-checklist--default&collection=0'],
-    managerState: {
-      path: '/story/manager-settings-checklist--default',
-      viewMode: 'story',
-      customQueryParams: { collection: '0' },
-    },
-  },
-  // A story is "newly added" when change detection reports it as new.
-  beforeEach: () => {
-    internal_fullStatusStore.set([
-      {
-        storyId: 'manager-settings-checklist--default',
-        typeId: 'storybook/change-detection',
-        value: 'status-value:new',
-        title: 'Change Detection',
-        description: '',
-      },
-    ]);
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    applyReviewState();
-
-    await expect(await canvas.findByText('New')).toBeInTheDocument();
-    // First story, others still unreviewed: forward control is a solid "Next".
-    await expect(await canvas.findByRole('link', { name: 'Next' })).toHaveAttribute(
-      'href',
-      buildReviewStoryHref({
-        collectionIndex: 0,
-        storyId: 'manager-settings-guidepage--default',
-      })
-    );
-  },
-});
-
-// Landing on the last story in the set offers "Done" (back to summary) instead
-// of a forward control, regardless of whether earlier stories were reviewed.
-export const LastStoryDone = meta.story({
-  parameters: {
-    routerInitialEntries: ['/?path=/story/manager-settings-aboutscreen--default&collection=0'],
-    managerState: {
-      path: '/story/manager-settings-aboutscreen--default',
-      viewMode: 'story',
-      customQueryParams: { collection: '0' },
-    },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    applyReviewState();
 
     const done = await canvas.findByRole('link', { name: 'Done' });
     await expect(done).toHaveAttribute('href', buildReviewChangesSummaryHref());
@@ -259,9 +247,9 @@ export const LastStoryDone = meta.story({
   },
 });
 
-// Every story reviewed but standing on a non-last story: the forward control
-// reverts to the plain ghost chevron ("Next story"), not a solid Next/Done.
-export const AllReviewedChevron = meta.story({
+// Every story already reviewed but standing on a non-last story: the forward
+// control reverts to the plain ghost chevron ("Next story"), not a solid one.
+export const AllReviewed = meta.story({
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {

@@ -9,17 +9,6 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
 
-// Lets us flip `@storybook/addon-review` presence so the review tool's gate can be exercised.
-// Keep the real exports (e.g. `normalizeStoryPath`) so unrelated tools still register.
-const { mockGetAddonNames } = vi.hoisted(() => ({
-	mockGetAddonNames: vi.fn(() => [] as string[]),
-}));
-vi.mock('storybook/internal/common', async (importActual) => ({
-	...(await importActual<typeof import('storybook/internal/common')>()),
-	loadMainConfig: vi.fn().mockResolvedValue({}),
-	getAddonNames: () => mockGetAddonNames(),
-}));
-
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
 	method?: string;
@@ -561,8 +550,7 @@ describe('mcpServerHandler', () => {
 		expect(toolNames).toContain('get-changed-stories');
 	});
 
-	it('registers display-review when changeDetection and @storybook/addon-review are present', async () => {
-		mockGetAddonNames.mockReturnValue(['@storybook/addon-review']);
+	it('registers display-review when the changeDetection feature flag is on', async () => {
 		const mockOptions = createMockOptions({
 			port: 6010,
 			presets: {

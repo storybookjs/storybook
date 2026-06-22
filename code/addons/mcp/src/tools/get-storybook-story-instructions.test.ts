@@ -31,7 +31,6 @@ describe('getUIBuildingInstructionsTool', () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
 			hasFeatureFlag: false,
-			hasAddon: false,
 		});
 
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -226,7 +225,6 @@ describe('getUIBuildingInstructionsTool', () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: true,
 			hasFeatureFlag: true,
-			hasAddon: true,
 		});
 
 		const mockOptions = {
@@ -268,15 +266,16 @@ describe('getUIBuildingInstructionsTool', () => {
 	it('tells the agent to include preview URLs when review is disabled', async () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
-			hasFeatureFlag: true,
-			hasAddon: false,
+			hasFeatureFlag: false,
 		});
 
 		const mockOptions = {
 			presets: {
 				apply: vi.fn(async (presetName: string) => {
 					if (presetName === 'framework') return '@storybook/react-vite';
-					if (presetName === 'features') return { changeDetection: true };
+					// Review is gated solely on changeDetection, so a disabled review
+					// means the flag is off — keep the preset consistent with the mock above.
+					if (presetName === 'features') return { changeDetection: false };
 					return undefined;
 				}),
 			},

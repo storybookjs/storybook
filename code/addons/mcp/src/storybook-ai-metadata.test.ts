@@ -53,7 +53,6 @@ describe('buildStorybookAiMetadata', () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: true,
 			hasFeatureFlag: true,
-			hasAddon: true,
 		});
 		vi.mocked(getManifestStatus).mockResolvedValue({
 			available: true,

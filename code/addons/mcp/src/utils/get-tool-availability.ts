@@ -10,7 +10,7 @@ export interface ToolAvailability {
 	moduleGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
-	/** `changeDetection` flag + `@storybook/addon-review` are both present. Gates `display-review`. */
+	/** The `changeDetection` feature flag is enabled. Gates `display-review`. */
 	reviewEnabled: boolean;
 	/** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
 	docsEnabled: boolean;

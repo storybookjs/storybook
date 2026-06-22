@@ -131,7 +131,21 @@ const extractEnumValues = (compodocType: any) => {
   }
 
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return compodocType.split('|').map((value) => {
+      const trimmed = value.trim();
+      // Strip matching surrounding quotes (compodoc emits 'foo' | 'bar' or "foo" | "bar")
+      const unquoted =
+        (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+        (trimmed.startsWith('"') && trimmed.endsWith('"'))
+          ? trimmed.slice(1, -1)
+          : trimmed;
+      // Try JSON.parse with double quotes; fall back to the raw trimmed string
+      try {
+        return JSON.parse(`"${unquoted.replace(/"/g, '\\"')}"`);
+      } catch {
+        return unquoted;
+      }
+    });
   } catch (e) {
     return null;
   }

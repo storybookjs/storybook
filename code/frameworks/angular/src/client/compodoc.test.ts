@@ -32,6 +32,15 @@ const getDummyCompodocJson = () => {
           description: '',
           kind: 168,
         },
+        {
+          name: 'SingleQuoteTypeAlias',
+          ctype: 'miscellaneous',
+          subtype: 'typealias',
+          rawtype: "'Option A' | 'Option B' | 'Option C'",
+          file: 'src/stories/component-with-enums/enums.component.ts',
+          description: '',
+          kind: 168,
+        },
       ],
       enumerations: [
         {
@@ -111,7 +120,15 @@ describe('extractType', () => {
       // ['T[]', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       ['[]', { name: 'other', value: 'empty-enum' }],
       ['"primary" | "secondary"', { name: 'enum', value: ['primary', 'secondary'] }],
+      ["'primary' | 'secondary'", { name: 'enum', value: ['primary', 'secondary'] }],
+      ["'S' | 'M' | 'L'", { name: 'enum', value: ['S', 'M', 'L'] }],
+      ['1 | 2 | 3', { name: 'enum', value: [1, 2, 3] }],
+      ["'hello \"world\"'", { name: 'enum', value: ['hello "world"'] }],
       ['TypeAlias', { name: 'enum', value: ['Type Alias 1', 'Type Alias 2', 'Type Alias 3'] }],
+      [
+        'SingleQuoteTypeAlias',
+        { name: 'enum', value: ['Option A', 'Option B', 'Option C'] },
+      ],
       // ['EnumNumeric', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       // ['EnumNumericInitial', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       ['EnumStringValues', { name: 'enum', value: ['PRIMARY', 'SECONDARY', 'TERTIARY'] }],

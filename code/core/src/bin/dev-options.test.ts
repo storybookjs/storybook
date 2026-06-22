@@ -11,10 +11,7 @@ describe('resolveDevCommandOptions', () => {
 
   it('keeps explicit --port precedence over PORT', () => {
     expect(
-      resolveDevCommandOptions(
-        { port: 7007 },
-        { env: { PORT: '6123' }, portWasProvidedByCli: true }
-      )
+      resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' }, portSource: '`--port`' })
     ).toMatchObject({
       port: 7007,
     });
@@ -34,11 +31,8 @@ describe('resolveDevCommandOptions', () => {
 
   it('does not treat --port placeholders as PORT interpolation', () => {
     expect(() =>
-      resolveDevCommandOptions(
-        { port: Number.NaN },
-        { env: { PORT: '6123' }, portWasProvidedByCli: true }
-      )
-    ).toThrow('`--port` must be a valid port number');
+      resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' }, portSource: '`--port`' })
+    ).toThrow('`--port` must be a valid port number from 1 to 65535, received "$PORT"');
   });
 
   it('defaults browser opening to false for Claude preview launches', () => {

@@ -1,4 +1,4 @@
-type AgentEnvironment = {
+export type AgentEnvironment = {
   AI_AGENT?: string;
   CLAUDE_AGENT_SDK_VERSION?: string;
 };

@@ -95,7 +95,7 @@ const command = (name: string) =>
     });
 
 command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-p, --port <number>', 'Port to run Storybook')
   .option('-h, --host <string>', 'Host to run Storybook')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
@@ -152,7 +152,7 @@ command('dev')
     let resolvedOptions;
     try {
       resolvedOptions = resolveDevCommandOptions(options, {
-        portWasProvidedByCli: cmd.getOptionValueSource('port') === 'cli',
+        portSource: cmd.getOptionValueSource('port') === 'cli' ? '`--port`' : 'SBCONFIG_PORT',
       });
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));

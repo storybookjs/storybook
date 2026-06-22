@@ -418,12 +418,7 @@ export interface Addon_PageType {
    * };
    * ```
    */
-  render: FC | null;
-  /**
-   * Optional always-mounted render layer for this page addon. Rendered outside
-   * the pages/preview swap so it survives story navigation.
-   */
-  persistentRender?: FC;
+  render: FC;
 }
 
 export interface Addon_WrapperType {
@@ -508,8 +503,6 @@ export enum Addon_TypesEnum {
   TOOL = 'tool',
   /** This adds items in the toolbar above the canvas - on the right side. */
   TOOLEXTRA = 'toolextra',
-  /** Renders a full-width bar directly above the preview toolbar. */
-  TOOLBAR_HEADER = 'toolbar-header',
   /**
    * This adds wrapper components around the canvas/iframe component storybook renders.
    *

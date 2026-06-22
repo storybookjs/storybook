@@ -1,6 +1,6 @@
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview.tsx';
+import preview from '../../../../../../.storybook/preview.tsx';
 import { AttentionBanner } from './AttentionBanner.tsx';
 
 const onAccept = fn();

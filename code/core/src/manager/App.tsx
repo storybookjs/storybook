@@ -10,6 +10,7 @@ import { Global, createGlobal } from 'storybook/theming';
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
+import { ReviewPersistentLayer } from './components/review/ReviewPersistentLayer.tsx';
 import Panel from './container/Panel.tsx';
 import Preview from './container/Preview.tsx';
 import Sidebar from './container/Sidebar.tsx';
@@ -64,9 +65,7 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
-        {pages.map(({ id, persistentRender: PersistentRender }) =>
-          PersistentRender ? <PersistentRender key={`${id}-persistent`} /> : null
-        )}
+        <ReviewPersistentLayer />
         <Layout
           hasTab={hasTab}
           managerLayoutState={managerLayoutState}
@@ -74,9 +73,9 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
           slotMain={<Preview id="main" withLoader />}
           slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
           slotPanel={<Panel />}
-          slotPages={pages.map(({ id, render: Content }) =>
-            Content ? <Content key={id} /> : null
-          )}
+          slotPages={pages.map(({ id, render: Content }) => (
+            <Content key={id} />
+          ))}
         />
       </ManagerErrorBoundary>
     </>

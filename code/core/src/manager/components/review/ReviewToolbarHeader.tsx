@@ -15,12 +15,14 @@ import {
 } from './review-navigation.ts';
 import { useReview } from './review-store.ts';
 
-const Root = styled.div({
+const Root = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   flexShrink: 0,
   width: '100%',
-});
+  background: theme.background.content,
+  zIndex: 4,
+}));
 
 const HeaderWrap = styled.div({
   position: 'relative',

@@ -245,7 +245,11 @@ describe('mcpServerHandler', () => {
 	}
 
 	// Initializes the server then asks for `tools/list`, returning the registered tool names.
-	async function getRegisteredToolNames(mockOptions: any, port: number): Promise<string[]> {
+	async function getRegisteredToolNames(
+		mockOptions: any,
+		port: number,
+		handlerOptions: { sources?: any[] } = {},
+	): Promise<string[]> {
 		const host = `localhost:${port}`;
 		const addonOptions = { toolsets: { dev: true, docs: true } };
 
@@ -261,6 +265,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions,
 			addonOptions,
 			compositionAuth: new CompositionAuth(),
+			...handlerOptions,
 		});
 
 		const listReq = createMockIncomingMessage({
@@ -275,6 +280,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions,
 			addonOptions,
 			compositionAuth: new CompositionAuth(),
+			...handlerOptions,
 		});
 
 		const { body } = getResponseData();
@@ -510,6 +516,30 @@ describe('mcpServerHandler', () => {
 
 		// Verify component manifest tools are included
 		const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
+		expect(toolNames).toContain('list-all-documentation');
+		expect(toolNames).toContain('get-documentation');
+		expect(toolNames).toContain('get-documentation-for-story');
+	});
+
+	it('registers docs tools for composed sources when local manifests are unavailable', async () => {
+		const mockOptions = createMockOptions({
+			port: 6012,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { componentsManifest: true };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6012, {
+			sources: [
+				{ id: 'local', title: 'Local' },
+				{ id: 'remote', title: 'Remote', url: 'https://example.com/storybook' },
+			],
+		});
+
 		expect(toolNames).toContain('list-all-documentation');
 		expect(toolNames).toContain('get-documentation');
 		expect(toolNames).toContain('get-documentation-for-story');

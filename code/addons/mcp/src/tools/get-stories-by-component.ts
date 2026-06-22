@@ -17,7 +17,15 @@ import {
 /** When omitted by the caller, applied internally to keep result sets actionable on real codebases. */
 const DEFAULT_MAX_DISTANCE = 3;
 
-const GetStoriesByComponentInput = v.object({
+export const GET_STORIES_BY_COMPONENT_TOOL_DESCRIPTION = `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${PREVIEW_STORIES_TOOL_NAME} instead of guessing.
+
+Reach for this to map specific file paths to stories: when the user names a feature/area, or when \`${GET_CHANGED_STORIES_TOOL_NAME}\` (try it first for "I just edited X") returned nothing or too much. The full file-paths → story-IDs workflow lives in the server instructions.
+
+Never invent IDs from file names, feature names, or memory; if a component has no matches here, it has no stories yet (say so, don't fabricate).
+
+Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error. Results are sorted by \`distance\` (lower = stronger); for shared components like Button or Icon, expect many indirect matches and use \`maxDistance\` to cap noise.`;
+
+export const GetStoriesByComponentInput = v.object({
 	componentPaths: v.pipe(
 		v.array(v.string()),
 		v.minLength(1),
@@ -39,7 +47,7 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
 	),
 });
 
-const StoryMatch = v.object({
+export const StoryMatch = v.object({
 	storyId: v.string(),
 	title: v.string(),
 	name: v.string(),
@@ -52,7 +60,7 @@ const StoryMatch = v.object({
 	),
 });
 
-const ClippedByMaxDistanceSchema = v.pipe(
+export const ClippedByMaxDistanceSchema = v.pipe(
 	v.object({
 		count: v.number(),
 		distances: v.array(v.number()),
@@ -62,7 +70,7 @@ const ClippedByMaxDistanceSchema = v.pipe(
 	),
 );
 
-const GetStoriesByComponentOutput = v.object({
+export const GetStoriesByComponentOutput = v.object({
 	results: v.array(
 		v.object({
 			componentPath: v.string(),
@@ -78,6 +86,7 @@ const GetStoriesByComponentOutput = v.object({
 	),
 });
 
+export type GetStoriesByComponentInput = v.InferOutput<typeof GetStoriesByComponentInput>;
 export type GetStoriesByComponentOutput = v.InferOutput<typeof GetStoriesByComponentOutput>;
 
 export interface ComponentStoryMatch {
@@ -195,21 +204,25 @@ function applyMaxDistance(
 	return { kept, clipped };
 }
 
-export async function addGetStoriesByComponentTool(server: McpServer<any, AddonContext>) {
+export function getStoriesByComponentToolMetadata() {
+	return {
+		name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
+		title: 'Get stories for component files',
+		description: GET_STORIES_BY_COMPONENT_TOOL_DESCRIPTION,
+		schema: GetStoriesByComponentInput,
+		outputSchema: GetStoriesByComponentOutput,
+	};
+}
+
+export async function addGetStoriesByComponentTool(
+	server: McpServer<any, AddonContext>,
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.dev ?? true,
+) {
 	server.tool(
 		{
-			name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
-			title: 'Get stories for component files',
-			description: `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${PREVIEW_STORIES_TOOL_NAME} instead of guessing.
-
-Reach for this to map specific file paths to stories: when the user names a feature/area, or when \`${GET_CHANGED_STORIES_TOOL_NAME}\` (try it first for "I just edited X") returned nothing or too much. The full file-paths → story-IDs workflow lives in the server instructions.
-
-Never invent IDs from file names, feature names, or memory; if a component has no matches here, it has no stories yet (say so, don't fabricate).
-
-Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error. Results are sorted by \`distance\` (lower = stronger); for shared components like Button or Icon, expect many indirect matches and use \`maxDistance\` to cap noise.`,
-			schema: GetStoriesByComponentInput,
-			outputSchema: GetStoriesByComponentOutput,
-			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
+			...getStoriesByComponentToolMetadata(),
+			enabled,
 		},
 		async (input) => {
 			try {

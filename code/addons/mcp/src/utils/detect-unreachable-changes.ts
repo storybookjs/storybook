@@ -1,9 +1,15 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
-import { getDependencyGraphService } from './change-detection.ts';
+import { getModuleGraphService } from './module-graph.ts';
 import { slash } from './slash.ts';
 
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
+
+/**
+ * Module-graph query batch size. Bounds the per-call file list so a large working tree doesn't
+ * issue one oversized reverse-index query; we early-exit between chunks once `maxFiles` is reached.
+ */
+const CHUNK_SIZE = 50;
 
 /**
  * git status --porcelain produces lines like `XY filename`, where XY are two
@@ -36,8 +42,10 @@ function parsePorcelain(output: string): string[] {
  *     status-store result directly).
  */
 export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]> {
-	const service = await getDependencyGraphService();
-	if (!service || !service.hasGraph()) return [];
+	const moduleGraph = await getModuleGraphService();
+	if (!moduleGraph) return [];
+	const status = await moduleGraph.queries.getStatus.loaded(undefined);
+	if (status.value !== 'ready') return [];
 	// Matches what the dev server uses, so paths line up with the reverse-index keys.
 	const workingDir = process.cwd();
 
@@ -55,14 +63,25 @@ export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]>
 	const relFiles = parsePorcelain(porcelain).filter((f) => SOURCE_EXT_RE.test(f));
 	if (relFiles.length === 0) return [];
 
+	// Query in chunks and stop once we've collected `maxFiles` unreachable files, so a huge working
+	// tree doesn't build an oversized module-graph query for results we'd discard anyway.
 	const unreachable: string[] = [];
-	for (const rel of relFiles) {
-		// The reverse graph keys are forward-slash normalized; `path.resolve` emits backslashes on
-		// Windows, which would miss every key and wrongly flag reachable files as unreachable.
-		const abs = slash(path.resolve(workingDir, rel));
-		const hits = service.lookup(abs);
-		if (hits.size === 0) unreachable.push(rel);
-		if (unreachable.length >= maxFiles) break;
+	for (
+		let start = 0;
+		start < relFiles.length && unreachable.length < maxFiles;
+		start += CHUNK_SIZE
+	) {
+		const chunk = relFiles.slice(start, start + CHUNK_SIZE);
+		// The module graph accepts absolute paths but normalizes them with forward slashes;
+		// `path.resolve` emits backslashes on Windows, which would miss every key and wrongly flag
+		// reachable files.
+		const absChunk = chunk.map((rel) => slash(path.resolve(workingDir, rel)));
+		// One batched lookup per chunk; output is positional (result `i` corresponds to `absChunk[i]`).
+		const hits = await moduleGraph.queries.getStoriesForFiles.loaded({ files: absChunk });
+		for (const [i, rel] of chunk.entries()) {
+			if (unreachable.length >= maxFiles) break;
+			if ((hits[i]?.length ?? 0) === 0) unreachable.push(rel);
+		}
 	}
 	return unreachable;
 }

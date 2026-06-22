@@ -147,7 +147,7 @@ play: async ({ canvas }) => {
 
 - ALWAYS provide story links after any changes to stories files, including changes to existing stories.
 - {{STORY_LINKING_WORKFLOW}}
-- In the final user-facing response, present links in this order: review page URL first (when available), changed-stories fallback URL second (when relevant), then specific story preview URLs.
-- When sharing links, choose the most relevant subset for the user and avoid long lists (generally no more than 5 links).
+- {{FINAL_LINKS_GUIDANCE}}
+- When you will share preview/story links (i.e. when you are not collapsing everything into a single review section), pass only the most relevant story IDs into **preview-stories** (generally no more than 5) so the returned URL list stays manageable. Include every URL returned by that call in your final response — do not drop links there.
 - {{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}
 - After changing any UI components, ALWAYS search for related stories that might cover the changes you've made. If you find any, provide the story links to the user. THIS IS VERY IMPORTANT, as it allows the user to visually inspect the changes you've made. Even later in a session when changing UI components or stories that have already been linked to previously, YOU MUST PROVIDE THE LINKS AGAIN.

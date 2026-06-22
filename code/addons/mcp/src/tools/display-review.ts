@@ -9,6 +9,26 @@ import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 
+export const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
+
+## When to call
+- **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Omit \`changedFiles\`.
+
+## Hard rules
+1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
+2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
+4. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
+5. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
+6. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+
+## Curating (Trigger 1)
+Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
+
+## Curating (Trigger 2)
+Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.`;
+
 /**
  * Canonical schema for the agent-pushed review payload.
  *
@@ -19,12 +39,14 @@ import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
 export const ReviewCollectionSchema = v.object({
 	title: v.pipe(
 		v.string(),
-		v.description('Short, PR-dense title for this collection, e.g. "Direct Button importers".'),
+		v.description(
+			'Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.',
+		),
 	),
 	rationale: v.pipe(
 		v.string(),
 		v.description(
-			'One sentence describing what these stories show — the component states, variants, or screens on display. Describe the content that appears on screen, not tasks for the reviewer. No imperatives ("verify", "check", "make sure", "ensure", "confirm"): say what is shown (e.g. "The default and error states across breakpoints"), not what to do (e.g. "Verify it still renders correctly").',
+			'Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.',
 		),
 	),
 	storyIds: v.pipe(
@@ -39,12 +61,14 @@ export const ReviewStateSchema = v.object({
 	title: v.pipe(
 		v.string(),
 		v.description(
-			'PR-style title for the change — short and specific, e.g. "Recolour the primary button".',
+			'Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.',
 		),
 	),
 	description: v.pipe(
 		v.string(),
-		v.description('One-line summary of what changed and where to start reviewing.'),
+		v.description(
+			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
+		),
 	),
 	collections: v.array(ReviewCollectionSchema),
 	changedFiles: v.pipe(
@@ -56,7 +80,7 @@ export const ReviewStateSchema = v.object({
 export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
 export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
-const DisplayReviewOutput = v.object({
+export const DisplayReviewOutput = v.object({
 	reviewUrl: v.pipe(
 		v.string(),
 		v.description(
@@ -100,6 +124,16 @@ export function buildReviewUrl(ctx: {
 	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 
+export function getDisplayReviewToolMetadata() {
+	return {
+		name: DISPLAY_REVIEW_TOOL_NAME,
+		title: 'Display Storybook review',
+		description: DISPLAY_REVIEW_TOOL_DESCRIPTION,
+		schema: withFriendlyErrors(ReviewStateSchema),
+		outputSchema: DisplayReviewOutput,
+	};
+}
+
 /**
  * Returns the storyIds the agent passed that don't resolve against the live
  * Storybook index. Order-preserving and deduplicated so the error message
@@ -131,35 +165,15 @@ function formatUnknownStoryIdsError(unknownIds: string[]): string {
 	return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
-export async function addDisplayReviewTool(server: McpServer<any, AddonContext>) {
+export async function addDisplayReviewTool(
+	server: McpServer<any, AddonContext>,
+	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+		server.ctx.custom?.toolsets?.dev ?? true,
+) {
 	server.tool(
 		{
-			name: DISPLAY_REVIEW_TOOL_NAME,
-			title: 'Display Storybook review',
-			description: `Push a curated set of stories to Storybook's review page — either to review a UI change you just made, or to show the user stories/components they asked to see (e.g. "show me all badge components").
-
-**Every storyId you pass here must have come from a tool result in this session** — \`get-changed-stories\`, \`get-stories-by-component\`, or \`list-all-documentation\`. IDs derived from file paths, story-file naming conventions, feature names, or memory will not resolve. The tool validates every ID against the live Storybook index and rejects the whole review if any are unknown, so guessing is a hard failure, not a soft one. If you don't have a verified ID for a story you want to include, call \`get-stories-by-component\` first.
-
-Two triggers:
-- **After a UI code change** — call this to help the user spot-check it.
-- **When the user wants to see or browse stories/components** rather than change them — e.g. "show me all badge components", "what button variants do we have", "display the checkout stories". Render exactly those stories. There's no diff in this mode: describe what you're showing and omit \`changedFiles\`.
-
-When reviewing a change, answer two questions before composing collections (skip this for a plain "show me X" request — just resolve the stories the user asked for and group them sensibly):
-- *Where is this change rendered?* Trace upward from the edited file through the import graph until you hit page-level or top-level story files.
-- *What would a reviewer want to spot-check in real context?* Include at least one story per layer of that chain.
-
-Provide:
-- title: a PR-style title for the change — short and specific.
-- description: a one-line summary of what changed and where to start reviewing.
-- collections: titled groups of stories covering the **visual cascade** of the change — not just where the code is read, but everywhere a reviewer will see it. For any non-trivial UI change, include the changed component itself, the components that directly import it, and the pages/containers that render them further up the tree. A single-collection review is a smell: only do it if the component is genuinely standalone (e.g. has no parents in the story graph). Theme tokens, shared styles, and layout primitives almost always need page-level coverage even when only one file imports them. Give each collection a concise, PR-dense title and a one-sentence rationale. Both should describe *what the reviewer is looking at* — the title names the stories (e.g. "Button — all variants", "Checkout pages"), the rationale says what's on screen in them. Describe the content, never instruct the reviewer, and avoid imperatives like "verify", "check", "ensure", "confirm".
-- changedFiles: the files you edited (most central first); omit when the user just wants to see stories rather than review a change.
-
-Anti-pattern: editing a theme token that only one component reads, then publishing a review with just that one component's story. The token change is visible on every page that renders the component — include those pages.
-
-Always include the returned reviewUrl in your final user-facing response so the user can open it. This tool maintains a single active review state; each call replaces the previously published review.`,
-			schema: withFriendlyErrors(ReviewStateSchema),
-			outputSchema: DisplayReviewOutput,
-			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
+			...getDisplayReviewToolMetadata(),
+			enabled,
 		},
 		async (input: ReviewState) => {
 			try {
@@ -215,7 +229,7 @@ Always include the returned reviewUrl in your final user-facing response so the 
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then the review page as a markdown link \`[Open the Storybook review page](${reviewUrl})\`. Put nothing after it — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
+2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
 						},
 					],
 					structuredContent: { reviewUrl },

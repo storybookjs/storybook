@@ -15,6 +15,7 @@ import { ADDON_ID, EVENTS } from './constants.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
+import { writeReviewProgress } from './review-progress.ts';
 import type { ReviewState } from './review-state.ts';
 import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
@@ -255,5 +256,32 @@ export const LastStoryDone = meta.story({
     const done = await canvas.findByRole('link', { name: 'Done' });
     await expect(done).toHaveAttribute('href', buildReviewChangesSummaryHref());
     await expect(canvas.queryByRole('link', { name: 'Next' })).not.toBeInTheDocument();
+  },
+});
+
+// Every story reviewed but standing on a non-last story: the forward control
+// reverts to the plain ghost chevron ("Next story"), not a solid Next/Done.
+export const AllReviewedChevron = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Seed progress for this review so all stories read as already reviewed.
+    writeReviewProgress(reviewState.createdAt, new Set(reviewState.collections[0].storyIds));
+    applyReviewState();
+
+    const next = await canvas.findByRole('link', { name: 'Next story' });
+    await expect(next).toHaveAttribute(
+      'href',
+      buildReviewStoryHref({ collectionIndex: 0, storyId: 'manager-settings-aboutscreen--default' })
+    );
+    await expect(canvas.queryByRole('link', { name: 'Next' })).not.toBeInTheDocument();
+    await expect(canvas.queryByRole('link', { name: 'Done' })).not.toBeInTheDocument();
   },
 });

@@ -2,7 +2,7 @@
 
 Build, preview, and test UI components from Claude.
 
-This package installs Storybook-specific skills and configures Claude to start `@storybook/mcp-proxy`.
+This package installs Storybook-specific skills for Claude.
 
 ## Testing from GitHub
 
@@ -21,8 +21,7 @@ claude mcp list
 ```
 
 The output should include `storybook@storybook` with `"enabled": true`, and
-`claude mcp list` should show `plugin:storybook:storybook` using the
-`@storybook/mcp-proxy` preview URL from `pkg.pr.new`.
+`claude mcp list` should show `plugin:storybook:storybook` with no MCP servers (the plugin uses CLI-based skills).
 
 ## Local development
 
@@ -87,7 +86,6 @@ The output should include `storybook@storybook` with:
 
 - `"scope": "user"`
 - `"enabled": true`
-- an MCP server named `storybook`
 
 Check that Claude Code picks up the plugin-provided MCP server:
 
@@ -98,10 +96,10 @@ claude mcp list
 The output should include:
 
 ```text
-plugin:storybook:storybook: npx -y https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
+plugin:storybook:storybook: (no MCP servers)
 ```
 
-The important signal for this package is that `plugin:storybook:storybook` appears and can be started from the pkg.pr.new preview URL.
+The important signal for this package is that `plugin:storybook:storybook` appears and the Storybook skills are available.
 
 To test in Claude Desktop, restart Claude Desktop after installing or updating the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
 
@@ -135,15 +133,7 @@ The plugin directory must include these files:
 
 ## MCP server
 
-The plugin's `.mcp.json` starts the latest `@storybook/mcp-proxy` preview from pkg.pr.new:
-
-```sh
-npx -y --prefer-online https://pkg.pr.new/storybookjs/mcp/@storybook/mcp-proxy@main
-```
-
-The `@main` ref tracks the latest preview build from the `main` branch.
-
-`@storybook/mcp-proxy` is ignored by Changesets in this milestone, so it is not on npm yet. PR previews use pkg.pr.new (`@main` tracks the default branch). When the proxy is ready for npm, remove it from the Changesets ignore list, switch `.mcp.json` to `@storybook/mcp-proxy@latest`, and add a changeset in that publishing PR.
+The plugin's `.mcp.json` contains no MCP servers. The plugin uses CLI-based skills instead of the `@storybook/mcp-proxy` package, which has been removed.
 
 ## Included Skills
 

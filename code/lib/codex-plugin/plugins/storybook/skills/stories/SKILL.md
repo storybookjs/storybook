@@ -23,50 +23,14 @@ stories in sync with every frontend component you create, modify, or delete.
 
 ## Prerequisites
 
-- Storybook must be installed in the project. If it is not, go to "When Storybook is not installed" below and stop here unless the user opts in.
+- Storybook must be installed in the project. If it is not installed:
+  - If this skill is not explicitly invoked by the user, silently ignore this skill.
+  - Otherwise, ask the user whether they want to set up Storybook and write stories.
+    - If the user decline, silently skip all story work, finish the component change (if any), and move on.
+    - If the user accepts, invoke the **init** skill to set up Storybook and write stories.
 - Storybook must be a canary version (0.0.0-canary) or at least version 10.5. If an older version is
   installed, invoke the **upgrade** skill to upgrade it before
   proceeding.
-
-### When Storybook is not installed
-
-Installing and configuring Storybook is invasive, so it is the **user's choice**.
-Never set it up on your own initiative as a side effect of a component change.
-
-Before asking the user anything, check whether they have already declined. A
-decline can apply at two scopes:
-
-- **User-level** — the user never wants Storybook set up in any project.
-- **Project-level** — the user only declined for this project.
-
-1. **Look for a previously recorded decline.** If you find one that applies here
-   (at either scope), the user has ALREADY refused Storybook. Do NOT ask again —
-   silently skip all story work, finish the component change (if any), and move
-   on.
-2. **If there is no recorded decline**, briefly tell the user the project has no
-   Storybook and ask whether they want to set it up (and write stories). Offer
-   three choices:
-   - **Yes** — set it up for this project.
-   - **No, not for this project** — decline at the project level.
-   - **No, and don't ask me again in any project** — decline at the user level.
-3. **If the user declines**, remember that decision durably so future
-   invocations don't re-ask, recording the scope they chose (this project vs.
-   all projects) and a short paraphrase of their reason. Choose an appropriate
-   place and format yourself — but do NOT commit it to the project's version
-   control; if the only durable option lives inside the repo, keep it out of
-   commits (e.g. via `.gitignore`). Then finish the component change (if any)
-   without any story work. If the user explicitly asked for story work, STOP and
-   report that Storybook is required for it.
-
-4. **If the user opts in**, set Storybook up via the setup skills
-   (`init` / `setup`), then resume this workflow from
-   Step 1. If you recorded a decline at either scope from a previous "no", clear
-   it.
-
-**Gate:** Do NOT install Storybook, scaffold `.storybook/`, add Storybook
-dependencies, or invoke the setup skills unless the user has explicitly opted in
-this time. A recorded decline at either scope MUST be respected on every later
-invocation without re-prompting.
 
 ## Load the rules (before touching any story file)
 
@@ -87,7 +51,6 @@ Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` subcommand with `requir
 
 If there is a running instance:
 
-- Note its port and save it in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
 - Open the preview URL in the preview browser.
 - Make the preview browser visible to the user.
 
@@ -95,7 +58,5 @@ If there is no running instance, start it with the steps below:
 
 1. Start the project's existing Storybook dev script as a background task from
    the Storybook invocation directory
-2. Wait for the terminal to show which port Storybook is running on and use that port to open the preview URL (e.g. `http://localhost:6006`) in the preview browser.
+2. Wait for the terminal and storybook to be ready and show the preview URL in the terminal.
 3. Make the preview browser visible to the user.
-4. Save the port being used by Storybook shown in the terminal in your working memory. USE THIS PORT FOR ANY SUBCOMMAND THAT NEEDS TO KNOW THE PORT (e.g. `preview-stories`).
-5. Open the preview URL in the preview browser.

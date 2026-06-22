@@ -151,7 +151,7 @@ export const useSourceProps = (
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
   let format = props.format;
 
-  const language = props.language ?? sourceParameters.language ?? 'jsx';
+  let language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
   if (props.code === undefined && !story) {
@@ -168,6 +168,7 @@ export const useSourceProps = (
   }
 
   format = source?.format ?? true;
+  language = source?.language ?? language;
 
   return {
     code: transformedCode,

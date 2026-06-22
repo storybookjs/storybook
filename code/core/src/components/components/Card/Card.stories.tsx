@@ -33,6 +33,15 @@ export const SpinningAgentic = meta.story(() => (
   </Card>
 ));
 
+// Filled agentic card with a spinning outline (as used by ReviewWidget). The
+// `agentic` content background is translucent in dark mode, so this guards
+// against the spinning gradient bleeding through the content instead of the ring.
+export const SpinningAgenticFilled = meta.story(() => (
+  <Card outlineAnimation="spin" color="agentic">
+    <Contents>Spinning agentic filled</Contents>
+  </Card>
+));
+
 export const Agentic = meta.story(() => (
   <Card color="agentic">
     <Contents>Agentic</Contents>

@@ -96,6 +96,37 @@ describe('PNPM Proxy', () => {
     });
   });
 
+  describe('getRegistryURL', () => {
+    it('returns the registry from npm config', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'https://registry.example.com/\n',
+      } as any);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.example.com/');
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+        })
+      );
+    });
+
+    it('returns no registry when npm is not installed', async () => {
+      mockedExecuteCommand.mockRejectedValueOnce(
+        Object.assign(new Error('spawn npm ENOENT'), { code: 'ENOENT' })
+      );
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBeUndefined();
+    });
+
+    it('rethrows other npm errors', async () => {
+      const error = new Error('npm config failed');
+      mockedExecuteCommand.mockRejectedValueOnce(error);
+
+      await expect(pnpmProxy.getRegistryURL()).rejects.toBe(error);
+    });
+  });
+
   describe('addDependencies', () => {
     it('with devDep it should run `pnpm add -D storybook`', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);

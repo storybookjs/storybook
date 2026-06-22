@@ -1,12 +1,12 @@
-import type { API } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
+import type { API } from 'storybook/manager-api';
 
 /** Matches the `storybook/review` sessionStorage keys owned by the review module. */
 const REVIEW_ADDON_ID = 'storybook/review';
 
 // Persisted flag marking the manager as being in review mode. Review mode is
 // interaction-driven (never inferred from the URL) and survives reloads via
-// this key. See docs/adr/0001-interaction-driven-review-mode.md.
+// this key.
 const REVIEW_MODE_SESSION_KEY = `${REVIEW_ADDON_ID}/review-mode`;
 
 // Snapshot of the manager chrome (sidebar/addon panel visibility) taken when

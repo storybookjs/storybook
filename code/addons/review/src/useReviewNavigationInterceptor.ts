@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { useNavigate } from 'storybook/internal/router';
-import { type ReviewModeFilters, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import type { StatusValue } from 'storybook/internal/types';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { PRE_REVIEW_RETURN_KEY } from './constants.ts';
 import {
@@ -17,6 +16,7 @@ import {
   parseReviewStoryHref,
 } from './review-navigation.ts';
 import { sessionStore } from './session-store.ts';
+import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
 const isReviewStoryHref = (href: string) =>
   href.startsWith('?path=/story/') && href.includes(`${REVIEW_COLLECTION_QUERY_PARAM}=`);
@@ -30,22 +30,7 @@ const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummary
 export const useReviewNavigationInterceptor = () => {
   const navigate = useNavigate();
   const api = useStorybookApi();
-  const { includedStatusFilters, excludedStatusFilters, includedTagFilters, excludedTagFilters } =
-    useStorybookState();
-
-  // Keep the latest filters available to the click handler without re-binding it.
-  const filtersRef = useRef<ReviewModeFilters>({
-    includedStatusFilters: [],
-    excludedStatusFilters: [],
-    includedTagFilters: [],
-    excludedTagFilters: [],
-  });
-  filtersRef.current = {
-    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
-    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
-    includedTagFilters: includedTagFilters ?? [],
-    excludedTagFilters: excludedTagFilters ?? [],
-  };
+  const filtersRef = useReviewFiltersRef();
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -90,5 +75,5 @@ export const useReviewNavigationInterceptor = () => {
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
-  }, [api, navigate]);
+  }, [api, navigate, filtersRef]);
 };

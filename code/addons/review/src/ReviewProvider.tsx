@@ -1,4 +1,4 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -10,7 +10,6 @@ import React, {
 } from 'react';
 
 import {
-  type ReviewModeFilters,
   enterReviewMode,
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -20,7 +19,7 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 import { useNavigate } from 'storybook/internal/router';
-import type { StatusValue, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import {
@@ -50,6 +49,7 @@ import type { ReviewState } from './review-state.ts';
 import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
 import { sessionStore } from './session-store.ts';
+import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
 
@@ -70,38 +70,17 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const api = useStorybookApi();
   const navigate = useNavigate();
-  const {
-    index,
-    path,
-    viewMode,
-    customQueryParams,
-    location,
-    includedStatusFilters,
-    excludedStatusFilters,
-    includedTagFilters,
-    excludedTagFilters,
-  } = useStorybookState();
+  const { index, path, viewMode, customQueryParams, location } = useStorybookState();
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
 
   // Current sidebar filters, snapshotted by enterReviewMode and restored on exit.
-  const filtersRef = useRef<ReviewModeFilters>({
-    includedStatusFilters: [],
-    excludedStatusFilters: [],
-    includedTagFilters: [],
-    excludedTagFilters: [],
-  });
-  filtersRef.current = {
-    includedStatusFilters: (includedStatusFilters ?? []) as StatusValue[],
-    excludedStatusFilters: (excludedStatusFilters ?? []) as StatusValue[],
-    includedTagFilters: includedTagFilters ?? [],
-    excludedTagFilters: excludedTagFilters ?? [],
-  };
+  const filtersRef = useReviewFiltersRef();
 
   const enterReview = useCallback(() => {
     void enterReviewMode(api, filtersRef.current);
     setIsInReviewMode(true);
-  }, [api]);
+  }, [api, filtersRef]);
 
   const getStoryPreviewHref = useCallback(
     (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,

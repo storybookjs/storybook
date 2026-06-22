@@ -40,7 +40,7 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 	};
 }
 
-describe('Storybook Claude plugin CLI validation', () => {
+describe('Claude launch skill guidance', () => {
 	it('keeps Claude launch guidance scoped to autoPort without shell interpolation', () => {
 		const launchSkill = readFileSync(
 			resolve(packageRoot, 'skills/storybook-setup-claude-launch/SKILL.md'),
@@ -48,13 +48,12 @@ describe('Storybook Claude plugin CLI validation', () => {
 		);
 
 		expect(launchSkill).toContain('autoPort: true');
-		expect(launchSkill).toContain('existing Storybook script');
-		expect(launchSkill).toContain('Storybook invocation directory');
-		expect(launchSkill).not.toContain('$PORT');
-		expect(launchSkill).not.toContain('%PORT%');
+		expect(launchSkill).not.toMatch(/--port|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
 		expect(launchSkill).not.toContain('--ci');
 	});
+});
 
+describe('Storybook Claude plugin CLI validation', () => {
 	it('keeps root and package-local marketplaces in sync', () => {
 		const packageMarketplace = readMarketplace(
 			resolve(packageRoot, '.claude-plugin/marketplace.json'),

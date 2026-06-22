@@ -132,10 +132,15 @@ export const ReviewWidget = () => {
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
   const remaining = Math.max(0, storyCount - reviewedCount);
-  const progressText = remaining === 0 ? 'Review complete' : `${remaining} left to review`;
+  const isComplete = remaining === 0;
+  const progressText = isComplete ? 'Review complete' : `${remaining} left to review`;
 
   return (
-    <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
+    <Card
+      color="agentic"
+      outlineAnimation={isComplete ? 'none' : 'spin'}
+      id="storybook-review-widget"
+    >
       <ActionList as="div">
         <ActionList.Item as="div">
           <HeaderContent>

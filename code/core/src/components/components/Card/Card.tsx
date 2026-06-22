@@ -1,4 +1,4 @@
-import React, { type ComponentProps, type DOMAttributes, forwardRef } from 'react';
+import React, { forwardRef, type ComponentProps, type DOMAttributes } from 'react';
 
 import type { StorybookTheme } from 'storybook/theming';
 import { keyframes, styled } from 'storybook/theming';
@@ -26,6 +26,15 @@ const getBorderColor = (
 const getBackgroundColor = (theme: StorybookTheme, color?: ThemeColor): string =>
   resolveThemeColor(theme.bgColor, color) ?? theme.background.content;
 
+// Compose the (possibly translucent) themed background over an opaque base. Some
+// themed bgColors are intentionally translucent for tinting (e.g. `agentic` in
+// dark mode), which would otherwise let the animated outline behind the content
+// bleed through the whole card instead of just the 1px ring.
+const getOpaqueBackground = (theme: StorybookTheme, color?: ThemeColor): string => {
+  const bg = getBackgroundColor(theme, color);
+  return `linear-gradient(${bg}, ${bg}), ${theme.background.content}`;
+};
+
 const fadeInOut = keyframes({
   '0%': { opacity: 0 },
   '5%': { opacity: 1 },
@@ -52,7 +61,7 @@ const slide = keyframes({
 const CardContent = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
   color: getColor(theme, color),
   borderRadius: theme.appBorderRadius,
-  backgroundColor: getBackgroundColor(theme, color),
+  background: getOpaqueBackground(theme, color),
   position: 'relative',
 }));
 
@@ -111,7 +120,12 @@ const CardOutline = styled.div<{
         outlineColor === 'negative'
           ? `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
           : outlineColor === 'agentic'
-            ? `conic-gradient(#e1d2ef 90deg, #b6a7ff 150deg, #d8aeff 210deg, #e1d2ef 270deg)`
+            ? // Agentic is intentionally subtle. Pale lavender stays low-contrast on a
+              // light background, but the same colors read as a bright sweep on dark, so
+              // the dark arc is dimmed with low-alpha hues to keep it a faint glow.
+              theme.base === 'dark'
+              ? `conic-gradient(transparent 90deg, rgba(114,58,166,0.65) 150deg, rgba(157,98,214,0.6) 210deg, transparent 270deg)`
+              : `conic-gradient(transparent 90deg, #b6a7ff 150deg, #d8aeff 210deg, transparent 270deg)`
             : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
     }),
   },

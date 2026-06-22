@@ -173,8 +173,12 @@ const Result: FC<
 
   const api = useStorybookApi();
   useEffect(() => {
-    if (api && props.isHighlighted && item.type === 'component') {
-      api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
+    if (api && props.isHighlighted) {
+      if (item.type === 'component') {
+        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
+      } else if (item.type === 'docs') {
+        api.emit(PRELOAD_ENTRIES, { ids: [item.id] }, { options: { target: item.refId } });
+      }
     }
   }, [api, props.isHighlighted, item]);
 
@@ -196,7 +200,12 @@ const Result: FC<
             <UseSymbol type={item.subtype} />
           </TypeIcon>
         )}
-        {!(item.type === 'component' || item.type === 'story') && (
+        {item.type === 'docs' && (
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
+            <UseSymbol type="document" />
+          </TypeIcon>
+        )}
+        {!(item.type === 'component' || item.type === 'story' || item.type === 'docs') && (
           <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
             <UseSymbol type="document" />
           </TypeIcon>
@@ -277,6 +286,11 @@ export const SearchResults: FC<{
       api.emit(PRELOAD_ENTRIES, {
         // @ts-expect-error (TODO)
         ids: [item.isLeaf ? item.id : item.children[0]],
+        options: { target: refId },
+      });
+    } else if (item?.type === 'docs') {
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [item.id],
         options: { target: refId },
       });
     }

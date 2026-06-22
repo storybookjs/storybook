@@ -216,9 +216,21 @@ export const Search = React.memo<SearchProps>(function Search({
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+
+      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
+      });
+
+      const docsParentIds = new Set<string>();
+      allMatches.forEach(({ item }) => {
+        if (item.type === 'docs' && item.parent) {
+          docsParentIds.add(item.parent);
+        }
+      });
+
+      const distinctResults = allMatches.filter(({ item }) => {
         if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
+          (item.type === 'component' && docsParentIds.has(item.id)) ||
           // @ts-expect-error (non strict)
           resultIds.has(item.parent)
         ) {

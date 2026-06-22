@@ -63,6 +63,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   onChange,
   isInline,
   argType,
+  required,
 }) => {
   if (!options) {
     logger.warn(`Checkbox with no options: ${name}`);
@@ -93,7 +94,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   const controlId = getControlId(name, storyId, controlsId);
 
   return (
-    <Wrapper $isInline={isInline}>
+    <Wrapper $isInline={isInline} aria-required={required || undefined}>
       <legend className="sb-sr-only">{name}</legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;

@@ -49,6 +49,12 @@ describe('resolveDevCommandOptions', () => {
     );
   });
 
+  it('fails clearly when PORT is outside the port range', () => {
+    expect(() => resolveDevCommandOptions({}, { env: { PORT: '70000' } })).toThrow(
+      'PORT must be a valid port number from 1 to 65535, received "70000"'
+    );
+  });
+
   it('ignores empty PORT values', () => {
     expect(resolveDevCommandOptions({}, { env: { PORT: '' } })).not.toHaveProperty('port');
     expect(resolveDevCommandOptions({}, { env: { PORT: '   ' } })).not.toHaveProperty('port');
@@ -63,6 +69,12 @@ describe('resolveDevCommandOptions', () => {
   it('does not treat --port placeholders as PORT interpolation', () => {
     expect(() => resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' } })).toThrow(
       '--port must be a valid port number from 1 to 65535, received "$PORT"'
+    );
+  });
+
+  it('fails clearly when explicit --port is invalid', () => {
+    expect(() => resolveDevCommandOptions({ port: '7007abc' })).toThrow(
+      '--port must be a valid port number from 1 to 65535, received "7007abc"'
     );
   });
 

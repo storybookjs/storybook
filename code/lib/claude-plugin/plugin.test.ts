@@ -52,7 +52,7 @@ describe('Claude launch skill guidance', () => {
 		expect(launchSkill).toContain('existing Storybook script');
 		expect(launchSkill).toContain('Storybook invocation directory');
 		expect(launchSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-		expect(launchSkill).not.toMatch(/runtimeArgs.+storybook.+dev/i);
+		expect(launchSkill).not.toMatch(/runtimeArgs[\s\S]+storybook[\s\S]+dev/i);
 		expect(launchSkill).not.toContain('--ci');
 	});
 });

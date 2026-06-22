@@ -54,6 +54,12 @@ describe('resolveDevCommandOptions', () => {
     expect(resolveDevCommandOptions({}, { env: { PORT: '   ' } })).not.toHaveProperty('port');
   });
 
+  it('trims PORT values before parsing', () => {
+    expect(resolveDevCommandOptions({}, { env: { PORT: ' 6123 ' } })).toMatchObject({
+      port: 6123,
+    });
+  });
+
   it('does not treat --port placeholders as PORT interpolation', () => {
     expect(() => resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' } })).toThrow(
       '--port must be a valid port number from 1 to 65535, received "$PORT"'

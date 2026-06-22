@@ -10,7 +10,6 @@ type DevCommandEnvironment = AgentEnvironment & {
 type DevCommandOptions = {
   open?: boolean;
   port?: number | string;
-  [key: string]: unknown;
 };
 
 const parseStrictPort = (value: number | string, source: string) => {
@@ -25,22 +24,23 @@ const parseStrictPort = (value: number | string, source: string) => {
 };
 
 const parseLegacyPort = (value: number | string) => {
+  // Preserve the historical SBCONFIG_PORT parseInt behavior while PORT gets strict launcher validation.
   const port = parseInt(`${value}`, 10);
   return port || value;
 };
 
-export function resolveDevCommandOptions(
-  options: DevCommandOptions,
+export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
+  options: TOptions,
   { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
-  const resolvedOptions = { ...options };
+  const resolvedOptions = { ...options } as TOptions;
 
   if (env.SBCONFIG_PORT) {
     resolvedOptions.port = parseLegacyPort(env.SBCONFIG_PORT);
   } else if (resolvedOptions.port != null) {
     resolvedOptions.port = parseStrictPort(resolvedOptions.port, '--port');
   } else if (env.PORT?.trim()) {
-    resolvedOptions.port = parseStrictPort(env.PORT, 'PORT');
+    resolvedOptions.port = parseStrictPort(env.PORT.trim(), 'PORT');
   }
 
   if (isClaudePreviewLaunch(env)) {

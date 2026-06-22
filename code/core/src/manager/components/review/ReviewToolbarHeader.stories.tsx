@@ -226,12 +226,34 @@ export const NewStory = meta.story({
     applyReviewState();
 
     await expect(await canvas.findByText('New')).toBeInTheDocument();
-    await expect(await canvas.findByRole('link', { name: 'Next story' })).toHaveAttribute(
+    // First story, others still unreviewed: forward control is a solid "Next".
+    await expect(await canvas.findByRole('link', { name: 'Next' })).toHaveAttribute(
       'href',
       buildReviewStoryHref({
         collectionIndex: 0,
         storyId: 'manager-settings-guidepage--default',
       })
     );
+  },
+});
+
+// Landing on the last story in the set offers "Done" (back to summary) instead
+// of a forward control, regardless of whether earlier stories were reviewed.
+export const LastStoryDone = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-aboutscreen--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-aboutscreen--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    const done = await canvas.findByRole('link', { name: 'Done' });
+    await expect(done).toHaveAttribute('href', buildReviewChangesSummaryHref());
+    await expect(canvas.queryByRole('link', { name: 'Next' })).not.toBeInTheDocument();
   },
 });

@@ -7,7 +7,15 @@ import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
 import { expect, fn, userEvent } from 'storybook/test';
 
+import { reviewStore } from '../review/review-store.ts';
 import { ReviewWidget } from './ReviewWidget.tsx';
+
+// The widget reads reviewed progress from the shared review store singleton.
+// Stories mount the widget without a ReviewProvider, so seed it directly and
+// reset between stories to avoid leaking the count across runs.
+const setReviewedCount = (reviewedCount: number) => {
+  reviewStore.setState({ ...reviewStore.getState(), reviewedCount });
+};
 
 const REVIEW_ADDON_ID = 'storybook/review';
 const DISPLAY_REVIEW = `${REVIEW_ADDON_ID}/display-review`;
@@ -152,12 +160,49 @@ export const Default: Story = {
   },
   beforeEach: () => {
     eventListeners.clear();
+    setReviewedCount(0);
     return setReviewingStatuses(storyIds);
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Quick review')).toBeVisible();
     await expect(canvas.getByText('Review 12 stories')).toBeVisible();
-    await expect(canvas.findByText('Button style changes on Shop screen')).resolves.toBeVisible();
+    await expect(canvas.getByText('12 left to review')).toBeVisible();
+  },
+};
+
+export const PartialProgress: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds,
+      reviewTitle: 'Button style changes on Shop screen',
+    },
+  },
+  beforeEach: () => {
+    eventListeners.clear();
+    setReviewedCount(5);
+    return setReviewingStatuses(storyIds);
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Review 12 stories')).toBeVisible();
+    await expect(canvas.getByText('7 left to review')).toBeVisible();
+  },
+};
+
+export const Complete: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds,
+      reviewTitle: 'Button style changes on Shop screen',
+    },
+  },
+  beforeEach: () => {
+    eventListeners.clear();
+    setReviewedCount(storyIds.length);
+    return setReviewingStatuses(storyIds);
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Review 12 stories')).toBeVisible();
+    await expect(canvas.getByText('Review complete')).toBeVisible();
   },
 };
 
@@ -170,11 +215,12 @@ export const SingleStory: Story = {
   },
   beforeEach: () => {
     eventListeners.clear();
+    setReviewedCount(0);
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Review 1 story')).toBeVisible();
-    await expect(canvas.findByText('Primary button visual refresh')).resolves.toBeVisible();
+    await expect(canvas.getByText('1 left to review')).toBeVisible();
   },
 };
 
@@ -209,6 +255,7 @@ export const OpenReview: Story = {
   beforeEach: () => {
     eventListeners.clear();
     sessionStorage.clear();
+    setReviewedCount(0);
     navigateMock.mockClear();
     toggleNavMock.mockClear();
     togglePanelMock.mockClear();
@@ -248,6 +295,7 @@ export const DismissReview: Story = {
   beforeEach: () => {
     eventListeners.clear();
     emitMock.mockClear();
+    setReviewedCount(0);
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {

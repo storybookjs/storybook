@@ -17,3 +17,9 @@ export const PRE_REVIEW_RETURN_KEY = `${REVIEW_NAMESPACE}/pre-review-return`;
 // sessionStorage marker deduplicating the one-time auto-enter on first landing
 // on the review summary. Reset on dismiss and when a new review payload arrives.
 export const AUTO_ENTERED_SESSION_KEY = `${REVIEW_NAMESPACE}/auto-entered`;
+
+// sessionStorage key prefix for per-review reviewed-progress (the set of visited
+// story ids). Suffixed with the review's server-stamped `createdAt` so each
+// review tracks its own progress and a new review starts fresh, while reloads of
+// the same review keep it. Cleared on full dismiss.
+export const REVIEW_PROGRESS_KEY_PREFIX = `${REVIEW_NAMESPACE}/progress`;

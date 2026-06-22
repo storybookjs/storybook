@@ -16,6 +16,7 @@ import { styled } from 'storybook/theming';
 import { REVIEW_EVENTS } from '../../../shared/review/index.ts';
 import { REVIEW_CHANGES_URL } from '../review/constants.ts';
 import { enterReviewMode } from '../review/review-mode.ts';
+import { useReview } from '../review/review-store.ts';
 import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
 
 type ReviewPayload = {
@@ -90,6 +91,7 @@ export const ReviewWidget = () => {
   const api = useStorybookApi();
   const storyCount = useReviewingStoryCount();
   const reviewTitle = useActiveReviewTitle();
+  const { reviewedCount } = useReview();
   const {
     includedStatusFilters = [],
     excludedStatusFilters = [],
@@ -129,6 +131,8 @@ export const ReviewWidget = () => {
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
+  const remaining = Math.max(0, storyCount - reviewedCount);
+  const progressText = remaining === 0 ? 'Review complete' : `${remaining} left to review`;
 
   return (
     <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
@@ -159,7 +163,7 @@ export const ReviewWidget = () => {
               <strong>
                 Review {storyCount} {storyLabel}
               </strong>
-              {reviewTitle ? <small>{reviewTitle}</small> : null}
+              <small>{progressText}</small>
             </ActionList.Text>
           </ActionList.Action>
         </ActionList.Item>

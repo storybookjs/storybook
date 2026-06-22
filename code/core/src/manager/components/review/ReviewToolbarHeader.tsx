@@ -13,6 +13,7 @@ import {
   buildReviewStoryHref,
   getAdjacentReviewEntries,
 } from './review-navigation.ts';
+import { countReviewed, reviewEntryKey } from './review-progress.ts';
 import { useReview } from './review-store.ts';
 
 const Root = styled.div(({ theme }) => ({
@@ -85,6 +86,8 @@ export const ReviewToolbarHeader: FC = () => {
     newlyAddedStoryIds,
     activeEntry,
     activeIndex,
+    reviewedStoryIds,
+    justCompletedEntryKey,
   } = useReview();
 
   if (!state || !activeEntry || activeIndex < 0) {
@@ -100,6 +103,18 @@ export const ReviewToolbarHeader: FC = () => {
   const progress = totalStories > 1 ? activeIndex / (totalStories - 1) : 0;
   const currentStoryInfo = storyInfo[activeEntry.storyId];
   const isNewlyAdded = newlyAddedStoryIds.has(activeEntry.storyId);
+
+  // Forward control state machine (first match wins). The current story always
+  // counts as reviewed: it is marked on arrival, but this guards the render frame
+  // before that effect commits.
+  const uniqueStoryIds = new Set(flattenedEntries.map((entry) => entry.storyId));
+  const reviewedWithCurrent = reviewedStoryIds.has(activeEntry.storyId)
+    ? reviewedStoryIds
+    : new Set(reviewedStoryIds).add(activeEntry.storyId);
+  const allReviewed = countReviewed(reviewedWithCurrent, uniqueStoryIds) >= uniqueStoryIds.size;
+  const isLastEntry = activeIndex === flattenedEntries.length - 1;
+  const justCompleted = justCompletedEntryKey === reviewEntryKey(activeEntry);
+  const showDone = isLastEntry || justCompleted;
 
   const metadataSubtitle =
     currentStoryInfo?.title && currentStoryInfo.name ? (
@@ -192,11 +207,21 @@ export const ReviewToolbarHeader: FC = () => {
                   <ChevronSmallLeftIcon />
                 </a>
               </Button>
-              <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-                <a href={buildReviewStoryHref(nextEntry)}>
-                  <ChevronSmallRightIcon />
-                </a>
-              </Button>
+              {showDone ? (
+                <Button variant="solid" size="small" padding="small" ariaLabel={false} asChild>
+                  <a href={buildReviewChangesSummaryHref()}>Done</a>
+                </Button>
+              ) : !allReviewed ? (
+                <Button variant="solid" size="small" padding="small" ariaLabel={false} asChild>
+                  <a href={buildReviewStoryHref(nextEntry)}>Next</a>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
+                  <a href={buildReviewStoryHref(nextEntry)}>
+                    <ChevronSmallRightIcon />
+                  </a>
+                </Button>
+              )}
             </>
           }
         />

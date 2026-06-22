@@ -175,9 +175,15 @@ const Result: FC<
   useEffect(() => {
     if (api && props.isHighlighted) {
       if (item.type === 'component') {
-        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
+        api.emit(PRELOAD_ENTRIES, {
+          ids: [item.children[0]],
+          options: { target: item.refId },
+        });
       } else if (item.type === 'docs') {
-        api.emit(PRELOAD_ENTRIES, { ids: [item.id] }, { options: { target: item.refId } });
+        api.emit(PRELOAD_ENTRIES, {
+          ids: [item.id],
+          options: { target: item.refId },
+        });
       }
     }
   }, [api, props.isHighlighted, item]);

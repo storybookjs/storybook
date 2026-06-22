@@ -2,7 +2,7 @@ import React, { useSyncExternalStore } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, waitFor } from 'storybook/test';
+import { expect, fireEvent, waitFor } from 'storybook/test';
 
 import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
 import { createDemoStore } from '../demo-store.ts';
@@ -88,18 +88,18 @@ type Story = StoryObj<typeof meta>;
 export const LocalCommandSync: Story = {};
 
 export const LocalCommandPlayFunction: Story = {
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas }) => {
     const input = await canvas.findByLabelText('Local command story sync input');
     const raw = await canvas.findByTestId('local-command-raw-service-state-value');
     const nextValue = 'local-command-sync-value';
 
-    await userEvent.clear(input);
+    await fireEvent.input(input, { target: { value: '' } });
 
     await waitFor(() => {
       expect(raw).toHaveTextContent(JSON.stringify(''));
     });
 
-    await userEvent.type(input, nextValue);
+    await fireEvent.input(input, { target: { value: nextValue } });
 
     await waitFor(() => {
       expect(raw).toHaveTextContent(JSON.stringify(nextValue));

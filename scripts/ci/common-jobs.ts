@@ -211,7 +211,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'yarn storybook:ui:build',
+          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
         },
       },
       {

@@ -11,6 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useServiceStorySnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -65,11 +66,13 @@ const getStorySource = (
 
 const useCode = ({
   snippet,
+  serviceSnippet,
   storyContext,
   typeFromProps,
   transformFromProps,
 }: {
   snippet: string;
+  serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
@@ -80,13 +83,14 @@ const useCode = ({
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
+  const staticSnippet = serviceSnippet || snippet;
   const useSnippet =
     // if user has explicitly set this as dynamic, use snippet
     type === SourceType.DYNAMIC ||
     // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && snippet && isArgsStory);
+    (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? snippet : sourceParameters.originalSource || '';
+  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
   const transformer = transformFromProps ?? sourceParameters.transform;
 
   const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
@@ -130,8 +134,11 @@ export const useSourceProps = (
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
 
+  const serviceSnippet = useServiceStorySnippet(story?.id) ?? '';
+
   const transformedCode = useCode({
     snippet: source ? source.code : '',
+    serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
     typeFromProps: props.type as SourceType,
     transformFromProps: props.transform,

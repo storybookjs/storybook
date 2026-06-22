@@ -131,6 +131,13 @@ describe('readRegistry', () => {
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([minimal]);
   });
 
+  it('accepts records with optional agent provenance', async () => {
+    const agentRecord = { ...aliveRecord, agent: 'claude-preview' };
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'agent.json': JSON.stringify(agentRecord) } });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([agentRecord]);
+  });
+
   it('rejects out-of-range ports', async () => {
     vol.fromNestedJSON({
       [REGISTRY_DIR]: {

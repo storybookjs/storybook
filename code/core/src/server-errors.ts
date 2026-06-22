@@ -553,6 +553,27 @@ export class MainFileEvaluationError extends StorybookError {
   }
 }
 
+export class MainFileESMOnlyError extends StorybookError {
+  constructor(public data: { location: string; missingGlobal: string; error: Error }) {
+    super({
+      name: 'MainFileESMOnlyError',
+      category: Category.CORE_SERVER,
+      code: 17,
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
+      message: dedent`
+        Storybook couldn't evaluate your ${picocolors.yellow(data.location)} file because it references ${picocolors.yellow(data.missingGlobal)}, which is not available in ESM.
+
+        Storybook loads your config as an ES module, where the CommonJS globals \`__dirname\` and \`__filename\` do not exist.
+        Recreate them from \`import.meta.url\`, or otherwise rewrite the config to avoid CommonJS globals:
+
+        import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
+
+        const __dirname = dirname(fileURLToPath(import.meta.url));`,
+    });
+  }
+}
+
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(
     public data: {

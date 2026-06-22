@@ -2,7 +2,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join, parse, relative, resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import { MainFileEvaluationError } from 'storybook/internal/server-errors';
+import { MainFileESMOnlyError, MainFileEvaluationError } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -61,6 +61,18 @@ export async function loadMainConfig({
         }
         return out;
       }
+    }
+
+    // CommonJS globals like `__dirname`/`__filename` are not available when the config is
+    // evaluated as ESM. Surface actionable migration guidance instead of a raw ReferenceError
+    // whose stack runs through Storybook internals and looks like an internal failure.
+    const esmGlobalMatch = e.message.match(/\b(__dirname|__filename)\b is not defined/);
+    if (e instanceof ReferenceError && esmGlobalMatch) {
+      throw new MainFileESMOnlyError({
+        location: relative(process.cwd(), mainPath),
+        missingGlobal: esmGlobalMatch[1],
+        error: e,
+      });
     }
 
     throw new MainFileEvaluationError({

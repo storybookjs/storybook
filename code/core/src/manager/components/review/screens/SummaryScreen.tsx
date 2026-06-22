@@ -21,8 +21,8 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
-import Markdown from 'markdown-to-jsx';
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
+import { Markdown } from '../components/Markdown.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
@@ -471,9 +471,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <SummaryCard color="agentic">
               <WandIcon />
               <SummaryContent>
-                <Markdown options={{ disableParsingRawHTML: true }}>
-                  {'**Summary:** ' + state.description}
-                </Markdown>
+                <Markdown>{'**Summary:** ' + state.description}</Markdown>
               </SummaryContent>
             </SummaryCard>
             {visibleCollections.length === 0 ? (
@@ -521,9 +519,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                     >
                       {collection.rationale ? (
                         <CardRationale>
-                          <Markdown options={{ disableParsingRawHTML: true }}>
-                            {collection.rationale}
-                          </Markdown>
+                          <Markdown>{collection.rationale}</Markdown>
                         </CardRationale>
                       ) : null}
                       <CollectionGrid

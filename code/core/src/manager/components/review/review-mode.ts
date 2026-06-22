@@ -1,5 +1,5 @@
-import type { API } from 'storybook/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
+import type { API } from 'storybook/manager-api';
 
 import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
@@ -7,7 +7,7 @@ import { sessionStore } from './session-store.ts';
 
 // Persisted flag marking the manager as being in review mode. Review mode is
 // interaction-driven (never inferred from the URL) and survives reloads via
-// this key. See docs/adr/0001-interaction-driven-review-mode.md.
+// this key.
 const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
 
 // Snapshot of the manager chrome (sidebar/addon panel visibility) taken when

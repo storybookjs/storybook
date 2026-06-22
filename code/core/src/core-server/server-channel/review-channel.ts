@@ -19,35 +19,25 @@ type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
  * Default subscription to the `core/module-graph` open service. The review goes
  * stale when any file in the story module graph changes (the service's revision
  * only advances for in-graph changes, so unrelated file edits never trip it).
- * The lookup is deferred a microtask so the service has a chance to register
- * during dev-server startup; if it's unavailable (e.g. a builder without
- * module-graph support), staleness simply never triggers.
+ * The `services` preset registers the service before `experimental_serverChannel`
+ * runs, so the lookup succeeds synchronously here; if it's unavailable (e.g. a
+ * builder without module-graph support), staleness simply never triggers.
  */
 const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
-  let unsubscribe: () => void = () => {};
-  let cancelled = false;
-  void Promise.resolve().then(() => {
-    if (cancelled) {
-      return;
-    }
-    try {
-      const service = getService<ModuleGraphService>('core/module-graph');
-      // Omit the input to watch the entire graph. The initial emission carries
-      // revision 0 (or the current revision at subscribe time); only subsequent
-      // advances represent a change after the review was cached.
-      unsubscribe = service.queries.getGraphRevision.subscribe(undefined, (revision) => {
-        if (revision > 0) {
-          onChange();
-        }
-      });
-    } catch {
-      // Module graph unavailable (e.g. builder without support); no staleness.
-    }
-  });
-  return () => {
-    cancelled = true;
-    unsubscribe();
-  };
+  try {
+    const service = getService<ModuleGraphService>('core/module-graph');
+    // Omit the input to watch the entire graph. The initial emission carries
+    // revision 0 (or the current revision at subscribe time); only subsequent
+    // advances represent a change after the review was cached.
+    return service.queries.getGraphRevision.subscribe(undefined, (revision) => {
+      if (revision > 0) {
+        onChange();
+      }
+    });
+  } catch {
+    // Module graph unavailable (e.g. builder without support); no staleness.
+    return () => {};
+  }
 };
 
 export interface ReviewChannelOptions {

@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { Link } from 'storybook/internal/components';
 
+import { styled } from 'storybook/theming';
+
 import {
   BooleanControl,
   ColorControl,
@@ -20,10 +22,19 @@ export interface ArgControlProps {
   row: ArgType;
   arg: any;
   updateArgs: (args: Args) => void;
-  isHovered: boolean;
+  isRequired: boolean;
   storyId?: string;
   controlsId?: string;
 }
+
+/** Parent row toggles visibility purely with CSS (see `StyledTr` in `ArgRow`).  */
+export const SetupControlsLink = styled.span({
+  display: 'none',
+});
+
+export const NoControlPlaceholder = styled.span({
+  display: 'inline',
+});
 
 const Controls: Record<string, FC<any>> = {
   array: ObjectControl,
@@ -49,7 +60,7 @@ export const ArgControl: FC<ArgControlProps> = ({
   row,
   arg,
   updateArgs,
-  isHovered,
+  isRequired,
   storyId,
   controlsId,
 }) => {
@@ -79,16 +90,26 @@ export const ArgControl: FC<ArgControlProps> = ({
 
   if (!control || control.disable) {
     const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
-    return isHovered && canBeSetup ? (
-      <Link
-        href="https://storybook.js.org/docs/essentials/controls?ref=ui"
-        target="_blank"
-        withArrow
-      >
-        Setup controls
-      </Link>
-    ) : (
-      <NoControl />
+    if (!canBeSetup) {
+      return <NoControl />;
+    }
+    // Both nodes are always rendered; the parent row toggles their visibility with CSS on
+    // :hover and :focus-within, so the link stays reachable for keyboard users.
+    return (
+      <>
+        <SetupControlsLink>
+          <Link
+            href="https://storybook.js.org/docs/essentials/controls?ref=ui"
+            target="_blank"
+            withArrow
+          >
+            Setup controls
+          </Link>
+        </SetupControlsLink>
+        <NoControlPlaceholder>
+          <NoControl />
+        </NoControlPlaceholder>
+      </>
     );
   }
   // row.name is a display name and not a suitable DOM input id or name - i might contain whitespace etc.
@@ -99,6 +120,7 @@ export const ArgControl: FC<ArgControlProps> = ({
     controlsId,
     argType: row,
     value: boxedValue.value,
+    required: isRequired,
     onChange,
     onBlur,
     onFocus,

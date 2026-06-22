@@ -508,3 +508,14 @@ export const MobileDocs = {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
   },
 };
+
+export const MobilePages: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'review' },
+  },
+  play: async ({ canvas }) => {
+    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
+    expect(canvas.getByTestId('page')).toBeInTheDocument();
+  },
+};

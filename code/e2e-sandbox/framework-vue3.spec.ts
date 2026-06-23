@@ -47,7 +47,8 @@ test.describe('Vue 3', () => {
     await expect(sbPage.previewRoot()).toContainText('Hola');
   });
 
-  test('docs preserve unicode prop defaults from vue-component-meta', async ({ page }) => {
+  // TODO: Re-enable this test once vue-component-meta is the default docgen and supports Vue 3.5 syntax.
+  test.skip('docs preserve unicode prop defaults from vue-component-meta', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
     const docsPages = [
       {

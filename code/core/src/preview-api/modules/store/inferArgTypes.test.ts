@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
 
@@ -7,6 +7,10 @@ import { inferArgTypes } from './inferArgTypes.ts';
 vi.mock('storybook/internal/client-logger');
 
 describe('inferArgTypes', () => {
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockClear();
+  });
+
   it('infers scalar types', () => {
     expect(
       inferArgTypes({
@@ -84,7 +88,6 @@ describe('inferArgTypes', () => {
     const cyclic: any = {};
     cyclic.foo = cyclic;
 
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: {
@@ -112,7 +115,6 @@ describe('inferArgTypes', () => {
       },
     };
 
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: {
@@ -139,7 +141,6 @@ describe('inferArgTypes', () => {
       },
     };
 
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: { a: value },
@@ -164,7 +165,6 @@ describe('inferArgTypes', () => {
     const toJSON = vi.fn(() => ({ id: 1 }));
     const shared = { foo: 'bar', toJSON };
 
-    vi.mocked(logger.warn).mockClear();
     inferArgTypes({
       initialArgs: {
         a: shared,
@@ -184,7 +184,6 @@ describe('inferArgTypes', () => {
       return this;
     };
 
-    vi.mocked(logger.warn).mockClear();
     inferArgTypes({
       initialArgs: { a: cyclic },
     } as any);
@@ -192,7 +191,6 @@ describe('inferArgTypes', () => {
   });
 
   it('ensures names', () => {
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: {
@@ -216,7 +214,6 @@ describe('inferArgTypes', () => {
   });
 
   it('ensures names even with no arg', () => {
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         argTypes: {

@@ -25,6 +25,10 @@ import type { UserOptions } from './types';
 export type { UserOptions } from './types';
 
 export async function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
+  // @ts-expect-error
+  if (globalThis.__sb_vite_plugin_active__) return [];
+  // @ts-expect-error
+  globalThis.__sb_vite_plugin_active__ = true;
   const finalOptions = {
     base: '/__storybook',
     configDir: resolve(options?.configDir ?? '.storybook'),

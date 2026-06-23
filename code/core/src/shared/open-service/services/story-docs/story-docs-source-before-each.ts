@@ -20,10 +20,14 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     return;
   }
 
-  let service;
-  try {
-    service = getService('core/story-docs');
-  } catch {
+  const service = (() => {
+    try {
+      return getService('core/story-docs');
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!service) {
     return;
   }
 

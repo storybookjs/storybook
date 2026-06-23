@@ -34,16 +34,22 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
   const resolvedOptions = { ...options } as TOptions;
+  const isClaudePreview = isClaudePreviewLaunch(env);
+  const claudePreviewPort = isClaudePreview ? env.PORT?.trim() : undefined;
 
   if (env.SBCONFIG_PORT) {
     resolvedOptions.port = parseLegacyPort(env.SBCONFIG_PORT);
   } else if (resolvedOptions.port != null) {
     resolvedOptions.port = parseStrictPort(resolvedOptions.port, '--port');
-  } else if (env.PORT?.trim()) {
+  }
+
+  if (!env.SBCONFIG_PORT && claudePreviewPort) {
+    resolvedOptions.port = parseStrictPort(claudePreviewPort, 'PORT');
+  } else if (resolvedOptions.port == null && env.PORT?.trim()) {
     resolvedOptions.port = parseStrictPort(env.PORT.trim(), 'PORT');
   }
 
-  if (isClaudePreviewLaunch(env)) {
+  if (isClaudePreview) {
     resolvedOptions.open = false;
   }
 

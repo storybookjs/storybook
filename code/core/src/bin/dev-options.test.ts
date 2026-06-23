@@ -9,9 +9,20 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
-  it('keeps explicit --port precedence over PORT', () => {
+  it('keeps explicit --port precedence over PORT outside Claude preview', () => {
     expect(resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' } })).toMatchObject({
       port: 7007,
+    });
+  });
+
+  it('uses Claude preview PORT over explicit --port', () => {
+    expect(
+      resolveDevCommandOptions(
+        { port: '7007' },
+        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: '6123' } }
+      )
+    ).toMatchObject({
+      port: 6123,
     });
   });
 
@@ -70,6 +81,15 @@ describe('resolveDevCommandOptions', () => {
     expect(() => resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' } })).toThrow(
       '--port must be a valid port number from 1 to 65535, received "$PORT"'
     );
+  });
+
+  it('does not hide --port placeholders in Claude preview launches', () => {
+    expect(() =>
+      resolveDevCommandOptions(
+        { port: '$PORT' },
+        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: '6123' } }
+      )
+    ).toThrow('--port must be a valid port number from 1 to 65535, received "$PORT"');
   });
 
   it('fails clearly when explicit --port is invalid', () => {

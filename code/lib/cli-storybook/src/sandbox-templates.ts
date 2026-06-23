@@ -714,13 +714,15 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@21.2.16'], // Move this to latest or 22 once ng new creates v22 projects
+      // Move this to latest or 22 once ng new creates v22 projects
+      extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -732,6 +734,49 @@ export const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: { builder: SupportedBuilder.WEBPACK5 },
+  },
+  'angular-vite/21-ts': {
+    name: 'Angular CLI v21 (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli@21 ng new angular-v21 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
+      // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
+      extraDependencies: ['@angular/forms@^21.2.0', '@angular/animations@^21.2.0'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
+  'angular-vite/default-ts': {
+    name: 'Angular CLI Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
+      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22'],
+      useCsfFactory: true,
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench'],
+    initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
@@ -1070,6 +1115,7 @@ export const normal: TemplateKey[] = [
   // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
+  'angular-vite/21-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',
@@ -1103,6 +1149,7 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-cli/prerelease',
+  'angular-vite/default-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

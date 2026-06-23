@@ -18,7 +18,7 @@ import {
   workspace,
 } from './utils/helpers.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
-import { defineJob, defineNoOpJob } from './utils/types.ts';
+import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -405,6 +405,26 @@ export const testUnit_windows = defineJob(
   }),
   [build_windows]
 );
+
+export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
+  defineJob(
+    'CircleCI completion',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        {
+          run: {
+            name: 'Workflow completed',
+            command: 'echo "All required jobs completed successfully"',
+          },
+        },
+      ],
+    }),
+    requires
+  );
 
 export const benchmarkPackages = defineJob(
   'Benchmark packages',

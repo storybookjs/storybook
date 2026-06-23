@@ -11,6 +11,7 @@ import { remoteCommandSyncService } from './preview.ts';
 const store = createDemoStore('');
 
 function RemoteCommandDemo() {
+  // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (

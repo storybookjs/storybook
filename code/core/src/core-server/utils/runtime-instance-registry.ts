@@ -7,6 +7,9 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
+import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
+import { detectAgent } from '../../telemetry/detect-agent.ts';
+
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,6 +22,7 @@ export type RuntimeInstanceRecord = {
   cwd: string;
   url: string;
   port: number;
+  agent?: string;
   storybookVersion: string;
   startedAt: string;
   updatedAt: string;
@@ -71,8 +75,17 @@ export function getMcpMetadataFromMainConfig(
   return { status: 'ready', endpoint };
 }
 
+function detectRuntimeInstanceAgent() {
+  if (process.env.CLAUDE_AGENT_SDK_VERSION && !process.env.AI_AGENT) {
+    return CLAUDE_PREVIEW_AGENT_NAME;
+  }
+
+  return detectAgent()?.name;
+}
+
 export function createRuntimeInstanceRecord({
   address,
+  agent,
   cwd = process.cwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
@@ -82,6 +95,7 @@ export function createRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
@@ -100,6 +114,7 @@ export function createRuntimeInstanceRecord({
     cwd: resolve(cwd),
     url: origin,
     port,
+    ...(agent ? { agent } : {}),
     storybookVersion,
     startedAt: timestamp,
     updatedAt: timestamp,
@@ -302,6 +317,7 @@ function registerProcessCleanup(recordPath: string) {
 
 export async function writeStorybookRuntimeInstanceRecord({
   address,
+  agent = detectRuntimeInstanceAgent(),
   cwd,
   mcp,
   pid,
@@ -311,6 +327,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
@@ -321,6 +338,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }): Promise<RuntimeInstanceRegistration> {
   const record = createRuntimeInstanceRecord({
     address,
+    agent,
     cwd,
     mcp,
     pid,

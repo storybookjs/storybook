@@ -21,6 +21,7 @@ const store = createDemoStore<StaticLoadSnapshot>({
 });
 
 function StaticLoadDemo() {
+  // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (

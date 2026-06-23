@@ -6,7 +6,7 @@ export default {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   features: {
-    babelRemoveBugfixes: true
+    babelRemoveBugfixes: true,
   },
 };
 ```
@@ -20,7 +20,7 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   features: {
-    babelRemoveBugfixes: true
+    babelRemoveBugfixes: true,
   },
 };
 

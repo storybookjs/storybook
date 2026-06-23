@@ -22,9 +22,16 @@ import {
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
 } from 'storybook/internal/preview-errors';
-import type { StoryIndex } from 'storybook/internal/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from 'storybook/internal/types';
-import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
+import type {
+  Args,
+  Globals,
+  ModuleImportFn,
+  ProjectAnnotations,
+  Renderer,
+  StoryId,
+  StoryIndex,
+  ViewMode,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
@@ -32,7 +39,6 @@ import { Tag } from '../../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../../shared/utils/story-index-filters.ts';
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 import type { MaybePromise } from './Preview.tsx';
-import { setupStoryFreezer } from './setupStoryFreezer.ts';
 import { Preview } from './Preview.tsx';
 import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
@@ -40,6 +46,7 @@ import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
+import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
 

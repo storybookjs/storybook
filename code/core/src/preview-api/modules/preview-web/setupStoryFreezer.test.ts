@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { global as globalRef } from '@storybook/global';
+import { STORY_HOT_UPDATED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import { setupStoryFreezer, shouldFreeze } from './setupStoryFreezer.ts';
 
@@ -76,6 +76,8 @@ describe('setupStoryFreezer', () => {
   let previousHref: string;
   let previousBody: string;
   let originalGlobals: Record<string, unknown>;
+  let originalReload: Location['reload'];
+  let reloadSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     previousHref = window.location.href;
@@ -83,6 +85,13 @@ describe('setupStoryFreezer', () => {
     originalGlobals = Object.fromEntries(
       SCHEDULING_GLOBALS.map((key) => [key, (window as unknown as Record<string, unknown>)[key]])
     );
+    originalReload = window.location.reload.bind(window.location);
+    reloadSpy = vi.fn();
+    Object.defineProperty(window.location, 'reload', {
+      configurable: true,
+      writable: true,
+      value: reloadSpy,
+    });
   });
 
   afterEach(() => {
@@ -95,6 +104,11 @@ describe('setupStoryFreezer', () => {
         writable: true,
         value: originalGlobals[key],
       });
+    });
+    Object.defineProperty(window.location, 'reload', {
+      configurable: true,
+      writable: true,
+      value: originalReload,
     });
     delete window.__freezeInlineClicked;
     delete window.__freezeScriptExecuted;
@@ -154,6 +168,28 @@ describe('setupStoryFreezer', () => {
 
     button.click();
     expect(interactionSpy).not.toHaveBeenCalled();
+  });
+
+  it('reloads the iframe on a hot update so it re-renders fresh and re-freezes', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&freeze=finished'
+    );
+    const channel = createChannel();
+    expect(setupStoryFreezer(channel)).toBe(true);
+
+    channel.emit(STORY_HOT_UPDATED, undefined);
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload on a hot update when freeze mode is disabled', () => {
+    window.history.replaceState({}, '', '/iframe.html?id=example--story&viewMode=story');
+    const channel = createChannel();
+    expect(setupStoryFreezer(channel)).toBe(false);
+
+    channel.emit(STORY_HOT_UPDATED, undefined);
+    expect(reloadSpy).not.toHaveBeenCalled();
   });
 
   describe('animation freezing', () => {

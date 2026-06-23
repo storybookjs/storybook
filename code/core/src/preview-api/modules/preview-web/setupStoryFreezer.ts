@@ -1,5 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
+import { STORY_HOT_UPDATED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
@@ -298,5 +298,15 @@ export const setupStoryFreezer = (channel: Pick<Channel, 'on'>) => {
       }
     }
   });
+
+  // The HMR connection stays live (we no longer block reloads or skip the builder's HMR handler),
+  // but applying a hot update in place would re-render into an already-frozen document, where
+  // scripts are stripped, timers and animations are paused, and interactions are blocked, so the
+  // updated story would never come alive. Instead, reload the whole iframe on any hot update so it
+  // boots fresh and re-freezes cleanly once the new render finishes.
+  channel.on(STORY_HOT_UPDATED, () => {
+    windowRef.location.reload();
+  });
+
   return true;
 };

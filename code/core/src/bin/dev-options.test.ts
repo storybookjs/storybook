@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import { resolveDevCommandOptions } from './dev-options.ts';
 
+const getErrorMessage = (callback: () => unknown) => {
+  try {
+    callback();
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+  throw new Error('Expected callback to throw');
+};
+
 describe('resolveDevCommandOptions', () => {
   it('preserves truthy getEnvConfig-style env overrides for existing dev options', () => {
     expect(
@@ -100,24 +109,38 @@ describe('resolveDevCommandOptions', () => {
   });
 
   it('rejects invalid selected PORT values', () => {
-    expect(() => resolveDevCommandOptions({}, { env: { PORT: 'not-a-port' } })).toThrow(
-      'not-a-port'
+    const message = getErrorMessage(() =>
+      resolveDevCommandOptions({}, { env: { PORT: 'not-a-port' } })
     );
+
+    expect(message).toContain(
+      'Port must be a valid number from 1 to 65535, received "not-a-port".'
+    );
+    expect(message).toContain('at port');
   });
 
   it('rejects invalid selected SBCONFIG_PORT values', () => {
-    expect(() => resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '7007abc' } })).toThrow(
-      '7007abc'
+    const message = getErrorMessage(() =>
+      resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '7007abc' } })
     );
+
+    expect(message).toContain('Port must be a valid number from 1 to 65535, received "7007abc".');
+    expect(message).toContain('at port');
   });
 
   it('does not treat --port placeholders as PORT interpolation', () => {
-    expect(() => resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' } })).toThrow(
-      '$PORT'
+    const message = getErrorMessage(() =>
+      resolveDevCommandOptions({ port: '$PORT' }, { env: { PORT: '6123' } })
     );
+
+    expect(message).toContain('Port must be a valid number from 1 to 65535, received "$PORT".');
+    expect(message).toContain('at port');
   });
 
   it('rejects selected ports outside the valid range', () => {
-    expect(() => resolveDevCommandOptions({ port: '70000' })).toThrow('70000');
+    const message = getErrorMessage(() => resolveDevCommandOptions({ port: '70000' }));
+
+    expect(message).toContain('Port must be a valid number from 1 to 65535, received 70000.');
+    expect(message).toContain('at port');
   });
 });

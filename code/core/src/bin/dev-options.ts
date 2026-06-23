@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { HandledError } from 'storybook/internal/common';
 
 import { isClaudePreviewLaunch, type AgentEnvironment } from '../shared/utils/agent-environment.ts';
 
@@ -20,11 +21,14 @@ type DevCommandOptions = {
   staticDir?: string;
 };
 
-const PortSchema = v.pipe(
-  v.union([v.pipe(v.string(), v.trim(), v.regex(/^\d+$/), v.transform(Number)), v.number()]),
-  v.minValue(1),
-  v.integer(),
-  v.maxValue(65535)
+const PortSchema = v.message(
+  v.pipe(
+    v.union([v.pipe(v.string(), v.trim(), v.regex(/^\d+$/), v.transform(Number)), v.number()]),
+    v.minValue(1),
+    v.integer(),
+    v.maxValue(65535)
+  ),
+  (issue) => `Port must be a valid number from 1 to 65535, received ${issue.received}.`
 );
 
 const DevOptionsSchema = v.looseObject({
@@ -44,7 +48,7 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   const PORT = env.PORT?.trim() || undefined;
   const SBCONFIG_PORT = env.SBCONFIG_PORT?.trim() || undefined;
 
-  return v.parse(DevOptionsSchema, {
+  const result = v.safeParse(DevOptionsSchema, {
     ...options,
     host: env.SBCONFIG_HOSTNAME || options.host,
     staticDir: env.SBCONFIG_STATIC_DIR || options.staticDir,
@@ -54,5 +58,11 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
       ? (PORT ?? options.port ?? SBCONFIG_PORT)
       : (options.port ?? SBCONFIG_PORT ?? PORT),
     open: isClaudePreview ? false : options.open,
-  }) as TOptions & v.InferOutput<typeof DevOptionsSchema>;
+  });
+
+  if (!result.success) {
+    throw new HandledError(v.summarize(result.issues));
+  }
+
+  return result.output as TOptions & v.InferOutput<typeof DevOptionsSchema>;
 }

@@ -16,7 +16,6 @@ import {
   ChevronSmallLeftIcon,
   CloseIcon,
   CopyIcon,
-  SearchIcon,
   StorybookIcon,
   WandIcon,
 } from '@storybook/icons';
@@ -82,62 +81,6 @@ const Empty = styled.div(({ theme }) => ({
     alignItems: 'center',
     gap: 8,
   },
-}));
-
-const SearchField = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  flex: '0 1 240px',
-  width: 240,
-  maxWidth: '100%',
-  minWidth: 0,
-  minHeight: 30,
-  borderRadius: theme.appBorderRadius + 2,
-  boxShadow: `${theme.button.border} 0 0 0 1px inset`,
-  padding: 2,
-  paddingLeft: 6,
-  '@container review-header (max-width: 480px)': {
-    flex: '1 1 100%',
-    width: 'auto',
-    maxWidth: 'none',
-  },
-  // Mirror the sidebar search field: the wrapper owns the focus ring while the
-  // inner input stays outline-less, so the whole field reads as focused.
-  '&:has(input:focus), &:has(input:active)': {
-    background: theme.background.app,
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: 2,
-  },
-}));
-
-const SearchInput = styled.input(({ theme }) => ({
-  flex: 1,
-  minWidth: 0,
-  border: 0,
-  background: 'transparent',
-  outline: 0,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s1,
-  height: 26,
-  '&::placeholder': {
-    color: theme.textMutedColor,
-    opacity: 1,
-  },
-  '&::-ms-clear': {
-    display: 'none',
-  },
-  '&::-webkit-search-decoration, &::-webkit-search-cancel-button, &::-webkit-search-results-button, &::-webkit-search-results-decoration':
-    {
-      display: 'none',
-    },
-}));
-
-const SearchIconWrap = styled.span(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: theme.textMutedColor,
-  width: 22,
 }));
 
 // Wrapper that gives the overlay ScrollArea a bounded height to scroll within.
@@ -225,12 +168,6 @@ const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   margin: '0 12px',
 }));
 
-const NoResults = styled.div(({ theme }) => ({
-  color: theme.textMutedColor,
-  padding: 16,
-  fontSize: 14,
-}));
-
 const Footer = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: '10px 10px 30px',
@@ -238,24 +175,6 @@ const Footer = styled.div(({ theme }) => ({
   textAlign: 'center',
   textWrap: 'balance',
 }));
-
-// A story matches the search if its id, component title, or story name
-// contains the query. Search narrows results to this story level, so a
-// collection is shown with only its matching stories.
-const storyMatchesQuery = (
-  storyId: string,
-  storyInfo: Record<string, StoryInfo>,
-  query: string
-) => {
-  if (storyId.toLowerCase().includes(query)) {
-    return true;
-  }
-  const meta = storyInfo[storyId];
-  if (!meta) {
-    return false;
-  }
-  return meta.title.toLowerCase().includes(query) || meta.name.toLowerCase().includes(query);
-};
 
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
@@ -300,7 +219,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   onDismiss,
   returnSearch = null,
 }) => {
-  const [search, setSearch] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
   const [showNewOnly, setShowNewOnly] = useState(false);
@@ -334,25 +252,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     [state, storyInfo]
   );
 
-  const normalizedQuery = search.trim().toLowerCase();
   const visibleCollections = useMemo(
     () =>
       (state?.collections ?? [])
         .map((collection, index) => {
-          const titleMatch =
-            !normalizedQuery || collection.title.toLowerCase().includes(normalizedQuery);
-          let storyIds = titleMatch
-            ? collection.storyIds
-            : collection.storyIds.filter((storyId) =>
-                storyMatchesQuery(storyId, storyInfo, normalizedQuery)
-              );
-          if (showNewOnly) {
-            storyIds = storyIds.filter((id) => storyInfo[id]?.isNewlyAdded);
-          }
+          const storyIds = showNewOnly
+            ? collection.storyIds.filter((id) => storyInfo[id]?.isNewlyAdded)
+            : collection.storyIds;
           return { collection, index, storyIds };
         })
         .filter((entry) => entry.storyIds.length > 0),
-    [state?.collections, normalizedQuery, showNewOnly, storyInfo]
+    [state?.collections, showNewOnly, storyInfo]
   );
 
   if (!state) {
@@ -435,33 +345,19 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </>
         }
         actions={
-          <>
-            {newStoryCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel={false}
-                tooltip="Toggle filtering of new stories"
-                active={showNewOnly}
-                onClick={() => setShowNewOnly((v) => !v)}
-              >
-                {newStoryCount} new
-              </Button>
-            ) : null}
-            <SearchField>
-              <SearchIconWrap>
-                <SearchIcon />
-              </SearchIconWrap>
-              <SearchInput
-                type="search"
-                aria-label="Find stories"
-                placeholder="Find stories"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </SearchField>
-          </>
+          newStoryCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="small"
+              padding="small"
+              ariaLabel={false}
+              tooltip="Toggle filtering of new stories"
+              active={showNewOnly}
+              onClick={() => setShowNewOnly((v) => !v)}
+            >
+              {newStoryCount} new
+            </Button>
+          ) : null
         }
       />
 
@@ -475,13 +371,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               </SummaryContent>
             </SummaryCard>
             {visibleCollections.length === 0 ? (
-              <NoResults>
-                {showNewOnly && !search.trim()
-                  ? 'No new stories found.'
-                  : search.trim()
-                    ? `No collections match “${search.trim()}”.`
-                    : 'No collections found.'}
-              </NoResults>
+              <Footer>{showNewOnly ? 'No new stories found.' : 'No collections found.'}</Footer>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
@@ -527,7 +417,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         showAll={showAllCollections.has(index)}
                         onShowAll={() => markCollectionShowAll(index)}
                         storyInfo={storyInfo}
-                        query={search}
                         getStoryHref={(storyId) =>
                           buildReviewStoryHref({ collectionIndex: index, storyId })
                         }

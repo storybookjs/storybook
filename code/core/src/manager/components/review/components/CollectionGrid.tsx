@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useRef, useState, type FC } from 'react'
 import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { Highlight } from './Highlight.tsx';
-
 const PREVIEW_SCALE = 0.5;
 
 /**
@@ -312,10 +310,9 @@ const StoryPreviewCell: FC<{
   storyId: string;
   href?: string;
   info: StoryInfo;
-  query: string;
   getPreviewHref: (storyId: string) => string;
   previewsPaused?: boolean;
-}> = ({ storyId, href, info, query, getPreviewHref, previewsPaused = false }) => {
+}> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
   const hostRef = useRef<HTMLElement>(null);
   const previewsPausedRef = useRef(previewsPaused);
   previewsPausedRef.current = previewsPaused;
@@ -455,20 +452,12 @@ const StoryPreviewCell: FC<{
       </Frame>
       <ActionBar>
         <Label>
-          <LabelComponent>
-            <Highlight text={component} query={query} />
-          </LabelComponent>
+          <LabelComponent>{component}</LabelComponent>
           <LabelSeparator>/</LabelSeparator>
-          <LabelStory>
-            <Highlight text={name} query={query} />
-          </LabelStory>
+          <LabelStory>{name}</LabelStory>
           {info.changeStatus === 'new' || info.isNewlyAdded ? (
             <NewBadge status="positive" compact>
               New
-            </NewBadge>
-          ) : info.changeStatus === 'modified' ? (
-            <NewBadge status="neutral" compact>
-              Modified
             </NewBadge>
           ) : null}
         </Label>
@@ -488,8 +477,6 @@ export interface CollectionGridProps {
   onShowAll?: () => void;
   /** Story id → component title + story name, for the cell label. */
   storyInfo: Record<string, StoryInfo>;
-  /** Active search query — matches in the cell label are highlighted. */
-  query?: string;
   /** Keep loaded previews mounted while the summary overlay is hidden. */
   previewsPaused?: boolean;
 }
@@ -501,7 +488,6 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   showAll = false,
   onShowAll,
   storyInfo,
-  query = '',
   previewsPaused = false,
 }) => (
   <GridContainer>
@@ -514,7 +500,6 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
             storyId={storyId}
             href={getStoryHref?.(storyId, storyIndex)}
             info={info}
-            query={query}
             getPreviewHref={getStoryPreviewHref}
             previewsPaused={previewsPaused}
           />

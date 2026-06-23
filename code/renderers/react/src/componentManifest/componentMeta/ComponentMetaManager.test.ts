@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 import ts from 'typescript';
@@ -80,6 +80,8 @@ describe('multi-project management', () => {
   let manager: ComponentMetaManager;
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     manager?.dispose();
     if (tempDir) {
       cleanup(tempDir);
@@ -199,6 +201,54 @@ describe('multi-project management', () => {
     expect(entries2[0].component?.reactComponentMeta).toMatchObject({
       props: { color: expect.anything() },
     });
+  });
+
+  it('does not re-extract cached entries after file changes', { timeout: 30_000 }, () => {
+    tempDir = createTempDir();
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'Tag.tsx': dedent`
+        import React from 'react';
+        export const Tag = (_props: { text: string }) => <span />;
+      `,
+      'Tag.stories.tsx': dedent`
+        import { Tag } from './Tag';
+        export default { component: Tag };
+      `,
+    });
+
+    manager = new ComponentMetaManager(ts);
+    const tagPath = path.join(tempDir, 'Tag.tsx');
+    const project = manager.getProjectForFile(tagPath);
+    const entries: StoryRef[] = [
+      {
+        storyPath: files['Tag.stories.tsx'],
+        component: {
+          componentName: 'Tag',
+          importName: 'Tag',
+          path: tagPath,
+          isPackage: false,
+        },
+      },
+    ];
+
+    project.extractPropsFromStories(entries);
+    const extractSpy = vi.spyOn(project, 'extractPropsFromStories');
+
+    fs.writeFileSync(
+      tagPath,
+      dedent`
+        import React from 'react';
+        export const Tag = (_props: { text: string; color?: string }) => <span />;
+      `
+    );
+
+    vi.useFakeTimers();
+    manager.onFilesChanged([{ filePath: tagPath, type: 'changed' }]);
+    vi.advanceTimersByTime(150);
+
+    expect(extractSpy).not.toHaveBeenCalled();
   });
 
   it('handles config change: deleted tsconfig disposes project', () => {

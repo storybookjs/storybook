@@ -41,9 +41,6 @@ export class ComponentMetaProject {
   private ls: ts.LanguageService;
   private projectVersion = 0;
   private shouldCheckRootFiles = false;
-  private warmupTimer?: ReturnType<typeof setTimeout>;
-  /** Entries to extract — set by the generator, replayed during warmup for targeted type resolution. */
-  private entries: StoryRef[] = [];
 
   constructor(
     private typescript: typeof ts,
@@ -132,7 +129,6 @@ export class ComponentMetaProject {
   }
 
   dispose() {
-    clearTimeout(this.warmupTimer);
     this.ls.dispose();
   }
 
@@ -213,7 +209,6 @@ export class ComponentMetaProject {
       this.fsFileSnapshots.delete(filePath);
     }
 
-    const oldVersion = this.projectVersion;
     const program = this.ls.getProgram();
     for (const { filePath, type } of changes) {
       if (type === 'changed') {
@@ -231,22 +226,6 @@ export class ComponentMetaProject {
         break;
       }
     }
-
-    // Targeted warmup: re-extract in the background so the next request is instant.
-    // Only resolves the specific types we need (story JSX → getResolvedSignature),
-    // not the entire program. TypeScript caches resolved types on AST nodes —
-    // the real extraction then hits cached results.
-    if (this.projectVersion !== oldVersion && this.entries.length > 0) {
-      clearTimeout(this.warmupTimer);
-      this.warmupTimer = setTimeout(() => {
-        try {
-          this.extractPropsFromStories(this.entries);
-        } catch {
-          // Warmup failure is non-fatal — extraction will still work on demand.
-        }
-      }, 100);
-      this.warmupTimer?.unref?.();
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -254,8 +233,6 @@ export class ComponentMetaProject {
   // ---------------------------------------------------------------------------
 
   extractPropsFromStories(entries: StoryRef[]): void {
-    this.entries = entries;
-
     const allFiles = entries.flatMap((entry) =>
       entry.component?.path ? [entry.storyPath, entry.component.path] : [entry.storyPath]
     );

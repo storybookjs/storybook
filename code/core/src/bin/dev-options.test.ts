@@ -26,6 +26,31 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
+  it('uses explicit --port in Claude preview when PORT is absent', () => {
+    expect(
+      resolveDevCommandOptions({ port: '7007' }, { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0' } })
+    ).toMatchObject({
+      port: 7007,
+    });
+  });
+
+  it('fails clearly when Claude preview PORT is invalid even with explicit --port', () => {
+    expect(() =>
+      resolveDevCommandOptions(
+        { port: '7007' },
+        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: 'not-a-port' } }
+      )
+    ).toThrow('PORT must be a valid port number from 1 to 65535, received "not-a-port"');
+  });
+
+  it('ignores invalid PORT outside Claude preview when explicit --port was provided', () => {
+    expect(
+      resolveDevCommandOptions({ port: '7007' }, { env: { PORT: 'not-a-port' } })
+    ).toMatchObject({
+      port: 7007,
+    });
+  });
+
   it('preserves existing SBCONFIG_PORT-style string parsing', () => {
     expect(
       resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123', SBCONFIG_PORT: '7008' } })
@@ -37,6 +62,17 @@ describe('resolveDevCommandOptions', () => {
   it('keeps SBCONFIG_PORT precedence over explicit --port', () => {
     expect(
       resolveDevCommandOptions({ port: '7007' }, { env: { SBCONFIG_PORT: '7008' } })
+    ).toMatchObject({
+      port: 7008,
+    });
+  });
+
+  it('keeps SBCONFIG_PORT precedence over Claude preview PORT', () => {
+    expect(
+      resolveDevCommandOptions(
+        { port: '7007' },
+        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: '6123', SBCONFIG_PORT: '7008' } }
+      )
     ).toMatchObject({
       port: 7008,
     });

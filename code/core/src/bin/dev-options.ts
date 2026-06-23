@@ -35,18 +35,22 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
 ) {
   const resolvedOptions = { ...options } as TOptions;
   const isClaudePreview = isClaudePreviewLaunch(env);
-  const claudePreviewPort = isClaudePreview ? env.PORT?.trim() : undefined;
+  const launcherPort = env.PORT?.trim();
 
   if (env.SBCONFIG_PORT) {
     resolvedOptions.port = parseLegacyPort(env.SBCONFIG_PORT);
-  } else if (resolvedOptions.port != null) {
-    resolvedOptions.port = parseStrictPort(resolvedOptions.port, '--port');
-  }
+  } else {
+    // Validate explicit ports before a Claude launcher PORT override so placeholders still fail.
+    const explicitPort =
+      resolvedOptions.port == null ? undefined : parseStrictPort(resolvedOptions.port, '--port');
 
-  if (!env.SBCONFIG_PORT && claudePreviewPort) {
-    resolvedOptions.port = parseStrictPort(claudePreviewPort, 'PORT');
-  } else if (resolvedOptions.port == null && env.PORT?.trim()) {
-    resolvedOptions.port = parseStrictPort(env.PORT.trim(), 'PORT');
+    if (isClaudePreview && launcherPort) {
+      resolvedOptions.port = parseStrictPort(launcherPort, 'PORT');
+    } else if (explicitPort != null) {
+      resolvedOptions.port = explicitPort;
+    } else if (launcherPort) {
+      resolvedOptions.port = parseStrictPort(launcherPort, 'PORT');
+    }
   }
 
   if (isClaudePreview) {

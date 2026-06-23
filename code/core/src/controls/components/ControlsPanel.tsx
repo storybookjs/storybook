@@ -158,9 +158,9 @@ function ServiceControlsPanel({
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
   const [docgenReady, setDocgenReady] = useState(false);
-  // Custom argTypes (project + meta + story, already inferred) for the selected story arrive over
-  // the channel via STORY_PREPARED — the same source the legacy panel reads. The service only needs
-  // to contribute server-extracted component props.
+  // Custom argTypes (project + meta + story annotations) for the selected story arrive over the
+  // channel via STORY_PREPARED. With experimentalDocgenServer, prepareStory skips second-pass
+  // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
   // `useServiceQuery` mis-infers its types for services with more than one query (it unifies across

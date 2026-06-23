@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
@@ -8,6 +8,7 @@ import {
   selectStoryDoc,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
+import { useSyncExternalStoreShim } from './useSyncExternalStoreShim.ts';
 
 type SnapshotCache<T> = {
   storyId: string | undefined;
@@ -57,7 +58,7 @@ export function useServiceStory<TSelected>(
     [service, componentId, storyId, selector]
   );
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return useSyncExternalStoreShim(subscribe, getSnapshot);
 }
 
 /** Convenience hook for the common case: the story-docs entry for one story. */

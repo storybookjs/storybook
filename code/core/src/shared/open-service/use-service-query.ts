@@ -90,5 +90,6 @@ export function useServiceQuery<TKey extends string, TInput, TOutput>(
     return snapshotRef.current as TOutput;
   }, []);
 
+  // Only runs in manager, so React 18 is available.
   return React.useSyncExternalStore(subscribe, getSnapshot);
 }

@@ -4,7 +4,7 @@ sidebar:
   order: 2
 ---
 
-Storybook Webpack builder is the default builder for Storybook. This builder enables you to create a seamless development and testing experience for your components and provides an efficient way to develop UI components in isolation allowing you to leverage your existing Webpack configuration with Storybook.
+Storybook Webpack builder is the historical builder for Storybook. This builder enables you to create a seamless development and testing experience for your components and provides an efficient way to develop UI components in isolation allowing you to leverage your existing Webpack configuration with Storybook.
 
 ## Configure
 
@@ -102,6 +102,20 @@ However, if you're working with a framework that provides a default aliasing con
 ### Pre-bundled assets do not show in the Storybook UI
 
 As Storybook relies on [esbuild](https://esbuild.github.io/) to build its internal manager, support for bundling assets with the `managerWebpack` will no longer have an impact on the Storybook UI. We recommend removing existing `managerWebpack` configuration elements from your Storybook configuration file and bundling assets other than images or CSS into JavaScript beforehand.
+
+### @babel/preset-env: The 'bugfixes' option has been removed
+
+If you use Babel 8, you may receive the following error when running Storybook:
+
+```
+@babel/preset-env: The
+│  'bugfixes' option has been removed, and now bugfix plugins are always
+│  enabled. Please remove it from your config.
+```
+
+Storybook attempts to detect when you use Babel 8 and to automatically remove the `bugfixes` option from your configuration. If version detection fails, you may set the `babelRemoveBugfixes` feature flag in your Storybook configuration file to forcefully disable the `bugfixes` option:
+
+<CodeSnippets path="storybook-main-ts-babel-remove-bugfixes.md" />
 
 ### Storybook doesn't run with Webpack 4
 

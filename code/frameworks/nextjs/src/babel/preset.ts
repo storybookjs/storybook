@@ -2,8 +2,6 @@ import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
 import type { PluginItem } from '@babel/core';
-import { version } from '@babel/core';
-import semver from 'semver';
 
 import ampAttributesPlugin from './plugins/amp-attributes.ts';
 // Static imports for relative requires
@@ -94,7 +92,12 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
     // In production/development this option is set to `false` so that webpack can handle import/export with tree-shaking
     modules: 'auto',
     exclude: ['transform-typeof-symbol'],
-    bugfixes: version && semver.gte(version, '8.0.0') ? undefined : true,
+    bugfixes:
+      globalThis?.FEATURES &&
+      'babelRemoveBugfixes' in globalThis.FEATURES &&
+      globalThis.FEATURES.babelRemoveBugfixes
+        ? undefined
+        : true,
     targets: {
       chrome: 100,
       safari: 15,

@@ -27,11 +27,9 @@ DEALINGS IN THE SOFTWARE.
 */
 import { isAbsolute, relative } from 'node:path';
 
-import { version } from '@babel/core';
 import type { NextConfig } from 'next';
 import * as nextSwcUtils from 'next/dist/build/swc/index.js';
 import { getLoaderSWCOptions } from 'next/dist/build/swc/options.js';
-import semver from 'semver';
 
 export interface SWCLoaderOptions {
   rootDir: string;
@@ -118,7 +116,11 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
   // Transpiles the broken syntax to the closest non-broken modern syntax.
   // E.g. it won't transpile parameter destructuring in Safari
   // which would break how we detect if the mount context property is used in the play function.
-  if (semver.lt(version, '8.0.0')) {
+  if (
+    !globalThis.FEATURES ||
+    !('babelRemoveBugfixes' in globalThis.FEATURES) ||
+    !globalThis.FEATURES.babelRemoveBugfixes
+  ) {
     programmaticOptions.env.bugfixes = true;
   }
 

@@ -4,9 +4,7 @@ import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
-import { version } from '@babel/core';
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
-import semver from 'semver';
 
 import type { Configuration } from 'webpack';
 import webpackModule from 'webpack';
@@ -15,7 +13,17 @@ import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mock
 import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin.ts';
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config.ts';
 
-export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
+export const swc: PresetProperty<'swc'> = (
+  config: Record<string, any>,
+  options: Options
+): Record<string, any> => {
+  const bugfixes =
+    options.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes
+      ? undefined
+      : true;
+
   return {
     ...config,
     env: {
@@ -28,7 +36,7 @@ export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<
       // Transpiles the broken syntax to the closest non-broken modern syntax.
       // E.g. it won't transpile parameter destructuring in Safari
       // which would break how we detect if the mount context property is used in the play function.
-      bugfixes: config?.env?.bugfixes ?? (semver.gte(version, '8.0.0') ? undefined : true),
+      bugfixes: config?.env?.bugfixes ?? bugfixes,
     },
   };
 };

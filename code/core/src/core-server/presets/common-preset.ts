@@ -6,6 +6,7 @@ import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
   STORY_FILE_TEST_REGEXP,
+  getBabelPresetEnvMajor,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -36,7 +37,6 @@ import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import semver from 'semver';
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
@@ -118,7 +118,6 @@ export const babel = async (_: unknown, options: Options) => {
     string,
     any
   >;
-  const { version } = await import('@babel/core');
 
   return {
     ...babelDefault,
@@ -133,7 +132,12 @@ export const babel = async (_: unknown, options: Options) => {
           [
             '@babel/preset-env',
             {
-              bugfixes: version && semver.gte(version, '8.0.0') ? undefined : true,
+              bugfixes:
+                options?.features &&
+                'babelRemoveBugfixes' in options.features &&
+                options.features.babelRemoveBugfixes
+                  ? undefined
+                  : true,
               targets: {
                 // This is the same browser supports that we use to bundle our manager and preview code.
                 chrome: 100,
@@ -212,10 +216,13 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
+const babelPresetEnvMajor = getBabelPresetEnvMajor();
+
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
+  babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
   changeDetection: true,
   componentsManifest: false,

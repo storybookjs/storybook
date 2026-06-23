@@ -8,7 +8,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
-import { loadPartialConfig, version } from '@babel/core';
+import { loadPartialConfig } from '@babel/core';
 import semver from 'semver';
 
 import nextBabelPreset from './babel/preset.ts';
@@ -126,7 +126,12 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
           [
             'next/dist/compiled/babel/preset-env',
             {
-              bugfixes: version && semver.gte(version, '8.0.0') ? undefined : true,
+              bugfixes:
+                globalThis?.FEATURES &&
+                'babelRemoveBugfixes' in globalThis.FEATURES &&
+                globalThis.FEATURES.babelRemoveBugfixes
+                  ? undefined
+                  : true,
               targets: {
                 chrome: 100,
                 safari: 15,

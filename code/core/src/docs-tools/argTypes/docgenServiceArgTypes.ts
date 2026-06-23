@@ -14,16 +14,14 @@ import { combineParameters } from '../../preview-api/modules/store/parameters.ts
 /**
  * Builds the Controls/ArgTypes table shape from server docgen and custom argTypes.
  *
- * The server payload contributes component prop extraction (`payload.argTypes`); custom argTypes
- * (project + meta + story annotations, already inferred by `prepareStory`) are layered on top via
- * `customArgTypes`. Callers source those from the prepared meta/story they already hold — the docs
- * blocks resolve it locally through `useOf` (as `StrictArgTypes`), the manager Controls panel reads
- * it from the `STORY_PREPARED` channel via `useArgTypes` (as the looser `ArgTypes`); both are
- * accepted here and normalized by the inference passes below.
+ * Mirrors the legacy `prepareStory` enhancer chain when `experimentalDocgenServer` is enabled:
+ * server docgen stands in for `enhanceArgTypes`, user annotations from `customArgTypes` layer on
+ * top, then `inferArgTypes` and `inferControls` run the second pass that `prepareStory` skips.
  *
- * `inferArgTypes` fills in rows for args that only exist in `initialArgs`, and `inferControls`
- * assigns the default control widget from each final argType's type/options — mirroring the
- * second-pass enhancers that run in `prepareStory`.
+ * Callers source custom argTypes from the prepared meta/story they already hold — the docs blocks
+ * resolve it locally through `useOf` (as `StrictArgTypes`), the manager Controls panel reads it
+ * from the `STORY_PREPARED` channel via `useArgTypes` (as the looser `ArgTypes`); both are
+ * accepted here and normalized by the inference passes below.
  */
 export function mergeServiceArgTypes({
   payload,

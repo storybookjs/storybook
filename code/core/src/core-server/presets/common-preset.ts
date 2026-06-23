@@ -384,6 +384,7 @@ export const storyIndexGenerator: PresetPropertyFn<
     const normalizedStories = normalizeStories(stories, {
       configDir,
       workingDir,
+      pathFilters: options.pathFilters,
     });
 
     const [indexers, docs] = await Promise.all([

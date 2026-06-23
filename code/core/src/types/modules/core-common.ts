@@ -260,6 +260,7 @@ export interface CLIOptions extends CLIBaseOptions {
   statsJson?: string | boolean;
   outputDir?: string;
   previewOnly?: boolean;
+  pathFilters?: string[];
 }
 
 export interface BuilderOptions {

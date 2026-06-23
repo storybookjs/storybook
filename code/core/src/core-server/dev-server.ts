@@ -44,6 +44,7 @@ export async function storybookDevServer(
   const normalizedStories = normalizeStories(stories, {
     configDir,
     workingDir,
+    pathFilters: options.pathFilters,
   });
 
   const storyIndexGeneratorPromise =

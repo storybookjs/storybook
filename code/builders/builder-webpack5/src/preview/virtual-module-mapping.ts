@@ -29,6 +29,7 @@ export const getVirtualModules = async (options: Options) => {
   const stories = normalizeStories(nonNormalizedStories, {
     configDir: options.configDir,
     workingDir,
+    pathFilters: options.pathFilters,
   });
 
   const previewAnnotations = [

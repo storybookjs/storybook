@@ -23,6 +23,12 @@ export type NormalizedStoriesSpecifier = Required<StoriesSpecifier> & {
    * relative to the current working directory.
    */
   importPathMatcher: RegExp;
+  /*
+   * Match active CLI path filters against normalized story file paths. These filters narrow the
+   * configured story universe, but do not replace the user's configured stories specifier.
+   */
+  pathFilterMatcher?: RegExp;
+  pathFilters?: string[];
 };
 
 export interface IndexerOptions {

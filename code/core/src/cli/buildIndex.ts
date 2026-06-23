@@ -6,6 +6,7 @@ import type { BuilderOptions, CLIBaseOptions } from 'storybook/internal/types';
 export interface CLIIndexOptions extends CLIBaseOptions {
   configDir?: string;
   outputFile?: string;
+  pathFilters?: string[];
 }
 
 export const buildIndex = async (

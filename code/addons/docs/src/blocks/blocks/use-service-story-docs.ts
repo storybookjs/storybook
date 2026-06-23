@@ -8,7 +8,7 @@ import {
   selectStoryDoc,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
-import { useSyncExternalStoreShim } from './useSyncExternalStoreShim';
+import { useSyncExternalStoreShim } from './useSyncExternalStoreShim.ts';
 
 type SnapshotCache<T> = {
   storyId: string | undefined;

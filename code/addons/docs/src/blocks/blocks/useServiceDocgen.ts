@@ -4,7 +4,7 @@ import type { DocgenPayload } from 'storybook/internal/types';
 
 import type { DocgenService } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
-import { useSyncExternalStoreShim } from './useSyncExternalStoreShim';
+import { useSyncExternalStoreShim } from './useSyncExternalStoreShim.ts';
 
 type SnapshotCache = {
   id: string | undefined;

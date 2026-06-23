@@ -133,4 +133,187 @@ describe('inferControls', () => {
     expect(Object.keys(excludeArray)).toEqual(['labelName', 'borderWidth']);
     expect(Object.keys(excludeRegex)).toEqual(['borderWidth']);
   });
+
+  describe('large union types (keyof typeof with many keys)', () => {
+    it('should infer select control when type has value array with >5 string literals', () => {
+      // Simulates react-docgen-typescript misclassifying a large `keyof typeof` union
+      // as a non-enum type (e.g. 'other') while still providing the value array
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            variant: {
+              type: {
+                name: 'other',
+                value: [
+                  'option1',
+                  'option2',
+                  'option3',
+                  'option4',
+                  'option5',
+                  'option6',
+                  'option7',
+                  'option8',
+                ],
+              },
+              name: 'variant',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.variant.control;
+      expect(typeof control === 'object' && control.type).toEqual('select');
+      expect(inferredControls.variant.options).toEqual([
+        'option1',
+        'option2',
+        'option3',
+        'option4',
+        'option5',
+        'option6',
+        'option7',
+        'option8',
+      ]);
+    });
+
+    it('should infer radio control when type has value array with <=5 string literals', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            size: {
+              type: {
+                name: 'other',
+                value: ['sm', 'md', 'lg'],
+              },
+              name: 'size',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.size.control;
+      expect(typeof control === 'object' && control.type).toEqual('radio');
+      expect(inferredControls.size.options).toEqual(['sm', 'md', 'lg']);
+    });
+
+    it('should fall back to object control when type has no value array', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            config: {
+              type: {
+                name: 'other',
+              },
+              name: 'config',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.config.control;
+      expect(typeof control === 'object' && control.type).toEqual('object');
+    });
+
+    it('should prefer explicit options over inferred value array', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            variant: {
+              type: {
+                name: 'other',
+                value: ['a', 'b', 'c', 'd', 'e', 'f'],
+              },
+              options: ['x', 'y', 'z'],
+              name: 'variant',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.variant.control;
+      expect(typeof control === 'object' && control.type).toEqual('select');
+    });
+
+    it('should not treat mixed-type value arrays as enums', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            config: {
+              type: {
+                name: 'other',
+                value: ['string', 42, true, null],
+              },
+              name: 'config',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.config.control;
+      expect(typeof control === 'object' && control.type).toEqual('object');
+    });
+
+    it('should handle numeric value arrays correctly', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            columns: {
+              type: {
+                name: 'other',
+                value: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+              },
+              name: 'columns',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.columns.control;
+      expect(typeof control === 'object' && control.type).toEqual('select');
+      expect(inferredControls.columns.options).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    });
+
+    it('should handle intersection type name with value array (29+ keys scenario)', () => {
+      // This is the exact scenario from issue #12641 — keyof typeof with 29+ keys
+      // causes react-docgen-typescript to report type.name as 'intersection'
+      const manyKeys = Array.from({ length: 30 }, (_, i) => `key${i}`);
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            iconName: {
+              type: {
+                name: 'intersection',
+                value: manyKeys,
+              },
+              name: 'iconName',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.iconName.control;
+      expect(typeof control === 'object' && control.type).toEqual('select');
+      expect(inferredControls.iconName.options).toEqual(manyKeys);
+      expect(inferredControls.iconName.options).toHaveLength(30);
+    });
+
+    it('should not infer enum from empty value arrays', () => {
+      const inferredControls = inferControls(
+        getStoryContext({
+          argTypes: {
+            empty: {
+              type: {
+                name: 'other',
+                value: [],
+              },
+              name: 'empty',
+            },
+          },
+        })
+      );
+
+      const control = inferredControls.empty.control;
+      expect(typeof control === 'object' && control.type).toEqual('object');
+    });
+  });
 });
+

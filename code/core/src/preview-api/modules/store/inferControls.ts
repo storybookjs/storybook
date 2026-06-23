@@ -65,8 +65,26 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'function':
     case 'symbol':
       return null;
-    default:
+    default: {
+      // When type parsers (e.g. react-docgen-typescript) encounter large union types
+      // such as `keyof typeof obj` with many keys, they may fail to classify the type
+      // as 'enum' and instead report it as 'other', 'intersection', etc.
+      // However, the type metadata often still contains a `value` array with the
+      // individual union members. Detect this case and infer a select/radio control.
+      const enumValues = (type as SBEnumType).value;
+      if (
+        !options &&
+        Array.isArray(enumValues) &&
+        enumValues.length > 0 &&
+        enumValues.every((v) => typeof v === 'string' || typeof v === 'number')
+      ) {
+        return {
+          control: { type: enumValues.length <= 5 ? 'radio' : 'select' },
+          options: enumValues,
+        };
+      }
       return { control: { type: options ? 'select' : 'object' } };
+    }
   }
 };
 

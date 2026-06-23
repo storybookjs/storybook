@@ -186,17 +186,18 @@ const Frame = styled.a(({ theme }) => ({
   },
 }));
 
-const Preview = styled.iframe({
+const Preview = styled.iframe(({ theme }) => ({
   position: 'absolute',
   inset: 0,
   width: `${(1 / PREVIEW_SCALE) * 100}%`,
   height: `${(1 / PREVIEW_SCALE) * 100}%`,
+  background: theme.background.preview,
   border: 0,
   display: 'block',
   transform: `scale(${PREVIEW_SCALE})`,
   transformOrigin: 'top left',
   pointerEvents: 'none',
-});
+}));
 
 // The info/action bar below the preview: the component/story label stretches
 // and ellipsizes on the left; the action slot on the right never wraps.

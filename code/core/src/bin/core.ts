@@ -12,6 +12,7 @@ import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { Option, program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
+import * as v from 'valibot';
 
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
@@ -20,7 +21,7 @@ import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
-import { resolveDevCommandOptions } from './dev-options.ts';
+import { isClaudePreviewLaunch } from '../shared/utils/agent-environment.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -46,6 +47,22 @@ const handleCommandFailure = async (logFilePath: string | boolean): Promise<neve
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };
+
+const PortSchema = v.pipe(
+  v.union([v.pipe(v.string(), v.trim(), v.regex(/^\d+$/), v.transform(Number)), v.number()]),
+  v.minValue(1),
+  v.integer(),
+  v.maxValue(65535)
+);
+
+const DevOptionsSchema = v.looseObject({
+  ci: v.optional(v.union([v.boolean(), v.string()])),
+  configDir: v.optional(v.string()),
+  host: v.optional(v.string()),
+  open: v.optional(v.boolean()),
+  port: v.optional(PortSchema),
+  staticDir: v.optional(v.string()),
+});
 
 const command = (name: string) =>
   program
@@ -139,18 +156,23 @@ command('dev')
 
     logger.intro(`${packageJson.name} v${packageJson.version}`);
 
-    // The key is the field created in `options` variable for
-    // each command line argument. Value is the env variable.
-    getEnvConfig(options, {
-      host: 'SBCONFIG_HOSTNAME',
-      staticDir: 'SBCONFIG_STATIC_DIR',
-      configDir: 'SBCONFIG_CONFIG_DIR',
-      ci: 'CI',
-    });
-
-    let resolvedOptions;
+    let resolvedOptions: typeof options;
     try {
-      resolvedOptions = resolveDevCommandOptions(options);
+      const isClaudePreview = isClaudePreviewLaunch();
+      const PORT = process.env.PORT?.trim() || undefined;
+      const SBCONFIG_PORT = process.env.SBCONFIG_PORT?.trim() || undefined;
+      const rawOptions = {
+        ...options,
+        host: process.env.SBCONFIG_HOSTNAME || options.host,
+        staticDir: process.env.SBCONFIG_STATIC_DIR || options.staticDir,
+        configDir: process.env.SBCONFIG_CONFIG_DIR || options.configDir,
+        ci: process.env.CI || options.ci,
+        port: isClaudePreview
+          ? (PORT ?? options.port ?? SBCONFIG_PORT)
+          : (options.port ?? SBCONFIG_PORT ?? PORT),
+        open: isClaudePreview ? false : options.open,
+      };
+      resolvedOptions = v.parse(DevOptionsSchema, rawOptions);
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
       return handleCommandFailure(options.logfile);

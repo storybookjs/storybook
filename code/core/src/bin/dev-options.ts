@@ -45,8 +45,8 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
   const isClaudePreview = isClaudePreviewLaunch(env);
-  const PORT = env.PORT?.trim() || undefined;
-  const SBCONFIG_PORT = env.SBCONFIG_PORT?.trim() || undefined;
+  const PORT = env.PORT ?? undefined;
+  const SBCONFIG_PORT = env.SBCONFIG_PORT ?? undefined;
 
   const result = v.safeParse(DevOptionsSchema, {
     ...options,

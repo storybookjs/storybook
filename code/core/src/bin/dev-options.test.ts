@@ -108,6 +108,16 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
+  it('keeps unrelated dev command options after validation', () => {
+    expect(
+      resolveDevCommandOptions({ https: true, port: '6006', smokeTest: true }, { env: {} })
+    ).toMatchObject({
+      https: true,
+      port: 6006,
+      smokeTest: true,
+    });
+  });
+
   it('rejects invalid selected PORT values', () => {
     const message = getErrorMessage(() =>
       resolveDevCommandOptions({}, { env: { PORT: 'not-a-port' } })
@@ -116,6 +126,25 @@ describe('resolveDevCommandOptions', () => {
     expect(message).toContain(
       'Port must be a valid number from 1 to 65535, received "not-a-port".'
     );
+    expect(message).toContain('at port');
+  });
+
+  it('rejects empty selected PORT values', () => {
+    const message = getErrorMessage(() => resolveDevCommandOptions({}, { env: { PORT: '' } }));
+
+    expect(message).toContain('Port must be a valid number from 1 to 65535');
+    expect(message).toContain('at port');
+  });
+
+  it('rejects invalid Claude preview PORT values before explicit --port fallback', () => {
+    const message = getErrorMessage(() =>
+      resolveDevCommandOptions(
+        { port: '7007' },
+        { env: { CLAUDE_AGENT_SDK_VERSION: '0.1.0', PORT: '   ' } }
+      )
+    );
+
+    expect(message).toContain('Port must be a valid number from 1 to 65535');
     expect(message).toContain('at port');
   });
 

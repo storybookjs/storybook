@@ -3,17 +3,15 @@ import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
-  STORY_FILE_TEST_REGEXP,
-  normalizeStories,
-  optionalEnvToBoolean,
-} from 'storybook/internal/common';
-import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  STORY_FILE_TEST_REGEXP,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
+  normalizeStories,
+  optionalEnvToBoolean,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
@@ -27,18 +25,20 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
-  StorybookConfigRaw,
   StoryDocsProvider,
+  StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
-import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
+import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import semver from 'semver';
 import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
@@ -50,7 +50,6 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
-import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -119,6 +118,8 @@ export const babel = async (_: unknown, options: Options) => {
     string,
     any
   >;
+  const { version } = await import('@babel/core');
+
   return {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
@@ -132,7 +133,7 @@ export const babel = async (_: unknown, options: Options) => {
           [
             '@babel/preset-env',
             {
-              bugfixes: true,
+              bugfixes: version && semver.gte(version, '8.0.0') ? undefined : true,
               targets: {
                 // This is the same browser supports that we use to bundle our manager and preview code.
                 chrome: 100,

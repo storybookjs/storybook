@@ -19,14 +19,14 @@ describe('ESLint compatibility', () => {
   it('does not import runtime values from the @typescript-eslint/utils barrel', () => {
     const violations = getSourceFiles(srcDir).flatMap((file) => {
       const source = readFileSync(file, 'utf8');
-      const matches = source
-        .split('\n')
-        .filter(
-          (line) =>
-            /^import\s+/.test(line) &&
-            !/^import\s+type\b/.test(line) &&
-            /from ['"]@typescript-eslint\/utils['"];$/.test(line)
-        );
+      const matches = Array.from(
+        source.matchAll(/^\s*import\s+(?:type\s+)?[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gm),
+        ([statement]) => statement
+      ).filter(
+        (statement) =>
+          !/^\s*import\s+type\b/.test(statement) &&
+          /\sfrom\s+['"]@typescript-eslint\/utils['"];?\s*$/.test(statement)
+      );
       return matches?.map((statement) => `${relative(srcDir, file)}: ${statement}`) ?? [];
     });
 

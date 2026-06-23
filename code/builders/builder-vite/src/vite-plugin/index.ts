@@ -7,28 +7,28 @@ import {
 
 import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { join, resolve } from 'pathe';
+import { resolve } from 'pathe';
 import polka from 'polka';
 import type { InlineConfig, Plugin, PluginOption } from 'vite';
 
 import EventEmitter from 'node:events';
-import { bundlerOptionsKey } from '../utils/vite-features';
-import { pluginConfig } from '../vite-config';
-import { buildStorybookPlugin } from './build';
-import { createServerChannel } from './middlewares/channel';
-import { registerIframeMiddleware } from './middlewares/iframe';
-import { buildManager, registerManagerMiddleware } from './middlewares/manager';
-import { registerEnvironmentModuleMiddleware } from './middlewares/module-router';
-import { createStaticMiddlewares } from './middlewares/static';
-import { registerStoryIndexMiddleware } from './middlewares/story-index';
-import type { UserOptions } from './types';
+import { bundlerOptionsKey } from '../utils/vite-features.ts';
+import { pluginConfig } from '../vite-config.ts';
+import { buildStorybookPlugin } from './build/index.ts';
+import { createServerChannel } from './middlewares/channel.ts';
+import { registerIframeMiddleware } from './middlewares/iframe.ts';
+import { buildManager, registerManagerMiddleware } from './middlewares/manager.ts';
+import { registerEnvironmentModuleMiddleware } from './middlewares/module-router.ts';
+import { createStaticMiddlewares } from './middlewares/static.ts';
+import { registerStoryIndexMiddleware } from './middlewares/story-index.ts';
+import type { UserOptions } from './types.ts';
 
-export type { UserOptions } from './types';
+export type { UserOptions } from './types.ts';
 
 export async function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
-  // @ts-expect-error
+  // @ts-expect-error -- custom global flag to guard against duplicate plugin activation
   if (globalThis.__sb_vite_plugin_active__) return [];
-  // @ts-expect-error
+  // @ts-expect-error -- custom global flag to guard against duplicate plugin activation
   globalThis.__sb_vite_plugin_active__ = true;
   const finalOptions = {
     base: '/__storybook',
@@ -223,9 +223,9 @@ function wrapTransformIndexHtml(
   basePath: string
 ): Plugin['transformIndexHtml'] {
   if (typeof transform === 'function') {
-    return async function (this: unknown, html, ctx) {
+    return async function (this: ThisParameterType<typeof transform>, html, ctx) {
       if (ctx.path.startsWith(basePath)) {
-        return (transform as Function).apply(this, [html, ctx]);
+        return transform.call(this, html, ctx);
       }
     };
   }

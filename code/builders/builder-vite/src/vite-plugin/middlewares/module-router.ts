@@ -66,7 +66,7 @@ function createEnvironmentModuleRouter(server: ViteDevServer): Connect.NextHandl
       return next();
     }
 
-    const storybookEnv = server.environments['storybook'] as DevEnvironment | undefined;
+    const storybookEnv = server.environments.storybook as DevEnvironment | undefined;
     if (!storybookEnv) {
       return next();
     }

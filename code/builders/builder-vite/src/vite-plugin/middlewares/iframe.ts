@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import type { ViteDevServer } from 'vite';
-import { transformIframeHtml } from '../../transform-iframe-html';
 import type { Options } from 'storybook/internal/types';
-import { SB_VIRTUAL_FILES } from '../../virtual-file-names';
-import { getStorybookModulePrefix } from './module-router';
+import type { ViteDevServer } from 'vite';
+import { transformIframeHtml } from '../../transform-iframe-html.ts';
+import { SB_VIRTUAL_FILES } from '../../virtual-file-names.ts';
+import { getStorybookModulePrefix } from './module-router.ts';
 
 export function registerIframeMiddleware(
   server: ViteDevServer,

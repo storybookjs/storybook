@@ -1,10 +1,9 @@
-import { EventEmitter } from 'node:events';
-import type { Server } from 'node:http';
-import type { ChannelHandler } from 'storybook/internal/channels';
+import type { EventEmitter } from 'node:events';
+import type { ChannelEvent, ChannelHandler } from 'storybook/internal/channels';
 import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 import { experimental_UniversalStore as UniversalStore } from 'storybook/internal/core-server';
 import { isJSON, parse, stringify } from 'telejson';
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
 class PluginChannelTransport {
   private socket: WebSocketServer;
@@ -50,7 +49,7 @@ class PluginChannelTransport {
     });
 
     const interval = setInterval(() => {
-      this.send({ type: 'ping' });
+      this.send({ type: 'ping', from: 'server', args: [] });
     }, HEARTBEAT_INTERVAL);
 
     this.socket.on('close', () => {
@@ -62,7 +61,7 @@ class PluginChannelTransport {
     this.handler = handler;
   }
 
-  send(event: any) {
+  send(event: ChannelEvent) {
     const data = stringify(event, { maxDepth: 15 });
     Array.from(this.socket.clients)
       .filter((c) => c.readyState === WebSocket.OPEN)

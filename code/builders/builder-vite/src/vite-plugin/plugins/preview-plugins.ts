@@ -1,12 +1,12 @@
 import type { Options } from 'storybook/internal/types';
 
 import type { Plugin, PluginOption } from 'vite';
-import { codeGeneratorPlugin } from '../../plugins/code-generator-plugin';
-import { csfPlugin } from '../../plugins/csf-plugin';
-import { injectExportOrderPlugin } from '../../plugins/inject-export-order-plugin';
-import { storybookExternalGlobalsPlugin } from '../../plugins/storybook-external-globals-plugin';
-import { stripStoryHMRBoundary } from '../../plugins/strip-story-hmr-boundaries';
-import { transformIframeHtml } from '../../transform-iframe-html';
+import { codeGeneratorPlugin } from '../../plugins/code-generator-plugin.ts';
+import { csfPlugin } from '../../plugins/csf-plugin.ts';
+import { injectExportOrderPlugin } from '../../plugins/inject-export-order-plugin.ts';
+import { storybookExternalGlobalsPlugin } from '../../plugins/storybook-external-globals-plugin.ts';
+import { stripStoryHMRBoundary } from '../../plugins/strip-story-hmr-boundaries.ts';
+import { transformIframeHtml } from '../../transform-iframe-html.ts';
 
 export async function getPreviewPlugins(
   options: Options,

@@ -206,12 +206,7 @@ const Result: FC<
             <UseSymbol type={item.subtype} />
           </TypeIcon>
         )}
-        {item.type === 'docs' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
-            <UseSymbol type="document" />
-          </TypeIcon>
-        )}
-        {!(item.type === 'component' || item.type === 'story' || item.type === 'docs') && (
+        {!(item.type === 'component' || item.type === 'story') && (
           <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
             <UseSymbol type="document" />
           </TypeIcon>

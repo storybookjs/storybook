@@ -71,8 +71,7 @@ export const AttentionBanner: FC<AttentionBannerProps> = (props) => {
       <Bar role="status" aria-live="polite">
         <span>An updated review is available.</span>
         <Button variant="solid" padding="small" onClick={onAccept}>
-          <TransferIcon />
-          Switch
+          Update
         </Button>
       </Bar>
     );

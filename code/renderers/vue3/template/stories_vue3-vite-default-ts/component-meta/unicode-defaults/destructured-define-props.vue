@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { label = '你好', size = '大きい', icon = '✨' } = defineProps<{
+const {
+  label = '你好',
+  size = '大きい',
+  icon = '✨',
+} = defineProps<{
   /**
    * Greeting label.
    */

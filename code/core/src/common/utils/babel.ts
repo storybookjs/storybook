@@ -27,7 +27,8 @@ export const getBabelPresetEnvMajor = (): number | undefined => {
   try {
     const pkgPath = require.resolve('@babel/preset-env/package.json');
     const { version } = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    return Number.parseInt(version, 10) || 0;
+    const parsed = Number.parseInt(version, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
   } catch {
     logger.debug(
       'Could not determine @babel/preset-env version in use. In case of runtime errors with \@babel/preset-env, you may need to set the babelRemoveBugfixes feature flag in your `main.ts` file.'

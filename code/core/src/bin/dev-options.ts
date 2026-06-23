@@ -23,33 +23,28 @@ const parseStrictPort = (value: number | string, source: string) => {
   return port;
 };
 
-const parseLegacyPort = (value: number | string) => {
-  // Preserve the historical SBCONFIG_PORT parseInt behavior while PORT gets strict launcher validation.
-  const port = parseInt(`${value}`, 10);
-  return port || value;
-};
-
 export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   options: TOptions,
   { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
   const resolvedOptions = { ...options } as TOptions;
   const isClaudePreview = isClaudePreviewLaunch(env);
-  const launcherPort = env.PORT?.trim();
+  const portEnv = env.PORT?.trim();
+  const sbConfigPort = env.SBCONFIG_PORT?.trim();
 
-  if (env.SBCONFIG_PORT) {
-    resolvedOptions.port = parseLegacyPort(env.SBCONFIG_PORT);
+  if (sbConfigPort) {
+    resolvedOptions.port = parseStrictPort(sbConfigPort, 'SBCONFIG_PORT');
   } else {
     // Validate explicit ports before a Claude launcher PORT override so placeholders still fail.
     const explicitPort =
       resolvedOptions.port == null ? undefined : parseStrictPort(resolvedOptions.port, '--port');
 
-    if (isClaudePreview && launcherPort) {
-      resolvedOptions.port = parseStrictPort(launcherPort, 'PORT');
+    if (isClaudePreview && portEnv) {
+      resolvedOptions.port = parseStrictPort(portEnv, 'PORT');
     } else if (explicitPort != null) {
       resolvedOptions.port = explicitPort;
-    } else if (launcherPort) {
-      resolvedOptions.port = parseStrictPort(launcherPort, 'PORT');
+    } else if (portEnv) {
+      resolvedOptions.port = parseStrictPort(portEnv, 'PORT');
     }
   }
 

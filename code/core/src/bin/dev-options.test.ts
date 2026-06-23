@@ -51,7 +51,7 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
-  it('preserves existing SBCONFIG_PORT-style string parsing', () => {
+  it('parses SBCONFIG_PORT with the same strict validation as PORT', () => {
     expect(
       resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123', SBCONFIG_PORT: '7008' } })
     ).toMatchObject({
@@ -78,16 +78,35 @@ describe('resolveDevCommandOptions', () => {
     });
   });
 
-  it('keeps legacy SBCONFIG_PORT parsing for prefixed numeric values', () => {
-    expect(resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '7007abc' } })).toMatchObject({
-      port: 7007,
-    });
+  it('fails clearly when SBCONFIG_PORT is not a port number', () => {
+    expect(() => resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: 'not-a-port' } })).toThrow(
+      'SBCONFIG_PORT must be a valid port number from 1 to 65535, received "not-a-port"'
+    );
   });
 
-  it('does not add new validation to invalid SBCONFIG_PORT values', () => {
-    expect(() =>
-      resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: 'not-a-port' } })
-    ).not.toThrow();
+  it('rejects partial numeric SBCONFIG_PORT values', () => {
+    expect(() => resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '7007abc' } })).toThrow(
+      'SBCONFIG_PORT must be a valid port number from 1 to 65535, received "7007abc"'
+    );
+  });
+
+  it('fails clearly when SBCONFIG_PORT is outside the port range', () => {
+    expect(() => resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '70000' } })).toThrow(
+      'SBCONFIG_PORT must be a valid port number from 1 to 65535, received "70000"'
+    );
+  });
+
+  it('ignores empty SBCONFIG_PORT values', () => {
+    expect(resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '' } })).not.toHaveProperty('port');
+    expect(resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: '   ' } })).not.toHaveProperty(
+      'port'
+    );
+  });
+
+  it('trims SBCONFIG_PORT values before parsing', () => {
+    expect(resolveDevCommandOptions({}, { env: { SBCONFIG_PORT: ' 7008 ' } })).toMatchObject({
+      port: 7008,
+    });
   });
 
   it('fails clearly when PORT is not a port number', () => {

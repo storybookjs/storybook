@@ -1,5 +1,9 @@
 import { resolve } from 'node:path';
 
+import {
+  CLAUDE_AGENT_NAME,
+  CLAUDE_PREVIEW_AGENT_NAME,
+} from '../../../shared/constants/agent-provenance.ts';
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
 export type ResolveResult =
@@ -34,15 +38,16 @@ export type ResolveResult =
  * - `error` → mcp-error intercept
  *
  * Zero matches → no-instance intercept (callers may surface running cwds). 2+ matches at the same
- * cwd → pick the most recently started instance (latest `startedAt` among `ready` records, else
- * latest overall), on the assumption that the freshest instance is the one the agent just started.
- * Records without a `startedAt` tie-break on lowest pid for determinism. All matches are returned
- * (most-recent first) as `matches` so callers can warn the agent without blocking the call.
+ * cwd → use the current agent to select the competing bucket, then pick the most recently started
+ * instance in that bucket (latest `startedAt` among `ready` records, else latest overall). Records
+ * without a `startedAt` tie-break on lowest pid for determinism. The selected bucket is returned
+ * (most-recent first) as `matches` so callers can warn only about instances that competed.
  */
 export function resolveInstance(
   records: StorybookInstanceRecord[],
   targetCwd: string,
-  targetPort?: number
+  targetPort?: number,
+  currentAgent?: string
 ): ResolveResult {
   const normalisedTarget = resolve(targetCwd);
   const cwdMatches = records.filter((r) => resolve(r.cwd) === normalisedTarget);
@@ -67,7 +72,7 @@ export function resolveInstance(
     };
   }
 
-  const sortedMatches = [...matches].sort(byMostRecentlyStarted);
+  const sortedMatches = selectCompetingBucket(matches, targetPort, currentAgent);
   const selected = sortedMatches.find((r) => r.mcp.status === 'ready') ?? sortedMatches[0];
 
   switch (selected.mcp.status) {
@@ -104,6 +109,28 @@ export function resolveInstance(
       throw new Error(`Unhandled MCP status: ${unhandled as string}`);
     }
   }
+}
+
+function selectCompetingBucket(
+  matches: StorybookInstanceRecord[],
+  targetPort: number | undefined,
+  currentAgent: string | undefined
+) {
+  if (targetPort != null) {
+    return [...matches].sort(byMostRecentlyStarted);
+  }
+
+  // std-env reports Claude CLI as `claude`; preview-launched Storybooks record `claude-preview`.
+  const agentBuckets =
+    currentAgent === CLAUDE_AGENT_NAME
+      ? [CLAUDE_PREVIEW_AGENT_NAME, CLAUDE_AGENT_NAME]
+      : currentAgent
+        ? [currentAgent]
+        : [];
+  const selectedAgent = agentBuckets.find((agent) => matches.some((r) => r.agent === agent));
+  const bucket = selectedAgent ? matches.filter((r) => r.agent === selectedAgent) : matches;
+
+  return [...bucket].sort(byMostRecentlyStarted);
 }
 
 /**

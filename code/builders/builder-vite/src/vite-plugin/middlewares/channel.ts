@@ -1,13 +1,10 @@
+import { EventEmitter } from 'node:events';
+import type { Server } from 'node:http';
 import type { ChannelHandler } from 'storybook/internal/channels';
 import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 import { experimental_UniversalStore as UniversalStore } from 'storybook/internal/core-server';
-
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
-
-type HttpServer = NonNullable<
-  NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']
->;
 
 class PluginChannelTransport {
   private socket: WebSocketServer;
@@ -15,7 +12,7 @@ class PluginChannelTransport {
   private handler?: ChannelHandler;
 
   constructor(
-    server: HttpServer,
+    server: EventEmitter,
     private channelPath: string,
     private token: string
   ) {
@@ -74,7 +71,7 @@ class PluginChannelTransport {
 }
 
 export function createServerChannel(
-  server: HttpServer,
+  server: EventEmitter,
   channelPath: string,
   token: string
 ): Channel {

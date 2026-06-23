@@ -11,6 +11,7 @@ import { join, resolve } from 'pathe';
 import polka from 'polka';
 import type { InlineConfig, Plugin, PluginOption } from 'vite';
 
+import EventEmitter from 'node:events';
 import { bundlerOptionsKey } from '../utils/vite-features';
 import { pluginConfig } from '../vite-config';
 import { buildStorybookPlugin } from './build';
@@ -132,11 +133,25 @@ export async function experimental_vitePlugin(options?: UserOptions): Promise<Pl
           sb.channel = channel;
 
           await sb.presets.apply('experimental_serverChannel', channel);
+        } else {
+          // middleware mode
+          const eventEmitter = new EventEmitter();
+          const channel = createServerChannel(eventEmitter, '/storybook-server-channel', wsToken);
+          sb.channel = channel;
 
-          const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
-          registerManagerMiddleware(server, managerHtml, basePath);
+          await sb.presets.apply('experimental_serverChannel', channel);
+
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/storybook-server-channel') {
+              eventEmitter.emit('upgrade', req, res.socket, Buffer.alloc(0));
+            } else {
+              next();
+            }
+          });
         }
 
+        const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
+        registerManagerMiddleware(server, managerHtml, basePath);
         registerIframeMiddleware(server, sb, basePath);
 
         registerEnvironmentModuleMiddleware(server);

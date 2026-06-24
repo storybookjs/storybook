@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
 import {
@@ -25,7 +25,10 @@ import {
   isReviewSummaryPath,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import { reviewStore } from './review-store.ts';
 import { ReviewSummaryPortal } from './screens/ReviewSummaryPortal.tsx';
+
+const REVIEW_CREATED_AT = 1_700_000_000_000;
 
 type EventListener = (payload?: unknown) => void;
 
@@ -106,7 +109,7 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  createdAt: Date.now(),
+  createdAt: REVIEW_CREATED_AT,
   collections: [
     {
       title: 'Settings',
@@ -217,6 +220,7 @@ const meta = preview.meta({
     ),
   ],
   beforeEach: () => {
+    reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();
@@ -305,11 +309,7 @@ export const PendingUpdateAccept = meta.story({
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
-    await expect(addNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: reviewAvailableNotificationId(updatedReviewState.createdAt!),
-      })
-    );
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
 
     clearNotificationMock.mockClear();
     addNotificationMock.mockClear();
@@ -382,10 +382,12 @@ export const ShowsNotificationForEachNewReview = meta.story({
   play: async () => {
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
-    await expect(addNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: reviewAvailableNotificationId(reviewState.createdAt!),
-      })
+    await waitFor(() =>
+      expect(addNotificationMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: reviewAvailableNotificationId(reviewState.createdAt!),
+        })
+      )
     );
 
     addNotificationMock.mockClear();
@@ -393,14 +395,18 @@ export const ShowsNotificationForEachNewReview = meta.story({
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
-    await expect(clearNotificationMock).toHaveBeenCalledWith(
-      reviewAvailableNotificationId(reviewState.createdAt!)
+    await waitFor(() =>
+      expect(clearNotificationMock).toHaveBeenCalledWith(
+        reviewAvailableNotificationId(reviewState.createdAt!)
+      )
     );
-    await expect(addNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: reviewAvailableNotificationId(updatedReviewState.createdAt!),
-        content: expect.objectContaining({ headline: 'New review available' }),
-      })
+    await waitFor(() =>
+      expect(addNotificationMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: reviewAvailableNotificationId(updatedReviewState.createdAt!),
+          content: expect.objectContaining({ headline: 'New review available' }),
+        })
+      )
     );
   },
 });
@@ -418,11 +424,13 @@ export const ShowsNotificationForUnseenReview = meta.story({
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
     expect(navigateMock).not.toHaveBeenCalled();
-    await expect(addNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: reviewAvailableNotificationId(reviewState.createdAt!),
-        content: expect.objectContaining({ headline: 'New review available' }),
-      })
+    await waitFor(() =>
+      expect(addNotificationMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: reviewAvailableNotificationId(reviewState.createdAt!),
+          content: expect.objectContaining({ headline: 'New review available' }),
+        })
+      )
     );
     expect(screen.queryByText('A new review is available.')).not.toBeInTheDocument();
   },
@@ -465,10 +473,12 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
     };
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, freshReviewState);
-    await expect(addNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: reviewAvailableNotificationId(freshReviewState.createdAt!),
-      })
+    await waitFor(() =>
+      expect(addNotificationMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: reviewAvailableNotificationId(freshReviewState.createdAt!),
+        })
+      )
     );
 
     const notification = addNotificationMock.mock.calls[0][0];

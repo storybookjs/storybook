@@ -35,7 +35,7 @@ export const PendingUpdate = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('A new review is available.')).toBeInTheDocument();
 
-    await userEvent.click(await canvas.findByRole('button', { name: 'Switch' }));
+    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
     await expect(onAccept).toHaveBeenCalledOnce();
   },
 });

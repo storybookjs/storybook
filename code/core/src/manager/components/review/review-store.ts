@@ -80,6 +80,12 @@ export const reviewStore = {
     }
   },
   isSummaryOverlayShown: () => currentStore.isSummaryVisible && !summaryOverlaySuppressed,
+  reset: () => {
+    currentStore = emptyStore;
+    internalPendingReview = null;
+    summaryOverlaySuppressed = false;
+    notify();
+  },
 };
 
 export const useReview = (): ReviewStoreState =>

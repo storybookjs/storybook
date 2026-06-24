@@ -1,8 +1,9 @@
-import React, { type ReactNode } from 'react';
+import React, { useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
+import type { API_Notification } from 'storybook/internal/types';
 import {
   ManagerContext,
   internal_fullStatusStore,
@@ -11,6 +12,8 @@ import {
 } from 'storybook/manager-api';
 
 import preview from '../../../../../.storybook/preview.tsx';
+import { LayoutProvider } from '../layout/LayoutProvider.tsx';
+import { NotificationList } from '../notifications/NotificationList.tsx';
 import { ReviewNotification } from './components/ReviewNotification.tsx';
 import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
@@ -149,6 +152,56 @@ const ReviewOutsideHarness = () => (
     <ReviewSummaryPortal />
   </ReviewProvider>
 );
+
+/** Renders sidebar notifications so review notification stories are visually accurate. */
+const ReviewOutsideWithNotificationsHarness = () => {
+  const parent = useContext(ManagerContext);
+  const [notifications, setNotifications] = useState<API_Notification[]>([]);
+
+  const api = useMemo(
+    () => ({
+      ...parent.api,
+      addNotification: (notification: API_Notification) => {
+        addNotificationMock(notification);
+        setNotifications((current) => [
+          ...current.filter((item) => item.id !== notification.id),
+          notification,
+        ]);
+      },
+      clearNotification: (id: string) => {
+        clearNotificationMock(id);
+        setNotifications((current) => current.filter((item) => item.id !== id));
+      },
+    }),
+    [parent.api]
+  );
+
+  return (
+    <ManagerContext.Provider value={{ state: parent.state, api }}>
+      <LayoutProvider forceDesktop>
+        <ReviewProvider>
+          <ReviewNotification />
+          <ReviewToolbarHeader />
+          <ReviewSummaryPortal />
+        </ReviewProvider>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            left: 20,
+            width: 240,
+            zIndex: 200,
+          }}
+        >
+          <NotificationList
+            notifications={notifications}
+            clearNotification={api.clearNotification}
+          />
+        </div>
+      </LayoutProvider>
+    </ManagerContext.Provider>
+  );
+};
 
 const deriveViewMode = (path: string): State['viewMode'] => {
   if (path.startsWith('/story/') || path.startsWith('/docs/')) {
@@ -412,7 +465,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
 });
 
 export const ShowsNotificationForUnseenReview = meta.story({
-  render: () => <ReviewOutsideHarness />,
+  render: () => <ReviewOutsideWithNotificationsHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default'],
     managerState: {
@@ -420,7 +473,8 @@ export const ShowsNotificationForUnseenReview = meta.story({
       viewMode: 'story',
     },
   },
-  play: async () => {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
     expect(navigateMock).not.toHaveBeenCalled();
@@ -432,7 +486,8 @@ export const ShowsNotificationForUnseenReview = meta.story({
         })
       )
     );
-    expect(screen.queryByText('A new review is available.')).not.toBeInTheDocument();
+    await expect(await canvas.findByText('New review available')).toBeInTheDocument();
+    expect(canvas.queryByText('A new review is available.')).not.toBeInTheDocument();
   },
 });
 

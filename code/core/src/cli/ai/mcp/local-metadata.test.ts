@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
@@ -39,7 +41,7 @@ describe('loadStorybookAiMetadata', () => {
 
     const metadata = await loadStorybookAiMetadata({ cwd: '/repo' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: '/repo/.storybook' });
+    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/.storybook') });
     expect(apply).toHaveBeenCalledWith('experimental_storybookAi', undefined);
     expect(metadata).toEqual({
       instructions: 'Follow the story workflow.',
@@ -64,7 +66,7 @@ describe('loadStorybookAiMetadata', () => {
 
     await loadStorybookAiMetadata({ cwd: '/repo', configDir: 'config/storybook' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: '/repo/config/storybook' });
+    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/config/storybook') });
   });
 
   it('normalizes optional metadata fields and hides descriptor-less local tools', async () => {
@@ -126,18 +128,18 @@ describe('loadStorybookAiMetadata', () => {
 
 describe('resolveStorybookConfigDir', () => {
   it('defaults to .storybook under the target cwd', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo' })).toBe('/repo/.storybook');
+    expect(resolveStorybookConfigDir({ cwd: '/repo' })).toBe(resolve('/repo/.storybook'));
   });
 
   it('resolves relative config dirs from the target cwd', () => {
     expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: 'config/storybook' })).toBe(
-      '/repo/config/storybook'
+      resolve('/repo/config/storybook')
     );
   });
 
   it('keeps absolute config dirs unchanged', () => {
     expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: '/custom/.storybook' })).toBe(
-      '/custom/.storybook'
+      resolve('/custom/.storybook')
     );
   });
 });

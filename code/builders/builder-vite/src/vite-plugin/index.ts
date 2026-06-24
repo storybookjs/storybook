@@ -11,6 +11,7 @@ import { resolve } from 'pathe';
 import polka from 'polka';
 import type { InlineConfig, Plugin, PluginOption } from 'vite';
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
 import { bundlerOptionsKey } from '../utils/vite-features.ts';
 import { pluginConfig } from '../vite-config.ts';
@@ -22,10 +23,19 @@ import { registerEnvironmentModuleMiddleware } from './middlewares/module-router
 import { createStaticMiddlewares } from './middlewares/static.ts';
 import { registerStoryIndexMiddleware } from './middlewares/story-index.ts';
 import type { UserOptions } from './types.ts';
-
 export type { UserOptions } from './types.ts';
 
-export async function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
+// use to guard against duplicate plugin activation
+const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
+
+export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
+  if (ViteAsyncLocalStorage.getStore()) {
+    return Promise.resolve([]);
+  }
+  return ViteAsyncLocalStorage.run(true, () => main(options));
+}
+
+async function main(options?: UserOptions): Promise<PluginOption> {
   // @ts-expect-error -- custom global flag to guard against duplicate plugin activation
   if (globalThis.__sb_vite_plugin_active__) return [];
   // @ts-expect-error -- custom global flag to guard against duplicate plugin activation

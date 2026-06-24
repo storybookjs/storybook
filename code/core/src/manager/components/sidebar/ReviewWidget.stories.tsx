@@ -4,9 +4,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
+import { MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
 import { expect, fn, userEvent } from 'storybook/test';
 
+import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { ReviewWidget } from './ReviewWidget.tsx';
 
 const REVIEW_ADDON_ID = 'storybook/review';
@@ -47,9 +49,10 @@ const buildIndexEntries = (storyIds: string[]) =>
     return acc;
   }, {});
 
-const buildReviewPayload = (reviewTitle: string, storyIds: string[]) => ({
+const buildReviewPayload = (reviewTitle: string, storyIds: string[], createdAt = Date.now()) => ({
   title: reviewTitle,
   description: '',
+  createdAt,
   collections: storyIds.map((storyId) => ({
     title: 'Collection',
     rationale: '',
@@ -61,6 +64,7 @@ const makeManagerContext = (
   options: {
     storyIds?: string[];
     reviewTitle?: string;
+    reviewCreatedAt?: number;
     navigate?: ReturnType<typeof fn>;
     toggleNav?: ReturnType<typeof fn>;
     togglePanel?: ReturnType<typeof fn>;
@@ -85,7 +89,11 @@ const makeManagerContext = (
     options.emit ??
     fn((eventName: string, payload?: unknown) => {
       if (eventName === REQUEST_REVIEW && options.reviewTitle) {
-        const review = buildReviewPayload(options.reviewTitle, options.storyIds ?? []);
+        const review = buildReviewPayload(
+          options.reviewTitle,
+          options.storyIds ?? [],
+          options.reviewCreatedAt
+        );
         eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
           listener(review);
         });
@@ -97,6 +105,9 @@ const makeManagerContext = (
 
   return {
     state: {
+      path: '/',
+      viewMode: 'story',
+      customQueryParams: {},
       internal_index: {
         v: 5,
         entries: buildIndexEntries(options.storyIds ?? []),
@@ -118,6 +129,13 @@ const makeManagerContext = (
       togglePanel: options.togglePanel ?? fn().mockName('api::togglePanel'),
       setAllTagFilters: options.setAllTagFilters ?? fn().mockName('api::setAllTagFilters'),
       setAllStatusFilters: options.setAllStatusFilters ?? fn().mockName('api::setAllStatusFilters'),
+      getStoryHrefs: (storyId: string) => ({
+        managerHref: `?path=/story/${storyId}`,
+        previewHref: `iframe.html?id=${storyId}&viewMode=story`,
+      }),
+      addNotification: fn().mockName('api::addNotification'),
+      clearNotification: fn().mockName('api::clearNotification'),
+      getUrlState: () => ({ path: '/', queryParams: {} }),
       navigate: options.navigate ?? fn().mockName('api::navigate'),
     },
   };
@@ -128,11 +146,15 @@ const meta = {
   title: 'Sidebar/ReviewWidget',
   decorators: [
     (Story, { parameters }) => (
-      <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
-        <div style={{ padding: '8px', width: '280px' }}>
-          <Story />
-        </div>
-      </ManagerContext.Provider>
+      <MemoryRouter initialEntries={['/']}>
+        <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
+          <ReviewProvider>
+            <div style={{ padding: '8px', width: '280px' }}>
+              <Story />
+            </div>
+          </ReviewProvider>
+        </ManagerContext.Provider>
+      </MemoryRouter>
     ),
   ],
 } satisfies Meta<typeof ReviewWidget>;
@@ -226,7 +248,7 @@ export const OpenReview: Story = {
   },
 };
 
-const emitMock = fn((eventName: string, payload?: unknown) => {
+const dismissEmitMock = fn((eventName: string, payload?: unknown) => {
   if (eventName === REQUEST_REVIEW) {
     eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
       listener(buildReviewPayload('Button prop rename', ['s1']));
@@ -242,16 +264,45 @@ export const DismissReview: Story = {
     contextOptions: {
       storyIds: ['s1'],
       reviewTitle: 'Button prop rename',
-      emit: emitMock,
+      emit: dismissEmitMock,
     },
   },
   beforeEach: () => {
     eventListeners.clear();
-    emitMock.mockClear();
+    dismissEmitMock.mockClear();
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Dismiss review' }));
-    await expect(emitMock).toHaveBeenCalledWith(DISMISS_REVIEW);
+    await expect(dismissEmitMock).toHaveBeenCalledWith(DISMISS_REVIEW);
+  },
+};
+
+const INITIAL_CREATED_AT = 1_700_000_000_000;
+
+export const KeepsDisplayedTitleDuringPendingUpdate: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: ['s1', 's2'],
+      reviewTitle: 'First review title',
+      reviewCreatedAt: INITIAL_CREATED_AT,
+    },
+  },
+  beforeEach: () => {
+    eventListeners.clear();
+    sessionStorage.clear();
+    return setReviewingStatuses(['s1', 's2']);
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText('First review title')).toBeVisible();
+
+    eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
+      listener(
+        buildReviewPayload('Updated review title', ['s1', 's2'], INITIAL_CREATED_AT + 60_000)
+      );
+    });
+
+    await expect(canvas.getByText('First review title')).toBeVisible();
+    expect(canvas.queryByText('Updated review title')).toBeNull();
   },
 };

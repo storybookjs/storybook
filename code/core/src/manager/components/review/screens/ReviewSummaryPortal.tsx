@@ -4,10 +4,10 @@ import { createPortal } from 'react-dom';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { PRE_REVIEW_RETURN_KEY } from './constants.ts';
-import { reviewStore, useReview } from './review-store.ts';
-import { SummaryScreen } from './screens/SummaryScreen.tsx';
-import { sessionStore } from './session-store.ts';
+import { PRE_REVIEW_RETURN_KEY } from '../constants.ts';
+import { reviewStore, useReview } from '../review-store.ts';
+import { sessionStore } from '../session-store.ts';
+import { SummaryScreen } from './SummaryScreen.tsx';
 
 const LEGACY_PORTAL_HOST_ID = 'storybook-review-summary-portal';
 const DESKTOP_BREAKPOINT_PX = 600;

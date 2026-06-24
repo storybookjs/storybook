@@ -84,6 +84,18 @@ export const teardown = async () => {
     if (storybookProcess?.pid) {
       treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
         if (error) {
+          const errno = error as NodeJS.ErrnoException;
+          const alreadyGone =
+            errno.code === 128 ||
+            errno.code === 'ESRCH' ||
+            /not found|no running instance|no tasks/i.test(errno.message ?? '');
+
+          if (alreadyGone) {
+            logger.verbose('Storybook process already exited');
+            resolve();
+            return;
+          }
+
           logger.error('Failed to stop Storybook process:');
           reject(error);
           return;

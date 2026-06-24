@@ -55,13 +55,15 @@ const readJson = <T>(key: string): T | null => {
  * Enter review mode: the single place chrome collapse and filter narrowing
  * happen. On the first entry it snapshots the current chrome and filters so
  * {@link exitReviewMode} can restore them. Idempotent: re-entering while already
- * in review mode re-applies the focused layout without overwriting the snapshot.
+ * in review mode is a no-op so in-review navigation does not re-collapse chrome.
  */
 export const enterReviewMode = async (
   api: ReviewModeApi,
   filters: ReviewModeFilters
 ): Promise<void> => {
-  if (!isReviewModeActive()) {
+  const alreadyInReviewMode = isReviewModeActive();
+
+  if (!alreadyInReviewMode) {
     sessionStore.write(
       CHROME_SNAPSHOT_SESSION_KEY,
       JSON.stringify({
@@ -71,12 +73,12 @@ export const enterReviewMode = async (
     );
     sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
     sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
-  }
 
-  api.toggleNav(false);
-  api.togglePanel(false);
-  await api.setAllTagFilters([], []);
-  await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+    api.toggleNav(false);
+    api.togglePanel(false);
+    await api.setAllTagFilters([], []);
+    await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+  }
 };
 
 /**

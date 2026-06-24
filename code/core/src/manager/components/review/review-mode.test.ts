@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StatusValue } from 'storybook/internal/types';
 
 import {
-  type ReviewModeFilters,
   enterReviewMode,
   exitReviewMode,
   isReviewModeActive,
+  type ReviewModeFilters,
 } from './review-mode.ts';
 
 const emptyFilters: ReviewModeFilters = {
@@ -60,6 +60,17 @@ describe('enterReviewMode', () => {
     await exitReviewMode(api);
     expect(api.setAllTagFilters).toHaveBeenCalledWith(['play-fn'], []);
     expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
+  });
+
+  it('does not re-collapse chrome or re-apply filters when already in review mode', async () => {
+    const api = makeApi();
+    await enterReviewMode(api, emptyFilters);
+    vi.clearAllMocks();
+    await enterReviewMode(api, emptyFilters);
+    expect(api.toggleNav).not.toHaveBeenCalled();
+    expect(api.togglePanel).not.toHaveBeenCalled();
+    expect(api.setAllTagFilters).not.toHaveBeenCalled();
+    expect(api.setAllStatusFilters).not.toHaveBeenCalled();
   });
 });
 

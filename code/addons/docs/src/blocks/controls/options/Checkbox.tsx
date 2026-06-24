@@ -94,8 +94,11 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   const controlId = getControlId(name, storyId, controlsId);
 
   return (
-    <Wrapper $isInline={isInline} aria-required={required || undefined}>
-      <legend className="sb-sr-only">{name}</legend>
+    <Wrapper $isInline={isInline}>
+      <legend className="sb-sr-only">
+        {name}
+        {required ? ' (required)' : ''}
+      </legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (

@@ -17,8 +17,8 @@ afterEach(() => {
   }
 });
 
-skipWindows(() => {
-  describe('syncStorybookVersion', () => {
+describe('syncStorybookVersion', () => {
+  skipWindows(() => {
     it('runs the upgrade for each project, commits, and pushes', async () => {
       TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-'));
       const reposRoot = join(TMP, 'repos');
@@ -153,264 +153,264 @@ skipWindows(() => {
         getRemoteHead(join(remotesRoot, 'wikitok.git'))
       );
     });
+  });
 
-    it('reports no change and skips commit when upgrade does not modify files', async () => {
-      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-noop-'));
-      const reposRoot = join(TMP, 'repos');
-      const remotesRoot = join(TMP, 'remotes');
-      await mkdir(reposRoot, { recursive: true });
-      await mkdir(remotesRoot, { recursive: true });
+  it('reports no change and skips commit when upgrade does not modify files', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-noop-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
 
-      const projects: Project[] = [
-        {
-          name: 'mealdrop',
-          repo: join(remotesRoot, 'mealdrop.git'),
-          branch: 'main',
-          githubSlug: 'storybook-tmp/mealdrop',
-        },
-      ];
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
 
-      setupRepo({
-        repoRoot: join(reposRoot, 'mealdrop'),
-        remoteRoot: join(remotesRoot, 'mealdrop.git'),
-        packageJsonPath: 'package.json',
-        packageJson: {
-          name: 'mealdrop',
-          dependencies: { storybook: '9.1.0' },
-        },
-      });
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      packageJsonPath: 'package.json',
+      packageJson: {
+        name: 'mealdrop',
+        dependencies: { storybook: '9.1.0' },
+      },
+    });
 
-      const headBefore = getHead(join(reposRoot, 'mealdrop'));
+    const headBefore = getHead(join(reposRoot, 'mealdrop'));
 
-      const results = await syncStorybookVersion({
+    const results = await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: true,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async () => {},
+    });
+
+    expect(results).toEqual([{ project: 'mealdrop', changed: false }]);
+    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(headBefore);
+  });
+
+  it('fails fast when a target repo is dirty', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-dirty-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
+
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
+
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      packageJsonPath: 'package.json',
+      packageJson: {
+        name: 'mealdrop',
+        dependencies: { storybook: '9.0.0' },
+      },
+    });
+
+    writeFileSync(join(reposRoot, 'mealdrop', 'README.md'), 'dirty\n');
+
+    const upgradeCalls: string[] = [];
+
+    await expect(
+      syncStorybookVersion({
         version: '9.1.0',
         reposRoot,
         projects,
         push: true,
         log: () => {},
         installProjectDeps: async () => {},
-        runUpgrade: async () => {},
-      });
+        runUpgrade: async ({ project }) => {
+          upgradeCalls.push(project.name);
+        },
+      })
+    ).rejects.toThrow('mealdrop has local changes');
 
-      expect(results).toEqual([{ project: 'mealdrop', changed: false }]);
-      expect(getHead(join(reposRoot, 'mealdrop'))).toBe(headBefore);
+    expect(upgradeCalls).toEqual([]);
+  });
+
+  it('auto-clones repos that have not been cloned yet', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-auto-clone-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
+
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
+
+    setupBareRemoteWithContent({
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      files: {
+        'package.json': `${JSON.stringify(
+          { name: 'mealdrop', dependencies: { storybook: '9.0.0' } },
+          null,
+          2
+        )}\n`,
+      },
     });
 
-    it('fails fast when a target repo is dirty', async () => {
-      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-dirty-'));
-      const reposRoot = join(TMP, 'repos');
-      const remotesRoot = join(TMP, 'remotes');
-      await mkdir(reposRoot, { recursive: true });
-      await mkdir(remotesRoot, { recursive: true });
+    expect(existsSync(join(reposRoot, 'mealdrop'))).toBe(false);
 
-      const projects: Project[] = [
-        {
-          name: 'mealdrop',
-          repo: join(remotesRoot, 'mealdrop.git'),
-          branch: 'main',
-          githubSlug: 'storybook-tmp/mealdrop',
-        },
-      ];
-
-      setupRepo({
-        repoRoot: join(reposRoot, 'mealdrop'),
-        remoteRoot: join(remotesRoot, 'mealdrop.git'),
-        packageJsonPath: 'package.json',
-        packageJson: {
-          name: 'mealdrop',
-          dependencies: { storybook: '9.0.0' },
-        },
-      });
-
-      writeFileSync(join(reposRoot, 'mealdrop', 'README.md'), 'dirty\n');
-
-      const upgradeCalls: string[] = [];
-
-      await expect(
-        syncStorybookVersion({
-          version: '9.1.0',
-          reposRoot,
-          projects,
-          push: true,
-          log: () => {},
-          installProjectDeps: async () => {},
-          runUpgrade: async ({ project }) => {
-            upgradeCalls.push(project.name);
-          },
-        })
-      ).rejects.toThrow('mealdrop has local changes');
-
-      expect(upgradeCalls).toEqual([]);
+    const results = await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: true,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
     });
 
-    it('auto-clones repos that have not been cloned yet', async () => {
-      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-auto-clone-'));
-      const reposRoot = join(TMP, 'repos');
-      const remotesRoot = join(TMP, 'remotes');
-      await mkdir(reposRoot, { recursive: true });
-      await mkdir(remotesRoot, { recursive: true });
+    expect(existsSync(join(reposRoot, 'mealdrop', '.git'))).toBe(true);
+    const pkg = JSON.parse(readFileSync(join(reposRoot, 'mealdrop', 'package.json'), 'utf-8'));
+    expect(pkg.dependencies.storybook).toBe('9.1.0');
+    expect(results).toEqual([
+      { project: 'mealdrop', changed: true, commitSha: getHead(join(reposRoot, 'mealdrop')) },
+    ]);
+    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
+      getRemoteHead(join(remotesRoot, 'mealdrop.git'))
+    );
+  });
 
-      const projects: Project[] = [
-        {
-          name: 'mealdrop',
-          repo: join(remotesRoot, 'mealdrop.git'),
-          branch: 'main',
-          githubSlug: 'storybook-tmp/mealdrop',
-        },
-      ];
+  it('honors push=false by committing locally but not pushing', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-skip-push-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
 
-      setupBareRemoteWithContent({
-        remoteRoot: join(remotesRoot, 'mealdrop.git'),
-        files: {
-          'package.json': `${JSON.stringify(
-            { name: 'mealdrop', dependencies: { storybook: '9.0.0' } },
-            null,
-            2
-          )}\n`,
-        },
-      });
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
 
-      expect(existsSync(join(reposRoot, 'mealdrop'))).toBe(false);
-
-      const results = await syncStorybookVersion({
-        version: '9.1.0',
-        reposRoot,
-        projects,
-        push: true,
-        log: () => {},
-        installProjectDeps: async () => {},
-        runUpgrade: async ({ version, projectPath }) => {
-          const pkgPath = join(projectPath, 'package.json');
-          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-          pkg.dependencies.storybook = version;
-          writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-        },
-      });
-
-      expect(existsSync(join(reposRoot, 'mealdrop', '.git'))).toBe(true);
-      const pkg = JSON.parse(readFileSync(join(reposRoot, 'mealdrop', 'package.json'), 'utf-8'));
-      expect(pkg.dependencies.storybook).toBe('9.1.0');
-      expect(results).toEqual([
-        { project: 'mealdrop', changed: true, commitSha: getHead(join(reposRoot, 'mealdrop')) },
-      ]);
-      expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
-        getRemoteHead(join(remotesRoot, 'mealdrop.git'))
-      );
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      packageJsonPath: 'package.json',
+      packageJson: {
+        name: 'mealdrop',
+        dependencies: { storybook: '9.0.0' },
+      },
     });
 
-    it('honors push=false by committing locally but not pushing', async () => {
-      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-skip-push-'));
-      const reposRoot = join(TMP, 'repos');
-      const remotesRoot = join(TMP, 'remotes');
-      await mkdir(reposRoot, { recursive: true });
-      await mkdir(remotesRoot, { recursive: true });
+    const remoteHeadBefore = getRemoteHead(join(remotesRoot, 'mealdrop.git'));
 
-      const projects: Project[] = [
-        {
-          name: 'mealdrop',
-          repo: join(remotesRoot, 'mealdrop.git'),
-          branch: 'main',
-          githubSlug: 'storybook-tmp/mealdrop',
-        },
-      ];
-
-      setupRepo({
-        repoRoot: join(reposRoot, 'mealdrop'),
-        remoteRoot: join(remotesRoot, 'mealdrop.git'),
-        packageJsonPath: 'package.json',
-        packageJson: {
-          name: 'mealdrop',
-          dependencies: { storybook: '9.0.0' },
-        },
-      });
-
-      const remoteHeadBefore = getRemoteHead(join(remotesRoot, 'mealdrop.git'));
-
-      await syncStorybookVersion({
-        version: '9.1.0',
-        reposRoot,
-        projects,
-        push: false,
-        log: () => {},
-        installProjectDeps: async () => {},
-        runUpgrade: async ({ version, projectPath }) => {
-          const pkgPath = join(projectPath, 'package.json');
-          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-          pkg.dependencies.storybook = version;
-          writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-        },
-      });
-
-      const localHead = getHead(join(reposRoot, 'mealdrop'));
-      expect(localHead).not.toBe(remoteHeadBefore);
-      expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
+    await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: false,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
     });
 
-    it('pushes an existing local upgrade commit on a rerun after skip-push', async () => {
-      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-resume-push-'));
-      const reposRoot = join(TMP, 'repos');
-      const remotesRoot = join(TMP, 'remotes');
-      await mkdir(reposRoot, { recursive: true });
-      await mkdir(remotesRoot, { recursive: true });
+    const localHead = getHead(join(reposRoot, 'mealdrop'));
+    expect(localHead).not.toBe(remoteHeadBefore);
+    expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
+  });
 
-      const projects: Project[] = [
-        {
-          name: 'mealdrop',
-          repo: join(remotesRoot, 'mealdrop.git'),
-          branch: 'main',
-          githubSlug: 'storybook-tmp/mealdrop',
-        },
-      ];
+  it('pushes an existing local upgrade commit on a rerun after skip-push', async () => {
+    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-resume-push-'));
+    const reposRoot = join(TMP, 'repos');
+    const remotesRoot = join(TMP, 'remotes');
+    await mkdir(reposRoot, { recursive: true });
+    await mkdir(remotesRoot, { recursive: true });
 
-      setupRepo({
-        repoRoot: join(reposRoot, 'mealdrop'),
-        remoteRoot: join(remotesRoot, 'mealdrop.git'),
-        packageJsonPath: 'package.json',
-        packageJson: {
-          name: 'mealdrop',
-          dependencies: { storybook: '9.0.0' },
-        },
-      });
+    const projects: Project[] = [
+      {
+        name: 'mealdrop',
+        repo: join(remotesRoot, 'mealdrop.git'),
+        branch: 'main',
+        githubSlug: 'storybook-tmp/mealdrop',
+      },
+    ];
 
-      const remoteHeadBefore = getRemoteHead(join(remotesRoot, 'mealdrop.git'));
-
-      await syncStorybookVersion({
-        version: '9.1.0',
-        reposRoot,
-        projects,
-        push: false,
-        log: () => {},
-        installProjectDeps: async () => {},
-        runUpgrade: async ({ version, projectPath }) => {
-          const pkgPath = join(projectPath, 'package.json');
-          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-          pkg.dependencies.storybook = version;
-          writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-        },
-      });
-
-      const localHead = getHead(join(reposRoot, 'mealdrop'));
-      expect(localHead).not.toBe(remoteHeadBefore);
-      expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
-
-      const results = await syncStorybookVersion({
-        version: '9.1.0',
-        reposRoot,
-        projects,
-        push: true,
-        log: () => {},
-        installProjectDeps: async () => {},
-        runUpgrade: async ({ version, projectPath }) => {
-          const pkgPath = join(projectPath, 'package.json');
-          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-          pkg.dependencies.storybook = version;
-          writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-        },
-      });
-
-      expect(results).toEqual([{ project: 'mealdrop', changed: true, commitSha: localHead }]);
-      expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(localHead);
+    setupRepo({
+      repoRoot: join(reposRoot, 'mealdrop'),
+      remoteRoot: join(remotesRoot, 'mealdrop.git'),
+      packageJsonPath: 'package.json',
+      packageJson: {
+        name: 'mealdrop',
+        dependencies: { storybook: '9.0.0' },
+      },
     });
+
+    const remoteHeadBefore = getRemoteHead(join(remotesRoot, 'mealdrop.git'));
+
+    await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: false,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
+    });
+
+    const localHead = getHead(join(reposRoot, 'mealdrop'));
+    expect(localHead).not.toBe(remoteHeadBefore);
+    expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(remoteHeadBefore);
+
+    const results = await syncStorybookVersion({
+      version: '9.1.0',
+      reposRoot,
+      projects,
+      push: true,
+      log: () => {},
+      installProjectDeps: async () => {},
+      runUpgrade: async ({ version, projectPath }) => {
+        const pkgPath = join(projectPath, 'package.json');
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        pkg.dependencies.storybook = version;
+        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+      },
+    });
+
+    expect(results).toEqual([{ project: 'mealdrop', changed: true, commitSha: localHead }]);
+    expect(getRemoteHead(join(remotesRoot, 'mealdrop.git'))).toBe(localHead);
   });
 });
 

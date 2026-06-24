@@ -1,19 +1,22 @@
-import { useEffect, useReducer, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { type Query, type QueryState, seedQueryState } from 'storybook/open-service';
+
+import { useSyncExternalStoreShim } from './useSyncExternalStoreShim.ts';
 
 /**
  * React 16/17-safe subscription to a single open-service query, shared by the preview-side docs
  * hooks.
  *
- * Deliberately does NOT reuse the manager-side `useServiceQuery`: that hook is built on
+ * Deliberately does NOT reuse the manager-side `useServiceQuery`: that hook is built on React's
  * `useSyncExternalStore`, which only exists in React 18+, while the preview docs blocks must keep
- * working on React 16/17. This is a small, query-specific subscription instead:
+ * working on React 16/17. It is instead built on {@link useSyncExternalStoreShim} (the React 16-safe
+ * port of that hook), adding the open-service specifics:
  *
  * - the current {@link QueryState} is seeded synchronously during render (via `seedQueryState`, a
  *   pure `.get()` read wrapped in a synthetic `pending` state) so switching subjects never lags a
  *   frame, and
- * - the subscription forces a re-render whenever the query emits a new {@link QueryState}.
+ * - the subscription re-renders whenever the query emits a new {@link QueryState}.
  *
  * `cacheKey` must uniquely identify the `input` (a stringifiable identity for the value the query is
  * read with); it gates the synchronous re-seed and re-subscription. `input` itself is read through a
@@ -39,7 +42,6 @@ export function useQuerySubscription<TInput, TOutput, TSelected>(
   input: TInput,
   selector?: (value: TOutput) => TSelected
 ): QueryState<TOutput | TSelected> {
-  const [, forceRender] = useReducer((tick: number) => tick + 1, 0);
   const cache = useRef<{
     key: string;
     selector: ((value: TOutput) => TSelected) | undefined;
@@ -57,17 +59,24 @@ export function useQuerySubscription<TInput, TOutput, TSelected>(
   const inputRef = useRef(input);
   inputRef.current = input;
 
-  useEffect(() => {
-    const onState = (state: QueryState<TOutput | TSelected>) => {
-      cache.current = { key: cacheKey, selector, state };
-      forceRender();
-    };
-    return selector
-      ? query.subscribe(inputRef.current, selector, onState)
-      : query.subscribe(inputRef.current, onState);
-    // `cacheKey` encodes the input identity; `selector` is a real subscription dependency. `input`
-    // stays in a ref so its per-render object identity does not re-subscribe under a stable key.
-  }, [query, cacheKey, selector]);
+  // Re-subscribe only when the query, input identity (`cacheKey`), or `selector` changes; `input`
+  // stays in a ref so its per-render object identity does not re-subscribe under a stable key.
+  const subscribe = useCallback(
+    (listener: () => void): (() => void) => {
+      const onQueryState = (state: QueryState<TOutput | TSelected>) => {
+        cache.current = { key: cacheKey, selector, state };
+        listener();
+      };
+      return selector
+        ? query.subscribe(inputRef.current, selector, onQueryState)
+        : query.subscribe(inputRef.current, onQueryState);
+    },
+    [query, cacheKey, selector]
+  );
 
-  return cache.current.state;
+  // Pure ref read: the shim calls this during render and to detect emitted changes, so it must not
+  // recompute the seed (which would re-run the query handler).
+  const getSnapshot = useCallback((): QueryState<TOutput | TSelected> => cache.current!.state, []);
+
+  return useSyncExternalStoreShim(subscribe, getSnapshot);
 }

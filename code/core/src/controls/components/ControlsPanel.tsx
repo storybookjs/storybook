@@ -157,15 +157,14 @@ function ServiceControlsPanel({
   const api = useStorybookApi();
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
-  // Custom argTypes (project + meta + story, already inferred) for the selected story arrive over
-  // the channel via STORY_PREPARED — the same source the legacy panel reads. The service only needs
-  // to contribute server-extracted component props.
+  // Custom argTypes (project + meta + story annotations) for the selected story arrive over the
+  // channel via STORY_PREPARED. With experimentalDocgenServer, prepareStory skips second-pass
+  // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
-  const { data: docgenPayload, isInitialLoading } = useServiceQuery(
-    docgenService.queries.getDocgen,
-    { id }
-  );
+  const { data: docgenPayload, isInitialLoading } = useServiceQuery(docgenService.queries.docgen, {
+    id,
+  });
   const isStoryPrepared = storyData.type === 'story' ? storyData.prepared : true;
 
   // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a

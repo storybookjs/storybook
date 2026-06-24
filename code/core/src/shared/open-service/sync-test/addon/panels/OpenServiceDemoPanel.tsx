@@ -74,7 +74,7 @@ function CommandDemoSection({
   inputLabel,
   rawValueTestId,
 }: CommandDemoSectionProps) {
-  const value = useServiceQuery(service.queries.getValue).data ?? '';
+  const value = useServiceQuery(service.queries.value).data ?? '';
   const setValue = useServiceCommand(service, 'setValue');
 
   return (
@@ -101,11 +101,11 @@ function CommandDemoSection({
 }
 
 function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) {
-  const { data: alpha } = useServiceQuery(service.queries.getEntry, { id: 'alpha' });
-  const { data: beta } = useServiceQuery(service.queries.getEntry, { id: 'beta' });
-  // `getUnbacked` has no static snapshot: in a static build its `load` invokes a server-only command
+  const { data: alpha } = useServiceQuery(service.queries.entry, { id: 'alpha' });
+  const { data: beta } = useServiceQuery(service.queries.entry, { id: 'beta' });
+  // `unbacked` has no static snapshot: in a static build its `load` invokes a server-only command
   // that no peer acknowledges, so the subscription surfaces a load error in `QueryState`.
-  const { data: unbacked, error: unbackedError } = useServiceQuery(service.queries.getUnbacked);
+  const { data: unbacked, error: unbackedError } = useServiceQuery(service.queries.unbacked);
 
   // Prefer the resolved state over the load error: a remote command is best-effort, so a slow peer
   // can still execute it (populating state) after the load already rejected on the ack timeout. Only
@@ -116,8 +116,8 @@ function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) 
   return (
     <DemoSection title="Static Load">
       <p style={{ lineHeight: 1.5, margin: 0 }}>
-        Static load demo — <code>getEntry</code> reads prebuilt JSON in production builds;
-        <code>getUnbacked</code> has no static snapshot.
+        Static load demo — <code>entry</code> reads prebuilt JSON in production builds;
+        <code>unbacked</code> has no static snapshot.
       </p>
       <ValueBlock title="Entry alpha" testId="static-load-manager-panel-entry-alpha-value">
         {JSON.stringify(alpha ?? null)}

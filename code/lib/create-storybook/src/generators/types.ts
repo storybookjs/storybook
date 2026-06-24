@@ -37,6 +37,12 @@ export interface FrameworkOptions {
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
+  /**
+   * Options to attach to the framework field in main.ts, producing `framework: { name, options }`.
+   * Use this for framework-specific config (e.g. Angular's `compodoc`) that belongs in the
+   * framework options rather than as a top-level main field.
+   */
+  frameworkOptions?: Record<string, any>;
   extensions?: string[];
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;
@@ -78,11 +84,14 @@ export interface GeneratorMetadata {
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the
-   * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
+   * builder cannot be detected (Webpack and Vite are both non-existent dependencies). The function
+   * receives the original CLI options so it can short-circuit prompts in non-interactive (`--yes`)
+   * mode.
    */
   builderOverride?:
     | SupportedBuilder
     | ((context: {
+        options: CommandOptions;
         telemetryService: TelemetryService;
       }) => SupportedBuilder | Promise<SupportedBuilder>);
 }

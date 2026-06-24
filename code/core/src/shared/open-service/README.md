@@ -194,6 +194,14 @@ Services and operations can be hidden from discovery APIs without disabling them
 `internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
 be overridden at `registerService()` time. Static snapshot building is unaffected.
 
+### Query naming
+
+Public query names are nouns or noun phrases (`docgen`, `status`, `recordFields`) without a `get`
+prefix — callers already use `.get()`, `.loaded()`, and `.subscribe()` on the query handle.
+
+`core/module-graph` keeps deprecated `getStatus` and `getGraphRevision` aliases that delegate to
+`status` and `graphRevision` for backwards compatibility with external consumers.
+
 ### Internal operation naming
 
 Internal queries and commands must use a `_` prefix (for example `_debugState`). `defineService()`
@@ -220,7 +228,7 @@ handler: (input, ctx) => {
     'internal-fixture/mutable-record-lookup'
   );
 
-  const record = lookup.queries.getRecordFields.get({ entryId: input.entryId });
+  const record = lookup.queries.recordFields.get({ entryId: input.entryId });
   // record is fully typed — do not cast individual query results
 
   return record?.marker === 'match';
@@ -713,17 +721,17 @@ Subscribes to a service query and returns its [`QueryState`](#query-state) (the 
 import { useServiceQuery } from 'storybook/manager-api';
 
 // With input
-const { data, isInitialLoading, isError, error } = useServiceQuery(service.queries.getRecordFields, {
+const { data, isInitialLoading, isError, error } = useServiceQuery(service.queries.recordFields, {
   entryId: 'a',
 });
 
 // Void-input query (no input argument, no selector)
-const { data } = useServiceQuery(service.queries.getSummary);
+const { data } = useServiceQuery(service.queries.summary);
 
 // With a selector the input is always positional; `data` is the selected slice.
-const { data: name } = useServiceQuery(service.queries.getRecordFields, { entryId: 'a' }, (r) => r?.name);
+const { data: name } = useServiceQuery(service.queries.recordFields, { entryId: 'a' }, (r) => r?.name);
 // A void-input query passes `undefined` for the input when it needs a selector.
-const { data: count } = useServiceQuery(service.queries.getSummary, undefined, (s) => s?.count);
+const { data: count } = useServiceQuery(service.queries.summary, undefined, (s) => s?.count);
 ```
 
 The signature is `useServiceQuery(query, input?, selector?)`. The input argument is required for input queries and omittable only for void-input queries that pass no selector — `void` is just sugar for `undefined`, so there is no separate lone-selector shorthand (unlike `query.subscribe`). Backed by `useSyncExternalStore`. The subscription is torn down and recreated when the `query`, `input`, or `selector` changes.
@@ -774,7 +782,7 @@ export const exampleServiceDef = defineService({
   description: 'Example service used in documentation.',
   initialState: { values: {} } satisfies ExampleState,
   queries: {
-    getValue: {
+    value: {
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
@@ -805,10 +813,10 @@ export const exampleServiceDef = defineService({
 const exampleService = registerService(exampleServiceDef);
 
 // Sync read — returns current state (null if the load has never run). Does NOT fire the load.
-const current = exampleService.queries.getValue.get({ entryId: 'a' });
+const current = exampleService.queries.value.get({ entryId: 'a' });
 
 // Awaited variant — fires the load, waits for it (and any transitive deps) to settle, then returns the value.
-const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
+const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 ```
 
 ## Design Rules

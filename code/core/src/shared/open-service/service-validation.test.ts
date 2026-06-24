@@ -44,9 +44,9 @@ describe('service validation', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
-      () => service.queries.getRecordFields.get({} as unknown as { entryId: string }),
+      () => service.queries.recordFields.get({} as unknown as { entryId: string }),
       dedent`
-        Invalid input for query "internal-fixture/mutable-record-lookup.getRecordFields":
+        Invalid input for query "internal-fixture/mutable-record-lookup.recordFields":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -56,9 +56,9 @@ describe('service validation', () => {
     const service = registerService(createInvalidQueryOutputServiceDef());
 
     await expectValidationMessage(
-      () => service.queries.getBrokenValue.get(undefined),
+      () => service.queries.brokenValue.get(undefined),
       dedent`
-        Invalid output for query "internal-fixture/invalid-query-output.getBrokenValue":
+        Invalid output for query "internal-fixture/invalid-query-output.brokenValue":
         Invalid type: Expected string but received 42
       `
     );
@@ -103,7 +103,7 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => buildStaticFiles(),
       dedent`
-        Invalid input for query "internal-fixture/invalid-static-input.getPreloadedValue":
+        Invalid input for query "internal-fixture/invalid-static-input.preloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -115,7 +115,7 @@ describe('service validation', () => {
         id: 'internal-fixture/nested-query-output',
         initialState: {} as Record<string, never>,
         queries: {
-          getBrokenTree: {
+          brokenTree: {
             input: v.undefined(),
             output: v.object({
               items: v.array(
@@ -134,9 +134,9 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getBrokenTree.get(undefined),
+      () => service.queries.brokenTree.get(undefined),
       dedent`
-        Invalid output for query "internal-fixture/nested-query-output.getBrokenTree":
+        Invalid output for query "internal-fixture/nested-query-output.brokenTree":
         items[0].name: Invalid type: Expected string but received 1
       `
     );
@@ -148,7 +148,7 @@ describe('service validation', () => {
         id: 'internal-fixture/zod-query-input',
         initialState: {} as Record<string, never>,
         queries: {
-          getGreeting: {
+          greeting: {
             input: z.object({
               name: z.string().min(2, 'Name must be at least 2 characters'),
             }),
@@ -161,9 +161,9 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getGreeting.get({ name: 'x' }),
+      () => service.queries.greeting.get({ name: 'x' }),
       dedent`
-        Invalid input for query "internal-fixture/zod-query-input.getGreeting":
+        Invalid input for query "internal-fixture/zod-query-input.greeting":
         name: Name must be at least 2 characters
       `
     );
@@ -173,7 +173,7 @@ describe('service validation', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     expect(
-      service.queries.getRecordFields.get({
+      service.queries.recordFields.get({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
@@ -196,7 +196,7 @@ describe('service validation', () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(service.queries.getRecordFields.get({ entryId: 'entry-a' })).toEqual({
+    expect(service.queries.recordFields.get({ entryId: 'entry-a' })).toEqual({
       marker: 'match',
     });
   });
@@ -205,7 +205,7 @@ describe('service validation', () => {
     expect(mutableRecordLookupServiceDef.description).toBe(
       'Provides a mutable record lookup keyed by entry id.'
     );
-    expect(mutableRecordLookupServiceDef.queries.getRecordFields.description).toBe(
+    expect(mutableRecordLookupServiceDef.queries.recordFields.description).toBe(
       'Returns all stored fields for one entry, or null when absent.'
     );
     expect(mutableRecordLookupServiceDef.commands.assignRecordField.description).toBe(

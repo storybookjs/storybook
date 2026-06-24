@@ -230,7 +230,7 @@ export class ChangeDetectionService {
     this.changeDetectionEnabled = true;
 
     const moduleGraph = this.getModuleGraph();
-    this.unsubscribeModuleGraphStatus = moduleGraph.queries.getStatus.subscribe(
+    this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
       undefined,
       ({ data }) => {
         if (data !== undefined) {
@@ -238,7 +238,7 @@ export class ChangeDetectionService {
         }
       }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.getGraphRevision.subscribe(
+    this.unsubscribeModuleGraphRevision = moduleGraph.queries.graphRevision.subscribe(
       undefined,
       ({ data }) => {
         if ((data ?? 0) > 0) {
@@ -247,7 +247,7 @@ export class ChangeDetectionService {
       }
     );
 
-    void moduleGraph.queries.getStatus
+    void moduleGraph.queries.status
       .loaded(undefined)
       .then((status) => {
         this.onModuleGraphStatus(status as ModuleGraphStatus);
@@ -323,7 +323,7 @@ export class ChangeDetectionService {
     // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
     // reverse index and publishes incorrect statuses.
     const moduleGraph = this.getModuleGraph();
-    const status = await moduleGraph.queries.getStatus.loaded(undefined);
+    const status = await moduleGraph.queries.status.loaded(undefined);
 
     if (this.disposed || status.value !== 'ready') {
       return;
@@ -407,7 +407,7 @@ export class ChangeDetectionService {
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
     const moduleGraph = this.getModuleGraph();
-    const lookupResults = await moduleGraph.queries.getStoriesForFiles.loaded({
+    const lookupResults = await moduleGraph.queries.storiesForFiles.loaded({
       files: scannedFilesArray,
     });
 

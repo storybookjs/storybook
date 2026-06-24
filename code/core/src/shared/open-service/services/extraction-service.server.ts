@@ -48,7 +48,7 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
 /**
  * Re-extracts already-cached components when the module graph reports story file changes.
  *
- * `getLatestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
+ * `latestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
  * "something changed" trigger; `storyFiles` is an optimization hint that is sometimes legitimately
  * empty (e.g. after a story-index invalidation). When the hint is empty we refresh every
  * already-extracted component; when populated we refresh only those mapped from the bumped files.
@@ -74,7 +74,7 @@ function subscribeExtractionServiceRefresh(
     );
   };
 
-  moduleGraph.queries.getLatestStoryChanges.subscribe(undefined, async ({ data }) => {
+  moduleGraph.queries.latestStoryChanges.subscribe(undefined, async ({ data }) => {
     if (!data || data.revision === 0) {
       return;
     }

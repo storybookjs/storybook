@@ -23,7 +23,7 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     workingDir: options.workingDir ?? process.cwd(),
     getIndex: options.getIndex,
     provider: options.storyDocsProvider,
-    queryName: 'getStoryDocs',
+    queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
   });

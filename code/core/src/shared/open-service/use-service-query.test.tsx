@@ -27,7 +27,7 @@ describe('useServiceQuery', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
+      useServiceQuery(service.queries.recordFields, { entryId: 'a' })
     );
 
     expect(result.current.data).toBeNull();
@@ -38,7 +38,7 @@ describe('useServiceQuery', () => {
     const service = registerService(awaitedPreloadValueServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service.queries.getPreloadedValue, { entryId: 'a' })
+      useServiceQuery(service.queries.preloadedValue, { entryId: 'a' })
     );
 
     // A load-backed query stays `pending` until its load settles. `data` is the synchronous
@@ -54,7 +54,7 @@ describe('useServiceQuery', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
+      useServiceQuery(service.queries.recordFields, { entryId: 'a' })
     );
 
     expect(result.current.data).toBeNull();
@@ -76,7 +76,7 @@ describe('useServiceQuery', () => {
 
     renderHook(() => {
       renderCount++;
-      return useServiceQuery(service.queries.getRecordFields, { entryId: 'a' });
+      return useServiceQuery(service.queries.recordFields, { entryId: 'a' });
     });
 
     const countAfterMount = renderCount;
@@ -105,7 +105,7 @@ describe('useServiceQuery', () => {
 
     let currentEntryId = 'b';
     const { result, rerender } = renderHook(() =>
-      useServiceQuery(service.queries.getRecordFields, { entryId: currentEntryId })
+      useServiceQuery(service.queries.recordFields, { entryId: currentEntryId })
     );
 
     expect(result.current.data).toBeNull();
@@ -120,7 +120,7 @@ describe('useServiceQuery', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const { result } = renderHook(() =>
-      useServiceQuery(service.queries.getRecordFields, { entryId: 'a' })
+      useServiceQuery(service.queries.recordFields, { entryId: 'a' })
     );
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'x', fieldValue: '1' });
@@ -141,9 +141,9 @@ describe('useServiceQuery', () => {
     // Re-subscription happens only when the lazy-init subscription key changes. If `undefined`
     // output were mistaken for "uninitialised", the key would be rebuilt on every render and the
     // hook would resubscribe each time.
-    const subscribeSpy = vi.spyOn(service.queries.getNothing, 'subscribe');
+    const subscribeSpy = vi.spyOn(service.queries.nothing, 'subscribe');
 
-    const { result, rerender } = renderHook(() => useServiceQuery(service.queries.getNothing));
+    const { result, rerender } = renderHook(() => useServiceQuery(service.queries.nothing));
 
     expect(result.current.data).toBeUndefined();
 
@@ -170,7 +170,7 @@ describe('useServiceQuery', () => {
       isInitialLoading: false,
       isRefreshing: false,
     });
-    const getRecordFields = {
+    const recordFields = {
       get: vi.fn(() => ({ k: 'v' })),
       subscribe: vi.fn(
         (
@@ -186,7 +186,7 @@ describe('useServiceQuery', () => {
     let renderCount = 0;
     const { result } = renderHook(() => {
       renderCount++;
-      return useServiceQuery(getRecordFields, { entryId: 'a' });
+      return useServiceQuery(recordFields, { entryId: 'a' });
     });
 
     // The first render is the synthetic `pending` seed built from `get()`.

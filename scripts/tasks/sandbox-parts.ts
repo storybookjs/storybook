@@ -338,6 +338,7 @@ export const init: Task['run'] = async (
 
   switch (template.expected.framework) {
     case '@storybook/angular':
+    case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:
@@ -558,9 +559,16 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
+  // Angular sandboxes need `yarn docs:json` to run before any preview-evaluating
+  // task so `.storybook/preview.ts`'s static `import docJson from "../documentation.json"`
+  // resolves real compodoc data. `prepareAngularSandbox` already wires this into
+  // the `storybook` and `build-storybook` scripts; do the same for `vitest` when
+  // the script exists (added only by the Angular template path).
+  const vitestCmd = 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000';
+  const hasDocsJson = !!packageJson.scripts?.['docs:json'];
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+    vitest: hasDocsJson ? `yarn docs:json && ${vitestCmd}` : vitestCmd,
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode
@@ -1102,14 +1110,6 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
     /**
-     * Sets compodoc option in angular.json projects to false. We have to generate compodoc manually
-     * to avoid symlink issues related to the template-stories folder. In a second step a docs:json
-     * script is placed into the package.json to generate the Compodoc documentation.json, which
-     * respects symlinks
-     */
-    angularJson.projects[projectName].architect.storybook.options.compodoc = false;
-    angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
-    /**
      * Sets preserveSymlinks option in angular.json projects to true. This is necessary to respect
      * symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
      */
@@ -1147,6 +1147,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
+    // @analogjs/vite-plugin-angular only compiles files referenced by the
+    // tsconfig program. Template renderer components (e.g. pre.component.ts)
+    // are symlinked into `template-stories/components` and must be part of the
+    // program too — otherwise @Input/@Output decorators are stripped and
+    // bindings never resolve at runtime.
+    '../template-stories/components/**/*.ts',
     // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];

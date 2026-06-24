@@ -45,7 +45,7 @@ describe('manifests', () => {
       id: 'addon-docs/mdx',
       initialState: { components },
       queries: {
-        getMdxForAllComponents: {
+        mdxForAllComponents: {
           input: v.void(),
           output: v.record(v.string(), v.unknown()),
           handler: (_input, ctx) => ctx.self.state.components,

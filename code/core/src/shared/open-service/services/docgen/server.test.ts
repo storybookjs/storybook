@@ -61,7 +61,7 @@ describe('docgen open service', () => {
       const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toEqual(payload);
-      expect(service.queries.getDocgen.get({ id: 'button' })).toEqual(payload);
+      expect(service.queries.docgen.get({ id: 'button' })).toEqual(payload);
 
       expect(provider).toHaveBeenCalledTimes(1);
       expect(provider.mock.calls[0][0]).toEqual({ entry });
@@ -100,7 +100,7 @@ describe('docgen open service', () => {
       const returned = await service.commands.extractDocgen({ id: 'button' });
 
       expect(returned).toBeUndefined();
-      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
+      expect(service.queries.docgen.get({ id: 'button' })).toBeUndefined();
     });
 
     it('throws when no entry exists for the component id', async () => {
@@ -128,7 +128,7 @@ describe('docgen open service', () => {
     });
   });
 
-  describe('getDocgenForAllComponents query', () => {
+  describe('docgenForAllComponents query', () => {
     it('returns every extracted component without filtering', async () => {
       const manifestStory = {
         ...makeStoryEntry('button--primary', 'Button'),
@@ -146,7 +146,7 @@ describe('docgen open service', () => {
           }),
       });
 
-      await expect(service.queries.getDocgenForAllComponents.loaded()).resolves.toEqual({
+      await expect(service.queries.docgenForAllComponents.loaded()).resolves.toEqual({
         button: makeDocgenPayload({
           id: 'button',
           name: 'Button',
@@ -161,14 +161,14 @@ describe('docgen open service', () => {
     });
   });
 
-  describe('getDocgen query', () => {
+  describe('docgen query', () => {
     it('returns undefined synchronously when nothing has been extracted yet', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
         docgenProvider: async () => makeDocgenPayload(),
       });
 
-      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
+      expect(service.queries.docgen.get({ id: 'button' })).toBeUndefined();
     });
 
     it('.loaded() drives the load body which calls extractDocgen', async () => {
@@ -177,7 +177,7 @@ describe('docgen open service', () => {
         docgenProvider: async () => makeDocgenPayload({ description: 'from-loaded' }),
       });
 
-      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
+      await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({ description: 'from-loaded' })
       );
     });
@@ -188,7 +188,7 @@ describe('docgen open service', () => {
         docgenProvider: async () => undefined,
       });
 
-      await expect(service.queries.getDocgen.loaded({ id: 'unknown' })).rejects.toThrow(
+      await expect(service.queries.docgen.loaded({ id: 'unknown' })).rejects.toThrow(
         /No story or attached docs entry was found for component id "unknown"/
       );
     });
@@ -210,7 +210,7 @@ describe('docgen open service', () => {
         docgenProvider: provider,
       });
 
-      await service.queries.getDocgen.loaded({ id: 'button' });
+      await service.queries.docgen.loaded({ id: 'button' });
 
       const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
@@ -241,7 +241,7 @@ describe('docgen open service', () => {
         docgenProvider: provider,
       });
 
-      await service.queries.getDocgen.loaded({ id: 'button' });
+      await service.queries.docgen.loaded({ id: 'button' });
 
       const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
@@ -340,7 +340,7 @@ describe('docgen open service', () => {
         docgenProvider: outer,
       });
 
-      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
+      await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({ name: 'inner-name', description: 'outer-description' })
       );
     });
@@ -369,7 +369,7 @@ describe('docgen open service', () => {
         docgenProvider: providerB,
       });
 
-      await expect(service.queries.getDocgen.loaded({ id: 'button' })).resolves.toEqual(
+      await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
         makeDocgenPayload({
           name: 'A-name',
           description: 'B-description',
@@ -387,7 +387,7 @@ describe('docgen open service', () => {
       });
 
       await service.commands.extractDocgen({ id: 'button' });
-      expect(service.queries.getDocgen.get({ id: 'button' })).toBeUndefined();
+      expect(service.queries.docgen.get({ id: 'button' })).toBeUndefined();
     });
   });
 });

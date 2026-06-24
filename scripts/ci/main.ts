@@ -10,6 +10,7 @@ import {
   build_windows,
   check,
   commonJobsNoOpJob,
+  defineCircleciCompletion,
   knip,
   lint,
   fmt,
@@ -106,6 +107,11 @@ function generateConfig(workflow: Workflow) {
   const isDebugging = filteredJobs.length !== jobs.length;
 
   const ensuredJobs = ensureRequiredJobs(filteredJobs);
+
+  // Append a completion job that depends on every other job in the workflow.
+  // It acts as a single status check for GitHub branch protection: it only runs
+  // (and reports success) once every required job has finished successfully.
+  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {

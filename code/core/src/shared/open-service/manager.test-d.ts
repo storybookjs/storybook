@@ -5,7 +5,7 @@ import { getService } from './manager.ts';
 
 describe('typed core getService (manager)', () => {
   it('types known core service ids without an explicit generic', () => {
-    expectTypeOf(getService('core/docgen').queries.getDocgen.get).parameter(0).toEqualTypeOf<{
+    expectTypeOf(getService('core/docgen').queries.docgen.get).parameter(0).toEqualTypeOf<{
       id: string;
     }>();
   });

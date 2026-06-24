@@ -20,7 +20,7 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     workingDir: options.workingDir ?? process.cwd(),
     getIndex: options.getIndex,
     provider: options.docgenProvider,
-    queryName: 'getDocgen',
+    queryName: 'docgen',
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
   });

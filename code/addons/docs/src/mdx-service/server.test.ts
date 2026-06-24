@@ -66,14 +66,12 @@ describe('mdx open service', () => {
       provider: mockProvider,
     });
 
-    await expect(
-      service.queries.getMdxForComponent.loaded({ id: 'button' })
-    ).resolves.toMatchObject({
+    await expect(service.queries.mdxForComponent.loaded({ id: 'button' })).resolves.toMatchObject({
       id: 'button',
       docs: { 'button--docs': { content: '# button' } },
     });
     await expect(
-      service.queries.getMdxForComponent.loaded({ id: 'intro--docs' })
+      service.queries.mdxForComponent.loaded({ id: 'intro--docs' })
     ).resolves.toMatchObject({
       id: 'intro--docs',
       docs: { 'intro--docs': { content: '# intro' } },

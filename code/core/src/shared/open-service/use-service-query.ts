@@ -1,8 +1,9 @@
 /**
  * React hook to subscribe to a service query with fine-grained reactivity.
  *
- * Backed by `useSyncExternalStore`, so it integrates correctly with React 18+ concurrent
- * features and works in both manager and preview contexts without any adapter.
+ * Backed by React's `useSyncExternalStore`, so it integrates correctly with React 18+ concurrent
+ * features. Manager-only: that hook does not exist before React 18, and the preview must keep
+ * supporting React 16/17, so preview docs blocks use the shim-based `useQuerySubscription` instead.
  *
  * Returns a {@link QueryState}: the current `data` plus the `load` lifecycle (`status`,
  * `loadStatus`, `error`, and the derived booleans). Re-renders whenever the subscribed query emits
@@ -22,7 +23,7 @@ import type { Query, QueryState } from './types.ts';
 /**
  * Subscribe to a service query and receive reactive {@link QueryState} updates in a React component.
  *
- * Pass the query directly (e.g. `myService.queries.getThing`) so its input/output types infer per
+ * Pass the query directly (e.g. `myService.queries.thing`) so its input/output types infer per
  * query. The service must exist: if it may be absent (e.g. behind a feature flag), guard at a parent
  * and conditionally render the component that calls this hook.
  *
@@ -32,7 +33,7 @@ import type { Query, QueryState } from './types.ts';
  *
  * @example
  * ```tsx
- * const { data, isInitialLoading, isError } = useServiceQuery(recordService.queries.getRecordFields, {
+ * const { data, isInitialLoading, isError } = useServiceQuery(recordService.queries.recordFields, {
  *   entryId: 'a',
  * });
  * ```
@@ -99,5 +100,6 @@ export function useServiceQuery(
     return snapshotRef.current as QueryState<unknown>;
   }, []);
 
+  // Only runs in manager, so React 18 is available.
   return React.useSyncExternalStore(subscribe, getSnapshot);
 }

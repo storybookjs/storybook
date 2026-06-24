@@ -967,7 +967,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
     engine: cardEngine,
     filePath,
     exportName,
-  } = getDocgenRenderData(c, a.hasPropTypeError);
+  } = docgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -1191,7 +1191,7 @@ type DocgenRenderData = {
   exportName?: string;
 };
 
-const getDocgenRenderData = (
+const docgenRenderData = (
   component: ComponentManifestLikeWithDocgen,
   hasPropTypeError: boolean
 ): DocgenRenderData => {
@@ -1234,10 +1234,7 @@ function renderSubcomponentNote(
   subcomponent: ComponentManifestLikeWithDocgen
 ) {
   const hasPropTypeError = Boolean(subcomponent.error);
-  const { parsed, engine, filePath, exportName } = getDocgenRenderData(
-    subcomponent,
-    hasPropTypeError
-  );
+  const { parsed, engine, filePath, exportName } = docgenRenderData(subcomponent, hasPropTypeError);
   const propEntries = Object.entries(parsed?.props ?? {});
   const tags =
     subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'

@@ -68,7 +68,7 @@ import {
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
 import { applyStatePatch } from './service-sync.ts';
-import type { StaticLoader } from './static-fetch.ts';
+import { fetchStaticSnapshot, shouldUseBrowserStaticLoader } from './static-fetch.ts';
 import { rethrowAsync, validateSchema, validateSchemaSync } from './service-validation.ts';
 import type {
   AnySchema,
@@ -1143,13 +1143,14 @@ function subscribeToQuery<TState>(
 }
 
 /**
- * When a browser static loader is active, queries with `staticPath` fetch prebuilt JSON instead of
- * running their authored `load` hook (which typically invokes server-only commands).
+ * In a static Storybook build, queries with `staticPath` fetch prebuilt JSON instead of running
+ * their authored `load` hook (which typically invokes server-only commands). The fetch is defined
+ * inline via {@link fetchStaticSnapshot} rather than injected, and is only reached when
+ * {@link shouldUseBrowserStaticLoader} is true.
  */
 function buildQueryDefinitionsWithStaticLoader<TState>(
   serviceId: ServiceId,
   queries: Record<string, RuntimeQueryDefinition<TState>>,
-  staticLoader: StaticLoader,
   setState: CommandSelf<TState>['setState']
 ): Map<string, RuntimeQueryDefinition<TState>> {
   return new Map(
@@ -1166,7 +1167,7 @@ function buildQueryDefinitionsWithStaticLoader<TState>(
           ...queryDef,
           load: async (input: unknown) => {
             const logicalPath = resolveStaticPath(serviceId, name, { staticPath }, input);
-            const snapshot = await staticLoader(logicalPath, {
+            const snapshot = await fetchStaticSnapshot(logicalPath, {
               serviceId,
               queryName: name,
               input,
@@ -1215,7 +1216,6 @@ export function createServiceRuntime<
   def: ServiceDefinition<TState, TQueries, TCommands>,
   runtimeOptions: {
     registryApi: ServiceRegistryApi;
-    staticLoader?: StaticLoader;
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
@@ -1229,7 +1229,7 @@ export function createServiceRuntime<
   const state = deepSignal(rawState as object) as TState;
   const getStateSnapshot = (): TState => structuredClone(rawState);
   const commandSelf = createCommandSelf(state);
-  const { registryApi, staticLoader } = runtimeOptions;
+  const { registryApi } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({
     self: commandSelf,
     getService: registryApi.getService,
@@ -1250,11 +1250,13 @@ export function createServiceRuntime<
   let loadCommands = commands as CommandSelf<TState>['commands'];
   const remoteCommandNames = new Set<string>();
 
-  const queryDefinitions = staticLoader
+  // Static builds inject `CONFIG_TYPE = 'PRODUCTION'` into the browser, so `staticPath` queries
+  // fetch prebuilt snapshots inline. The dev server and the Node static-build pipeline leave it
+  // undefined, so they keep running the authored `load` hooks (the static build generates the files).
+  const queryDefinitions = shouldUseBrowserStaticLoader()
     ? buildQueryDefinitionsWithStaticLoader(
         def.id,
         def.queries as Record<string, RuntimeQueryDefinition<TState>>,
-        staticLoader,
         commandSelf.setState
       )
     : new Map<string, RuntimeQueryDefinition<TState>>(

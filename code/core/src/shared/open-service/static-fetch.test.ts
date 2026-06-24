@@ -11,7 +11,11 @@ import { clearRegistry, serviceRegistryApi } from './service-registry.ts';
 import { registerService as registerPreviewService } from './preview.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { staticLoadSyncServiceDef } from './sync-test/static-load/definition.ts';
-import { createBrowserStaticLoader, type StaticLoaderContext } from './static-fetch.ts';
+import {
+  fetchStaticSnapshot,
+  shouldUseBrowserStaticLoader,
+  type StaticLoaderContext,
+} from './static-fetch.ts';
 
 const staticFetchServiceDef = defineService({
   id: 'internal-fixture/static-fetch',
@@ -49,45 +53,53 @@ const staticLoaderContext = {
   input: { id: 'alpha' },
 } satisfies StaticLoaderContext;
 
-describe('createBrowserStaticLoader', () => {
-  const originalConfigType = globalThis.CONFIG_TYPE;
-
+describe('shouldUseBrowserStaticLoader', () => {
   afterEach(() => {
-    globalThis.CONFIG_TYPE = originalConfigType;
+    vi.unstubAllGlobals();
+  });
+
+  it('is false in development', () => {
+    vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
+
+    expect(shouldUseBrowserStaticLoader()).toBe(false);
+  });
+
+  it('is true in production', () => {
+    vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
+
+    expect(shouldUseBrowserStaticLoader()).toBe(true);
+  });
+});
+
+describe('fetchStaticSnapshot', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it('returns undefined in development', () => {
-    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
-
-    expect(createBrowserStaticLoader()).toBeUndefined();
-  });
-
-  it('fetches snapshots from /services/<logicalPath> in production', async () => {
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
+  it('fetches snapshots from /services/<logicalPath>', async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,
       json: async () => ({ entries: { alpha: 'from-file' } }),
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const loader = createBrowserStaticLoader();
-    const snapshot = await loader!('internal-fixture/static-fetch/alpha.json', staticLoaderContext);
+    const snapshot = await fetchStaticSnapshot(
+      'internal-fixture/static-fetch/alpha.json',
+      staticLoaderContext
+    );
 
     expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/alpha.json');
     expect(snapshot).toEqual({ entries: { alpha: 'from-file' } });
   });
 
   it('rejects when the response is not ok', async () => {
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: false, status: 404, statusText: 'Not Found' }))
     );
 
-    const loader = createBrowserStaticLoader();
-
-    const error = await loader!('missing.json', staticLoaderContext).catch(
+    const error = await fetchStaticSnapshot('missing.json', staticLoaderContext).catch(
       (caught: unknown) => caught
     );
     expect(error).toBeInstanceOf(OpenServiceStaticSnapshotLoadError);
@@ -106,7 +118,6 @@ describe('createBrowserStaticLoader', () => {
   });
 
   it('rejects when fetch fails', async () => {
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
     const cause = new Error('network down');
     vi.stubGlobal(
       'fetch',
@@ -115,9 +126,7 @@ describe('createBrowserStaticLoader', () => {
       })
     );
 
-    const loader = createBrowserStaticLoader();
-
-    await expect(loader!('network.json', staticLoaderContext)).rejects.toMatchObject({
+    await expect(fetchStaticSnapshot('network.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
         queryName: 'getEntry',
@@ -130,7 +139,6 @@ describe('createBrowserStaticLoader', () => {
   });
 
   it('rejects when JSON parsing fails', async () => {
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
     const cause = new SyntaxError('bad json');
     vi.stubGlobal(
       'fetch',
@@ -142,9 +150,7 @@ describe('createBrowserStaticLoader', () => {
       }))
     );
 
-    const loader = createBrowserStaticLoader();
-
-    await expect(loader!('broken.json', staticLoaderContext)).rejects.toMatchObject({
+    await expect(fetchStaticSnapshot('broken.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
         queryName: 'getEntry',
@@ -157,7 +163,6 @@ describe('createBrowserStaticLoader', () => {
   });
 
   it('rejects when the snapshot is not a plain object', async () => {
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
     const received = ['not an object'];
     vi.stubGlobal(
       'fetch',
@@ -167,9 +172,7 @@ describe('createBrowserStaticLoader', () => {
       }))
     );
 
-    const loader = createBrowserStaticLoader();
-
-    const error = await loader!('invalid.json', staticLoaderContext).catch(
+    const error = await fetchStaticSnapshot('invalid.json', staticLoaderContext).catch(
       (caught: unknown) => caught
     );
     expect(error).toBeInstanceOf(OpenServiceStaticSnapshotInvalidError);
@@ -187,20 +190,27 @@ describe('createBrowserStaticLoader', () => {
 });
 
 describe('static loader in service runtime', () => {
-  it('applies fetched snapshots instead of running the authored load command', async () => {
-    const staticLoader = vi.fn(async (logicalPath: string) => {
-      if (logicalPath === 'internal-fixture/static-fetch/alpha.json') {
-        return { entries: { alpha: 'static-alpha' } };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('fetches snapshots inline instead of running the authored load command in production', async () => {
+    vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/services/internal-fixture/static-fetch/alpha.json') {
+        return { ok: true, json: async () => ({ entries: { alpha: 'static-alpha' } }) };
       }
-      if (logicalPath === 'internal-fixture/static-fetch/beta.json') {
-        return { entries: { beta: 'static-beta' } };
+      if (url === '/services/internal-fixture/static-fetch/beta.json') {
+        return { ok: true, json: async () => ({ entries: { beta: 'static-beta' } }) };
       }
-      throw new Error(`Unexpected static path: ${logicalPath}`);
+      throw new Error(`Unexpected static url: ${url}`);
     });
+    vi.stubGlobal('fetch', fetchMock);
 
     const runtime = createServiceRuntime(
       staticFetchServiceDef,
-      { registryApi: serviceRegistryApi, staticLoader },
+      { registryApi: serviceRegistryApi },
       structuredClone(staticFetchServiceDef.initialState)
     );
 
@@ -209,30 +219,19 @@ describe('static loader in service runtime', () => {
 
     expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('static-alpha');
     expect(runtime.queries.getEntry({ id: 'beta' })).toBe('static-beta');
-    expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/alpha.json', {
-      serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
-      input: { id: 'alpha' },
-    });
-    expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/beta.json', {
-      serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
-      input: { id: 'beta' },
-    });
+    expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/alpha.json');
+    expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/beta.json');
   });
 
   it('resolves static-load demo entries through the preview registerService path', async () => {
-    const originalConfigType = globalThis.CONFIG_TYPE;
-    globalThis.CONFIG_TYPE = 'PRODUCTION';
+    vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
 
     const channel = createTestChannel();
     installTestChannel(channel);
     clearRegistry();
     onTestFinished(() => {
-      globalThis.CONFIG_TYPE = originalConfigType;
       clearRegistry();
       installTestChannel(null);
-      vi.restoreAllMocks();
     });
 
     vi.stubGlobal(
@@ -263,7 +262,7 @@ describe('static loader in service runtime', () => {
     );
   });
 
-  it('runs the authored load when no static loader is configured', async () => {
+  it('runs the authored load when not in a static build', async () => {
     const runtime = createServiceRuntime(
       staticFetchServiceDef,
       { registryApi: serviceRegistryApi },

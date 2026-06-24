@@ -422,7 +422,7 @@ If multiple tasks resolve to the same path, their states are deep-merged.
 
 `writeOpenServiceStaticFiles(outputDir)` then writes those logical paths underneath `<outputDir>/services`, converting slash-separated logical keys into native filesystem paths for the current operating system.
 
-In a static Storybook build (`CONFIG_TYPE === 'PRODUCTION'`), manager and preview runtimes pass a browser static loader into `registerService`. For every query that declares `staticPath`, the runtime swaps the authored `load` hook for a fetch of `./services/<serviceId>/<staticPath>` relative to the served HTML root (the same convention as `./index.json`), then applies the JSON snapshot via `applyStatePatch(..., { preserveMissingKeys: true })` so snapshots for one query input do not delete state populated by other inputs. Development mode keeps running `load` normally against the dev server.
+In a static Storybook build (`CONFIG_TYPE === 'PRODUCTION'`), the manager and preview runtimes detect the static build inline via `shouldUseBrowserStaticLoader()` rather than having a loader injected. For every query that declares `staticPath`, the runtime swaps the authored `load` hook for `fetchStaticSnapshot()`, which fetches `./services/<serviceId>/<staticPath>` relative to the served HTML root (the same convention as `./index.json`), then applies the JSON snapshot via `applyStatePatch(..., { preserveMissingKeys: true })` so snapshots for one query input do not delete state populated by other inputs. Development mode and the Node static-build pipeline keep running `load` normally (the static build generates these files by running the real loads).
 
 Static path rules:
 

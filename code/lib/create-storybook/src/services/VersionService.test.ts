@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import { VersionService } from './VersionService';
+import { VersionService } from './VersionService.ts';
 
 vi.mock('storybook/internal/common', async () => {
   const actual = await vi.importActual('storybook/internal/common');
@@ -181,6 +181,14 @@ describe('VersionService', () => {
       const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
 
       expect(integration).toBe('@tanstack/start');
+    });
+
+    it('should detect vike new command', () => {
+      const ancestry = [{ command: 'pnpm create vike@latest --- --react --storybook' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBe('vike');
     });
   });
 

@@ -5,13 +5,13 @@ import { getProjectRoot } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
-import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo';
-import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo';
+import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
+import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
+import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type {
   GetArgTypesDataOptions,
   ReactDocgenConfig,
-} from './componentManifest/reactDocgen/utils';
+} from './componentManifest/reactDocgen/utils.ts';
 
 type TypescriptOptionsWithDocgen = {
   reactDocgen?: ReactDocgenConfig;
@@ -26,9 +26,13 @@ export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
-export { manifests as experimental_manifests } from './componentManifest/generator';
+export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
-export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
+export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
+
+export { experimental_docgenProvider } from './docgen/preset.ts';
+
+export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -135,3 +139,5 @@ export async function internal_getArgTypesData(
 
   return argTypesData;
 }
+
+export const optimizeViteDeps: string[] = ['react-dom/test-utils'];

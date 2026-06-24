@@ -8,11 +8,13 @@ import type {
   Renderer,
   StoryId,
 } from 'storybook/internal/types';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { useStory } from './useStory';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type PureStoryProps = ComponentProps<typeof PureStory>;
 
@@ -61,7 +63,7 @@ export type StoryProps = StoryRefProps & StoryParameters;
 export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryId => {
   const { of, meta } = props as StoryRefProps;
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   if (meta) {
@@ -113,7 +115,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   };
 };
 
-const Story: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: false }) => {
+const StoryImpl: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: false }) => {
   const context = useContext(DocsContext);
   const storyId = getStoryId(props, context);
   const story = useStory(storyId, context);
@@ -130,4 +132,4 @@ const Story: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: f
   return <PureStory {...storyProps} />;
 };
 
-export { Story };
+export const Story = withMdxComponentOverride('Story', StoryImpl);

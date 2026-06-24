@@ -6,10 +6,10 @@ import { Select } from 'storybook/internal/components';
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Icons } from '../../components/components/icon/icon';
-import type { ToolbarItem, ToolbarMenuProps } from '../types';
-import { getSelectedItem } from '../utils/get-selected';
-import { registerShortcuts } from '../utils/register-shortcuts';
+import { Icons } from '../../components/components/icon/icon.tsx';
+import type { ToolbarItem, ToolbarMenuProps } from '../types.ts';
+import { getSelectedItem } from '../utils/get-selected.ts';
+import { registerShortcuts } from '../utils/register-shortcuts.ts';
 
 // We can't remove the Icons component just yet because there's no way for now to import icons
 // in the preview directly. Before having a better solution, we are going to keep the Icons component
@@ -29,7 +29,14 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
   name,
   description,
-  toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle, shortcuts },
+  toolbar: {
+    icon: _icon,
+    items,
+    title: _title,
+    preventDynamicIcon,
+    dynamicTitle = true,
+    shortcuts,
+  },
 }) => {
   const api = useStorybookApi();
   const [globals, updateGlobals, storyGlobals] = useGlobals();
@@ -132,6 +139,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
       icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+      showSelectedOptionTitle={dynamicTitle}
     >
       {title}
     </Select>

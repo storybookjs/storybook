@@ -1,6 +1,6 @@
-import { error, log, shouldLog } from '../logger';
-import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
-import { getPromptProvider } from './prompt-config';
+import { error, log, shouldLog } from '../logger/index.ts';
+import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
+import { getPromptProvider } from './prompt-config.ts';
 import type {
   BasePromptOptions,
   ConfirmPromptOptions,
@@ -13,7 +13,7 @@ import type {
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
-} from './prompt-provider-base';
+} from './prompt-provider-base.ts';
 
 // Re-export types for convenience
 export type {

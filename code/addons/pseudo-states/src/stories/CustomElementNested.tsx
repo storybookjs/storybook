@@ -1,4 +1,4 @@
-import './CustomElement';
+import './CustomElement.tsx';
 
 export class CustomElementNested extends HTMLElement {
   constructor() {

@@ -2,8 +2,8 @@ import {
   EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
   EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
   PSEUDO_STATES,
-} from '../constants';
-import { splitSelectors } from './splitSelectors';
+} from '../constants.ts';
+import { splitSelectors } from './splitSelectors.ts';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
 const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
@@ -69,6 +69,9 @@ const extractPseudoStates = (selector: string) => {
       // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
       // The negative lookbehind ensures we don't replace :is() with :is(*).
       .replaceAll(/(?<!is)\(\)/g, '(*)')
+      // If removing pseudo-state selectors left a combinator without a right-hand selector,
+      // keep the selector valid by targeting any child/sibling.
+      .replace(/([>+~])\s*(?=$|[,)])/g, '$1 *')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
       .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
 
@@ -198,24 +201,28 @@ const rewriteRuleContainer = (
       // @ts-expect-error We're adding this nonstandard property below
       numRewritten = cssRule.__pseudoStatesRewrittenCount;
     } else {
-      if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
-        numRewritten = rewriteRuleContainer(
-          cssRule as CSSGroupingRule,
-          rewriteLimit - count,
-          forShadowDOM
-        );
-      } else {
-        if (!('selectorText' in cssRule)) {
-          continue;
-        }
-        const styleRule = cssRule as CSSStyleRule;
+      let styleRule = cssRule as CSSStyleRule;
+
+      // Modify the rule, if it contains a pseudo state
+      if ('selectorText' in styleRule) {
         if (matchOne.test(styleRule.selectorText)) {
           const newRule = rewriteRule(styleRule, forShadowDOM);
           ruleContainer.deleteRule(index);
           ruleContainer.insertRule(newRule, index);
+          styleRule = ruleContainer.cssRules[index] as CSSStyleRule;
           numRewritten = 1;
         }
       }
+
+      // If it has nested rules, check them as well
+      if ('cssRules' in styleRule && (styleRule.cssRules as CSSRuleList).length) {
+        numRewritten = rewriteRuleContainer(
+          styleRule as CSSGroupingRule,
+          rewriteLimit - count,
+          forShadowDOM
+        );
+      }
+
       // @ts-expect-error We're adding this nonstandard property
       cssRule.__processed = true;
       // @ts-expect-error We're adding this nonstandard property

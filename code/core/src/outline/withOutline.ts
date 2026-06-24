@@ -2,13 +2,14 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useEffect, useMemo } from 'storybook/preview-api';
 
-import { PARAM_KEY } from './constants';
-import { addOutlineStyles, clearStyles } from './helpers';
-import outlineCSS from './outlineCSS';
+import { PARAM_KEY } from './constants.ts';
+import { addOutlineStyles, clearStyles } from './helpers.ts';
+import outlineCSS from './outlineCSS.ts';
 
 export const withOutline: DecoratorFunction = (StoryFn, context) => {
   const globals = context.globals || {};
-  const isActive = [true, 'true'].includes(globals[PARAM_KEY]);
+  const isDisabled = context.parameters?.[PARAM_KEY]?.disable;
+  const isActive = !isDisabled && [true, 'true'].includes(globals[PARAM_KEY]);
   const isInDocs = context.viewMode === 'docs';
 
   const outlineStyles = useMemo(() => {

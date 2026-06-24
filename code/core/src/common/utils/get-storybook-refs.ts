@@ -1,13 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
 import type { Options, Ref } from 'storybook/internal/types';
 
 import * as pkg from 'empathic/package';
-import * as resolve from 'empathic/resolve';
 
-import { getProjectRoot } from './paths';
+import { getProjectRoot } from './paths.ts';
+import { readDependencyManifest } from './read-dependency-manifest.ts';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
   const location = pkg.up({ cwd: options.configDir, last: getProjectRoot() });
@@ -22,23 +21,10 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
 
   const list = await Promise.all(
     deps.map(async (d) => {
-      try {
-        const l = resolve.from(directory, join(d, 'package.json'));
+      const manifest = await readDependencyManifest(directory, d);
 
-        const { storybook, name, version } =
-          JSON.parse(await readFile(l, { encoding: 'utf8' })) || {};
-
-        if (storybook?.url) {
-          return { id: name, ...storybook, version };
-        }
-      } catch (error) {
-        if ((error as any).code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
-          // silent warning because user can't do anything about it
-          // "package.json" is not part of the package's "exports" field in its package.json
-          return undefined;
-        }
-        logger.warn(`unable to find package.json for ${d}`);
-        return undefined;
+      if (manifest?.storybook?.url) {
+        return { id: manifest.name, ...manifest.storybook, version: manifest.version };
       }
       return undefined;
     })
@@ -58,7 +44,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-const checkRef = (url: string) =>
+export const checkRef = (url: string) =>
   fetch(`${url}/iframe.html`).then(
     async ({ ok, status }) => {
       if (ok) {

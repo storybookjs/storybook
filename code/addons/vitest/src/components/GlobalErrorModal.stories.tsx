@@ -6,8 +6,8 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { storeOptions } from '../constants';
-import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal';
+import { storeOptions } from '../constants.ts';
+import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal.tsx';
 
 type Story = StoryObj<typeof meta>;
 
@@ -81,7 +81,7 @@ export const FatalError: Story = {
     const canvas = within(canvasElement.parentElement!);
     const button = canvas.getByText('Open modal');
     await userEvent.click(button);
-    await expect(canvas.findByText('Storybook Tests error details')).resolves.toBeInTheDocument();
+    await expect(canvas.findByText('Storybook Test Error Details')).resolves.toBeInTheDocument();
   },
 };
 

@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import {
+  STORY_FILE_TEST_REGEXP,
+  normalizeStories,
+  optionalEnvToBoolean,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -13,33 +17,40 @@ import {
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
-import { readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
+  DocgenProvider,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
   StorybookConfigRaw,
+  StoryDocsProvider,
 } from 'storybook/internal/types';
+
+import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 
 import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../shared/utils/module';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel';
-import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
-import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
-import { initializeChecklist } from '../utils/checklist';
-import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { parseStaticDir } from '../utils/server-statics';
-import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
+import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
+import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
+import { initializeChecklist } from '../utils/checklist.ts';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
+import { initializeSaveStory } from '../utils/save-story/save-story.ts';
+import { parseStaticDir } from '../utils/server-statics.ts';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
+import { getWsToken } from './wsToken.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -92,7 +103,7 @@ export const favicon = async (
     .reduce((l1, l2) => l1.concat(l2), []);
 
   if (faviconPaths.length > 1) {
-    logger.warn(dedent`
+    logger.debug(dedent`
       Looks like multiple favicons were detected. Using the first one.
 
       ${faviconPaths.join(', ')}
@@ -175,12 +186,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
   const packageManager = JsPackageManagerFactory.getPackageManager({
     configDir: options.configDir,
   });
-  if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
-      await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, { ...opts, packageManager });
-    };
-  }
+  removeAddon = async (id: string, opts: RemoveAddonOptions) => {
+    await telemetry('remove', { addon: id, source: 'api' });
+    return removeAddonBase(id, { ...opts, packageManager });
+  };
   return { ...extension, removeAddon };
 };
 
@@ -192,30 +201,44 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  disableTelemetry: options.disableTelemetry === true,
+  channelOptions: {
+    ...(existing?.channelOptions ?? {}),
+    ...(options.configType === 'DEVELOPMENT' ? { wsToken: getWsToken() } : {}),
+  },
+  disableTelemetry:
+    options.disableTelemetry || optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  argTypeTargetsV7: true,
-  legacyDecoratorFileOrder: false,
-  disallowImplicitActionsInRenderV8: true,
-  viewport: true,
-  highlight: true,
-  controls: true,
-  interactions: true,
   actions: true,
+  argTypeTargetsV7: true,
   backgrounds: true,
-  outline: true,
+  changeDetection: true,
+  componentsManifest: false,
+  controls: true,
+  disallowImplicitActionsInRenderV8: true,
+  highlight: true,
+  interactions: true,
+  legacyDecoratorFileOrder: false,
   measure: true,
+  outline: true,
   sidebarOnboardingChecklist: true,
+  viewport: true,
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
-  createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
+  test: STORY_FILE_TEST_REGEXP,
+  createIndex: async (fileName, options) => {
+    const code = (await readFile(fileName, 'utf-8')).toString();
+    if (code.trim().length === 0) {
+      logger.debug(`The file ${fileName} is empty. Skipping indexing.`);
+      return [];
+    }
+    return loadCsf(code, { ...options, fileName }).parse().indexInputs;
+  },
 };
 
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
@@ -250,21 +273,23 @@ export const managerHead = async (_: any, options: Options) => {
   return '';
 };
 
+export const channelToken = async (value: string | undefined) => {
+  return value;
+};
+
 export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  const coreOptions = await options.presets.apply('core');
-
-  initializeChecklist();
-  initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
-
-  initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
-  initGhostStoriesChannel(channel, options, coreOptions);
-  initOpenInEditorChannel(channel, options, coreOptions);
-  initPreviewInitializedChannel(channel, options, coreOptions);
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
+  initializeWhatsNew(channel, options);
+  initializeSaveStory(channel, options);
+  initFileSearchChannel(channel, options);
+  initCreateNewStoryChannel(channel, options);
+  initGhostStoriesChannel(channel, options);
+  initOpenInEditorChannel(channel);
+  initTelemetryChannel(channel);
 
   return channel;
 };
@@ -292,6 +317,52 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  if (globalThis.STORYBOOK_SERVICES_LOADED) {
+    throw new Error(
+      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
+    );
+  }
+  globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
+  // generator, not a promise.
+  const storyIndexGenerator =
+    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  registerModuleGraphService({
+    channel: options.channel,
+    getIndex: () => storyIndexGenerator.getIndex(),
+    workingDir: process.cwd(),
+    presets: options.presets,
+  });
+
+  const features = await options.presets.apply('features');
+
+  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
+  // so registering it would force full story-index generation during manager-only builds (and
+  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
+  // gate around index.json and writeManifests in build-static.ts.
+  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+    const [docgenProvider, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+      options.presets.apply<StoryDocsProvider>(
+        'experimental_storyDocsProvider',
+        async () => undefined
+      ),
+    ]);
+
+    registerDocgenServices({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      docgenProvider,
+      storyDocsProvider,
+      workingDir: process.cwd(),
+    });
+  }
 };
 
 // Store the promise (not the result) to prevent race conditions.

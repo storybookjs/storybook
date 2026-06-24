@@ -56,6 +56,8 @@ type CheckboxConfig = NormalizedOptionsConfig & { isInline: boolean };
 type CheckboxProps = ControlProps<OptionsMultiSelection> & CheckboxConfig;
 export const CheckboxControl: FC<CheckboxProps> = ({
   name,
+  storyId,
+  controlsId,
   options,
   value,
   onChange,
@@ -88,7 +90,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
     setSelected(selectedKeys(value || [], options));
   }, [value]);
 
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <Wrapper $isInline={isInline}>

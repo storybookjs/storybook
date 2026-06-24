@@ -1,6 +1,6 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 
-import { cleanupTypeImports } from './csf-factories-utils';
+import { cleanupTypeImports } from './csf-factories-utils.ts';
 
 // Name of types that should be removed from the import list
 const typesDisallowList = [

@@ -28,6 +28,11 @@ export const Secondary: Story = {
   args: {
     label: 'Button',
   },
+  globals: {
+    backgrounds: {
+      grid: true,
+    },
+  },
 };
 
 export const ForcedBgLight: Story = {

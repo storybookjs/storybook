@@ -1,7 +1,7 @@
 import { Button } from 'storybook/internal/components';
 
-import preview from '../../../../../.storybook/preview';
-import { AbstractToolbar } from './Toolbar';
+import preview from '../../../../../.storybook/preview.tsx';
+import { AbstractToolbar } from './Toolbar.tsx';
 
 const Children = () => (
   <>

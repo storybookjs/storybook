@@ -10,7 +10,7 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
+import { esMain } from '../utils/esmain.ts';
 
 program
   .name('publish')
@@ -129,7 +129,7 @@ const publishAllPackages = async ({
   dryRun?: boolean;
 }) => {
   console.log(`📦 Publishing all packages...`);
-  const command = `yarn workspaces foreach --all --parallel --no-private --verbose npm publish --tolerate-republish --tag ${tag}`;
+  const command = `yarn workspaces foreach --all --parallel --no-private --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
   if (verbose) {
     console.log(`📦 Executing: ${command}`);
   }

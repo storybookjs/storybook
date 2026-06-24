@@ -11,11 +11,12 @@ import { global } from '@storybook/global';
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
+import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
-import merge from '../lib/merge';
-import type { ModuleFn } from '../lib/types';
-import type { State } from '../root';
+import merge from '../lib/merge.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import type { State } from '../root.tsx';
 
 const { document } = global;
 
@@ -102,40 +103,68 @@ export interface SubAPI {
    * account customisations requested by the end user via a layoutCustomisations function.
    */
   getNavSizeWithCustomisations: (navSize: number) => number;
+  /**
+   * Attempts to focus an element identified by its ID.
+   *
+   * @param elementId - The id of the element to focus.
+   * @param options - Options for focusing the element.
+   * @param options.forceFocus - Whether to make the element focusable even though it wasn't.
+   * @param options.select - Whether to call select() on the element after focusing it.
+   * @param options.poll - Whether to poll for the element if it is not immediately available.
+   *   Defaults to true. When true, polls every 50ms for up to 500ms.
+   * @returns Whether the element was successfully focused. Returns a Promise when polling.
+   */
+  focusOnUIElement: (
+    elementId?: string,
+    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+  ) => boolean | Promise<boolean>;
 }
 
 type PartialSubState = Partial<SubState>;
 
-export const defaultLayoutState: SubState = {
-  ui: {
-    enableShortcuts: true,
-  },
-  layout: {
-    initialActive: ActiveTabs.CANVAS,
-    showToolbar: true,
-    navSize: 300,
-    bottomPanelHeight: 300,
-    rightPanelWidth: 400,
-    recentVisibleSizes: {
-      navSize: 300,
-      bottomPanelHeight: 300,
-      rightPanelWidth: 400,
+export const DEFAULT_NAV_SIZE = 300;
+export const DEFAULT_BOTTOM_PANEL_HEIGHT = 300;
+export const DEFAULT_RIGHT_PANEL_WIDTH = 400;
+
+export const getDefaultLayoutState: () => SubState = () => {
+  return {
+    ui: {
+      enableShortcuts: true,
     },
-    panelPosition: 'bottom',
-    showTabs: true,
-  },
-  layoutCustomisations: {
-    showSidebar: undefined,
-    showToolbar: undefined,
-  },
-  selectedPanel: undefined,
-  theme: create(),
+    layout: {
+      initialActive: ActiveTabs.CANVAS,
+      navSize: DEFAULT_NAV_SIZE,
+      bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
+      rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
+      recentVisibleSizes: {
+        navSize: DEFAULT_NAV_SIZE,
+        bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
+        rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
+      },
+      panelPosition: 'bottom',
+      showNav: true,
+      showPanel: true,
+      showTabs: true,
+      showToolbar: true,
+    },
+    layoutCustomisations: {
+      showPanel: undefined,
+      showSidebar: undefined,
+      showToolbar: undefined,
+    },
+    selectedPanel: undefined,
+    theme: create(),
+  };
 };
 
 export const focusableUIElements = {
+  addonPanel: 'storybook-panel-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',
+  showAddonPanel: 'storybook-show-addon-panel',
+  sidebarRegion: 'storybook-sidebar-region',
+  showSidebar: 'storybook-show-sidebar',
 };
 
 const getIsNavShown = (state: State) => {
@@ -165,6 +194,81 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
         ? layoutState.rightPanelWidth
         : layoutState.recentVisibleSizes.rightPanelWidth,
   };
+};
+
+/**
+ * Merges layout options into the existing layout state and translates
+ * `showNav` / `showPanel` booleans into the underlying size fields.
+ *
+ * Layout keys can be provided either at the top level (deprecated) or under
+ * `options.layout` (preferred). Nested layout keys take precedence.
+ *
+ * Numeric sizes are merged in before applying show/hide flags, so
+ * `recentVisibleSizes` is captured from the latest size values.
+ */
+const applyLayoutOptions = (
+  layoutState: API_Layout,
+  options: { layout?: Partial<API_Layout>; [key: string]: any },
+  singleStory: boolean
+) => {
+  const layoutKeys = Object.keys(layoutState);
+  const layoutAtTopLevel = pick(options, layoutKeys);
+
+  for (const key of Object.keys(layoutAtTopLevel)) {
+    deprecate(
+      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ layout: { ${key}: ... } })\` instead.`
+    );
+  }
+
+  const mergedLayoutOptions = toMerged(layoutAtTopLevel, options.layout || {});
+  const { showPanel, showNav } = mergedLayoutOptions;
+
+  // Safety net: drop any unknown keys that aren't part of API_Layout.
+  const typedLayoutKeys = layoutKeys as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(mergedLayoutOptions, typedLayoutKeys));
+
+  // singleStory always hides the sidebar; otherwise honor showSidebar.
+  if (showNav === false || singleStory) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.navSize = 0;
+  } else if (showNav === true) {
+    nextLayoutState.navSize = nextLayoutState.recentVisibleSizes.navSize;
+  }
+
+  if (showPanel === false) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.bottomPanelHeight = 0;
+    nextLayoutState.rightPanelWidth = 0;
+  } else if (showPanel === true) {
+    nextLayoutState.bottomPanelHeight = nextLayoutState.recentVisibleSizes.bottomPanelHeight;
+    nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
+  }
+
+  return nextLayoutState;
+};
+
+/**
+ * Merges ui options into the existing ui state.
+ *
+ * Ui keys can be provided either at the top level (deprecated) or under
+ * `options.ui` (preferred). Nested ui keys take precedence.
+ *
+ * Numeric sizes are merged in before applying show/hide flags, so
+ * `recentVisibleSizes` is captured from the latest size values.
+ */
+const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: string]: any }) => {
+  const uiKeys = Object.keys(uiState);
+  const uiAtTopLevel = pick(options, uiKeys);
+
+  for (const key of Object.keys(uiAtTopLevel)) {
+    deprecate(
+      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ ui: { ${key}: ... } })\` instead.`
+    );
+  }
+
+  // Safety net: drop any unknown keys that aren't part of API_UI.
+  const typedUiKeys = uiKeys as (keyof API_UI)[];
+  return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
 };
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
@@ -330,24 +434,31 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     /**
      * Attempts to focus (and select) an element identified by its ID. It is the responsibility of
      * the callee to ensure that the element is present in the DOM and that no focus trap is
-     * available. This API polls and attempts to perform the focus for a set duration (max 500ms),
-     * so that race conditions can be avoided with the current API design. Because this API is
-     * historically synchronous, it cannot report errors or failure to focus. It fails silently.
+     * available. When polling is enabled, this API polls and attempts to perform the focus for a
+     * set duration (max 500ms), so that race conditions can be avoided with the current API
+     * design.
      *
      * @param elementId The id of the element to focus.
-     * @param select Whether to call select() on the element after focusing it.
+     * @param options When a boolean, treated as the `select` option for backwards compatibility.
+     *   When an object, may contain `select` and `poll` options.
+     * @returns Whether the element was successfully focused. Returns a Promise when polling.
      */
-    focusOnUIElement(elementId?: string, select?: boolean) {
+    focusOnUIElement(
+      elementId?: string,
+      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+    ): boolean | Promise<boolean> {
       // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
       // ways to make this API more robust to focus-trap race conditions.
 
-      if (!elementId) {
-        return;
-      }
+      const {
+        forceFocus = false,
+        select = false,
+        poll = true,
+      } = typeof options === 'boolean' ? { select: options } : (options ?? {});
 
-      const startTime = Date.now();
-      const maxDuration = 500;
-      const pollInterval = 50;
+      if (!elementId) {
+        return false;
+      }
 
       const attemptFocus = () => {
         const element = document.getElementById(elementId);
@@ -356,7 +467,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         }
 
         element.focus();
-        if (element !== document.activeElement) {
+        if (
+          element !== document.activeElement &&
+          forceFocus &&
+          element.getAttribute('tabindex') === null
+        ) {
+          element.setAttribute('tabindex', '-1');
+          element.focus();
+        }
+
+        if (element !== document.activeElement && element.id !== document.activeElement?.id) {
           return false;
         }
 
@@ -367,41 +487,50 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       };
 
       if (attemptFocus()) {
-        return;
+        return true;
+      }
+
+      if (!poll) {
+        return false;
       }
 
       // Poll every 50ms for up to 500ms to account for race conditions.
-      const intervalId = setInterval(() => {
-        const elapsed = Date.now() - startTime;
+      return new Promise<boolean>((resolve) => {
+        const startTime = Date.now();
+        const maxDuration = 500;
+        const pollInterval = 50;
 
-        if (elapsed >= maxDuration) {
-          clearInterval(intervalId);
-          return;
-        }
+        const intervalId = setInterval(() => {
+          const elapsed = Date.now() - startTime;
 
-        if (attemptFocus()) {
-          clearInterval(intervalId);
-        }
-      }, pollInterval);
+          if (attemptFocus()) {
+            clearInterval(intervalId);
+            resolve(true);
+            return;
+          }
+
+          if (elapsed >= maxDuration) {
+            clearInterval(intervalId);
+            resolve(false);
+          }
+        }, pollInterval);
+      });
     },
 
     getInitialOptions() {
-      const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
+      const userConfig = provider.getConfig();
+      const defaultLayoutState = getDefaultLayoutState();
+
+      const { theme, selectedPanel, layoutCustomisations } = userConfig;
 
       return {
         ...defaultLayoutState,
-        layout: {
-          ...toMerged(
-            defaultLayoutState.layout,
-            pick(options, Object.keys(defaultLayoutState.layout))
-          ),
-          ...(singleStory && { navSize: 0 }),
-        },
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -459,18 +588,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = {
-        ...layout,
-        ...(options.layout || {}),
-        ...pick(options, Object.keys(layout)),
-        ...(singleStory && { navSize: 0 }),
-      };
+      const updatedLayout = applyLayoutOptions(layout, options, !!singleStory);
 
-      const updatedUi = {
-        ...ui,
-        ...options.ui,
-        ...toMerged(options.ui || {}, pick(options, Object.keys(ui))),
-      };
+      const updatedUi = applyUiOptions(ui, options);
 
       const updatedTheme = {
         ...theme,

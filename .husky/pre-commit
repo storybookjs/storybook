@@ -1,0 +1,3 @@
+if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
+  yarn lint-staged
+fi

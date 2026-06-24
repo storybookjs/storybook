@@ -1,4 +1,4 @@
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -23,8 +23,8 @@ import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
-import type { TypescriptOptions } from '../types';
-import { getVirtualModules } from './virtual-module-mapping';
+import type { TypescriptOptions } from '../types.ts';
+import { getVirtualModules } from './virtual-module-mapping.ts';
 
 const { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } = webpackModule;
 

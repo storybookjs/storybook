@@ -5,11 +5,11 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
-import { getCurrentVersion } from './get-current-version';
-import type { Change } from './utils/get-changes';
-import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes';
-import type { PullRequestInfo } from './utils/get-github-info';
+import { esMain } from '../utils/esmain.ts';
+import { getCurrentVersion } from './get-current-version.ts';
+import type { Change } from './utils/get-changes.ts';
+import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes.ts';
+import type { PullRequestInfo } from './utils/get-github-info.ts';
 
 program
   .name('generate-pr-description')
@@ -53,7 +53,6 @@ const CHANGE_TITLES_TO_IGNORE = [
   /\[ci skip\]/i,
   /^Update CHANGELOG\.md for.*/i,
   /^Release: (Pre)?(Patch|Minor|Major|Release).*\d+$/i,
-  /^Update \.\/docs\/versions/,
 ];
 
 export const mapToChangelist = ({
@@ -90,7 +89,7 @@ export const mapToChangelist = ({
             Object.keys(LABELS_BY_IMPORTANCE).indexOf(b)
         )[0] || 'unknown') as keyof typeof LABELS_BY_IMPORTANCE;
 
-      return `- [ ] **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${change.links.pull}${
+      return `- **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${change.links.pull}${
         !unpickedPatches && change.labels?.includes('patch:yes') ? ' (will also be patched)' : ''
       }`;
     })

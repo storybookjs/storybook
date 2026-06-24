@@ -3,15 +3,25 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Container = styled.div(({ theme }) => ({
-  position: 'absolute',
-  bottom: 0,
-  right: 0,
-  maxWidth: '100%',
-  display: 'flex',
-  background: theme.background.content,
-  zIndex: 1,
-}));
+const Container = styled.div<{ $flexLayout?: boolean }>(({ theme, $flexLayout = false }) => [
+  {
+    background: theme.background.content,
+  },
+  $flexLayout
+    ? {
+        display: 'inline-flex',
+        marginInlineStart: 'auto',
+        alignSelf: 'flex-end',
+      }
+    : {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        maxWidth: '100%',
+        display: 'flex',
+        zIndex: 1,
+      },
+]);
 
 export const ActionButton = styled.button<{ disabled: boolean }>(
   ({ theme }) => ({
@@ -47,7 +57,8 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
       outline: '0 none',
 
       '@media (forced-colors: active)': {
-        outline: '1px solid highlight',
+        outline: '2px solid ButtonBorder',
+        outlineOffset: '2px',
       },
     },
   }),
@@ -61,21 +72,36 @@ ActionButton.displayName = 'ActionButton';
 
 export interface ActionItem {
   title: string | ReactElement;
+  ariaLabel?: string;
   className?: string;
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
 }
 
 export interface ActionBarProps {
+  /** Items to render in this ActionBar. */
   actionItems: ActionItem[];
+  /**
+   * When true, ActionBar aligns to the flex end and inline end of a wrapping row flex container.
+   * When false, ActionBar is positioned absolutely at the bottom right of its relative parent.
+   */
+  flexLayout?: boolean;
 }
 
-export const ActionBar = ({ actionItems, ...props }: ActionBarProps) => (
-  <Container {...props}>
-    {actionItems.map(({ title, className, onClick, disabled }, index: number) => (
-      <ActionButton key={index} className={className} onClick={onClick} disabled={!!disabled}>
-        {title}
-      </ActionButton>
-    ))}
-  </Container>
-);
+export const ActionBar = ({ actionItems, flexLayout = false, ...props }: ActionBarProps) => {
+  return (
+    <Container {...props} $flexLayout={flexLayout}>
+      {actionItems.map(({ title, ariaLabel, className, onClick, disabled }, index: number) => (
+        <ActionButton
+          key={index}
+          aria-label={ariaLabel}
+          className={className}
+          onClick={onClick}
+          disabled={!!disabled}
+        >
+          {title}
+        </ActionButton>
+      ))}
+    </Container>
+  );
+};

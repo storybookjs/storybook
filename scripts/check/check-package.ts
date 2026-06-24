@@ -1,10 +1,11 @@
+import { existsSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { join } from 'pathe';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './utils/typescript';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './utils/typescript.ts';
 
 const {
   values: { cwd },
@@ -19,15 +20,17 @@ const normalizedCwd = cwd ? (isAbsolute(cwd) ? cwd : join(ROOT_DIRECTORY, cwd)) 
 
 const tsconfigPath = join(normalizedCwd, 'tsconfig.json');
 
-const { options, fileNames } = getTSFilesAndConfig(tsconfigPath, normalizedCwd);
-const { program, host } = getTSProgramAndHost(fileNames, options);
+if (existsSync(tsconfigPath)) {
+  const { options, fileNames } = getTSFilesAndConfig(tsconfigPath, normalizedCwd);
+  const { program, host } = getTSProgramAndHost(fileNames, options);
 
-const tsDiagnostics = getTSDiagnostics(program, normalizedCwd, host);
-if (tsDiagnostics.length > 0) {
-  console.log(tsDiagnostics);
-  process.exit(1);
-} else if (!process.env.CI) {
-  console.log('✅ No type errors');
+  const tsDiagnostics = getTSDiagnostics(program, normalizedCwd, host);
+  if (tsDiagnostics.length > 0) {
+    console.log(tsDiagnostics);
+    process.exit(1);
+  } else if (!process.env.CI) {
+    console.log('✅ No type errors');
+  }
 }
 
 // TODO, add more package checks here, like:

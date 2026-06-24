@@ -41,17 +41,25 @@ export const viteInjectMockerRuntime = (options: {
         });
       }
     },
-    resolveId(source) {
-      if (source === ENTRY_PATH) {
-        return mockerRuntimePath;
-      }
-      return undefined;
+    resolveId: {
+      filter: { id: /\/vite-inject-mocker-entry\.js/ },
+      handler(source) {
+        if (source === ENTRY_PATH) {
+          return mockerRuntimePath;
+        }
+        return undefined;
+      },
     },
     transformIndexHtml(html: string) {
       const headTag = html.match(/<head[^>]*>/);
 
       if (headTag) {
-        const entryCode = `<script type="module" src="${ENTRY_PATH}"></script>`;
+        // Use a relative path for production builds so the script loads
+        // correctly when artifacts are hosted at non-root paths (e.g.,
+        // GitHub Pages subdirectories).  In dev mode, the absolute path
+        // is required so Vite's dev server can match it in resolveId.
+        const src = viteConfig.command === 'build' ? `.${ENTRY_PATH}` : ENTRY_PATH;
+        const entryCode = `<script type="module" src="${src}"></script>`;
         const headTagIndex = html.indexOf(headTag[0]);
         const newHtml =
           html.slice(0, headTagIndex + headTag[0].length) +

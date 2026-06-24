@@ -26,7 +26,8 @@ const toGlobalSelector = (element: string): string =>
 
 const breakpoint = 600;
 
-export const Title = styled.h1(withReset, ({ theme }) => ({
+export const Title = styled.h1(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   color: theme.color.defaultText,
   fontSize: theme.typography.size.m3,
   fontWeight: theme.typography.weight.bold,
@@ -39,7 +40,8 @@ export const Title = styled.h1(withReset, ({ theme }) => ({
   },
 }));
 
-export const Subtitle = styled.h2(withReset, ({ theme }) => ({
+export const Subtitle = styled.h2(({ theme }) => ({
+  ...(withReset({ theme }) as CSSObject),
   fontWeight: theme.typography.weight.regular,
   fontSize: theme.typography.size.s3,
   lineHeight: '20px',
@@ -108,13 +110,17 @@ export const DocsContent = styled.div(({ theme }) => {
     maxWidth: 1000,
     width: '100%',
     minWidth: 0,
+    flex: 1,
     [toGlobalSelector('a')]: {
       ...reset,
       fontSize: 'inherit',
       lineHeight: '24px',
 
       color: theme.color.secondary,
-      textDecoration: 'none',
+      // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
+      textDecoration: 'underline',
+      textDecorationThickness: '0.03125rem',
+      textUnderlineOffset: '0.11em',
       '&.absent': {
         color: '#cc0000',
       },
@@ -127,6 +133,10 @@ export const DocsContent = styled.div(({ theme }) => {
         top: 0,
         left: 0,
         bottom: 0,
+        textDecoration: 'none',
+      },
+      '&.anchor:hover, &.anchor:focus': {
+        textDecoration: 'underline',
       },
     },
     [toGlobalSelector('blockquote')]: {
@@ -431,7 +441,7 @@ export const DocsWrapper = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row-reverse',
   justifyContent: 'center',
-  padding: '4rem 20px',
+  padding: '4rem 40px',
   minHeight: '100vh',
   boxSizing: 'border-box',
   gap: '3rem',

@@ -1,9 +1,11 @@
 import React, { type ComponentProps } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { styled } from 'storybook/theming';
 
-import { Button } from './Button';
+import { Button } from './Button.tsx';
 import './grid.css';
+import { PseudoStateGrid } from './PseudoStateGrid.tsx';
 
 const meta = {
   title: 'Button',
@@ -17,32 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 export const All: Story = {
   render: (args: ComponentProps<typeof Button>) => (
-    <div className="story-grid">
-      <div>
-        <Button {...args}>Normal</Button>
-      </div>
-      <div className="pseudo-hover-all">
-        <Button {...args}>Hover</Button>
-      </div>
-      <div className="pseudo-focus-all">
-        <Button {...args}>Focus</Button>
-      </div>
-      <div className="pseudo-active-all">
-        <Button {...args}>Active</Button>
-      </div>
-      <div className="pseudo-hover-all pseudo-focus-all">
-        <Button {...args}>Hover Focus</Button>
-      </div>
-      <div className="pseudo-hover-all pseudo-active-all">
-        <Button {...args}>Hover Active</Button>
-      </div>
-      <div className="pseudo-focus-all pseudo-active-all">
-        <Button {...args}>Focus Active</Button>
-      </div>
-      <div className="pseudo-hover-all pseudo-focus-all pseudo-active-all">
-        <Button {...args}>Hover Focus Active</Button>
-      </div>
-    </div>
+    <PseudoStateGrid render={(label) => <Button {...args}>{label}</Button>} />
   ),
 };
 
@@ -51,6 +28,23 @@ export const Default: Story = {};
 export const Hover: Story = {
   parameters: {
     pseudo: { hover: true },
+  },
+};
+
+const StyledButton = styled(Button)`
+  &:hover {
+    @media (hover: hover) {
+      background-color: limegreen !important;
+    }
+  }
+`;
+
+export const HoverMediaQuery: Story = {
+  parameters: {
+    pseudo: { hover: true },
+  },
+  render: (args) => {
+    return <StyledButton {...args}>Hover (hover: hover)</StyledButton>;
   },
 };
 

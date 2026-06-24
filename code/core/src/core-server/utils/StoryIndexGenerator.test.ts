@@ -1,17 +1,18 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf';
-import { getStorySortParameter, readCsf } from 'storybook/internal/csf-tools';
+import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
-import { Tag } from '../../shared/constants/tags';
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
+import { Tag } from '../../shared/constants/tags.ts';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 
 vi.mock('../utils/constants', () => {
   return {
@@ -34,13 +35,13 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   const csfTools = await importOriginal<typeof import('storybook/internal/csf-tools')>();
   return {
     ...csfTools,
-    readCsf: vi.fn(csfTools.readCsf),
+    loadCsf: vi.fn(csfTools.loadCsf),
     getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
-const readCsfMock = vi.mocked(readCsf);
+const loadCsfMock = vi.mocked(loadCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
@@ -55,7 +56,7 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(logger.warn).mockClear();
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
-    readCsfMock.mockClear();
+    loadCsfMock.mockClear();
     getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
@@ -216,6 +217,25 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
+            "v": 5,
+          }
+        `);
+      });
+    });
+    describe('empty or whitespace-only files', () => {
+      it('ignores story files that only contain whitespace (e.g. just a newline)', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/Empty.stories.ts',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {},
             "v": 5,
           }
         `);
@@ -1937,6 +1957,64 @@ describe('StoryIndexGenerator', () => {
           }
         `);
       });
+
+      it('uses the explicit id prop on <Meta> for standalone mdx docs', async () => {
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './docs-id-generation/Standalone.docs.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {
+              "custom-standalone-id--docs": {
+                "id": "custom-standalone-id--docs",
+                "importPath": "./docs-id-generation/Standalone.docs.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "unattached-mdx",
+                ],
+                "title": "Standalone Page Title",
+                "type": "docs",
+              },
+            },
+            "v": 5,
+          }
+        `);
+      });
+
+      it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
+        const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/*.stories.(js|ts)',
+          options
+        );
+
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './complex/MetaOfImportOrder.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const docsEntry = storyIndex.entries['a--metaofimportorder'];
+
+        expect(docsEntry).toMatchObject({
+          type: 'docs',
+          title: 'A',
+          importPath: './complex/MetaOfImportOrder.mdx',
+          storiesImports: ['./src/A.stories.js', './src/B.stories.ts'],
+        });
+      });
     });
 
     describe('errors', () => {
@@ -1953,6 +2031,28 @@ describe('StoryIndexGenerator', () => {
     });
 
     describe('warnings', () => {
+      it('does not match directories that have story-like names', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.tsx',
+          options
+        );
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+        const storyLikeDirectory = join(
+          options.workingDir,
+          './src/__screenshots__/Button.stories.tsx'
+        );
+        const storyLikeDirectoryFile = join(storyLikeDirectory, 'Primary.png');
+
+        expect(existsSync(storyLikeDirectoryFile)).toBe(true);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectory);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectoryFile);
+      });
+
       it('when entries do not match any files', async () => {
         const generator = new StoryIndexGenerator(
           [normalizeStoriesEntry('./src/docs2/wrong.js', options)],
@@ -2135,16 +2235,16 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does not extract docs files a second time', async () => {
@@ -2156,8 +2256,8 @@ describe('StoryIndexGenerator', () => {
           './src/docs2/*.mdx',
           options
         );
-        readCsfMock.mockClear();
-        expect(readCsfMock).toHaveBeenCalledTimes(0);
+        loadCsfMock.mockClear();
+        expect(loadCsfMock).toHaveBeenCalledTimes(0);
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
@@ -2194,17 +2294,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', false);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(1);
+        expect(loadCsfMock).toHaveBeenCalledTimes(1);
       });
 
       it('calls extract docs file for just the one file', async () => {
@@ -2279,17 +2379,17 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', true);
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         await generator.getIndex();
-        expect(readCsfMock).not.toHaveBeenCalled();
+        expect(loadCsfMock).not.toHaveBeenCalled();
       });
 
       it('does call the sort function a second time', async () => {
@@ -2318,11 +2418,11 @@ describe('StoryIndexGenerator', () => {
           options
         );
 
-        readCsfMock.mockClear();
+        loadCsfMock.mockClear();
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(12);
+        expect(loadCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate('./src/B.stories.ts', true);
 

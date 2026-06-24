@@ -1,4 +1,4 @@
-export { instrument } from './instrumenter';
+export { instrument } from './instrumenter.ts';
 
-export { EVENTS } from './EVENTS';
-export * from './types';
+export { EVENTS } from './EVENTS.ts';
+export * from './types.ts';

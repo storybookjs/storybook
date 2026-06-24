@@ -1,12 +1,12 @@
-import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
+import type { FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
-import { type Theme, styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';
@@ -14,14 +14,14 @@ import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
 const { window: globalWindow } = globalThis;
 
-type JsonTreeProps = ComponentProps<typeof JsonTree>;
-
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
+  gap: 8,
 
   '.rejt-tree': {
+    flex: 1,
     marginLeft: '1rem',
     fontSize: '13px',
     listStyleType: 'none',
@@ -39,7 +39,13 @@ const Wrapper = styled.div(({ theme }) => ({
     alignItems: 'center',
   },
   '.rejt-name': {
+    color: theme.color.secondary,
     lineHeight: '22px',
+  },
+  '.rejt-not-collapsed-list': {
+    listStyle: 'none',
+    margin: '0 0 0 1rem',
+    padding: 0,
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
@@ -56,6 +62,9 @@ const Wrapper = styled.div(({ theme }) => ({
   '.rejt-value-node:hover > .rejt-value': {
     background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
     borderColor: theme.appBorderColor,
+  },
+  '.rejt-collapsed-value': {
+    color: theme.color.defaultText,
   },
 }));
 
@@ -118,10 +127,9 @@ const Input = styled.input(({ theme, placeholder }) => ({
 }));
 
 const RawButton = styled(ToggleButton)({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
+  alignSelf: 'flex-start',
+  order: 2,
+  marginRight: -10,
 });
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
@@ -155,28 +163,18 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
 
 export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
-const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (theme) => () => ({
-  name: {
-    color: theme.color.secondary,
-  },
-  collapsed: {
-    color: theme.color.dark,
-  },
-  ul: {
-    listStyle: 'none',
-    margin: '0 0 0 1rem',
-    padding: 0,
-  },
-  li: {
-    outline: 0,
-  },
-});
-
-export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
-  const theme = useTheme();
+export const ObjectControl: FC<ObjectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  argType,
+}) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+  const hadDataRef = useRef(hasData);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
@@ -198,7 +196,14 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const onForceVisible = useCallback(() => {
     onChange({});
     setForceVisible(true);
-  }, [setForceVisible]);
+  }, [onChange, setForceVisible]);
+
+  useEffect(() => {
+    if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
+      setShowRaw(false);
+    }
+    hadDataRef.current = hasData;
+  }, [forceVisible, hasData, showRaw]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -217,7 +222,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       <Button
         ariaLabel={false}
         disabled={readonly}
-        id={getControlSetterButtonId(name)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
       >
         Set object
@@ -225,20 +230,26 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     );
   }
 
+  const rawInputId = getControlId(name, storyId, controlsId);
   const rawJSONForm = (
-    <RawInput
-      ref={htmlElRef}
-      id={getControlId(name)}
-      minRows={3}
-      name={name}
-      key={jsonString}
-      defaultValue={jsonString}
-      onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
-      placeholder="Edit JSON string..."
-      autoFocus={forceVisible}
-      valid={parseError ? 'error' : undefined}
-      readOnly={readonly}
-    />
+    <>
+      <label htmlFor={rawInputId} className="sb-sr-only">
+        Edit {name} as JSON
+      </label>
+      <RawInput
+        ref={htmlElRef}
+        id={rawInputId}
+        minRows={3}
+        name={name}
+        key={jsonString}
+        defaultValue={jsonString}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        placeholder="Edit JSON string..."
+        autoFocus={forceVisible}
+        valid={parseError ? 'error' : undefined}
+        readOnly={readonly}
+      />
+    </>
   );
 
   const isObjectOrArray =
@@ -250,13 +261,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
         <RawButton
           disabled={readonly}
           pressed={showRaw}
-          ariaLabel={`Edit the ${name} properties in JSON format`}
+          ariaLabel={`Edit ${name} as JSON`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
+          variant="ghost"
+          padding="small"
+          size="small"
         >
-          Edit JSON
+          <EditIcon />
         </RawButton>
       )}
       {!showRaw ? (
@@ -266,7 +280,6 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
           data={data}
           rootName={name}
           onFullyUpdate={onChange}
-          getStyle={getCustomStyleFunction(theme)}
           cancelButtonElement={<ButtonInline type="button">Cancel</ButtonInline>}
           addButtonElement={
             <ButtonInline type="submit" primary>
@@ -283,7 +296,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
               <SubtractIcon />
             </ActionButton>
           }
-          inputElement={(_: any, __: any, ___: any, key: string) =>
+          inputElement={(_: unknown, __: unknown, ___: unknown, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }
           fallback={rawJSONForm}

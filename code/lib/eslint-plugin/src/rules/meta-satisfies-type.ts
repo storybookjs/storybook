@@ -5,9 +5,9 @@
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { ASTUtils, AST_NODE_TYPES } from '@typescript-eslint/utils';
 
-import { getMetaObjectExpression } from '../utils';
-import { isTSSatisfiesExpression } from '../utils/ast';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { getMetaObjectExpression } from '../utils/index.ts';
+import { isTSSatisfiesExpression } from '../utils/ast.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition
@@ -33,7 +33,7 @@ export default createStorybookRule({
 
   create(context) {
     // variables should be defined here
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     //----------------------------------------------------------------------
     // Helpers

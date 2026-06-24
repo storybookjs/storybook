@@ -1,13 +1,16 @@
 import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedLanguage } from 'storybook/internal/types';
+import { telemetry } from 'storybook/internal/telemetry';
+import { SupportedLanguage } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { CommandOptions } from '../generators/types';
-import { ProjectTypeService } from '../services/ProjectTypeService';
+import type { CommandOptions } from '../generators/types.ts';
+import { createPromptCancelOptions } from '../prompt-cancel.ts';
+import { ProjectTypeService } from '../services/ProjectTypeService.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
 
 /**
  * Command for detecting the project type during Storybook initialization
@@ -23,7 +26,8 @@ export class ProjectDetectionCommand {
   constructor(
     private options: CommandOptions,
     jsPackageManager: JsPackageManager,
-    private projectTypeService: ProjectTypeService = new ProjectTypeService(jsPackageManager)
+    private projectTypeService: ProjectTypeService = new ProjectTypeService(jsPackageManager),
+    private telemetryService = new TelemetryService()
   ) {}
 
   /** Execute project type detection */
@@ -47,30 +51,49 @@ export class ProjectDetectionCommand {
     // Check for existing installation
     await this.checkExistingInstallation(projectType);
 
-    const language = this.options.language || (await this.projectTypeService.detectLanguage());
+    const language = this.options.language || (await this.detectAndReportLanguage());
 
     return { projectType, language };
   }
 
+  /** Detect language and warn about incompatible packages */
+  private async detectAndReportLanguage(): Promise<SupportedLanguage> {
+    const language = await this.projectTypeService.detectLanguage();
+
+    if (language === SupportedLanguage.JAVASCRIPT) {
+      const incompatibleReasons = await this.projectTypeService.detectIncompatiblePackageVersions();
+      if (incompatibleReasons.length > 0) {
+        logger.warn(
+          `Populating with JavaScript examples due to incompatible package versions:\n${incompatibleReasons.map((r) => `  - ${r}`).join('\n')}`
+        );
+      }
+    }
+
+    return language;
+  }
+
   /** Prompt user to select React Native variant */
   private async promptReactNativeVariant(): Promise<ProjectType> {
-    const manualType = await prompt.select({
-      message: "We've detected a React Native project. Install:",
-      options: [
-        {
-          label: `${picocolors.bold('React Native')}: Storybook on your device/simulator`,
-          value: ProjectType.REACT_NATIVE,
-        },
-        {
-          label: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
-          value: ProjectType.REACT_NATIVE_WEB,
-        },
-        {
-          label: `${picocolors.bold('Both')}: Add both native and web Storybooks`,
-          value: ProjectType.REACT_NATIVE_AND_RNW,
-        },
-      ],
-    });
+    const manualType = await prompt.select(
+      {
+        message: "We've detected a React Native project. Install:",
+        options: [
+          {
+            label: `${picocolors.bold('React Native')}: Storybook on your device/simulator`,
+            value: ProjectType.REACT_NATIVE,
+          },
+          {
+            label: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
+            value: ProjectType.REACT_NATIVE_WEB,
+          },
+          {
+            label: `${picocolors.bold('Both')}: Add both native and web Storybooks`,
+            value: ProjectType.REACT_NATIVE_AND_RNW,
+          },
+        ],
+      },
+      createPromptCancelOptions(this.telemetryService, 'react-native-variant')
+    );
     return manualType as ProjectType;
   }
 
@@ -84,13 +107,21 @@ export class ProjectDetectionCommand {
       storybookInstantiated &&
       projectType !== ProjectType.ANGULAR
     ) {
-      const force = await prompt.confirm({
-        message: dedent`We found a .storybook config directory in your project.
+      const force = await prompt.confirm(
+        {
+          message: dedent`We found a .storybook config directory in your project.
 We assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?`,
-      });
+        },
+        createPromptCancelOptions(this.telemetryService, 'force-on-existing-installation')
+      );
       if (force || options.yes) {
         options.force = true;
       } else {
+        await telemetry(
+          'exit',
+          { eventType: 'init', reason: 'existing-installation' },
+          { stripMetadata: true, immediate: true }
+        );
         process.exit(0);
       }
     }

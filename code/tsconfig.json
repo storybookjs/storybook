@@ -3,6 +3,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "customConditions": ["code"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "5.0",
@@ -12,6 +13,8 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "Preserve",
     "moduleResolution": "bundler",
+    // Required for explicit .ts import extensions — migrating toward native Node TS execution
+    "allowImportingTsExtensions": true,
     "noImplicitAny": true,
     "noUnusedLocals": false,
     "skipLibCheck": true,

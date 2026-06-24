@@ -1,16 +1,48 @@
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
-import { format, resolveConfig } from 'prettier';
 
-import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
-import { categoryIds } from './categories';
+import { minimatch } from 'minimatch';
+import { format } from 'oxfmt';
+import type { FormatConfig } from 'oxfmt';
 
-const prettierConfig = resolveConfig(__dirname);
-const readmePath = resolve(
-  __dirname,
-  `../../../../../docs/configure/integration/eslint-plugin.mdx`
-);
-const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
+import type { TRuleListWithoutName, TRulesList } from '../update-rules-list.ts';
+import { categoryIds } from './categories.ts';
+
+const REPO_ROOT = resolve(__dirname, '../../../../..');
+const readmePath = resolve(REPO_ROOT, 'docs/configure/integration/eslint-plugin.mdx');
+const readmeRelPath = 'docs/configure/integration/eslint-plugin.mdx';
+const ruleDocRelPath = (ruleName: string) => `code/lib/eslint-plugin/docs/rules/${ruleName}.md`;
+
+let cachedFormatConfig: {
+  $schema?: string;
+  ignorePatterns?: unknown;
+  overrides?: Array<{ files: string | string[]; options: Record<string, unknown> }>;
+  [key: string]: unknown;
+} | null = null;
+
+// oxfmt programmatic API doesn't support loading config files, so we need to do it ourselves. We also need to merge the base options with the overrides based on the file path.
+const loadFormatOptions = async (relPath: string): Promise<FormatConfig> => {
+  if (!cachedFormatConfig) {
+    cachedFormatConfig = JSON.parse(await readFile(resolve(REPO_ROOT, '.oxfmtrc.json'), 'utf8'));
+  }
+
+  const {
+    $schema: _schema,
+    ignorePatterns: _ignore,
+    overrides,
+    ...baseOptions
+  } = cachedFormatConfig!;
+  const merged: Record<string, unknown> = { ...baseOptions };
+
+  for (const override of overrides ?? []) {
+    const patterns = ([] as string[]).concat(override.files);
+    if (patterns.some((p) => minimatch(relPath, p))) {
+      Object.assign(merged, override.options);
+    }
+  }
+
+  return merged as FormatConfig;
+};
 
 export const configBadges = categoryIds.reduce(
   (badges, category) => ({
@@ -91,28 +123,25 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
 export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
   const readme = await readFile(readmePath, 'utf8');
   const rulesListWithoutName = rulesList.map((rule) => rule.slice(1)) as TRuleListWithoutName[];
-  const newReadme = await format(overWriteRulesList(rulesListWithoutName, readme), {
-    parser: 'markdown',
-    ...(await prettierConfig),
-  });
-  // Workaround for prettier that keeps replacing {/* xyz */} with {_ xyz _} and that breaks the docs
-  const contentToWrite = newReadme.replaceAll('{/_', '{/*').replaceAll('_/}', '*/}');
-  await writeFile(readmePath, contentToWrite);
+  const options = await loadFormatOptions(readmeRelPath);
+  const { code } = await format(
+    readmeRelPath,
+    overWriteRulesList(rulesListWithoutName, readme),
+    options
+  );
+  await writeFile(readmePath, code);
 };
 
 export const updateRulesDocs = async (rulesList: TRulesList[]) => {
   await Promise.all(
     rulesList.map(async (rule) => {
       const ruleName = rule[0];
-      const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`);
+      const relPath = ruleDocRelPath(ruleName);
+      const ruleDocFilePath = resolve(REPO_ROOT, relPath);
       const ruleDocFile = await readFile(ruleDocFilePath, 'utf8');
-
-      const updatedDocFile = await format(overWriteRuleDocs(rule, ruleDocFile), {
-        parser: 'markdown',
-        ...(await prettierConfig),
-      });
-
-      await writeFile(ruleDocFilePath, updatedDocFile);
+      const options = await loadFormatOptions(relPath);
+      const { code } = await format(relPath, overWriteRuleDocs(rule, ruleDocFile), options);
+      await writeFile(ruleDocFilePath, code);
     })
   );
 };

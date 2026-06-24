@@ -13,11 +13,11 @@ import { Provider as ManagerProvider, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
 
-import { App } from './App';
-import type { Layout } from './components/layout/Layout';
-import { LayoutProvider } from './components/layout/LayoutProvider';
-import Provider from './provider';
-import { settingsPageAddon } from './settings/index';
+import { App } from './App.tsx';
+import type { Layout } from './components/layout/Layout.tsx';
+import { LayoutProvider } from './components/layout/LayoutProvider.tsx';
+import Provider from './provider.ts';
+import { settingsPageAddon } from './settings/index.tsx';
 
 // @ts-expect-error (Converted from ts-ignore)
 ThemeProvider.displayName = 'ThemeProvider';
@@ -37,7 +37,7 @@ export const Root: FC<RootProps> = ({ provider }) => (
   </HelmetProvider>
 );
 
-const Main: FC<{ provider: Provider }> = ({ provider }) => {
+export const Main: FC<{ provider: Provider }> = ({ provider }) => {
   const navigate = useNavigate();
 
   return (

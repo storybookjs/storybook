@@ -15,8 +15,8 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
 import { useTransitionState } from 'react-transition-state';
 
-import { useMediaQuery } from '../../../manager/hooks/useMedia';
-import * as Components from './Modal.styled';
+import { useMediaQuery } from '../../../manager/hooks/useMedia.tsx';
+import * as Components from './Modal.styled.tsx';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   container?: HTMLElement;
@@ -216,19 +216,22 @@ function BaseModal({
         />
         <div role="dialog" aria-label={ariaLabel} ref={overlayRef} {...finalModalProps}>
           <ModalContext.Provider value={{ close }}>
-            {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
-            <Components.Container
-              data-deprecated={deprecated}
-              $variant={variant}
-              $status={status}
-              $transitionDuration={transitionDuration}
-              className={className}
-              width={width}
-              height={height}
-              {...props}
-            >
-              {children}
-            </Components.Container>
+            {/* This div exists to help the FocusScope, see https://github.com/adobe/react-spectrum/issues/1604. */}
+            <div tabIndex={-1}>
+              {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
+              <Components.Container
+                data-deprecated={deprecated}
+                $variant={variant}
+                $status={status}
+                $transitionDuration={transitionDuration}
+                className={className}
+                width={width}
+                height={height}
+                {...props}
+              >
+                {children}
+              </Components.Container>
+            </div>
           </ModalContext.Provider>
         </div>
       </FocusScope>

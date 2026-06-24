@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import type { UniversalStore } from './index';
+import type { UniversalStore } from './index.ts';
 
 /**
  * A hook to use a UniversalStore in the manager UI (eg. in an addon panel). This hook will react to
@@ -74,6 +74,7 @@ export const useUniversalStore: {
     return snapshotRef.current;
   }, [universalStore, selector]);
 
+  // Manager-only, safe to use React 18 API
   const state = React.useSyncExternalStore(subscribe, getSnapshot);
 
   return [state, universalStore.setState];

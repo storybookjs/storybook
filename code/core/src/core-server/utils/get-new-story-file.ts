@@ -17,15 +17,16 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import type { ArgTypes } from '../../csf';
-import { loadConfig, printConfig } from '../../csf-tools';
+import type { ArgTypes } from '../../csf/index.ts';
+import { loadConfig, printConfig } from '../../csf-tools/index.ts';
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
-} from './get-dummy-args-from-argtypes';
-import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
-import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
-import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
+} from './get-dummy-args-from-argtypes.ts';
+import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template.ts';
+import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript.ts';
+import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript.ts';
+import { escapeForTemplate } from './safeString.ts';
 
 export async function getNewStoryFile(
   {
@@ -41,7 +42,7 @@ export async function getNewStoryFile(
 
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
-  const basenameWithoutExtension = base.replace(extension, '');
+  const basenameWithoutExtension = escapeForTemplate(base.replace(extension, ''));
   const dir = dirname(componentFilePath);
 
   const { storyFileName, isTypescript, storyFileExtension } = getStoryMetadata(componentFilePath);
@@ -98,7 +99,9 @@ export async function getNewStoryFile(
         const storyFilePath = join(getProjectRoot(), dir);
         const relPath = relative(storyFilePath, previewConfigPath);
         const pathWithoutExt = relPath.replace(/\.(ts|js|mts|cts|tsx|jsx)$/, '');
-        previewImportPath = pathWithoutExt.startsWith('.') ? pathWithoutExt : `./${pathWithoutExt}`;
+        previewImportPath = escapeForTemplate(
+          pathWithoutExt.startsWith('.') ? pathWithoutExt : `./${pathWithoutExt}`
+        );
       }
     }
 

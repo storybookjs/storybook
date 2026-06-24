@@ -1,6 +1,7 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, StoryId } from 'storybook/internal/types';
+import type { PreviewAnnotation, Status, StoryId, StoryIndex } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
+import type { Report } from 'storybook/preview-api';
 
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;
@@ -20,7 +21,46 @@ export type ErrorLike = {
   cause?: ErrorLike;
 };
 
-export type RunTrigger = 'run-all' | 'global' | 'watch' | Extract<API_HashEntry['type'], string>;
+export type RunConfig = Record<string, unknown>;
+
+export type RunTrigger =
+  | 'run-all'
+  | 'global'
+  | 'watch'
+  | Extract<API_HashEntry['type'], string>
+  | `external:${string}`;
+
+export type A11yRunReport = Report['result'];
+
+export type CurrentRun = {
+  triggeredBy: RunTrigger | undefined;
+  config: RunConfig;
+  componentTestStatuses: Status[];
+  a11yStatuses: Status[];
+  componentTestCount: {
+    success: number;
+    error: number;
+  };
+  a11yCount: {
+    success: number;
+    warning: number;
+    error: number;
+  };
+  // Backwards compatibility for consumers that still read the legacy a11y-only shape.
+  a11yReports: Record<StoryId, A11yRunReport[]>;
+  reports: Record<StoryId, Report[]>;
+  totalTestCount: number | undefined;
+  storyIds: StoryId[] | undefined;
+  startedAt: number | undefined;
+  finishedAt: number | undefined;
+  unhandledErrors: VitestError[];
+  coverageSummary:
+    | {
+        status: 'positive' | 'warning' | 'negative' | 'unknown';
+        percentage: number;
+      }
+    | undefined;
+};
 
 export type StoreState = {
   config: {
@@ -29,9 +69,7 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
-  // TODO: Avoid needing to do a fetch request server-side to retrieve the index
-  // e.g. http://localhost:6006/index.json
-  indexUrl: string | undefined;
+  index: StoryIndex;
   previewAnnotations: PreviewAnnotation[];
   fatalError:
     | {
@@ -39,30 +77,7 @@ export type StoreState = {
         error: ErrorLike;
       }
     | undefined;
-  currentRun: {
-    triggeredBy: RunTrigger | undefined;
-    config: StoreState['config'];
-    componentTestCount: {
-      success: number;
-      error: number;
-    };
-    a11yCount: {
-      success: number;
-      warning: number;
-      error: number;
-    };
-    totalTestCount: number | undefined;
-    storyIds: StoryId[] | undefined;
-    startedAt: number | undefined;
-    finishedAt: number | undefined;
-    unhandledErrors: VitestError[];
-    coverageSummary:
-      | {
-          status: 'positive' | 'warning' | 'negative' | 'unknown';
-          percentage: number;
-        }
-      | undefined;
-  };
+  currentRun: CurrentRun;
 };
 
 export type CachedState = Pick<StoreState, 'config'>;
@@ -72,6 +87,7 @@ export type TriggerRunEvent = {
   payload: {
     storyIds?: string[] | undefined;
     triggeredBy: RunTrigger;
+    configOverride?: RunConfig;
   };
 };
 

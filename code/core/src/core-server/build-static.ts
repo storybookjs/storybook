@@ -1,11 +1,11 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
+import { Channel } from 'storybook/internal/channels';
 import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
-  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -17,16 +17,21 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import { resolvePackageDir } from '../shared/utils/module';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { buildOrThrow } from './utils/build-or-throw';
-import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
-import { getBuilders } from './utils/get-builders';
-import { writeIndexJson } from './utils/index-json';
-import { writeManifests } from './utils/manifests/manifests';
-import { extractStorybookMetadata } from './utils/metadata';
-import { outputStats } from './utils/output-stats';
-import { summarizeIndex } from './utils/summarizeIndex';
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
+import { getBuilders } from './utils/get-builders.ts';
+import { writeIndexJson } from './utils/index-json.ts';
+import { writeManifests } from './utils/manifests/manifests.ts';
+import { extractStorybookMetadata } from './utils/metadata.ts';
+import { outputStats } from './utils/output-stats.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -68,16 +73,25 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
     isCritical: true,
+    channel,
     ...options,
   });
 
   const { renderer } = await presets.apply('core', {});
   const build = await presets.apply('build', {});
-  const [previewBuilder, managerBuilder] = await getBuilders({ ...options, presets, build });
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    ...options,
+    presets,
+    build,
+    channel,
+  });
 
   const resolvedRenderer = renderer
     ? resolveAddonName(options.configDir, renderer, options)
@@ -91,8 +105,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...corePresets,
     ],
     overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
-    ...options,
     build,
+    channel,
+    ...options,
   });
 
   const [features, core, staticDirs] = await Promise.all([
@@ -102,7 +117,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
-  if (!core?.disableTelemetry && invokedBy) {
+  if (invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
     // This could result in telemetry events being lost.
     telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
@@ -110,6 +125,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const fullOptions: Options = {
     ...options,
+    channel,
     presets,
     features,
     build,
@@ -118,6 +134,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
+  await applyServicesPresetOnce(presets);
 
   if (!options.previewOnly) {
     await buildOrThrow(async () =>
@@ -132,7 +149,27 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
-  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
+
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = !options.ignorePreview && features?.componentsManifest;
+
+  if (hasRegisteredServices || shouldWriteManifests) {
+    effects.push(
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
+
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
+  }
 
   let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
@@ -145,10 +182,6 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
       )
     );
-
-    if (features?.experimentalComponentsManifest) {
-      effects.push(writeManifests(options.outputDir, presets));
-    }
   }
 
   if (!core?.disableProjectJson) {
@@ -197,7 +230,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
-  if (!core?.disableTelemetry && !options.test) {
+  if (!options.test) {
     try {
       const generator = await storyIndexGeneratorPromise;
       const storyIndex = await generator?.getIndex();

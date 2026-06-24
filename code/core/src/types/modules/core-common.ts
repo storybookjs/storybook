@@ -1,7 +1,8 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
@@ -9,19 +10,36 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { SupportedBuilder } from './builders';
-import type { SupportedFramework } from './frameworks';
-import type { Indexer, StoriesEntry } from './indexer';
-import type { SupportedRenderer } from './renderers';
+import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsProvider } from '../../shared/open-service/services/story-docs/types.ts';
+import type { SupportedBuilder } from './builders.ts';
+import type { SupportedFramework } from './frameworks.ts';
+import type { Indexer, StoriesEntry } from './indexer.ts';
+import type { SupportedRenderer } from './renderers.ts';
+
+export type {
+  DocgenError,
+  DocgenJsDocTags,
+  DocgenPayload,
+  DocgenProvider,
+  DocgenProviderInput,
+  DocgenProviderPreset,
+  DocgenSubcomponent,
+} from '../../shared/open-service/services/docgen/types.ts';
+export type {
+  StoryDoc,
+  StoryDocsById,
+  StoryDocsError,
+  StoryDocsPayload,
+  StoryDocsProvider,
+  StoryDocsProviderInput,
+  StoryDocsProviderPreset,
+} from '../../shared/open-service/services/story-docs/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
 export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
-
-interface ServerChannel {
-  emit(type: string, args?: any): void;
-}
 
 export interface CoreConfig {
   builder?:
@@ -32,7 +50,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions>;
+  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -50,6 +68,11 @@ export interface CoreConfig {
    * @see https://storybook.js.org/telemetry
    */
   enableCrashReports?: boolean;
+  /**
+   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
+   * all hosts except known local/network address, or `true` to allow all hosts.
+   */
+  allowedHosts?: string[] | true;
   /**
    * Enable CORS headings to run document in a "secure context" see:
    * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
@@ -111,6 +134,17 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+  apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
+  apply(
+    extension: 'experimental_docgenProvider',
+    config: DocgenProvider,
+    args?: any
+  ): Promise<DocgenProvider>;
+  apply(
+    extension: 'experimental_storyDocsProvider',
+    config: StoryDocsProvider,
+    args?: any
+  ): Promise<StoryDocsProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -154,6 +188,29 @@ export interface Stats {
 export interface BuilderResult {
   totalTime?: ReturnType<typeof process.hrtime>;
   stats?: Stats;
+}
+
+/**
+ * Builder-supplied module resolution config consumed by Storybook's change-detection
+ * dependency graph (and any future module-resolver consumer in core).
+ *
+ * Shape mirrors a subset of Vite's `resolve.*` options and is intentionally
+ * builder-agnostic — webpack/rspack adapters surface the same fields.
+ */
+export interface ModuleResolveConfig {
+  /** Project root (where Storybook is started from). */
+  projectRoot: string;
+  /**
+   * Builder-supplied alias map. Accepts both Vite shapes:
+   *   - `Record<string, string>` (object form)
+   *   - `Array<{ find: string | RegExp; replacement: string }>` (array form, supports regex)
+   *
+   * Callers may treat unresolvable specifiers (including unsupported regex aliases) as
+   * terminal.
+   */
+  alias?: Record<string, string> | Array<{ find: string | RegExp; replacement: string }>;
+  /** Conditions for package `exports` resolution. */
+  conditions?: string[];
 }
 
 export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
@@ -215,12 +272,14 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  localAddress?: string;
   networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
   presets: Presets;
   presetsList?: LoadedPreset[];
+  channel: ChannelLike;
 }
 
 export type Options = LoadOptions &
@@ -259,7 +318,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
     startTime: ReturnType<typeof process.hrtime>;
     router: ServerApp;
     server: HttpServer;
-    channel: ServerChannel;
+    channel: ChannelLike;
   }) => Promise<void | {
     stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;
@@ -272,6 +331,11 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   bail: (e?: Error) => Promise<void>;
   corePresets?: string[];
   overridePresets?: string[];
+  /**
+   * Returns a change-detection adapter the core change-detection service uses to (a) read
+   * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   */
+  changeDetectionAdapter?(): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -343,12 +407,17 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: 'include' | 'exclude';
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
+
+export type ComponentSubcomponentManifest = Pick<
+  ComponentManifest,
+  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+>;
 
 export interface ComponentManifest {
   id: string;
@@ -358,6 +427,7 @@ export interface ComponentManifest {
   import?: string | undefined;
   summary?: string | undefined;
   stories: {
+    id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;
@@ -365,12 +435,17 @@ export interface ComponentManifest {
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
+  subcomponents?: Record<string, ComponentSubcomponentManifest>;
   error?: { name: string; message: string };
 }
 
 export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
+  meta?: {
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+    durationMs: number;
+  };
 }
 
 type ManifestName = string;
@@ -394,6 +469,8 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
+  experimental_docgenProvider?: DocgenProvider;
+  experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -499,7 +576,21 @@ export interface StorybookConfigRaw {
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
 
-    experimentalComponentsManifest?: boolean;
+    /**
+     * Enable component manifest generation for MCP and other tooling integrations.
+     *
+     * @default false
+     */
+    componentsManifest?: boolean;
+
+    /**
+     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+     * instead of react-docgen / react-docgen-typescript.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalReactComponentMeta?: boolean;
 
     /**
      * Enables the new code example generation for React components. You can see those examples when
@@ -513,6 +604,24 @@ export interface StorybookConfigRaw {
      * @experimental This feature is in early development and may change significantly in future releases.
      */
     experimentalCodeExamples?: boolean;
+
+    /**
+     * Enable the experimental docgen open service.
+     *
+     * When true, Storybook registers the `core/docgen` service in the open-service registry and
+     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+     * providers contribute through the `experimental_docgenProvider` preset.
+     *
+     * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalDocgenServer?: boolean;
+
+    /**
+     * Enable change detection
+     * @default true
+     */
+    changeDetection?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -539,6 +648,27 @@ export interface StorybookConfigRaw {
 
   experimental_indexers?: Indexer[];
 
+  /**
+   * Register parsers that extract import edges from non-JS/TS files (e.g. .vue, .svelte).
+   * Each parser claims one or more file extensions. Last registration wins on collision.
+   * Lazy-load heavy SFC compilers inside the parser body — the function is awaited on first
+   * use.
+   *
+   * Used by Storybook's change-detection dependency graph. May be reused by other consumers
+   * in the future (static build, dependency analysis CLIs).
+   *
+   * @experimental Subject to change before stable release.
+   */
+  experimental_importParsers?:
+    | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
+    | ((
+        existing: import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
+      ) =>
+        | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
+        | Promise<
+            import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
+          >);
+
   storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
@@ -554,6 +684,8 @@ export interface StorybookConfigRaw {
   managerHead?: string;
 
   tags?: TagsOptions;
+
+  services?: void;
 }
 
 /**
@@ -659,6 +791,25 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Run open-service registration side effects for the server environment. */
+  services?: PresetValue<StorybookConfigRaw['services']>;
+
+  /**
+   * Middleware-style provider for the experimental docgen service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
+
+  /**
+   * Middleware-style provider for the experimental story-docs service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_storyDocsProvider?: PresetValue<
+    StorybookConfigRaw['experimental_storyDocsProvider']
+  >;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

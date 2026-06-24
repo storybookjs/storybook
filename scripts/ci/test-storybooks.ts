@@ -1,15 +1,15 @@
 import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
-import { build_linux } from './common-jobs';
-import { artifact, workflow } from './utils/helpers';
+import { build_linux } from './common-jobs.ts';
+import { artifact, workflow } from './utils/helpers.ts';
 import {
   type JobOrNoOpJob,
   type Workflow,
   defineJob,
   defineNoOpJob,
   isWorkflowOrAbove,
-} from './utils/types';
+} from './utils/types.ts';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
@@ -23,7 +23,7 @@ export function definePortableStoryTest(directory: string) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),
@@ -152,7 +152,9 @@ export function definePortableStoryTestVitest3() {
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
 export function getTestStorybooks(workflow: Workflow) {
-  const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3'].map(definePortableStoryTest);
+  const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3', 'svelte', 'nextjs'].map(
+    definePortableStoryTest
+  );
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
     testStorybooks.push(definePortableStoryTestPNP());

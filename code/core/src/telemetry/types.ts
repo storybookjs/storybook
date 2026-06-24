@@ -2,9 +2,9 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
-import type { AgentInfo } from './detect-agent';
-import type { KnownPackagesList } from './get-known-packages';
-import type { MonorepoType } from './get-monorepo-type';
+import type { AgentInfo } from './detect-agent.ts';
+import type { KnownPackagesList } from './get-known-packages.ts';
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'
@@ -19,6 +19,7 @@ export type EventType =
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
+  | 'exit'
   | 'error'
   | 'error-metadata'
   | 'version-update'
@@ -42,7 +43,15 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
-  | 'ghost-stories';
+  | 'share'
+  | 'ghost-stories'
+  | 'sidebar-filter'
+  | 'ai-command'
+  | 'ai-init-opt-in'
+  | 'ai-prompt-nudge'
+  | 'ai-setup'
+  | 'ai-setup-final-scoring'
+  | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -101,6 +110,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export type PayloadFactory = () => Payload | Promise<Payload>;
+
+export type PayloadInput = Payload | PayloadFactory;
+
 export interface Context {
   [key: string]: any;
 }
@@ -112,6 +125,10 @@ export interface Options {
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
   notify?: boolean;
+  /** Override the event timestamp. Used when flushing queued events to preserve original timing. */
+  timestamp?: number;
+  /** When true, bypass the disabled state. Used for error telemetry with enableCrashReports. */
+  force?: boolean;
 }
 
 export interface TelemetryData {
@@ -128,7 +145,7 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean; ai: boolean };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

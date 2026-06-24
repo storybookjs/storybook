@@ -1,3 +1,4 @@
+import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -7,12 +8,13 @@ import {
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
 import { global } from '@storybook/global';
 
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -29,6 +31,10 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
+  setChannel(channel);
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -47,7 +53,6 @@ export async function loadStorybook(
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
-
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
@@ -55,6 +60,7 @@ export async function loadStorybook(
     ],
     ...options,
     isCritical: true,
+    channel,
   });
 
   const { renderer, builder } = await presets.apply('core', {});
@@ -63,7 +69,13 @@ export async function loadStorybook(
   const builderName = typeof builder === 'string' ? builder : builder?.name;
 
   if (builderName) {
-    corePresets.push(join(dirname(builderName), 'preset.js'));
+    /* builderName can be a bare package name (e.g. '@storybook/builder-vite') or an already-resolved
+       file URL / absolute path (e.g. 'file:///.../.../dist/index.js'). For bare package names, we
+       need to resolve the package directory first; for already-resolved paths, dirname works directly.
+    */
+    const isResolved = builderName.startsWith('file:') || isAbsolute(builderName);
+    const builderPresetDir = isResolved ? dirname(builderName) : resolvePackageDir(builderName);
+    corePresets.push(join(builderPresetDir, 'preset.js'));
   }
 
   // Load second pass: all presets are applied in order
@@ -77,11 +89,14 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
+    channel,
     ...options,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+
+  await applyServicesPresetOnce(presets);
 
   return {
     ...options,

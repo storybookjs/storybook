@@ -76,3 +76,17 @@ code/core/report
 .junie
 CLAUDE.local.md
 .claude
+.cursor/mcp.json
+.vscode/mcp.json
+.mcp.json
+.nx/polygraph
+
+# Eval system
+scripts/eval/.cache
+scripts/eval/results
+
+# review-pr skill output
+.pr-review
+
+# Unknown
+.omc

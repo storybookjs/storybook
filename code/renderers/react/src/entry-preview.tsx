@@ -6,13 +6,13 @@ import { global } from '@storybook/global';
 
 import { configure } from 'storybook/test';
 
-import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
-import type { Decorator } from './public-types';
+import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
+import type { Decorator } from './public-types.ts';
 
-export { render } from './render';
-export { renderToCanvas } from './renderToCanvas';
-export { mount } from './mount';
-export { applyDecorators } from './applyDecorators';
+export { render } from './render.tsx';
+export { renderToCanvas } from './renderToCanvas.tsx';
+export { mount } from './mount.ts';
+export { applyDecorators } from './applyDecorators.ts';
 
 export const decorators: Decorator[] = [
   (story, context) => {

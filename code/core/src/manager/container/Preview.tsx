@@ -10,20 +10,26 @@ import memoizerific from 'memoizerific';
 import type { State, StoriesHash } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
 
-import { Preview, createCanvasTab, filterTabs } from '../components/preview/Preview';
-import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar';
-import { defaultWrappers } from '../components/preview/Wrappers';
-import { addonsTool } from '../components/preview/tools/addons';
-import { menuTool } from '../components/preview/tools/menu';
-import { openInEditorTool } from '../components/preview/tools/open-in-editor';
-import { remountTool } from '../components/preview/tools/remount';
-import { shareTool } from '../components/preview/tools/share';
-import { zoomTool } from '../components/preview/tools/zoom';
-import type { PreviewProps } from '../components/preview/utils/types';
+import { Preview, createCanvasTab, filterTabs } from '../components/preview/Preview.tsx';
+import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar.tsx';
+import { defaultWrappers } from '../components/preview/Wrappers.tsx';
+import { addonsTool } from '../components/preview/tools/addons.tsx';
+import { menuTool } from '../components/preview/tools/menu.tsx';
+import { openInEditorTool } from '../components/preview/tools/open-in-editor.tsx';
+import { remountTool } from '../components/preview/tools/remount.tsx';
+import { isolationModeTool } from '../components/preview/tools/share.tsx';
+import { zoomTool } from '../components/preview/tools/zoom.tsx';
+import type { PreviewProps } from '../components/preview/utils/types.tsx';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool];
-const defaultToolsExtra = [zoomTool, addonsTool, fullScreenTool, shareTool, openInEditorTool];
+const defaultToolsExtra = [
+  isolationModeTool,
+  zoomTool,
+  addonsTool,
+  fullScreenTool,
+  openInEditorTool,
+];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

@@ -1,6 +1,8 @@
+import React, { useEffect, useState } from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -64,6 +66,34 @@ export const Undefined: Story = {
   },
 };
 
+export const DelayedObject: Story = {
+  render: (args) => {
+    const [value, setValue] = useState<object | undefined>(undefined);
+
+    useEffect(() => {
+      setTimeout(() => {
+        setValue({
+          name: 'Michael',
+          nested: { someBool: true, someNumber: 22 },
+        });
+      }, 1_000);
+    }, []);
+
+    return <ObjectControl {...args} value={value} />;
+  },
+  parameters: {
+    withRawArg: false,
+  },
+  play: async ({ canvas }) => {
+    await canvas.findByText('"Michael"');
+    await waitFor(() => {
+      expect(
+        canvas.queryByRole('textbox', { name: 'Edit object as JSON' })
+      ).not.toBeInTheDocument();
+    });
+  },
+};
+
 class Person {
   constructor(
     public firstName: string,
@@ -110,5 +140,33 @@ export const ReadonlyAndUndefined: Story = {
   args: {
     value: undefined,
     argType: { table: { readonly: true } },
+  },
+};
+
+export const ObjectSmallViewport: Story = {
+  args: {
+    value: {
+      name: 'Michael',
+      someDate: new Date('2022-10-30T12:31:11'),
+      nested: { someBool: true, someNumber: 22 },
+    },
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
+  },
+};
+
+export const ArraySmallViewport: Story = {
+  args: {
+    value: [
+      'someString',
+      22,
+      true,
+      new Date('2022-10-30T12:31:11'),
+      { someBool: true, someNumber: 22 },
+    ],
+  },
+  parameters: {
+    chromatic: { viewports: [320] },
   },
 };

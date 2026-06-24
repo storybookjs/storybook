@@ -1,6 +1,11 @@
 import React from 'react';
 
-import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type DecoratorFunction,
+  type StatusValue,
+  type StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -10,16 +15,17 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
-} from '../../manager-stores.mock';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { standardData as standardHeaderData } from './Heading.stories';
-import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
-import { mockDataset } from './mockdata';
-import type { RefType } from './types';
+} from '../../manager-stores.mock.ts';
+import { internal_fullStatusStore as internal_ctaStatusStore } from 'storybook/manager-api';
+import { LayoutProvider } from '../layout/LayoutProvider.tsx';
+import { standardData as standardHeaderData } from './Heading.stories.tsx';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
+import { mockDataset } from './mockdata.ts';
+import type { RefType } from './types.ts';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -33,13 +39,22 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
-const managerContext: any = {
+const managerContext: any = (
+  args: Meta<typeof Sidebar>['args'],
+  options: {
+    includedStatusFilters?: StatusValue[];
+    excludedStatusFilters?: StatusValue[];
+  } = {}
+) => ({
   state: {
     docsOptions: {
       defaultName: 'Docs',
       autodocs: 'tag',
       docsMode: false,
     },
+    internal_index: args?.indexJson,
+    includedStatusFilters: options.includedStatusFilters ?? [],
+    excludedStatusFilters: options.excludedStatusFilters ?? [],
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -65,8 +80,9 @@ const managerContext: any = {
       url: 'http://localhost:6006/',
     }),
     applyQueryParams: fn().mockName('api::applyQueryParams'),
+    setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
   },
-};
+});
 
 const meta = {
   component: Sidebar,
@@ -100,8 +116,8 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn, { globals, title }) => (
-      <ManagerContext.Provider value={managerContext}>
+    (storyFn, { args, globals, title, parameters }) => (
+      <ManagerContext.Provider value={managerContext(args, parameters?.contextOptions ?? {})}>
         <LayoutProvider
           forceDesktop={
             globals.viewport?.value === 'desktop' ||
@@ -134,8 +150,8 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) => (
-  <ManagerContext.Provider value={managerContext}>
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { args, globals, title }) => (
+  <ManagerContext.Provider value={managerContext(args)}>
     <LayoutProvider
       forceDesktop={
         globals.viewport?.value === 'desktop' ||
@@ -250,6 +266,45 @@ export const EmptyMobile: Story = {
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
   play: waitForChecklistWidget,
+};
+
+export const EmptyWithFilters: Story = {
+  args: Empty.args,
+  decorators: [
+    (storyFn, { args, globals, title }) => {
+      const context = managerContext(args);
+      return (
+        <ManagerContext.Provider
+          value={{
+            ...context,
+            state: {
+              ...context.state,
+              includedTagFilters: ['A'],
+              excludedTagFilters: ['B'],
+              includedStatusFilters: [],
+              excludedStatusFilters: [],
+            },
+          }}
+        >
+          <LayoutProvider
+            forceDesktop={
+              globals.viewport?.value === 'desktop' ||
+              globals.viewport?.value === undefined ||
+              title.endsWith('scrolled')
+            }
+          >
+            {storyFn()}
+          </LayoutProvider>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    const clearFiltersButton = await canvas.findByRole('button', { name: 'Clear filters' });
+    await expect(clearFiltersButton).toBeInTheDocument();
+  },
 };
 
 export const EmptyIndex: Story = {
@@ -527,5 +582,424 @@ export const Scrolled: Story = {
     // expect the scrollable to be scrolled to the bottom
     // @ts-expect-error (non strict)
     await expect(scrollable.scrollTop).toBe(scrollable.scrollHeight - scrollable.clientHeight);
+  },
+};
+
+const newStatusAllStories = Object.entries(index).reduce((acc, [id, item]) => {
+  if (item.type !== 'story') return acc;
+  return {
+    ...acc,
+    [id]: {
+      [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        storyId: id,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      },
+    },
+  } satisfies StatusesByStoryIdAndTypeId;
+}, {} as StatusesByStoryIdAndTypeId);
+
+const newStatusStoryIds = Object.entries(index)
+  .filter(([, item]) => item.type === 'story')
+  .map(([id]) => id);
+
+const indexJsonWithAllStories = {
+  entries: {
+    ...(meta.args.indexJson?.entries ?? {}),
+    ...Object.fromEntries(
+      Object.entries(index)
+        .filter(
+          (entry): entry is [string, Extract<IndexHash[string], { type: 'story' }>] =>
+            entry[1].type === 'story'
+        )
+        .map(([id, item]) => [
+          id,
+          {
+            id,
+            name: item.name ?? id,
+            title: item.title ?? id,
+            importPath: './importPath.js',
+            type: 'story' as const,
+            subtype: 'story' as const,
+            tags: ['dev'],
+          },
+        ])
+    ),
+  },
+  v: 6,
+};
+
+export const StatusesNew: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA shows new label', async () => {
+      const canvas = within(canvasElement);
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(cta).toBeInTheDocument();
+      await expect(cta).toHaveTextContent('Review new stories');
+    });
+  },
+};
+
+const modifiedStatusAllStories = Object.entries(index).reduce((acc, [id, item]) => {
+  if (item.type !== 'story') return acc;
+  return {
+    ...acc,
+    [id]: {
+      [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        storyId: id,
+        value: 'status-value:modified' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story was modified',
+      },
+    },
+  } satisfies StatusesByStoryIdAndTypeId;
+}, {} as StatusesByStoryIdAndTypeId);
+
+const modifiedStatusStoryIds = newStatusStoryIds;
+
+export const StatusesModified: Story = {
+  args: {
+    allStatuses: modifiedStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      modifiedStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:modified' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story was modified',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA shows modified label', async () => {
+      const canvas = within(canvasElement);
+      const cta = await canvas.findByRole('switch', { name: 'Review modified stories' });
+      await expect(cta).toBeInTheDocument();
+      await expect(cta).toHaveTextContent('Review modified stories');
+    });
+  },
+};
+
+export const StatusesRelated: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      return {
+        ...acc,
+        [id]: {
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+            storyId: id,
+            value: 'status-value:affected' as StatusValue,
+            title: 'Change Detection',
+            description: 'This story is related to a change',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  beforeEach: () => {
+    // affected statuses do not count as new/modified — CTA should be hidden
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:affected' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is related to a change',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA is hidden for affected-only statuses', async () => {
+      const canvas = within(canvasElement);
+      await expect(canvas.queryByRole('button', { name: /Review/ })).toBeNull();
+    });
+  },
+};
+
+export const StatusesMixed: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      const values: StatusValue[] = [
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:success',
+        'status-value:warning',
+      ];
+      const value = values[Object.keys(acc).length % values.length];
+      return {
+        ...acc,
+        [id]: {
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+            storyId: id,
+            value,
+            title: 'Change Detection',
+            description: '',
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const StatusesChangeDetectionPriority: Story = {
+  args: {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
+      if (item.type !== 'story') return acc;
+      // Cycles through all change-detection variants + warning/error to verify
+      // priority ordering (most critical wins): error > warning > related > modified > new
+      const priorityValues: StatusValue[] = [
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:warning',
+        'status-value:error',
+      ];
+      const value = priorityValues[Object.keys(acc).length % priorityValues.length];
+      return {
+        ...acc,
+        [id]: {
+          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
+            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+            storyId: id,
+            value,
+            title: 'Change Detection',
+            description: `Priority test: ${value}`,
+          },
+        },
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
+  },
+  play: waitForChecklistWidget,
+};
+
+export const WithCTAInactive: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  parameters: {
+    contextOptions: {
+      includedStatusFilters: [] as StatusValue[],
+    },
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA shows reviewing state', async () => {
+      const canvas = within(canvasElement);
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(cta).toBeInTheDocument();
+      await expect(cta).toHaveAttribute('aria-checked', 'false');
+    });
+  },
+};
+
+/**
+ * CTA in active state: both new and modified filters are included.
+ * Shows "Reviewing N new, M changed" with active styling.
+ */
+export const WithCTAActive: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  parameters: {
+    contextOptions: {
+      includedStatusFilters: ['status-value:new', 'status-value:modified'] as StatusValue[],
+    },
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    await step('CTA shows reviewing state', async () => {
+      const canvas = within(canvasElement);
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      await expect(cta).toBeInTheDocument();
+      await expect(cta).toHaveAttribute('aria-checked', 'true');
+      await expect(cta).toHaveTextContent('Reviewing new stories');
+    });
+  },
+};
+
+/**
+ * Clicking the CTA flips includedStatusFilters live — the button text, aria-checked and active
+ * styling all update in the same render cycle. Regression guard for the Tree.tsx Consumer issue
+ * where new data props were ignored after first render.
+ */
+export const CTAToggleUpdatesLive: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  decorators: [
+    (StoryFn, { args }) => {
+      const [included, setIncluded] = React.useState<StatusValue[]>([]);
+      const [excluded, setExcluded] = React.useState<StatusValue[]>([]);
+      const ctx = React.useMemo(() => {
+        const base = managerContext(args);
+        return {
+          ...base,
+          state: {
+            ...base.state,
+            includedStatusFilters: included,
+            excludedStatusFilters: excluded,
+          },
+          api: {
+            ...base.api,
+            setAllStatusFilters: (nextIncluded: StatusValue[], nextExcluded: StatusValue[]) => {
+              setIncluded(nextIncluded);
+              setExcluded(nextExcluded);
+            },
+          },
+        };
+      }, [args, included, excluded]);
+      return (
+        <ManagerContext.Provider value={ctx}>
+          <LayoutProvider forceDesktop>
+            <StoryFn />
+          </LayoutProvider>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+
+    await step('initial CTA reads "Review new stories"', async () => {
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(cta).toHaveAttribute('aria-checked', 'false');
+      await expect(cta).toHaveTextContent('Review new stories');
+    });
+
+    await step('click CTA → tree state flips live', async () => {
+      const cta = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await userEvent.click(cta);
+    });
+
+    await step('CTA shows reviewing state and aria-checked=true', async () => {
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      await expect(cta).toHaveAttribute('aria-checked', 'true');
+      await expect(cta).toHaveTextContent('Reviewing new stories');
+    });
+
+    await step('click again deactivates', async () => {
+      const cta = await canvas.findByRole('switch', { name: 'Reviewing new stories' });
+      await userEvent.click(cta);
+      const idle = await canvas.findByRole('switch', { name: 'Review new stories' });
+      await expect(idle).toHaveAttribute('aria-checked', 'false');
+    });
+  },
+};
+
+/**
+ * CTA hides while search results are rendered to keep the focus on results.
+ */
+export const CTAHiddenDuringSearch: Story = {
+  args: {
+    allStatuses: newStatusAllStories,
+    indexJson: indexJsonWithAllStories,
+  },
+  parameters: {
+    chromatic: { delay: 2200 },
+  },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (StoryFn) => (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
+  beforeEach: () => {
+    internal_ctaStatusStore.set(
+      newStatusStoryIds.map((id) => ({
+        storyId: id,
+        typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
+        value: 'status-value:new' as StatusValue,
+        title: 'Change Detection',
+        description: 'This story is new',
+      }))
+    );
+    return () => internal_ctaStatusStore.unset();
+  },
+  play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    await step('type search query to trigger search results', async () => {
+      const search = await canvas.findByPlaceholderText('Find components');
+      await userEvent.clear(search);
+      await userEvent.type(search, 'Child');
+    });
+    await step('CTA is hidden while search results are shown', async () => {
+      await expect(canvas.queryByRole('button', { name: /Review/ })).toBeNull();
+    });
   },
 };

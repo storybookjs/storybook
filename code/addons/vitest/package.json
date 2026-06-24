@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.3.0-alpha.1",
+  "version": "10.5.0-alpha.7",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -40,11 +40,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "code": "./src/constants.ts",
+      "default": "./dist/constants.js"
     },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
+    "./internal/setup-file-with-project-annotations": "./dist/vitest-plugin/setup-file-with-project-annotations.js",
+    "./internal/setup-file.browser.3": "./dist/vitest-plugin/setup-file.browser.3.js",
+    "./internal/setup-file.browser.4": "./dist/vitest-plugin/setup-file.browser.4.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
@@ -53,6 +62,7 @@
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
+      "code": "./src/vitest-plugin/index.ts",
       "default": "./dist/vitest-plugin/index.js"
     }
   },
@@ -69,15 +79,17 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^2.0.1"
+    "@storybook/icons": "^2.0.2"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "workspace:*",
+    "@storybook/builder-vite": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",
     "@types/semver": "^7.7.1",
-    "@vitest/browser-playwright": "^4.0.14",
-    "@vitest/runner": "^4.0.14",
+    "@vitest/browser-playwright": "^4.1.5",
+    "@vitest/runner": "^4.1.5",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
     "istanbul-lib-report": "^3.0.1",
@@ -93,7 +105,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14"
+    "vitest": "^4.1.5"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",

@@ -3,10 +3,11 @@ import type {
   ChannelArgsMulti,
   ChannelArgsSingle,
   ChannelEvent,
+  ChannelLike,
   ChannelTransport,
   EventsKeyValue,
   Listener,
-} from './types';
+} from './types.ts';
 
 const isMulti = (args: ChannelArgs): args is ChannelArgsMulti => {
   // @ts-expect-error (we guard against this right here)
@@ -18,7 +19,7 @@ const generateRandomId = () => {
   return Math.random().toString(16).slice(2);
 };
 
-export class Channel {
+export class Channel implements ChannelLike {
   readonly isAsync: boolean;
 
   private sender = generateRandomId();

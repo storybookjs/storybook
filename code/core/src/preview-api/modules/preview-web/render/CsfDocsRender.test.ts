@@ -3,11 +3,11 @@ import { expect, it, vi } from 'vitest';
 import { Channel } from 'storybook/internal/channels';
 import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
 
-import { Tag } from '../../../../shared/constants/tags';
-import type { StoryStore } from '../../store';
-import { csfFileParts } from '../docs-context/test-utils';
-import { CsfDocsRender } from './CsfDocsRender';
-import { PREPARE_ABORTED } from './Render';
+import { Tag } from '../../../../shared/constants/tags.ts';
+import type { StoryStore } from '../../store/index.ts';
+import { csfFileParts } from '../docs-context/test-utils.ts';
+import { CsfDocsRender } from './CsfDocsRender.ts';
+import { PREPARE_ABORTED } from './Render.ts';
 
 const entry = {
   type: 'docs',
@@ -76,4 +76,30 @@ it('attached immediately', async () => {
   const context = render.docsContext(vi.fn());
 
   expect(context.storyById()).toEqual(story);
+});
+
+it('sets filterByAutodocs to true for autodocs pages', async () => {
+  const { story, csfFile, moduleExports } = csfFileParts();
+
+  const store = {
+    loadEntry: () => ({
+      entryExports: moduleExports,
+      csfFiles: [],
+    }),
+    processCSFFileWithCache: () => csfFile,
+    componentStoriesFromCSFFile: () => [story],
+    storyFromCSFFile: () => story,
+  } as unknown as StoryStore<Renderer>;
+
+  const render = new CsfDocsRender(
+    new Channel({}),
+    store,
+    entry,
+    {} as RenderContextCallbacks<Renderer>
+  );
+  await render.prepare();
+
+  const context = render.docsContext(vi.fn());
+
+  expect(context.filterByAutodocs).toBe(true);
 });

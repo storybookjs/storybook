@@ -66,7 +66,16 @@ const FlexSpaced = styled.fieldset({
 });
 
 export type DateProps = ControlProps<DateValue> & DateConfig;
-export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur, argType }) => {
+export const DateControl: FC<DateProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  argType,
+}) => {
   const [valid, setValid] = useState(true);
   const dateRef = useRef<HTMLInputElement>();
   const timeRef = useRef<HTMLInputElement>();
@@ -114,7 +123,7 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
     setValid(!!time);
   };
 
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <FlexSpaced>

@@ -18,7 +18,7 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { addons } from './main';
+import { addons } from './main.ts';
 
 interface Hook {
   name: string;
@@ -218,7 +218,10 @@ const areDepsEqual = (deps: any[], nextDeps: any[]) =>
   deps.length === nextDeps.length && deps.every((dep, i) => dep === nextDeps[i]);
 
 const invalidHooksError = () =>
-  new Error('Storybook preview hooks can only be called inside decorators and story functions.');
+  new Error(
+    'Storybook preview hooks can only be called inside decorators and story functions.\n\n' +
+      "When combining Storybook hooks (e.g. useArgs) with framework hooks (e.g. React's useState, useEffect, useRef) in the same render function, use Storybook's equivalents from 'storybook/preview-api' instead: useState, useEffect, useRef, useMemo, useCallback, useReducer."
+  );
 
 function getHooksContextOrNull<
   TRenderer extends Renderer,

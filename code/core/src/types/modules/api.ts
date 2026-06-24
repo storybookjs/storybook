@@ -1,14 +1,19 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels';
-import type { State } from '../../manager-api';
-import type { RenderData } from '../../router/types';
-import type { ThemeVars } from '../../theming/types';
-import type { Addon_RenderOptions } from './addons';
-import type { API_FilterFunction, API_HashEntry, API_IndexHash } from './api-stories';
-import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
-import type { DocsOptions } from './core-common';
-import type { StoryIndex } from './indexer';
+import type { Channel } from '../../channels/index.ts';
+import type { State } from '../../manager-api/index.ts';
+import type { RenderData } from '../../router/types.ts';
+import type { ThemeVars } from '../../theming/types.ts';
+import type { Addon_RenderOptions } from './addons.ts';
+import type {
+  API_FilterFunction,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedIndexEntry,
+} from './api-stories.ts';
+import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
+import type { DocsOptions } from './core-common.ts';
+import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 
@@ -43,9 +48,10 @@ export interface API_Provider<API> {
   getConfig(): {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
+    selectedPanel?: string;
     StoryMapper?: API_StoryMapper;
     [k: string]: any;
-  } & Partial<API_UIOptions>;
+  };
   [key: string]: any;
 }
 
@@ -58,16 +64,7 @@ export type API_IframeRenderer = (
   queryParams: Record<string, any>
 ) => ReactElement<any, any> | null;
 
-export interface API_UIOptions {
-  name?: string;
-  url?: string;
-  goFullScreen: boolean;
-  showStoriesPanel: boolean;
-  showAddonPanel: boolean;
-  addonPanelInRight: boolean;
-  theme?: ThemeVars;
-  selectedPanel?: string;
-}
+export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 
 export interface API_Layout {
   initialActive: API_ActiveTabsType;
@@ -84,6 +81,8 @@ export interface API_Layout {
     rightPanelWidth: number;
   };
   panelPosition: API_PanelPositions;
+  showNav: boolean;
+  showPanel: boolean;
   showTabs: boolean;
   showToolbar: boolean;
 }

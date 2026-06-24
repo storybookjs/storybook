@@ -2,10 +2,12 @@ import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Subtitle as PureSubtitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
+import { withMdxComponentOverride } from './with-mdx-component-override';
 
 interface SubtitleProps {
   children?: ReactNode;
@@ -19,11 +21,11 @@ interface SubtitleProps {
 const DEPRECATION_MIGRATION_LINK =
   'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#subtitle-block-and-parameterscomponentsubtitle';
 
-export const Subtitle: FunctionComponent<SubtitleProps> = (props) => {
+const SubtitleImpl: FunctionComponent<SubtitleProps> = (props) => {
   const { of, children } = props;
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   let preparedMeta;
@@ -50,3 +52,5 @@ export const Subtitle: FunctionComponent<SubtitleProps> = (props) => {
     <PureSubtitle className="sbdocs-subtitle sb-unstyled">{content}</PureSubtitle>
   ) : null;
 };
+
+export const Subtitle = withMdxComponentOverride('Subtitle', SubtitleImpl);

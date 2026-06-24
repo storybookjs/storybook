@@ -1,4 +1,4 @@
-import type { ThemeAddonState, ThemesParameters } from './types';
+import type { ThemeAddonState, ThemesParameters } from './types.ts';
 
 export const PARAM_KEY = 'themes' as const;
 export const ADDON_ID = `storybook/${PARAM_KEY}` as const;

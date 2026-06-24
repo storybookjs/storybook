@@ -6,6 +6,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
+import { jsModuleExtensions } from '../constants/extensions.ts';
+
 /**
  * This is just an alias for import.meta.resolve. It makes it possible to mock it in Vitest with
  * module-mocking, as Vitest currently does not support import.meta.resolve in tests.
@@ -32,8 +34,14 @@ export const resolvePackageDir = (
   try {
     return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
   } catch {
-    // Necessary fallback for Bun runtime
-    return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
+    try {
+      // Necessary fallback for Bun runtime
+      return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
+    } catch {
+      // Fallback using require.resolve for strict pnpm environments where import.meta.resolve may fail
+      const req = createRequire(parent ?? import.meta.url);
+      return dirname(req.resolve(join(pkg, 'package.json')));
+    }
   }
 };
 
@@ -120,7 +128,7 @@ export async function importModule(
 export const safeResolveModule = ({
   specifier,
   parent,
-  extensions = ['.mjs', '.js', '.cjs'],
+  extensions = [...jsModuleExtensions],
 }: {
   specifier: string;
   parent?: string;

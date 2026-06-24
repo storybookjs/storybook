@@ -1,20 +1,29 @@
 /// <reference path="../typings.d.ts" />
-import { global } from '@storybook/global';
 
-import { UniversalStore } from '../shared/universal-store';
-import { Channel } from './main';
-import { PostMessageTransport } from './postmessage';
-import type { ChannelTransport, Config } from './types';
-import { WebsocketTransport } from './websocket';
+import { UniversalStore } from '../shared/universal-store/index.ts';
+import { Channel } from './main.ts';
+import { PostMessageTransport } from './postmessage/index.ts';
+import type { ChannelTransport, Config } from './types.ts';
+import { WebsocketTransport } from './websocket/index.ts';
 
-const { CONFIG_TYPE } = global;
-
-export * from './main';
+export * from './main.ts';
+export {
+  clearChannel,
+  ensureChannel,
+  getChannel,
+  installNoopChannel,
+  requireChannel,
+  setChannel,
+} from './channel-slot.ts';
 
 export default Channel;
 
-export { PostMessageTransport } from './postmessage';
-export { WebsocketTransport, HEARTBEAT_INTERVAL, HEARTBEAT_MAX_LATENCY } from './websocket';
+export { PostMessageTransport } from './postmessage/index.ts';
+export {
+  WebsocketTransport,
+  HEARTBEAT_INTERVAL,
+  HEARTBEAT_MAX_LATENCY,
+} from './websocket/index.ts';
 
 type Options = Config & {
   extraTransports?: ChannelTransport[];
@@ -32,10 +41,11 @@ type Options = Config & {
 export function createBrowserChannel({ page, extraTransports = [] }: Options): Channel {
   const transports: ChannelTransport[] = [new PostMessageTransport({ page }), ...extraTransports];
 
-  if (CONFIG_TYPE === 'DEVELOPMENT') {
+  if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel`;
+    const { wsToken } = globalThis.CHANNEL_OPTIONS || {};
+    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${wsToken}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }
@@ -49,4 +59,10 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   return channel;
 }
 
-export type { Listener, ChannelEvent, ChannelTransport, ChannelHandler } from './types';
+export type {
+  Listener,
+  ChannelEvent,
+  ChannelTransport,
+  ChannelHandler,
+  ChannelLike,
+} from './types.ts';

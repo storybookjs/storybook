@@ -1,17 +1,18 @@
 import React from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import { type TestProviderState } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { destroyAnnouncer } from '@react-aria/live-announcer';
 import { ManagerContext, addons } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
-import { storeOptions } from '../constants';
-import { store as mockStore } from '../manager-store.mock';
-import { TestProviderRender } from './TestProviderRender';
+import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants.ts';
+import { storeOptions } from '../constants.ts';
+import { store as mockStore } from '../manager-store.mock.ts';
+import { TestProviderRender } from './TestProviderRender.tsx';
 
 const managerContext: any = {
   api: {
@@ -74,8 +75,10 @@ const meta = {
   beforeEach: async () => {
     addons.register(A11Y_ADDON_ID, () => {});
     mockStore.setState.mockClear();
+    destroyAnnouncer();
     return () => {
       mockStore.setState(storeOptions.initialState);
+      destroyAnnouncer();
     };
   },
 } satisfies Meta<typeof TestProviderRender>;
@@ -320,5 +323,95 @@ export const InSidebarContextMenu: Story = {
       exportName: 'ExampleStory',
       depth: 1,
     },
+  },
+};
+
+/** Verifies that transitioning from pending to running announces "Test run started." */
+export const AnnouncesTestRunStart: Story = {
+  tags: ['vitest'],
+  args: {
+    testProviderState: 'test-provider-state:pending',
+  },
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      // Simulate test start after a brief delay (matching the pattern of other Announces stories).
+      const timer = setTimeout(() => setState('test-provider-state:running'), 100);
+      return () => clearTimeout(timer);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ step }) => {
+    await step('Verify "Test run started." is announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({ text: 'Test run started.', level: 'polite' });
+      });
+    });
+  },
+};
+
+/** Verifies that transitioning from running to succeeded announces results. */
+export const AnnouncesTestRunFinished: Story = {
+  tags: ['vitest'],
+  args: {
+    testProviderState: 'test-provider-state:running',
+    componentTestStatusValueToStoryIds: {
+      ...meta.args.componentTestStatusValueToStoryIds,
+      'status-value:success': ['story-id-1', 'story-id-2', 'story-id-3'],
+      'status-value:error': ['story-id-4'],
+    },
+  },
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      // Simulate test completion after a brief delay.
+      const timer = setTimeout(() => setState('test-provider-state:succeeded'), 100);
+      return () => clearTimeout(timer);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ step }) => {
+    await step('Verify test results are announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: /Test run finished\. 1 component errored, 3 components passed\./,
+          level: 'assertive',
+        });
+      });
+    });
+  },
+};
+
+/** Verifies that transitioning to crashed state announces the crash assertively. */
+export const AnnouncesTestRunCrashed: Story = {
+  tags: ['vitest'],
+  args: {
+    testProviderState: 'test-provider-state:running',
+    storeState: {
+      ...storeOptions.initialState,
+      fatalError: {
+        message: 'Error message',
+        error: { name: 'Error', message: 'Error message', stack: 'Error stack' },
+      },
+    },
+  },
+  render: function Render(args) {
+    const [state, setState] = React.useState<TestProviderState>(args.testProviderState);
+    React.useEffect(() => {
+      // Simulate crash after a brief delay.
+      const timer = setTimeout(() => setState('test-provider-state:crashed'), 100);
+      return () => clearTimeout(timer);
+    }, []);
+    return <TestProviderRender {...args} testProviderState={state} />;
+  },
+  play: async ({ step }) => {
+    await step('Verify crash is announced', async () => {
+      await waitFor(() => {
+        expect(document.body).toHaveLiveRegion({
+          text: 'Test run crashed.',
+          level: 'assertive',
+        });
+      });
+    });
   },
 };

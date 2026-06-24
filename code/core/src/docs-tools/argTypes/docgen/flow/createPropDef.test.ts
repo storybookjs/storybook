@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DocgenInfo } from '../types';
-import { createFlowPropDef } from './createPropDef';
+import type { DocgenInfo } from '../types.ts';
+import { createFlowPropDef } from './createPropDef.ts';
 
 const PROP_NAME = 'propName';
 

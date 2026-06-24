@@ -1,6 +1,7 @@
 import { isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -8,6 +9,7 @@ import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { CompileOptions } from './compiler';
+import { registerMdxService } from './mdx-service/server.ts';
 
 /**
  * Get the resolvedReact preset, which points either to the user's react dependencies or the react
@@ -49,7 +51,9 @@ async function webpack(
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
-      providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
+      providerImportSource: fileURLToPath(
+        import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+      ),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
         ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
@@ -211,11 +215,32 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
 
+export const services = async (_value: void, options: Options): Promise<void> => {
+  const features = await options.presets.apply('features');
+
+  if (
+    features?.experimentalDocgenServer &&
+    features?.componentsManifest &&
+    !options.ignorePreview
+  ) {
+    const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+    registerMdxService({
+      getIndex: () => generator.getIndex(),
+    });
+  }
+};
+
 const optimizeViteDeps = [
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
   '@storybook/addon-docs > @mdx-js/react',
+  '@storybook/addon-docs > @storybook/react-dom-shim',
+  'react-dom/client',
+  'react/jsx-runtime',
+  'react',
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
+export { experimental_docgenProvider } from './docgen';

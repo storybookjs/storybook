@@ -2,6 +2,11 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Builder-vite: Vite's `publicDir` is disabled by default](#builder-vite-vites-publicdir-is-disabled-by-default)
+- [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
+  - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
+- [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
+  - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
+  - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -25,6 +30,7 @@
       - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
     - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
     - [PopoverProvider Component Added](#popoverprovider-component-added)
+      - [Added: ariaLabel](#added-arialabel-2)
     - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
       - [Removed: trigger](#removed-trigger)
     - [Added: triggerOnFocusOnly](#added-triggeronfocusonly)
@@ -35,6 +41,7 @@
     - [Removed: interactive](#removed-interactive)
       - [Other changes](#other-changes)
     - [WithTooltipPure and WithTooltipState are deprecated](#withtooltippure-and-withtooltipstate-are-deprecated)
+    - [Link isButton is deprecated](#link-isbutton-is-deprecated)
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
     - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
@@ -206,17 +213,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -242,7 +249,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -256,7 +263,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -307,7 +314,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -555,6 +562,103 @@ const config = {
 export default config;
 ```
 
+## From version 10.4.0 to 10.5.0
+
+### ExternalDocs and ExternalDocsContainer are deprecated
+
+The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
+
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
+
+## From version 10.3.0 to 10.4.0
+
+### React Native: on-device addons moved to `deviceAddons`
+
+In Storybook 10.4, the React Native on-device Storybook config (`.rnstorybook/main.ts`) uses a dedicated `deviceAddons` key. All entries that used to live under `addons` in your React Native config must now be listed under `deviceAddons` instead.
+
+Listing them under `addons` caused `storybook extract` to fail because Storybook Core evaluates every entry in `addons` as a Node.js preset, which on-device addons are not.
+
+The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically by renaming the `addons` key to `deviceAddons`. It only acts on React Native main configs (detected by the `.rnstorybook` directory name or by a `framework` field of `@storybook/react-native`), and leaves any paired web `.storybook/main.ts` untouched.
+
+You can also migrate manually:
+
+```ts
+// Before (.rnstorybook/main.ts)
+export default {
+  addons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+
+// After (.rnstorybook/main.ts)
+export default {
+  deviceAddons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+```
+
+### TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`
+
+Projects using `@storybook/react-vite` together with `@tanstack/react-router` (or `@tanstack/react-start`) can migrate to the dedicated `@storybook/tanstack-react` framework. The new framework provides built-in TanStack Router and TanStack Query support: every story is automatically wrapped in a TanStack Router instance (in-memory history), so any manual decorator that creates a `RouterProvider`, `createRouter`, `createMemoryHistory` or `createRootRoute` is no longer needed and should be removed.
+
+To run the automigration:
+
+```sh
+npx storybook automigrate
+```
+
+The migration will:
+
+- Replace `@storybook/react-vite` with `@storybook/tanstack-react` in `package.json`.
+- Update the framework string in `.storybook/main.*` (works for both regular and CSF factories `defineMain` configs).
+- Update import sites that reference `@storybook/react-vite` (including CSF factories `definePreview` and `defineMain` from `@storybook/react-vite/node`).
+- Detect manual TanStack Router decorators in `.storybook/preview.*`, the rest of `.storybook/`, and any `*.stories.*` file. When a decorator is detected, the migration offers to copy a ready-to-paste AI prompt to your clipboard that walks an AI assistant through removing it.
+
+After running the automigration, remove any manual TanStack Router decorators (you can use the AI prompt offered by the CLI). For stories that need to render under a specific route, use the framework's `parameters.tanstack.router` API instead. With the CSF factories syntax:
+
+```ts
+// src/stories/Page.stories.ts
+import preview from '#.storybook/preview';
+import { Route } from './Page';
+
+const meta = preview.meta({
+  title: 'Example/Page',
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route,
+      },
+    },
+  },
+});
+
+export const Default = meta.story();
+```
+
+Or with the CSF3 syntax — note that `Meta` and `StoryObj` should now be imported from `@storybook/tanstack-react` so they pick up the TanStack-aware parameter types:
+
+```ts
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { Route } from './Page';
+
+const meta = {
+  title: 'Example/Page',
+  parameters: {
+    tanstack: { router: { route: Route } },
+  },
+} satisfies Meta<typeof Route>;
+
+export default meta;
+export const Default: StoryObj<typeof meta> = {};
+```
+
+`parameters.tanstack.router` also accepts `path`, `params`, `query`, `routeOverrides`, and `useRouterContext` for finer-grained control. You can additionally register a project-wide default route by passing `route` to `definePreview` in `.storybook/preview.*`.
+
+See the [`@storybook/tanstack-react` framework documentation](https://storybook.js.org/docs/get-started/frameworks/tanstack-react) for the full list of features and APIs.
+
 ## From version 10.0.0 to 10.1.0
 
 ### API and Component Changes
@@ -664,6 +768,16 @@ The PopoverProvider component acts as a counterpoint to WithTooltip. When you wa
 
 PopoverProvider is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
 
+##### Added: ariaLabel
+
+The `ariaLabel` prop was added in Storybook 10.3 to provide an accessible label for the popover dialog. This label is announced by screen readers when the popover opens. `ariaLabel` will become mandatory in Storybook 11.
+
+```tsx
+<PopoverProvider ariaLabel="Share options" popover={<ShareMenu />}>
+  <Button ariaLabel="Share">Share</Button>
+</PopoverProvider>
+```
+
 #### WithTooltip Component API Changes
 
 The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.
@@ -703,6 +817,10 @@ The underlying implementation was switched from Popper.js to react-aria. Due to 
 #### WithTooltipPure and WithTooltipState are deprecated
 
 Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+
+#### Link isButton is deprecated
+
+Link now renders automatically as an HTML `button`, with keyboard focus support, when no `href` is provided. The `isButton` prop continues to enforce rendering with a `button` role in Storybook 10, but will be removed in Storybook 11.
 
 ## From version 9.x to 10.0.0
 

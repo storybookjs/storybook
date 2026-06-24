@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY } from './constants';
-import { MINIMAL_VIEWPORTS } from './defaults';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { MINIMAL_VIEWPORTS } from './defaults.ts';
 import type {
   GlobalState,
   GlobalStateUpdate,
   ViewportMap,
   ViewportParameters,
   ViewportType,
-} from './types';
+} from './types.ts';
 
 // Custom viewport format, e.g. '100pct-200px' (width-height)
 const URL_VALUE_PATTERN = /^([0-9]{1,4})([a-z]{0,4})-([0-9]{1,4})([a-z]{0,4})$/;
@@ -78,13 +79,17 @@ const parseGlobals = (
     };
   }
 
-  // Ensure URL-defined viewports (user globals) override story globals.
-  // Spreading is not sufficient here, because undefined would still override defined values.
   const global = normalizeGlobal(globals?.[PARAM_KEY]);
   const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
   const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
-  const value = userGlobal?.value ?? storyGlobal?.value ?? global?.value;
-  const isRotated = userGlobal?.isRotated ?? storyGlobal?.isRotated ?? global?.isRotated ?? false;
+  const storyHasViewport = PARAM_KEY in storyGlobals;
+
+  // Story-level viewport globals override user globals for the current story.
+  const primaryGlobal = storyHasViewport ? storyGlobal : userGlobal;
+  const secondaryGlobal = storyHasViewport ? userGlobal : storyGlobal;
+  const value = primaryGlobal?.value ?? secondaryGlobal?.value ?? global?.value;
+  const isRotated =
+    primaryGlobal?.isRotated ?? secondaryGlobal?.isRotated ?? global?.isRotated ?? false;
 
   const keys = Object.keys(options);
   const isLocked = disable || PARAM_KEY in storyGlobals || !keys.length;
@@ -153,6 +158,17 @@ export const useViewport = () => {
   const parameter = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
   const [globals, updateGlobals, storyGlobals, userGlobals] = useGlobals();
 
+  useEffect(() => {
+    if (parameter && 'defaultViewport' in parameter) {
+      const value = (parameter as { defaultViewport?: unknown }).defaultViewport;
+      deprecate(
+        `The \`viewport.defaultViewport\` parameter was removed in Storybook 10. ` +
+          `Use \`globals: { viewport: ${JSON.stringify(value)} }\` instead, ` +
+          `or run \`npx storybook automigrate\` to update your code automatically.`
+      );
+    }
+  }, [parameter]);
+
   const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
   const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =
     parseGlobals(
@@ -175,35 +191,29 @@ export const useViewport = () => {
       const w = width.replace(/px$/, '').replace(/%$/, 'pct');
       const h = height.replace(/px$/, '').replace(/%$/, 'pct');
       const value = isRotated ? `${h}-${w}` : `${w}-${h}`;
-      const [match, vx, ux, vy, uy] = value.match(URL_VALUE_PATTERN) || [];
-
-      // Don't update to pixel values less than 40
-      if (match && (ux || Number(vx) >= 40) && (uy || Number(vy) >= 40)) {
-        update({ value: match, isRotated });
-      }
+      update({ value, isRotated });
     },
     [update, isRotated]
   );
 
   useEffect(() => {
-    // Reset the viewport to the story global value if the story defines one, regardless of URL state
-    if (PARAM_KEY in storyGlobals) {
-      update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
-      lastSelectedOption.current = undefined;
+    // Skip if parameter not loaded to avoid race condition with default MINIMAL_VIEWPORTS
+    if (!parameter) {
+      return;
     }
-  }, [storyGlobals, update]);
 
-  useEffect(() => {
-    // Reset the viewport to the story global value if the URL state defines an invalid option
+    // Track valid options; if invalid and no story-level viewport is set, reset to default
     if (option) {
       if (Object.hasOwn(options, option)) {
         lastSelectedOption.current = option;
       } else {
         lastSelectedOption.current = undefined;
-        update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
+        if (!(PARAM_KEY in storyGlobals)) {
+          update({ value: undefined, isRotated: false });
+        }
       }
     }
-  }, [storyGlobals, options, option, update]);
+  }, [parameter, storyGlobals, options, option, update]);
 
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {

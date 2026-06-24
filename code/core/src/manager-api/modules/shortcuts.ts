@@ -9,12 +9,16 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import type { KeyboardEventLike } from '../lib/shortcut';
-import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
-import type { ModuleFn } from '../lib/types';
-import { focusableUIElements } from './layout';
+import type { KeyboardEventLike } from '../lib/shortcut.ts';
+import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
+
+function wasFocusInElement(element: HTMLElement | null) {
+  return document.activeElement && element?.contains(document.activeElement);
+}
 
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
@@ -358,12 +362,61 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'togglePanel': {
+          const wasPanelShown = fullAPI.getIsPanelShown();
+          const panelElement = document.getElementById(focusableUIElements.addonPanel);
+
           fullAPI.togglePanel();
+
+          if (wasPanelShown && wasFocusInElement(panelElement)) {
+            // poll: true always returns a Promise.
+            (
+              fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
+                poll: true,
+              }) as Promise<boolean>
+            ).then((success) => {
+              // Fallback to body for predictable behavior.
+              if (success === false) {
+                document.body.focus();
+              }
+            });
+          }
+
+          if (!wasPanelShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
           break;
         }
 
         case 'toggleNav': {
+          const wasNavShown = fullAPI.getIsNavShown();
+          const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
+
           fullAPI.toggleNav();
+
+          if (wasNavShown && wasFocusInElement(sidebarElement)) {
+            // poll: true always returns a Promise.
+            (
+              fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
+                poll: true,
+              }) as Promise<boolean>
+            ).then((success) => {
+              // Fallback to body for predictable behavior.
+              if (success === false) {
+                document.body.focus();
+              }
+            });
+          }
+
+          if (!wasNavShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
+
           break;
         }
 

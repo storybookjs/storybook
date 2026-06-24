@@ -1,18 +1,19 @@
-import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { getPort } from '../sandbox/utils/getPort';
-import { type Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import { type Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 8001;
 
 function getServePort(key: AllTemplatesKey) {
-  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'serve', key }) : PORT;
+  return isNxTaskExecution() ? getPort({ selectedTask: 'serve', key }) : PORT;
 }
 
 export const serve: Task = {
@@ -21,9 +22,15 @@ export const serve: Task = {
   dependsOn: ['build'],
   async ready({ key }) {
     const port = getServePort(key);
-    return (await detectFreePort(port)) !== port;
+    try {
+      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
+      return true;
+    } catch {
+      return false;
+    }
   },
-  async run({ builtSandboxDir, key }, { debug, dryRun }) {
+  async run({ builtSandboxDir, key }, { debug, dryRun, link }) {
+    await prepareSandbox({ key, link });
     const port = getServePort(key);
 
     const controller = new AbortController();

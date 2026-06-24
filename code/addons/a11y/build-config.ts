@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -21,6 +21,11 @@ const config: BuildEntries = {
       {
         exportEntries: ['./postinstall'],
         entryPoint: './src/postinstall.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./preset'],
+        entryPoint: './src/preset.ts',
         dts: false,
       },
     ],

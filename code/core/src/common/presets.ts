@@ -15,10 +15,11 @@ import type {
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { importModule, safeResolveModule } from '../shared/utils/module';
-import { getInterpretedFile } from './utils/interpret-files';
-import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
-import { validateConfigurationFiles } from './utils/validate-configuration-files';
+import type { ChannelLike } from '../channels/index.ts';
+import { importModule, safeResolveModule } from '../shared/utils/module.ts';
+import { getInterpretedFile } from './utils/interpret-files.ts';
+import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path.ts';
+import { validateConfigurationFiles } from './utils/validate-configuration-files.ts';
 
 export type InterPresetOptions = Omit<
   CLIOptions &
@@ -335,6 +336,7 @@ export async function loadAllPresets(
       /** Whether preset failures should be critical or not */
       isCritical?: boolean;
       build?: StorybookConfigRaw['build'];
+      channel: ChannelLike;
     }
 ) {
   const { corePresets = [], overridePresets = [], ...restOptions } = options;

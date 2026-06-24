@@ -9,11 +9,11 @@ import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
-import { csfIndexer } from '../presets/common-preset';
-import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
-import { StoryIndexGenerator } from './StoryIndexGenerator';
-import type { ServerChannel } from './get-server-channel';
-import { DEBOUNCE, registerIndexJsonRoute } from './index-json';
+import { csfIndexer } from '../presets/common-preset.ts';
+import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
+import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+import type { ServerChannel } from './get-server-channel.ts';
+import { registerIndexJsonRoute } from './index-json.ts';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });
@@ -96,7 +96,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -496,7 +496,7 @@ describe('registerIndexJsonRoute', () => {
 
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -527,7 +527,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -564,7 +564,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
@@ -610,7 +610,7 @@ describe('registerIndexJsonRoute', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({
         app,
-        serverChannel: mockServerChannel,
+        channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),

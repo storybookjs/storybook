@@ -5,7 +5,6 @@ module.exports = {
     'plugin:depend/recommended',
     'plugin:eslint-comments/recommended',
     'plugin:import-x/react-native',
-    'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
     'plugin:jsx-a11y/recommended',
@@ -46,7 +45,6 @@ module.exports = {
     'import-x',
     'json',
     'html',
-    'prettier',
   ],
   rules: {
     'react/no-unescaped-entities': 'off',
@@ -95,6 +93,32 @@ module.exports = {
         '@typescript-eslint/dot-notation': 'off',
         '@typescript-eslint/no-implied-eval': 'off',
         '@typescript-eslint/return-await': 'off',
+      },
+    },
+    {
+      files: ['*.ts', '*.tsx', '**/*.ts', '**/*.tsx'],
+      excludedFiles: [
+        '**/*.d.ts',
+        '**/docs/**/*',
+        '**/template/**/*',
+        '**/templates/**/*',
+        '**/__testfixtures__/**/*',
+        '**/__mocks-ng-workspace__/**/*',
+      ],
+      rules: {
+        'import-x/extensions': [
+          'error',
+          'always',
+          {
+            ignorePackages: true,
+            checkTypeImports: true,
+            fix: true,
+            pathGroupOverrides: [
+              { pattern: 'storybook/**', action: 'ignore' },
+              { pattern: '@storybook/**', action: 'ignore' },
+            ],
+          },
+        ],
       },
     },
   ],

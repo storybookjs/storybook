@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "10.3.0-alpha.1",
+  "version": "10.5.0-alpha.7",
   "description": "Storybook for Web Components and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -30,10 +30,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
@@ -56,7 +58,8 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "publishConfig": {
     "access": "public"

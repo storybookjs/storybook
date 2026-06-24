@@ -11,7 +11,7 @@ on:
     # Manual canary releases on PRs
     inputs:
       pr:
-        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
+        description: '⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for'
         required: true
         type: number
   pull_request:
@@ -22,10 +22,7 @@ env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
 
-permissions:
-  id-token: write
-  contents: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   # Group concurrent runs based on the event type:
@@ -44,12 +41,18 @@ jobs:
       (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
       contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
+    permissions:
+      contents: write
+      issues: write
+      actions: write # required for yarn release:cancel-preparation-runs
+      id-token: write # required for npm provenance via yarn release:publish
     defaults:
       run:
         working-directory: scripts
     steps:
       - name: Checkout ${{ github.ref_name }}
-        uses: actions/checkout@v4
+        # zizmor: ignore[artipacked]  # git push origin runs at multiple steps using persisted GH_TOKEN
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
@@ -83,7 +86,7 @@ jobs:
           git config --global user.name "storybook-bot"
           git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
           git add .
-          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" || true
+          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" --no-verify --allow-empty
           git push origin "$REF_NAME"
 
       - name: Get current version
@@ -104,6 +107,8 @@ jobs:
         run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
         if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
@@ -179,29 +184,12 @@ jobs:
           git pull
           git checkout origin/main ./CHANGELOG.md
           git add ./CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" || true
+          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" --no-verify --allow-empty
           git push origin next
-
-      # Sync the next.json version file to the main branch so it gets deployed to the docs site
-      # but only if this is a prerelease, because in minor/major releases we're already force pushing next-release onto main, so it's already there
-      - name: Sync version JSONs from `next-release` to `main`
-        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
-        working-directory: .
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: |
-          VERSION_FILE="./docs/versions/next.json"
-          git fetch origin main
-          git checkout main
-          git pull
-          git checkout origin/next-release $VERSION_FILE
-          git add $VERSION_FILE
-          git commit -m "Update $VERSION_FILE for v$CURRENT_VERSION"
-          git push origin main
 
       - name: Create Sentry release
         if: steps.publish-needed.outputs.published == 'false'
-        uses: getsentry/action-release@v3
+        uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3.6.0
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -214,9 +202,9 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
   publish-canary:
     name: Publish canary version
@@ -229,9 +217,13 @@ jobs:
       ) &&
       contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # required for npm provenance via yarn release:publish
     steps:
       - name: Fail if triggering actor is not administrator
-        uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d
+        uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d # no version attached, ahead of last release
         with:
           permission: admin
 
@@ -255,11 +247,12 @@ jobs:
           echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -276,15 +269,17 @@ jobs:
           yarn release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
         working-directory: scripts
         run: yarn release:publish --tag canary --verbose
 
       - name: Replace Pull Request Body
-        uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
+        uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8 # no version attached, ahead of last release
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
-          find: "CANARY_RELEASE_SECTION"
+          find: 'CANARY_RELEASE_SECTION'
           isHtmlCommentTag: true
           replace: |
             This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.

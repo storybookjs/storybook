@@ -8,16 +8,27 @@ import type {
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
-import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
-import { errorToErrorLike } from '../utils';
-import { VitestManager } from './vitest-manager';
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
+import type {
+  CurrentRun,
+  RunConfig,
+  RunTrigger,
+  StoreEvent,
+  StoreState,
+  TriggerRunEvent,
+  VitestError,
+} from '../types.ts';
+import { errorToErrorLike } from '../utils.ts';
+import { VitestManager } from './vitest-manager.ts';
 
 export type TestManagerOptions = {
   storybookOptions: Options;
+  configLoader?: BuilderOptions['configLoader'];
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -49,6 +60,8 @@ export class TestManager {
 
   public storybookOptions: Options;
 
+  public readonly configLoader?: TestManagerOptions['configLoader'];
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -62,6 +75,7 @@ export class TestManager {
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
+    this.configLoader = options.configLoader;
 
     this.vitestManager = new VitestManager(this);
 
@@ -70,7 +84,9 @@ export class TestManager {
     this.store
       .untilReady()
       .then(() => {
-        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+        return this.vitestManager.startVitest({
+          coverage: this.store.getState().config.coverage,
+        });
       })
       .then(() => this.onReady?.())
       .catch((e) => {
@@ -82,6 +98,7 @@ export class TestManager {
     await this.runTestsWithState({
       storyIds: event.payload.storyIds,
       triggeredBy: event.payload.triggeredBy,
+      configOverride: event.payload.configOverride,
       callback: async () => {
         try {
           await this.vitestManager.vitestRestartPromise;
@@ -114,14 +131,18 @@ export class TestManager {
   async runTestsWithState({
     storyIds,
     triggeredBy,
+    configOverride,
     callback,
   }: {
     storyIds?: string[];
     triggeredBy: RunTrigger;
+    configOverride?: RunConfig;
     callback: () => Promise<void>;
   }) {
     this.componentTestStatusStore.unset(storyIds);
     this.a11yStatusStore.unset(storyIds);
+
+    const runConfig = configOverride ?? this.store.getState().config;
 
     this.store.setState((s) => ({
       ...s,
@@ -130,13 +151,9 @@ export class TestManager {
         triggeredBy,
         startedAt: Date.now(),
         storyIds: storyIds,
-        config: s.config,
+        config: runConfig,
       },
     }));
-    // set the config at the start of a test run,
-    // so that changing the config during the test run does not affect the currently running test run
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(this.store.getState().config);
-
     await this.testProviderStore.runWithState(async () => {
       await callback();
       this.store.send({
@@ -165,8 +182,24 @@ export class TestManager {
       return;
     }
 
+    const requestedStoryIds = this.store.getState().currentRun.storyIds;
+    if (requestedStoryIds && !this.isRequestedStoryOrChild(storyId, requestedStoryIds)) {
+      // In focused runs, Vitest name filtering can still pick up same-named tests in other files.
+      // Drop those results here so status stores and run summaries only reflect requested stories.
+      return;
+    }
+
     this.batchedTestCaseResults.push({ storyId, testResult, reports });
     this.throttledFlushTestCaseResults();
+  }
+
+  private isRequestedStoryOrChild(storyId: string, requestedStoryIds: string[]) {
+    if (requestedStoryIds.includes(storyId)) {
+      return true;
+    }
+
+    const entry = this.store.getState().index.entries[storyId];
+    return entry?.type === 'story' && !!entry.parent && requestedStoryIds.includes(entry.parent);
   }
 
   /**
@@ -186,6 +219,47 @@ export class TestManager {
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];
+
+    const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
+      storyId,
+      typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+      value: testStateToStatusValueMap[testResult.state],
+      title: 'Component tests',
+      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
+      sidebarContextMenu: false,
+    }));
+
+    this.componentTestStatusStore.set(componentTestStatuses);
+
+    const a11yReportsByStoryId: CurrentRun['a11yReports'] = {};
+    const reportsByStoryId: CurrentRun['reports'] = {};
+    const a11yStatuses: typeof componentTestStatuses = [];
+
+    for (const { storyId, reports } of testCaseResultsToFlush) {
+      if (reports?.length) {
+        reportsByStoryId[storyId] = reports;
+      }
+
+      const storyA11yReports = reports?.filter((r) => r.type === 'a11y');
+      if (!storyA11yReports?.length) {
+        continue;
+      }
+      a11yReportsByStoryId[storyId] = storyA11yReports.map((report) => report.result);
+      for (const a11yReport of storyA11yReports) {
+        a11yStatuses.push({
+          storyId,
+          typeId: STATUS_TYPE_ID_A11Y,
+          value: testStateToStatusValueMap[a11yReport.status],
+          title: 'Accessibility tests',
+          description: '',
+          sidebarContextMenu: false,
+        });
+      }
+    }
+
+    if (a11yStatuses.length > 0) {
+      this.a11yStatusStore.set(a11yStatuses);
+    }
 
     this.store.setState((s) => {
       let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
@@ -215,7 +289,25 @@ export class TestManager {
         currentRun: {
           ...s.currentRun,
           componentTestCount: { success: ctSuccess, error: ctError },
-          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          a11yCount: {
+            success: a11ySuccess,
+            warning: a11yWarning,
+            error: a11yError,
+          },
+          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
+          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          /*
+            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
+            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
+          */
+          a11yReports: {
+            ...s.currentRun.a11yReports,
+            ...a11yReportsByStoryId,
+          },
+          reports: {
+            ...s.currentRun.reports,
+            ...reportsByStoryId,
+          },
           // in some cases successes and errors can exceed the anticipated totalTestCount
           // e.g. when testing more tests than the stories we know about upfront
           // in those cases, we set the totalTestCount to the sum of successes and errors
@@ -226,52 +318,26 @@ export class TestManager {
         },
       };
     });
-
-    const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
-      storyId,
-      typeId: STATUS_TYPE_ID_COMPONENT_TEST,
-      value: testStateToStatusValueMap[testResult.state],
-      title: 'Component tests',
-      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
-      sidebarContextMenu: false,
-    }));
-
-    this.componentTestStatusStore.set(componentTestStatuses);
-
-    const a11yStatuses = testCaseResultsToFlush
-      .flatMap(({ storyId, reports }) =>
-        reports
-          ?.filter((r) => r.type === 'a11y')
-          .map((a11yReport) => ({
-            storyId,
-            typeId: STATUS_TYPE_ID_A11Y,
-            value: testStateToStatusValueMap[a11yReport.status],
-            title: 'Accessibility tests',
-            description: '',
-            sidebarContextMenu: false,
-          }))
-      )
-      .filter((a11yStatus) => a11yStatus !== undefined);
-
-    if (a11yStatuses.length > 0) {
-      this.a11yStatusStore.set(a11yStatuses);
-    }
   }, 500);
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
     this.throttledFlushTestCaseResults.flush();
-    this.store.setState((s) => ({
-      ...s,
-      currentRun: {
-        ...s.currentRun,
-        // when the test run is finished, we can set the totalTestCount to the actual number of tests run
-        // this number can be lower than the total number of tests we anticipated upfront
-        // e.g. when some tests where skipped without us knowing about it upfront
-        totalTestCount: endResult.totalTestCount,
-        unhandledErrors: endResult.unhandledErrors,
-        finishedAt: Date.now(),
-      },
-    }));
+    this.store.setState((s) => {
+      const focusedRunTotal =
+        s.currentRun.componentTestCount.success + s.currentRun.componentTestCount.error;
+
+      return {
+        ...s,
+        currentRun: {
+          ...s.currentRun,
+          // For focused runs, keep totals aligned with filtered case results.
+          // For full runs, use Vitest's reported total.
+          totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,
+          unhandledErrors: endResult.unhandledErrors,
+          finishedAt: Date.now(),
+        },
+      };
+    });
   }
 
   onCoverageCollected(coverageSummary: StoreState['currentRun']['coverageSummary']) {

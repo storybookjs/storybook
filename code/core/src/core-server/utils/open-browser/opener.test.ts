@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import spawn from 'cross-spawn';
 import open from 'open';
 
-import { BrowserEnvError, openBrowser } from './opener';
+import { BrowserEnvError, openBrowser } from './opener.ts';
 
 vi.mock('open', { spy: true });
 vi.mock('cross-spawn', { spy: true });
@@ -96,13 +96,14 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('starts browser process on Linux when BROWSER is not a shell script', () => {
     process.env.BROWSER = 'google chrome';
+    process.env.BROWSER_ARGS = '--incognito';
     platformSpy.mockReturnValue('linux');
 
     openBrowser('http://localhost:6006/');
 
     expect(vi.mocked(spawn)).not.toHaveBeenCalled();
     expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
-      app: 'google chrome',
+      app: { name: 'google chrome', arguments: ['--incognito'] },
       wait: false,
       url: true,
     });

@@ -12,10 +12,10 @@ import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import { ToolbarManager } from '../toolbar/components/ToolbarManager';
-import { TOOLBAR_ID } from '../toolbar/constants';
-import { renderStorybookUI } from './index';
-import Provider from './provider';
+import { ToolbarManager } from '../toolbar/components/ToolbarManager.tsx';
+import { TOOLBAR_ID } from '../toolbar/constants.ts';
+import { renderStorybookUI } from './index.tsx';
+import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 
@@ -47,7 +47,6 @@ class ReactProvider extends Provider {
 
     this.addons = addons;
     this.channel = channel;
-    global.__STORYBOOK_ADDONS_CHANNEL__ = channel;
   }
 
   getElements(type: Addon_Types) {

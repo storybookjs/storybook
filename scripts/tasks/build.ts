@@ -4,10 +4,12 @@ import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
-import { now, saveBench } from '../bench/utils';
-import type { Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
+import { now, saveBench } from '../bench/utils.ts';
+import type { Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
 
 async function pathExists(path: string) {
   try {
@@ -24,7 +26,8 @@ export const build: Task = {
   async ready({ builtSandboxDir }) {
     return pathExists(builtSandboxDir);
   },
-  async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug }) {
+  async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link });
     const start = now();
 
     await exec(
@@ -64,7 +67,7 @@ export const build: Task = {
     );
 
     const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
-    if (process.env.NX_CLI_SET === 'true' && builtSandboxDir !== cacheDir) {
+    if (isNxTaskExecution() && builtSandboxDir !== cacheDir) {
       console.info(`✅ Removing cache directory ${cacheDir}`);
       await rm(cacheDir, { recursive: true, force: true });
 

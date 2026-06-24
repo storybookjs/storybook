@@ -1,8 +1,7 @@
 ---
-title: 'features'
+title: features
 sidebar:
   order: 11
-  title: features
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -16,18 +15,23 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
+  componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  experimentalCodeExamples?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If renderer="angular">
@@ -38,6 +42,7 @@ Type:
   angularFilterNonInputControls?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
   highlight?: boolean;
@@ -45,10 +50,12 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
 ```
+
 </If>
 
 <If notRenderer={['react','angular']}>
@@ -58,6 +65,7 @@ Type:
   actions?: boolean;
   argTypeTargetsV7?: boolean;
   backgrounds?: boolean;
+  changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
   highlight?: boolean;
@@ -65,18 +73,21 @@ Type:
   legacyDecoratorFileOrder?: boolean;
   measure?: boolean;
   outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
 ```
-</If>
 
+</If>
 
 Enables Storybook's additional features.
 
 ## `actions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Actions](../../essentials/actions.mdx) feature.
 
@@ -96,23 +107,53 @@ Filter non-input controls in Angular.
 
 Type: `boolean`
 
+Default: `true`
+
 Filter args with a "target" on the type from the render function.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
-
-{/* prettier-ignore-end */}
 
 ## `backgrounds`
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
+
+<If renderer="react">
+
+## `componentsManifest`
+
+Type: `boolean`
+
+Default: `false`
+
+Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
+
+<CodeSnippets path="main-config-features-components-manifest.md" />
+
+</If>
+
+## `changeDetection`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable [change detection](../../configure/user-interface/change-detection.mdx). When enabled, Storybook monitors your git working tree and the builder's module graph to show which stories are new, modified, or related to code changes. Changed stories are displayed with status icons in the sidebar.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-change-detection.md" />
+
+{/* prettier-ignore-end */}
 
 ## `controls`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Controls](../../essentials/controls.mdx) feature.
 
@@ -122,13 +163,21 @@ Type: `boolean`
 
 Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
-{/* prettier-ignore-end */}
-
 <If renderer="react">
+
+## `experimentalCodeExamples`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
+
+Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
+
+<CodeSnippets path="main-config-features-experimental-code-examples.md" />
 
 ## `experimentalTestSyntax`
 
@@ -136,13 +185,9 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 
 Type: `boolean`
 
-Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next#storytest).
-
-{/* prettier-ignore-start */}
+Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next.mdx#storytest).
 
 <CodeSnippets path="main-config-features-experimental-test-syntax.md" />
-
-{/* prettier-ignore-end */}
 
 </If>
 
@@ -150,11 +195,15 @@ Enable the [experimental `.test` method with the CSF Next format](../csf/csf-nex
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Highlight](../../essentials/highlight.mdx) feature.
 
 ## `interactions`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Interactions](../../writing-tests/interaction-testing.mdx#debugging-interaction-tests) feature.
 
@@ -164,15 +213,13 @@ Type: `boolean`
 
 Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
-
-{/* prettier-ignore-end */}
 
 ## `measure`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
 
@@ -180,16 +227,22 @@ Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
 
 Type: `boolean`
 
+Default: `true`
+
 Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
 
-## `toolbars`
+## `sidebarOnboardingChecklist`
 
 Type: `boolean`
 
-Enable the [Toolbars](../../essentials/toolbars.mdx) feature.
+Default: `true`
+
+Enable the onboarding checklist sidebar widget.
 
 ## `viewport`
 
 Type: `boolean`
+
+Default: `true`
 
 Enable the [Viewport](../../essentials/viewport.mdx) feature.

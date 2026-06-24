@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import npmlog from 'npmlog';
 
-import { logger } from '.';
-import * as loggerRaw from './logger/logger';
+import { logger } from './index.ts';
+import * as loggerRaw from './logger/logger.ts';
 
 vi.mock('./logger/logger', () => ({
   log: vi.fn(),
@@ -48,6 +48,23 @@ describe('node-logger', () => {
     logger.warn(message);
     expect(loggerMock.warn).toHaveBeenCalledWith(message);
   });
+
+  it('should sync --loglevel with npmlog', () => {
+    logger.setLogLevel('debug');
+    expect(npmlog.level).toBe('verbose');
+    expect(loggerMock.setLogLevel).toHaveBeenCalledWith('debug');
+
+    logger.setLogLevel('trace');
+    expect(npmlog.level).toBe('silly');
+    expect(loggerMock.setLogLevel).toHaveBeenCalledWith('trace');
+  });
+
+  it('should keep setLevel and setLogLevel consistent', () => {
+    logger.setLevel('warn');
+    expect(npmlog.level).toBe('warn');
+    expect(loggerMock.setLogLevel).toHaveBeenCalledWith('warn');
+  });
+
   it('should have an error method', () => {
     const message = 'error message';
     logger.error(message);

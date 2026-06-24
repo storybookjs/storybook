@@ -14,17 +14,13 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options, SupportedRenderer } from 'storybook/internal/types';
+import type { Options, SupportedRenderer } from 'storybook/internal/types';
 
-import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
-import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
+import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file.ts';
+import { getParser } from '../utils/parser/index.ts';
+import { searchFiles } from '../utils/search-files.ts';
 
-export async function initFileSearchChannel(
-  channel: Channel,
-  options: Options,
-  coreOptions: CoreConfig
-) {
+export async function initFileSearchChannel(channel: Channel, options: Options) {
   /** Listens for a search query event and searches for files in the project */
   channel.on(
     FILE_COMPONENT_SEARCH_REQUEST,
@@ -62,12 +58,10 @@ export async function initFileSearchChannel(
               storyFileExists,
             };
           } catch (e) {
-            if (!coreOptions.disableTelemetry) {
-              telemetry('create-new-story-file-search', {
-                success: false,
-                error: `Could not parse file: ${e}`,
-              });
-            }
+            telemetry('create-new-story-file-search', {
+              success: false,
+              error: `Could not parse file: ${e}`,
+            });
 
             return {
               filepath: file,
@@ -77,14 +71,12 @@ export async function initFileSearchChannel(
           }
         });
 
-        if (!coreOptions.disableTelemetry) {
-          telemetry('create-new-story-file-search', {
-            success: true,
-            payload: {
-              fileCount: entries.length,
-            },
-          });
-        }
+        telemetry('create-new-story-file-search', {
+          success: true,
+          payload: {
+            fileCount: entries.length,
+          },
+        });
 
         channel.emit(FILE_COMPONENT_SEARCH_RESPONSE, {
           success: true,
@@ -102,12 +94,10 @@ export async function initFileSearchChannel(
           error: `An error occurred while searching for components in the project.\n${e?.message}`,
         } satisfies ResponseData<FileComponentSearchResponsePayload>);
 
-        if (!coreOptions.disableTelemetry) {
-          telemetry('create-new-story-file-search', {
-            success: false,
-            error: `An error occured while searching for components: ${e}`,
-          });
-        }
+        telemetry('create-new-story-file-search', {
+          success: false,
+          error: `An error occurred while searching for components: ${e}`,
+        });
       }
     }
   );

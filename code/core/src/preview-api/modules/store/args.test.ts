@@ -9,7 +9,7 @@ import {
   groupArgsByTarget,
   mapArgsToTypes,
   validateOptions,
-} from './args';
+} from './args.ts';
 
 const stringType: SBType = { name: 'string' };
 const numberType: SBType = { name: 'number' };
@@ -19,6 +19,7 @@ const functionType: SBType = { name: 'function' };
 const numArrayType: SBType = { name: 'array', value: numberType };
 const boolObjectType: SBType = { name: 'object', value: { bool: booleanType } };
 const reactNodeType: SBType = { name: 'other', value: 'ReactNode' };
+const otherUnionType: SBType = { name: 'other', value: 'small | default' };
 
 vi.mock('storybook/internal/client-logger');
 
@@ -133,6 +134,21 @@ describe('mapArgsToTypes', () => {
     expect(mapArgsToTypes({ a: new Date() }, { a: { type: reactNodeType } })).toStrictEqual({});
     expect(mapArgsToTypes({ a: { foo: 'bar' } }, { a: { type: reactNodeType } })).toStrictEqual({});
     expect(mapArgsToTypes({ a: Symbol('foo') }, { a: { type: reactNodeType } })).toStrictEqual({});
+  });
+
+  // Types Storybook can't model (e.g. TS/Vue string-union selects) are extracted as `other`.
+  // Their primitive values must survive deserialization, or they get dropped from the URL and
+  // lost on reload / "open in new tab" (#29076). Non-primitive `other` values stay dropped.
+  it('passes primitives for non-ReactNode other types', () => {
+    expect(mapArgsToTypes({ a: 'small' }, { a: { type: otherUnionType } })).toStrictEqual({
+      a: 'small',
+    });
+    expect(mapArgsToTypes({ a: 2 }, { a: { type: otherUnionType } })).toStrictEqual({ a: 2 });
+    expect(mapArgsToTypes({ a: true }, { a: { type: otherUnionType } })).toStrictEqual({ a: true });
+    expect(mapArgsToTypes({ a: { foo: 'bar' } }, { a: { type: otherUnionType } })).toStrictEqual(
+      {}
+    );
+    expect(mapArgsToTypes({ a: new Date() }, { a: { type: otherUnionType } })).toStrictEqual({});
   });
 
   it('deeply maps objects', () => {

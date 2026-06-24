@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
-import { executeCommand } from '../utils/command';
-import { JsPackageManager } from './JsPackageManager';
-import { NPMProxy } from './NPMProxy';
+import { executeCommand } from '../utils/command.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
+import { NPMProxy } from './NPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -18,7 +19,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock(import('../utils/command'), { spy: true });
+vi.mock(import('../utils/command.ts'), { spy: true });
 
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
@@ -26,6 +27,7 @@ describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
 
   beforeEach(() => {
+    vi.useRealTimers();
     npmProxy = new NPMProxy();
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(npmProxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -69,6 +71,59 @@ describe('NPM Proxy', () => {
           expect.objectContaining({ command: 'npm', args: ['install'] })
         );
       });
+
+      it('should rethrow minimum-release-age install errors as handled errors', async () => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const originalError = new Error(
+          [
+            'npm error code ETARGET',
+            'npm error notarget No matching version found for @storybook/react-vite@10.4.0-alpha.17 with a date before 02/05/2026, 13:32:18.',
+            "npm error notarget In most cases you or one of your dependencies are requesting a package version that doesn't exist.",
+          ].join('\n')
+        );
+        mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+        const error = await npmProxy.installDependencies().then(
+          () => null,
+          (caughtError) => caughtError
+        );
+
+        expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+        expect(error).toMatchObject({ cause: originalError });
+        expect(error?.message).toContain('min-release-age');
+        expect(error?.message).toContain('@storybook/react-vite@10.4.0-alpha.17');
+      });
+    });
+  });
+
+  describe('precheckStorybookPackageInstall', () => {
+    it('throws a handled error with rerun instructions when npm min-release-age blocks the requested version', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
+      mockedExecuteCommand.mockResolvedValueOnce({ stdout: '1' } as any).mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          '10.4.0-alpha.17': '2025-01-09T23:30:00.000Z',
+          '10.3.9': '2025-01-08T20:00:00.000Z',
+        }),
+      } as any);
+
+      const error = await npmProxy
+        .precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+        .then(
+          () => null,
+          (caughtError) => caughtError
+        );
+
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toBeTruthy();
+      expect(error?.message).toContain('npx storybook@10.3.9 upgrade');
+      expect(error?.message).toContain('min-release-age');
     });
   });
 
@@ -182,6 +237,78 @@ describe('NPM Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('parses stdout JSON and ignores npm warnings written to stderr', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            '@storybook/react': { version: '1.2.3' },
+          },
+        }),
+        // npm routinely emits peer-dependency / deprecation warnings on stderr
+        stderr: 'npm warn ERESOLVE overriding peer dependency\nnpm warn deprecated foo@1.0.0',
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['ls', '--json', '--depth=99'],
+          env: { FORCE_COLOR: 'false' },
+          stdio: ['pipe', 'pipe', 'ignore'],
+        })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
+      mockedExecuteCommand.mockReset();
+      mockedExecuteCommand
+        .mockRejectedValueOnce(new Error('npm error code ELSPROBLEMS'))
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            dependencies: {
+              '@storybook/react': { version: '1.2.3' },
+            },
+          }),
+        } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99'] })
+      );
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=0'] })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('returns undefined and never treats stderr as the dependency source when stdout is empty', async () => {
+      mockedExecuteCommand.mockReset();
+      // Valid-looking JSON on stderr must never be parsed as the result.
+      const stderrJson = JSON.stringify({
+        dependencies: { '@storybook/react': { version: '9.9.9' } },
+      });
+      mockedExecuteCommand.mockResolvedValue({ stdout: undefined, stderr: stderrJson } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toBeUndefined();
+    });
+  });
+
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
@@ -222,7 +349,9 @@ describe('NPM Proxy', () => {
 
   describe('getVersion', () => {
     it('with a Storybook package listed in versions.json it returns the version', async () => {
-      const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
+      const storybookAngularVersion = (await import('../versions.ts')).default[
+        '@storybook/angular'
+      ];
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await npmProxy.getVersion('@storybook/angular');
@@ -369,66 +498,6 @@ describe('NPM Proxy', () => {
           "infoCommand": "npm ls --depth=1",
         }
       `);
-    });
-  });
-
-  describe('parseErrors', () => {
-    it('should parse npm errors', () => {
-      const NPM_LEGACY_RESOLVE_ERROR_SAMPLE = `
-        npm ERR!
-        npm ERR! code ERESOLVE
-        npm ERR! ERESOLVE unable to resolve dependency tree
-        npm ERR! 
-        npm ERR! While resolving: before-storybook@1.0.0
-        npm ERR! Found: react@undefined
-        npm ERR! node_modules/react
-        npm ERR!   react@"30" from the root project
-        `;
-
-      const NPM_RESOLVE_ERROR_SAMPLE = `
-        npm error
-        npm error code ERESOLVE
-        npm error ERESOLVE unable to resolve dependency tree
-        npm error 
-        npm error While resolving: before-storybook@1.0.0
-        npm error Found: react@undefined
-        npm error node_modules/react
-        npm error   react@"30" from the root project
-        `;
-
-      const NPM_TIMEOUT_ERROR_SAMPLE = `
-          npm notice 
-          npm notice New major version of npm available! 8.5.0 -> 9.6.7
-          npm notice Changelog: <https://github.com/npm/cli/releases/tag/v9.6.7>
-          npm notice Run \`npm install -g npm@9.6.7\` to update!
-          npm notice 
-          npm ERR! code ERR_SOCKET_TIMEOUT
-          npm ERR! errno ERR_SOCKET_TIMEOUT
-          npm ERR! network Invalid response body while trying to fetch https://registry.npmjs.org/@storybook%2ftypes: Socket timeout
-          npm ERR! network This is a problem related to network connectivity.
-      `;
-
-      expect(npmProxy.parseErrorFromLogs(NPM_LEGACY_RESOLVE_ERROR_SAMPLE)).toEqual(
-        'NPM error ERESOLVE - Dependency resolution error.'
-      );
-      expect(npmProxy.parseErrorFromLogs(NPM_RESOLVE_ERROR_SAMPLE)).toEqual(
-        'NPM error ERESOLVE - Dependency resolution error.'
-      );
-      expect(npmProxy.parseErrorFromLogs(NPM_TIMEOUT_ERROR_SAMPLE)).toEqual(
-        'NPM error ERR_SOCKET_TIMEOUT - Socket timed out.'
-      );
-    });
-
-    it('should show unknown npm error', () => {
-      const NPM_ERROR_SAMPLE = `
-        npm ERR! 
-        npm ERR! While resolving: before-storybook@1.0.0
-        npm ERR! Found: react@undefined
-        npm ERR! node_modules/react
-        npm ERR!   react@"30" from the root project
-      `;
-
-      expect(npmProxy.parseErrorFromLogs(NPM_ERROR_SAMPLE)).toEqual(`NPM error`);
     });
   });
 });

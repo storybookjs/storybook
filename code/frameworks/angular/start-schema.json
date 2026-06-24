@@ -132,12 +132,12 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "webpackStatsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
     "statsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write stats JSON to disk",
       "default": false
     },
@@ -147,7 +147,7 @@
     },
     "loglevel": {
       "type": "string",
-      "description": "Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent].",
+      "description": "Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent].",
       "pattern": "(trace|debug|info|warn|error|silent)"
     },
     "logfile": {

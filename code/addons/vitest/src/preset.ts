@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -9,9 +8,11 @@ import {
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
+  type StoryIndexGenerator,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type {
   Options,
@@ -19,6 +20,8 @@ import type {
   PreviewAnnotation,
   StoryId,
 } from 'storybook/internal/types';
+
+import type { BuilderOptions } from '@storybook/builder-vite';
 
 import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
@@ -29,12 +32,16 @@ import {
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+  type TriggerTestRunResponsePayload,
   storeOptions,
-} from './constants';
-import { log } from './logger';
-import { runTestRunner } from './node/boot-test-runner';
-import type { CachedState, ErrorLike, StoreState } from './types';
-import type { StoreEvent } from './types';
+} from './constants.ts';
+import { log } from './logger.ts';
+import { runTestRunner } from './node/boot-test-runner.ts';
+import type { CachedState, ErrorLike, StoreState } from './types.ts';
+import type { StoreEvent } from './types.ts';
 
 type Event =
   | {
@@ -77,6 +84,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
+  const configLoader =
+    typeof core.builder !== 'string' &&
+    (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
+
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
     ns: 'storybook',
@@ -94,6 +108,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     initialState: {
       ...storeOptions.initialState,
       previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
+      index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
     leader: true,
@@ -104,6 +119,16 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+
+  storyIndexGenerator.onInvalidated(async () => {
+    try {
+      const index = await storyIndexGenerator.getIndex();
+      store.setState((s) => ({ ...s, index }));
+    } catch (error) {
+      logger.debug('Failed to update story index after invalidation, Error:');
+      logger.debug(error);
+    }
+  });
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     testProviderStore.setState('test-provider-state:running');
@@ -117,6 +142,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       initEvent: STORE_CHANNEL_EVENT_NAME,
       initArgs: [{ event, eventInfo }],
       options,
+      configLoader: configLoader || undefined,
     });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
@@ -138,6 +164,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         initEvent: STORE_CHANNEL_EVENT_NAME,
         initArgs: [{ event, eventInfo }],
         options,
+        configLoader: configLoader || undefined,
       });
     }
   });
@@ -184,49 +211,101 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }));
   });
 
-  if (!core.disableTelemetry) {
-    const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
+  // Programmatic test run trigger API
+  channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
+    const { requestId, actor, storyIds, config: configOverride } = payload;
 
-    channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      if (event.type !== 'test-run-completed') {
-        telemetry('addon-test', {
-          ...event,
-          payload: {
-            ...event.payload,
-            storyId: oneWayHash(event.payload.storyId),
-          },
-        });
+    const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
+      channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
+    };
+
+    await store.untilReady();
+
+    const {
+      currentRun: { startedAt, finishedAt },
+      config,
+    } = store.getState();
+    if (startedAt && !finishedAt) {
+      sendResponse({
+        status: 'error',
+        error: { message: 'Tests are already running' },
+      });
+      return;
+    }
+
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds,
+        triggeredBy: `external:${actor}`,
+        ...(configOverride && {
+          configOverride: { ...config, ...configOverride },
+        }),
+      },
+    });
+
+    const unsubscribe = store.subscribe((event) => {
+      switch (event.type) {
+        case 'TEST_RUN_COMPLETED': {
+          unsubscribe();
+          sendResponse({ status: 'completed', result: event.payload });
+          return;
+        }
+        case 'FATAL_ERROR': {
+          unsubscribe();
+          sendResponse({ status: 'error', error: event.payload });
+          return;
+        }
+        case 'CANCEL_RUN': {
+          unsubscribe();
+          sendResponse({ status: 'cancelled' });
+          return;
+        }
       }
     });
+  });
 
-    store.subscribe('TOGGLE_WATCHING', async (event) => {
-      await telemetry('addon-test', {
-        watchMode: event.payload.to,
-      });
-    });
-    store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
-      await telemetry('addon-test', {
-        ...currentRun,
-        duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        unhandledErrorCount: unhandledErrors.length,
-        ...(enableCrashReports &&
-          unhandledErrors.length > 0 && {
-            unhandledErrors: unhandledErrors.map((error) => {
-              const { stacks, ...errorWithoutStacks } = error;
-              return sanitizeError(errorWithoutStacks);
-            }),
-          }),
-      });
-    });
+  const enableCrashReports = core?.enableCrashReports || options.enableCrashReports;
 
-    if (enableCrashReports) {
-      store.subscribe('FATAL_ERROR', async (event) => {
-        await telemetry('addon-test', {
-          fatalError: cleanPaths(event.payload.error.message),
-        });
-      });
+  channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
+    if (event.type !== 'test-run-completed') {
+      telemetry('addon-test', () => ({
+        ...event,
+        payload: {
+          ...event.payload,
+          storyId: oneWayHash(event.payload.storyId),
+        },
+      }));
     }
+  });
+
+  store.subscribe('TOGGLE_WATCHING', async (event) => {
+    await telemetry('addon-test', () => ({
+      watchMode: event.payload.to,
+    }));
+  });
+  store.subscribe('TEST_RUN_COMPLETED', async (event) => {
+    const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
+    await telemetry('addon-test', () => ({
+      ...currentRun,
+      duration: (finishedAt ?? 0) - (startedAt ?? 0),
+      unhandledErrorCount: unhandledErrors.length,
+      ...(enableCrashReports &&
+        unhandledErrors.length > 0 && {
+          unhandledErrors: unhandledErrors.map((error) => {
+            const { stacks, ...errorWithoutStacks } = error;
+            return sanitizeError(errorWithoutStacks);
+          }),
+        }),
+    }));
+  });
+
+  if (enableCrashReports) {
+    store.subscribe('FATAL_ERROR', async (event) => {
+      await telemetry('addon-test', () => ({
+        fatalError: cleanPaths(event.payload.error.message),
+      }));
+    });
   }
 
   return channel;

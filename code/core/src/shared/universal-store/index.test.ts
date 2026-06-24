@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { UniversalStore } from '.';
-import { instances as mockedInstances } from './__mocks__/instances';
-import { MockUniversalStore } from './mock';
-import type { ChannelEvent } from './types';
+import { UniversalStore } from './index.ts';
+import { instances as mockedInstances } from './__mocks__/instances.ts';
+import { MockUniversalStore } from './mock.ts';
+import type { ChannelEvent } from './types.ts';
+import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 
 vi.mock('./instances');
 
@@ -690,8 +691,8 @@ You should reuse the existing instance instead of trying to create a new one.`);
 
         // Assert - eventually the follower.untilReady() promise should throw an error when the timeout is reached
         vi.advanceTimersToNextTimer();
-        await expect(follower.untilReady()).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[TypeError: No existing state found for follower with id: 'env1:test'. Make sure a leader with the same id exists before creating a follower.]`
+        await expect(follower.untilReady()).rejects.toBeInstanceOf(
+          UniversalStoreFollowerTimeoutError
         );
         expect(follower.status).toBe(UniversalStore.Status.ERROR);
       });

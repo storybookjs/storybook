@@ -4,9 +4,9 @@
  */
 import type { TSESTree } from '@typescript-eslint/utils';
 
-import { isImportDefaultSpecifier } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { isImportDefaultSpecifier } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition
@@ -27,7 +27,7 @@ export default createStorybookRule({
     messages: {
       updateImports: 'Update imports',
       dontUseTestingLibraryDirectly:
-        'Do not use `{{library}}` directly in the story. You should import the functions from `@storybook/test` (preferrably) or `@storybook/testing-library` instead.',
+        'Do not use `{{library}}` directly in the story. You should import the functions from `storybook/test` instead.',
     },
   },
 
@@ -68,7 +68,7 @@ export default createStorybookRule({
       //
       // import foo, { bar } from 'baz';
       //        ^        ^ end
-      const fullText = context.getSourceCode().text;
+      const fullText = context.sourceCode.text;
       const importEnd = node.range[1];
       const closingBrace = fullText.indexOf('}', end - 1);
       if (closingBrace > -1 && closingBrace <= importEnd) {
@@ -102,10 +102,7 @@ export default createStorybookRule({
               library: node.source.value,
             },
             *fix(fixer) {
-              yield fixer.replaceTextRange(
-                getRangeWithoutQuotes(node.source),
-                '@storybook/testing-library'
-              );
+              yield fixer.replaceTextRange(getRangeWithoutQuotes(node.source), 'storybook/test');
               if (hasDefaultImport(node.specifiers)) {
                 const specifiers = getSpecifiers(node);
                 if (specifiers) {
@@ -120,7 +117,7 @@ export default createStorybookRule({
                 *fix(fixer) {
                   yield fixer.replaceTextRange(
                     getRangeWithoutQuotes(node.source),
-                    '@storybook/testing-library'
+                    'storybook/test'
                   );
                   if (hasDefaultImport(node.specifiers)) {
                     const specifiers = getSpecifiers(node);

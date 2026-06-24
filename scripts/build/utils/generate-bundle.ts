@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
+import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -99,6 +100,7 @@ export async function generateBundle({
       'process.env.NODE_ENV': 'process.env.NODE_ENV',
     },
     plugins: [
+      rawPlugin(),
       {
         name: 'postbuild',
         setup(build) {
@@ -128,7 +130,7 @@ export async function generateBundle({
       // The following modules are conditionally called inside of @vitest/mocker
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
-      'msw/browser', 
+      'msw/browser',
       'msw/core/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
@@ -145,6 +147,7 @@ export async function generateBundle({
       'storybook/measure': './src/measure',
       'storybook/actions': './src/actions',
       'storybook/viewport': './src/viewport',
+      'storybook/open-service': './src/shared/open-service',
       // The following aliases ensures that the manager has a single version of React,
       // even if transitive dependencies would depend on other versions.
       react: resolvePackageDir('react'),
@@ -167,6 +170,11 @@ export async function generateBundle({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
+        alias: {
+          // Keep a single bundled acorn copy when CommonJS dependencies such as
+          // acorn-jsx require('acorn') alongside ESM imports.
+          acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+        },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
           /*
@@ -205,6 +213,10 @@ export async function generateBundle({
     contexts.push(
       esbuild.context({
         ...sharedOptions,
+        external: [
+          ...(sharedOptions.external as string[]),
+          ...(entries.browser.flatMap((entry) => entry.external) ?? []),
+        ].filter(Boolean),
         entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
         chunkNames: '_browser-chunks/[name]-[hash]',

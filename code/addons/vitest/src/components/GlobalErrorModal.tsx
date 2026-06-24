@@ -7,8 +7,8 @@ import { SyncIcon } from '@storybook/icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
-import type { ErrorLike, StoreState } from '../types';
+import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants.ts';
+import type { ErrorLike, StoreState } from '../types.ts';
 
 const ModalBar = styled.div({
   display: 'flex',
@@ -31,6 +31,7 @@ const ModalTitle = styled(Modal.Title)(({ theme: { typography } }) => ({
 const ModalStackTrace = styled.pre(({ theme }) => ({
   whiteSpace: 'pre-wrap',
   wordWrap: 'break-word',
+  userSelect: 'text',
   overflow: 'auto',
   maxHeight: '60vh',
   margin: 0,
@@ -147,9 +148,9 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
   ) : null;
 
   return (
-    <Modal ariaLabel="Storybook Tests error details" onOpenChange={setModalOpen} open={isModalOpen}>
+    <Modal ariaLabel="Storybook Test Error Details" onOpenChange={setModalOpen} open={isModalOpen}>
       <ModalBar>
-        <ModalTitle>Storybook Tests error details</ModalTitle>
+        <ModalTitle>Storybook Test Error Details</ModalTitle>
         <ModalActionBar>
           <Button onClick={onRerun} variant="ghost" ariaLabel={false}>
             <SyncIcon />

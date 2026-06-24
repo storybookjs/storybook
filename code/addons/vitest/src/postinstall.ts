@@ -1,21 +1,21 @@
-import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import os from 'node:os';
 
-import { babelParse, generate } from 'storybook/internal/babel';
+import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
+  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
 import {
   AddonVitestPostinstallConfigUpdateError,
   AddonVitestPostinstallError,
-  AddonVitestPostinstallExistingSetupFileError,
   AddonVitestPostinstallFailedAddonA11yError,
   AddonVitestPostinstallPrerequisiteCheckError,
   AddonVitestPostinstallWorkspaceUpdateError,
@@ -27,14 +27,32 @@ import { dirname, relative, resolve } from 'pathe';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { DOCUMENTATION_LINK } from './constants';
-import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
+import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
+import {
+  injectAngularVitestIntoAst,
+  injectAngularVitestIntoConfig,
+  isAngularVitestAlreadyWired,
+} from './angular-vitest-postinstall.ts';
+import { DOCUMENTATION_LINK } from './constants.ts';
+import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile.ts';
 
 const ADDON_NAME = '@storybook/addon-vitest' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
+const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
 
 const addonA11yName = '@storybook/addon-a11y';
+
+/**
+ * The Vitest config templates resolve the Storybook config dir against the
+ * generated config file's own directory (`path.join(dirname, CONFIG_DIR)`).
+ * So CONFIG_DIR must be the path FROM that file's directory TO the config dir,
+ * not the cwd-relative `--config-dir` value. Otherwise, in a monorepo where the
+ * config file is created inside the project (e.g. `apps/x/vitest.config.ts`) but
+ * `--config-dir apps/x/.storybook` is passed from the repo root, the path gets
+ * doubled to `apps/x/apps/x/.storybook`.
+ */
+export const getTemplateConfigDir = (configFilePath: string, configDir: string): string =>
+  relative(dirname(configFilePath), configDir);
 
 export default async function postInstall(options: PostinstallOptions) {
   const errors: InstanceType<typeof StorybookError>[] = [];
@@ -76,7 +94,10 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
     : true;
 
-  const info = await getStorybookInfo(options.configDir);
+  // Skip the module cache: an automigration (e.g. angular-to-angular-vite) may have rewritten the
+  // main config earlier in this same process, and the cached version would still report the old
+  // framework/builder — causing the prerequisite check below to fail incorrectly.
+  const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
 
   const addonVitestService = new AddonVitestService(packageManager);
@@ -161,60 +182,26 @@ export default async function postInstall(options: PostinstallOptions) {
     if (!options.skipInstall) {
       await addonVitestService.installPlaywright({
         yes: options.yes,
+        useRemotePkg: !!options.skipInstall,
       });
     } else {
+      const platform = os.platform();
+      const useWithDeps = platform === 'darwin' || platform === 'win32';
+      const manualCommand = useWithDeps
+        ? 'npx playwright install chromium --with-deps'
+        : 'npx playwright install chromium';
+      const linuxNote = !useWithDeps
+        ? '\n        Note: add --with-deps to the command above if you are on Debian or Ubuntu.'
+        : '';
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+        ${CLI_COLORS.cta(manualCommand)}${linuxNote}
       `);
     }
   }
 
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
-
-  const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
-
-  if (existsSync(vitestSetupFile)) {
-    const errorMessage = dedent`
-    Found an existing Vitest setup file:
-    ${vitestSetupFile}
-    Please refer to the documentation to complete the setup manually:
-    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
-  `;
-    logger.line();
-    logger.error(`${errorMessage}\n`);
-    errors.push(new AddonVitestPostinstallExistingSetupFileError({ filePath: vitestSetupFile }));
-  } else {
-    logger.step(`Creating a Vitest setup file for Storybook:`);
-    logger.log(`${vitestSetupFile}\n`);
-
-    const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
-      existsSync
-    );
-
-    const annotationsImport = info.frameworkPackage;
-
-    const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
-
-    const projectAnnotations = [];
-
-    if (previewExists) {
-      imports.push(`import * as projectAnnotations from './preview';`);
-      projectAnnotations.push('projectAnnotations');
-    }
-
-    await writeFile(
-      vitestSetupFile,
-      dedent`
-      ${imports.join('\n')}
-
-      // This is an important step to apply the right configuration when testing your stories.
-      // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
-      setProjectAnnotations([${projectAnnotations.join(', ')}]);
-    `
-    );
-  }
 
   const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = findFile('vite.config');
@@ -231,34 +218,116 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
-  const getTemplateName = () => {
+  const getTemplateName = (configContent?: string) => {
     if (isVitest4OrNewer) {
-      return 'vitest.config.4.template.ts';
+      return 'vitest.config.4.template';
     } else if (isVitest3_2To4) {
-      return 'vitest.config.3.2.template.ts';
+      // In Vitest 3.2, `workspace` was deprecated in favor of `projects` but still works.
+      // If the user's existing config already uses `workspace`, use the old template that
+      // also uses `workspace` so that the merge doesn't introduce both keys.
+      if (configContent && configUsesWorkspace(configContent)) {
+        return 'vitest.config.template';
+      }
+      return 'vitest.config.3.2.template';
     }
-    return 'vitest.config.template.ts';
+    return 'vitest.config.template';
+  };
+
+  const isAngularVite = info.framework === SupportedFramework.ANGULAR_VITE;
+
+  /**
+   * For Angular projects, co-locate `storybookAngularVitest()` in the same nested plugins array as
+   * `storybookTest()` so standalone `vitest` runs receive the Angular build options. Reads the file
+   * back from disk so it always operates on the just-written content, formats, and writes once. On a
+   * non-locatable plugins array the injector returns `null` and we emit the manual-setup error.
+   */
+  const maybeWireAngular = async (
+    filePath: string,
+    content: string,
+    ErrorClass:
+      | typeof AddonVitestPostinstallConfigUpdateError
+      | typeof AddonVitestPostinstallWorkspaceUpdateError = AddonVitestPostinstallConfigUpdateError
+  ) => {
+    if (!isAngularVite || isAngularVitestAlreadyWired(content)) {
+      return;
+    }
+
+    const injected = injectAngularVitestIntoConfig(content);
+    if (injected === null) {
+      logger.error(dedent`
+        We configured @storybook/addon-vitest, but could not automatically add the
+        @storybook/angular-vite standalone-vitest bridge to:
+        ${filePath}
+
+        Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+        and import it from "@storybook/angular-vite/vitest". See:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+      `);
+      errors.push(new ErrorClass({ filePath }));
+      return;
+    }
+
+    const formattedContent = await formatFileContent(filePath, injected);
+    await writeFile(filePath, formattedContent);
+    logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
   };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
   if (vitestWorkspaceFile) {
-    const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
+    const workspaceFileContent = await fs.readFile(vitestWorkspaceFile, 'utf8');
+    const alreadyConfigured = isConfigAlreadySetup(vitestWorkspaceFile, workspaceFileContent);
+
+    if (alreadyConfigured) {
+      // storybookTest is already wired, but the Angular bridge may still be missing (e.g.
+      // addon-vitest was set up before angular-vite). Wire it before the early return.
+      await maybeWireAngular(
+        vitestWorkspaceFile,
+        workspaceFileContent,
+        AddonVitestPostinstallWorkspaceUpdateError
+      );
+      logger.step(
+        CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
+      );
+      return;
+    }
+
+    const workspaceTemplate = await loadTemplate('vitest.workspace.template', {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
-      CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(vitestWorkspaceFile), vitestSetupFile),
+      CONFIG_DIR: getTemplateConfigDir(vitestWorkspaceFile, options.configDir),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
-    const workspaceFile = await fs.readFile(vitestWorkspaceFile, 'utf8');
     const source = babelParse(workspaceTemplate);
-    const target = babelParse(workspaceFile);
+    const target = babelParse(workspaceFileContent);
 
     const updated = updateWorkspaceFile(source, target);
     if (updated) {
       logger.step(`Updating your Vitest workspace file...`);
 
       logger.log(`${vitestWorkspaceFile}`);
+
+      // The workspace template adds a storybookTest plugins array inline, so the Angular bridge can
+      // be co-located in the merged target. If the workspace only references external config files
+      // (no inline plugins array), the injector returns false and we degrade to manual setup.
+      if (isAngularVite && !isAngularVitestAlreadyWired(workspaceFileContent)) {
+        if (injectAngularVitestIntoAst(target)) {
+          logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+        } else {
+          logger.error(dedent`
+            We configured @storybook/addon-vitest, but could not automatically add the
+            @storybook/angular-vite standalone-vitest bridge to your workspace file:
+            ${vitestWorkspaceFile}
+
+            Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+            in the referenced config and import it from "@storybook/angular-vite/vitest". See:
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+          `);
+          errors.push(
+            new AddonVitestPostinstallWorkspaceUpdateError({ filePath: vitestWorkspaceFile })
+          );
+        }
+      }
 
       const formattedContent = await formatFileContent(vitestWorkspaceFile, generate(target).code);
       await writeFile(vitestWorkspaceFile, formattedContent);
@@ -288,12 +357,13 @@ export default async function postInstall(options: PostinstallOptions) {
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName = getTemplateName();
+    const templateName = getTemplateName(configFile);
 
-    if (templateName) {
+    const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
+
+    if (templateName && !alreadyConfigured) {
       const configTemplate = await loadTemplate(templateName, {
-        CONFIG_DIR: options.configDir,
-        SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
+        CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
       });
 
       const source = babelParse(configTemplate);
@@ -301,9 +371,37 @@ export default async function postInstall(options: PostinstallOptions) {
       updated = updateConfigFile(source, target);
     }
 
-    if (target && updated) {
+    if (alreadyConfigured) {
+      // storybookTest is already wired, but the Angular bridge may still be missing. Operate on the
+      // current on-disk content (no merge happened in this branch).
+      await maybeWireAngular(rootConfig, configFile);
+      logger.step(
+        CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
+      );
+    } else if (target && updated) {
       logger.step(`Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
       logger.log(`  ${rootConfig}`);
+
+      // Inject the Angular bridge into the already-merged target so it co-locates with the freshly
+      // added storybookTest call, before the single generate/format/write below. Arrow-function
+      // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
+      // defer to the manual-setup error in the else branch.
+      if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
+        if (injectAngularVitestIntoAst(target)) {
+          logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+        } else {
+          logger.error(dedent`
+            We configured @storybook/addon-vitest, but could not automatically add the
+            @storybook/angular-vite standalone-vitest bridge to:
+            ${rootConfig}
+
+            Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+            and import it from "@storybook/angular-vite/vitest". See:
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+          `);
+          errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
+        }
+      }
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
       // Only add triple slash reference to vite.config files, not vitest.config files
@@ -331,14 +429,24 @@ export default async function postInstall(options: PostinstallOptions) {
     const newConfigFile = resolve(parentDir, `vitest.config.${fileExtension}`);
 
     const configTemplate = await loadTemplate(getTemplateName(), {
-      CONFIG_DIR: options.configDir,
-      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
+      CONFIG_DIR: getTemplateConfigDir(newConfigFile, options.configDir),
     });
 
     logger.step(`Creating a Vitest config file:`);
     logger.log(`${newConfigFile}`);
 
-    const formattedContent = await formatFileContent(newConfigFile, configTemplate);
+    // For Angular, co-locate the standalone-vitest bridge in the template's storybookTest plugins
+    // array. The template always has a locatable array, so the injector never returns null here.
+    let configContent = configTemplate;
+    if (isAngularVite) {
+      const injected = injectAngularVitestIntoConfig(configTemplate);
+      if (injected !== null) {
+        configContent = injected;
+        logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+      }
+    }
+
+    const formattedContent = await formatFileContent(newConfigFile, configContent);
     await writeFile(newConfigFile, formattedContent);
   }
 
@@ -347,7 +455,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       const command = [
-        'storybook',
+        options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',
@@ -370,7 +478,12 @@ export default async function postInstall(options: PostinstallOptions) {
 
       await prompt.executeTask(
         // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
-        () => packageManager.runPackageCommand({ args: command, stdio: 'ignore' }),
+        () =>
+          packageManager.runPackageCommand({
+            args: command,
+            stdio: 'ignore',
+            useRemotePkg: !!options.skipInstall,
+          }),
         {
           intro: 'Setting up a11y addon for @storybook/addon-vitest',
           error: 'Failed to setup a11y addon for @storybook/addon-vitest',
@@ -411,4 +524,92 @@ export default async function postInstall(options: PostinstallOptions) {
     );
     throw new AddonVitestPostinstallError({ errors });
   }
+}
+
+function isStorybookTestPluginSource(value: string) {
+  return value === STORYBOOK_TEST_PLUGIN_SOURCE;
+}
+
+export function isConfigAlreadySetup(_configPath: string, configContent: string) {
+  let ast: ReturnType<typeof babelParse>;
+  try {
+    ast = babelParse(configContent);
+  } catch (e) {
+    return false;
+  }
+
+  const pluginIdentifiers = new Set<string>();
+
+  traverse(ast, {
+    ImportDeclaration(path) {
+      const source = path.node.source.value;
+      if (typeof source === 'string' && isStorybookTestPluginSource(source)) {
+        path.node.specifiers.forEach((specifier) => {
+          if ('local' in specifier && specifier.local?.name) {
+            pluginIdentifiers.add(specifier.local.name);
+          }
+        });
+      }
+    },
+  });
+
+  let pluginReferenced = false;
+
+  traverse(ast, {
+    CallExpression(path) {
+      if (pluginReferenced) {
+        path.stop();
+        return;
+      }
+      const callee = path.node.callee;
+      if (
+        callee.type === 'Identifier' &&
+        (pluginIdentifiers.has(callee.name) || callee.name === 'storybookTest')
+      ) {
+        pluginReferenced = true;
+        path.stop();
+      }
+    },
+  });
+
+  return pluginReferenced;
+}
+
+/**
+ * Checks whether an existing config file uses `test.workspace` (Vitest 3.0-3.1 style) rather than
+ * `test.projects` (Vitest 3.2+ style).
+ */
+function configUsesWorkspace(configContent: string): boolean {
+  let ast: ReturnType<typeof babelParse>;
+  try {
+    ast = babelParse(configContent);
+  } catch {
+    return false;
+  }
+
+  let found = false;
+
+  traverse(ast, {
+    ObjectProperty(path) {
+      if (found) {
+        path.stop();
+        return;
+      }
+      const key = path.node.key;
+      if (key.type === 'Identifier' && key.name === 'workspace') {
+        // Check that this is inside a `test` property to avoid false positives
+        const parent = path.parentPath?.parentPath;
+        if (
+          parent?.isObjectProperty() &&
+          parent.node.key.type === 'Identifier' &&
+          parent.node.key.name === 'test'
+        ) {
+          found = true;
+          path.stop();
+        }
+      }
+    },
+  });
+
+  return found;
 }

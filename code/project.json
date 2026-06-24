@@ -1,7 +1,15 @@
 {
   "name": "code",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "tags": ["library"],
   "targets": {
+    "fmt": {
+      "executor": "nx:run-commands",
+      "options": { "command": "yarn fmt:check" },
+      "cache": true,
+      "inputs": ["sharedGlobals", "{workspaceRoot}/**/*"],
+      "configurations": { "production": {} }
+    },
     "lint": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
@@ -13,9 +21,9 @@
     "test": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
+      "options": { "command": "yarn test" },
       "cache": true,
-      "inputs": ["default"],
+      "inputs": ["default", "{workspaceRoot}/vitest.config.ts"],
       "configurations": { "production": {} }
     },
     "knip": {

@@ -10,23 +10,31 @@ import {
   build_windows,
   check,
   commonJobsNoOpJob,
+  defineCircleciCompletion,
   knip,
   lint,
-  prettyDocs,
+  fmt,
+  internalStorybookBuildE2e,
+  internalStorybookE2e,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
   testsUnit_linux,
-} from './common-jobs';
-import { getInitEmpty, initEmptyNoOpJob } from './init-empty';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes';
-import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks';
-import { executors } from './utils/executors';
-import { ensureRequiredJobs } from './utils/helpers';
-import { orbs } from './utils/orbs';
-import { parameters } from './utils/parameters';
-import type { JobImplementationObj, JobOrNoOpJob, NoOpJobImplementationObj } from './utils/types';
-import { type Workflow, isWorkflowOrAbove } from './utils/types';
+} from './common-jobs.ts';
+import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
+import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
+import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
+import { executors } from './utils/executors.ts';
+import { ensureRequiredJobs } from './utils/helpers.ts';
+import { orbs } from './utils/orbs.ts';
+import { parameters } from './utils/parameters.ts';
+import { setTrustedAuthor } from './utils/runtime.ts';
+import type {
+  JobImplementationObj,
+  JobOrNoOpJob,
+  NoOpJobImplementationObj,
+} from './utils/types.ts';
+import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -39,7 +47,7 @@ const dirname = import.meta.dirname;
 function generateConfig(workflow: Workflow) {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(prettyDocs);
+    jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);
@@ -56,10 +64,13 @@ function generateConfig(workflow: Workflow) {
 
       commonJobsNoOpJob,
       lint,
+      fmt,
       check,
       knip,
 
       storybookChromatic,
+      internalStorybookE2e,
+      internalStorybookBuildE2e,
       benchmarkPackages,
 
       sandboxesNoOpJob,
@@ -96,6 +107,11 @@ function generateConfig(workflow: Workflow) {
   const isDebugging = filteredJobs.length !== jobs.length;
 
   const ensuredJobs = ensureRequiredJobs(filteredJobs);
+
+  // Append a completion job that depends on every other job in the workflow.
+  // It acts as a single status check for GitHub branch protection: it only runs
+  // (and reports success) once every required job has finished successfully.
+  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
@@ -144,11 +160,19 @@ console.log('--------------------------------');
 program
   .description('Generate CircleCI config')
   .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .option(
+    '--gh-trusted-author <string>',
+    'Whether the pipeline can persist to shared caches',
+    'false'
+  )
   .parse(process.argv);
+
+const opts = program.opts();
+setTrustedAuthor(opts.ghTrustedAuthor === 'true');
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(program.opts().workflow), null, {
+  yml.stringify(generateConfig(opts.workflow), null, {
     lineWidth: 1200,
     indent: 4,
   })

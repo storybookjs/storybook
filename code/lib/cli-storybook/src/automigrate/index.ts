@@ -1,4 +1,5 @@
 import { type JsPackageManager } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -7,7 +8,8 @@ import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { doctor } from '../doctor';
+import { doctor } from '../doctor/index.ts';
+import { configureDeferredAddons } from '../postinstallAddon.ts';
 import type {
   AutofixOptions,
   AutofixOptionsFromCLI,
@@ -16,11 +18,11 @@ import type {
   FixSummary,
   PreCheckFailure,
   Prompt,
-} from './fixes';
-import { FixStatus, allFixes, commandFixes } from './fixes';
-import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { logMigrationSummary } from './helpers/logMigrationSummary';
-import { getStorybookData } from './helpers/mainConfigFile';
+} from './fixes/index.ts';
+import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
+import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
+import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
+import { getStorybookData } from './helpers/mainConfigFile.ts';
 
 const logAvailableMigrations = () => {
   const availableFixes = [...allFixes, ...commandFixes]
@@ -56,10 +58,6 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     packageManagerName: options.packageManager,
   });
 
-  if (!versionInstalled) {
-    throw new Error('Could not determine Storybook version');
-  }
-
   if (!mainConfigPath) {
     throw new Error('Could not determine main config path');
   }
@@ -67,7 +65,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const outcome = await automigrate({
     ...options,
     packageManager,
-    storybookVersion: versionInstalled,
+    storybookVersion: versionInstalled || versions.storybook,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
@@ -85,6 +83,17 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   if (hasAppliedFixes && !options.skipInstall) {
     await packageManager.installDependencies();
+
+    // Configure addons whose postinstall a fix deferred until after install (mirrors CLI init's
+    // install-then-configure ordering). Their postinstall hooks can only be resolved now that the
+    // packages are on disk; running them earlier (during the fix) silently no-ops.
+    await configureDeferredAddons(outcome?.addonsToPostinstall ?? [], {
+      packageManager: packageManager.type,
+      configDir,
+      yes: options.yes,
+      logger,
+      prompt,
+    });
   }
 
   if (outcome && !options.skipDoctor) {
@@ -126,6 +135,8 @@ export const automigrate = async ({
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
+  /** Core addons added by fixes that must be configured after dependencies are installed. */
+  addonsToPostinstall?: string[];
 } | null> => {
   if (list) {
     logAvailableMigrations();
@@ -178,7 +189,7 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure } = await runFixes({
+  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall } = await runFixes({
     fixes,
     packageManager,
     rendererPackage,
@@ -207,7 +218,7 @@ export const automigrate = async ({
     });
   }
 
-  return { fixResults, preCheckFailure };
+  return { fixResults, preCheckFailure, addonsToPostinstall };
 };
 
 type RunFixesOptions = {
@@ -245,9 +256,12 @@ export async function runFixes({
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
   fixSummary: FixSummary;
+  addonsToPostinstall: string[];
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
+  // Collects core addons that fixes add but whose postinstall must run after `installDependencies`.
+  const addonsToPostinstall: string[] = [];
 
   for (let i = 0; i < fixes.length; i += 1) {
     const f = fixes[i] as Fix;
@@ -384,6 +398,7 @@ export async function runFixes({
               storybookVersion,
               storiesPaths,
               yes,
+              addonsToPostinstall,
             });
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
@@ -408,5 +423,5 @@ export async function runFixes({
     }
   }
 
-  return { fixResults, fixSummary };
+  return { fixResults, fixSummary, addonsToPostinstall };
 }

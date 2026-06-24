@@ -13,9 +13,9 @@ import prompts from 'prompts';
 import Watchpack from 'watchpack';
 import windowSize from 'window-size';
 
-import { getTSFilesAndConfig } from './check/utils/typescript';
-import { ROOT_DIRECTORY } from './utils/constants';
-import { getCodeWorkspaces } from './utils/workspace';
+import { getTSFilesAndConfig } from './check/utils/typescript.ts';
+import { ROOT_DIRECTORY } from './utils/constants.ts';
+import { getCodeWorkspaces } from './utils/workspace.ts';
 
 async function run() {
   // Place main package first in option list
@@ -97,7 +97,7 @@ async function run() {
         })),
       },
     ]).then(({ watch, todo }: { watch: boolean; todo: Array<string> }) => {
-      watchMode = watch;
+      watchMode ??= watch;
       return todo?.map((key) => tasks[key]);
     });
   }

@@ -2,9 +2,11 @@ import { readFile } from 'node:fs/promises';
 
 import {
   JsPackageManagerFactory,
+  cache,
   getConfigInfo,
   getInterpretedFile,
   getProjectRoot,
+  isWebContainer,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
@@ -12,29 +14,64 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { detectPnp } from '../cli/detect';
-import { resolvePackageDir } from '../shared/utils/module';
-import { storybookDevServer } from './dev-server';
-import { buildOrThrow } from './utils/build-or-throw';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
-import { outputStartupInformation } from './utils/output-startup-information';
-import { outputStats } from './utils/output-stats';
-import { getServerChannelUrl, getServerPort } from './utils/server-address';
-import { stripCommentsAndStrings } from './utils/strip-comments-and-strings';
-import { updateCheck } from './utils/update-check';
-import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
-import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
+import Channel from '../channels/index.ts';
+import { detectPnp } from '../cli/detect.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import { storybookDevServer } from './dev-server.ts';
+import { getWsToken } from './presets/wsToken.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
+import { getServerChannel } from './utils/get-server-channel.ts';
+import { outputStartupInformation } from './utils/output-startup-information.ts';
+import { outputStats } from './utils/output-stats.ts';
+import {
+  getMcpMetadataFromMainConfig,
+  type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
+import { getServer } from './utils/server-init.ts';
+import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
+import { updateCheck } from './utils/update-check.ts';
+import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons.ts';
+import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex.ts';
+
+/**
+ * Resolves the initialPath for the browser open URL.
+ * CLI-provided initialPath always wins. If not set and not running in an agent context,
+ * checks the project cache for an `onboarding-pending` entry written by `storybook init`.
+ * If found, returns '/onboarding' and removes the cache entry so it only triggers once.
+ * The cache entry is only written by init when onboarding is known to be supported,
+ * so no further addon check is needed here.
+ */
+export async function resolveOnboardingInitialPath(
+  cliInitialPath: string | undefined
+): Promise<string | undefined> {
+  if (cliInitialPath || detectAgent()) {
+    // Explicit CLI flag wins; leave cache intact for next run.
+    // Agent environments skip onboarding (no browser to open).
+    return cliInitialPath;
+  }
+  const onboardingPending = await cache.get('onboarding-pending').catch(() => {});
+  if (onboardingPending) {
+    try {
+      await cache.remove('onboarding-pending');
+    } catch {}
+    return '/onboarding';
+  }
+  return undefined;
+}
 
 export async function buildDevStandalone(
   options: CLIOptions &
@@ -82,6 +119,17 @@ export async function buildDevStandalone(
 
   const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
+  // Resolve initialPath: CLI flag takes precedence; fall back to onboarding-pending cache entry.
+  invariant(port, 'expected options to have a port');
+  options.initialPath = await resolveOnboardingInitialPath(options.initialPath);
+
+  const { address: localAddress, networkAddress } = getServerAddresses(
+    port,
+    options.host,
+    options.https ? 'https' : 'http',
+    options.initialPath
+  );
+
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
   if (options.smokeTest) {
@@ -95,6 +143,8 @@ export async function buildDevStandalone(
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
+  options.localAddress = localAddress;
+  options.networkAddress = networkAddress;
 
   // TODO: Remove in SB11
   options.pnp = await detectPnp();
@@ -108,7 +158,8 @@ export async function buildDevStandalone(
   }
 
   const config = await loadMainConfig(options);
-  const { framework } = config;
+  const { core, framework } = config;
+
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
@@ -142,6 +193,8 @@ export async function buildDevStandalone(
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
   } catch (e) {}
 
+  const server = await getServer(options);
+
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
@@ -152,18 +205,37 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
+    channel: new Channel({
+      transports: [
+        {
+          setHandler: () => () => console.error('CHANNEL IS NOT READY YET'),
+          send: () => () => console.error('CHANNEL IS NOT READY YET'),
+        },
+      ],
+    }),
   });
 
-  const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
+  const { allowedHosts, renderer, builder } = await presets.apply('core', {});
+
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
+  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
+  if (
+    options.host === '0.0.0.0' &&
+    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
+  ) {
+    logger.warn(dedent`
+      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
+      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
+      See: https://storybook.js.org/docs/api/main-config/main-config-core
+    `);
+  }
 
   if (!builder) {
     throw new MissingBuilderError();
   }
 
-  if (!options.disableTelemetry && !disableTelemetry) {
-    if (versionCheck.success && !versionCheck.cached) {
-      telemetry('version-update');
-    }
+  if (versionCheck.success && !versionCheck.cached) {
+    telemetry('version-update');
   }
 
   const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
@@ -195,6 +267,15 @@ export async function buildDevStandalone(
 
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
 
+  const channel = getServerChannel(server, {
+    token: getWsToken(),
+    host: options.host,
+    allowedHosts,
+    skipValidation: isWebContainer(),
+    localAddress,
+    networkAddress,
+  });
+
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
@@ -209,20 +290,37 @@ export async function buildDevStandalone(
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
 
+  await applyServicesPresetOnce(presets);
+  await presets.apply('experimental_serverChannel', channel);
+
   const fullOptions: Options = {
     ...options,
     presets,
     features,
+    channel,
   };
 
-  const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions)
+  const { managerResult, previewResult } = await buildOrThrow(async () =>
+    storybookDevServer(fullOptions, server)
   );
+
+  const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
+
+  await writeStorybookRuntimeInstanceRecord({
+    address: localAddress,
+    mcp,
+    port,
+    storybookVersion,
+  }).catch((error: unknown) => {
+    logger.warn('Storybook failed to write its runtime instance registry record.');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+  });
 
   const previewTotalTime = previewResult?.totalTime;
   const managerTotalTime = managerResult?.totalTime;
@@ -257,7 +355,13 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    logger.log(problems.map((p) => p.stack).join('\n'));
+    if (problems.length > 0) {
+      logger.error('Smoke tests failed.');
+      logger.log(problems.map((p) => p.stack).join('\n'));
+    } else {
+      logger.step(CLI_COLORS.success('Smoke tests passed, exiting.'));
+    }
+    logger.outro('');
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =
@@ -270,12 +374,13 @@ export async function buildDevStandalone(
         updateInfo: versionCheck,
         version: storybookVersion,
         name,
-        address,
+        address: localAddress,
         networkAddress,
+        allowedHosts,
         managerTotalTime,
         previewTotalTime,
       });
     }
   }
-  return { port, address, networkAddress };
+  return { port, address: localAddress, networkAddress };
 }

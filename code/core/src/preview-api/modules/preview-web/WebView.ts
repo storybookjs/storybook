@@ -70,12 +70,14 @@ export class WebView implements View<HTMLElement> {
   prepareForStory(story: PreparedStory<any>) {
     this.showStory();
     this.applyLayout(story.parameters.layout);
-    this.applyHtmlLang(story.parameters.htmlLang);
 
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
 
-    return this.storyRoot();
+    const storyRoot = this.storyRoot();
+    this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
+
+    return storyRoot;
   }
 
   storyRoot(): HTMLElement {
@@ -86,7 +88,6 @@ export class WebView implements View<HTMLElement> {
     this.showMain();
     this.showDocs();
     this.applyLayout('fullscreen');
-    this.applyHtmlLang('en');
 
     // Only reset scroll when navigating to a new docs page, not on HMR re-renders.
     // Without this guard, hot-reloading a story file while scrolled down on a docs page
@@ -120,8 +121,17 @@ export class WebView implements View<HTMLElement> {
     this.currentLayoutClass = layoutClass;
   }
 
-  applyHtmlLang(lang: string = 'en') {
-    document.documentElement.lang = lang;
+  // Scope the BCP-47 language to the story's own root rather than `document.documentElement`.
+  // The document is shared — when stories render inline inside a docs page they live in the same
+  // document, so mutating the root `<html lang>` would leak one story's language onto its siblings
+  // and the surrounding docs prose. Setting it on the story root keeps it local; CSS hyphenation and
+  // assistive tech resolve `lang` from the nearest ancestor, so scoped content still behaves correctly.
+  applyHtmlLang(element: HTMLElement, lang?: string) {
+    if (lang) {
+      element.setAttribute('lang', lang);
+    } else {
+      element.removeAttribute('lang');
+    }
   }
 
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {

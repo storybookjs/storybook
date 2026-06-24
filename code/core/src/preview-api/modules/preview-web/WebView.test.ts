@@ -11,22 +11,28 @@ describe('WebView htmlLang', () => {
     document.documentElement.lang = 'en';
   });
 
-  it('sets <html lang> from the story htmlLang parameter when preparing a story', () => {
+  it('sets lang on the story root from the story htmlLang parameter when preparing a story', () => {
     const view = new WebView();
     view.prepareForStory(makeStory({ htmlLang: 'ja' }));
-    expect(document.documentElement.lang).toBe('ja');
+    expect(document.getElementById('storybook-root')).toHaveAttribute('lang', 'ja');
   });
 
-  it('defaults <html lang> to en when a story has no htmlLang parameter', () => {
+  it('leaves the shared document root untouched so sibling stories are not polluted', () => {
     const view = new WebView();
-    document.documentElement.lang = 'ja';
-    view.prepareForStory(makeStory({}));
+    view.prepareForStory(makeStory({ htmlLang: 'ja' }));
     expect(document.documentElement.lang).toBe('en');
   });
 
-  it('resets <html lang> to en when preparing docs', () => {
+  it('removes lang from the story root when a story has no htmlLang parameter', () => {
     const view = new WebView();
-    document.documentElement.lang = 'ja';
+    const storyRoot = document.getElementById('storybook-root')!;
+    storyRoot.setAttribute('lang', 'ja');
+    view.prepareForStory(makeStory({}));
+    expect(storyRoot).not.toHaveAttribute('lang');
+  });
+
+  it('does not modify the document language when preparing docs', () => {
+    const view = new WebView();
     view.prepareForDocs();
     expect(document.documentElement.lang).toBe('en');
   });

@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Builder-vite: Vite's `publicDir` is disabled by default](#builder-vite-vites-publicdir-is-disabled-by-default)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -517,6 +519,41 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Builder-vite: Vite's `publicDir` is disabled by default
+
+Storybook's Vite builder now sets Vite's [`publicDir`](https://vite.dev/config/shared-options.html#publicdir) option to `false`. Previously, Vite always copied the contents of its public directory (`public` by default) into the root of the build output, regardless of how you configured `staticDirs`. This duplicated assets and could overwrite Storybook's own generated files — for example, a `public/index.json` would clobber the story index and break the build.
+
+If you depend on Vite serving your public directory, add it to `staticDirs` instead:
+
+```ts
+// .storybook/main.ts
+const config = {
+  framework: '@storybook/react-vite',
+  staticDirs: ['../public'],
+};
+
+export default config;
+```
+
+If you'd rather keep Vite's original behavior, re-enable `publicDir` from `viteFinal`:
+
+```ts
+// .storybook/main.ts
+const config = {
+  framework: '@storybook/react-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    return mergeConfig(config, {
+      publicDir: 'public',
+    });
+  },
+};
+
+export default config;
+```
 
 ## From version 10.0.0 to 10.1.0
 

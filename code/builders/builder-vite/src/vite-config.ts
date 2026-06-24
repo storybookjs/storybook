@@ -66,6 +66,9 @@ export async function commonConfig(
     root: projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
+    // Vite always copies its public directory into the build root, which duplicates assets already
+    // handled by `staticDirs` and can overwrite Storybook's generated files (e.g. `index.json`).
+    // Disable it and let `staticDirs` own static assets. See https://github.com/storybookjs/storybook/issues/24627
     publicDir: false,
     plugins: await pluginConfig(options),
     resolve: {

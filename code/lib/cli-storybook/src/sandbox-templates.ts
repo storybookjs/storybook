@@ -972,6 +972,7 @@ const internalTemplates = {
       mainConfig: {
         swc: { swcrc: false },
         features: {
+          babelRemoveBugfixes: true,
           experimentalTestSyntax: true,
         },
       },

@@ -43,6 +43,7 @@ export interface StorybookConfigWebpack extends Omit<
     /**
      * Remove the `bugfixes` option from `@babel/preset-env`. This is required when using Babel 8 and when
      * Storybook fails to detect your Babel version.
+     * @default false
      */
     babelRemoveBugfixes?: boolean;
   };

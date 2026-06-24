@@ -21,9 +21,6 @@ const require = createRequire(import.meta.url);
  * @returns The major version (e.g. `7` or `8`), or `0` when preset-env cannot be resolved.
  */
 export const getBabelPresetEnvMajor = (): number | undefined => {
-  // TODO read from main.ts or env
-  // return what we found
-  // if nothing declared, we try and detect
   try {
     const pkgPath = require.resolve('@babel/preset-env/package.json');
     const { version } = JSON.parse(readFileSync(pkgPath, 'utf8'));

@@ -766,6 +766,11 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22'],
       useCsfFactory: true,
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,

@@ -14,7 +14,7 @@ import type { ICollection, NgModuleMetadata } from '../types.ts';
 import { STORY_PROPS } from './StorybookProvider.ts';
 import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
 import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer.ts';
-import { PropertyExtractor } from './utils/PropertyExtractor.ts';
+import type { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
@@ -59,8 +59,6 @@ export const createStorybookWrapperComponent = ({
     exports: [...declarations, ...imports],
   })
   class StorybookComponentModule {}
-
-  PropertyExtractor.warnImportsModuleWithProviders(analyzedMetadata);
 
   @Component({
     selector,

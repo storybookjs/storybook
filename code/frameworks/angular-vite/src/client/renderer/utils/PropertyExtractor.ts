@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import type { NgModule, Provider, importProvidersFrom } from '@angular/core';
+import type { ModuleWithProviders, NgModule, Provider } from '@angular/core';
 import {
   Component,
   Directive,
@@ -8,6 +8,7 @@ import {
   Input,
   Output,
   Pipe,
+  importProvidersFrom,
   ɵReflectionCapabilities as ReflectionCapabilities,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -42,27 +43,6 @@ export class PropertyExtractor implements NgModuleMetadata {
     private component?: any
   ) {}
 
-  // Stories built on top of `bootstrapApplication` should pass providers through
-  // `applicationConfig`, not via `ModuleWithProviders` entries in `moduleMetadata.imports`.
-  static warnImportsModuleWithProviders(propertyExtractor: PropertyExtractor) {
-    const hasModuleWithProvidersImport = propertyExtractor.imports.some(
-      (importedModule) => 'ngModule' in importedModule
-    );
-
-    if (hasModuleWithProvidersImport) {
-      console.warn(
-        dedent(
-          `
-          Storybook Warning:
-          moduleMetadata.imports contains one or more ModuleWithProviders (likely the result of a 'Module.forRoot()'-style call).
-          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and pass the providers to its 'providers' array instead.
-          See https://angular.dev/guide/components/anatomy-of-components#configuring-dependency-injection for more information.
-          `
-        )
-      );
-    }
-  }
-
   public async init() {
     const analyzed = await this.analyzeMetadata(this.metadata);
     this.imports = uniqueArray([CommonModule, analyzed.imports]);
@@ -96,7 +76,7 @@ export class PropertyExtractor implements NgModuleMetadata {
   private analyzeMetadata = async (metadata: NgModuleMetadata) => {
     const declarations = [...(metadata?.declarations || [])];
     const providers = [...(metadata?.providers || [])];
-    const applicationProviders: Provider[] = [];
+    const applicationProviders: Array<Provider | ReturnType<typeof importProvidersFrom>> = [];
     const imports = await Promise.all(
       [...(metadata?.imports || [])].map(async (imported) => {
         const [isRestricted, restrictedProviders] =
@@ -105,11 +85,22 @@ export class PropertyExtractor implements NgModuleMetadata {
           applicationProviders.unshift(restrictedProviders || []);
           return null;
         }
+        // A standalone component cannot import a ModuleWithProviders (e.g. `Module.forRoot()`).
+        // Hoist its providers into the environment injector and keep importing the plain
+        // NgModule so its exported directives and pipes stay available to the template.
+        if (PropertyExtractor.isModuleWithProviders(imported)) {
+          applicationProviders.push(importProvidersFrom(imported));
+          return imported.ngModule;
+        }
         return imported;
       })
     ).then((results) => results.filter(Boolean));
 
     return { ...metadata, imports, providers, applicationProviders, declarations };
+  };
+
+  static isModuleWithProviders = (imported: unknown): imported is ModuleWithProviders<any> => {
+    return typeof imported === 'object' && imported !== null && 'ngModule' in imported;
   };
 
   static analyzeRestricted = (ngModule: NgModule): [boolean] | [boolean, Provider] => {

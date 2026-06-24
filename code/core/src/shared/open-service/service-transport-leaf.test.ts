@@ -55,7 +55,7 @@ describe('channel: sync-start initialization (leaf)', () => {
       clientId: 'manager-hub',
     });
 
-    expect(preview.queries.getRecordFields.get({ entryId: 'entry-late' })).toEqual({
+    expect(preview.queries.recordFields.get({ entryId: 'entry-late' })).toEqual({
       marker: 'synced',
     });
 
@@ -86,7 +86,7 @@ describe('channel: sync-start initialization (leaf)', () => {
       clientId: 'early-hub',
     });
 
-    expect(preview.queries.getRecordFields.get({ entryId: 'entry-stale' })).toEqual({
+    expect(preview.queries.recordFields.get({ entryId: 'entry-stale' })).toEqual({
       marker: 'v1',
     });
   });
@@ -100,7 +100,7 @@ describe('channel: patch broadcast (leaf)', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     const received: unknown[] = [];
-    service.queries.getRecordFields.subscribe({ entryId: 'a' }, (v) => received.push(v));
+    service.queries.recordFields.subscribe({ entryId: 'a' }, (v) => received.push(v));
     await vi.waitFor(() => expect(received).toHaveLength(1));
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
@@ -133,7 +133,7 @@ describe('channel: last-write-wins convergence', () => {
     });
 
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' })
+      expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' })
     );
   });
 
@@ -157,7 +157,7 @@ describe('channel: last-write-wins convergence', () => {
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' });
+    expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' });
   });
 
   it('a higher version wins even against a greater clientId', async () => {
@@ -180,7 +180,7 @@ describe('channel: last-write-wins convergence', () => {
     });
 
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ color: 'green' })
+      expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'green' })
     );
   });
 
@@ -204,7 +204,7 @@ describe('channel: last-write-wins convergence', () => {
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ color: 'green' });
+    expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'green' });
   });
 });
 
@@ -235,7 +235,7 @@ describe('channel: multi-peer sync-start bootstrap', () => {
     });
 
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ v: '3' })
+      expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ v: '3' })
     );
   });
 });
@@ -254,7 +254,7 @@ describe('channel: deletion propagation', () => {
       clientId: 'peer',
     });
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'b' })).toEqual({ k: 'w' })
+      expect(service.queries.recordFields.get({ entryId: 'b' })).toEqual({ k: 'w' })
     );
 
     channel.emitExternal(SERVICE_PATCHES, {
@@ -264,10 +264,8 @@ describe('channel: deletion propagation', () => {
       clientId: 'peer',
     });
 
-    await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'b' })).toBeNull()
-    );
-    expect(service.queries.getRecordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
+    await vi.waitFor(() => expect(service.queries.recordFields.get({ entryId: 'b' })).toBeNull());
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 });
 
@@ -292,7 +290,7 @@ describe('channel: untrusted payloads', () => {
     ).not.toThrow();
 
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'good' })).toEqual({ k: 'v' })
+      expect(service.queries.recordFields.get({ entryId: 'good' })).toEqual({ k: 'v' })
     );
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
@@ -322,7 +320,7 @@ describe('channel: untrusted payloads', () => {
     }
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.getRecordFields.get({ entryId: 'a' })).toBeNull();
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toBeNull();
   });
 });
 
@@ -344,7 +342,7 @@ describe('channel: relay role (leaf)', () => {
       clientId: 'peer-1',
     });
 
-    expect(service.queries.getRecordFields.get({ entryId: 'item' })).toEqual({ color: 'red' });
+    expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'red' });
     expect(patchEmits(channel)).toHaveLength(0);
   });
 });
@@ -363,7 +361,7 @@ describe('channel: disconnect on unregister', () => {
       clientId: 'peer',
     });
     await vi.waitFor(() =>
-      expect(service.queries.getRecordFields.get({ entryId: 'entry' })).toEqual({
+      expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({
         marker: 'before',
       })
     );
@@ -381,6 +379,6 @@ describe('channel: disconnect on unregister', () => {
       clientId: 'peer',
     });
 
-    expect(service.queries.getRecordFields.get({ entryId: 'entry' })).toEqual({ marker: 'before' });
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'before' });
   });
 });

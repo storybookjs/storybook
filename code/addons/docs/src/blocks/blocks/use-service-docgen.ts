@@ -20,5 +20,5 @@ import { useQuerySubscription } from './use-query-subscription.ts';
  */
 export function useServiceDocgen(id: string): QueryState<DocgenPayload | undefined> {
   const service = getService<DocgenService>('core/docgen');
-  return useQuerySubscription(id, service.queries.getDocgen, { id });
+  return useQuerySubscription(id, service.queries.docgen, { id });
 }

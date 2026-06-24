@@ -42,7 +42,7 @@ export function useServiceStory<TSelected>(
   // sibling stories in the same component must re-seed and re-subscribe with the new selector.
   return useQuerySubscription(
     storyId,
-    service.queries.getStoryDocs,
+    service.queries.storyDocs,
     { id: componentId },
     boundSelector
   );

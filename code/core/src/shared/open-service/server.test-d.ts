@@ -15,7 +15,7 @@ const registrationOnlyServiceDef = defineService({
     valuesById: {} as Record<string, string | undefined>,
   },
   queries: {
-    getValue: {
+    value: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
       handler: (input, ctx) => {
@@ -53,7 +53,7 @@ const registrationOnlyServiceDef = defineService({
 
 const registeredService = registerService(registrationOnlyServiceDef, {
   queries: {
-    getValue: {
+    value: {
       staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
@@ -79,11 +79,11 @@ const registeredService = registerService(registrationOnlyServiceDef, {
 
 describe('open-service registration types', () => {
   it('infers registration overrides and the registered runtime surface', () => {
-    expectTypeOf(registeredService.queries.getValue.get).parameter(0).toEqualTypeOf<{
+    expectTypeOf(registeredService.queries.value.get).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.queries.getValue.get).returns.toEqualTypeOf<string | null>();
-    expectTypeOf(registeredService.queries.getValue.loaded).returns.toEqualTypeOf<
+    expectTypeOf(registeredService.queries.value.get).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(registeredService.queries.value.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
 
@@ -102,7 +102,7 @@ describe('open-service registration types', () => {
   it('rejects invalid registration overrides', () => {
     registerService(registrationOnlyServiceDef, {
       queries: {
-        getValue: {
+        value: {
           // @ts-expect-error query handlers belong on the definition, not at registration
           handler: () => 'wrong',
         },
@@ -111,7 +111,7 @@ describe('open-service registration types', () => {
 
     registerService(registrationOnlyServiceDef, {
       queries: {
-        getValue: {
+        value: {
           // @ts-expect-error load must be declared on the definition, not at registration
           load: async () => {},
         },
@@ -137,7 +137,7 @@ describe('open-service registration types', () => {
         id: 'internal-fixture/open-service-registration-cross-service',
         initialState: { valuesById: {} as Record<string, string | undefined> },
         queries: {
-          getValue: {
+          value: {
             input: entryIdInputSchema,
             output: v.nullable(v.string()),
             handler: (_input, ctx) => {
@@ -145,14 +145,14 @@ describe('open-service registration types', () => {
                 'internal-fixture/mutable-record-lookup'
               );
 
-              expectTypeOf(lookup.queries.getRecordFields.get).returns.toEqualTypeOf<Record<
+              expectTypeOf(lookup.queries.recordFields.get).returns.toEqualTypeOf<Record<
                 string,
                 string
               > | null>();
               const missingService = ctx.getService('internal-fixture/missing-service');
               expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
-              // @ts-expect-error getRecordFields requires an entryId string
-              lookup.queries.getRecordFields.get({});
+              // @ts-expect-error recordFields requires an entryId string
+              lookup.queries.recordFields.get({});
 
               return null;
             },

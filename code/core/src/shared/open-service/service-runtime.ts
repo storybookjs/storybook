@@ -118,7 +118,7 @@ export type ServiceRuntime<
    * Installs the channel-routed command map produced once the runtime is wired to the channel.
    *
    * Load bodies use this map (not the raw local one) so a command implemented only on a peer — e.g. a
-   * server-only `extractDocgen` invoked from the manager's `getDocgen` load — is requested remotely
+   * server-only `extractDocgen` invoked from the manager's `docgen` load — is requested remotely
    * instead of throwing `OpenServiceUnimplementedOperationError` locally. Command names not in
    * `implementedCommandNames` are treated as remote and routed through this map even inside the
    * stale-write-gated reactive load path (remote calls carry no local `setState` to gate).

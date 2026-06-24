@@ -40,7 +40,7 @@ describe('service registration', () => {
       {
         id: 'internal-fixture/mutable-record-lookup',
         description: 'Provides a mutable record lookup keyed by entry id.',
-        queryNames: ['getRecordFields'],
+        queryNames: ['recordFields'],
         commandNames: ['assignRecordField'],
       },
     ]);
@@ -51,8 +51,8 @@ describe('service registration', () => {
       id: 'internal-fixture/mutable-record-lookup',
       description: 'Provides a mutable record lookup keyed by entry id.',
       queries: {
-        getRecordFields: {
-          name: 'getRecordFields',
+        recordFields: {
+          name: 'recordFields',
           description: 'Returns all stored fields for one entry, or null when absent.',
         },
       },
@@ -63,9 +63,9 @@ describe('service registration', () => {
         },
       },
     });
-    expect(descriptor.queries.getRecordFields.input).toBe(entryIdInputSchema);
-    expect(descriptor.queries.getRecordFields.output).toBe(recordFieldsOutputSchema);
-    expect(descriptor.queries.getRecordFields.staticPath).toBeUndefined();
+    expect(descriptor.queries.recordFields.input).toBe(entryIdInputSchema);
+    expect(descriptor.queries.recordFields.output).toBe(recordFieldsOutputSchema);
+    expect(descriptor.queries.recordFields.staticPath).toBeUndefined();
     expect(descriptor.commands.assignRecordField.input).toBe(assignEntryFieldInputSchema);
     expect(descriptor.commands.assignRecordField.output).toBe(voidOutputSchema);
   });
@@ -93,7 +93,7 @@ describe('service registration', () => {
         description: 'Leaves the query handler undefined so registration can supply it later.',
         initialState: {} as Record<string, never>,
         queries: {
-          getValue: {
+          value: {
             description: 'Reads a value that is not implemented in this environment.',
             input: v.undefined(),
             output: v.string(),
@@ -103,8 +103,8 @@ describe('service registration', () => {
       })
     );
 
-    expect(() => service.queries.getValue.get(undefined)).toThrow(
-      'Query "internal-fixture/unimplemented-operations.getValue" is not implemented for this environment.'
+    expect(() => service.queries.value.get(undefined)).toThrow(
+      'Query "internal-fixture/unimplemented-operations.value" is not implemented for this environment.'
     );
   });
 
@@ -142,7 +142,7 @@ describe('service registration', () => {
 
             await lookup.commands.assignRecordField(input);
 
-            const record = lookup.queries.getRecordFields.get({
+            const record = lookup.queries.recordFields.get({
               entryId: input.entryId,
             });
             ctx.self.setState((state) => {
@@ -154,17 +154,17 @@ describe('service registration', () => {
     });
 
     await service.commands.increment(undefined);
-    expect(service.queries.getCount.get(undefined)).toBe(1);
+    expect(service.queries.count.get(undefined)).toBe(1);
 
     await service.commands.assignFromLookup({
       entryId: 'entry-a',
       fieldKey: 'marker',
       fieldValue: 'match',
     });
-    expect(service.queries.getCount.get(undefined)).toBe(1);
+    expect(service.queries.count.get(undefined)).toBe(1);
 
     expect(
-      getService('internal-fixture/mutable-record-lookup').queries.getRecordFields.get({
+      getService('internal-fixture/mutable-record-lookup').queries.recordFields.get({
         entryId: 'entry-a',
       })
     ).toEqual({ marker: 'match' });
@@ -175,7 +175,7 @@ describe('service registration', () => {
 
     const descriptor = await describeService('internal-fixture/awaited-preload-value');
 
-    expect(descriptor.queries.getPreloadedValue.staticPath).toBe(true);
+    expect(descriptor.queries.preloadedValue.staticPath).toBe(true);
   });
 
   it('allows staticInputs to be supplied only at registration time', async () => {
@@ -184,7 +184,7 @@ describe('service registration', () => {
       description: 'Declares staticPath and load in the definition; staticInputs at registration.',
       initialState: { value: null as string | null },
       queries: {
-        getValue: {
+        value: {
           description: 'Returns one statically built value.',
           input: v.object({ build: v.literal('once') }),
           output: v.nullable(v.string()),
@@ -206,7 +206,7 @@ describe('service registration', () => {
 
     registerService(serviceDef, {
       queries: {
-        getValue: {
+        value: {
           staticInputs: async () => [{ build: 'once' as const }],
         },
       },
@@ -228,7 +228,7 @@ describe('service registration', () => {
     });
 
     expect(
-      getService('internal-fixture/registration-only-static-build').queries.getValue.get({
+      getService('internal-fixture/registration-only-static-build').queries.value.get({
         build: 'once',
       })
     ).toBe(null);
@@ -241,19 +241,19 @@ describe('service registration', () => {
       {
         id: 'internal-fixture/mixed-visibility',
         description: 'Exposes one public and one internal operation per family.',
-        queryNames: ['getValue'],
+        queryNames: ['value'],
         commandNames: ['setValue'],
       },
     ]);
 
     const descriptor = await describeService('internal-fixture/mixed-visibility');
 
-    expect(Object.keys(descriptor.queries)).toEqual(['getValue']);
+    expect(Object.keys(descriptor.queries)).toEqual(['value']);
     expect(Object.keys(descriptor.commands)).toEqual(['setValue']);
 
-    expect(service.queries._getInternalValue.get(undefined)).toBe(0);
+    expect(service.queries._internalValue.get(undefined)).toBe(0);
     await service.commands._reset(undefined);
-    expect(service.queries.getValue.get(undefined)).toBe(0);
+    expect(service.queries.value.get(undefined)).toBe(0);
   });
 
   it('omits internal services from listServices while keeping runtime access', async () => {
@@ -264,7 +264,7 @@ describe('service registration', () => {
       {
         id: 'internal-fixture/mutable-record-lookup',
         description: 'Provides a mutable record lookup keyed by entry id.',
-        queryNames: ['getRecordFields'],
+        queryNames: ['recordFields'],
         commandNames: ['assignRecordField'],
       },
     ]);
@@ -275,17 +275,15 @@ describe('service registration', () => {
       id: 'internal-fixture/hidden-service',
       description: 'Hidden from listServices.',
       queries: {
-        getSecret: {
-          name: 'getSecret',
+        secret: {
+          name: 'secret',
           description: 'Returns the secret flag.',
         },
       },
       commands: {},
     });
 
-    expect(getService('internal-fixture/hidden-service').queries.getSecret.get(undefined)).toBe(
-      true
-    );
+    expect(getService('internal-fixture/hidden-service').queries.secret.get(undefined)).toBe(true);
   });
 
   it('still builds static snapshots for internal queries', async () => {

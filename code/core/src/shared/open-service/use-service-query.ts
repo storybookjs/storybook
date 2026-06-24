@@ -23,7 +23,7 @@ import type { Query, QueryState } from './types.ts';
 /**
  * Subscribe to a service query and receive reactive {@link QueryState} updates in a React component.
  *
- * Pass the query directly (e.g. `myService.queries.getThing`) so its input/output types infer per
+ * Pass the query directly (e.g. `myService.queries.thing`) so its input/output types infer per
  * query. The service must exist: if it may be absent (e.g. behind a feature flag), guard at a parent
  * and conditionally render the component that calls this hook.
  *
@@ -33,7 +33,7 @@ import type { Query, QueryState } from './types.ts';
  *
  * @example
  * ```tsx
- * const { data, isInitialLoading, isError } = useServiceQuery(recordService.queries.getRecordFields, {
+ * const { data, isInitialLoading, isError } = useServiceQuery(recordService.queries.recordFields, {
  *   entryId: 'a',
  * });
  * ```

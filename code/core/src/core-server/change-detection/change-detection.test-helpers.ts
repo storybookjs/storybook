@@ -55,7 +55,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   const emitRevision = () => {
     revisionSubscribers.forEach((subscriber) => subscriber(toSuccessState(graphRevision)));
   };
-  const getStoriesForFiles = ({ files }: { files: string[] }) =>
+  const storiesForFiles = ({ files }: { files: string[] }) =>
     files.map((file) => {
       const hits = engine.lookup(normalize(file));
       return [...hits.entries()].map(([storyFile, depth]) => ({
@@ -66,7 +66,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
 
   vi.mocked(getService).mockReturnValue({
     queries: {
-      getStatus: {
+      status: {
         get: () => status,
         loaded: async () => {
           await engine.whenSettled();
@@ -80,14 +80,14 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
           }
         ),
       },
-      getStoriesForFiles: {
-        get: getStoriesForFiles,
+      storiesForFiles: {
+        get: storiesForFiles,
         loaded: async (input: { files: string[] }) => {
           await engine.whenSettled();
-          return getStoriesForFiles(input);
+          return storiesForFiles(input);
         },
       },
-      getGraphRevision: {
+      graphRevision: {
         get: () => 0,
         subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
           revisionSubscribers.add(callback);
@@ -95,7 +95,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
           return () => revisionSubscribers.delete(callback);
         }),
       },
-      getLatestStoryChanges: {
+      latestStoryChanges: {
         get: () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
         subscribe: vi.fn(() => () => undefined),
       },

@@ -75,7 +75,7 @@ describe('story-docs open service', () => {
     });
 
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
-    expect(service.queries.getStoryDocs.get({ id: 'button' })).toEqual(payload);
+    expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
@@ -90,7 +90,7 @@ describe('story-docs open service', () => {
         provider,
       });
 
-      await service.queries.getStoryDocs.loaded({ id: 'button' });
+      await service.queries.storyDocs.loaded({ id: 'button' });
       expect(provider).toHaveBeenCalledTimes(1);
 
       const moduleGraph = getService<ModuleGraphService>('core/module-graph');

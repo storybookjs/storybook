@@ -6,7 +6,7 @@ export function registerLocalCommandSyncService() {
 
   let previousValue: string | undefined;
 
-  service.queries.getValue.subscribe(undefined, ({ data }) => {
+  service.queries.value.subscribe(undefined, ({ data }) => {
     const value = data ?? '';
     if (previousValue === undefined) {
       console.log(`[open-service-local-command-sync-demo] initial value: ${JSON.stringify(value)}`);

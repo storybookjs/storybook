@@ -162,10 +162,9 @@ function ServiceControlsPanel({
   // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
-  const { data: docgenPayload, isInitialLoading } = useServiceQuery(
-    docgenService.queries.getDocgen,
-    { id }
-  );
+  const { data: docgenPayload, isInitialLoading } = useServiceQuery(docgenService.queries.docgen, {
+    id,
+  });
   const isStoryPrepared = storyData.type === 'story' ? storyData.prepared : true;
 
   // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a

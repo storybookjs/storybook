@@ -82,10 +82,10 @@ const serviceGetDocgen = Object.assign(
         type: { name: 'enum', value: ['primary', 'secondary'] },
       },
     },
-  })).mockName('docgenService::getDocgen'),
+  })).mockName('docgenService::docgen'),
   {
     get: fn((input?: { id: string }) => serviceGetDocgen(input)).mockName(
-      'docgenService::getDocgen.get'
+      'docgenService::docgen.get'
     ),
     subscribe: fn((_input: { id: string }, callback: (state: QueryState<unknown>) => void) => {
       callback(
@@ -96,14 +96,14 @@ const serviceGetDocgen = Object.assign(
         })
       );
       return fn();
-    }).mockName('docgenService::getDocgen.subscribe'),
+    }).mockName('docgenService::docgen.subscribe'),
     loaded: fn((input: { id: string }) => Promise.resolve(serviceGetDocgen(input))).mockName(
-      'docgenService::getDocgen.loaded'
+      'docgenService::docgen.loaded'
     ),
   }
 );
 
-const docgenService: any = { queries: { getDocgen: serviceGetDocgen } };
+const docgenService: any = { queries: { docgen: serviceGetDocgen } };
 
 const meta = {
   component: ControlsPanel,

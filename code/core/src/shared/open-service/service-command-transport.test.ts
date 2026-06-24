@@ -67,7 +67,7 @@ const loadInvokesRemoteCommandServiceDef = defineService({
   description: 'Query load calls a command declared without a local handler.',
   initialState: {} as Record<string, string | undefined>,
   queries: {
-    getPreloadedValue: {
+    preloadedValue: {
       description: 'Populates state via a remote-only command inside load.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
@@ -306,7 +306,7 @@ describe('remote command responder (has local handler)', () => {
       )
     );
 
-    expect(service.queries.getRecordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
     expect(emittedCalls(channel, SERVICE_PATCHES).length).toBeGreaterThan(0);
   });
 
@@ -367,12 +367,12 @@ describe('load bodies and command routing', () => {
 
     const service = registerService(awaitedPreloadValueServiceDef);
 
-    await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+    await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
 
     expect(handlerSpy).toHaveBeenCalledTimes(1);
     expect(handlerSpy.mock.calls[0]?.[0]).toEqual({ entryId: 'entry-a' });
     expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(0);
-    expect(service.queries.getPreloadedValue.get({ entryId: 'entry-a' })).toBe('preloaded');
+    expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBe('preloaded');
   });
 
   it('routes a load-body command through command-invoke when no local handler exists', async () => {
@@ -380,7 +380,7 @@ describe('load bodies and command routing', () => {
     installTestChannel(channel);
 
     const service = registerService(loadInvokesRemoteCommandServiceDef);
-    const promise = service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+    const promise = service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
 
     await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(1));
 

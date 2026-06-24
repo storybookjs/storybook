@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React, { useContext } from 'react';
 
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import type { Parameters } from 'storybook/internal/types';
 
 import { DocsContext } from './DocsContext';
 import { resolveDocsLang } from './docsLang';
@@ -91,11 +92,12 @@ const DescriptionBody: FC<{
   return markdown ? <Markdown lang={lang}>{markdown}</Markdown> : null;
 };
 
-const DescriptionStoryWithServices: FC<{ resolvedOf: Extract<ResolvedOf, { type: 'story' }> }> = ({
-  resolvedOf,
-}) => {
+const DescriptionStoryWithServices: FC<{
+  resolvedOf: Extract<ResolvedOf, { type: 'story' }>;
+  projectParameters?: Parameters;
+}> = ({ resolvedOf, projectParameters }) => {
   const storyDocsDescription = useServiceStoryDoc(resolvedOf.story.id).data?.description;
-  const lang = resolveDocsLang(resolvedOf.story.parameters);
+  const lang = resolveDocsLang(resolvedOf.story.parameters, projectParameters);
   return (
     <DescriptionBody
       resolvedOf={resolvedOf}
@@ -108,12 +110,14 @@ const DescriptionStoryWithServices: FC<{ resolvedOf: Extract<ResolvedOf, { type:
 const DescriptionComponentWithServices: FC<{
   resolvedOf: Extract<ResolvedOf, { type: 'meta' | 'component' }>;
   componentId: string;
-}> = ({ resolvedOf, componentId }) => {
+  projectParameters?: Parameters;
+}> = ({ resolvedOf, componentId, projectParameters }) => {
   const serviceComponentDescription = useServiceDocgen(componentId).data?.description || undefined;
   const lang = resolveDocsLang(
     resolvedOf.type === 'meta'
       ? resolvedOf.preparedMeta.parameters
-      : resolvedOf.projectAnnotations.parameters
+      : resolvedOf.projectAnnotations.parameters,
+    projectParameters
   );
   return (
     <DescriptionBody
@@ -126,12 +130,13 @@ const DescriptionComponentWithServices: FC<{
 
 const DescriptionImpl: FC<DescriptionProps> = (props) => {
   const { of } = props;
+  const context = useContext(DocsContext);
 
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
   }
   const resolvedOf = useOf(of || 'meta');
-  const context = useContext(DocsContext);
+  const projectParameters = context?.projectAnnotations?.parameters;
 
   // The docgen service contributes a fallback description, but its two sources need different hooks
   // (story-docs by story id, docgen by component id), so each lives in its own child component to
@@ -139,7 +144,12 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
   // resolvable component id — render without a service fallback.
   if (globalThis.FEATURES?.experimentalDocgenServer) {
     if (resolvedOf.type === 'story') {
-      return <DescriptionStoryWithServices resolvedOf={resolvedOf} />;
+      return (
+        <DescriptionStoryWithServices
+          resolvedOf={resolvedOf}
+          projectParameters={projectParameters}
+        />
+      );
     }
 
     const componentId =
@@ -148,7 +158,13 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
         : context.getComponentId(resolvedOf.component);
 
     if (componentId) {
-      return <DescriptionComponentWithServices resolvedOf={resolvedOf} componentId={componentId} />;
+      return (
+        <DescriptionComponentWithServices
+          resolvedOf={resolvedOf}
+          componentId={componentId}
+          projectParameters={projectParameters}
+        />
+      );
     }
   }
 
@@ -158,7 +174,7 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
       : resolvedOf.type === 'meta'
         ? resolvedOf.preparedMeta.parameters
         : resolvedOf.projectAnnotations.parameters;
-  const lang = resolveDocsLang(parameters);
+  const lang = resolveDocsLang(parameters, projectParameters);
   return <DescriptionBody resolvedOf={resolvedOf} lang={lang} />;
 };
 

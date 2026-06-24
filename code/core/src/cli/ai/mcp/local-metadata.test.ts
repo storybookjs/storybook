@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
 
-import { resolve } from 'node:path';
 import { loadStorybookAiMetadata, resolveStorybookConfigDir } from './local-metadata.ts';
 
 vi.mock('storybook/internal/core-server', { spy: true });

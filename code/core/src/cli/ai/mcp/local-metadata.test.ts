@@ -139,7 +139,7 @@ describe('resolveStorybookConfigDir', () => {
 
   it('keeps absolute config dirs unchanged', () => {
     expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: '/custom/.storybook' })).toBe(
-      resolve('/custom/.storybook')
+      '/custom/.storybook'
     );
   });
 });

@@ -268,7 +268,7 @@ describe('runAiTool', () => {
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Storybook is running at this cwd');
-    expect(result.output).toContain(resolve('/projects/foo'));
+    expect(result.output).toContain('/projects/foo');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
@@ -465,7 +465,7 @@ describe('runAiTool', () => {
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Multiple matching Storybook instances');
-    expect(result.output).toContain(`Matching instances at \`${resolve('/projects/foo')}\``);
+    expect(result.output).toContain('Matching instances at `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
@@ -516,7 +516,7 @@ describe('runAiTool', () => {
       );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain('Multiple matching Storybook instances');
-      expect(result.output).toContain(`Matching instances at \`${resolve('/projects/foo')}\``);
+      expect(result.output).toContain('Matching instances at `/projects/foo`');
       expect(result.output).toContain('pid `2`');
       expect(result.output).toContain('pid `3`');
       expect(result.output).not.toContain('pid `4`');

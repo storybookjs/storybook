@@ -439,6 +439,7 @@ export const baseTemplates = {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -459,6 +460,7 @@ export const baseTemplates = {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -489,6 +491,7 @@ export const baseTemplates = {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -967,6 +970,7 @@ const internalTemplates = {
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
         ),
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -988,6 +992,7 @@ const internalTemplates = {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },

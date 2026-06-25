@@ -6,6 +6,7 @@ import {
   Collapsible,
   DocumentWrapper,
   IconButton,
+  PopoverProvider,
   ScrollArea,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -17,13 +18,14 @@ import {
   CloseIcon,
   CopyIcon,
   StorybookIcon,
+  SyncIcon,
   WandIcon,
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { Markdown } from '../components/Markdown.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
-import { AttentionBanner } from '../components/AttentionBanner.tsx';
+import { STALE_REFRESH_PROMPT } from '../components/AttentionBanner.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
@@ -186,6 +188,43 @@ const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   },
 }));
 
+const StalePopoverContent = styled.div({
+  padding: 15,
+  width: 280,
+  boxSizing: 'border-box',
+});
+
+const StalePopoverMessage = styled.div(({ theme }) => ({
+  color: theme.color.defaultText,
+  lineHeight: '18px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 8,
+}));
+
+const StalePopoverTitle = styled.div(({ theme }) => ({
+  fontWeight: theme.typography.weight.bold,
+}));
+
+const StalePrompt = styled.p(({ theme }) => ({
+  margin: 0,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1 - 1,
+  padding: '6px 10px',
+  background: theme.background.app,
+  boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
+  borderRadius: theme.appBorderRadius,
+}));
+
+const HeaderNoticeText = styled.strong(({ theme }) => ({
+  fontSize: theme.typography.size.s1,
+  color: theme.color.defaultText,
+  whiteSpace: 'nowrap',
+  lineHeight: '20px',
+  marginLeft: 12,
+}));
+
 const Footer = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
   padding: '10px 10px 30px',
@@ -334,11 +373,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   return (
     <Page>
-      {hasPendingUpdate && onAcceptPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
       <ReviewHeader
         leading={
           <Button
@@ -369,19 +403,72 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </>
         }
         actions={
-          newStoryCount > 0 ? (
-            <Button
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel={false}
-              tooltip="Toggle filtering of new stories"
-              active={showNewOnly}
-              onClick={() => setShowNewOnly((v) => !v)}
-            >
-              {newStoryCount} new
-            </Button>
-          ) : null
+          <>
+            {newStoryCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                active={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                {newStoryCount} new
+              </Button>
+            ) : null}
+            {hasPendingUpdate && onAcceptPendingUpdate ? (
+              <>
+                <HeaderNoticeText>Newer review available</HeaderNoticeText>
+                <Button
+                  variant="solid"
+                  padding="small"
+                  ariaLabel="Refresh review"
+                  onClick={onAcceptPendingUpdate}
+                >
+                  <SyncIcon />
+                </Button>
+              </>
+            ) : isStale ? (
+              <>
+                <HeaderNoticeText>Code edits detected</HeaderNoticeText>
+                <PopoverProvider
+                  ariaLabel="Prompt to refresh stale review"
+                  placement="bottom-end"
+                  padding={0}
+                  popover={
+                    <StalePopoverContent>
+                      <StalePopoverMessage>
+                        <StalePopoverTitle>
+                          Prompt for your agent to refresh this review:
+                        </StalePopoverTitle>
+                        <StalePrompt>{STALE_REFRESH_PROMPT}</StalePrompt>
+                        <CopyButton
+                          appearance="agentic"
+                          padding="small"
+                          ariaLabel="Copy prompt to refresh this review"
+                          ariaLabelOnCopy="Prompt copied to clipboard"
+                          content={STALE_REFRESH_PROMPT}
+                          childrenOnCopy={
+                            <>
+                              <CheckIcon /> Copy prompt
+                            </>
+                          }
+                        >
+                          <CopyIcon />
+                          Copy prompt
+                        </CopyButton>
+                      </StalePopoverMessage>
+                    </StalePopoverContent>
+                  }
+                >
+                  <Button variant="solid" ariaLabel={false}>
+                    Prompt agent
+                  </Button>
+                </PopoverProvider>
+              </>
+            ) : null}
+          </>
         }
       />
 

@@ -6,7 +6,7 @@ import { styled } from 'storybook/theming';
 import { CheckIcon, CopyIcon, TransferIcon } from '@storybook/icons';
 import { CopyButton } from './CopyButton.tsx';
 
-const STALE_REFRESH_PROMPT =
+export const STALE_REFRESH_PROMPT =
   'Generate a fresh review including my latest changes using the display-review tool.';
 
 const Bar = styled.div(({ theme }) => ({

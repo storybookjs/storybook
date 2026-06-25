@@ -86,6 +86,7 @@ const managerApi: API = {
     managerHref: `?path=/story/${storyId}`,
     previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
   }),
+  findLeafEntry: fn().mockName('api::findLeafEntry'),
 } as unknown as API;
 
 const reviewState: ReviewState = {
@@ -318,13 +319,13 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 
     applyReviewState();
     await expect(await canvas.findByRole('button', { name: 'Open story list' })).toHaveTextContent(
-      '2/3'
+      '2/8'
     );
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
+    await expect(await canvas.findByRole('status')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
@@ -338,12 +339,12 @@ export const PendingUpdateSupersedesStale = meta.story({
 
     applyReviewState();
     emitMock(EVENTS.REVIEW_STALE);
-    await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
+    await expect(await canvas.findByText(/Code edits detected/)).toBeInTheDocument();
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
     await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Refresh review' })).toBeInTheDocument();
-    expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
+    expect(canvas.queryByText(/Code edits detected/)).not.toBeInTheDocument();
   },
 });

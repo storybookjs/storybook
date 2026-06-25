@@ -427,17 +427,6 @@ const rootMenuData = {
 } as unknown as IndexHash;
 
 const rootContextMenuBase: Story = {
-  // The context menu is gated on CONFIG_TYPE === 'DEVELOPMENT'. In a static
-  // Storybook build (Chromatic URL viewed manually, storybook:ui:build) the
-  // builder injects 'PRODUCTION', so preview.tsx leaves it untouched and the
-  // button never renders. Force it here so the stories work everywhere.
-  beforeEach: () => {
-    const original = (globalThis as any).CONFIG_TYPE;
-    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
-    return () => {
-      (globalThis as any).CONFIG_TYPE = original;
-    };
-  },
   args: {
     docsMode: false,
     isBrowsing: true,
@@ -462,32 +451,12 @@ const rootContextMenuBase: Story = {
 };
 
 /**
- * Hover the root heading to reveal its context menu, then open it.
- * Verifies the "Expand all" action is shown (Input is collapsed initially).
+ * Hover the root heading to reveal the expand/collapse button, then click it.
+ * Input starts collapsed; after clicking "Expand all" its "Empty" story appears.
  */
 export const RootContextMenuOpen: Story = {
   ...rootContextMenuBase,
   parameters: { chromatic: { viewports: [380] } },
-  play: async ({ canvasElement }) => {
-    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
-    await userEvent.hover(rootEl);
-
-    const contextButton = await within(rootEl).findByTestId('context-menu');
-    await userEvent.click(contextButton);
-
-    const dialog = await screen.findByRole('dialog');
-    await expect(dialog).toBeVisible();
-    await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
-  },
-};
-
-/**
- * Clicking "Expand all" in the root context menu expands all collapsed
- * component nodes. Input starts collapsed; after expand all its "Empty"
- * story should appear.
- */
-export const RootContextMenuExpandAll: Story = {
-  ...rootContextMenuBase,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
@@ -495,35 +464,34 @@ export const RootContextMenuExpandAll: Story = {
     expect(canvas.queryByText('Empty')).toBeNull();
 
     await userEvent.hover(rootEl);
-    const contextButton = await within(rootEl).findByTestId('context-menu');
-    await userEvent.click(contextButton);
-    await userEvent.click(await screen.findByText('Expand all'));
+    // findByTestId doesn't filter by CSS visibility, which is needed because the
+    // button uses data-displayed="off" (visibility:hidden until hover reveals it).
+    const btn = await within(rootEl).findByTestId('expand-collapse-all');
 
+    await userEvent.click(btn);
     await expect(await canvas.findByText('Empty')).toBeInTheDocument();
   },
 };
 
 /**
- * After expanding all, the root context menu switches to "Collapse all".
+ * After expanding all, the expand/collapse button switches label to "Collapse all".
+ * Clicking it hides the child stories again.
  */
 export const RootContextMenuCollapseAll: Story = {
   ...rootContextMenuBase,
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
     const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
 
-    // Expand all first so the tree is fully expanded
+    // Expand all first
     await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
-    await userEvent.click(await screen.findByText('Expand all'));
+    await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
 
-    // Close the popover, then re-open — should now offer "Collapse all"
-    await userEvent.keyboard('{Escape}');
+    // Collapse all — button has switched label after state update
     await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
-
-    const dialog = await screen.findByRole('dialog');
-    await expect(dialog).toBeVisible();
-    await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
+    await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
+    await expect(canvas.queryByText('Empty')).toBeNull();
   },
 };
 
@@ -537,6 +505,15 @@ export const RootContextMenuCollapseAll: Story = {
  */
 export const StoryContextMenuWithStatusAndProvider: Story = {
   ...rootContextMenuBase,
+  // The context menu for story/component nodes is gated on CONFIG_TYPE === 'DEVELOPMENT'.
+  // Force it here so this story works in static Storybook builds too.
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
   parameters: { chromatic: { disableSnapshot: true } },
   args: {
     ...rootContextMenuBase.args,

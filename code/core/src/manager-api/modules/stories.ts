@@ -48,9 +48,13 @@ import type {
   Tag,
   TagsOptions,
 } from 'storybook/internal/types';
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
 
+import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
+import { countStatusesByValue } from '../../shared/status-store/index.ts';
+import { hasActiveFilters } from '../../shared/utils/story-index-filters.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
@@ -61,11 +65,8 @@ import {
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
-import { hasActiveFilters } from '../../shared/utils/story-index-filters.ts';
 import type { ComposedRef } from '../root.tsx';
 import { fullStatusStore } from '../stores/status.ts';
-import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
-import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses.ts';
 import {
   computeStaticFilterFn,
@@ -1059,7 +1060,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (sourceType === 'local') {
         const state = store.getState();
         const isCanvasRoute =
-          state.path === '/' || state.viewMode === 'story' || state.viewMode === 'docs';
+          !isReviewManagerRoute(state.path, state.customQueryParams) &&
+          (state.path === '/' || state.viewMode === 'story' || state.viewMode === 'docs');
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};

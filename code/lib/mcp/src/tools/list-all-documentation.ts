@@ -1,7 +1,12 @@
 import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
-import type { StorybookContext } from '../types.ts';
-import { getManifests, getMultiSourceManifests, errorToMCPContent } from '../utils/get-manifest.ts';
+import type { ComponentManifestEntry, StorybookContext } from '../types.ts';
+import {
+	getManifests,
+	getMultiSourceManifests,
+	errorToMCPContent,
+	resolveComponentStories,
+} from '../utils/get-manifest.ts';
 import {
 	formatMultiSourceManifestsToLists,
 	formatManifestsToLists,
@@ -81,6 +86,24 @@ export async function addListAllDocumentationTool(
 
 				// Single-source mode: existing behavior
 				const manifests = await getManifests(ctx?.request, ctx?.manifestProvider);
+
+				// Split/ref format keeps stories behind a `$ref`; resolve them only when story
+				// ids are requested so plain listing stays cheap.
+				if (withStoryIds) {
+					// Widened so resolved (inline) components can be written back regardless of the
+					// parsed map's version. Resolution mutates the entries in place for formatting.
+					const components: Record<string, ComponentManifestEntry> =
+						manifests.componentManifest.components;
+					await Promise.all(
+						Object.entries(components).map(async ([id, component]) => {
+							components[id] = await resolveComponentStories(
+								component,
+								ctx?.request,
+								ctx?.manifestProvider,
+							);
+						}),
+					);
+				}
 
 				const lists = formatManifestsToLists(manifests, {
 					withStoryIds,

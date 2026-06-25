@@ -2,7 +2,12 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { StorybookIdField } from '../types.ts';
-import { getManifests, errorToMCPContent, resolveComponentDocgen } from '../utils/get-manifest.ts';
+import {
+	getManifests,
+	errorToMCPContent,
+	resolveComponentEntry,
+	resolveDoc,
+} from '../utils/get-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 import {
 	formatComponentManifest,
@@ -86,14 +91,45 @@ export async function addGetDocumentationTool(
 					}
 				}
 
-				const { componentManifest, docsManifest } = await getManifests(
-					ctx?.request,
-					ctx?.manifestProvider,
-					source,
-				);
+				let component: ComponentManifest | undefined;
+				let docsEntry: Doc | undefined;
 
-				let component = componentManifest.components[id];
-				const docsEntry = docsManifest?.docs[id];
+				// Dev (experimentalDocgenServer): resolve a single entry in-process, bypassing
+				// the all-component manifest index so one lookup never triggers all-docgen.
+				// The in-process services back the local Storybook only, so this is used for the
+				// local source — single-source (no `source`) or the urlless `local` source in a
+				// composition. Remote sources (with a `url`) fall through to the fetch path.
+				if (ctx?.resolveEntry && !source?.url) {
+					const resolved = await ctx.resolveEntry(id);
+					if (resolved?.kind === 'component') {
+						component = resolved.component;
+					} else if (resolved?.kind === 'doc') {
+						docsEntry = resolved.doc;
+					}
+				} else {
+					const { componentManifest, docsManifest } = await getManifests(
+						ctx?.request,
+						ctx?.manifestProvider,
+						source,
+					);
+
+					const componentEntry = componentManifest.components[id];
+					const docEntry = docsManifest?.docs[id];
+
+					// Built/static/remote. v1 (split/ref) index rows carry `$ref`s to externalized
+					// payloads, which these helpers follow; v0 (inline) rows have no `$ref`s and are
+					// returned unchanged. Either way the result is a fully-resolved entry.
+					if (componentEntry) {
+						component = await resolveComponentEntry(
+							componentEntry,
+							ctx?.request,
+							ctx?.manifestProvider,
+							source,
+						);
+					} else if (docEntry) {
+						docsEntry = await resolveDoc(docEntry, ctx?.request, ctx?.manifestProvider, source);
+					}
+				}
 
 				if (!component && !docsEntry) {
 					const suffix = storybookId ? ` in source "${storybookId}"` : '';
@@ -111,15 +147,6 @@ export async function addGetDocumentationTool(
 						],
 						isError: true,
 					};
-				}
-
-				if (component?.docgen?.$ref) {
-					component = await resolveComponentDocgen(
-						component,
-						ctx?.request,
-						ctx?.manifestProvider,
-						source,
-					);
 				}
 
 				const documentation = component ?? docsEntry!;

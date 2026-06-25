@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
 
-import { Badge, Button } from 'storybook/internal/components';
+import { Badge, Button, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 const PREVIEW_SCALE = 0.5;
@@ -251,7 +251,7 @@ const ReviewAllCell = styled.div(({ theme }) => ({
   aspectRatio: '3 / 2',
   borderRadius: 6,
   background: theme.background.app,
-  border: `1px dashed ${theme.appBorderColor}`,
+  border: `1px solid ${theme.appBorderColor}`,
 }));
 
 // The cell lives inside a scrollable container (the review page keeps a single
@@ -432,25 +432,27 @@ const StoryPreviewCell: FC<{
 
   return (
     <Cell data-cell data-testid="review-collection-grid-cell">
-      <Frame
-        as={href ? 'a' : 'div'}
-        href={href}
-        ref={hostRef as React.RefObject<HTMLAnchorElement>}
-        aria-label={href ? `Review story ${storyId}` : undefined}
-        onMouseEnter={forceStartCurrent}
-        onFocus={forceStartCurrent}
-      >
-        {src ? (
-          <Preview
-            title={storyId}
-            src={src}
-            tabIndex={-1}
-            scrolling="no"
-            onLoad={finishCurrent}
-            onError={finishCurrent}
-          />
-        ) : null}
-      </Frame>
+      <WithTooltip trigger="hover" tooltip={<TooltipNote note="Open story" />} hasChrome={false}>
+        <Frame
+          as={href ? 'a' : 'div'}
+          href={href}
+          ref={hostRef as React.RefObject<HTMLAnchorElement>}
+          aria-label={href ? `Review story ${storyId}` : undefined}
+          onMouseEnter={forceStartCurrent}
+          onFocus={forceStartCurrent}
+        >
+          {src ? (
+            <Preview
+              title={storyId}
+              src={src}
+              tabIndex={-1}
+              scrolling="no"
+              onLoad={finishCurrent}
+              onError={finishCurrent}
+            />
+          ) : null}
+        </Frame>
+      </WithTooltip>
       <ActionBar>
         <Label>
           <LabelComponent>{component}</LabelComponent>

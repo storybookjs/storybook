@@ -5,6 +5,7 @@ import {
   Card,
   Collapsible,
   DocumentWrapper,
+  EmptyTabContent,
   IconButton,
   PopoverProvider,
   ScrollArea,
@@ -15,7 +16,6 @@ import {
   CheckIcon,
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
-  CloseIcon,
   CopyIcon,
   StorybookIcon,
   WandIcon,
@@ -67,21 +67,6 @@ const Page = styled.div(({ theme }) => ({
   color: theme.color.defaultText,
   fontFamily: theme.typography.fonts.base,
   fontSize: theme.typography.size.s2,
-}));
-
-const Empty = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100dvh',
-  color: theme.color.defaultText,
-  '& > div': {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
 }));
 
 // Wrapper that gives the overlay ScrollArea a bounded height to scroll within.
@@ -323,30 +308,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   if (!state) {
     return (
-      <Empty>
-        <span>Waiting for the agent to display a review…</span>
-        <div>
-          <CopyButton
-            appearance="agentic"
-            padding="small"
-            ariaLabel="Copy prompt to refresh this review"
-            ariaLabelOnCopy="Prompt copied to clipboard"
-            content="Generate a Storybook review including my latest changes using the display-review tool."
-            childrenOnCopy={
-              <>
-                <CheckIcon /> Copy prompt
-              </>
-            }
-          >
-            <CopyIcon />
-            Copy prompt
-          </CopyButton>
-          <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
-            <CloseIcon />
-            Close
-          </Button>
-        </div>
-      </Empty>
+      <Page>
+        <EmptyTabContent
+          title="Waiting for the agent…"
+          description="Once the agent creates a review, it will appear here."
+          footer={
+            <Button variant="outline" onClick={onDismiss}>
+              Back to Storybook
+            </Button>
+          }
+        />
+      </Page>
     );
   }
 

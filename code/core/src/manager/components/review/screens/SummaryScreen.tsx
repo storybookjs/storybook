@@ -18,7 +18,6 @@ import {
   CloseIcon,
   CopyIcon,
   StorybookIcon,
-  SyncIcon,
   WandIcon,
 } from '@storybook/icons';
 
@@ -420,13 +419,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             {hasPendingUpdate && onAcceptPendingUpdate ? (
               <>
                 <HeaderNoticeText>Newer review available</HeaderNoticeText>
-                <Button
-                  variant="solid"
-                  padding="small"
-                  ariaLabel="Refresh review"
-                  onClick={onAcceptPendingUpdate}
-                >
-                  <SyncIcon />
+                <Button variant="solid" ariaLabel="Refresh review" onClick={onAcceptPendingUpdate}>
+                  Reload
                 </Button>
               </>
             ) : isStale ? (

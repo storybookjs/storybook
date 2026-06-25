@@ -388,56 +388,54 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 {newStoryCount} new
               </Button>
             ) : null}
-            {hasPendingUpdate && onAcceptPendingUpdate ? (
-              <>
-                <HeaderNoticeText>Newer review available</HeaderNoticeText>
-                <Button
-                  variant="outline"
-                  ariaLabel="Refresh review"
-                  onClick={onAcceptPendingUpdate}
-                >
-                  Reload
-                </Button>
-              </>
-            ) : isStale ? (
-              <>
-                <HeaderNoticeText>Code edits detected</HeaderNoticeText>
-                <PopoverProvider
-                  ariaLabel="Prompt to refresh stale review"
-                  placement="bottom-end"
-                  padding={0}
-                  popover={
-                    <StalePopoverContent>
-                      <StalePopoverMessage>
-                        <StalePopoverTitle>
-                          Prompt for your agent to refresh this review:
-                        </StalePopoverTitle>
-                        <StalePrompt>{STALE_REFRESH_PROMPT}</StalePrompt>
-                        <CopyButton
-                          appearance="agentic"
-                          padding="small"
-                          ariaLabel="Copy prompt to refresh this review"
-                          ariaLabelOnCopy="Prompt copied to clipboard"
-                          content={STALE_REFRESH_PROMPT}
-                          childrenOnCopy={
-                            <>
-                              <StatusPassIcon /> Copy prompt
-                            </>
-                          }
-                        >
-                          <CopyIcon />
-                          Copy prompt
-                        </CopyButton>
-                      </StalePopoverMessage>
-                    </StalePopoverContent>
-                  }
-                >
-                  <Button variant="outline" ariaLabel={false}>
-                    Prompt agent
+            <div role="status" aria-live="polite" style={{ display: 'contents' }}>
+              {hasPendingUpdate && onAcceptPendingUpdate ? (
+                <>
+                  <HeaderNoticeText>Newer review available</HeaderNoticeText>
+                  <Button variant="outline" ariaLabel={false} onClick={onAcceptPendingUpdate}>
+                    Refresh review
                   </Button>
-                </PopoverProvider>
-              </>
-            ) : null}
+                </>
+              ) : isStale ? (
+                <>
+                  <HeaderNoticeText>Code edits detected</HeaderNoticeText>
+                  <PopoverProvider
+                    ariaLabel="Prompt to refresh stale review"
+                    placement="bottom-end"
+                    padding={0}
+                    popover={
+                      <StalePopoverContent>
+                        <StalePopoverMessage>
+                          <StalePopoverTitle>
+                            Prompt for your agent to refresh this review:
+                          </StalePopoverTitle>
+                          <StalePrompt>{STALE_REFRESH_PROMPT}</StalePrompt>
+                          <CopyButton
+                            appearance="agentic"
+                            padding="small"
+                            ariaLabel="Copy prompt to refresh this review"
+                            ariaLabelOnCopy="Prompt copied to clipboard"
+                            content={STALE_REFRESH_PROMPT}
+                            childrenOnCopy={
+                              <>
+                                <StatusPassIcon /> Copy prompt
+                              </>
+                            }
+                          >
+                            <CopyIcon />
+                            Copy prompt
+                          </CopyButton>
+                        </StalePopoverMessage>
+                      </StalePopoverContent>
+                    }
+                  >
+                    <Button variant="outline" ariaLabel={false}>
+                      Prompt agent
+                    </Button>
+                  </PopoverProvider>
+                </>
+              ) : null}
+            </div>
           </>
         }
       />

@@ -281,6 +281,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
+        // Diagnostics for browser-mode crashes ("Browser connection was closed"). `store_artifacts`
+        // has an implicit `when: always`, so these upload even when the Vitest step above fails.
+        artifact.persist(
+          join(LINUX_ROOT_DIR, SANDBOX_DIR, path, 'vitest-artifacts'),
+          'vitest-artifacts'
+        ),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),

@@ -14,6 +14,7 @@ Type:
 {
   actions?: boolean;
   argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   changeDetection?: boolean;
   componentsManifest?: boolean;
@@ -41,6 +42,7 @@ Type:
   actions?: boolean;
   angularFilterNonInputControls?: boolean;
   argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   changeDetection?: boolean;
   controls?: boolean;
@@ -64,6 +66,7 @@ Type:
 {
   actions?: boolean;
   argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   changeDetection?: boolean;
   controls?: boolean;
@@ -112,6 +115,14 @@ Default: `true`
 Filter args with a "target" on the type from the render function.
 
 <CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
+
+## `babelRemoveBugfixes`
+
+(⚠️ **Webpack builder only**)
+
+Type: `boolean`
+
+Disable the `bugfixes` option in `@babel/preset-env` for Webpack builder. This option was removed in Babel 8 and now causes Babel to throw an error. Set this to `true` if you use Babel 8 and Storybook fails to detect your Babel version.
 
 ## `backgrounds`
 

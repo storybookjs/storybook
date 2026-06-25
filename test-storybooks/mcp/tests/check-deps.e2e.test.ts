@@ -6,6 +6,9 @@ const PACKAGES_TO_CHECK = ['@storybook/addon-docs', '@storybook/react-vite', 'st
 
 const stripPrerelease = (version: string) => version.split(/[+-]/)[0]!;
 
+/** When the catalog pins a PR canary (`0.0.0-pr-*`), compare against that exact version. */
+const isPrCanary = (version: string) => version.startsWith('0.0.0-pr-');
+
 describe('Storybook Dependencies', () => {
 	it('should be using latest versions from registry', async () => {
 		const outdated: Array<{ pkg: string; current: string; latest: string }> = [];
@@ -20,8 +23,9 @@ describe('Storybook Dependencies', () => {
 			const currentVersion =
 				listData[0]?.devDependencies?.[pkg]?.version || listData[0]?.dependencies?.[pkg]?.version;
 
-			// Get registry version for @next tag
-			const viewResult = await x('pnpm', ['view', `${pkg}@next`, 'version'], {
+			// PR canaries are pinned intentionally until the feature ships on @next.
+			const viewTag = isPrCanary(currentVersion) ? currentVersion : '@next';
+			const viewResult = await x('pnpm', ['view', `${pkg}@${viewTag}`, 'version'], {
 				nodeOptions: { cwd: process.cwd() },
 			});
 			const latestVersion = viewResult.stdout.trim();

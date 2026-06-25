@@ -322,9 +322,9 @@ Invalid key: Expected "components" but received undefined]`);
 				},
 			};
 
-		const validDocsManifest: DocsManifestMap = {
-			v: 0,
-			docs: {
+			const validDocsManifest: DocsManifestMap = {
+				v: 0,
+				docs: {
 					'getting-started': {
 						id: 'getting-started',
 						name: 'Getting Started',

@@ -57,7 +57,7 @@ export const FilterPanel = ({
 
   const toTagFilterItem = useCallback(
     (entry: TagFilterEntry): FilterItem | null => {
-      if (entry.count === 0 && entry.type === 'built-in') return null;
+      if (entry.count === 0) return null;
       const isIncluded = includedFilters.includes(entry.id);
       const isExcluded = excludedFilters.includes(entry.id);
       const isChecked = isIncluded || isExcluded;

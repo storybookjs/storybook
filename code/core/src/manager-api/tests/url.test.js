@@ -623,4 +623,34 @@ describe('getStoryHrefs', () => {
     // Freezing is a preview-only contract; the manager href must be unaffected.
     expect(managerHref).toEqual('/?path=/story/test--story');
   });
+
+  it('opts the preview into embed mode when embed is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&embed=true');
+  });
+
+  it('appends embed before freeze when both are set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true, freeze: true });
+    expect(previewHref).toEqual(
+      '/iframe.html?id=test--story&viewMode=story&embed=true&freeze=finished'
+    );
+  });
 });

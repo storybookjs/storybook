@@ -29,8 +29,8 @@ const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onC
     // Omit the input to watch the entire graph. The initial emission carries
     // revision 0 (or the current revision at subscribe time); only subsequent
     // advances represent a change after the review was cached.
-    return service.queries.getGraphRevision.subscribe(undefined, (revision) => {
-      if (revision > 0) {
+    return service.queries.getGraphRevision.subscribe(undefined, ({ data: revision }) => {
+      if (revision !== undefined && revision > 0) {
         onChange();
       }
     });

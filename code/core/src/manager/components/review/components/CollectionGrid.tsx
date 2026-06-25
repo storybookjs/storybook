@@ -3,7 +3,16 @@ import React, { useCallback, useEffect, useRef, useState, type FC } from 'react'
 import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-const PREVIEW_SCALE = 0.5;
+import {
+  computeThumbnailLayout,
+  parseIframeResizeMessage,
+  type ThumbnailLayout,
+} from './computeThumbnailLayout.ts';
+
+const DEFAULT_THUMBNAIL_LAYOUT: ThumbnailLayout = {
+  scale: 1,
+  aspectRatio: '3 / 2',
+};
 
 /**
  * Each thumbnail is a full Storybook preview iframe, and booting one fires
@@ -165,11 +174,11 @@ const Cell = styled.div({
 // The bordered, clickable preview frame. Rendered as an <a> when a detail href
 // is provided, otherwise a plain <div>. Hover and keyboard focus are indicated
 // here (not on the surrounding cell) since the frame is the interactive target.
-const Frame = styled.a(({ theme }) => ({
+const Frame = styled.a<{ $aspectRatio: string }>(({ theme, $aspectRatio }) => ({
   position: 'relative',
   display: 'block',
   width: '100%',
-  aspectRatio: '3 / 2',
+  aspectRatio: $aspectRatio,
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -186,15 +195,15 @@ const Frame = styled.a(({ theme }) => ({
   },
 }));
 
-const Preview = styled.iframe(({ theme }) => ({
+const Preview = styled.iframe<{ $scale: number }>(({ theme, $scale }) => ({
   position: 'absolute',
   inset: 0,
-  width: `${(1 / PREVIEW_SCALE) * 100}%`,
-  height: `${(1 / PREVIEW_SCALE) * 100}%`,
+  width: `${(1 / $scale) * 100}%`,
+  height: `${(1 / $scale) * 100}%`,
   background: theme.background.preview,
   border: 0,
   display: 'block',
-  transform: `scale(${PREVIEW_SCALE})`,
+  transform: `scale(${$scale})`,
   transformOrigin: 'top left',
   pointerEvents: 'none',
 }));
@@ -315,9 +324,11 @@ const StoryPreviewCell: FC<{
   previewsPaused?: boolean;
 }> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
   const hostRef = useRef<HTMLElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewsPausedRef = useRef(previewsPaused);
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
+  const [thumbnailLayout, setThumbnailLayout] = useState(DEFAULT_THUMBNAIL_LAYOUT);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
   const [src, setSrc] = useState<string | undefined>(undefined);
@@ -380,6 +391,7 @@ const StoryPreviewCell: FC<{
   useEffect(() => {
     if (!isInView && !previewsPaused) {
       setSrc(undefined);
+      setThumbnailLayout(DEFAULT_THUMBNAIL_LAYOUT);
     }
   }, [isInView, previewsPaused]);
 
@@ -428,6 +440,29 @@ const StoryPreviewCell: FC<{
     return () => clearTimeout(timer);
   }, [src, finishCurrent]);
 
+  useEffect(() => {
+    if (!src) {
+      return undefined;
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      const iframe = iframeRef.current;
+      if (!iframe?.contentWindow || event.source !== iframe.contentWindow) {
+        return;
+      }
+
+      const dimensions = parseIframeResizeMessage(event.data);
+      if (!dimensions) {
+        return;
+      }
+
+      setThumbnailLayout(computeThumbnailLayout(dimensions));
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [src]);
+
   const { component, name } = deriveStoryInfo(info);
 
   return (
@@ -436,14 +471,17 @@ const StoryPreviewCell: FC<{
         as={href ? 'a' : 'div'}
         href={href}
         ref={hostRef as React.RefObject<HTMLAnchorElement>}
+        $aspectRatio={thumbnailLayout.aspectRatio}
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}
       >
         {src ? (
           <Preview
+            ref={iframeRef}
             title={storyId}
             src={src}
+            $scale={thumbnailLayout.scale}
             tabIndex={-1}
             scrolling="no"
             onLoad={finishCurrent}

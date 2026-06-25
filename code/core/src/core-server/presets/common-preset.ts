@@ -119,6 +119,23 @@ export const babel = async (_: unknown, options: Options) => {
     any
   >;
 
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      // This is the same browser supports that we use to bundle our manager and preview code.
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  const shouldRemoveBugfixes =
+    options?.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
@@ -128,25 +145,7 @@ export const babel = async (_: unknown, options: Options) => {
       ...(babelDefault?.overrides ?? []),
       {
         include: /\.(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            '@babel/preset-env',
-            {
-              bugfixes:
-                options?.features &&
-                'babelRemoveBugfixes' in options.features &&
-                options.features.babelRemoveBugfixes
-                  ? undefined
-                  : true,
-              targets: {
-                // This is the same browser supports that we use to bundle our manager and preview code.
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['@babel/preset-env', presetConfig]],
       },
     ],
   };

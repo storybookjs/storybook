@@ -17,14 +17,12 @@ export const swc: PresetProperty<'swc'> = (
   config: Record<string, any>,
   options: Options
 ): Record<string, any> => {
-  const bugfixes =
+  const shouldRemoveBugfixes =
     options.features &&
     'babelRemoveBugfixes' in options.features &&
-    options.features.babelRemoveBugfixes
-      ? undefined
-      : true;
+    options.features.babelRemoveBugfixes;
 
-  return {
+  const newConfig = {
     ...config,
     env: {
       ...(config?.env ?? {}),
@@ -33,12 +31,17 @@ export const swc: PresetProperty<'swc'> = (
         safari: 15,
         firefox: 91,
       },
-      // Transpiles the broken syntax to the closest non-broken modern syntax.
-      // E.g. it won't transpile parameter destructuring in Safari
-      // which would break how we detect if the mount context property is used in the play function.
-      bugfixes: config?.env?.bugfixes ?? bugfixes,
     },
   };
+
+  // Transpiles the broken syntax to the closest non-broken modern syntax.
+  // E.g. it won't transpile parameter destructuring in Safari
+  // which would break how we detect if the mount context property is used in the play function.
+  if (!shouldRemoveBugfixes) {
+    newConfig.env.bugfixes = config?.env?.bugfixes ?? true;
+  }
+
+  return newConfig;
 };
 
 export async function webpackFinal(config: Configuration, options: Options) {

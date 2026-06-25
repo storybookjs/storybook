@@ -13,8 +13,8 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -270,7 +270,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),

@@ -98,7 +98,7 @@ const meta = preview.meta({
     storyIds: demoStoryIds,
     storyInfo: demoStoryInfo,
     getStoryPreviewHref: (storyId: string) =>
-      `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`,
+      `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`,
   },
 });
 

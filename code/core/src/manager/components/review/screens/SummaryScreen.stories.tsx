@@ -9,7 +9,7 @@ import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const getStoryPreviewHref = (storyId: string) =>
-  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
 
 const minimal: ReviewState = {
   title: 'Button prop rename',

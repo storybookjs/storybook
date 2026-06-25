@@ -82,7 +82,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [api, filtersRef]);
 
   const getStoryPreviewHref = useCallback(
-    (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,
+    (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
   );
 

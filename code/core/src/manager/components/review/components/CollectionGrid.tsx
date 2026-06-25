@@ -206,16 +206,16 @@ const ActionBar = styled.div({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: 8,
-  minHeight: 36,
+  minHeight: 40,
 });
 
 const Label = styled.div({
   display: 'flex',
   alignItems: 'center',
-  gap: 4,
+  gap: 8,
   flex: 1,
   minWidth: 0,
-  marginLeft: 10,
+  marginLeft: 12,
   overflow: 'hidden',
 });
 

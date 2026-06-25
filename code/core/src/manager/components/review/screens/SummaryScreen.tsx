@@ -106,7 +106,7 @@ const SummaryCard = styled(Card)({
   display: 'flex',
   alignItems: 'flex-start',
   padding: '9px 12px',
-  gap: 10,
+  gap: 6,
   svg: {
     flexShrink: 0,
     marginTop: 4,
@@ -163,9 +163,27 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
+const CardTitleGroup = styled.div({
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: 8,
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+});
+
 const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   color: theme.textMutedColor,
-  margin: '0 12px',
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  p: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
 }));
 
 const Footer = styled.div(({ theme }) => ({
@@ -323,7 +341,13 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
       ) : null}
       <ReviewHeader
         leading={
-          <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
+          <Button
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="Back to Storybook"
+            asChild
+          >
             <a href={buildSummaryBackHref(returnSearch)} {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}>
               <ChevronSmallLeftIcon />
               <StorybookIcon />
@@ -381,7 +405,14 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                       collapsed={!isExpanded}
                       summary={
                         <CardHead onClick={() => toggleCollection(index)}>
-                          <CardTitle>{collection.title}</CardTitle>
+                          <CardTitleGroup>
+                            <CardTitle>{collection.title}</CardTitle>
+                            {collection.rationale ? (
+                              <CardRationale>
+                                <Markdown>{collection.rationale}</Markdown>
+                              </CardRationale>
+                            ) : null}
+                          </CardTitleGroup>
                           <CardControls>
                             <CardCount>{storyIds.length}</CardCount>
                             <IconButton
@@ -407,11 +438,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         </CardHead>
                       }
                     >
-                      {collection.rationale ? (
-                        <CardRationale>
-                          <Markdown>{collection.rationale}</Markdown>
-                        </CardRationale>
-                      ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
                         showAll={showAllCollections.has(index)}

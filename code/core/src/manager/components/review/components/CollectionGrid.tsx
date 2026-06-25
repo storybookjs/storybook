@@ -33,13 +33,10 @@ const MAX_CONCURRENT_PREVIEWS = 3;
 const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
 
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
-// iframe within one root-height of the fold, evict it past two. The gap is
-// hysteresis so scrolling near a boundary doesn't thrash. These margins only
-// take effect when the observer's `root` is the real scroll container (see
-// `getScrollRoot`); `rootMargin` is not applied to intermediate scrollers, so
-// against the default viewport root they would be silently clipped to zero.
-const PREVIEW_MOUNT_ROOT_MARGIN = '100% 0px';
-const PREVIEW_EVICT_ROOT_MARGIN = '200% 0px';
+// iframe within half a root-height of the fold, evict it past one and a half.
+// The gap is hysteresis so scrolling near a boundary doesn't thrash.
+const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
+const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
 
 interface PreviewTask {
   /** Assigns the iframe src, kicking off the actual load. */
@@ -345,7 +342,9 @@ const StoryPreviewCell: FC<{
   const previewsPausedRef = useRef(previewsPaused);
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
-  const [contentDimensions, setContentDimensions] = useState<ContentDimensions | null>(null);
+  // Last reported iframe size; kept across eviction so the frame aspect ratio
+  // does not jump when the preview unmounts or while it remounts.
+  const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
   const [src, setSrc] = useState<string | undefined>(undefined);
@@ -405,10 +404,10 @@ const StoryPreviewCell: FC<{
 
   // Eviction: when the cell scrolls well out of range, drop the iframe so its
   // preview runtime is reclaimed. It re-enqueues (below) if it scrolls back.
+  // `rememberedDimensions` is left intact so the frame keeps its aspect ratio.
   useEffect(() => {
     if (!isInView && !previewsPaused) {
       setSrc(undefined);
-      setContentDimensions(null);
     }
   }, [isInView, previewsPaused]);
 
@@ -473,7 +472,7 @@ const StoryPreviewCell: FC<{
         return;
       }
 
-      setContentDimensions(dimensions);
+      setRememberedDimensions(dimensions);
     };
 
     window.addEventListener('message', handleMessage);
@@ -489,10 +488,10 @@ const StoryPreviewCell: FC<{
         href={href}
         ref={hostRef as React.RefObject<HTMLAnchorElement>}
         style={
-          contentDimensions
+          rememberedDimensions
             ? ({
-                '--content-w': contentDimensions.width,
-                '--content-h': contentDimensions.height,
+                '--content-w': rememberedDimensions.width,
+                '--content-h': rememberedDimensions.height,
               } as React.CSSProperties)
             : undefined
         }
@@ -505,8 +504,8 @@ const StoryPreviewCell: FC<{
             ref={iframeRef}
             title={storyId}
             src={src}
-            data-content-width={contentDimensions?.width}
-            data-content-height={contentDimensions?.height}
+            data-content-width={rememberedDimensions?.width}
+            data-content-height={rememberedDimensions?.height}
             tabIndex={-1}
             scrolling="no"
             onLoad={finishCurrent}

@@ -259,8 +259,8 @@ export const PendingUpdateDeferred = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Refresh review' })).toBeInTheDocument();
     expect(canvas.getByText('Manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByText('Updated manager settings polish')).not.toBeInTheDocument();
   },
@@ -276,11 +276,11 @@ export const PendingUpdateAccept = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
-    expect(canvas.queryByText('An updated review is available.')).not.toBeInTheDocument();
+    expect(canvas.queryByText('Newer review available')).not.toBeInTheDocument();
   },
 });
 
@@ -304,8 +304,8 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
@@ -323,8 +323,8 @@ export const PendingUpdateSupersedesStale = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Refresh review' })).toBeInTheDocument();
     expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
   },
 });

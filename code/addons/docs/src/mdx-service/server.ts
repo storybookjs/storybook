@@ -43,7 +43,7 @@ export function registerMdxService({
 }: RegisterMdxServiceOptions) {
   return registerService(mdxServiceDef, {
     queries: {
-      getMdxForComponent: {
+      mdxForComponent: {
         staticInputs: async () => {
           const index = await getIndex();
           const grouped = groupMdxEntriesByComponent(index);

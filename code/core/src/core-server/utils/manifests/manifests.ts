@@ -171,8 +171,8 @@ async function renderComponentsHtmlFromService(
   const startTime = performance.now();
 
   const [allDocgenPayloads, allStoryDocsPayloads, mdxPayloads] = await Promise.all([
-    docgenService.queries.getDocgenForAllComponents.loaded(),
-    storyDocsService.queries.getStoryDocsForAllComponents.loaded(),
+    docgenService.queries.docgenForAllComponents.loaded(),
+    storyDocsService.queries.storyDocsForAllComponents.loaded(),
     loadMdxPayloadsFromServiceIfNeeded(manifests, docsManifest),
   ]);
 

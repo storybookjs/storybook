@@ -80,7 +80,7 @@ export const moduleGraphServiceDef = defineService({
     latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
   queries: {
-    getStoriesForFiles: {
+    storiesForFiles: {
       description:
         'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
       input: v.object({
@@ -123,7 +123,7 @@ export const moduleGraphServiceDef = defineService({
         });
       },
     },
-    getStatus: {
+    status: {
       description:
         'Current module graph lifecycle status. `booting` means the graph is still expected to become ready; `ready` means query state is populated; `error` means an unexpected graph failure; `unavailable` means the current builder/runtime cannot provide module graph functionality.',
       input: noInputSchema,
@@ -133,7 +133,7 @@ export const moduleGraphServiceDef = defineService({
       },
       handler: (_input, ctx) => ctx.self.state.status,
     },
-    getGraphRevision: {
+    graphRevision: {
       description:
         'Monotonic revision counter for module graph changes, advanced only by in-graph file changes and story-index reconciliation (out-of-graph file changes never advance it). Omit the input to watch the entire graph. Provide `storyFiles` to scope the watch to specific stories: returns the highest revision at which any of those story subgraphs last changed (0 if none have changed yet, or for unknown stories).',
       input: v.optional(
@@ -169,7 +169,7 @@ export const moduleGraphServiceDef = defineService({
         return max;
       },
     },
-    getLatestStoryChanges: {
+    latestStoryChanges: {
       description:
         'Latest story files whose module graph changed, paired with the graph revision that produced the change set.',
       input: noInputSchema,
@@ -189,6 +189,37 @@ export const moduleGraphServiceDef = defineService({
         revision: ctx.self.state.graphRevision,
         storyFiles: ctx.self.state.latestChangedStoryFiles,
       }),
+    },
+    /** @deprecated Use {@link status} instead. */
+    getStatus: {
+      description: 'Deprecated alias for `status`. Use `status` instead.',
+      input: noInputSchema,
+      output: moduleGraphStatusSchema,
+      handler: (input, ctx) => ctx.self.queries.status.get(input),
+      load: async (input, ctx) => {
+        await ctx.self.queries.status.loaded(input);
+      },
+    },
+    /** @deprecated Use {@link graphRevision} instead. */
+    getGraphRevision: {
+      description: 'Deprecated alias for `graphRevision`. Use `graphRevision` instead.',
+      input: v.optional(
+        v.object({
+          storyFiles: v.array(
+            v.pipe(
+              v.string(),
+              v.description(
+                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
+              )
+            )
+          ),
+        })
+      ),
+      output: v.number(),
+      handler: (input, ctx) => ctx.self.queries.graphRevision.get(input),
+      load: async (input, ctx) => {
+        await ctx.self.queries.graphRevision.loaded(input);
+      },
     },
   },
   commands: {
@@ -210,7 +241,7 @@ export const moduleGraphServiceDef = defineService({
           state.status = { value: 'ready' };
           state.storiesByFile = input.storiesByFile;
           // The snapshot is the baseline, not a change, so it does not advance the revision. Seed
-          // every known story to revision 0 so scoped `getGraphRevision` reads track existing keys
+          // every known story to revision 0 so scoped `graphRevision` reads track existing keys
           // and observe later per-story bumps.
           state.storyChangeRevisions = {};
           for (const stories of Object.values(input.storiesByFile)) {

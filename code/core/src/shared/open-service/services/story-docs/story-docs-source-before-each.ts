@@ -35,7 +35,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   // Do not await story-docs I/O here — story render should start immediately. Cleanup flips
   // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
   // so navigation waits for in-flight work to settle.
-  const codePanelSnippetPromise = service.queries.getStoryDocs
+  const codePanelSnippetPromise = service.queries.storyDocs
     .loaded({ id: componentId })
     .then((payload) => {
       if (cancelled) {

@@ -22,14 +22,25 @@ import type { DocgenProvider } from './types.ts';
 /** Extraction services key provider-extracted payloads by component id under `components`. */
 type ExtractionServiceState = { components: Record<string, unknown> };
 
+/**
+ * The component-keyed query whose synchronous `.get({ id })` reports whether a payload is currently
+ * stored: it returns the payload, or `undefined` when nothing has been extracted for that id. `.get()`
+ * never fires the query's `load`, so reading it cannot trigger a behind-the-scenes extraction.
+ */
+type ComponentPayloadQuery = { get(input: { id: string }): unknown };
+
 type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
 
-type RegisterExtractionServiceOptions<TPayload> = {
+type RegisterExtractionServiceOptions<TPayload, TQueries> = {
   workingDir: string;
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
-  /** Query whose `staticInputs` enumerate the eligible component ids. */
-  queryName: string;
+  /**
+   * Query whose `staticInputs` enumerate the eligible component ids, and whose `.get({ id })` the
+   * hot-refresh subscription reads to decide which components are already extracted. Typed as a key
+   * of the service's queries so the runtime query handle resolves without a cast.
+   */
+  queryName: keyof TQueries & string;
   /** Command that extracts and stores one component's payload. */
   extractCommand: string;
   /** Command that extracts every component in the story index. */
@@ -39,7 +50,7 @@ type RegisterExtractionServiceOptions<TPayload> = {
 /**
  * Re-extracts already-cached components when the module graph reports story file changes.
  *
- * `getLatestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
+ * `latestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
  * "something changed" trigger; `storyFiles` is an optimization hint that is sometimes legitimately
  * empty (e.g. after a story-index invalidation). When the hint is empty we refresh every
  * already-extracted component; when populated we refresh only those mapped from the bumped files.
@@ -49,12 +60,14 @@ function subscribeExtractionServiceRefresh(
   options: {
     workingDir: string;
     getIndex: () => Promise<StoryIndex>;
-    hasExtractedPayload: (componentId: string) => boolean;
+    query: ComponentPayloadQuery;
     refreshComponent: (componentId: string) => Promise<unknown>;
   }
 ) {
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter((id) => options.hasExtractedPayload(id));
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => options.query.get({ id }) !== undefined
+    );
     if (idsToRefresh.length === 0) {
       return;
     }
@@ -63,49 +76,48 @@ function subscribeExtractionServiceRefresh(
     );
   };
 
-  moduleGraph.queries.getLatestStoryChanges.subscribe(
-    undefined,
-    async ({ revision, storyFiles }) => {
-      if (revision === 0) {
-        return;
-      }
-
-      const componentEntries = selectComponentEntriesByComponentId(
-        Object.values((await options.getIndex()).entries)
-      );
-
-      if (storyFiles.length === 0) {
-        await refreshExtracted(componentEntries.keys());
-        return;
-      }
-
-      const componentEntryCandidates = Array.from(componentEntries)
-        .map(([id, entry]) => {
-          const storyFilePath = getStoryImportPathFromEntry(entry);
-          if (!storyFilePath) {
-            return undefined;
-          }
-          return {
-            id,
-            storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
-          };
-        })
-        .filter((candidate) => candidate !== undefined);
-
-      const bumpedComponentIds = new Set<string>();
-      for (const storyFile of storyFiles) {
-        const componentEntry = componentEntryCandidates.find(
-          (candidate) => candidate.storyIndexPath === storyFile
-        );
-        if (!componentEntry) {
-          continue;
-        }
-        bumpedComponentIds.add(componentEntry.id);
-      }
-
-      await refreshExtracted(bumpedComponentIds);
+  moduleGraph.queries.latestStoryChanges.subscribe(undefined, async ({ data }) => {
+    if (!data || data.revision === 0) {
+      return;
     }
-  );
+
+    const { storyFiles } = data;
+
+    const componentEntries = selectComponentEntriesByComponentId(
+      Object.values((await options.getIndex()).entries)
+    );
+
+    if (storyFiles.length === 0) {
+      await refreshExtracted(componentEntries.keys());
+      return;
+    }
+
+    const componentEntryCandidates = Array.from(componentEntries)
+      .map(([id, entry]) => {
+        const storyFilePath = getStoryImportPathFromEntry(entry);
+        if (!storyFilePath) {
+          return undefined;
+        }
+        return {
+          id,
+          storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
+        };
+      })
+      .filter((candidate) => candidate !== undefined);
+
+    const bumpedComponentIds = new Set<string>();
+    for (const storyFile of storyFiles) {
+      const componentEntry = componentEntryCandidates.find(
+        (candidate) => candidate.storyIndexPath === storyFile
+      );
+      if (!componentEntry) {
+        continue;
+      }
+      bumpedComponentIds.add(componentEntry.id);
+    }
+
+    await refreshExtracted(bumpedComponentIds);
+  });
 }
 
 /**
@@ -126,10 +138,9 @@ function registerExtractionService<
   TCommands extends Commands<TState>,
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  options: RegisterExtractionServiceOptions<TState['components'][string]>
+  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries>
 ) {
   const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
-  const extractedComponentIds = new Set<string>();
 
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
@@ -150,14 +161,12 @@ function registerExtractionService<
       ctx.self.setState((state) => {
         delete state.components[id];
       });
-      extractedComponentIds.delete(id);
       return undefined;
     }
 
     ctx.self.setState((state) => {
       state.components[id] = payload;
     });
-    extractedComponentIds.add(id);
     return payload;
   };
 
@@ -188,7 +197,7 @@ function registerExtractionService<
   subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
     getIndex,
-    hasExtractedPayload: (id) => extractedComponentIds.has(id),
+    query: runtime.queries[queryName],
     refreshComponent: (id) =>
       (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
         extractCommand
@@ -233,7 +242,7 @@ export function registerDocgenServices(options: RegisterDocgenServicesOptions) {
         workingDir,
         getIndex: options.getIndex,
         provider: options.docgenProvider,
-        queryName: 'getDocgen',
+        queryName: 'docgen',
         extractCommand: 'extractDocgen',
         extractAllCommand: 'extractAllDocgen',
       })
@@ -244,7 +253,7 @@ export function registerDocgenServices(options: RegisterDocgenServicesOptions) {
         workingDir,
         getIndex: options.getIndex,
         provider: options.storyDocsProvider,
-        queryName: 'getStoryDocs',
+        queryName: 'storyDocs',
         extractCommand: 'extractStoryDocs',
         extractAllCommand: 'extractAllStoryDocs',
       })

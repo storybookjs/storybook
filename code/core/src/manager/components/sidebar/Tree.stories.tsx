@@ -426,7 +426,7 @@ const rootMenuData = {
   },
 } as unknown as IndexHash;
 
-const rootContextMenuBase: Story = {
+const rootNodeBase: Story = {
   args: {
     docsMode: false,
     isBrowsing: true,
@@ -451,11 +451,11 @@ const rootContextMenuBase: Story = {
 };
 
 /**
- * Hover the root heading to reveal the expand/collapse button, then click it.
+ * Hover the root heading to reveal the direct expand/collapse button, then click it.
  * Input starts collapsed; after clicking "Expand all" its "Empty" story appears.
  */
-export const RootContextMenuOpen: Story = {
-  ...rootContextMenuBase,
+export const RootExpandAll: Story = {
+  ...rootNodeBase,
   parameters: { chromatic: { viewports: [380] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -474,11 +474,10 @@ export const RootContextMenuOpen: Story = {
 };
 
 /**
- * After expanding all, the expand/collapse button switches label to "Collapse all".
- * Clicking it hides the child stories again.
+ * After expanding all, clicking the button again collapses and hides child stories.
  */
-export const RootContextMenuCollapseAll: Story = {
-  ...rootContextMenuBase,
+export const RootCollapseAll: Story = {
+  ...rootNodeBase,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
@@ -488,7 +487,7 @@ export const RootContextMenuCollapseAll: Story = {
     await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
     await expect(await canvas.findByText('Empty')).toBeInTheDocument();
 
-    // Collapse all — button has switched label after state update
+    // Collapse all
     await userEvent.hover(rootEl);
     await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
     await expect(canvas.queryByText('Empty')).toBeNull();
@@ -504,7 +503,7 @@ export const RootContextMenuCollapseAll: Story = {
  * which suppresses the status from the menu.
  */
 export const StoryContextMenuWithStatusAndProvider: Story = {
-  ...rootContextMenuBase,
+  ...rootNodeBase,
   // The context menu for story/component nodes is gated on CONFIG_TYPE === 'DEVELOPMENT'.
   // Force it here so this story works in static Storybook builds too.
   beforeEach: () => {
@@ -516,7 +515,7 @@ export const StoryContextMenuWithStatusAndProvider: Story = {
   },
   parameters: { chromatic: { disableSnapshot: true } },
   args: {
-    ...rootContextMenuBase.args,
+    ...rootNodeBase.args,
     allStatuses: {
       'ui-components-button--primary': {
         'storybook/vitest': {

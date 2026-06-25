@@ -387,7 +387,10 @@ const Node = React.memo<NodeProps>(function Node(props) {
           variant="ghost"
           padding="small"
           type="button"
-          onClick={() => setFullyExpanded?.()}
+          onClick={(e) => {
+            (e.currentTarget as HTMLButtonElement).blur();
+            setFullyExpanded?.();
+          }}
         >
           {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
         </FloatingExpandCollapseButton>

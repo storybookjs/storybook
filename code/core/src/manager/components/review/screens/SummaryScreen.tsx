@@ -419,7 +419,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             {hasPendingUpdate && onAcceptPendingUpdate ? (
               <>
                 <HeaderNoticeText>Newer review available</HeaderNoticeText>
-                <Button variant="solid" ariaLabel="Refresh review" onClick={onAcceptPendingUpdate}>
+                <Button
+                  variant="outline"
+                  ariaLabel="Refresh review"
+                  onClick={onAcceptPendingUpdate}
+                >
                   Reload
                 </Button>
               </>
@@ -456,7 +460,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                     </StalePopoverContent>
                   }
                 >
-                  <Button variant="solid" ariaLabel={false}>
+                  <Button variant="outline" ariaLabel={false}>
                     Prompt agent
                   </Button>
                 </PopoverProvider>

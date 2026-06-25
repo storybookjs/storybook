@@ -251,4 +251,21 @@ describe('setupStoryFreezer', () => {
       expect(pause).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('calls onFrozen after freeze completes', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&freeze=finished'
+    );
+
+    const channel = createChannel();
+    const onFrozen = vi.fn();
+    expect(setupStoryFreezer(channel, { onFrozen })).toBe(true);
+
+    channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'finished', storyId: 'example--story' });
+    await Promise.resolve();
+
+    expect(onFrozen).toHaveBeenCalledTimes(1);
+  });
 });

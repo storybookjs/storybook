@@ -4,15 +4,11 @@ import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
-  computeThumbnailLayout,
+  DEFAULT_CONTENT_HEIGHT,
+  DEFAULT_CONTENT_WIDTH,
   parseIframeResizeMessage,
-  type ThumbnailLayout,
-} from './computeThumbnailLayout.ts';
-
-const DEFAULT_THUMBNAIL_LAYOUT: ThumbnailLayout = {
-  scale: 1,
-  aspectRatio: '3 / 2',
-};
+  type ContentDimensions,
+} from './iframeResizeMessage.ts';
 
 /**
  * Each thumbnail is a full Storybook preview iframe, and booting one fires
@@ -149,8 +145,11 @@ const GridContainer = styled.div({
   containerName: 'review-grid',
 });
 
+const GRID_CHILD_ROW_SPAN = 2;
+
 const Grid = styled.div({
   display: 'grid',
+  alignItems: 'stretch',
   gap: 12,
   padding: 12,
   // Fallback for browsers without container-query support: a single column and
@@ -166,19 +165,31 @@ const Grid = styled.div({
 });
 
 const Cell = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
+  display: 'grid',
+  gridTemplateRows: 'subgrid',
+  gridRow: `span ${GRID_CHILD_ROW_SPAN}`,
+  gap: 0,
   minWidth: 0,
 });
 
-// The bordered, clickable preview frame. Rendered as an <a> when a detail href
-// is provided, otherwise a plain <div>. Hover and keyboard focus are indicated
-// here (not on the surrounding cell) since the frame is the interactive target.
-const Frame = styled.a<{ $aspectRatio: string }>(({ theme, $aspectRatio }) => ({
+// Preview frame is a container so `100cqw` tracks the cell width. Content size
+// arrives via `--content-w` / `--content-h`; scale and aspect ratio follow in CSS.
+const Frame = styled.a(({ theme }) => ({
   position: 'relative',
   display: 'block',
   width: '100%',
-  aspectRatio: $aspectRatio,
+  height: '100%',
+  minHeight: 0,
+  alignSelf: 'stretch',
+  containerType: 'inline-size',
+  containerName: 'preview-frame',
+  '--content-w': DEFAULT_CONTENT_WIDTH,
+  '--content-h': DEFAULT_CONTENT_HEIGHT,
+  '--fit': 'min(1, calc(100cqw / (var(--content-w) * 1px)))',
+  '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
+  '--scaled-h': 'calc(var(--content-h) * var(--scale) * 1px)',
+  '--thirds': 'clamp(1, round(up, calc(3 * var(--scaled-h) / 100cqw), 1), 4)',
+  aspectRatio: 'calc(3 / var(--thirds))',
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -195,15 +206,15 @@ const Frame = styled.a<{ $aspectRatio: string }>(({ theme, $aspectRatio }) => ({
   },
 }));
 
-const Preview = styled.iframe<{ $scale: number }>(({ theme, $scale }) => ({
+const Preview = styled.iframe(({ theme }) => ({
   position: 'absolute',
   inset: 0,
-  width: `${(1 / $scale) * 100}%`,
-  height: `${(1 / $scale) * 100}%`,
+  width: 'calc(100% / var(--scale))',
+  height: 'calc(100% / var(--scale))',
   background: theme.background.preview,
   border: 0,
   display: 'block',
-  transform: `scale(${$scale})`,
+  transform: 'scale(var(--scale))',
   transformOrigin: 'top left',
   pointerEvents: 'none',
 }));
@@ -253,11 +264,17 @@ const NewBadge = styled(Badge)({
   flexShrink: 0,
 });
 
-const ReviewAllCell = styled.div(({ theme }) => ({
+const ReviewAllCell = styled(Cell)({
   display: 'none',
+});
+
+const ReviewAllFrame = styled.div(({ theme }) => ({
+  display: 'grid',
   placeItems: 'center',
   width: '100%',
-  aspectRatio: '3 / 2',
+  height: '100%',
+  minHeight: 50,
+  alignSelf: 'stretch',
   borderRadius: 6,
   background: theme.background.app,
   border: `1px dashed ${theme.appBorderColor}`,
@@ -328,7 +345,7 @@ const StoryPreviewCell: FC<{
   const previewsPausedRef = useRef(previewsPaused);
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
-  const [thumbnailLayout, setThumbnailLayout] = useState(DEFAULT_THUMBNAIL_LAYOUT);
+  const [contentDimensions, setContentDimensions] = useState<ContentDimensions | null>(null);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
   const [src, setSrc] = useState<string | undefined>(undefined);
@@ -391,7 +408,7 @@ const StoryPreviewCell: FC<{
   useEffect(() => {
     if (!isInView && !previewsPaused) {
       setSrc(undefined);
-      setThumbnailLayout(DEFAULT_THUMBNAIL_LAYOUT);
+      setContentDimensions(null);
     }
   }, [isInView, previewsPaused]);
 
@@ -456,7 +473,7 @@ const StoryPreviewCell: FC<{
         return;
       }
 
-      setThumbnailLayout(computeThumbnailLayout(dimensions));
+      setContentDimensions(dimensions);
     };
 
     window.addEventListener('message', handleMessage);
@@ -471,7 +488,14 @@ const StoryPreviewCell: FC<{
         as={href ? 'a' : 'div'}
         href={href}
         ref={hostRef as React.RefObject<HTMLAnchorElement>}
-        $aspectRatio={thumbnailLayout.aspectRatio}
+        style={
+          contentDimensions
+            ? ({
+                '--content-w': contentDimensions.width,
+                '--content-h': contentDimensions.height,
+              } as React.CSSProperties)
+            : undefined
+        }
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}
@@ -481,7 +505,8 @@ const StoryPreviewCell: FC<{
             ref={iframeRef}
             title={storyId}
             src={src}
-            $scale={thumbnailLayout.scale}
+            data-content-width={contentDimensions?.width}
+            data-content-height={contentDimensions?.height}
             tabIndex={-1}
             scrolling="no"
             onLoad={finishCurrent}
@@ -545,9 +570,12 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
         );
       })}
       <ReviewAllCell data-review-all>
-        <Button size="medium" onClick={() => onShowAll?.()}>
-          Review all {storyIds.length}
-        </Button>
+        <ReviewAllFrame>
+          <Button size="medium" onClick={() => onShowAll?.()}>
+            Review all {storyIds.length}
+          </Button>
+        </ReviewAllFrame>
+        <ActionBar aria-hidden="true" />
       </ReviewAllCell>
     </Grid>
   </GridContainer>

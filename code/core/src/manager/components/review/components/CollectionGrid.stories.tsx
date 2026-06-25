@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
@@ -111,6 +111,13 @@ export const ManyStoriesOverflow = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: /Review all/i })).toBeInTheDocument();
+    const reviewAllFrame = canvasElement.querySelector('[data-review-all] > :first-child');
+    await expect(reviewAllFrame).toBeTruthy();
+    await waitFor(() => {
+      expect((reviewAllFrame as HTMLElement).getBoundingClientRect().height).toBeGreaterThanOrEqual(
+        50
+      );
+    });
   },
 });
 
@@ -125,6 +132,13 @@ export const FewStories = meta.story({
     await expect(
       canvasElement.querySelector<HTMLButtonElement>('[data-review-all] button')
     ).not.toBeVisible();
+
+    const frames = Array.from(cells).map((cell) => cell.firstElementChild as HTMLElement | null);
+    await waitFor(() => {
+      expect(frames.every((frame) => (frame?.clientHeight ?? 0) > 0)).toBe(true);
+    });
+    const [firstHeight, secondHeight] = frames.map((frame) => frame?.clientHeight ?? 0);
+    expect(firstHeight).toBe(secondHeight);
   },
 });
 
@@ -146,6 +160,22 @@ export const FortyStoriesOverflow = meta.story({
       (el) => (el as HTMLElement).style.display !== 'none' && el.checkVisibility?.()
     );
     await expect(visibleCells.length).toBeLessThanOrEqual(8);
+
+    const reviewAllFrame = canvasElement.querySelector('[data-review-all] > :first-child');
+    await expect(reviewAllFrame).toBeTruthy();
+    await waitFor(() => {
+      expect((reviewAllFrame as HTMLElement).clientHeight).toBeGreaterThan(0);
+    });
+    const reviewAllHeight = (reviewAllFrame as HTMLElement).clientHeight;
+    const rowNeighborHeights = visibleCells
+      .slice(-3)
+      .map((cell) => (cell.firstElementChild as HTMLElement | null)?.clientHeight ?? 0);
+    await waitFor(() => {
+      expect(rowNeighborHeights.every((height) => height > 0)).toBe(true);
+    });
+    for (const height of rowNeighborHeights) {
+      expect(height).toBe(reviewAllHeight);
+    }
   },
 });
 

@@ -18,6 +18,7 @@ import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import type { DocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -107,6 +108,12 @@ type McpServerHandlerParams = {
 		path: string,
 		source?: Source,
 	) => Promise<string>;
+	/**
+	 * Optional in-process single-entry resolver for `experimentalDocgenServer` mode.
+	 * Selected (alongside `manifestProvider`) by the caller; the doc tools only consult
+	 * it for the local source. Undefined on older Storybook versions / when the feature is off.
+	 */
+	resolveEntry?: DocgenServerManifestAccess['resolveEntry'];
 	/** Composition auth handler for multi-source mode */
 	compositionAuth: CompositionAuth;
 };
@@ -119,6 +126,7 @@ export const mcpServerHandler = async ({
 	endpoint = DEFAULT_MCP_ENDPOINT,
 	sources,
 	manifestProvider,
+	resolveEntry,
 	compositionAuth,
 }: McpServerHandlerParams) => {
 	// Initialize MCP server and transport on first request, with concurrency safety
@@ -143,6 +151,7 @@ export const mcpServerHandler = async ({
 		request: webRequest,
 		sources,
 		manifestProvider,
+		resolveEntry,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
 			onListAllDocumentation: async ({ manifests, resultText, sources: sourceManifests }) => {

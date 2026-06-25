@@ -144,13 +144,31 @@ export class CompositionAuth {
 		];
 	}
 
-	/** Create a manifest provider for multi-source mode. */
-	createManifestProvider(localOrigin: string): ManifestProvider {
+	/**
+	 * Create a manifest provider for multi-source mode.
+	 *
+	 * Remote sources are always fetched over HTTP (with auth + caching). The local
+	 * source normally fetches from `localOrigin`, but in `experimentalDocgenServer`
+	 * mode core 404s `/manifests/*.json` (the data lives in the open services), so
+	 * callers pass `localManifestProvider` to read the local source in-process
+	 * instead. When omitted, the local source keeps its HTTP behavior.
+	 */
+	createManifestProvider(
+		localOrigin: string,
+		localManifestProvider?: ManifestProvider,
+	): ManifestProvider {
 		return async (request, path, source) => {
 			const token = extractBearerToken(request?.headers.get('Authorization'));
 			const remoteSource: RemoteSource | undefined = source?.url
 				? { ...source, url: source.url }
 				: undefined;
+
+			// Local source in docgen-server mode: there is nothing to fetch over
+			// loopback, so read it in-process.
+			if (!remoteSource && localManifestProvider) {
+				return localManifestProvider(request, path, source);
+			}
+
 			const baseUrl = remoteSource?.url ?? localOrigin;
 			const manifestUrl = `${baseUrl}${path.replace('./', '/')}`;
 			const isRemote = !!remoteSource;
@@ -227,13 +245,20 @@ export class CompositionAuth {
 		}
 
 		const text = await response.text();
-		const schema = url.includes('docs.json') ? DocsManifestMap : ComponentManifestMap;
+
+		const isComponentsManifest = url.includes('components.json');
+		const isDocsManifest = url.includes('docs.json');
+		const schema = isComponentsManifest
+			? ComponentManifestMap
+			: isDocsManifest
+				? DocsManifestMap
+				: v.unknown();
 
 		if (v.safeParse(v.pipe(v.string(), v.parseJson(), schema), text).success) {
 			return text;
 		}
 
-		// Invalid manifest — check /mcp to see if it's an auth issue
+		// Invalid response — check /mcp to see if it's an auth issue
 		if (await this.#isMcpUnauthorized(new URL(url).origin)) {
 			throw new AuthenticationError(url);
 		}

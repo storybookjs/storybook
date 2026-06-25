@@ -1,7 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 import { isModuleGraphSupported } from './module-graph.ts';
 import { getReviewStatus } from './is-review-available.ts';
-import { getManifestStatus } from '../tools/is-manifest-available.ts';
+import { getManifestStatus, type ManifestFeatures } from '../tools/is-manifest-available.ts';
 import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
 import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
@@ -22,6 +22,8 @@ export interface ToolAvailability {
 	testSupported: boolean;
 	/** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `run-story-tests`. */
 	a11yEnabled: boolean;
+	/** `experimentalDocgenServer` mode: read manifest data in-process from the open services. */
+	docgenServer: boolean;
 }
 
 export interface GetToolAvailabilityOptions {
@@ -29,7 +31,7 @@ export interface GetToolAvailabilityOptions {
 	 * Pre-resolved `features` preset. Pass it to avoid re-applying the preset and
 	 * risking a different snapshot than the caller already resolved.
 	 */
-	features?: { changeDetection?: boolean } | undefined;
+	features?: (ManifestFeatures & { changeDetection?: boolean }) | undefined;
 	/**
 	 * Pre-resolved module-graph support. The live MCP server should omit this so it
 	 * probes the registered open service. Serverless metadata can pass a builder-level
@@ -76,7 +78,9 @@ export async function getToolAvailability(
 ): Promise<ToolAvailability> {
 	const resolvedFeatures =
 		features ??
-		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
+		((await options.presets.apply('features', {})) as
+			| (ManifestFeatures & { changeDetection?: boolean })
+			| undefined);
 
 	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
 		await Promise.all([
@@ -96,5 +100,6 @@ export async function getToolAvailability(
 		docsFeatureEnabled: manifestStatus.hasFeatureFlag,
 		testSupported: !!addonVitestConstants,
 		a11yEnabled,
+		docgenServer: manifestStatus.docgenServer,
 	};
 }

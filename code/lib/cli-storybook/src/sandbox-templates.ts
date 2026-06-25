@@ -697,25 +697,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
-  'angular-cli/prerelease': {
-    name: 'Angular CLI Prerelease (Webpack | TypeScript)',
-    script:
-      'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
-    modifications: {
-      // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
-      useCsfFactory: true,
-    },
-    extraCiSteps: {
-      ensureMinNodeVersion: true,
-    },
-    expected: {
-      framework: '@storybook/angular',
-      renderer: '@storybook/angular',
-      builder: '@storybook/builder-webpack5',
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-    initOptions: { builder: SupportedBuilder.WEBPACK5 },
-  },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
@@ -764,7 +745,8 @@ export const baseTemplates = {
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
-      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22'],
+      // Also, Angular 22 needs TypeScript 6 or more recent.
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -1115,7 +1097,7 @@ export const normal: TemplateKey[] = [
   // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
-  'angular-vite/21-ts',
+  'angular-vite/default-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',
@@ -1148,8 +1130,7 @@ export const merged: TemplateKey[] = [
 
 export const daily: TemplateKey[] = [
   ...merged,
-  'angular-cli/prerelease',
-  'angular-vite/default-ts',
+  'angular-vite/21-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

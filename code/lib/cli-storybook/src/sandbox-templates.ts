@@ -93,6 +93,10 @@ export type Template = {
     testBuild?: boolean;
     disableDocs?: boolean;
     extraDependencies?: string[];
+    extraDevDependencies?: string[];
+    removeDependencies?: string[];
+    removeDevDependencies?: string[];
+    resolutions?: Record<string, string>;
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
   };
@@ -138,7 +142,7 @@ export const baseTemplates = {
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
@@ -172,7 +176,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -198,7 +202,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', 'prop-types'],
+      extraDevDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
       builder: SupportedBuilder.WEBPACK5,
@@ -223,7 +227,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', 'prop-types'],
+      extraDevDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
       builder: SupportedBuilder.WEBPACK5,
@@ -249,7 +253,7 @@ export const baseTemplates = {
           changeDetection: true,
         },
       },
-      extraDependencies: ['server-only', 'prop-types'],
+      extraDevDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
       builder: SupportedBuilder.WEBPACK5,
@@ -274,7 +278,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', 'prop-types'],
+      extraDevDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
       builder: SupportedBuilder.WEBPACK5,
@@ -300,7 +304,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', 'vite', 'prop-types'],
+      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -323,7 +327,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', 'vite', 'prop-types'],
+      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -347,7 +351,7 @@ export const baseTemplates = {
           changeDetection: true,
         },
       },
-      extraDependencies: ['server-only', 'vite', 'prop-types'],
+      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['bench'],
   },
@@ -361,7 +365,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -381,7 +385,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
@@ -397,19 +401,10 @@ export const baseTemplates = {
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
     /**
-     * 1. Create a Vite project with the React template
-     * 2. Add React beta versions
-     * 3. Add resolutions for react, react-dom,@types/react and @types/react-dom, see
-     *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     * 4. Add @types/react and @types/react-dom pointing to the beta packages
+     * Create a Vite project with the React template. The beta React, React-DOM and @types packages,
+     * see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      */
-    script: `
-      npm create vite --yes {{beforeDir}} -- --template react-ts && \
-      cd {{beforeDir}} && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta", "react": "npm:react@beta", "react-dom": "npm:react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
-      yarn add react@beta react-dom@beta && \
-      yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
-      `,
+    script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -417,7 +412,18 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDependencies: ['react@beta', 'react-dom@beta'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@npm:types-react@beta',
+        '@types/react-dom@npm:types-react-dom@beta',
+      ],
+      resolutions: {
+        '@types/react': 'npm:types-react@beta',
+        '@types/react-dom': 'npm:types-react-dom@beta',
+        react: 'npm:react@beta',
+        'react-dom': 'npm:react-dom@beta',
+      },
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -437,8 +443,9 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -457,8 +464,9 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -469,17 +477,11 @@ export const baseTemplates = {
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
     /**
-     * 1. Create a Webpack project with React beta versions
-     * 2. Add resolutions for @types/react and @types/react-dom, see
-     *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     * 3. Add @types/react and @types/react-dom pointing to the beta packages
+     * Create a Webpack project with React beta versions.
+     * See https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      */
-    script: `
-      yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
-      cd {{beforeDir}} && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
-      yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
-      `,
+    script:
+      'yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -487,8 +489,17 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@npm:types-react@beta',
+        '@types/react-dom@npm:types-react-dom@beta',
+      ],
+      resolutions: {
+        '@types/react': 'npm:types-react@beta',
+        '@types/react-dom': 'npm:types-react-dom@beta',
+      },
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },
@@ -505,7 +516,7 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       useCsfFactory: true,
       mainConfig: {
         features: {
@@ -536,7 +547,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
         features: {
@@ -556,7 +567,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         framework: '@storybook/tanstack-react',
         features: {
@@ -601,7 +612,7 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-vue3-rsbuild@^3.0.0-beta.1'],
+      extraDevDependencies: ['storybook-vue3-rsbuild@^3.0.0-beta.1'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -704,6 +715,9 @@ export const baseTemplates = {
     modifications: {
       // Move this to latest or 22 once ng new creates v22 projects
       extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
+      resolutions: {
+        webpack: '5.107.2',
+      },
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -884,8 +898,8 @@ export const baseTemplates = {
       useCsfFactory: true,
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
       // `prop-types`. Every other React-renderer sandbox declares it explicitly via
-      // extraDependencies; this template was missing it.
-      extraDependencies: ['prop-types'],
+      // extraDevDependencies; this template was missing it.
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -917,8 +931,8 @@ export const baseTemplates = {
     modifications: {
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
       // `prop-types`. Every other React-renderer sandbox declares it explicitly via
-      // extraDependencies; this template was missing it.
-      extraDependencies: ['prop-types'],
+      // extraDevDependencies; this template was missing it.
+      extraDevDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     initOptions: {
@@ -943,13 +957,23 @@ const internalTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
+      extraDevDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
+      removeDependencies: ['babel-preset-react-app'],
+      resolutions: {
+        '@babel/core': '^8.0.0',
+        '@babel/preset-env': '^8.0.0',
+        '@babel/preset-react': '^8.0.0',
+        '@babel/preset-typescript': '^8.0.0',
+        'babel-loader': '^8.0.0',
+      },
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
         ),
       mainConfig: {
+        swc: { swcrc: false },
         features: {
+          babelRemoveBugfixes: true,
           experimentalTestSyntax: true,
         },
       },
@@ -968,8 +992,9 @@ const internalTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
+        swc: { swcrc: false },
         features: {
           experimentalTestSyntax: true,
         },

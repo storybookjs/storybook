@@ -24,7 +24,7 @@ export interface DocgenError {
 export type DocgenJsDocTags = Record<string, string[]>;
 
 /**
- * Docgen payload returned by `core/docgen`'s `getDocgen` query.
+ * Docgen payload returned by `core/docgen`'s `docgen` query.
  *
  * Component-only fields (props, descriptions, subcomponents). Story snippets and file-level
  * imports live in `core/story-docs` when `experimentalDocgenServer` is enabled.

@@ -43,34 +43,34 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
       storyIndexSampleIds: [],
     } as DebugServiceState,
     queries: {
-      getActivity: {
+      activity: {
         description: 'Returns the latest activity entries for the debug service.',
         input: activityQueryInputSchema,
         output: v.array(v.string()),
         handler: (input, ctx) => {
-          logger.warn('[open-service debug] query getActivity');
+          logger.warn('[open-service debug] query activity');
           return ctx.self.state.activity.slice(-input.limit);
         },
       },
-      getStoryIndexSummary: {
+      storyIndexSummary: {
         description: 'Returns story-index-derived summary data captured by the debug service.',
         input: storyIndexSummaryInputSchema,
         output: storyIndexSummaryOutputSchema,
         handler: (input, ctx) => {
-          logger.warn('[open-service debug] query getStoryIndexSummary');
+          logger.warn('[open-service debug] query storyIndexSummary');
           return {
             entryCount: ctx.self.state.storyIndexEntryCount,
             sampleIds: input.includeSampleIds ? ctx.self.state.storyIndexSampleIds : [],
           };
         },
       },
-      getPreloadedValue: {
+      preloadedValue: {
         description:
           'Returns a preloaded value for one entry id and participates in static builds.',
         input: entryInputSchema,
         output: v.nullable(v.string()),
         load: async (input, ctx) => {
-          logger.warn(`[open-service debug] load getPreloadedValue(${input.entryId})`);
+          logger.warn(`[open-service debug] load preloadedValue(${input.entryId})`);
           if (ctx.self.state.preloadedByEntryId[input.entryId] !== undefined) {
             return;
           }
@@ -85,7 +85,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         handler: (input, ctx) => {
           const value = ctx.self.state.preloadedByEntryId[input.entryId] ?? null;
 
-          logger.warn(`[open-service debug] query getPreloadedValue(${input.entryId}) => ${value}`);
+          logger.warn(`[open-service debug] query preloadedValue(${input.entryId}) => ${value}`);
           return value;
         },
       },
@@ -129,9 +129,9 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
         input: preloadVisitInputSchema,
         output: v.undefined(),
         handler: async (input, ctx) => {
-          const summary = (await ctx.self.queries.getStoryIndexSummary({
+          const summary = ctx.self.queries.storyIndexSummary.get({
             includeSampleIds: false,
-          })) as { entryCount: number; sampleIds: string[] };
+          });
           const value = `${input.source}:${input.entryId}:${summary.entryCount}`;
 
           logger.warn(
@@ -167,10 +167,10 @@ export async function registerOpenServiceDebugService(
   logger.warn('[open-service debug] registered service descriptor');
   logger.warn(JSON.stringify(descriptor, null, 2));
 
-  const unsubscribe = service.queries.getPreloadedValue.subscribe(
+  const unsubscribe = service.queries.preloadedValue.subscribe(
     { entryId: 'startup' },
-    (value) => {
-      logger.warn(`[open-service debug] subscription getPreloadedValue(startup) => ${value}`);
+    ({ data }) => {
+      logger.warn(`[open-service debug] subscription preloadedValue(startup) => ${data}`);
     }
   );
 
@@ -179,9 +179,9 @@ export async function registerOpenServiceDebugService(
     // the command, query, load, and subscription paths without extra manual setup.
     await service.commands.syncStoryIndex({ reason: 'services-preset' });
     await service.commands.addActivity({ message: 'registered via services preset' });
-    service.queries.getActivity({ limit: 10 });
-    service.queries.getStoryIndexSummary({ includeSampleIds: true });
-    await service.queries.getPreloadedValue.loaded({ entryId: 'startup' });
+    service.queries.activity.get({ limit: 10 });
+    service.queries.storyIndexSummary.get({ includeSampleIds: true });
+    await service.queries.preloadedValue.loaded({ entryId: 'startup' });
     await new Promise<void>((resolve) => queueMicrotask(resolve));
   } finally {
     unsubscribe();

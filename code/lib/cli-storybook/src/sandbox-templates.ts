@@ -489,8 +489,8 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
       extraDevDependencies: [
+        'prop-types',
         '@types/react@npm:types-react@beta',
         '@types/react-dom@npm:types-react-dom@beta',
       ],

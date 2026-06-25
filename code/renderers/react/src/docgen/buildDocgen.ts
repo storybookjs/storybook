@@ -8,7 +8,7 @@ import type {
 import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import path from 'pathe';
 
-import { buildReactComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
+import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
@@ -70,9 +70,9 @@ function addArgTypesFromComponentMeta(payload: ReactDocgenPayload): DocgenPayloa
 /**
  * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
- * Uses {@link resolveStoryFileComponents} and {@link buildReactComponentDocgenFromResolved} for
- * shared field shaping, runs RCM `batchExtract`, then returns the resolved docgen in the same
- * shape as the experimental component manifest (including `reactComponentMeta` when present).
+ * Uses {@link resolveStoryFileComponents} and {@link buildComponentDocgenFromResolved} for
+ * shared field shaping, runs RCM `batchExtract`, then returns component docgen without story
+ * snippets (those live in `core/story-docs`).
  *
  * Returns `undefined` when the story file cannot be read or parsed — the docgen-service provider
  * chain treats undefined as "no docgen here, fall through to the next provider". Resolution errors
@@ -103,7 +103,7 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  const { csf, componentName, component, allComponents, subcomponents, storyFile } = resolved;
+  const { csf, componentName, component, subcomponents, storyFile } = resolved;
 
   const usableSubcomponents = subcomponents.filter(
     (sub): sub is { name: string; component: ComponentRef } => sub.component !== undefined
@@ -117,7 +117,7 @@ export async function buildDocgenPayload(
     context.componentMetaManager.batchExtract(storyRefs);
   }
 
-  const componentDocgen = buildReactComponentDocgenFromResolved({
+  const componentDocgen = buildComponentDocgenFromResolved({
     entry: input.entry,
     storyPath,
     storyFilePath,
@@ -125,7 +125,6 @@ export async function buildDocgenPayload(
     csf,
     componentName,
     component,
-    allComponents,
     subcomponents,
     docgenEngine: 'react-component-meta',
   });

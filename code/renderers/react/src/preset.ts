@@ -32,6 +32,8 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
+export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

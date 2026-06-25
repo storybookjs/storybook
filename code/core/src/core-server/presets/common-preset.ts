@@ -30,8 +30,9 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
 import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
@@ -363,9 +364,13 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       ),
     ]);
 
-    registerDocgenServices({
+    registerDocgenService({
       getIndex: () => storyIndexGenerator.getIndex(),
       docgenProvider,
+      workingDir: process.cwd(),
+    });
+    registerStoryDocsService({
+      getIndex: () => storyIndexGenerator.getIndex(),
       storyDocsProvider,
       workingDir: process.cwd(),
     });

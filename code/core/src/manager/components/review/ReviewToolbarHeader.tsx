@@ -1,13 +1,19 @@
 import React, { type FC } from 'react';
 
-import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
+import {
+  Badge,
+  Button,
+  Popover,
+  PopoverProvider,
+  WithTooltip,
+} from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, SparkleIcon } from '@storybook/icons';
 
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
-import { ReviewHeader } from './components/ReviewHeader.tsx';
-import { AttentionBanner } from './components/AttentionBanner.tsx';
+import { HeaderNoticeText, ReviewHeader } from './components/ReviewHeader.tsx';
+import { StaleNoticePopoverContent } from './components/StaleNotice.tsx';
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
@@ -145,13 +151,32 @@ export const ReviewToolbarHeader: FC = () => {
       </Counter>
     );
 
+  const notice =
+    hasPendingUpdate && onAcceptPendingUpdate ? (
+      <>
+        <HeaderNoticeText>Newer review available</HeaderNoticeText>
+        <Button variant="outline" ariaLabel={false} onClick={onAcceptPendingUpdate}>
+          Refresh review
+        </Button>
+      </>
+    ) : isStale ? (
+      <>
+        <HeaderNoticeText>Code edits detected</HeaderNoticeText>
+        <PopoverProvider
+          ariaLabel="Prompt to refresh stale review"
+          placement="bottom-end"
+          padding={0}
+          popover={<StaleNoticePopoverContent />}
+        >
+          <Button variant="outline" ariaLabel={false}>
+            Prompt agent
+          </Button>
+        </PopoverProvider>
+      </>
+    ) : null;
+
   return (
     <Root data-testid="review-toolbar-header">
-      {hasPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
       <HeaderWrap>
         <ProgressBar
           role="progressbar"
@@ -180,6 +205,9 @@ export const ReviewToolbarHeader: FC = () => {
           subtitle={subtitle}
           actions={
             <>
+              <div role="status" aria-live="polite" style={{ display: 'contents' }}>
+                {notice}
+              </div>
               {counter}
               <Button
                 variant="ghost"

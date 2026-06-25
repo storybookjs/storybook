@@ -83,6 +83,14 @@ const Actions = styled.div({
   marginLeft: 'auto',
 });
 
+export const HeaderNoticeText = styled.strong(({ theme }) => ({
+  fontSize: theme.typography.size.s1,
+  color: theme.color.defaultText,
+  whiteSpace: 'nowrap',
+  lineHeight: '20px',
+  marginLeft: 12,
+}));
+
 const SecondRow = styled.div({
   display: 'flex',
   alignItems: 'center',

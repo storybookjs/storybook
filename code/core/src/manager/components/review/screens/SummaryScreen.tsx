@@ -15,17 +15,14 @@ import { styled } from 'storybook/theming';
 import {
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
-  CopyIcon,
   SparkleIcon,
-  StatusPassIcon,
   StorybookIcon,
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { Markdown } from '../components/Markdown.tsx';
-import { CopyButton } from '../components/CopyButton.tsx';
-import { STALE_REFRESH_PROMPT } from '../components/AttentionBanner.tsx';
-import { ReviewHeader } from '../components/ReviewHeader.tsx';
+import { StaleNoticePopoverContent } from '../components/StaleNotice.tsx';
+import { HeaderNoticeText, ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
   buildReviewStoryHref,
@@ -170,43 +167,6 @@ const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-}));
-
-const StalePopoverContent = styled.div({
-  padding: 15,
-  width: 280,
-  boxSizing: 'border-box',
-});
-
-const StalePopoverMessage = styled.div(({ theme }) => ({
-  color: theme.color.defaultText,
-  lineHeight: '18px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: 8,
-}));
-
-const StalePopoverTitle = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
-
-const StalePrompt = styled.p(({ theme }) => ({
-  margin: 0,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s1 - 1,
-  padding: '6px 10px',
-  background: theme.background.app,
-  boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
-  borderRadius: theme.appBorderRadius,
-}));
-
-const HeaderNoticeText = styled.strong(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.color.defaultText,
-  whiteSpace: 'nowrap',
-  lineHeight: '20px',
-  marginLeft: 12,
 }));
 
 const Footer = styled.div(({ theme }) => ({
@@ -403,31 +363,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                     ariaLabel="Prompt to refresh stale review"
                     placement="bottom-end"
                     padding={0}
-                    popover={
-                      <StalePopoverContent>
-                        <StalePopoverMessage>
-                          <StalePopoverTitle>
-                            Prompt for your agent to refresh this review:
-                          </StalePopoverTitle>
-                          <StalePrompt>{STALE_REFRESH_PROMPT}</StalePrompt>
-                          <CopyButton
-                            appearance="agentic"
-                            padding="small"
-                            ariaLabel="Copy prompt to refresh this review"
-                            ariaLabelOnCopy="Prompt copied to clipboard"
-                            content={STALE_REFRESH_PROMPT}
-                            childrenOnCopy={
-                              <>
-                                <StatusPassIcon /> Copy prompt
-                              </>
-                            }
-                          >
-                            <CopyIcon />
-                            Copy prompt
-                          </CopyButton>
-                        </StalePopoverMessage>
-                      </StalePopoverContent>
-                    }
+                    popover={<StaleNoticePopoverContent />}
                   >
                     <Button variant="outline" ariaLabel={false}>
                       Prompt agent

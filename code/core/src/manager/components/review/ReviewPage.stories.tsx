@@ -324,11 +324,31 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
+  },
+});
+
+export const ToolbarStale = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    emitMock(EVENTS.REVIEW_STALE);
+
+    await expect(await canvas.findByText('Code edits detected')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Prompt agent' })).toBeInTheDocument();
   },
 });
 

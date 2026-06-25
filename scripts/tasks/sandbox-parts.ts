@@ -11,7 +11,7 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { babelParse, traverse, types as t } from '../../code/core/src/babel/index.ts';
+import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
@@ -29,7 +29,12 @@ import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/const
 import { exec } from '../utils/exec.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
-import { updatePackageScripts } from '../utils/package-json.ts';
+import {
+  addPackageDependencies,
+  injectResolutions,
+  removePackageDependencies,
+  updatePackageScripts,
+} from '../utils/package-json.ts';
 import { findFirstPath } from '../utils/paths.ts';
 import { workspacePath } from '../utils/workspace.ts';
 import {
@@ -639,38 +644,62 @@ export async function addExtraDependencies({
   dryRun,
   debug,
   extraDeps,
+  extraDevDeps,
+  removeDeps,
+  removeDevDeps,
+  resolutions,
 }: {
   cwd: string;
   dryRun: boolean;
   debug: boolean;
   extraDeps?: string[];
+  extraDevDeps?: string[];
+  removeDeps?: string[];
+  removeDevDeps?: string[];
+  resolutions?: Record<string, string>;
 }) {
-  const extraDevDeps = ['@storybook/test-runner@latest'];
-
-  if (debug) {
-    logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
-  }
-
   if (dryRun) {
     return;
   }
 
+  // Resolutions must be in place before dependencies are added, so they are honored by the
+  // install that follows.
+  if (resolutions) {
+    await injectResolutions({ cwd, resolutions });
+  }
+
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
 
-  await packageManager.addDependencies(
-    { type: 'devDependencies', skipInstall: true },
-    extraDevDeps
-  );
+  // Resolve bare package names to concrete versions. Already-versioned specs, `npm:` aliases and
+  // dist-tags are returned unchanged.
+  const versionedDeps = extraDeps?.length
+    ? await packageManager.getVersionedPackages(extraDeps)
+    : [];
+  const versionedDevDeps = extraDevDeps?.length
+    ? await packageManager.getVersionedPackages(extraDevDeps)
+    : [];
 
-  if (extraDeps) {
-    const versionedExtraDeps = await packageManager.getVersionedPackages(extraDeps);
+  if (debug) {
+    logger.log('\uD83C\uDF81 Adding extra deps', versionedDeps);
+    logger.log('\uD83C\uDF81 Adding extra dev deps', versionedDevDeps);
+  }
+
+  // Write to package.json without installing; the sandbox is reinstalled once afterwards.
+  await addPackageDependencies({
+    cwd,
+    dependencies: versionedDeps,
+    devDependencies: versionedDevDeps,
+  });
+
+  if (removeDeps?.length || removeDevDeps?.length) {
     if (debug) {
-      logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
+      logger.log('\uD83D\uDDD1\uFE0F Removing deps', { removeDeps, removeDevDeps });
     }
-    await packageManager.addDependencies(
-      { type: 'devDependencies', skipInstall: true },
-      versionedExtraDeps
-    );
+    await removePackageDependencies({
+      cwd,
+      dependencies: removeDeps,
+      devDependencies: removeDevDeps,
+    });
   }
 }
 

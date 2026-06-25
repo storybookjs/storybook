@@ -9721,6 +9721,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@storybook/icons@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@storybook/icons@npm:2.1.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/73614dbb3e9c4756a6838525a6c78f85b24a5a09782512a39f24fe5a435992d6af92591ce18ac7a9a08c14aec10c08b158f68126aa29125058e01169c827bed6
+  languageName: node
+  linkType: hard
+
 "@storybook/mcp@npm:0.7.0":
   version: 0.7.0
   resolution: "@storybook/mcp@npm:0.7.0"
@@ -31334,7 +31343,7 @@ __metadata:
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
     "@standard-schema/spec": "npm:^1.1.0"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^2.0.2"
+    "@storybook/icons": "npm:^2.1.0"
     "@tanstack/react-virtual": "npm:^3.3.0"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/jest-dom": "npm:^6.9.1"

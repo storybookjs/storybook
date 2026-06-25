@@ -13,12 +13,12 @@ import {
 import { styled } from 'storybook/theming';
 
 import {
-  CheckIcon,
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
   CopyIcon,
+  SparkleIcon,
+  StatusPassIcon,
   StorybookIcon,
-  WandIcon,
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
@@ -421,7 +421,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                           content={STALE_REFRESH_PROMPT}
                           childrenOnCopy={
                             <>
-                              <CheckIcon /> Copy prompt
+                              <StatusPassIcon /> Copy prompt
                             </>
                           }
                         >
@@ -446,7 +446,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <ScrollArea vertical>
           <List>
             <SummaryCard color="agentic">
-              <WandIcon />
+              <SparkleIcon />
               <SummaryContent>
                 <Markdown>{'**Summary:** ' + state.description}</Markdown>
               </SummaryContent>

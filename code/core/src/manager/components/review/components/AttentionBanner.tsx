@@ -3,7 +3,7 @@ import React, { type FC } from 'react';
 import { Button, Link, PopoverProvider } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { CheckIcon, CopyIcon, TransferIcon } from '@storybook/icons';
+import { CopyIcon, StatusPassIcon, TransferIcon } from '@storybook/icons';
 import { CopyButton } from './CopyButton.tsx';
 
 export const STALE_REFRESH_PROMPT =
@@ -98,7 +98,7 @@ export const AttentionBanner: FC<AttentionBannerProps> = (props) => {
                   content={STALE_REFRESH_PROMPT}
                   childrenOnCopy={
                     <>
-                      <CheckIcon /> Copy prompt
+                      <StatusPassIcon /> Copy prompt
                     </>
                   }
                 >

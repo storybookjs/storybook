@@ -24,6 +24,18 @@ import {
   toComponentManifestIndexEntries,
 } from './components-ref-manifest.ts';
 import {
+  createDiskLoader,
+  createDocsOnlyDocgenPayload,
+  createServiceLoader,
+  fullTransform,
+  getAttachedDocsByComponent,
+  injectAttachedDocsSummaries,
+  loadMdxPayloadsFromServiceIfNeeded,
+  resolveComponentDocs,
+  resolveDocsManifestRefs,
+  shallowSummaryTransform,
+} from './mdx-ref-resolution.ts';
+import {
   type ComponentsManifestForRenderer,
   type DocsManifest,
   renderComponentsManifest,
@@ -58,6 +70,13 @@ function mergeServicePayloads(
       return [[id, mergeManifestPayloads(docgen, storyDocsPayloads[id])] as const];
     })
   );
+}
+
+function isDocgenServerManifestMode(features: {
+  experimentalDocgenServer?: boolean;
+  componentsManifest?: boolean;
+}): boolean {
+  return features.experimentalDocgenServer === true && features.componentsManifest === true;
 }
 
 /** Narrows an unknown manifest value to the docs manifest shape used by the HTML debugger. */
@@ -122,12 +141,25 @@ function resolveDocgenMeta(manifests: Manifests, durationMs: number): Components
   return { docgen: presetMeta.docgen, durationMs };
 }
 
+function withDocsOnlyComponents(
+  components: Record<string, ComponentManifestWithStoryDocs>,
+  manifestComponentIds: string[],
+  docsByComponentId: Record<string, Record<string, unknown>>
+): Record<string, ComponentManifestWithStoryDocs> {
+  const next = { ...components };
+
+  for (const id of manifestComponentIds) {
+    if (!next[id] && docsByComponentId[id]) {
+      next[id] = mergeManifestPayloads(createDocsOnlyDocgenPayload(id));
+    }
+  }
+
+  return next;
+}
+
 /**
- * Renders the components HTML debugger from the live docgen service (dev only).
- *
- * Loads all docgen payloads and filters to the given manifest-tagged component ids. The static build
- * renders from the on-disk snapshots instead (see {@link writeDocgenServerManifests}) so it does not
- * re-extract docgen.
+ * Renders the components HTML debugger from the live docgen, story-docs, and MDX services (dev
+ * only).
  */
 async function renderComponentsHtmlFromService(
   manifests: Manifests,
@@ -138,25 +170,33 @@ async function renderComponentsHtmlFromService(
   const storyDocsService = getService<StoryDocsService>('core/story-docs');
   const startTime = performance.now();
 
-  const [allDocgenPayloads, allStoryDocsPayloads] = await Promise.all([
+  const [allDocgenPayloads, allStoryDocsPayloads, mdxPayloads] = await Promise.all([
     docgenService.queries.getDocgenForAllComponents.loaded(),
     storyDocsService.queries.getStoryDocsForAllComponents.loaded(),
+    loadMdxPayloadsFromServiceIfNeeded(manifests, docsManifest),
   ]);
 
   const durationMs = Math.round(performance.now() - startTime);
-  const components = mergeServicePayloads(
-    allDocgenPayloads,
-    allStoryDocsPayloads,
-    manifestComponentIds
+  const docsByComponentId = getAttachedDocsByComponent(manifests.components);
+  const components = withDocsOnlyComponents(
+    mergeServicePayloads(allDocgenPayloads, allStoryDocsPayloads, manifestComponentIds),
+    manifestComponentIds,
+    docsByComponentId
   );
 
+  const load = createServiceLoader(mdxPayloads);
+  const [componentsWithDocs, resolvedDocsManifest] = await Promise.all([
+    resolveComponentDocs(components, manifests, load, fullTransform),
+    resolveDocsManifestRefs(docsManifest, load, fullTransform),
+  ]);
+
   return renderComponentsManifest(
-    buildComponentsManifest(components, resolveDocgenMeta(manifests, durationMs)),
-    docsManifest
+    buildComponentsManifest(componentsWithDocs, resolveDocgenMeta(manifests, durationMs)),
+    resolvedDocsManifest
   );
 }
 
-/** Writes each manifest entry to `outputDir/manifests/<name>.json`. */
+/** Writes each manifest entry to `outputDir/manifests/<name>.json` (pretty-printed). */
 async function writeManifestJsonFiles(
   outputDir: string,
   manifests: Manifests,
@@ -166,7 +206,7 @@ async function writeManifestJsonFiles(
     Object.entries(manifests)
       .filter(([name]) => !skipComponents || name !== 'components')
       .map(([name, content]) =>
-        writeFile(join(outputDir, 'manifests', `${name}.json`), JSON.stringify(content))
+        writeFile(join(outputDir, 'manifests', `${name}.json`), JSON.stringify(content, null, 2))
       )
   );
 }
@@ -174,8 +214,9 @@ async function writeManifestJsonFiles(
 /**
  * Static build path when `features.experimentalDocgenServer` is enabled.
  *
- * Writes a ref-based `components.json`, other manifests from `experimental_manifests`, and
- * `components.html` rendered from the docgen service.
+ * Writes a ref-based `components.json` (with MDX summaries layered in from the snapshots), other
+ * manifests from `experimental_manifests`, and `components.html` rendered from the docgen,
+ * story-docs, and MDX service snapshots.
  */
 async function writeDocgenServerManifests(
   outputDir: string,
@@ -193,40 +234,62 @@ async function writeDocgenServerManifests(
   const manifestsDir = join(outputDir, 'manifests');
   await mkdir(manifestsDir, { recursive: true });
 
-  // Read docgen once from the snapshots written by writeOpenServiceStaticFiles. The same payloads
-  // back both components.json and the HTML debugger, so the build never re-extracts from the service.
   const startTime = performance.now();
   const [docgenPayloads, storyDocsPayloads] = await Promise.all([
     loadDocgenPayloadsFromDisk(outputDir, manifestComponentIds),
     loadStoryDocsPayloadsFromDisk(outputDir, manifestComponentIds),
   ]);
   const durationMs = Math.round(performance.now() - startTime);
-  const mergedComponents = mergeServicePayloads(
-    docgenPayloads,
-    storyDocsPayloads,
-    manifestComponentIds
+  const docsByComponentId = getAttachedDocsByComponent(manifests.components);
+  const mergedComponents = withDocsOnlyComponents(
+    mergeServicePayloads(docgenPayloads, storyDocsPayloads, manifestComponentIds),
+    manifestComponentIds,
+    docsByComponentId
   );
+
+  const load = createDiskLoader(outputDir);
+
+  const [attachedDocsWithSummaries, docsManifestWithSummaries] = await Promise.all([
+    injectAttachedDocsSummaries(docsByComponentId, load),
+    resolveDocsManifestRefs(docsManifest, load, shallowSummaryTransform),
+  ]);
 
   if (manifestComponentIds.length > 0) {
     await writeFile(
       join(manifestsDir, 'components.json'),
       JSON.stringify(
         buildComponentsRefManifest(
-          toComponentManifestIndexEntries(manifestComponentIds, docgenPayloads, storyDocsPayloads),
+          toComponentManifestIndexEntries(
+            manifestComponentIds,
+            docgenPayloads,
+            storyDocsPayloads,
+            attachedDocsWithSummaries
+          ),
           manifests.components?.meta
-        )
+        ),
+        null,
+        2
       )
     );
   }
 
-  await writeManifestJsonFiles(outputDir, manifests, { skipComponents: true });
+  await writeManifestJsonFiles(
+    outputDir,
+    docsManifestWithSummaries ? { ...manifests, docs: docsManifestWithSummaries } : manifests,
+    { skipComponents: true }
+  );
 
   if (shouldWriteHtml) {
+    const [componentsWithDocs, resolvedDocsManifest] = await Promise.all([
+      resolveComponentDocs(mergedComponents, manifests, load, fullTransform),
+      resolveDocsManifestRefs(docsManifest, load, fullTransform),
+    ]);
+
     await writeFile(
       join(manifestsDir, 'components.html'),
       renderComponentsManifest(
-        buildComponentsManifest(mergedComponents, resolveDocgenMeta(manifests, durationMs)),
-        docsManifest
+        buildComponentsManifest(componentsWithDocs, resolveDocgenMeta(manifests, durationMs)),
+        resolvedDocsManifest
       )
     );
   }
@@ -264,7 +327,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
     const manifests = await getManifests(presets, manifestEntries);
     const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
-    if (features.experimentalDocgenServer) {
+    if (isDocgenServerManifestMode(features)) {
       await writeDocgenServerManifests(
         outputDir,
         manifests,
@@ -293,13 +356,16 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
   const isDocgenServerEnabled = () => {
     useDocgenServerPromise ??= presets
       .apply('features')
-      .then((features) => features?.experimentalDocgenServer ?? false);
+      .then((features) => isDocgenServerManifestMode(features ?? {}));
     return useDocgenServerPromise;
   };
 
   app.get('/manifests/:name.json', async (req, res) => {
     try {
-      if ((await isDocgenServerEnabled()) && req.params.name === 'components') {
+      if (
+        (await isDocgenServerEnabled()) &&
+        (req.params.name === 'components' || req.params.name === 'docs')
+      ) {
         res.statusCode = 404;
         res.end(
           `Manifest "${req.params.name}" is not available in dev when experimentalDocgenServer is enabled`

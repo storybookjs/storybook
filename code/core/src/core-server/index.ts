@@ -18,6 +18,21 @@ export { loadStorybook as experimental_loadStorybook } from './load.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
+export {
+  MDX_SERVICE_ID,
+  mdxQueryStaticPath,
+  mdxStaticStorePath,
+  mdxManifestRef,
+} from './utils/manifests/mdx-manifest.ts';
+export type {
+  DocsManifestEntry,
+  DocsManifestRefEntry,
+  JsonRef,
+  MdxDocPayload,
+  MdxError,
+  MdxPayload,
+  MdxServiceContract,
+} from './utils/manifests/mdx-manifest.ts';
 export { defineService as experimental_defineService } from '../shared/open-service/index.ts';
 export type {
   Command,

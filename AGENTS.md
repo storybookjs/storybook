@@ -242,6 +242,7 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Test real behavior, not just syntax patterns
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
+- Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows
 
 ### Filesystem tests with `memfs`
 

@@ -102,6 +102,23 @@ const reviewState: ReviewState = {
         'manager-settings-aboutscreen--default',
       ],
     },
+    {
+      title: 'Toolbar',
+      rationale: 'Toolbar layout and button spacing adjusted.',
+      storyIds: [
+        'manager-components-toolbar-toolbar--default',
+        'manager-components-toolbar-toolbar--with-addons',
+      ],
+    },
+    {
+      title: 'Sidebar',
+      rationale: 'Sidebar tree and search behavior updated.',
+      storyIds: [
+        'manager-components-sidebar-sidebar--default',
+        'manager-components-sidebar-sidebar--search-results',
+        'manager-components-sidebar-sidebar--with-change-detection-only',
+      ],
+    },
   ],
 };
 
@@ -228,6 +245,8 @@ export const Collections = meta.story({
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
+    await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
+    await expect(await canvas.findByText('Sidebar')).toBeInTheDocument();
   },
 });
 

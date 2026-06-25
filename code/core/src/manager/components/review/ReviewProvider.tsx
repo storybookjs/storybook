@@ -9,6 +9,9 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -16,9 +19,6 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { useNavigate } from 'storybook/internal/router';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import {
   fallbackStoryInfo,
@@ -31,10 +31,9 @@ import {
   PRE_REVIEW_RETURN_KEY,
   REVIEW_CHANGES_URL,
 } from './constants.ts';
-import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
 import { navigateOutOfReview } from './review-actions.ts';
+import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   isReviewReturnSearch,
@@ -43,10 +42,11 @@ import {
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
+  REVIEW_COLLECTION_QUERY_PARAM,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
+import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 

@@ -2,8 +2,8 @@ import React from 'react';
 
 import { expect, within } from 'storybook/test';
 
-import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';

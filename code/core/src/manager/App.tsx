@@ -64,6 +64,9 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
+        {pages.map(({ id, persistentRender: PersistentRender }) =>
+          PersistentRender ? <PersistentRender key={`${id}-persistent`} /> : null
+        )}
         <Layout
           hasTab={hasTab}
           managerLayoutState={managerLayoutState}
@@ -71,9 +74,9 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
           slotMain={<Preview id="main" withLoader />}
           slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
           slotPanel={<Panel />}
-          slotPages={pages.map(({ id, render: Content }) => (
-            <Content key={id} />
-          ))}
+          slotPages={pages.map(({ id, render: Content }) =>
+            Content ? <Content key={id} /> : null
+          )}
         />
       </ManagerErrorBoundary>
     </>

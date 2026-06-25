@@ -1,8 +1,10 @@
 import type {
 	AllManifests,
 	ComponentManifest,
+	ComponentManifestEntry,
 	SubcomponentManifest,
 	Doc,
+	DocEntry,
 	SourceManifests,
 	Story,
 } from '../../types.ts';
@@ -26,7 +28,7 @@ type ListFormattingOptions = {
 	withStoryIds?: boolean;
 };
 
-function formatComponentLine(component: ComponentManifest): string {
+function formatComponentLine(component: ComponentManifestEntry): string {
 	const summary =
 		component.summary ??
 		(component.description
@@ -41,9 +43,12 @@ function formatComponentLine(component: ComponentManifest): string {
 	return `- ${component.name} (${component.id})`;
 }
 
-function formatDocLine(doc: Doc): string {
-	const summary = doc.summary ?? extractDocsSummary(doc.content);
-	return `- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`;
+function formatDocLine(doc: DocEntry): string {
+	// `title`/`content` only exist on inline (v0) docs; v1 index rows carry just a summary.
+	const title = 'title' in doc ? doc.title : undefined;
+	const content = 'content' in doc ? doc.content : undefined;
+	const summary = doc.summary ?? extractDocsSummary(content ?? '');
+	return `- ${title ?? doc.name} (${doc.id})${summary ? `: ${summary}` : ''}`;
 }
 
 function formatStorySubLine(story: Story): string {
@@ -240,11 +245,12 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 	const parsedDocgen = getParsedDocgen(componentManifest);
 
 	// Stories section
-	if (componentManifest.stories && componentManifest.stories.length > 0) {
+	const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
+	if (stories.length > 0) {
 		parts.push('## Stories');
 		parts.push('');
 
-		const storiesWithSnippets = componentManifest.stories.filter((s) => s.snippet);
+		const storiesWithSnippets = stories.filter((s) => s.snippet);
 
 		// Check if component has props - if not, show all stories fully
 		const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
@@ -287,7 +293,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 	// Attached docs section
 	if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
 		const docsWithContent = Object.values(componentManifest.docs).filter(
-			(doc) => doc.content.trim().length > 0,
+			(doc) => (doc.content ?? '').trim().length > 0,
 		);
 
 		if (docsWithContent.length > 0) {
@@ -298,7 +304,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 				parts.push(`### ${doc.name}`);
 				parts.push('');
 
-				parts.push(doc.content);
+				parts.push(doc.content ?? '');
 				parts.push('');
 			}
 		}
@@ -311,9 +317,9 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
  * Format a single doc manifest into markdown.
  */
 export function formatDocsManifest(doc: Doc): string {
-	return dedent`# ${doc.title}
+	return dedent`# ${doc.title ?? doc.name}
 
-			${doc.content}`;
+			${doc.content ?? ''}`;
 }
 
 /**
@@ -331,8 +337,8 @@ export function formatManifestsToLists(
 	parts.push('');
 	for (const component of Object.values(manifests.componentManifest.components)) {
 		parts.push(formatComponentLine(component));
-		if (options.withStoryIds) {
-			for (const story of component.stories ?? []) {
+		if (options.withStoryIds && Array.isArray(component.stories)) {
+			for (const story of component.stories) {
 				parts.push(formatStorySubLine(story));
 			}
 		}
@@ -381,8 +387,8 @@ export function formatMultiSourceManifestsToLists(
 			parts.push('');
 			for (const component of components) {
 				parts.push(formatComponentLine(component));
-				if (options.withStoryIds) {
-					for (const story of component.stories ?? []) {
+				if (options.withStoryIds && Array.isArray(component.stories)) {
+					for (const story of component.stories) {
 						parts.push(formatStorySubLine(story));
 					}
 				}
@@ -410,7 +416,9 @@ export function formatStoryDocumentation(
 	componentManifest: ComponentManifest,
 	storyName: string,
 ): string {
-	const story = componentManifest.stories?.find((s) => s.name === storyName);
+	const story = Array.isArray(componentManifest.stories)
+		? componentManifest.stories.find((s) => s.name === storyName)
+		: undefined;
 
 	if (!story || !story.snippet) {
 		return '';

@@ -4,10 +4,12 @@ import {
 	getMultiSourceManifests,
 	ManifestGetError,
 	parseDocgenRef,
-	resolveComponentDocgen,
+	resolveComponentEntry,
+	resolveComponentStories,
+	resolveDoc,
 	RequiresOwnMcpError,
 } from './get-manifest.ts';
-import type { ComponentManifest } from '../types.ts';
+import type { ComponentManifest, ComponentManifestV1, Doc, DocV1 } from '../types.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source } from '../types.ts';
 
 global.fetch = vi.fn();
@@ -256,7 +258,7 @@ Invalid key: Expected "components" but received undefined]`);
 	describe('success cases', () => {
 		it('should successfully fetch and parse a valid manifest', async () => {
 			const validManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -286,7 +288,7 @@ Invalid key: Expected "components" but received undefined]`);
 			['http://localhost:6006/custom-mcp', 'http://localhost:6006'],
 		])('should derive manifest URLs from the request origin for %s', async (requestUrl, origin) => {
 			const validManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -309,7 +311,7 @@ Invalid key: Expected "components" but received undefined]`);
 
 		it('should successfully fetch and parse both component and docs manifests', async () => {
 			const validComponentManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -320,9 +322,9 @@ Invalid key: Expected "components" but received undefined]`);
 				},
 			};
 
-			const validDocsManifest: DocsManifestMap = {
-				v: 1,
-				docs: {
+		const validDocsManifest: DocsManifestMap = {
+			v: 0,
+			docs: {
 					'getting-started': {
 						id: 'getting-started',
 						name: 'Getting Started',
@@ -352,7 +354,7 @@ Invalid key: Expected "components" but received undefined]`);
 	describe('manifestProvider', () => {
 		it('should use manifestProvider when provided', async () => {
 			const validManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -384,7 +386,7 @@ Invalid key: Expected "components" but received undefined]`);
 
 		it('should allow manifestProvider to work without request', async () => {
 			const validManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -414,7 +416,7 @@ Invalid key: Expected "components" but received undefined]`);
 
 		it('should fallback to fetch when manifestProvider is not provided', async () => {
 			const validManifest: ComponentManifestMap = {
-				v: 1,
+				v: 0,
 				components: {
 					button: {
 						id: 'button',
@@ -466,7 +468,7 @@ Invalid key: Expected "components" but received undefined]`);
 		};
 
 		const localManifest: ComponentManifestMap = {
-			v: 1,
+			v: 0,
 			components: {
 				button: {
 					id: 'button',
@@ -477,7 +479,7 @@ Invalid key: Expected "components" but received undefined]`);
 		};
 
 		const remoteManifest: ComponentManifestMap = {
-			v: 1,
+			v: 0,
 			components: {
 				badge: {
 					id: 'badge',
@@ -625,8 +627,8 @@ describe('parseDocgenRef', () => {
 	});
 });
 
-describe('resolveComponentDocgen', () => {
-	const stub: ComponentManifest = {
+describe('resolveComponentEntry', () => {
+	const stub: ComponentManifestV1 = {
 		id: 'button',
 		name: 'Button',
 		description: 'A button',
@@ -636,7 +638,7 @@ describe('resolveComponentDocgen', () => {
 	it('returns the component unchanged when it has no docgen $ref', async () => {
 		const plain: ComponentManifest = { id: 'button', name: 'Button', path: 'src/Button.tsx' };
 		const provider = vi.fn();
-		await expect(resolveComponentDocgen(plain, undefined, provider)).resolves.toBe(plain);
+		await expect(resolveComponentEntry(plain, undefined, provider)).resolves.toBe(plain);
 		expect(provider).not.toHaveBeenCalled();
 	});
 
@@ -654,7 +656,7 @@ describe('resolveComponentDocgen', () => {
 			}),
 		);
 
-		const resolved = await resolveComponentDocgen(stub, undefined, provider);
+		const resolved = await resolveComponentEntry(stub, undefined, provider);
 
 		// Provider is asked for the resolved (relative) path of the referenced file.
 		expect(provider).toHaveBeenCalledWith(
@@ -670,8 +672,162 @@ describe('resolveComponentDocgen', () => {
 
 	it('throws when the JSON pointer does not resolve', async () => {
 		const provider = vi.fn().mockResolvedValue(JSON.stringify({ components: {} }));
-		await expect(resolveComponentDocgen(stub, undefined, provider)).rejects.toThrow(
+		await expect(resolveComponentEntry(stub, undefined, provider)).rejects.toThrow(
 			ManifestGetError,
 		);
+	});
+});
+
+describe('resolveComponentEntry (split/ref format)', () => {
+	// Provider that serves the per-component service files referenced from the index.
+	const provider = vi.fn(async (_req: Request | undefined, path: string) => {
+		switch (path) {
+			case './services/core/docgen/button.json':
+				return JSON.stringify({
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/Button.tsx',
+							jsDocTags: {},
+							reactComponentMeta: {
+								props: { label: { type: { name: 'string' }, required: true } },
+							},
+							// argTypes must be dropped by the adapter.
+							argTypes: { label: { control: 'text' } },
+						},
+					},
+				});
+			case './services/core/story-docs/button.json':
+				return JSON.stringify({
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/Button.tsx',
+							import: "import { Button } from './Button'",
+							stories: {
+								'button--primary': {
+									id: 'button--primary',
+									name: 'Primary',
+									snippet: '<Button />',
+								},
+							},
+						},
+					},
+				});
+			case './services/addon-docs/mdx/button.json':
+				return JSON.stringify({
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							docs: {
+								'button--docs': {
+									id: 'button--docs',
+									name: 'Docs',
+									title: 'Button',
+									content: '# Button',
+								},
+							},
+						},
+					},
+				});
+			default:
+				throw new ManifestGetError(`unexpected path ${path}`);
+		}
+	});
+
+	beforeEach(() => {
+		provider.mockClear();
+	});
+
+	const indexEntry: ComponentManifestV1 = {
+		id: 'button',
+		name: 'Button',
+		summary: 'A button',
+		docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+		stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+		docs: {
+			'button--docs': {
+				id: 'button--docs',
+				name: 'Docs',
+				mdx: {
+					$ref: '../services/addon-docs/mdx/button.json#/components/button/docs/button--docs',
+				},
+			},
+		},
+	};
+
+	it('follows docgen, story-docs and mdx refs and adapts to the internal shape', async () => {
+		const resolved = await resolveComponentEntry(indexEntry, undefined, provider);
+
+		// docgen: reactComponentMeta passed through, argTypes dropped.
+		expect(resolved.reactComponentMeta).toEqual({
+			props: { label: { type: { name: 'string' }, required: true } },
+		});
+		expect('argTypes' in resolved).toBe(false);
+		expect(resolved.path).toBe('src/Button.tsx');
+		// story-docs record -> Story[]
+		expect(resolved.stories).toEqual([
+			{ id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+		]);
+		expect(resolved.import).toBe("import { Button } from './Button'");
+		// mdx ref row -> resolved Doc
+		expect(resolved.docs?.['button--docs']).toEqual({
+			id: 'button--docs',
+			name: 'Docs',
+			title: 'Button',
+			content: '# Button',
+		});
+		// identity from the index entry is authoritative
+		expect(resolved.id).toBe('button');
+	});
+
+	it('returns inline (v0) entries unchanged without calling the provider', async () => {
+		const inline: ComponentManifest = {
+			id: 'button',
+			name: 'Button',
+			stories: [{ name: 'Primary', snippet: '<Button />' }],
+		};
+		const localProvider = vi.fn();
+		await expect(resolveComponentEntry(inline, undefined, localProvider)).resolves.toBe(inline);
+		expect(localProvider).not.toHaveBeenCalled();
+	});
+
+	it('resolveComponentStories follows only the stories ref', async () => {
+		const resolved = await resolveComponentStories(indexEntry, undefined, provider);
+		expect(resolved.stories).toEqual([
+			{ id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+		]);
+		// Only the story-docs file is fetched (not docgen/mdx).
+		expect(provider).toHaveBeenCalledTimes(1);
+		expect(provider).toHaveBeenCalledWith(
+			undefined,
+			'./services/core/story-docs/button.json',
+			undefined,
+		);
+	});
+
+	it('resolveDoc follows a standalone doc mdx ref', async () => {
+		const docRow: DocV1 = {
+			id: 'button--docs',
+			name: 'Docs',
+			mdx: { $ref: '../services/addon-docs/mdx/button.json#/components/button/docs/button--docs' },
+		};
+		const resolved = await resolveDoc(docRow, undefined, provider);
+		expect(resolved).toEqual({
+			id: 'button--docs',
+			name: 'Docs',
+			title: 'Button',
+			content: '# Button',
+		});
+	});
+
+	it('resolveDoc returns inline docs unchanged', async () => {
+		const inlineDoc: Doc = { id: 'intro', name: 'Intro', title: 'Intro', content: '# Hi' };
+		const localProvider = vi.fn();
+		await expect(resolveDoc(inlineDoc, undefined, localProvider)).resolves.toBe(inlineDoc);
+		expect(localProvider).not.toHaveBeenCalled();
 	});
 });

@@ -81,7 +81,7 @@ const Pages: FC<{
       },
     ];
 
-    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+    if (global.CONFIG_TYPE === 'DEVELOPMENT' && global.FEATURES?.sidebarOnboardingChecklist !== false) {
       tabsToInclude.push({
         id: 'guide',
         title: 'Guide',

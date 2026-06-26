@@ -12,16 +12,30 @@ import {
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   REVIEW_SUMMARY_BACK_ATTR,
-  buildReviewChangesSummaryHref,
+  isReviewSummaryPath,
   parseReviewStoryHref,
 } from './review-navigation.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
-const isReviewStoryHref = (href: string) =>
-  href.startsWith('?path=/story/') && href.includes(`${REVIEW_COLLECTION_QUERY_PARAM}=`);
+const parseHrefPath = (href: string): string | null => {
+  const query = href.startsWith('?') ? href.slice(1) : href;
+  return new URLSearchParams(query).get('path');
+};
 
-const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummaryHref();
+const isReviewStoryHref = (href: string) => {
+  const path = parseHrefPath(href);
+  if (!path?.startsWith('/story/')) {
+    return false;
+  }
+  const query = href.startsWith('?') ? href.slice(1) : href;
+  return new URLSearchParams(query).has(REVIEW_COLLECTION_QUERY_PARAM);
+};
+
+const isReviewSummaryHref = (href: string) => {
+  const path = parseHrefPath(href);
+  return path !== null && isReviewSummaryPath(path);
+};
 
 /**
  * Intercepts primary clicks on in-page review navigation links for SPA

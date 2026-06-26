@@ -1,8 +1,8 @@
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { API_Provider } from 'storybook/internal/types';
 import * as clientLogger from 'storybook/internal/client-logger';
+import type { API_Provider } from 'storybook/internal/types';
 
 import EventEmitter from 'events';
 import { themes } from 'storybook/theming';
@@ -626,6 +626,30 @@ describe('layout API', () => {
 
       expect(state.layout.navSize).toBe(0);
       expect(state.layout.recentVisibleSizes.navSize).toBe(300);
+    });
+
+    it('should restore navSize from recentVisibleSizes when persisted showNav is true but navSize is 0', () => {
+      const storeWithCollapsedNav = {
+        ...store,
+        getState: () =>
+          ({
+            selectedPanel: currentState.selectedPanel,
+            layout: {
+              ...getDefaultLayoutState().layout,
+              navSize: 0,
+              showNav: true,
+            },
+          }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithCollapsedNav,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.showNav).toBe(true);
+      expect(state.layout.navSize).toBe(300);
     });
 
     it('should prioritize layout over top-level config keys', () => {

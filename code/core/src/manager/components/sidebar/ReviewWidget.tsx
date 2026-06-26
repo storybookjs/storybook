@@ -1,4 +1,4 @@
-import React, { type SyntheticEvent, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
@@ -14,8 +14,8 @@ import {
 import { styled } from 'storybook/theming';
 
 import { REVIEW_EVENTS } from '../../../shared/review/index.ts';
-import { REVIEW_CHANGES_URL } from '../review/constants.ts';
 import { enterReviewMode } from '../review/review-mode.ts';
+import { buildReviewChangesSummaryHref } from '../review/review-navigation.ts';
 import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
 
 type ReviewPayload = {
@@ -119,7 +119,7 @@ export const ReviewWidget = () => {
       } catch {
         // Best-effort: still continue into the review route.
       }
-      api.navigate(REVIEW_CHANGES_URL);
+      api.navigateUrl(buildReviewChangesSummaryHref(), {});
     })();
   };
 

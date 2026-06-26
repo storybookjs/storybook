@@ -25,19 +25,16 @@ import {
   type StoryChangeStatus,
   type StoryInfo,
 } from './components/CollectionGrid.tsx';
-import {
-  AUTO_ENTERED_SESSION_KEY,
-  EVENTS,
-  PRE_REVIEW_RETURN_KEY,
-  REVIEW_CHANGES_URL,
-} from './constants.ts';
-import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
+import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from './constants.ts';
 import { navigateOutOfReview } from './review-actions.ts';
+import { enterReviewMode, exitReviewMode, isReviewModeActive } from './review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
+  isReviewLayoutActive,
   isReviewReturnSearch,
+  isReviewRoute,
   isReviewSummaryPath,
   parseCollectionIndex,
   parseStoryIdFromPath,
@@ -65,6 +62,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [isInReviewMode, setIsInReviewMode] = useState(() => isReviewModeActive());
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const displayedReviewRef = useRef<ReviewState | null>(null);
+  const replayExpectedRef = useRef(true);
+  const routeRef = useRef({ path: '/', collectionParam: undefined as string | undefined });
   displayedReviewRef.current = state;
 
   const api = useStorybookApi();
@@ -72,6 +71,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { index, path, viewMode, customQueryParams, location } = useStorybookState();
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
+  routeRef.current = { path, collectionParam };
 
   // Current sidebar filters, snapshotted by enterReviewMode and restored on exit.
   const filtersRef = useReviewFiltersRef();
@@ -98,6 +98,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(next);
       setIsStale(!!next.stale);
+
+      const isReplay = replayExpectedRef.current;
+      replayExpectedRef.current = false;
+      const { path: currentPath, collectionParam: currentCollection } = routeRef.current;
+      if (!isReplay && !isReviewRoute(currentPath, currentCollection)) {
+        navigate(buildReviewChangesSummaryHref(), { plain: true });
+      }
     },
     [EVENTS.REVIEW_STALE]: () => {
       setIsStale(true);
@@ -132,7 +139,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [enterReview, navigate, pendingReview]);
 
   useEffect(() => {
+    replayExpectedRef.current = true;
     emit(EVENTS.REQUEST_REVIEW);
+    const timer = globalThis.setTimeout(() => {
+      replayExpectedRef.current = false;
+    }, 500);
+    return () => globalThis.clearTimeout(timer);
   }, [emit]);
 
   // Tag every story in the active review so the sidebar shows reviewing status
@@ -227,25 +239,45 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const isSummaryVisible = isReviewSummaryPath(path);
 
-  // Re-sync the persisted review-mode flag on every navigation. Enter/exit
-  // performed by the nav interceptor and shortcuts toggle it out of band before
-  // navigating, so a route change is the signal to re-read it.
+  // Keep review chrome/filters in sync with `full=1` and review routes in the URL.
   useEffect(() => {
-    setIsInReviewMode(isReviewModeActive());
-  }, [path, collectionParam]);
+    if (!isReviewRoute(path, collectionParam)) {
+      reviewStore.releaseUrlSyncSuppression();
+    }
+    if (reviewStore.isUrlSyncSuppressed()) {
+      return;
+    }
 
-  // First landing on the summary with a clean, newly available review enters
-  // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
-  useEffect(() => {
-    if (!state || !isSummaryVisible || isReviewModeActive()) {
+    const reviewRoute = isReviewRoute(path, collectionParam);
+    const fullActive = isReviewLayoutActive(location);
+
+    if (reviewRoute && !fullActive) {
+      if (isSummaryVisible) {
+        api.applyQueryParams({ full: '1' }, { replace: true });
+        return;
+      }
+      if (isReviewModeActive()) {
+        void exitReviewMode(api);
+        setIsInReviewMode(false);
+      }
       return;
     }
-    if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === '1') {
+
+    if (reviewRoute && fullActive) {
+      if (!isReviewModeActive()) {
+        void enterReviewMode(api, filtersRef.current);
+      }
+      setIsInReviewMode(true);
       return;
     }
-    sessionStore.write(AUTO_ENTERED_SESSION_KEY, '1');
-    enterReview();
-  }, [state, isSummaryVisible, enterReview]);
+
+    if (isReviewModeActive()) {
+      void exitReviewMode(api);
+      setIsInReviewMode(false);
+    } else {
+      setIsInReviewMode(false);
+    }
+  }, [api, collectionParam, filtersRef, isSummaryVisible, location, path]);
 
   // Remember the last canvas search outside review mode so leaving review can
   // return to the pre-review canvas (both summary back and dismiss).
@@ -309,5 +341,4 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   return children;
 };
 
-export const isReviewPath = (path: string): boolean =>
-  isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
+export const isReviewPath = (path: string): boolean => isReviewSummaryPath(path);

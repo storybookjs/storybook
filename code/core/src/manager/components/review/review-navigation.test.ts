@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ReviewState } from './review-state.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
+  REVIEW_FULL_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
@@ -10,6 +10,9 @@ import {
   buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
   getAdjacentReviewEntries,
+  isReviewLayoutActive,
+  isReviewRoute,
+  isReviewStoryRoute,
   isReviewSummaryPath,
   parseCollectionIndex,
   parseReviewStoryHref,
@@ -17,6 +20,7 @@ import {
   resolveActiveNavEntry,
   resolveNavIndex,
 } from './review-navigation.ts';
+import type { ReviewState } from './review-state.ts';
 
 const reviewState: ReviewState = {
   title: 'Test review',
@@ -36,9 +40,9 @@ const reviewState: ReviewState = {
 };
 
 describe('buildReviewStoryHref', () => {
-  it('builds a story URL with collection query param', () => {
+  it('builds a story URL with full layout and collection query params', () => {
     expect(buildReviewStoryHref({ storyId: 'story-a', collectionIndex: 1 })).toBe(
-      `?path=/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
+      `?${REVIEW_FULL_QUERY_PARAM}=1&path=/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
     );
   });
 });
@@ -122,7 +126,19 @@ describe('path helpers', () => {
   });
 
   it('builds the summary href', () => {
-    expect(buildReviewChangesSummaryHref()).toBe('?path=/review/');
+    expect(buildReviewChangesSummaryHref()).toBe('?full=1&path=/review/');
+  });
+
+  it('detects review layout from the URL', () => {
+    expect(isReviewLayoutActive({ search: '?full=1&path=/review/' })).toBe(true);
+    expect(isReviewLayoutActive({ search: '?path=/story/foo' })).toBe(false);
+  });
+
+  it('detects review routes', () => {
+    expect(isReviewRoute('/review/', undefined)).toBe(true);
+    expect(isReviewRoute('/story/foo', '0')).toBe(true);
+    expect(isReviewRoute('/story/foo', undefined)).toBe(false);
+    expect(isReviewStoryRoute('/story/foo', '0')).toBe(true);
   });
 });
 

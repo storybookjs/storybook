@@ -1,13 +1,13 @@
 import type { NavigateFunction } from 'storybook/internal/router';
 import { type API } from 'storybook/manager-api';
 
-import { REVIEW_CHANGES_URL } from './constants.ts';
-import { type ReviewModeFilters, enterReviewMode, exitReviewMode } from './review-mode.ts';
+import { enterReviewMode, exitReviewMode, type ReviewModeFilters } from './review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
-  type ReviewNavEntry,
-  buildReviewStoryTarget,
+  buildReviewChangesSummaryHref,
+  buildReviewStoryNavigateHref,
   isReviewReturnSearch,
+  type ReviewNavEntry,
 } from './review-navigation.ts';
 import { reviewStore } from './review-store.ts';
 
@@ -24,8 +24,7 @@ export const navigateToReviewEntry = (
 ): void => {
   void enterReviewMode(api, filters);
   reviewStore.suppressSummaryOverlay();
-  api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex) });
-  navigate(buildReviewStoryTarget(entry));
+  navigate(buildReviewStoryNavigateHref(entry), { plain: true });
 };
 
 /** Navigate back to the review summary, entering (or staying in) review mode. */
@@ -36,7 +35,7 @@ export const navigateToReviewSummary = (
 ): void => {
   void enterReviewMode(api, filters);
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-  navigate(REVIEW_CHANGES_URL);
+  navigate(buildReviewChangesSummaryHref(), { plain: true });
 };
 
 /**
@@ -49,8 +48,9 @@ export const navigateOutOfReview = (
   navigate: NavigateFunction,
   returnSearch: string | null | undefined
 ): void => {
-  api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
   reviewStore.releaseSummaryOverlaySuppression();
+  reviewStore.suppressUrlSync();
+  api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
   void exitReviewMode(api);
 
   if (returnSearch && !isReviewReturnSearch(returnSearch)) {

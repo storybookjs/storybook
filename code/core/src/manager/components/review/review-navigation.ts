@@ -1,5 +1,13 @@
+import { queryFromLocation } from 'storybook/internal/router';
+
 import { REVIEW_CHANGES_URL } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
+
+/** Layout query param that collapses manager chrome during review. */
+export const REVIEW_FULL_QUERY_PARAM = 'full';
+
+const parseReviewLayoutFull = (value: unknown): boolean =>
+  value === '1' || value === 'true' || value === 1 || value === true;
 
 /** Fallback display name when the Storybook index has not resolved a title. */
 export const prettifyComponentId = (componentId: string) =>
@@ -17,7 +25,12 @@ export interface ReviewNavEntry {
 
 export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
 
-export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
+export const buildReviewChangesSummaryHref = () =>
+  `?${REVIEW_FULL_QUERY_PARAM}=1&path=${REVIEW_CHANGES_URL}`;
+
+/** Plain manager href for navigating to a review story (includes `full=1`). */
+export const buildReviewStoryNavigateHref = (entry: ReviewNavEntry): string =>
+  `?${REVIEW_FULL_QUERY_PARAM}=1&path=/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
 
 /** Default back target when no story has been visited yet. */
 export const STORYBOOK_ROOT_HREF = '/';
@@ -34,12 +47,9 @@ export const buildReviewStoryTarget = (entry: ReviewNavEntry): string =>
 
 /** Full `?path=` href for a review story, derived from the router target. */
 export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
-  `?path=${buildReviewStoryTarget(entry)}`;
+  buildReviewStoryNavigateHref(entry);
 
 export const parseReviewStoryHref = (href: string): ReviewNavEntry | null => {
-  if (!href.startsWith('?path=/story/')) {
-    return null;
-  }
   const query = href.startsWith('?') ? href.slice(1) : href;
   const params = new URLSearchParams(query);
   const path = params.get('path');
@@ -69,6 +79,16 @@ export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] =
 
 export const isReviewSummaryPath = (path: string): boolean =>
   path === REVIEW_CHANGES_URL || path === '/review';
+
+export const isReviewLayoutActive = (location?: { search?: string }): boolean =>
+  parseReviewLayoutFull(queryFromLocation(location)[REVIEW_FULL_QUERY_PARAM]);
+
+export const isReviewStoryRoute = (path: string, collectionParam: string | undefined): boolean =>
+  parseStoryIdFromPath(path) !== null && collectionParam !== undefined;
+
+/** True when the route is part of the review flow (summary or curated story). */
+export const isReviewRoute = (path: string, collectionParam: string | undefined): boolean =>
+  isReviewSummaryPath(path) || isReviewStoryRoute(path, collectionParam);
 
 /** True when a manager search string points back at a review route (not a canvas). */
 export const isReviewReturnSearch = (search: string): boolean => {

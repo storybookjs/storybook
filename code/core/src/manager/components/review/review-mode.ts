@@ -5,9 +5,8 @@ import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
 import { sessionStore } from './session-store.ts';
 
-// Persisted flag marking the manager as being in review mode. Review mode is
-// interaction-driven (never inferred from the URL) and survives reloads via
-// this key.
+// Persisted flag marking filter snapshot while review mode is active. Chrome
+// collapse is driven by the `full=1` layout query param in the URL.
 const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
 
 // Snapshot of the manager chrome (sidebar/addon panel visibility) taken when

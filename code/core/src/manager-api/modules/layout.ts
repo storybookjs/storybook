@@ -10,8 +10,8 @@ import { global } from '@storybook/global';
 
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
-import type { ThemeVars } from 'storybook/theming';
 import { deprecate } from 'storybook/internal/client-logger';
+import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 
 import merge from '../lib/merge.ts';
@@ -619,6 +619,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
   };
 
   const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
+  const initialOptions = api.getInitialOptions();
+  const merged = merge(initialOptions, persisted);
+  const layout = applyLayoutOptions(
+    merged.layout,
+    { layout: { showNav: merged.layout.showNav, showPanel: merged.layout.showPanel } },
+    !!singleStory
+  );
+  const state = { ...merged, layout };
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));
@@ -626,6 +634,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
   return {
     api,
-    state: merge(api.getInitialOptions(), persisted),
+    state,
   };
 };

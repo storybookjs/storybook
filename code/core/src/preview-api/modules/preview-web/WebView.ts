@@ -121,11 +121,9 @@ export class WebView implements View<HTMLElement> {
     this.currentLayoutClass = layoutClass;
   }
 
-  // Scope the BCP-47 language to the story's own root rather than `document.documentElement`.
-  // The document is shared — when stories render inline inside a docs page they live in the same
-  // document, so mutating the root `<html lang>` would leak one story's language onto its siblings
-  // and the surrounding docs prose. Setting it on the story root keeps it local; CSS hyphenation and
-  // assistive tech resolve `lang` from the nearest ancestor, so scoped content still behaves correctly.
+  /**
+   * Injects a BCP-47 lang attribute to the story root, or removes it if `lang` is null.
+   */
   applyHtmlLang(element: HTMLElement, lang?: string) {
     if (lang) {
       element.setAttribute('lang', lang);

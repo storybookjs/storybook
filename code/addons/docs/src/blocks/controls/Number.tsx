@@ -37,7 +37,6 @@ export const NumberControl: FC<NumberProps> = ({
   onBlur,
   onFocus,
   argType,
-  required,
 }) => {
   const [inputValue, setInputValue] = useState(typeof value === 'number' ? value : '');
   const [forceVisible, setForceVisible] = useState(false);
@@ -126,7 +125,6 @@ export const NumberControl: FC<NumberProps> = ({
         value={inputValue}
         valid={parseError ? 'error' : undefined}
         autoFocus={forceVisible}
-        aria-required={required || undefined}
         readOnly={readonly}
         {...{ name, min, max, step, onFocus, onBlur }}
       />

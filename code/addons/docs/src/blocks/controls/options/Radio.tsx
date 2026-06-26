@@ -63,7 +63,6 @@ export const RadioControl: FC<RadioProps> = ({
   onChange,
   isInline,
   argType,
-  required,
 }) => {
   if (!options) {
     logger.warn(`Radio with no options: ${name}`);
@@ -76,10 +75,7 @@ export const RadioControl: FC<RadioProps> = ({
 
   return (
     <Wrapper isInline={isInline}>
-      <legend className="sb-sr-only">
-        {name}
-        {required ? ' (required)' : ''}
-      </legend>
+      <legend className="sb-sr-only">{name}</legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (

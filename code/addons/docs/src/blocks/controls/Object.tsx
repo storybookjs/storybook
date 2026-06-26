@@ -170,7 +170,6 @@ export const ObjectControl: FC<ObjectProps> = ({
   value,
   onChange,
   argType,
-  required,
 }) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
@@ -249,7 +248,6 @@ export const ObjectControl: FC<ObjectProps> = ({
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
         readOnly={readonly}
-        aria-required={required || undefined}
       />
     </>
   );

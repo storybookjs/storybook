@@ -129,7 +129,6 @@ export const BooleanControl: FC<BooleanProps> = ({
   onBlur,
   onFocus,
   argType,
-  required,
 }) => {
   const onSetFalse = useCallback(() => onChange(false), [onChange]);
   const readonly = !!argType?.table?.readonly;
@@ -160,7 +159,6 @@ export const BooleanControl: FC<BooleanProps> = ({
         checked={parsedValue}
         role="switch"
         disabled={readonly}
-        aria-required={required || undefined}
         {...{ name, onBlur, onFocus }}
       />
       <span aria-hidden="true">False</span>

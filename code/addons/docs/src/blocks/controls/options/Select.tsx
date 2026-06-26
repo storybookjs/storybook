@@ -112,7 +112,6 @@ const SingleSelect: FC<SelectProps> = ({
   options,
   onChange,
   argType,
-  required,
 }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange(options[e.currentTarget.value]);
@@ -128,13 +127,7 @@ const SingleSelect: FC<SelectProps> = ({
       <label htmlFor={controlId} className="sb-sr-only">
         {name}
       </label>
-      <OptionsSelect
-        disabled={readonly}
-        id={controlId}
-        value={selection}
-        onChange={handleChange}
-        aria-required={required || undefined}
-      >
+      <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
         <option disabled={selection === NO_SELECTION} key="no-selection">
           {NO_SELECTION}
         </option>
@@ -156,7 +149,6 @@ const MultiSelect: FC<SelectProps> = ({
   options,
   onChange,
   argType,
-  required,
 }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selection = Array.from(e.currentTarget.options)
@@ -180,7 +172,6 @@ const MultiSelect: FC<SelectProps> = ({
         multiple
         value={selection}
         onChange={handleChange}
-        aria-required={required || undefined}
       >
         {Object.keys(options).map((key) => (
           <option key={key} value={key}>

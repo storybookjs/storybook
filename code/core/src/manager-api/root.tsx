@@ -201,7 +201,10 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {
-    if (state.path !== props.path) {
+    const locationSearchChanged = state.location?.search !== props.location?.search;
+    const pathChanged = state.path !== props.path;
+
+    if (pathChanged || locationSearchChanged) {
       return {
         ...state,
         location: props.location,
@@ -209,6 +212,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
         refId: props.refId,
         viewMode: props.viewMode,
         storyId: props.storyId!,
+        customQueryParams: url.getCustomQueryParams(props.location),
       };
     }
     return null!;

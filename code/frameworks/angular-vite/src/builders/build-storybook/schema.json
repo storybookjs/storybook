@@ -21,7 +21,7 @@
     "loglevel": {
       "type": "string",
       "description": "Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent].",
-      "pattern": "(silly|verbose|info|warn|error|silent)"
+      "pattern": "^(silly|verbose|info|warn|error|silent)$"
     },
     "enableProdMode": {
       "type": "boolean",

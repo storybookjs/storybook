@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { expect, within } from 'storybook/test';
+import { expect, screen, userEvent, within } from 'storybook/test';
 
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
@@ -542,7 +542,10 @@ export const Stale = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Code edits detected/)).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Prompt agent' })).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Prompt agent' }));
+    await expect(
+      await screen.findByRole('button', { name: 'Copy prompt to refresh this review' })
+    ).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
   },
 });

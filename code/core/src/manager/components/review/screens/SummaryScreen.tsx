@@ -7,7 +7,6 @@ import {
   DocumentWrapper,
   EmptyTabContent,
   IconButton,
-  PopoverProvider,
   ScrollArea,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -21,8 +20,8 @@ import {
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { Markdown } from '../components/Markdown.tsx';
-import { StaleNoticePopoverContent } from '../components/StaleNotice.tsx';
-import { HeaderNoticeText, ReviewHeader } from '../components/ReviewHeader.tsx';
+import { ReviewNotice } from '../components/StaleNotice.tsx';
+import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
   buildReviewStoryHref,
@@ -348,30 +347,11 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 {newStoryCount} new
               </Button>
             ) : null}
-            <div role="status" aria-live="polite" style={{ display: 'contents' }}>
-              {hasPendingUpdate && onAcceptPendingUpdate ? (
-                <>
-                  <HeaderNoticeText>Newer review available</HeaderNoticeText>
-                  <Button variant="outline" ariaLabel={false} onClick={onAcceptPendingUpdate}>
-                    Refresh review
-                  </Button>
-                </>
-              ) : isStale ? (
-                <>
-                  <HeaderNoticeText>Code edits detected</HeaderNoticeText>
-                  <PopoverProvider
-                    ariaLabel="Prompt to refresh stale review"
-                    placement="bottom-end"
-                    padding={0}
-                    popover={<StaleNoticePopoverContent />}
-                  >
-                    <Button variant="outline" ariaLabel={false}>
-                      Prompt agent
-                    </Button>
-                  </PopoverProvider>
-                </>
-              ) : null}
-            </div>
+            <ReviewNotice
+              isStale={isStale}
+              hasPendingUpdate={hasPendingUpdate}
+              onAcceptPendingUpdate={onAcceptPendingUpdate}
+            />
           </>
         }
       />

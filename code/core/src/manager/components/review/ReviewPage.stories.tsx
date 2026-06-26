@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -348,7 +348,10 @@ export const ToolbarStale = meta.story({
     emitMock(EVENTS.REVIEW_STALE);
 
     await expect(await canvas.findByText('Code edits detected')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Prompt agent' })).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Prompt agent' }));
+    await expect(
+      await screen.findByRole('button', { name: 'Copy prompt to refresh this review' })
+    ).toBeInTheDocument();
   },
 });
 

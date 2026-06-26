@@ -18706,6 +18706,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^8.48.0"
     "@typescript-eslint/parser": "npm:^8.48.0"
     "@typescript-eslint/rule-tester": "npm:^8.48.0"
+    "@typescript-eslint/types": "npm:^8.48.0"
     "@typescript-eslint/utils": "npm:^8.48.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
     eslint: "npm:^8.57.1"

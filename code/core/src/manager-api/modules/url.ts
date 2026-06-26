@@ -57,6 +57,16 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
+// URL query params the manager consumes for layout/navigation. Everything else is a custom param
+// passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
+// identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
+const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
+
+/** Single source of truth for the custom (non-layout) query params derived from the URL. */
+export const getCustomQueryParams = (
+  location: Parameters<typeof queryFromLocation>[0]
+): QueryParams => omit(queryFromLocation(location), LAYOUT_QUERY_PARAM_KEYS);
+
 // Initialize the state based on the URL.
 // NOTE:
 //   Although we don't change the URL when you change the state, we do support setting initial state
@@ -66,21 +76,12 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
 //     - nav: 0/1 -- show or hide the story list
 //
 //   We also support legacy URLs from storybook <5
-let prevParams: ReturnType<typeof queryFromLocation>;
+let prevParams: QueryParams;
 const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const {
-    full,
-    panel,
-    nav,
-    shortcuts,
-    addonPanel,
-    tabs,
-    path: queryPath,
-    ...otherParams // the rest gets passed to the iframe
-  } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -124,6 +125,7 @@ const initialUrlSupport = ({
   const selectedPanel = addonPanel || undefined;
 
   const storyId = storyIdFromUrl;
+  const otherParams = getCustomQueryParams(location);
   // Avoid returning a new object each time if no params actually changed.
   const customQueryParams = deepEqual(prevParams, otherParams) ? prevParams : otherParams;
   prevParams = customQueryParams;
@@ -163,6 +165,8 @@ export interface SubAPI {
    * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
    * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
    * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
+   * @param {boolean} [options.freeze] - Append the `freeze=finished` preview contract so the
+   *   preview settles to a static end frame and blocks interaction. Affects `previewHref` only.
    * @returns {Object} Manager and preview hrefs for the story.
    */
   getStoryHrefs(
@@ -174,6 +178,7 @@ export interface SubAPI {
       queryParams?: QueryParams;
       refId?: string;
       viewMode?: API_ViewMode;
+      freeze?: boolean;
     }
   ): { managerHref: string; previewHref: string };
   /**
@@ -245,6 +250,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         queryParams = {},
         refId,
         viewMode = 'story',
+        freeze = false,
       } = options;
 
       if (refId && !refs[refId]) {
@@ -283,9 +289,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       customManagerParams = customManagerParams && `&${customManagerParams}`;
       customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
 
+      const freezeParam = freeze ? '&freeze=finished' : '';
+
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}${freezeParam}`,
       };
     },
     getQueryParam(key) {

@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/p
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
@@ -58,10 +59,9 @@ export function getOrigin(address: string) {
 export function getMcpMetadataFromMainConfig(
   mainConfig: Pick<StorybookConfig, 'addons'>
 ): RuntimeInstanceRecord['mcp'] {
+  // Normalize entries so addons registered via `getAbsolutePath()` are recognized, not just bare names.
   const addon = mainConfig.addons?.find(
-    (entry) =>
-      entry === STORYBOOK_MCP_ADDON ||
-      (typeof entry === 'object' && entry.name === STORYBOOK_MCP_ADDON)
+    (entry) => normalizeAddonName(entry) === STORYBOOK_MCP_ADDON
   );
 
   if (!addon) {

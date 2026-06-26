@@ -79,6 +79,10 @@ export type {
   ModuleResolveConfig,
 } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
 export type {
+  moduleGraphServiceDef,
+  ModuleGraphService,
+} from '../shared/open-service/services/module-graph/definition.ts';
+export type {
   ImportEdge,
   ImportParser,
   ImportParserContext,

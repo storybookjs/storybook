@@ -84,6 +84,21 @@ export const teardown = async () => {
     if (storybookProcess?.pid) {
       treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
         if (error) {
+          const errno = error as NodeJS.ErrnoException;
+          // On Windows the process tree may already be gone by the time teardown runs
+          // (e.g. the user stopped Storybook, a port conflict caused an early exit, or
+          // watch mode finished before teardown). Treat those cases as success.
+          const alreadyGone =
+            errno.code === 128 ||
+            errno.code === 'ESRCH' ||
+            /not found|no running instance|no tasks/i.test(errno.message ?? '');
+
+          if (alreadyGone) {
+            logger.verbose('Storybook process already exited, skipping kill');
+            resolve();
+            return;
+          }
+
           logger.error('Failed to stop Storybook process:');
           reject(error);
           return;

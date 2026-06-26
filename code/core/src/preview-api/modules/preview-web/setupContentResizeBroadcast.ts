@@ -1,8 +1,8 @@
 import { global } from '@storybook/global';
 
-import { shouldFreeze } from './setupStoryFreezer.ts';
+import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
 
-export const IFRAME_RESIZE_CONTEXT = 'iframe.resize';
+import { shouldFreeze } from './setupStoryFreezer.ts';
 
 const EMBED_STYLE_ID = 'storybook-embed-sizing';
 

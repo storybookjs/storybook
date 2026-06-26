@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
+
 import {
-  IFRAME_RESIZE_CONTEXT,
   isPassThroughContainer,
   isViewportOverlayUnderlay,
   setupContentResizeBroadcast,

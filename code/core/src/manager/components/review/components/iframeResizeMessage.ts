@@ -1,4 +1,4 @@
-export const IFRAME_RESIZE_CONTEXT = 'iframe.resize';
+import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 
 /** Default `--content-w` / `--content-h` before the embed iframe reports its size. */
 export const DEFAULT_CONTENT_WIDTH = 300;
@@ -53,7 +53,9 @@ export const computeThumbnailThirds = (
   return Math.min(THUMBNAIL_THIRDS_MAX, Math.max(1, thirds));
 };
 
-/** Minimum preview frame height for a cell width and reported iframe content size. */
+/** Minimum preview frame height for subgrid row sizing. CSS `minHeight` on the
+ * frame does not propagate through subgrid; this pixel value is applied inline.
+ */
 export const computeThumbnailMinHeight = (
   contentWidth: number,
   contentHeight: number,

@@ -21,11 +21,6 @@ import {
 } from 'storybook/manager-api';
 
 import {
-  fallbackStoryInfo,
-  type StoryChangeStatus,
-  type StoryInfo,
-} from './components/CollectionGrid.tsx';
-import {
   AUTO_ENTERED_SESSION_KEY,
   EVENTS,
   PRE_REVIEW_RETURN_KEY,
@@ -47,6 +42,7 @@ import {
 import type { ReviewState } from './review-state.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
 import { reviewStore, type ReviewStoreState } from './review-store.ts';
+import { fallbackStoryInfo, type StoryChangeStatus, type StoryInfo } from './review-types.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 

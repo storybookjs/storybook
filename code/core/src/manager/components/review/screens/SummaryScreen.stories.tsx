@@ -4,8 +4,8 @@ import { expect, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
-import type { StoryInfo } from '../components/CollectionGrid.tsx';
 import type { ReviewState } from '../review-state.ts';
+import type { StoryInfo } from '../review-types.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const getStoryPreviewHref = (storyId: string) =>

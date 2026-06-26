@@ -2,7 +2,7 @@ import React, { useEffect, useRef, type FC } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { type StoryInfo } from './components/CollectionGrid.tsx';
+import { type StoryInfo } from './review-types.ts';
 import {
   buildReviewStoryHref,
   prettifyComponentId,

@@ -4,7 +4,8 @@ import { expect, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
-import { CollectionGrid, type StoryInfo } from './CollectionGrid.tsx';
+import type { StoryInfo } from '../review-types.ts';
+import { CollectionGrid } from './CollectionGrid.tsx';
 
 // 40 unique story IDs drawn from real internal stories.
 const fortyStoryIds = [

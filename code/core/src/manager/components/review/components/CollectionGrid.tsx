@@ -1,125 +1,15 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState, type FC } from 'react';
+import React, { type FC } from 'react';
 
 import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
+import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
 import {
+  computeThumbnailMinHeight,
   DEFAULT_CONTENT_HEIGHT,
   DEFAULT_CONTENT_WIDTH,
-  computeThumbnailMinHeight,
-  parseIframeResizeMessage,
-  type ContentDimensions,
 } from './iframeResizeMessage.ts';
-
-/**
- * Each thumbnail is a full Storybook preview iframe, and booting one fires
- * dozens of module requests. Mounting every in-view thumbnail at once (wide
- * grids, or "Review all") floods the browser's connection pool and trips
- * `net::ERR_INSUFFICIENT_RESOURCES`, leaving some iframes permanently blank.
- *
- * The scheduler below caps how many previews boot concurrently across the
- * whole review page. A cell enqueues a task before it sets the iframe `src`;
- * the task starts when a slot is free and finishes once the iframe loads
- * (or errors / settles), so previews drain in waves instead of all at once.
- * Hovering a cell promotes its task to start immediately, bypassing the cap.
- */
-const MAX_CONCURRENT_PREVIEWS = 3;
-/**
- * A started preview frees its slot when its iframe fires `load`, or after this
- * delay — whichever comes first. The timeout guarantees the queue keeps
- * draining automatically even when `load` is slow or never fires (so previews
- * advance in steady waves rather than waiting on a single stuck frame), while
- * still rate-limiting how fast new iframes boot to avoid flooding the network.
- */
-const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
-
-// IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
-// iframe within half a root-height of the fold, evict it past one and a half.
-// The gap is hysteresis so scrolling near a boundary doesn't thrash.
-const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
-const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
-
-interface PreviewTask {
-  /** Assigns the iframe src, kicking off the actual load. */
-  start: () => void;
-  started: boolean;
-  finished: boolean;
-}
-
-let activePreviewLoads = 0;
-const previewQueue: PreviewTask[] = [];
-
-function startQueuedPreviews(): void {
-  while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS) {
-    const task = previewQueue.shift();
-    if (!task) {
-      return;
-    }
-    if (task.started || task.finished) {
-      continue;
-    }
-    task.started = true;
-    activePreviewLoads += 1;
-    task.start();
-  }
-}
-
-function enqueuePreview(task: PreviewTask): void {
-  previewQueue.push(task);
-  startQueuedPreviews();
-}
-
-/** Mark a task done (load/error/settle/unmount) and let the next one start. */
-function finishPreview(task: PreviewTask): void {
-  if (task.finished) {
-    return;
-  }
-  task.finished = true;
-  if (task.started) {
-    activePreviewLoads = Math.max(0, activePreviewLoads - 1);
-  } else {
-    const index = previewQueue.indexOf(task);
-    if (index !== -1) {
-      previewQueue.splice(index, 1);
-    }
-  }
-  startQueuedPreviews();
-}
-
-/** Hover/focus: start a still-queued preview right away, bypassing the cap. */
-function forceStartPreview(task: PreviewTask): void {
-  if (task.started || task.finished) {
-    return;
-  }
-  const index = previewQueue.indexOf(task);
-  if (index !== -1) {
-    previewQueue.splice(index, 1);
-  }
-  task.started = true;
-  activePreviewLoads += 1;
-  task.start();
-}
-
-export type StoryChangeStatus = 'new' | 'modified';
-
-export interface StoryInfo {
-  title: string;
-  name: string;
-  isNewlyAdded?: boolean;
-  changeStatus?: StoryChangeStatus;
-}
-
-/** Best-effort labels when the Storybook index has not resolved a story yet. */
-export const fallbackStoryInfo = (storyId: string): StoryInfo => {
-  const separator = storyId.indexOf('--');
-  if (separator === -1) {
-    return { title: storyId, name: 'Story' };
-  }
-  return {
-    title: storyId.slice(0, separator),
-    name: storyId.slice(separator + 2) || 'Story',
-  };
-};
+import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
 // two rows. Overflow beyond the cap is hidden and a "Review all" cell takes the
@@ -150,12 +40,7 @@ const Grid = styled.div({
   alignItems: 'stretch',
   gap: 12,
   padding: 12,
-  // Fallback for browsers without container-query support: a single column and
-  // no two-row cap (every story is shown).
   gridTemplateColumns: 'minmax(0, 1fr)',
-  // Bands are mutually exclusive (ranged) so a narrower band's overflow rules
-  // never bleed into a wider one. The .98 upper bounds sit just below the next
-  // band's integer `min-width` so the two never both match at the boundary.
   '@container review-grid (max-width: 629.98px)': band(1),
   '@container review-grid (min-width: 630px) and (max-width: 844.98px)': band(2),
   '@container review-grid (min-width: 845px) and (max-width: 1259.98px)': band(3),
@@ -170,17 +55,13 @@ const Cell = styled.div({
   minWidth: 0,
 });
 
-// Preview frame is a container so `100cqw` tracks the cell width. Content size
-// arrives via `--content-w` / `--content-h`; scale and aspect ratio follow in CSS.
+// Visual fit (scale, aspect ratio) lives in CSS; subgrid row growth uses inline
+// minHeight from computeThumbnailMinHeight — CSS minHeight does not propagate.
 const Frame = styled.a(({ theme }) => ({
   position: 'relative',
   display: 'block',
   width: '100%',
   height: '100%',
-  // Floor height from aspect-ratio so the grid row grows when iframe resize
-  // updates `--content-*`. `minHeight: 0` let subgrid rows stay at the
-  // placeholder size and clip tall stories after dimensions arrived.
-  minHeight: 'calc(100cqw * var(--thirds) / 3)',
   alignSelf: 'stretch',
   containerType: 'inline-size',
   containerName: 'preview-frame',
@@ -220,8 +101,6 @@ const Preview = styled.iframe(({ theme }) => ({
   pointerEvents: 'none',
 }));
 
-// The info/action bar below the preview: the component/story label stretches
-// and ellipsizes on the left; the action slot on the right never wraps.
 const ActionBar = styled.div({
   display: 'flex',
   alignItems: 'center',
@@ -281,58 +160,10 @@ const ReviewAllFrame = styled.div(({ theme }) => ({
   border: `1px dashed ${theme.appBorderColor}`,
 }));
 
-// The cell lives inside a scrollable container (the review page keeps a single
-// Radix ScrollArea as its scroller), not the document viewport. The lifecycle
-// observers must use that container as their `root`, otherwise `rootMargin` is
-// ignored and cells evict the moment they leave the scroller. Falls back to the
-// viewport (null) when there is no scroll container, e.g. fullscreen stories.
-const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
-  const radixViewport = element.closest<HTMLElement>('[data-radix-scroll-area-viewport]');
-  if (radixViewport) {
-    return radixViewport;
-  }
-  let current = element.parentElement;
-  while (current) {
-    const { overflowY } = window.getComputedStyle(current);
-    if (overflowY === 'auto' || overflowY === 'scroll') {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return null;
-};
-
-const isWithinPreloadRange = (
-  element: HTMLElement,
-  root: HTMLElement | null,
-  margin: number
-): boolean => {
-  const rect = element.getBoundingClientRect();
-  // Hidden cells (e.g. overflow beyond the two-row cap) have a zero-size box;
-  // don't seed them in-view or they'd boot iframes that never show.
-  if (rect.width === 0 && rect.height === 0) {
-    return false;
-  }
-  if (root) {
-    const rootRect = root.getBoundingClientRect();
-    return rect.bottom >= rootRect.top - margin && rect.top <= rootRect.bottom + margin;
-  }
-  const viewportHeight =
-    typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
-  return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
-};
-
 const deriveStoryInfo = (info: StoryInfo): { component: string; name: string } => ({
   component: info.title.split('/').pop() ?? info.title,
   name: info.name,
 });
-
-const getPreloadMargin = (scrollRoot: HTMLElement | null): number => {
-  if (!scrollRoot) {
-    return typeof window === 'undefined' ? 0 : window.innerHeight;
-  }
-  return scrollRoot.clientHeight || window.innerHeight;
-};
 
 const StoryPreviewCell: FC<{
   storyId: string;
@@ -341,202 +172,59 @@ const StoryPreviewCell: FC<{
   getPreviewHref: (storyId: string) => string;
   previewsPaused?: boolean;
 }> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
-  const hostRef = useRef<HTMLElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const previewsPausedRef = useRef(previewsPaused);
-  previewsPausedRef.current = previewsPaused;
-  const [isInView, setIsInView] = useState(false);
-  // Last reported iframe size; kept across eviction so the frame aspect ratio
-  // does not jump when the preview unmounts or while it remounts.
-  const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
-  const [frameWidth, setFrameWidth] = useState(0);
-  // `src` stays unset until the scheduler starts this preview; the iframe only
-  // mounts (and starts requesting) once it does.
-  const [src, setSrc] = useState<string | undefined>(undefined);
-  const taskRef = useRef<PreviewTask | null>(null);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) {
-      return undefined;
-    }
-    if (typeof IntersectionObserver === 'undefined') {
-      setIsInView(true);
-      return undefined;
-    }
-    const scrollRoot = getScrollRoot(host);
-    const effectiveRoot = scrollRoot && scrollRoot.clientHeight > 0 ? scrollRoot : null;
-    const markInViewIfClose = () => {
-      if (isWithinPreloadRange(host, effectiveRoot, getPreloadMargin(scrollRoot))) {
-        setIsInView(true);
-      }
-    };
-    // Snappy first paint for above-the-fold cells: the observers' initial
-    // callbacks are deferred to the next frame, so seed the state synchronously.
-    markInViewIfClose();
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => markInViewIfClose())
-        : undefined;
-    resizeObserver?.observe(host);
-    // Mount when the cell comes within the mount margin of the scroll root.
-    const mountObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-        }
-      },
-      { root: effectiveRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
-    );
-    // Evict once the cell moves beyond the (larger) evict margin, unmounting
-    // its iframe to free the preview runtime. The margin gap is hysteresis.
-    const evictObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && !previewsPausedRef.current) {
-          setIsInView(false);
-        }
-      },
-      { root: effectiveRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
-    );
-    mountObserver.observe(host);
-    evictObserver.observe(host);
-    return () => {
-      resizeObserver?.disconnect();
-      mountObserver.disconnect();
-      evictObserver.disconnect();
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    const host = hostRef.current;
-    if (!host) {
-      return undefined;
-    }
-    const updateWidth = () => {
-      setFrameWidth(host.clientWidth);
-    };
-    updateWidth();
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateWidth) : undefined;
-    resizeObserver?.observe(host);
-    return () => resizeObserver?.disconnect();
-  }, []);
-
-  // Eviction: when the cell scrolls well out of range, drop the iframe so its
-  // preview runtime is reclaimed. It re-enqueues (below) if it scrolls back.
-  // `rememberedDimensions` is left intact so the frame keeps its aspect ratio.
-  useEffect(() => {
-    if (!isInView && !previewsPaused) {
-      setSrc(undefined);
-    }
-  }, [isInView, previewsPaused]);
-
-  // Once in view, enqueue a scheduler task; it sets `src` when a slot frees.
-  useEffect(() => {
-    if (!isInView) {
-      return undefined;
-    }
-    const previewHref = getPreviewHref(storyId);
-    const task: PreviewTask = {
-      start: () => {
-        setSrc((current) => current ?? previewHref);
-      },
-      started: false,
-      finished: false,
-    };
-    taskRef.current = task;
-    enqueuePreview(task);
-    return () => {
-      // Unmounting / scrolling away before load frees the slot (or dequeues).
-      finishPreview(task);
-      taskRef.current = null;
-    };
-  }, [isInView, storyId, getPreviewHref]);
-
-  const finishCurrent = useCallback(() => {
-    if (taskRef.current) {
-      finishPreview(taskRef.current);
-    }
-  }, []);
-
-  // Hover or keyboard focus promotes this preview to start immediately.
-  const forceStartCurrent = useCallback(() => {
-    if (taskRef.current) {
-      forceStartPreview(taskRef.current);
-    }
-  }, []);
-
-  // Free this preview's slot a short time after it starts even if `load`
-  // hasn't fired, so the queue keeps draining automatically in steady waves.
-  useEffect(() => {
-    if (!src) {
-      return undefined;
-    }
-    const timer = setTimeout(finishCurrent, PREVIEW_SETTLE_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [src, finishCurrent]);
-
-  useEffect(() => {
-    if (!src) {
-      return undefined;
-    }
-
-    const handleMessage = (event: MessageEvent) => {
-      const iframe = iframeRef.current;
-      if (!iframe?.contentWindow || event.source !== iframe.contentWindow) {
-        return;
-      }
-
-      const dimensions = parseIframeResizeMessage(event.data);
-      if (!dimensions) {
-        return;
-      }
-
-      setRememberedDimensions(dimensions);
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [src]);
+  const {
+    cellRef,
+    frameRef,
+    iframeRef,
+    src,
+    rememberedDimensions,
+    frameWidth,
+    forceStartCurrent,
+    finishCurrent,
+  } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
 
   const { component, name } = deriveStoryInfo(info);
   const contentWidth = rememberedDimensions?.width ?? DEFAULT_CONTENT_WIDTH;
   const contentHeight = rememberedDimensions?.height ?? DEFAULT_CONTENT_HEIGHT;
-  const frameMinHeight =
+  const minHeight =
     frameWidth > 0 ? computeThumbnailMinHeight(contentWidth, contentHeight, frameWidth) : undefined;
 
+  const frameStyle = {
+    ...(rememberedDimensions
+      ? ({
+          '--content-w': rememberedDimensions.width,
+          '--content-h': rememberedDimensions.height,
+        } as React.CSSProperties)
+      : undefined),
+    ...(minHeight !== undefined ? { minHeight } : undefined),
+  };
+
+  const preview = src ? (
+    <Preview
+      ref={iframeRef}
+      title={storyId}
+      src={src}
+      data-content-width={rememberedDimensions?.width}
+      data-content-height={rememberedDimensions?.height}
+      tabIndex={-1}
+      scrolling="no"
+      onLoad={finishCurrent}
+      onError={finishCurrent}
+    />
+  ) : null;
+
   return (
-    <Cell data-cell data-testid="review-collection-grid-cell">
+    <Cell ref={cellRef} data-cell data-testid="review-collection-grid-cell">
       <Frame
         as={href ? 'a' : 'div'}
-        href={href}
-        ref={hostRef as React.RefObject<HTMLAnchorElement>}
-        style={{
-          ...(rememberedDimensions
-            ? ({
-                '--content-w': rememberedDimensions.width,
-                '--content-h': rememberedDimensions.height,
-              } as React.CSSProperties)
-            : undefined),
-          ...(frameMinHeight !== undefined ? { minHeight: frameMinHeight } : undefined),
-        }}
+        {...(href ? { href } : {})}
+        ref={frameRef as React.Ref<HTMLAnchorElement>}
+        style={frameStyle}
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}
       >
-        {src ? (
-          <Preview
-            ref={iframeRef}
-            title={storyId}
-            src={src}
-            data-content-width={rememberedDimensions?.width}
-            data-content-height={rememberedDimensions?.height}
-            tabIndex={-1}
-            scrolling="no"
-            onLoad={finishCurrent}
-            onError={finishCurrent}
-          />
-        ) : null}
+        {preview}
       </Frame>
       <ActionBar>
         <Label>

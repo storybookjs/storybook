@@ -20,7 +20,8 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
-import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
+import { CollectionGrid } from '../components/CollectionGrid.tsx';
+import type { StoryInfo } from '../review-types.ts';
 import { Markdown } from '../components/Markdown.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';

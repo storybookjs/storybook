@@ -149,6 +149,10 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
             map: s.generateMap({ hires: true, source: id }),
           };
         } catch (e) {
+          // Docgen extraction is best-effort: a failure for one file must not break the build.
+          // We still log it at debug level so silent extraction failures (e.g. checker setup
+          // issues) can be diagnosed instead of disappearing.
+          logger.debug(`vue-component-meta: failed to extract docgen for ${id}: ${String(e)}`);
           return undefined;
         }
       },
@@ -194,7 +198,10 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
 
   const defaultChecker = createCheckerByJson(
     projectRoot,
-    { include: ['**/*.{vue,ts,tsx,js,jsx,cjs,mjs}'] },
+    // tsconfig "include" globbing does not support brace expansion, extensions must be listed separately.
+    {
+      include: ['**/*.vue', '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.cjs', '**/*.mjs'],
+    },
     checkerOptions
   );
 

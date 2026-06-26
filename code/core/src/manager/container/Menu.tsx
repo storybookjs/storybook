@@ -218,7 +218,10 @@ export const useMenu = ({
       [
         [
           about,
-          ...(global.CONFIG_TYPE === 'DEVELOPMENT' ? [guide] : []),
+          ...(global.CONFIG_TYPE === 'DEVELOPMENT' &&
+          global.FEATURES?.menuOnboardingChecklist !== false
+            ? [guide]
+            : []),
           ...(enableShortcuts ? [shortcuts] : []),
         ],
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],

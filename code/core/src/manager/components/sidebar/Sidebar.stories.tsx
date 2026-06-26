@@ -15,12 +15,12 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
+import { internal_fullStatusStore as internal_ctaStatusStore } from 'storybook/manager-api';
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
 } from '../../manager-stores.mock.ts';
-import { internal_fullStatusStore as internal_ctaStatusStore } from 'storybook/manager-api';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { standardData as standardHeaderData } from './Heading.stories.tsx';
 import { DEFAULT_REF_ID, Sidebar } from './Sidebar.tsx';
@@ -228,7 +228,10 @@ export const SimpleNoChecklist: Story = {
   },
   beforeEach: () => {
     const features = global.FEATURES;
-    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
+    global.FEATURES = {
+      ...features,
+      sidebarOnboardingChecklist: false,
+    };
     return () => {
       global.FEATURES = features;
     };

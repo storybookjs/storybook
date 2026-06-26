@@ -52,7 +52,7 @@ You may need to update the port number in the URL. You will be prompted for a na
 
 You can also follow your agent's documentation to add the MCP server as a tool provider manually, for example in [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), or [OpenAI Codex](https://developers.openai.com/codex/mcp/).
 
-If you are using VS Code, you can configure the server directly in your workspace settings. For example:
+If you are using VS Code, you can configure the server directly in your workspace settings. For example, you can add the following to [.vscode/mcp.json](.vscode/mcp.json):
 
 ```json
 {
@@ -64,6 +64,8 @@ If you are using VS Code, you can configure the server directly in your workspac
   }
 }
 ```
+
+This makes the local MCP endpoint available to the VS Code client when Storybook is running.
 
 ### 3. Adjust your agent instructions
 

@@ -293,7 +293,12 @@ export function getReactDocgenImporter() {
   });
 }
 
-export function getImportTag(docgen: { description?: string }) {
+export function getImportTag(docgen: { description?: string; tags?: Record<string, string> }) {
+  // react-docgen-typescript surfaces parsed JSDoc tags directly on docgen.tags
+  const importTag = docgen?.tags?.import;
+  if (importTag) {
+    return importTag;
+  }
   const jsdocComment = docgen?.description;
   const tags = jsdocComment ? extractJSDocInfo(jsdocComment).tags : undefined;
   return tags?.import?.[0];

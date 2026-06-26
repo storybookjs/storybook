@@ -62,6 +62,7 @@ const makeManagerContext = (
     storyIds?: string[];
     reviewTitle?: string;
     navigate?: ReturnType<typeof fn>;
+    navigateUrl?: ReturnType<typeof fn>;
     toggleNav?: ReturnType<typeof fn>;
     togglePanel?: ReturnType<typeof fn>;
     setAllTagFilters?: ReturnType<typeof fn>;
@@ -119,7 +120,7 @@ const makeManagerContext = (
       setAllTagFilters: options.setAllTagFilters ?? fn().mockName('api::setAllTagFilters'),
       setAllStatusFilters: options.setAllStatusFilters ?? fn().mockName('api::setAllStatusFilters'),
       navigate: options.navigate ?? fn().mockName('api::navigate'),
-      navigateUrl: options.navigate ?? fn().mockName('api::navigateUrl'),
+      navigateUrl: options.navigateUrl ?? fn().mockName('api::navigateUrl'),
     },
   };
 };
@@ -189,7 +190,8 @@ export const HiddenWhenZeroCounts: Story = {
   },
 };
 
-const navigateMock = fn().mockName('api::navigateUrl');
+const navigateMock = fn().mockName('api::navigate');
+const navigateUrlMock = fn().mockName('api::navigateUrl');
 const toggleNavMock = fn().mockName('api::toggleNav');
 const togglePanelMock = fn().mockName('api::togglePanel');
 const setAllTagFiltersMock = fn().mockName('api::setAllTagFilters');
@@ -201,7 +203,7 @@ export const OpenReview: Story = {
       storyIds: ['s1', 's2'],
       reviewTitle: 'Theme token cascade review',
       navigate: navigateMock,
-      navigateUrl: navigateMock,
+      navigateUrl: navigateUrlMock,
       toggleNav: toggleNavMock,
       togglePanel: togglePanelMock,
       setAllTagFilters: setAllTagFiltersMock,
@@ -212,6 +214,7 @@ export const OpenReview: Story = {
     eventListeners.clear();
     sessionStorage.clear();
     navigateMock.mockClear();
+    navigateUrlMock.mockClear();
     toggleNavMock.mockClear();
     togglePanelMock.mockClear();
     setAllTagFiltersMock.mockClear();
@@ -224,7 +227,8 @@ export const OpenReview: Story = {
     await expect(togglePanelMock).toHaveBeenCalledWith(false);
     await expect(setAllTagFiltersMock).toHaveBeenCalledWith([], []);
     await expect(setAllStatusFiltersMock).toHaveBeenCalledWith(['status-value:reviewing'], []);
-    await expect(navigateMock).toHaveBeenCalledWith('?full=1&path=/review/', {});
+    await expect(navigateUrlMock).toHaveBeenCalledWith('?full=1&path=/review/', {});
+    await expect(navigateMock).not.toHaveBeenCalled();
   },
 };
 

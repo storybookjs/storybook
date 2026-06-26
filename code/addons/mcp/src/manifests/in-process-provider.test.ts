@@ -39,11 +39,11 @@ const index: StoryIndex = {
 	},
 } as unknown as StoryIndex;
 
-const getDocgen = vi.fn();
-const getDocgenForAllComponents = vi.fn();
-const getStoryDocs = vi.fn();
-const getMdxForComponent = vi.fn();
-const getMdxForAllComponents = vi.fn();
+const docgen = vi.fn();
+const docgenForAllComponents = vi.fn();
+const storyDocs = vi.fn();
+const mdxForComponent = vi.fn();
+const mdxForAllComponents = vi.fn();
 
 function query<T extends (...args: any[]) => any>(loaded: T) {
 	return { loaded, get: vi.fn() };
@@ -54,16 +54,16 @@ beforeEach(() => {
 
 	vi.mocked(getStoryIndex).mockResolvedValue(index);
 
-	getDocgenForAllComponents.mockResolvedValue({
+	docgenForAllComponents.mockResolvedValue({
 		button: { id: 'button', name: 'Button', description: 'A button' },
 	});
-	getDocgen.mockResolvedValue({
+	docgen.mockResolvedValue({
 		id: 'button',
 		name: 'Button',
 		description: 'A button',
 		reactComponentMeta: { props: {} },
 	});
-	getStoryDocs.mockResolvedValue({
+	storyDocs.mockResolvedValue({
 		id: 'button',
 		name: 'Button',
 		path: 'src/Button.tsx',
@@ -72,14 +72,14 @@ beforeEach(() => {
 			'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
 		},
 	});
-	getMdxForComponent.mockResolvedValue({
+	mdxForComponent.mockResolvedValue({
 		id: 'intro--docs',
 		name: 'Intro',
 		docs: {
 			'intro--docs': { id: 'intro--docs', name: 'Intro', title: 'Intro', content: '# Welcome' },
 		},
 	});
-	getMdxForAllComponents.mockResolvedValue({
+	mdxForAllComponents.mockResolvedValue({
 		'intro--docs': {
 			id: 'intro--docs',
 			name: 'Intro',
@@ -89,17 +89,17 @@ beforeEach(() => {
 
 	vi.mocked(getDocgenService).mockResolvedValue({
 		queries: {
-			getDocgen: query(getDocgen),
-			getDocgenForAllComponents: query(getDocgenForAllComponents),
+			docgen: query(docgen),
+			docgenForAllComponents: query(docgenForAllComponents),
 		},
 	} as any);
 	vi.mocked(getStoryDocsService).mockResolvedValue({
-		queries: { getStoryDocs: query(getStoryDocs) },
+		queries: { storyDocs: query(storyDocs) },
 	} as any);
 	vi.mocked(getMdxService).mockResolvedValue({
 		queries: {
-			getMdxForComponent: query(getMdxForComponent),
-			getMdxForAllComponents: query(getMdxForAllComponents),
+			mdxForComponent: query(mdxForComponent),
+			mdxForAllComponents: query(mdxForAllComponents),
 		},
 	} as any);
 });
@@ -134,7 +134,7 @@ describe('createDocgenServerManifestAccess - manifestProvider', () => {
 			await manifestProvider(undefined, './services/core/story-docs/button.json'),
 		);
 
-		expect(getStoryDocs).toHaveBeenCalledWith({ id: 'button' });
+		expect(storyDocs).toHaveBeenCalledWith({ id: 'button' });
 		expect(json.components.button.stories['button--primary'].name).toBe('Primary');
 	});
 
@@ -163,9 +163,9 @@ describe('createDocgenServerManifestAccess - resolveEntry', () => {
 		const resolved = await resolveEntry('button');
 
 		expect(resolved?.kind).toBe('component');
-		expect(getDocgen).toHaveBeenCalledWith({ id: 'button' });
+		expect(docgen).toHaveBeenCalledWith({ id: 'button' });
 		// Crucially, the all-component extraction is never invoked for a single lookup.
-		expect(getDocgenForAllComponents).not.toHaveBeenCalled();
+		expect(docgenForAllComponents).not.toHaveBeenCalled();
 		if (resolved?.kind === 'component') {
 			expect(resolved.component.id).toBe('button');
 			expect(resolved.component.stories).toEqual([

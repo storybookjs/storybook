@@ -103,7 +103,7 @@ async function buildComponentsManifest(cls: IndexClassification): Promise<string
 	const docgenService = await getDocgenService();
 	// All components must be listed even without a prior extraction, so load (not just read).
 	const allDocgen = docgenService
-		? await docgenService.queries.getDocgenForAllComponents.loaded()
+		? await docgenService.queries.docgenForAllComponents.loaded()
 		: {};
 
 	const components: Record<string, Record<string, unknown>> = {};
@@ -129,7 +129,7 @@ async function buildDocsManifest(cls: IndexClassification): Promise<string | und
 	}
 
 	const mdxService = await getMdxService();
-	const allMdx = mdxService ? await mdxService.queries.getMdxForAllComponents.loaded() : {};
+	const allMdx = mdxService ? await mdxService.queries.mdxForAllComponents.loaded() : {};
 
 	const docs: Record<string, Record<string, unknown>> = {};
 	for (const [docId, entry] of cls.unattachedDocs) {
@@ -157,7 +157,7 @@ function matchStoryDocsServicePath(normalizedPath: string): string | undefined {
 async function buildStoryDocsServiceFile(id: string): Promise<string> {
 	const storyDocsService = await getStoryDocsService();
 	const payload = storyDocsService
-		? await storyDocsService.queries.getStoryDocs.loaded({ id })
+		? await storyDocsService.queries.storyDocs.loaded({ id })
 		: undefined;
 	return JSON.stringify({ components: payload === undefined ? {} : { [id]: payload } });
 }
@@ -173,14 +173,14 @@ async function resolveComponent(
 	]);
 
 	const [docgen, storyDocs] = await Promise.all([
-		docgenService ? docgenService.queries.getDocgen.loaded({ id }) : undefined,
-		storyDocsService ? storyDocsService.queries.getStoryDocs.loaded({ id }) : undefined,
+		docgenService ? docgenService.queries.docgen.loaded({ id }) : undefined,
+		storyDocsService ? storyDocsService.queries.storyDocs.loaded({ id }) : undefined,
 	]);
 
 	const attached = cls.attachedDocsByComponent.get(id) ?? [];
 	let docs: Record<string, CoreMdxDoc> | undefined;
 	if (attached.length > 0 && mdxService) {
-		const mdxPayload = await mdxService.queries.getMdxForComponent.loaded({ id });
+		const mdxPayload = await mdxService.queries.mdxForComponent.loaded({ id });
 		if (mdxPayload?.docs) {
 			docs = {};
 			for (const entry of attached) {
@@ -207,7 +207,7 @@ async function resolveComponent(
 async function resolveStandaloneDoc(id: string): Promise<ResolvedEntry | undefined> {
 	const mdxService = await getMdxService();
 	const payload = mdxService
-		? await mdxService.queries.getMdxForComponent.loaded({ id })
+		? await mdxService.queries.mdxForComponent.loaded({ id })
 		: undefined;
 	const doc = payload?.docs?.[id];
 	if (!doc) {

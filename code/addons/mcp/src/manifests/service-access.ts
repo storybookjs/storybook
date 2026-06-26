@@ -18,11 +18,11 @@ import { DOCGEN_SERVICE_ID, MDX_SERVICE_ID, STORY_DOCS_SERVICE_ID } from './vend
 
 /**
  * MDX service handle from `@storybook/addon-docs`. Core exports the manifest-writer
- * slice via {@link MdxServiceContract}; addon-docs also registers `getMdxForComponent`.
+ * slice via {@link MdxServiceContract}; addon-docs also registers `mdxForComponent`.
  */
 type MdxService = {
 	queries: MdxServiceContract['queries'] & {
-		getMdxForComponent: Query<{ id: string }, MdxPayload | undefined>;
+		mdxForComponent: Query<{ id: string }, MdxPayload | undefined>;
 	};
 };
 

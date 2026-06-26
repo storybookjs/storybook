@@ -28,11 +28,11 @@ export interface ArgControlProps {
 }
 
 /** Parent row toggles visibility purely with CSS (see `StyledTr` in `ArgRow`).  */
-export const SetupControlsLink = styled.span({
+const SetupControlsLink = styled.span({
   display: 'none',
 });
 
-export const NoControlPlaceholder = styled.span({
+const NoControlPlaceholder = styled.span({
   display: 'inline',
 });
 
@@ -97,7 +97,7 @@ export const ArgControl: FC<ArgControlProps> = ({
     // :hover and :focus-within, so the link stays reachable for keyboard users.
     return (
       <>
-        <SetupControlsLink>
+        <span className="sbdocs sbdocs-argcontrol-placeholder">
           <Link
             href="https://storybook.js.org/docs/essentials/controls?ref=ui"
             target="_blank"
@@ -105,10 +105,10 @@ export const ArgControl: FC<ArgControlProps> = ({
           >
             Setup controls
           </Link>
-        </SetupControlsLink>
-        <NoControlPlaceholder>
+        </span>
+        <span>
           <NoControl />
-        </NoControlPlaceholder>
+        </span>
       </>
     );
   }

@@ -9,7 +9,7 @@ import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
 import type { ArgControlProps } from './ArgControl';
-import { ArgControl, NoControlPlaceholder, SetupControlsLink } from './ArgControl';
+import { ArgControl } from './ArgControl';
 import { ArgJsDoc } from './ArgJsDoc';
 import { ArgValue } from './ArgValue';
 import type { ArgType, Args, TableAnnotation } from './types';
@@ -83,11 +83,14 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
 // When a row has no usable control, the "Setup controls" link is hidden and a placeholder dash is
 // shown. Hovering or focusing within the row swaps them, so keyboard users reach the link too.
 const StyledTr = styled.tr({
+  [`span.sbdocs-argcontrol-placeholder`]: {
+    display: 'none',
+  },
   '&:hover, &:focus-within': {
-    [`${SetupControlsLink}`]: {
+    [`span.sbdocs-argcontrol-placeholder`]: {
       display: 'inline',
     },
-    [`${NoControlPlaceholder}`]: {
+    [`span:not(.sbdocs-argcontrol-placeholder)`]: {
       display: 'none',
     },
   },

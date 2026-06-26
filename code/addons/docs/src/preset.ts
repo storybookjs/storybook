@@ -1,6 +1,7 @@
 import { isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -8,6 +9,7 @@ import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { CompileOptions } from './compiler';
+import { registerMdxService } from './mdx-service/server.ts';
 
 /**
  * Get the resolvedReact preset, which points either to the user's react dependencies or the react
@@ -212,6 +214,22 @@ export const resolvedReact = async (existing: any) => ({
   reactDom: existing?.reactDom ?? resolvePackageDir('react-dom'),
   mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  const features = await options.presets.apply('features');
+
+  if (
+    features?.experimentalDocgenServer &&
+    features?.componentsManifest &&
+    !options.ignorePreview
+  ) {
+    const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+    registerMdxService({
+      getIndex: () => generator.getIndex(),
+    });
+  }
+};
 
 const optimizeViteDeps = [
   '@storybook/addon-docs',

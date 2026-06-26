@@ -1,12 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resolve } from 'node:path';
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
 import { readRegistry } from './registry.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
 vi.mock('./registry.ts', { spy: true });
 vi.mock('./client.ts', { spy: true });
+vi.mock('./local-metadata.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -18,6 +21,14 @@ const record: StorybookInstanceRecord = {
   mcp: { status: 'ready', endpoint: '/mcp' },
 };
 
+const defaultRuntimeMetadata: StorybookAiMetadata = {
+  instructions: 'Follow the story workflow.',
+  tools: [
+    { name: 'list-all-documentation', description: 'List docs' },
+    { name: 'get-documentation', description: 'Get docs.' },
+  ],
+};
+
 beforeEach(() => {
   vi.mocked(readRegistry).mockReset().mockResolvedValue([record]);
   vi.mocked(callMcpTool)
@@ -26,6 +37,11 @@ beforeEach(() => {
   vi.mocked(listMcpTools)
     .mockReset()
     .mockResolvedValue([{ name: 'list-all-documentation', description: 'List docs' }]);
+  vi.mocked(loadStorybookAiMetadata).mockReset().mockResolvedValue(defaultRuntimeMetadata);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('runAiTool', () => {
@@ -43,6 +59,176 @@ describe('runAiTool', () => {
       exitCode: 0,
       output: 'upstream result',
       outcome: { kind: 'success' },
+    });
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
+    });
+  });
+
+  it('runs local tools from Storybook AI metadata without contacting the MCP server', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'local story instructions' }],
+          }),
+        },
+      },
+    });
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result).toEqual({
+      exitCode: 0,
+      output: 'local story instructions',
+      outcome: { kind: 'success' },
+    });
+    expect(readRegistry).not.toHaveBeenCalled();
+    expect(callMcpTool).not.toHaveBeenCalled();
+  });
+
+  it('runs any metadata-declared local tool locally even when a Storybook server is ready', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'custom-local-command', description: 'Run custom local work' }],
+      localTools: {
+        'custom-local-command': {
+          call: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'custom local result' }],
+          }),
+        },
+      },
+    });
+
+    const result = await runAiTool('custom-local-command', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result.output).toBe('custom local result');
+    expect(readRegistry).not.toHaveBeenCalled();
+    expect(callMcpTool).not.toHaveBeenCalled();
+  });
+
+  it('loads known local tools from a custom config dir option', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'custom config instructions' }],
+          }),
+        },
+      },
+    });
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+      configDir: 'config/storybook',
+    });
+
+    expect(result.output).toBe('custom config instructions');
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
+    });
+    expect(readRegistry).not.toHaveBeenCalled();
+  });
+
+  it('ignores --port validation for metadata-declared local tools', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'local story instructions' }],
+          }),
+        },
+      },
+    });
+
+    const result = await runAiTool('get-storybook-story-instructions', ['--port', 'abc'], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result).toEqual({
+      exitCode: 0,
+      output: 'local story instructions',
+      outcome: { kind: 'success' },
+    });
+    expect(readRegistry).not.toHaveBeenCalled();
+  });
+
+  it('surfaces metadata loading errors before checking for a server', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockRejectedValue(new Error('main config failed'));
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Storybook command metadata is unavailable');
+    expect(result.output).toContain('main config failed');
+    expect(result.outcome).toEqual({
+      kind: 'error',
+      error: expect.objectContaining({ name: 'LocalAiToolError' }),
+    });
+    expect(readRegistry).not.toHaveBeenCalled();
+    expect(callMcpTool).not.toHaveBeenCalled();
+  });
+
+  it('surfaces local tool error results with the stable MCP error wrapper', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'local failure' }],
+            isError: true,
+          }),
+        },
+      },
+    });
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result).toEqual({
+      exitCode: 1,
+      output: 'local failure',
+      outcome: { kind: 'error', error: expect.objectContaining({ name: 'McpToolResultError' }) },
+    });
+  });
+
+  it('wraps thrown local tool errors with a stable local command error', async () => {
+    const error = new Error('local command exploded');
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockRejectedValue(error),
+        },
+      },
+    });
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('local command exploded');
+    expect(result.outcome).toEqual({
+      kind: 'error',
+      error: expect.objectContaining({ name: 'LocalAiToolError', cause: error }),
     });
   });
 
@@ -74,6 +260,11 @@ describe('runAiTool', () => {
   });
 
   it('prints the no-instance repair markdown and exits non-zero when nothing runs at the cwd', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
+
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Storybook is running at this cwd');
@@ -81,11 +272,27 @@ describe('runAiTool', () => {
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
+  it('prints metadata upgrade guidance when no metadata exists even if a server is ready', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue(undefined);
+
+    const result = await runAiTool('get-storybook-story-instructions', [], {
+      cwd: '/projects/foo',
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Storybook command metadata is unavailable');
+    expect(result.output).toContain('@storybook/addon-mcp');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'addon-missing' });
+    expect(readRegistry).not.toHaveBeenCalled();
+    expect(callMcpTool).not.toHaveBeenCalled();
+  });
+
   it('routes to the instance on the requested --port when several share the cwd', async () => {
     const onOtherPort = { ...record, instanceId: 'inst-2', pid: 2, port: 6007 };
     vi.mocked(readRegistry).mockResolvedValue([record, onOtherPort]);
-    const result = await runAiTool('list-all-documentation', ['--port', '6007'], {
+    const result = await runAiTool('list-all-documentation', [], {
       cwd: '/projects/foo',
+      port: '6007',
     });
     expect(callMcpTool).toHaveBeenCalledWith(onOtherPort, expect.anything(), undefined);
     expect(result.exitCode).toBe(0);
@@ -103,8 +310,9 @@ describe('runAiTool', () => {
   });
 
   it('rejects an invalid --port without contacting the registry', async () => {
-    const result = await runAiTool('list-all-documentation', ['--port', 'abc'], {
+    const result = await runAiTool('list-all-documentation', [], {
       cwd: '/projects/foo',
+      port: 'abc',
     });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('`--port` must be a port number');
@@ -156,9 +364,27 @@ describe('runAiTool', () => {
     expect(result.output).toContain('"resource_link"');
   });
 
-  it('lists the available tools when the call fails because the tool is unknown', async () => {
+  it('does not call live MCP for commands hidden by preset metadata', async () => {
+    const result = await runAiTool('run-story-tests', [], { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Unknown command `run-story-tests`');
+    expect(result.output).toContain('- `list-all-documentation`');
+    expect(result.output).not.toContain('- `run-story-tests`');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
+    expect(readRegistry).not.toHaveBeenCalled();
+    expect(callMcpTool).not.toHaveBeenCalled();
+  });
+
+  it('lists the server tools when a metadata-visible runtime command is missing server-side', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      ...defaultRuntimeMetadata,
+      tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
+    });
     vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32601, 'unknown tool'));
+
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
+
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
@@ -166,6 +392,10 @@ describe('runAiTool', () => {
   });
 
   it('lists the available tools when the server reports the unknown tool as an error result', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      ...defaultRuntimeMetadata,
+      tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
+    });
     // addon-mcp (tmcp) reports unknown tools as an isError result, not a JSON-RPC error.
     vi.mocked(callMcpTool).mockResolvedValue({
       content: [{ type: 'text', text: 'Tool no-such-tool not found' }],
@@ -192,7 +422,7 @@ describe('runAiTool', () => {
     // Constant message keeps the telemetry error hash aggregatable; the tool's error text only
     // travels as `cause` (uploaded path-sanitized, and only with crash-reports consent).
     const error = (result.outcome as { error: Error }).error;
-    expect(error.message).toBe('The Storybook MCP server returned an error result');
+    expect(error.message).toBe('The Storybook AI command returned an error result');
     expect(error.cause).toBe('tests failed');
   });
 
@@ -207,6 +437,10 @@ describe('runAiTool', () => {
 
   it('prints the original JSON-RPC error when the tool list cannot be fetched', async () => {
     const error = new McpJsonRpcError(-32601, 'unknown tool');
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      ...defaultRuntimeMetadata,
+      tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
+    });
     vi.mocked(callMcpTool).mockRejectedValue(error);
     vi.mocked(listMcpTools).mockRejectedValue(new Error('boom'));
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
@@ -230,162 +464,336 @@ describe('runAiTool', () => {
     vi.mocked(readRegistry).mockResolvedValue([record, sibling]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple Storybook instances');
+    expect(result.output).toContain('Multiple matching Storybook instances');
+    expect(result.output).toContain('Matching instances at `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
     expect(result.output).toContain('upstream result');
   });
+
+  describe('when multiple instances exist in the selected agent bucket', () => {
+    const olderPreview = {
+      ...record,
+      agent: 'claude-preview',
+      instanceId: 'inst-2',
+      pid: 2,
+      port: 6007,
+      startedAt: '2026-06-09T10:00:00.000Z',
+      url: 'http://localhost:6007',
+    };
+    const selectedPreview = {
+      ...record,
+      agent: 'claude-preview',
+      instanceId: 'inst-3',
+      pid: 3,
+      port: 6008,
+      startedAt: '2026-06-09T11:00:00.000Z',
+      url: 'http://localhost:6008',
+    };
+    const newerCodex = {
+      ...record,
+      agent: 'codex',
+      instanceId: 'inst-4',
+      pid: 4,
+      port: 6009,
+      startedAt: '2026-06-09T12:00:00.000Z',
+      url: 'http://localhost:6009',
+    };
+
+    beforeEach(() => {
+      vi.stubEnv('AI_AGENT', 'claude');
+      vi.mocked(readRegistry).mockResolvedValue([olderPreview, selectedPreview, newerCodex]);
+    });
+
+    it('only warns about instances in the selected agent bucket', async () => {
+      const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
+
+      expect(callMcpTool).toHaveBeenCalledWith(
+        selectedPreview,
+        { name: 'list-all-documentation', arguments: {} },
+        undefined
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain('Multiple matching Storybook instances');
+      expect(result.output).toContain('Matching instances at `/projects/foo`');
+      expect(result.output).toContain('pid `2`');
+      expect(result.output).toContain('pid `3`');
+      expect(result.output).not.toContain('pid `4`');
+      expect(result.output).not.toContain('http://localhost:6009');
+    });
+  });
 });
 
 describe('buildStorybookCommandsHelp', () => {
   it('lists each tool with the first line of its description', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([
-      {
-        name: 'get-documentation',
-        description: 'Get docs for a component.\n\nLong details that should not appear.',
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      tools: [
+        {
+          name: 'get-documentation',
+          description: 'Get docs for a component.\n\nLong details that should not appear.',
+        },
+        { name: 'list-all-documentation' },
+        { name: 'get-storybook-story-instructions', description: 'Get story guidance.' },
+      ],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({ content: [] }),
+        },
       },
-      { name: 'list-all-documentation' },
-    ]);
+      instructions: 'Follow the story workflow.',
+    });
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
-      'Storybook commands (from the Storybook running at http://localhost:6006):'
+      `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`
     );
+    expect(section).toContain('# Storybook commands');
     expect(section).toContain('get-documentation');
+    expect(section).toContain('[requires Storybook] Get docs for a component.');
+    expect(section).toContain('get-storybook-story-instructions  [local]');
     expect(section).toContain('Get docs for a component.');
     expect(section).not.toContain('Long details');
     expect(section).toContain("Run 'storybook ai <command> --help'");
+    expect(readRegistry).not.toHaveBeenCalled();
   });
 
-  it('degrades to a note when no Storybook is running (help must not fail)', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([]);
+  it('prints workflow instructions before the dynamic commands list', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
+      instructions: 'Use existing stories as examples.\nRun tests after writing stories.',
+    });
+
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('Storybook commands: (unavailable');
-    expect(section).toContain('storybook dev');
-  });
-
-  it('lists the sibling ports when several instances run at the cwd', async () => {
-    const older = { ...record, instanceId: 'inst-2', pid: 2, port: 6007 };
-    const newest = { ...record, startedAt: '2026-06-10T12:00:00.000Z' };
-    vi.mocked(readRegistry).mockResolvedValue([newest, older]);
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('2 instances are running at this cwd');
-    expect(section).toContain('port 6006');
-    expect(section).toContain('other ports: 6007');
-    expect(section).toContain('`--port`');
-  });
-
-  it('names the port mismatch instead of claiming nothing is running', async () => {
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo', port: '9999' });
-    expect(section).toContain('Storybook commands: (unavailable');
-    expect(section).toContain('no instance on port `9999`');
-    expect(section).toContain('running ports: 6006');
-    expect(section).not.toContain('no running Storybook detected');
-  });
-
-  it('says the Storybook is starting up instead of claiming nothing is running', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'starting' } }]);
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('still starting up');
-  });
-
-  it('points at the missing addon instead of claiming nothing is running', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'not-installed' } }]);
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain('install `@storybook/addon-mcp`');
-  });
-
-  it('shows the Storybook version reported by the running instance', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, storybookVersion: '10.5.0' }]);
-    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
-    expect(section).toContain(
-      'Storybook commands (from the Storybook running at http://localhost:6006, Storybook 10.5.0):'
+    expect(section).toBe(
+      [
+        `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`,
+        '',
+        '# Storybook workflow instructions',
+        '',
+        'Use existing stories as examples.',
+        'Run tests after writing stories.',
+        '',
+        '# Storybook commands',
+        '',
+        '  get-documentation  [requires Storybook] Get docs for a component.',
+        '',
+        '[local] commands run from configuration metadata without a running Storybook.',
+        '[requires Storybook] commands are forwarded to the running Storybook server.',
+        '',
+        "Run 'storybook ai <command> --help' for a command's description and arguments.",
+      ].join('\n')
     );
   });
 
-  it('degrades to a note when the MCP server is unreachable', async () => {
-    vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
+  it('degrades to a note when the metadata preset is unavailable', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue(undefined);
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain('Storybook commands: (unavailable');
-    expect(section).toContain('could not be reached');
+    expect(section).toContain('does not expose AI command metadata');
+    expect(section).toContain('@storybook/addon-mcp');
+  });
+
+  it('degrades to a note when metadata loading fails', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockRejectedValue(new Error('main config failed'));
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('Storybook commands: (unavailable');
+    expect(section).toContain('could not be loaded');
   });
 
   it('degrades to a note when no tools are exposed', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([]);
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      tools: [],
+      instructions: '',
+    });
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain('provides no commands');
+  });
+
+  it('still lists commands when workflow instructions are absent', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
+      instructions: '   ',
+    });
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
+    expect(section).toContain('# Storybook commands');
+    expect(section).toContain('get-documentation');
+    expect(section).not.toContain('# Storybook workflow instructions');
+  });
+
+  it('ignores --port on the serverless help path', async () => {
+    const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo', port: 'abc' });
+    expect(section).toContain('Storybook help from the Storybook configuration');
+    expect(section).toContain('list-all-documentation');
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
+    });
+  });
+
+  it('loads the command section from a custom config dir', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      tools: [{ name: 'get-documentation', description: 'Get docs for a component.' }],
+      instructions: 'Follow the story workflow.',
+    });
+
+    const section = await buildStorybookCommandsHelp({
+      cwd: '/projects/foo',
+      configDir: 'config/storybook',
+    });
+
+    expect(section).toContain('get-documentation');
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
+    });
   });
 });
 
 describe('runAiToolHelp', () => {
   it('prints the description and arguments of a single tool', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([
-      {
-        name: 'get-documentation',
-        description: 'Get docs for a component.',
-        inputSchema: {
-          properties: { id: { type: 'string', description: 'Documentation id' } },
-          required: ['id'],
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'get-documentation',
+          description: 'Get docs for a component.',
+          inputSchema: {
+            properties: { id: { type: 'string', description: 'Documentation id' } },
+            required: ['id'],
+          },
         },
-      },
-    ]);
+      ],
+    });
 
     const result = await runAiToolHelp('get-documentation', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Usage: storybook ai get-documentation');
     expect(result.output).toContain('Get docs for a component.');
+    expect(result.output).toContain('Execution: requires a running Storybook.');
     expect(result.output).toContain('- `--id` (string, required): Documentation id');
     expect(result.outcome).toEqual({ kind: 'help' });
   });
 
+  it('marks local commands in single-command help', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance.' }],
+      localTools: {
+        'get-storybook-story-instructions': {
+          call: vi.fn().mockResolvedValue({ content: [] }),
+        },
+      },
+    });
+
+    const result = await runAiToolHelp('get-storybook-story-instructions', {
+      cwd: '/projects/foo',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Execution: local (no running Storybook required).');
+  });
+
   it('is reachable through runAiTool via a --help token after the tool name', async () => {
-    vi.mocked(listMcpTools).mockResolvedValue([
-      { name: 'get-documentation', description: 'Get docs.' },
-    ]);
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
     const result = await runAiTool('get-documentation', ['--help'], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Usage: storybook ai get-documentation');
     expect(result.outcome).toEqual({ kind: 'help' });
     expect(callMcpTool).not.toHaveBeenCalled();
+    expect(readRegistry).not.toHaveBeenCalled();
   });
 
-  it('honors a --port token given after the command name on the help path', async () => {
-    const result = await runAiTool('get-documentation', ['--port', '9999', '--help'], {
+  it('honors the config dir option on the help path after the tool name', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
+    const result = await runAiTool('get-documentation', ['--help'], {
+      cwd: '/projects/foo',
+      configDir: 'config/storybook',
+    });
+    expect(result.exitCode).toBe(0);
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
+    });
+  });
+
+  it('ignores --port tokens on the help path without needing a running server', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
+    const result = await runAiTool('get-documentation', ['--port', 'not-a-port', '--help'], {
       cwd: '/projects/foo',
     });
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('not on port `9999`');
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Usage: storybook ai get-documentation');
+    expect(readRegistry).not.toHaveBeenCalled();
   });
 
   it('lists the available tools for an unknown tool name', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'list-all-documentation', description: 'List docs' }],
+    });
     const result = await runAiToolHelp('no-such-tool', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `list-all-documentation`');
   });
 
-  it('prints repair markdown and exits non-zero on intercepts, still classified as help', async () => {
-    vi.mocked(readRegistry).mockResolvedValue([]);
+  it('prints metadata unavailable guidance when no preset metadata is exposed', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue(undefined);
     const result = await runAiToolHelp('get-documentation', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Storybook is not running at this cwd');
+    expect(result.output).toContain('Storybook command metadata is unavailable');
+    expect(result.output).toContain('@storybook/addon-mcp');
     expect(result.outcome).toEqual({ kind: 'help' });
   });
 
-  it('rejects an invalid --port', async () => {
+  it('ignores an invalid --port on direct help lookup', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
+
     const result = await runAiToolHelp('get-documentation', {
       cwd: '/projects/foo',
       port: 'abc',
     });
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('`--port` must be a port number');
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Usage: storybook ai get-documentation');
   });
 
-  it('surfaces a friendly error when the MCP server is unreachable', async () => {
-    vi.mocked(listMcpTools).mockRejectedValue(new Error('connection refused'));
+  it('loads direct help from a custom config dir', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [{ name: 'get-documentation', description: 'Get docs.' }],
+    });
+
+    const result = await runAiToolHelp('get-documentation', {
+      cwd: '/projects/foo',
+      configDir: 'config/storybook',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
+    });
+  });
+
+  it('surfaces metadata loading errors', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockRejectedValue(new Error('main config failed'));
     const result = await runAiToolHelp('get-documentation', { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach the Storybook server at /mcp');
+    expect(result.output).toContain('Storybook command metadata is unavailable');
+    expect(result.output).toContain('main config failed');
   });
 });

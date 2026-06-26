@@ -2,14 +2,14 @@ import React from 'react';
 
 import { expect, within } from 'storybook/test';
 
-import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
-import type { StoryInfo } from '../components/CollectionGrid.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { ReviewState } from '../review-state.ts';
+import type { StoryInfo } from '../review-types.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const getStoryPreviewHref = (storyId: string) =>
-  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
 
 const minimal: ReviewState = {
   title: 'Button prop rename',

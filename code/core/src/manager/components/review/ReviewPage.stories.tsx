@@ -85,9 +85,9 @@ const managerApi: API = {
   removeStatusFilters: fn().mockName('api::removeStatusFilters'),
   applyQueryParams: fn().mockName('api::applyQueryParams'),
   setQueryParams: fn().mockName('api::setQueryParams'),
-  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
+  getStoryHrefs: (storyId: string, options?: { embed?: boolean; freeze?: boolean }) => ({
     managerHref: `?path=/story/${storyId}`,
-    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
+    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.embed ? '&embed=true' : ''}${options?.freeze ? '&freeze=finished' : ''}`,
   }),
 } as unknown as API;
 

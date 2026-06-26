@@ -1,10 +1,11 @@
 import React from 'react';
 
-import { expect, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
-import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
-import { CollectionGrid, type StoryInfo } from './CollectionGrid.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
+import type { StoryInfo } from '../review-types.ts';
+import { CollectionGrid } from './CollectionGrid.tsx';
 
 // 40 unique story IDs drawn from real internal stories.
 const fortyStoryIds = [
@@ -98,7 +99,7 @@ const meta = preview.meta({
     storyIds: demoStoryIds,
     storyInfo: demoStoryInfo,
     getStoryPreviewHref: (storyId: string) =>
-      `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`,
+      `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`,
   },
 });
 
@@ -111,6 +112,13 @@ export const ManyStoriesOverflow = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: /Review all/i })).toBeInTheDocument();
+    const reviewAllFrame = canvasElement.querySelector('[data-review-all] > :first-child');
+    await expect(reviewAllFrame).toBeTruthy();
+    await waitFor(() => {
+      expect((reviewAllFrame as HTMLElement).getBoundingClientRect().height).toBeGreaterThanOrEqual(
+        50
+      );
+    });
   },
 });
 
@@ -125,6 +133,13 @@ export const FewStories = meta.story({
     await expect(
       canvasElement.querySelector<HTMLButtonElement>('[data-review-all] button')
     ).not.toBeVisible();
+
+    const frames = Array.from(cells).map((cell) => cell.firstElementChild as HTMLElement | null);
+    await waitFor(() => {
+      expect(frames.every((frame) => (frame?.clientHeight ?? 0) > 0)).toBe(true);
+    });
+    const [firstHeight, secondHeight] = frames.map((frame) => frame?.clientHeight ?? 0);
+    expect(firstHeight).toBe(secondHeight);
   },
 });
 

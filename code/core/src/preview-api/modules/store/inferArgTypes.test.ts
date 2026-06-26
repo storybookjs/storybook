@@ -191,4 +191,56 @@ describe('inferArgTypes', () => {
       },
     });
   });
+  it('uses JSON serialization semantics for key-aware toJSON on cyclic args', () => {
+    const cyclic: any = { a: 1 };
+    cyclic.self = cyclic;
+    Object.defineProperty(cyclic, 'toJSON', {
+      value: (key: string) => (key === 'a' ? { a: 1, self: 'cyclic reference' } : cyclic),
+      enumerable: false,
+    });
+
+    vi.mocked(logger.warn).mockClear();
+    expect(inferArgTypes({ initialArgs: { a: cyclic } } as any)).toEqual({
+      a: {
+        name: 'a',
+        type: {
+          name: 'object',
+          value: { a: { name: 'number' }, self: { name: 'string' } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('uses JSON serialization semantics for nested toJSON in cyclic args', () => {
+    const child: any = { value: 'child' };
+    child.self = child;
+    Object.defineProperty(child, 'toJSON', {
+      value: (key: string) =>
+        key === 'child' ? { value: 'child', self: 'cyclic reference' } : child,
+      enumerable: false,
+    });
+
+    const wrapper = { child };
+
+    vi.mocked(logger.warn).mockClear();
+    expect(inferArgTypes({ initialArgs: { wrapper } } as any)).toEqual({
+      wrapper: {
+        name: 'wrapper',
+        type: {
+          name: 'object',
+          value: {
+            child: {
+              name: 'object',
+              value: {
+                value: { name: 'string' },
+                self: { name: 'string' },
+              },
+            },
+          },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

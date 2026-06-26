@@ -96,17 +96,18 @@ export const inferArgTypes: ((context: InferArgTypesContext) => StrictArgTypes) 
         const argName = `${id}.${key}`;
         const type = inferType(arg, argName, new Set(), cache);
 
-        if (isCyclicType(type) && typeof arg?.toJSON === 'function') {
+        if (isCyclicType(type)) {
           try {
-            const jsonValue = arg.toJSON();
-            if (jsonValue !== arg) {
+            const json = JSON.stringify({ [key]: arg });
+            if (json !== undefined) {
+              const jsonValue = JSON.parse(json)[key];
               const serializedType = inferType(jsonValue, argName, new Set(), new Map());
               if (!isCyclicType(serializedType)) {
                 return [key, { name: key, type: serializedType }];
               }
             }
           } catch {
-            // toJSON() threw; fall through to the cycle warning below
+            // JSON serialization failed; fall through to the cycle warning below
           }
         }
 

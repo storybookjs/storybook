@@ -25,6 +25,8 @@ Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
+After installation, make sure Storybook's main config includes the addon in the `addons` array. In this repository that is wired in [packages/react/.storybook/main.ts](packages/react/.storybook/main.ts), where `@storybook/addon-mcp` is registered alongside the existing Storybook addons.
+
 In monorepo setups, the addon may need to be installed from the workspace root when Storybook is configured in a package subdirectory. Once installed, start Storybook from the package directory that owns the Storybook configuration so the local Vite config resolves correctly.
 
 ```bash

@@ -20,6 +20,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import type ts from 'typescript';
+import * as v8 from 'v8';
 
 import type { StoryRef } from '../getComponentImports.ts';
 import { groupByToMap } from '../utils.ts';
@@ -35,6 +36,20 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   allowJs: true,
   skipLibCheck: true,
 };
+
+/**
+ * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
+ * of the V8 heap limit.
+ *
+ * In docgen-server dev mode every save re-extracts the edited component's many dependents through the
+ * shared program. Its resident type-resolution cache is the dominant retained set (~2 GB on the
+ * internal Storybook) and sits permanently near the heap cap, so the next extraction's spike OOMs the
+ * dev server. Disposing the program reclaims that cache; extracted docs already live in the
+ * open-service state, so nothing user-visible is lost. The chosen ratio leaves headroom for one
+ * extraction's transient before the cap and was verified to flip a deterministic crash → survive at a
+ * tight cap. See `scripts/bench/docgen-memory/FINDINGS.md`.
+ */
+const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 
 export class ComponentMetaManager {
   // Adapted from:
@@ -56,7 +71,23 @@ export class ComponentMetaManager {
     [number | undefined, ts.IScriptSnapshot | undefined]
   >();
 
-  constructor(private typescript: typeof ts) {}
+  // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
+  private readonly heapRecycleThresholdBytes: number;
+
+  /**
+   * @param recycleHeapPressureRatio Fraction of the V8 heap limit at which the shared program(s) are
+   *   recycled (see {@link RECYCLE_HEAP_PRESSURE_RATIO}). Exposed for tuning and for the memory
+   *   regression gate, which passes `Infinity` to disable recycling and assert the OOM still happens
+   *   without the fix. Defaults to {@link RECYCLE_HEAP_PRESSURE_RATIO}.
+   */
+  constructor(
+    private typescript: typeof ts,
+    recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
+  ) {
+    this.heapRecycleThresholdBytes = Math.floor(
+      v8.getHeapStatistics().heap_size_limit * recycleHeapPressureRatio
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Adapted from:
@@ -95,6 +126,34 @@ export class ComponentMetaManager {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
+
+    this.recycleProjectsIfHeapPressured();
+  }
+
+  /**
+   * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
+   * limit, preventing the next extraction's spike from OOMing the dev server.
+   *
+   * tsconfig discovery (`rootTsConfigs` / `searchedDirs`), the file-snapshot cache, and the directory
+   * watchers are intentionally preserved: the next `getProjectForFile` recreates only the program it
+   * needs (a one-time cold build, the same cost paid once at startup) while file events keep flowing.
+   *
+   * Small projects never cross the threshold, so this is a no-op for them.
+   */
+  private recycleProjectsIfHeapPressured(): void {
+    if (this.configProjects.size === 0 && !this.inferredProject) {
+      return;
+    }
+    if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
+      return;
+    }
+
+    for (const project of this.configProjects.values()) {
+      project.dispose();
+    }
+    this.inferredProject?.dispose();
+    this.configProjects.clear();
+    this.inferredProject = undefined;
   }
 
   // ---------------------------------------------------------------------------

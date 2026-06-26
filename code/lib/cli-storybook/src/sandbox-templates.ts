@@ -960,11 +960,10 @@ const internalTemplates = {
       extraDevDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
       removeDependencies: ['babel-preset-react-app'],
       resolutions: {
-        '@babel/core': '^8.0.0',
-        '@babel/preset-env': '^8.0.0',
-        '@babel/preset-react': '^8.0.0',
-        '@babel/preset-typescript': '^8.0.0',
-        'babel-loader': '^8.0.0',
+        '@babel/core': '^7',
+        '@babel/preset-env': '^7',
+        '@babel/preset-react': '^7',
+        '@babel/preset-typescript': '^7',
       },
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(

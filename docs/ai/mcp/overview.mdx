@@ -15,7 +15,7 @@ Additionally, the API may change in future releases. We welcome feedback and con
 
 <If renderer={['react']}>
 
-Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents will be equipped to reuse your existing components and follow your documented usage guidelines when generating UI, helping ensure the generated UI is consistent with your existing design system. Then they can write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If any issues are found, the agent can fix them and re-run the tests to confirm they are resolved, creating a self-healing loop that helps ensure the quality of the generated UI without requiring you to intervene.
+Storybook's MCP server connects your Storybook to AI agents, allowing them to understand your components and documentation, generate stories, run tests, and more. Agents can reuse your existing components and follow your documented usage guidelines when generating UI, helping ensure the generated UI is consistent with your design system. They can also write stories so you can preview the generated UI and automatically run interaction tests (and accessibility checks) on those stories to validate their work. If issues are found, the agent can fix them and re-run the tests to confirm they are resolved, creating a self-healing loop that improves the quality of the generated UI.
 
 ## Installation
 
@@ -25,7 +25,18 @@ Run this command to install and register the Storybook MCP addon:
 
 <CodeSnippets path="addon-mcp-add.md" />
 
-Now, when running Storybook's dev server, you can access the MCP server at `http://localhost:6006/mcp` (your port may be different). When viewed in the browser, you'll see a page showing which tools are available and a link to the [manifest debugger](../manifests.mdx#debugging).
+In monorepo setups, the addon may need to be installed from the workspace root when Storybook is configured in a package subdirectory. Once installed, start Storybook from the package directory that owns the Storybook configuration so the local Vite config resolves correctly.
+
+```bash
+# from the workspace root
+npm install -D @storybook/addon-mcp
+
+# then start Storybook from the package that contains the Storybook config
+cd packages/react
+npm run storybook
+```
+
+When Storybook is running, you can access the MCP server at `http://127.0.0.1:6006/mcp` (or the port you configured). When opened in the browser, you will see a page showing the available tools and a link to the [manifest debugger](../manifests.mdx#debugging).
 
 ![The MCP server page in the browser](../../_assets/ai/addon-mcp-splash.png)
 
@@ -39,11 +50,24 @@ You may need to update the port number in the URL. You will be prompted for a na
 
 [`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool designed to simplify adding MCP servers to various agents.
 
-You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), [OpenAI Codex](https://developers.openai.com/codex/mcp/), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), etc.
+You can also follow your agent's documentation to add the MCP server as a tool provider manually, for example in [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), or [OpenAI Codex](https://developers.openai.com/codex/mcp/).
+
+If you are using VS Code, you can configure the server directly in your workspace settings. For example:
+
+```json
+{
+  "servers": {
+    "storybook-local": {
+      "type": "http",
+      "url": "http://127.0.0.1:6006/mcp"
+    }
+  }
+}
+```
 
 ### 3. Adjust your agent instructions
 
-To guide your agent to use your MCP server, you should adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents in your development process, but something like this is a good starting point. Just make sure to replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
+To guide your agent to use your MCP server, adjust your [`AGENTS.md`](https://agents.md/) (or [`CLAUDE.md`](https://code.claude.com/docs/en/memory#claude-md-files), if you're using Claude). The specifics will depend on your project and how you use agents, but the following is a good starting point. Just replace `your-project-sb-mcp` with the name you chose for your MCP server toolset in the previous step.
 
 ```md title="AGENTS.md"
 When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
@@ -52,14 +76,25 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 - Query `list-all-documentation` to get a list of all components
 - Query `get-documentation` for that component to see all available properties and examples
 - Only use properties that are explicitly documented or shown in example stories
-- If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
-- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
-- Check your work by running `run-story-tests`.
+- If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries, check back with the user in these cases
+- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories
+- Check your work by running `run-story-tests`
 
-Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
+Remember: a story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
 
-Finally, test your agent's access to the MCP server. First, make sure your Storybook is running, then run a prompt like "List all documented components". You should see a call to the [`list-all-documentation`](#list-all-documentation) tool with a response listing components from your Storybook.
+Finally, test your agent's access to the MCP server. Make sure Storybook is running, then ask your agent something like "List all documented components". You should see a call to the [`list-all-documentation`](#list-all-documentation) tool with a response listing components from your Storybook.
+
+### Troubleshooting
+
+If Storybook cannot resolve the Vite config when launched from the repository root, start it from the package directory that contains the Storybook configuration instead. For example:
+
+```bash
+cd packages/react
+npm run storybook
+```
+
+If the MCP endpoint is not reachable, verify that Storybook is running and that the addon is registered in the Storybook config.
 
 ## Usage
 
@@ -71,7 +106,7 @@ _Prompt: Build a login form_
 
 1. The agent queries the [docs toolset](#docs) to find components that match the requirements of a login form, e.g. a `TextInput` component for the username and password fields, and a `Button` component for the submit button.
 
-1. The agent queries the [docs toolset](#docs) again to reference more detailed information about specific components, e.g., it learns that the `TextInput` component has a `type` prop that can be set to "password" to obscure the input.
+1. The agent queries the [docs toolset](#docs) again to reference more detailed information about specific components, e.g. it learns that the `TextInput` component has a `type` prop that can be set to "password" to obscure the input.
 
 1. The agent generates a LoginForm component that composes those components together.
 
@@ -82,6 +117,7 @@ _Prompt: Build a login form_
 1. The agent updates the LoginForm component to use a different color (found by using the [docs toolset](#docs) to reference your documented theme colors) for the submit button.
 
 1. The agent uses the [testing toolset](#testing) to re-run the tests to confirm that the issue is resolved.
+
 1. The agent uses the [development toolset](#development) to show you previews of each relevant story.
 
 **2. Previewing work with stories**
@@ -94,9 +130,9 @@ _Prompt: Show me the Button in dark mode_
 
 _Prompt: Run tests for all the stories that contain the Header component_
 
-1. Agent uses grep (or "file system lookup") to determine which components use Header.
+1. The agent uses grep (or "file system lookup") to determine which components use Header.
 
-1. Agent finds all the stories for those components.
+1. The agent finds all the stories for those components.
 
 1. The agent uses the [testing toolset](#testing) to run tests on those stories, and returns a summary of the results.
 

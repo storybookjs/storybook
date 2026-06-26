@@ -88,7 +88,7 @@ export async function addGetStoryDocumentationTool(
 				// local source — single-source (no `source`) or the urlless `local` source in a
 				// composition. Remote sources (with a `url`) fall through to the fetch path.
 				if (ctx?.resolveEntry && !source?.url) {
-					const resolved = await ctx.resolveEntry(componentId);
+					const resolved = await ctx.resolveEntry(componentId, source);
 					if (resolved?.kind === 'component') {
 						component = resolved.component;
 					}

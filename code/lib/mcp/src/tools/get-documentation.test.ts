@@ -624,7 +624,7 @@ describe('getDocumentationTool', () => {
 			});
 
 			// The urlless local source is resolved in-process; the all-component index is never built.
-			expect(resolveEntry).toHaveBeenCalledWith('button');
+			expect(resolveEntry).toHaveBeenCalledWith('button', sources[0]);
 			expect(getManifestsSpy).not.toHaveBeenCalled();
 			expect((response.result as any).content[0].text).toContain('# Button');
 		});
@@ -928,7 +928,7 @@ http://remote.example.com/mcp`);
 			});
 
 			// The single-entry hook is used, and the all-component manifest index is never fetched.
-			expect(resolveEntry).toHaveBeenCalledWith('button');
+			expect(resolveEntry).toHaveBeenCalledWith('button', undefined);
 			expect(getManifestsSpy).not.toHaveBeenCalled();
 			expect((response.result as any).content[0].text).toContain('# Button');
 			expect((response.result as any).content[0].text).toContain('button--primary');
@@ -952,7 +952,7 @@ http://remote.example.com/mcp`);
 				custom: { request: mockHttpRequest, resolveEntry },
 			});
 
-			expect(resolveEntry).toHaveBeenCalledWith('intro');
+			expect(resolveEntry).toHaveBeenCalledWith('intro', undefined);
 			expect(getManifestsSpy).not.toHaveBeenCalled();
 			expect((response.result as any).content[0].text).toContain('# Welcome');
 		});

@@ -133,7 +133,7 @@ async function buildDocsManifest(cls: IndexClassification): Promise<string | und
 
 	const docs: Record<string, Record<string, unknown>> = {};
 	for (const [docId, entry] of cls.unattachedDocs) {
-		const payload = allMdx[docId]?.docs[docId];
+		const payload = allMdx[docId]?.docs?.[docId];
 		docs[docId] = {
 			id: docId,
 			name: entry.name,

@@ -23,13 +23,22 @@ import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const serverInstructions = readFileSync(
 	resolve(dirname(fileURLToPath(import.meta.url)), './src/instructions.md'),
 	'utf-8',
 );
+
+function resolveManifestFile(base: string, rel: string): string {
+	const resolvedBase = resolve(base);
+	const resolved = resolve(resolvedBase, rel);
+	if (resolved !== resolvedBase && !resolved.startsWith(resolvedBase + sep)) {
+		throw new Error(`Refusing to read manifest outside base: ${rel}`);
+	}
+	return resolved;
+}
 
 const adapter = new ValibotJsonSchemaAdapter();
 const server = new McpServer(
@@ -78,8 +87,11 @@ transport.listen({
 
 		if (isRemote) {
 			const res = await fetch(`${base.replace(/\/$/, '')}/${rel}`);
+			if (!res.ok) {
+				throw new Error(`Failed to fetch manifest (${res.status}) from ${res.url}`);
+			}
 			return await res.text();
 		}
-		return await fs.readFile(resolve(base, rel), 'utf-8');
+		return await fs.readFile(resolveManifestFile(base, rel), 'utf-8');
 	},
 });

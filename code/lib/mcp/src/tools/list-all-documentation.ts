@@ -7,6 +7,7 @@ import {
 	errorToMCPContent,
 	resolveComponentStories,
 } from '../utils/get-manifest.ts';
+import { mapWithConcurrency } from '../utils/map-with-concurrency.ts';
 import {
 	formatMultiSourceManifestsToLists,
 	formatManifestsToLists,
@@ -94,15 +95,18 @@ export async function addListAllDocumentationTool(
 					// parsed map's version. Resolution mutates the entries in place for formatting.
 					const components: Record<string, ComponentManifestEntry> =
 						manifests.componentManifest.components;
-					await Promise.all(
-						Object.entries(components).map(async ([id, component]) => {
-							components[id] = await resolveComponentStories(
-								component,
-								ctx?.request,
-								ctx?.manifestProvider,
-							);
-						}),
-					);
+					const entries = Object.entries(components);
+					const resolved = await mapWithConcurrency(entries, 16, async ([id, component]) => {
+						const storiesResolved = await resolveComponentStories(
+							component,
+							ctx?.request,
+							ctx?.manifestProvider,
+						);
+						return [id, storiesResolved] as const;
+					});
+					for (const [id, component] of resolved) {
+						components[id] = component;
+					}
 				}
 
 				const lists = formatManifestsToLists(manifests, {

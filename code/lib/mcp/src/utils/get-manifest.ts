@@ -321,7 +321,9 @@ export async function resolveComponentEntry(
 			...core,
 			...payload,
 			id: component.id,
-			name: payload.name ?? component.name,
+			name: component.name,
+			...(component.description !== undefined ? { description: component.description } : {}),
+			...(component.summary !== undefined ? { summary: component.summary } : {}),
 		};
 	}
 

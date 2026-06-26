@@ -246,8 +246,12 @@ export class CompositionAuth {
 
 		const text = await response.text();
 
-		const isComponentsManifest = url.includes('components.json');
-		const isDocsManifest = url.includes('docs.json');
+		// Only the top-level manifest paths are sanity-checked against their schemas.
+		// Split/ref service payloads (e.g. `.../services/addon-docs/mdx/<id>--docs.json`)
+		// must not be matched here, so use an exact pathname check rather than a substring.
+		const { pathname } = new URL(url);
+		const isComponentsManifest = pathname.endsWith('/manifests/components.json');
+		const isDocsManifest = pathname.endsWith('/manifests/docs.json');
 		const schema = isComponentsManifest
 			? ComponentManifestMap
 			: isDocsManifest

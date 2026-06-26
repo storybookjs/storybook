@@ -219,7 +219,7 @@ export async function getManifests(
  * with pointer `["components", "button"]`. The same base (`manifests/`) applies to
  * docgen, story-docs and MDX refs.
  */
-export function parseDocgenRef(ref: string): { path: string; pointer: string[] } {
+export function parseManifestRef(ref: string): { path: string; pointer: string[] } {
 	const [filePath = '', hash = ''] = ref.split('#');
 
 	// Directory of the component manifest (e.g. "manifests/"), used as the base for
@@ -248,7 +248,7 @@ async function fetchRefValue<T>(
 	provider: ManifestProvider,
 	source: Source | undefined,
 ): Promise<T> {
-	const { path, pointer } = parseDocgenRef(ref);
+	const { path, pointer } = parseManifestRef(ref);
 	const jsonString = await provider(request, path, source);
 
 	let target: unknown;
@@ -313,6 +313,7 @@ export async function resolveComponentEntry(
 		name: component.name,
 		...(component.description !== undefined ? { description: component.description } : {}),
 		...(component.summary !== undefined ? { summary: component.summary } : {}),
+		...(component.error !== undefined ? { error: component.error } : {}),
 	};
 
 	if (docgenRef) {
@@ -324,6 +325,7 @@ export async function resolveComponentEntry(
 			name: component.name,
 			...(component.description !== undefined ? { description: component.description } : {}),
 			...(component.summary !== undefined ? { summary: component.summary } : {}),
+			...(component.error !== undefined ? { error: component.error } : {}),
 		};
 	}
 

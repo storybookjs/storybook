@@ -10,7 +10,10 @@ export async function mapWithConcurrency<T, R>(
 		return [];
 	}
 
-	const concurrency = Math.max(1, Math.min(limit, items.length));
+	// Guard against a non-finite `limit` (e.g. NaN), which would otherwise make
+	// `concurrency` NaN and spawn zero workers, leaving results unfilled.
+	const safeLimit = Number.isFinite(limit) ? limit : items.length;
+	const concurrency = Math.max(1, Math.min(safeLimit, items.length));
 	const results = Array<R>(items.length);
 	let nextIndex = 0;
 

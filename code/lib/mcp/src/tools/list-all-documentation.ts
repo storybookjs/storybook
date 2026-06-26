@@ -58,6 +58,40 @@ export async function addListAllDocumentationTool(
 						ctx.manifestProvider,
 					);
 
+					// Like single-source mode, split/ref (v1) sources keep stories behind a
+					// `$ref`; resolve them per source so story sub-bullets render. Failures
+					// are isolated to a source so one bad source can't break the whole list.
+					if (withStoryIds) {
+						await Promise.all(
+							multiSourceManifests.map(async (sourceManifest) => {
+								if (sourceManifest.error || sourceManifest.notice) return;
+								try {
+									const components: Record<string, ComponentManifestEntry> =
+										sourceManifest.componentManifest.components;
+									const entries = Object.entries(components);
+									const resolved = await mapWithConcurrency(
+										entries,
+										16,
+										async ([id, component]) => {
+											const storiesResolved = await resolveComponentStories(
+												component,
+												ctx.request,
+												ctx.manifestProvider,
+												sourceManifest.source,
+											);
+											return [id, storiesResolved] as const;
+										},
+									);
+									for (const [id, component] of resolved) {
+										components[id] = component;
+									}
+								} catch {
+									// Leave this source's rows unresolved rather than failing the listing.
+								}
+							}),
+						);
+					}
+
 					const lists = formatMultiSourceManifestsToLists(multiSourceManifests, {
 						withStoryIds,
 					});

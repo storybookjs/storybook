@@ -3,7 +3,7 @@ import {
 	getManifests,
 	getMultiSourceManifests,
 	ManifestGetError,
-	parseDocgenRef,
+	parseManifestRef,
 	resolveComponentEntry,
 	resolveComponentStories,
 	resolveDoc,
@@ -604,23 +604,23 @@ Invalid key: Expected "components" but received undefined]`);
 	});
 });
 
-describe('parseDocgenRef', () => {
+describe('parseManifestRef', () => {
 	it('resolves a `../`-prefixed ref relative to the component manifest location', () => {
-		expect(parseDocgenRef('../services/core/docgen/button.json#/components/button')).toEqual({
+		expect(parseManifestRef('../services/core/docgen/button.json#/components/button')).toEqual({
 			path: './services/core/docgen/button.json',
 			pointer: ['components', 'button'],
 		});
 	});
 
 	it('resolves a sibling ref within the manifests directory', () => {
-		expect(parseDocgenRef('./button.json#/components/button')).toEqual({
+		expect(parseManifestRef('./button.json#/components/button')).toEqual({
 			path: './manifests/button.json',
 			pointer: ['components', 'button'],
 		});
 	});
 
 	it('decodes JSON-pointer escape sequences', () => {
-		expect(parseDocgenRef('../x.json#/a~1b/c~0d')).toEqual({
+		expect(parseManifestRef('../x.json#/a~1b/c~0d')).toEqual({
 			path: './x.json',
 			pointer: ['a/b', 'c~d'],
 		});

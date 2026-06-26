@@ -34,11 +34,11 @@ const payload: StoryDocsPayload = {
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 
-/** Builds a minimal `core/story-docs` service mock whose `getStoryDocs.loaded` returns `loaded`. */
+/** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   mockedGetService.mockReturnValue({
     queries: {
-      getStoryDocs: Object.assign(() => payload, { loaded }),
+      storyDocs: Object.assign(() => payload, { loaded }),
     },
   } as unknown as StoryDocsService);
 }

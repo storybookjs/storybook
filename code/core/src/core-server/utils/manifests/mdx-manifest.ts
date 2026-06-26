@@ -44,7 +44,7 @@ export interface MdxPayload {
 }
 
 /**
- * Shape of one MDX service snapshot document, and of the live `getMdxForAllComponents` output once
+ * Shape of one MDX service snapshot document, and of the live `mdxForAllComponents` output once
  * wrapped under `components`. Both resolve the same `$ref` JSON pointers.
  */
 export interface MdxRefDocument {
@@ -69,7 +69,7 @@ export type DocsManifestEntry = MdxDocPayload | DocsManifestRefEntry;
 /** Minimal consumer handle for reading every MDX payload from the live service (dev). */
 export interface MdxServiceContract {
   queries: {
-    getMdxForAllComponents: {
+    mdxForAllComponents: {
       loaded: () => Promise<Record<string, MdxPayload>>;
     };
   };

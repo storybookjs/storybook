@@ -48,6 +48,12 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     const docsContext = context.loaded?.docsContext as DocsContextProps | undefined;
     invariant(docsContext, 'docsContext is required to mock story-docs for docs block stories');
 
+    // The docs blocks only consume the story-docs service when this feature is enabled, but it is
+    // disabled by default in production builds (e.g. Chromatic). Enable it here so the service-backed
+    // story renders the mocked data instead of falling back to the non-service path.
+    const previousFeatures = globalThis.FEATURES;
+    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+
     const payload = createStoryDocsPayload(docsContext, of, data);
     unregisterService('core/story-docs');
     const service = registerService(storyDocsServiceDef, {
@@ -73,6 +79,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
     return () => {
       unregisterService('core/story-docs');
+      globalThis.FEATURES = previousFeatures;
     };
   };
 }

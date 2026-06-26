@@ -5,11 +5,11 @@
 import type { IncludeExcludeOptions } from 'storybook/internal/csf';
 import { isExportStory } from 'storybook/internal/csf';
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { ASTUtils } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import { getDescriptor, getMetaObjectExpression } from '../utils/index.ts';
-import { isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
+import { ASTUtils, isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resolve } from 'node:path';
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
 import { readRegistry } from './registry.ts';
@@ -60,8 +61,8 @@ describe('runAiTool', () => {
       outcome: { kind: 'success' },
     });
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/.storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
     });
   });
 
@@ -133,8 +134,8 @@ describe('runAiTool', () => {
 
     expect(result.output).toBe('custom config instructions');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
     expect(readRegistry).not.toHaveBeenCalled();
   });
@@ -545,7 +546,7 @@ describe('buildStorybookCommandsHelp', () => {
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
-      'Storybook help from the Storybook configuration at /projects/foo/.storybook:'
+      `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`
     );
     expect(section).toContain('# Storybook commands');
     expect(section).toContain('get-documentation');
@@ -566,7 +567,7 @@ describe('buildStorybookCommandsHelp', () => {
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toBe(
       [
-        'Storybook help from the Storybook configuration at /projects/foo/.storybook:',
+        `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`,
         '',
         '# Storybook workflow instructions',
         '',
@@ -625,8 +626,8 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('Storybook help from the Storybook configuration');
     expect(section).toContain('list-all-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/.storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
     });
   });
 
@@ -643,8 +644,8 @@ describe('buildStorybookCommandsHelp', () => {
 
     expect(section).toContain('get-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 });
@@ -717,8 +718,8 @@ describe('runAiToolHelp', () => {
     });
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 
@@ -783,8 +784,8 @@ describe('runAiToolHelp', () => {
 
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 

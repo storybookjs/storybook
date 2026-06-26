@@ -17,6 +17,19 @@ export type InferArgTypesContext<TRenderer extends Renderer = Renderer> = Pick<
   'id' | 'argTypes' | 'initialArgs'
 >;
 
+const isCyclicType = (type: SBType): boolean => {
+  if (type.name === 'other' && type.value === 'cyclic object') {
+    return true;
+  }
+  if (type.name === 'object' && type.value) {
+    return Object.values(type.value).some((t) => isCyclicType(t));
+  }
+  if (type.name === 'array' && type.value) {
+    return isCyclicType(type.value);
+  }
+  return false;
+};
+
 const inferType = (
   value: any,
   name: string,
@@ -42,13 +55,6 @@ const inferType = (
 
     // Check for cycles (currently being processed in this path)
     if (visited.has(value)) {
-      logger.warn(dedent`
-        We've detected a cycle in arg '${name}'. Args should be JSON-serializable.
-
-        Consider using the mapping feature or fully custom args:
-        - Mapping: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values
-        - Custom args: https://storybook.js.org/docs/essentials/controls#fully-custom-args
-      `);
       return { name: 'other', value: 'cyclic object' };
     }
 
@@ -86,13 +92,36 @@ export const inferArgTypes: ((context: InferArgTypesContext) => StrictArgTypes) 
   const argTypes = Object.fromEntries(
     Object.entries(initialArgs)
       .filter(([key]) => !userArgTypes[key]?.type)
-      .map(([key, arg]) => [
-        key,
-        {
-          name: key,
-          type: inferType(arg, `${id}.${key}`, new Set(), cache),
-        },
-      ])
+      .map(([key, arg]) => {
+        const argName = `${id}.${key}`;
+        const type = inferType(arg, argName, new Set(), cache);
+
+        if (isCyclicType(type) && typeof arg?.toJSON === 'function') {
+          try {
+            const jsonValue = arg.toJSON();
+            if (jsonValue !== arg) {
+              const serializedType = inferType(jsonValue, argName, new Set(), new Map());
+              if (!isCyclicType(serializedType)) {
+                return [key, { name: key, type: serializedType }];
+              }
+            }
+          } catch {
+            // toJSON() threw; fall through to the cycle warning below
+          }
+        }
+
+        if (isCyclicType(type)) {
+          logger.warn(dedent`
+            We've detected a cycle in arg '${argName}'. Args should be JSON-serializable.
+
+            Consider using the mapping feature or fully custom args:
+            - Mapping: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values
+            - Custom args: https://storybook.js.org/docs/essentials/controls#fully-custom-args
+          `);
+        }
+
+        return [key, { name: key, type }];
+      })
   );
   const userArgTypesNames = mapValues(userArgTypes, (argType, key) => ({
     name: key,

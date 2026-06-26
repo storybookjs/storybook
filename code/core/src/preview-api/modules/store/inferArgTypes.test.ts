@@ -144,6 +144,31 @@ describe('inferArgTypes', () => {
     });
   });
 
+  it('uses toJSON() result for cyclic objects that define a valid toJSON()', () => {
+    const cyclic: any = { a: 1 };
+    cyclic.self = cyclic;
+    Object.defineProperty(cyclic, 'toJSON', {
+      value: () => ({ a: 1, self: 'cyclic reference' }),
+      enumerable: false,
+    });
+
+    vi.mocked(logger.warn).mockClear();
+    expect(
+      inferArgTypes({
+        initialArgs: { a: cyclic },
+      } as any)
+    ).toEqual({
+      a: {
+        name: 'a',
+        type: {
+          name: 'object',
+          value: { a: { name: 'number' }, self: { name: 'string' } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
   it('does not infer types for args that already have an argType', () => {
     expect(
       inferArgTypes({

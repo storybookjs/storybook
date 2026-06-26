@@ -11,7 +11,7 @@ export async function mapWithConcurrency<T, R>(
 	}
 
 	const concurrency = Math.max(1, Math.min(limit, items.length));
-	const results = new Array<R>(items.length);
+	const results = Array<R>(items.length);
 	let nextIndex = 0;
 
 	async function worker(): Promise<void> {

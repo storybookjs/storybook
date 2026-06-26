@@ -206,9 +206,7 @@ async function resolveComponent(
 
 async function resolveStandaloneDoc(id: string): Promise<ResolvedEntry | undefined> {
 	const mdxService = await getMdxService();
-	const payload = mdxService
-		? await mdxService.queries.mdxForComponent.loaded({ id })
-		: undefined;
+	const payload = mdxService ? await mdxService.queries.mdxForComponent.loaded({ id }) : undefined;
 	const doc = payload?.docs?.[id];
 	if (!doc) {
 		return undefined;

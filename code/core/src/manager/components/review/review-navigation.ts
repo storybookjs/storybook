@@ -84,7 +84,7 @@ export const isReviewLayoutActive = (location?: { search?: string }): boolean =>
   parseReviewLayoutFull(queryFromLocation(location)[REVIEW_FULL_QUERY_PARAM]);
 
 export const isReviewStoryRoute = (path: string, collectionParam: string | undefined): boolean =>
-  parseStoryIdFromPath(path) !== null && collectionParam !== undefined;
+  parseStoryIdFromPath(path) !== null && parseCollectionIndex(collectionParam) !== undefined;
 
 /** True when the route is part of the review flow (summary or curated story). */
 export const isReviewRoute = (path: string, collectionParam: string | undefined): boolean =>

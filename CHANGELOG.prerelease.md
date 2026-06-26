@@ -1,3 +1,42 @@
+## 10.5.0-alpha.8
+
+- Angular: Add versioned `@types/node` to packages installed during `storybook init` - [#34192](https://github.com/storybookjs/storybook/pull/34192), thanks @copilot-swe-agent!
+- Angular: Introduce @storybook/angular-vite package - [#34202](https://github.com/storybookjs/storybook/pull/34202), thanks @brandonroberts!
+- Angular: Use future-proof API for component reflection - [#35228](https://github.com/storybookjs/storybook/pull/35228), thanks @Sidnioulz!
+- Babel: Remove bugfixes from preset-env in v8 - [#35266](https://github.com/storybookjs/storybook/pull/35266), thanks @Sidnioulz!
+- Builder-Vite: Fix empty external globals imports - [#34348](https://github.com/storybookjs/storybook/pull/34348), thanks @raashish1601!
+- CLI: Exit process after successful build - [#34735](https://github.com/storybookjs/storybook/pull/34735), thanks @torleifhalseth!
+- CLI: Fix upgrade crash on Storybook latest version check - [#35156](https://github.com/storybookjs/storybook/pull/35156), thanks @yatishgoel!
+- CLI: Load Storybook AI help from preset metadata - [#35212](https://github.com/storybookjs/storybook/pull/35212), thanks @kasperpeulen!
+- CLI: Prefer agent-matched Storybook instances - [#35235](https://github.com/storybookjs/storybook/pull/35235), thanks @kasperpeulen!
+- CLI: Show MCP workflow instructions in AI help - [#35164](https://github.com/storybookjs/storybook/pull/35164), thanks @kasperpeulen!
+- CLI: Support Claude preview autoPort - [#35259](https://github.com/storybookjs/storybook/pull/35259), thanks @kasperpeulen!
+- Cli: Install MCP when upgrade is ran by agent - [#35215](https://github.com/storybookjs/storybook/pull/35215), thanks @huang-julien!
+- Controls: Prevent AbortError when rapidly resetting - [#34412](https://github.com/storybookjs/storybook/pull/34412), thanks @whdjh!
+- Controls: Prevent the save bar from covering the last control - [#35136](https://github.com/storybookjs/storybook/pull/35136), thanks @TheSeydiCharyyev!
+- Core: Fix npm dependency detection - [#35083](https://github.com/storybookjs/storybook/pull/35083), thanks @fallintoplace!
+- Core: Flush preview-api hook effects in portable stories - [#35224](https://github.com/storybookjs/storybook/pull/35224), thanks @lifeiscontent!
+- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
+- Core: Use UndoIcon for Review-changes clear button - [#34767](https://github.com/storybookjs/storybook/pull/34767), thanks @valentinpalkovic!
+- Docgen: Fix inferred argTypes from initial args overriding docgen and custom argTypes in experimentalDocgenServer mode - [#35196](https://github.com/storybookjs/storybook/pull/35196), thanks @JReinhold!
+- Docs: Add shallow MDX ref manifests for experimentalDocgenServer - [#35189](https://github.com/storybookjs/storybook/pull/35189), thanks @JReinhold!
+- Docs: Improve DocsParameters types - [#35190](https://github.com/storybookjs/storybook/pull/35190), thanks @mrginglymus!
+- Docs: Restore React 16/17 support in useServiceDocgen - [#35179](https://github.com/storybookjs/storybook/pull/35179), thanks @JReinhold!
+- Manager: Fix crash when toggling addon panel on mobile (LandmarkManager TypeError) - [#34790](https://github.com/storybookjs/storybook/pull/34790), thanks @valentinpalkovic!
+- Manager: Fix race condition in `experimental_setFilter` - [#35194](https://github.com/storybookjs/storybook/pull/35194), thanks @mrginglymus!
+- Measure & Outline: Honor the `disable` parameter - [#35150](https://github.com/storybookjs/storybook/pull/35150), thanks @yatishgoel!
+- ModuleGraph: Stop bumping the graph revision on story-index invalidation - [#35178](https://github.com/storybookjs/storybook/pull/35178), thanks @JReinhold!
+- NextJS: Support `as` prop in next/link mock - [#35148](https://github.com/storybookjs/storybook/pull/35148), thanks @yatishgoel!
+- Open Service: Split story docs from docgen service - [#35169](https://github.com/storybookjs/storybook/pull/35169), thanks @JReinhold!
+- Open-Service: Introduce query states (loading/error/success) - [#35214](https://github.com/storybookjs/storybook/pull/35214), thanks @JReinhold!
+- Open-Service: Type getService for core services per runtime - [#35242](https://github.com/storybookjs/storybook/pull/35242), thanks @JReinhold!
+- Preview: Preserve primitive args for non-ReactNode other types - [#35088](https://github.com/storybookjs/storybook/pull/35088), thanks @TheSeydiCharyyev!
+- PseudoStates: Preserve URL globals on story change - [#35211](https://github.com/storybookjs/storybook/pull/35211), thanks @Sidnioulz!
+- React Native: Remove babel deps from RN setup (not needed) - [#35243](https://github.com/storybookjs/storybook/pull/35243), thanks @dannyhw!
+- React: Align react-docgen versions - [#35271](https://github.com/storybookjs/storybook/pull/35271), thanks @Sidnioulz!
+- UI: Fix args not preserved in isolation mode - [#35055](https://github.com/storybookjs/storybook/pull/35055), thanks @sijie-Z!
+- Vue: Use AST to inject __docgenInfo correctly - [#35201](https://github.com/storybookjs/storybook/pull/35201), thanks @Sidnioulz!
+
 ## 10.5.0-alpha.7
 
 - CLI: Add `storybook ai <tool>` MCP passthrough behind `STORYBOOK_FEATURE_AI_CLI` - [#35125](https://github.com/storybookjs/storybook/pull/35125), thanks @kasperpeulen!

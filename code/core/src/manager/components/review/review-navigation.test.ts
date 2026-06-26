@@ -138,7 +138,9 @@ describe('path helpers', () => {
     expect(isReviewRoute('/review/', undefined)).toBe(true);
     expect(isReviewRoute('/story/foo', '0')).toBe(true);
     expect(isReviewRoute('/story/foo', undefined)).toBe(false);
+    expect(isReviewRoute('/story/foo', 'abc')).toBe(false);
     expect(isReviewStoryRoute('/story/foo', '0')).toBe(true);
+    expect(isReviewStoryRoute('/story/foo', 'abc')).toBe(false);
   });
 });
 

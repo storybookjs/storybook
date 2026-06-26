@@ -250,13 +250,14 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     const reviewRoute = isReviewRoute(path, collectionParam);
     const fullActive = isReviewLayoutActive(location);
+    const reviewModeActive = isReviewModeActive();
 
     if (reviewRoute && !fullActive) {
-      if (isSummaryVisible) {
+      if (isSummaryVisible && !reviewModeActive) {
         api.applyQueryParams({ full: '1' }, { replace: true });
         return;
       }
-      if (isReviewModeActive()) {
+      if (reviewModeActive) {
         void exitReviewMode(api);
         setIsInReviewMode(false);
       }

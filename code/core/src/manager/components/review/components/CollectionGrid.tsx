@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, type FC } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState, type FC } from 'react';
 
 import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
@@ -6,6 +6,7 @@ import { styled } from 'storybook/theming';
 import {
   DEFAULT_CONTENT_HEIGHT,
   DEFAULT_CONTENT_WIDTH,
+  computeThumbnailMinHeight,
   parseIframeResizeMessage,
   type ContentDimensions,
 } from './iframeResizeMessage.ts';
@@ -176,7 +177,10 @@ const Frame = styled.a(({ theme }) => ({
   display: 'block',
   width: '100%',
   height: '100%',
-  minHeight: 0,
+  // Floor height from aspect-ratio so the grid row grows when iframe resize
+  // updates `--content-*`. `minHeight: 0` let subgrid rows stay at the
+  // placeholder size and clip tall stories after dimensions arrived.
+  minHeight: 'calc(100cqw * var(--thirds) / 3)',
   alignSelf: 'stretch',
   containerType: 'inline-size',
   containerName: 'preview-frame',
@@ -345,6 +349,7 @@ const StoryPreviewCell: FC<{
   // Last reported iframe size; kept across eviction so the frame aspect ratio
   // does not jump when the preview unmounts or while it remounts.
   const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
+  const [frameWidth, setFrameWidth] = useState(0);
   // `src` stays unset until the scheduler starts this preview; the iframe only
   // mounts (and starts requesting) once it does.
   const [src, setSrc] = useState<string | undefined>(undefined);
@@ -400,6 +405,21 @@ const StoryPreviewCell: FC<{
       mountObserver.disconnect();
       evictObserver.disconnect();
     };
+  }, []);
+
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return undefined;
+    }
+    const updateWidth = () => {
+      setFrameWidth(host.clientWidth);
+    };
+    updateWidth();
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateWidth) : undefined;
+    resizeObserver?.observe(host);
+    return () => resizeObserver?.disconnect();
   }, []);
 
   // Eviction: when the cell scrolls well out of range, drop the iframe so its
@@ -480,6 +500,10 @@ const StoryPreviewCell: FC<{
   }, [src]);
 
   const { component, name } = deriveStoryInfo(info);
+  const contentWidth = rememberedDimensions?.width ?? DEFAULT_CONTENT_WIDTH;
+  const contentHeight = rememberedDimensions?.height ?? DEFAULT_CONTENT_HEIGHT;
+  const frameMinHeight =
+    frameWidth > 0 ? computeThumbnailMinHeight(contentWidth, contentHeight, frameWidth) : undefined;
 
   return (
     <Cell data-cell data-testid="review-collection-grid-cell">
@@ -487,14 +511,15 @@ const StoryPreviewCell: FC<{
         as={href ? 'a' : 'div'}
         href={href}
         ref={hostRef as React.RefObject<HTMLAnchorElement>}
-        style={
-          rememberedDimensions
+        style={{
+          ...(rememberedDimensions
             ? ({
                 '--content-w': rememberedDimensions.width,
                 '--content-h': rememberedDimensions.height,
               } as React.CSSProperties)
-            : undefined
-        }
+            : undefined),
+          ...(frameMinHeight !== undefined ? { minHeight: frameMinHeight } : undefined),
+        }}
         aria-label={href ? `Review story ${storyId}` : undefined}
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}

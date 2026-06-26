@@ -1,13 +1,19 @@
 import type { Channel } from 'storybook/internal/channels';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   SHARE_ISOLATE_MODE,
   SIDEBAR_FILTER_CHANGED,
-  AI_PROMPT_NUDGE,
 } from 'storybook/internal/core-events';
-import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
-import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
-import { getSessionId } from 'storybook/internal/telemetry';
+import {
+  type CacheEntry,
+  getLastEvents,
+  getSessionId,
+  type InitPayload,
+  telemetry,
+} from 'storybook/internal/telemetry';
+
+import { REVIEW_EVENTS, type ReviewPageviewPayload } from '../../shared/review/events.ts';
 
 export const makePayload = (
   userAgent: string,
@@ -49,5 +55,8 @@ export function initTelemetryChannel(channel: Channel) {
   });
   channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
     telemetry('ai-prompt-nudge', { id, origin });
+  });
+  channel.on(REVIEW_EVENTS.PAGEVIEW, ({ page, reviewCreatedAt }: ReviewPageviewPayload) => {
+    telemetry('ai-review', { action: 'pageview', page, reviewCreatedAt });
   });
 }

@@ -9,6 +9,9 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -16,9 +19,6 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { useNavigate } from 'storybook/internal/router';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import {
   fallbackStoryInfo,
@@ -31,8 +31,8 @@ import {
   PRE_REVIEW_RETURN_KEY,
   REVIEW_CHANGES_URL,
 } from './constants.ts';
-import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
 import { navigateOutOfReview } from './review-actions.ts';
+import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
@@ -45,8 +45,8 @@ import {
   resolveNavIndex,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
+import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
@@ -66,6 +66,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const displayedReviewRef = useRef<ReviewState | null>(null);
   displayedReviewRef.current = state;
+  // Last review page reported to telemetry; dedupes pageviews across re-renders.
+  const lastPageviewKeyRef = useRef<string | null>(null);
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -226,6 +228,30 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const activeIndex = activeEntry ? resolveNavIndex(flattenedEntries, activeEntry) : -1;
 
   const isSummaryVisible = isReviewSummaryPath(path);
+
+  // Report a "pageview" whenever the active review surface changes: the summary
+  // overlay, or a specific reviewed story's detail view. Keyed so re-renders that
+  // don't change the surface (or story) don't re-fire.
+  useEffect(() => {
+    if (!state) {
+      lastPageviewKeyRef.current = null;
+      return;
+    }
+    let page: 'summary' | 'detail' | null = null;
+    let key: string | null = null;
+    if (isSummaryVisible) {
+      page = 'summary';
+      key = 'summary';
+    } else if (isInReviewMode && activeEntry) {
+      page = 'detail';
+      key = `detail:${activeEntry.storyId}`;
+    }
+    if (!page || key === lastPageviewKeyRef.current) {
+      return;
+    }
+    lastPageviewKeyRef.current = key;
+    emit(EVENTS.PAGEVIEW, { page, reviewCreatedAt: state.createdAt });
+  }, [state, isSummaryVisible, isInReviewMode, activeEntry, emit]);
 
   // Re-sync the persisted review-mode flag on every navigation. Enter/exit
   // performed by the nav interceptor and shortcuts toggle it out of band before

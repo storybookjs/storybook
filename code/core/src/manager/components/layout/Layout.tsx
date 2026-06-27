@@ -192,7 +192,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
           </SidebarContainer>
         )}
-        {isMobile && (
+        {isMobile && !showPages && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
@@ -217,7 +217,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotPanel}
           </PanelContainer>
         )}
-        {isMobile && <Notifications />}
+        {isMobile && !showPages && <Notifications />}
       </>
       {isDragging && <DragShield style={{ cursor: dragCursor }} />}
     </LayoutContainer>

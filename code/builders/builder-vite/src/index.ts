@@ -11,6 +11,7 @@ import { build as viteBuild } from './build.ts';
 import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
 import type { ViteBuilder } from './types.ts';
 import { createViteServer } from './vite-server.ts';
+import { warmupPreview } from './warmup.ts';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 export { hasVitePlugins } from './utils/has-vite-plugins.ts';
@@ -60,11 +61,15 @@ export const start: ViteBuilder['start'] = async ({
   options,
   router,
   server: devServer,
+  warmupTargets,
 }) => {
   server = await createViteServer(options as Options, devServer);
 
   router.get('/iframe.html', iframeHandler(options as Options, server));
   router.use(server.middlewares);
+
+  // Kick off preview warmup without blocking startup; warmupRequest handles its own errors.
+  void warmupPreview(server, warmupTargets).catch(() => {});
 
   return {
     bail,

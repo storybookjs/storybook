@@ -16,6 +16,7 @@ import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
+import { getWarmupTargets } from './utils/get-warmup-targets.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
 import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware.ts';
 import { registerIndexJsonRoute } from './utils/index-json.ts';
@@ -128,6 +129,15 @@ export async function storybookDevServer(
 
   if (!options.ignorePreview) {
     logger.debug('Starting preview..');
+
+    // Compute the first entry's modules so the preview builder can pre-transform ("warm up") them
+    // during startup, instead of only when the browser's iframe requests the first story. Kept as
+    // an in-flight promise so we don't block the builder on full index extraction.
+    const warmupTargets = storyIndexGeneratorPromise
+      .then((generator) => generator.getIndex())
+      .then((index) => getWarmupTargets(index))
+      .catch(() => undefined);
+
     previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
@@ -135,6 +145,7 @@ export async function storybookDevServer(
         router: app,
         server,
         channel: options.channel,
+        warmupTargets,
       })
       .catch(async (e: unknown) => {
         logger.error('Failed to build the preview');

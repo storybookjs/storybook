@@ -311,6 +311,18 @@ export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
   trace(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
 }
 
+/**
+ * Modules a (lazy) preview builder can pre-transform ("warm up") during dev startup, so that the
+ * first story is already being built by the time the browser's iframe requests it.
+ *
+ * The paths mirror what `StoryStore.loadEntry` imports for the first entry: just the story file for
+ * a story, or the docs file plus every referenced CSF file for a docs entry. They are relative to
+ * the working directory, matching the entries' `importPath` in the story index.
+ */
+export interface PreviewWarmupTargets {
+  importPaths: string[];
+}
+
 export interface Builder<Config, BuilderStats extends Stats = Stats> {
   getConfig: (options: Options) => Promise<Config>;
   start: (args: {
@@ -319,6 +331,13 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
     router: ServerApp;
     server: HttpServer;
     channel: ChannelLike;
+    /**
+     * Resolves to the preview modules to warm up, or `undefined` when there is nothing to warm
+     * (e.g. an empty index). In flight when `start` is called — builders should not block startup
+     * on it, but await it at whatever point warming is most effective. Eager builders (e.g.
+     * webpack, which already compiles the whole preview) can ignore it.
+     */
+    warmupTargets?: Promise<PreviewWarmupTargets | undefined>;
   }) => Promise<void | {
     stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;

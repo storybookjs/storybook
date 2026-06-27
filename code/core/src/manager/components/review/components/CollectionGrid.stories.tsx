@@ -32,8 +32,8 @@ const fortyStoryIds = [
   'overlay-popover--with-hide-button',
   'overlay-popover--with-chrome',
   'manager-main--default',
-  'manager-main--about-page',
-  'manager-main--guide-page',
+  'manager-main--connection-lost',
+  'manager-main--server-timed-out',
 
   'manager-settings-aboutscreen--default',
   'manager-settings-guidepage--default',

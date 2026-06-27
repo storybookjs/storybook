@@ -58,8 +58,8 @@ const largeCascade: ReviewState = {
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
       storyIds: [
         'manager-main--default',
-        'manager-main--about-page',
-        'manager-main--guide-page',
+        'manager-settings-aboutscreen--default',
+        'manager-settings-guidepage--default',
         'manager-sidebar-sidebar--simple',
         'manager-sidebar-sidebar--with-refs',
         'manager-sidebar-sidebar--statuses-open',
@@ -123,7 +123,7 @@ const pagesAndBench: ReviewState = {
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
-        'manager-main--about-page',
+        'manager-main--default',
         'bench--es-build-analyzer',
       ],
     },
@@ -263,7 +263,11 @@ const manyCollections: ReviewState = {
     {
       title: 'Collection 09 — Manager main',
       rationale: 'Main manager page states.',
-      storyIds: ['manager-main--default', 'manager-main--about-page', 'manager-main--guide-page'],
+      storyIds: [
+        'manager-main--default',
+        'manager-settings-aboutscreen--default',
+        'manager-settings-guidepage--default',
+      ],
     },
     {
       title: 'Collection 10 — Manager settings',
@@ -424,8 +428,8 @@ const fortyStoryCollection: ReviewState = {
         'overlay-popover--with-hide-button',
         'overlay-popover--with-chrome',
         'manager-main--default',
-        'manager-main--about-page',
-        'manager-main--guide-page',
+        'manager-main--connection-lost',
+        'manager-main--server-timed-out',
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
         'manager-settings-shortcutsscreen--defaults',

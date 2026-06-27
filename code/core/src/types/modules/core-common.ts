@@ -618,6 +618,27 @@ export interface StorybookConfigRaw {
     experimentalDocgenServer?: boolean;
 
     /**
+     * Benchmarking toggle for `experimentalDocgenServer`. When true, the renderer docgen provider
+     * does NOT eagerly `import('typescript')` / pre-boot the component-meta manager at startup;
+     * instead the TypeScript module is loaded lazily on the first docgen request. Used to measure
+     * whether the eager import contends with the render-critical preview transforms.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalDocgenServerLazyTypescript?: boolean;
+
+    /**
+     * Benchmarking toggle for `experimentalDocgenServer`. When true, the preview
+     * `storyDocsSourceBeforeEach` hook becomes a no-op (no Code-panel snippet emission), so its
+     * cost can be isolated from story render/finish time.
+     *
+     * @default false
+     * @experimental
+     */
+    experimentalDocgenServerSkipStoryDocsBeforeEach?: boolean;
+
+    /**
      * Enable change detection
      * @default true
      */

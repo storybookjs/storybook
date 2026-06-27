@@ -16,6 +16,11 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
     return;
   }
+  // Benchmarking toggle: skip the story-docs snippet emission entirely so its cost can be
+  // isolated from story render/finish time.
+  if (globalThis.FEATURES?.experimentalDocgenServerSkipStoryDocsBeforeEach) {
+    return;
+  }
   if (shouldSkipStoryDocsEmit(context.parameters)) {
     return;
   }

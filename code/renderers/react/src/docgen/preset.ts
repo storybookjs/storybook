@@ -31,7 +31,15 @@ export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocg
   // up in parallel with the rest of server startup, so `await getSharedComponentMetaManager()`
   // below usually resolves instantly. The singleton memoizes and swallows its own errors, so this
   // is safe to leave unawaited.
-  void getSharedComponentMetaManager();
+  //
+  // The `experimentalDocgenServerLazyTypescript` benchmarking flag skips this pre-boot so the
+  // TypeScript import happens lazily on the first docgen request instead (see `features` types).
+  const features = (await (options.presets?.apply('features', {}) ?? Promise.resolve({}))) as {
+    experimentalDocgenServerLazyTypescript?: boolean;
+  };
+  if (!features.experimentalDocgenServerLazyTypescript) {
+    void getSharedComponentMetaManager();
+  }
 
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);

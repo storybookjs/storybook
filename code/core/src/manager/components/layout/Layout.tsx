@@ -223,7 +223,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     </LayoutContainer>
   );
 };
-
 const DragShield = styled.div({
   position: 'fixed',
   inset: 0,

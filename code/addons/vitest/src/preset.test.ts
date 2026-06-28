@@ -1,101 +1,103 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import {
+  createFileSystemCache,
+  getFrameworkName,
+  loadPreviewOrConfigFile,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+import {
+  experimental_UniversalStore,
+  experimental_getTestProviderStore,
+} from 'storybook/internal/core-server';
+import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from './constants.ts';
 import { experimental_serverChannel } from './preset.ts';
 
-const mockApply = vi.fn().mockImplementation((key) => {
-  if (key === 'core') {
-    return Promise.resolve({ builder: 'builder-vite' });
-  }
-  if (key === 'previewAnnotations') {
-    return Promise.resolve([]);
-  }
-  if (key === 'storyIndexGenerator') {
-    return Promise.resolve({
-      getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
-      onInvalidated: vi.fn(),
-    });
-  }
-  return Promise.resolve(undefined);
-});
-
-const mockOptions = {
-  configDir: '.storybook',
-  presets: {
-    apply: mockApply,
-  },
-} as unknown as Options;
-
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
-  return {
-    ...actual,
-    createFileSystemCache: vi.fn(() => ({
-      get: vi.fn().mockImplementation((key, defaultValue) => Promise.resolve(defaultValue ?? {})),
-      set: vi.fn().mockResolvedValue(undefined),
-    })),
-    getFrameworkName: vi.fn().mockResolvedValue('react-vite'),
-    loadPreviewOrConfigFile: vi.fn().mockReturnValue(undefined),
-    resolvePathInStorybookCache: vi.fn().mockReturnValue('/tmp/storybook-cache'),
-  };
-});
-
-const mockUnsubscribe = vi.fn();
-const mockStore = {
-  untilReady: vi.fn().mockResolvedValue(undefined),
-  getState: vi.fn().mockReturnValue({
-    currentRun: { startedAt: undefined, finishedAt: undefined },
-    config: {},
-  }),
-  setState: vi.fn(),
-  send: vi.fn(),
-  subscribe: vi.fn().mockReturnValue(mockUnsubscribe),
-  onStateChange: vi.fn(() => () => {}),
-};
-
-vi.mock('storybook/internal/core-server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
-  return {
-    ...actual,
-    experimental_UniversalStore: {
-      create: vi.fn(() => mockStore),
-    },
-    experimental_getTestProviderStore: vi.fn(() => ({
-      setState: vi.fn(),
-      onClearAll: vi.fn(),
-    })),
-  };
-});
-
-vi.mock('./node/boot-test-runner.ts', () => ({
-  runTestRunner: vi.fn(),
-}));
-
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-vi.mock('storybook/internal/telemetry', () => ({
-  cleanPaths: vi.fn((x) => x),
-  oneWayHash: vi.fn((x) => x),
-  sanitizeError: vi.fn((x) => x),
-  telemetry: vi.fn(),
-}));
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('./node/boot-test-runner.ts', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 describe('preset experimental_serverChannel', () => {
   let channel: Channel;
   let emitSpy: ReturnType<typeof vi.spyOn<Channel, 'emit'>>;
+  let mockApply: ReturnType<typeof vi.fn>;
+  let mockOptions: Options;
+  let mockUnsubscribe: ReturnType<typeof vi.fn>;
+  let mockStore: {
+    untilReady: ReturnType<typeof vi.fn>;
+    getState: ReturnType<typeof vi.fn>;
+    setState: ReturnType<typeof vi.fn>;
+    send: ReturnType<typeof vi.fn>;
+    subscribe: ReturnType<typeof vi.fn>;
+    onStateChange: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockApply = vi.fn().mockImplementation((key) => {
+      if (key === 'core') {
+        return Promise.resolve({ builder: 'builder-vite' });
+      }
+      if (key === 'previewAnnotations') {
+        return Promise.resolve([]);
+      }
+      if (key === 'storyIndexGenerator') {
+        return Promise.resolve({
+          getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+          onInvalidated: vi.fn(),
+        });
+      }
+      return Promise.resolve(undefined);
+    });
+
+    mockOptions = {
+      configDir: '.storybook',
+      presets: {
+        apply: mockApply,
+      },
+    } as unknown as Options;
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    vi.mocked(createFileSystemCache).mockReturnValue({
+      get: vi.fn().mockImplementation((key, defaultValue) => Promise.resolve(defaultValue ?? {})),
+      set: vi.fn().mockResolvedValue(undefined),
+    } as any);
+    vi.mocked(getFrameworkName).mockResolvedValue('react-vite');
+    vi.mocked(loadPreviewOrConfigFile).mockReturnValue(undefined);
+    vi.mocked(resolvePathInStorybookCache).mockReturnValue('/tmp/storybook-cache');
+
+    mockUnsubscribe = vi.fn();
+    mockStore = {
+      untilReady: vi.fn().mockResolvedValue(undefined),
+      getState: vi.fn().mockReturnValue({
+        currentRun: { startedAt: undefined, finishedAt: undefined },
+        config: {},
+      }),
+      setState: vi.fn(),
+      send: vi.fn(),
+      subscribe: vi.fn().mockReturnValue(mockUnsubscribe),
+      onStateChange: vi.fn(() => () => {}),
+    };
+
+    vi.mocked(experimental_UniversalStore.create).mockReturnValue(mockStore as any);
+    vi.mocked(experimental_getTestProviderStore).mockReturnValue({
+      setState: vi.fn(),
+      onClearAll: vi.fn(),
+    } as any);
+
+    vi.mocked(cleanPaths).mockImplementation((x) => x);
+    vi.mocked(oneWayHash).mockImplementation((x) => x);
+    vi.mocked(sanitizeError).mockImplementation((x) => x);
+    vi.mocked(telemetry).mockResolvedValue(undefined as any);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
     channel = new Channel({
       transport: {
         setHandler: vi.fn(),

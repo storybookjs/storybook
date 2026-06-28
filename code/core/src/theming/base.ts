@@ -113,6 +113,7 @@ export const tokens = {
       warning: '#7A4100',
       negative: '#C23400',
       critical: '#FFFFFF',
+      agentic: '#723aa6',
     },
     bgColor: {
       default: color.lightest,
@@ -122,6 +123,7 @@ export const tokens = {
       warning: '#FFF7EB',
       negative: '#FFF0EB',
       critical: '#D13800',
+      agentic: '#f5f0fa',
     },
     borderColor: {
       default: color.border,
@@ -131,6 +133,7 @@ export const tokens = {
       warning: '#FFCE85',
       negative: '#FFC3AD',
       critical: 'hsl(16 100% 100% / 0)',
+      agentic: '#e1d2ef',
     },
   },
   dark: {
@@ -144,6 +147,7 @@ export const tokens = {
       warning: '#FFAD33',
       negative: '#FF6933',
       critical: '#FF6933',
+      agentic: '#b07fdc',
     },
     bgColor: {
       default: '#222325',
@@ -153,6 +157,7 @@ export const tokens = {
       warning: 'hsl(101 100% 100% / 0)',
       negative: 'hsl(101 100% 100% / 0)',
       critical: 'hsl(101 100% 100% / 0)',
+      agentic: 'rgba(114,58,166,0.15)',
     },
     borderColor: {
       default: 'hsl(0 0% 100% / 0.1)',
@@ -162,6 +167,7 @@ export const tokens = {
       warning: 'hsl(36 100% 64% / 0.15)',
       negative: 'hsl(16 100% 64% / 0.15)',
       critical: '#FF6933',
+      agentic: 'rgba(114,58,166,0.35)',
     },
   },
 };

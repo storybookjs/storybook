@@ -12,7 +12,8 @@ import type { Polka } from 'polka';
 import { defineService } from '../../../shared/open-service/index.ts';
 import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
 import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
-import { registerDocgenServices } from '../../../shared/open-service/services/docgen/server.ts';
+import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
+import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsProvider } from '../../../shared/open-service/services/story-docs/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
@@ -44,7 +45,7 @@ describe('manifests', () => {
       id: 'addon-docs/mdx',
       initialState: { components },
       queries: {
-        getMdxForAllComponents: {
+        mdxForAllComponents: {
           input: v.void(),
           output: v.record(v.string(), v.unknown()),
           handler: (_input, ctx) => ctx.self.state.components,
@@ -388,9 +389,12 @@ describe('manifests', () => {
       }));
 
       registerTestModuleGraphService();
-      registerDocgenServices({
+      registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider,
+      });
+      registerStoryDocsService({
+        getIndex: () => mockGenerator.getIndex(),
         storyDocsProvider,
       });
 
@@ -910,7 +914,7 @@ describe('manifests', () => {
         };
 
         registerTestModuleGraphService();
-        registerDocgenServices({
+        registerDocgenService({
           getIndex: () => mockGenerator.getIndex(),
           docgenProvider: async () => ({
             id: 'button',
@@ -919,6 +923,9 @@ describe('manifests', () => {
             jsDocTags: {},
             stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
           }),
+        });
+        registerStoryDocsService({
+          getIndex: () => mockGenerator.getIndex(),
           storyDocsProvider: async () => ({
             id: 'button',
             name: 'Button',

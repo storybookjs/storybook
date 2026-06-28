@@ -18,7 +18,7 @@ export const localCommandSyncServiceDef = defineService({
   description: 'Internal demo service for validating local command execution and state sync.',
   initialState: { value: '' } satisfies LocalCommandState,
   queries: {
-    getValue: {
+    value: {
       description: 'Returns the current synchronized text value.',
       input: v.void(),
       output: v.string(),

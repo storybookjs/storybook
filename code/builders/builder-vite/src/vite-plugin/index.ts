@@ -9,7 +9,13 @@ import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { resolve } from 'pathe';
 import polka from 'polka';
-import type { InlineConfig, Plugin, PluginOption } from 'vite';
+import {
+  DevEnvironment,
+  type InlineConfig,
+  type Plugin,
+  type PluginOption,
+  resolveConfig,
+} from 'vite';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
@@ -36,10 +42,6 @@ export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOp
 }
 
 async function main(options?: UserOptions): Promise<PluginOption> {
-  // @ts-expect-error -- custom global flag to guard against duplicate plugin activation
-  if (globalThis.__sb_vite_plugin_active__) return [];
-  // @ts-expect-error -- custom global flag to guard against duplicate plugin activation
-  globalThis.__sb_vite_plugin_active__ = true;
   const finalOptions = {
     base: '/__storybook',
     configDir: resolve(options?.configDir ?? '.storybook'),
@@ -53,10 +55,6 @@ async function main(options?: UserOptions): Promise<PluginOption> {
 
   const sbPlugins = await pluginConfig(sb);
   const finalConfig = (await sb.presets.apply('viteFinal', { plugins: sbPlugins })) as InlineConfig;
-
-  const allPlugins = (await Promise.all(
-    (finalConfig.plugins ?? []).flat(3).filter(Boolean)
-  )) as Plugin[];
 
   const iframePath = fileURLToPath(
     import.meta.resolve('@storybook/builder-vite/input/iframe.html')
@@ -97,6 +95,14 @@ async function main(options?: UserOptions): Promise<PluginOption> {
             [bundlerOptionsKey]: {
               input: iframePath,
               external: [/\.\/sb-common-assets\/.*\.woff2/],
+            },
+          },
+          dev: {
+            async createEnvironment(name, config, context) {
+              return new DevEnvironment('client', await resolveConfig(finalConfig, 'serve'), {
+                ...context,
+                hot: true,
+              });
             },
           },
         };
@@ -144,20 +150,21 @@ async function main(options?: UserOptions): Promise<PluginOption> {
 
           await sb.presets.apply('experimental_serverChannel', channel);
         } else {
-          // middleware mode
-          const eventEmitter = new EventEmitter();
-          const channel = createServerChannel(eventEmitter, '/storybook-server-channel', wsToken);
-          sb.channel = channel;
+          const globalWithChannel = globalThis as typeof globalThis & {
+            __SB_CHANNEL_UPGRADE__?: EventEmitter;
+            __SB_CHANNEL__?: ReturnType<typeof createServerChannel>;
+          };
+          const sharedUpgrades = (globalWithChannel.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
 
-          await sb.presets.apply('experimental_serverChannel', channel);
-
-          server.middlewares.use((req, res, next) => {
-            if (req.url === '/storybook-server-channel') {
-              eventEmitter.emit('upgrade', req, res.socket, Buffer.alloc(0));
-            } else {
-              next();
-            }
-          });
+          if (!globalWithChannel.__SB_CHANNEL__) {
+            globalWithChannel.__SB_CHANNEL__ = createServerChannel(
+              sharedUpgrades,
+              '/storybook-server-channel',
+              wsToken
+            );
+            await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
+          }
+          sb.channel = globalWithChannel.__SB_CHANNEL__;
         }
 
         const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
@@ -195,7 +202,6 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         },
       },
     },
-    ...scopeToStorybookEnv(allPlugins, basePath, applyToStorybookOnly),
     buildStorybookPlugin(sb),
   ];
 }

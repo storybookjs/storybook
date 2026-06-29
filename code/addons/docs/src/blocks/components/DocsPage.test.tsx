@@ -89,7 +89,7 @@ describe('DocsContent', () => {
         </ThemeProvider>
       );
 
-      const content = container.querySelector('[lang]');
+      const content = container.querySelector('.sbdocs-content');
       expect(content?.getAttribute('lang')).toBe('de');
     });
 

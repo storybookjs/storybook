@@ -24,7 +24,6 @@ const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
-const NEW_ID = 'icon--new';
 const MODIFIED_ID = 'icon--modified';
 const AFFECTED_ID = 'icon--affected';
 const REVIEWING_ID = 'icon--reviewing';
@@ -108,10 +107,6 @@ export const IconSymbols: FC = () => {
       <symbol id={DOT_ID}>
         <circle cx="3" cy="3" r="3" fill="currentColor" />
       </symbol>
-      <symbol id={NEW_ID}>
-        <rect x="6" y="3.5" width="2" height="7" rx="1" fill="currentColor" />
-        <rect x="3.5" y="6" width="7" height="2" rx="1" fill="currentColor" />
-      </symbol>
       <symbol id={MODIFIED_ID}>
         <circle cx="7" cy="7" r="3" fill="currentColor" />
       </symbol>
@@ -139,7 +134,6 @@ export const UseSymbol: FC<{
     | 'error'
     | 'warning'
     | 'dot'
-    | 'new'
     | 'reviewing'
     | 'modified'
     | 'affected';
@@ -178,10 +172,6 @@ export const UseSymbol: FC<{
 
   if (type === 'dot') {
     return <use xlinkHref={`#${DOT_ID}`} />;
-  }
-
-  if (type === 'new') {
-    return <use xlinkHref={`#${NEW_ID}`} />;
   }
 
   if (type === 'reviewing') {

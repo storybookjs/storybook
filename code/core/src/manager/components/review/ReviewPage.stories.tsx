@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import {
   ManagerContext,
@@ -86,6 +86,7 @@ const managerApi: API = {
     managerHref: `?path=/story/${storyId}`,
     previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
   }),
+  findLeafEntry: fn().mockName('api::findLeafEntry'),
 } as unknown as API;
 
 const reviewState: ReviewState = {
@@ -100,6 +101,23 @@ const reviewState: ReviewState = {
         'manager-settings-checklist--default',
         'manager-settings-guidepage--default',
         'manager-settings-aboutscreen--default',
+      ],
+    },
+    {
+      title: 'Toolbar',
+      rationale: 'Toolbar layout and button spacing adjusted.',
+      storyIds: [
+        'manager-components-toolbar-toolbar--default',
+        'manager-components-toolbar-toolbar--with-addons',
+      ],
+    },
+    {
+      title: 'Sidebar',
+      rationale: 'Sidebar tree and search behavior updated.',
+      storyIds: [
+        'manager-components-sidebar-sidebar--default',
+        'manager-components-sidebar-sidebar--search-results',
+        'manager-components-sidebar-sidebar--with-change-detection-only',
       ],
     },
   ],
@@ -228,6 +246,8 @@ export const Collections = meta.story({
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
+    await expect(await canvas.findByText('Toolbar')).toBeInTheDocument();
+    await expect(await canvas.findByText('Sidebar')).toBeInTheDocument();
   },
 });
 
@@ -259,8 +279,8 @@ export const PendingUpdateDeferred = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Refresh review' })).toBeInTheDocument();
     expect(canvas.getByText('Manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByText('Updated manager settings polish')).not.toBeInTheDocument();
   },
@@ -276,11 +296,11 @@ export const PendingUpdateAccept = meta.story({
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
-    expect(canvas.queryByText('An updated review is available.')).not.toBeInTheDocument();
+    expect(canvas.queryByText('Newer review available')).not.toBeInTheDocument();
   },
 });
 
@@ -299,16 +319,39 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 
     applyReviewState();
     await expect(await canvas.findByRole('button', { name: 'Open story list' })).toHaveTextContent(
-      '2/3'
+      '2/8'
     );
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Refresh review' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
     expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
+  },
+});
+
+export const ToolbarStale = meta.story({
+  parameters: {
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    emitMock(EVENTS.REVIEW_STALE);
+
+    await expect(await canvas.findByText('Code edits detected')).toBeInTheDocument();
+    await userEvent.click(await canvas.findByRole('button', { name: 'Prompt agent' }));
+    await expect(
+      await screen.findByRole('button', { name: 'Copy prompt to refresh this review' })
+    ).toBeInTheDocument();
   },
 });
 
@@ -319,12 +362,12 @@ export const PendingUpdateSupersedesStale = meta.story({
 
     applyReviewState();
     emitMock(EVENTS.REVIEW_STALE);
-    await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
+    await expect(await canvas.findByText(/Code edits detected/)).toBeInTheDocument();
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
 
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
-    expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
+    await expect(await canvas.findByText('Newer review available')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Refresh review' })).toBeInTheDocument();
+    expect(canvas.queryByText(/Code edits detected/)).not.toBeInTheDocument();
   },
 });

@@ -5,25 +5,22 @@ import {
   Card,
   Collapsible,
   DocumentWrapper,
+  EmptyTabContent,
   IconButton,
   ScrollArea,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import {
-  CheckIcon,
   ChevronSmallDownIcon,
   ChevronSmallLeftIcon,
-  CloseIcon,
-  CopyIcon,
+  SparkleIcon,
   StorybookIcon,
-  WandIcon,
 } from '@storybook/icons';
 
 import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
 import { Markdown } from '../components/Markdown.tsx';
-import { CopyButton } from '../components/CopyButton.tsx';
-import { AttentionBanner } from '../components/AttentionBanner.tsx';
+import { ReviewNotice } from '../components/StaleNotice.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
@@ -68,21 +65,6 @@ const Page = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
 }));
 
-const Empty = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100dvh',
-  color: theme.color.defaultText,
-  '& > div': {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-}));
-
 // Wrapper that gives the overlay ScrollArea a bounded height to scroll within.
 const ListScroll = styled.div({
   flex: 1,
@@ -106,7 +88,7 @@ const SummaryCard = styled(Card)({
   display: 'flex',
   alignItems: 'flex-start',
   padding: '9px 12px',
-  gap: 10,
+  gap: 6,
   svg: {
     flexShrink: 0,
     marginTop: 4,
@@ -163,9 +145,27 @@ const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
+const CardTitleGroup = styled.div({
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: 8,
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+});
+
 const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
   color: theme.textMutedColor,
-  margin: '0 12px',
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  p: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
 }));
 
 const Footer = styled.div(({ theme }) => ({
@@ -267,30 +267,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   if (!state) {
     return (
-      <Empty>
-        <span>Waiting for the agent to display a review…</span>
-        <div>
-          <CopyButton
-            appearance="agentic"
-            padding="small"
-            ariaLabel="Copy prompt to refresh this review"
-            ariaLabelOnCopy="Prompt copied to clipboard"
-            content="Generate a Storybook review including my latest changes using the display-review tool."
-            childrenOnCopy={
-              <>
-                <CheckIcon /> Copy prompt
-              </>
-            }
-          >
-            <CopyIcon />
-            Copy prompt
-          </CopyButton>
-          <Button padding="small" onClick={onDismiss} ariaLabel="Close review screen">
-            <CloseIcon />
-            Close
-          </Button>
-        </div>
-      </Empty>
+      <Page>
+        <EmptyTabContent
+          title="Waiting for the agent…"
+          description="Once the agent creates a review, it will appear here."
+          footer={
+            <Button variant="outline" onClick={onDismiss}>
+              Back to Storybook
+            </Button>
+          }
+        />
+      </Page>
     );
   }
 
@@ -316,14 +303,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   return (
     <Page>
-      {hasPendingUpdate && onAcceptPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
       <ReviewHeader
         leading={
-          <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
+          <Button
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="Back to Storybook"
+            asChild
+          >
             <a href={buildSummaryBackHref(returnSearch)} {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}>
               <ChevronSmallLeftIcon />
               <StorybookIcon />
@@ -345,19 +333,26 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </>
         }
         actions={
-          newStoryCount > 0 ? (
-            <Button
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel={false}
-              tooltip="Toggle filtering of new stories"
-              active={showNewOnly}
-              onClick={() => setShowNewOnly((v) => !v)}
-            >
-              {newStoryCount} new
-            </Button>
-          ) : null
+          <>
+            {newStoryCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                active={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                {newStoryCount} new
+              </Button>
+            ) : null}
+            <ReviewNotice
+              isStale={isStale}
+              hasPendingUpdate={hasPendingUpdate}
+              onAcceptPendingUpdate={onAcceptPendingUpdate}
+            />
+          </>
         }
       />
 
@@ -365,7 +360,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         <ScrollArea vertical>
           <List>
             <SummaryCard color="agentic">
-              <WandIcon />
+              <SparkleIcon />
               <SummaryContent>
                 <Markdown>{'**Summary:** ' + state.description}</Markdown>
               </SummaryContent>
@@ -381,7 +376,14 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                       collapsed={!isExpanded}
                       summary={
                         <CardHead onClick={() => toggleCollection(index)}>
-                          <CardTitle>{collection.title}</CardTitle>
+                          <CardTitleGroup>
+                            <CardTitle>{collection.title}</CardTitle>
+                            {collection.rationale ? (
+                              <CardRationale>
+                                <Markdown>{collection.rationale}</Markdown>
+                              </CardRationale>
+                            ) : null}
+                          </CardTitleGroup>
                           <CardControls>
                             <CardCount>{storyIds.length}</CardCount>
                             <IconButton
@@ -407,11 +409,6 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         </CardHead>
                       }
                     >
-                      {collection.rationale ? (
-                        <CardRationale>
-                          <Markdown>{collection.rationale}</Markdown>
-                        </CardRationale>
-                      ) : null}
                       <CollectionGrid
                         storyIds={storyIds}
                         showAll={showAllCollections.has(index)}

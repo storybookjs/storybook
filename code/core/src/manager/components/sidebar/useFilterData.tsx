@@ -104,6 +104,6 @@ export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) 
         description: statusValueDescription(statusValue),
         count: counts[statusValue] ?? 0,
       }))
-      .filter((entry) => entry.statusValue !== 'status-value:reviewing' || entry.count > 0);
+      .filter((entry) => entry.count > 0);
   }, [allStatuses]);
 }

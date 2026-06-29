@@ -12,7 +12,7 @@ import {
   type StoryId,
 } from 'storybook/internal/types';
 
-import { CircleIcon } from '@storybook/icons';
+import { CircleIcon, StatusAddIcon } from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
@@ -82,11 +82,7 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
       textColor: 'currentColor',
     },
     'status-value:new': {
-      icon: (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="new" />
-        </svg>
-      ),
+      icon: <StatusAddIcon key="icon" />,
       iconColor: theme.fgColor.accent,
       textColor: null,
     },

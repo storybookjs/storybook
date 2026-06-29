@@ -3,11 +3,11 @@ import React, { type FC } from 'react';
 import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
+import { ChevronSmallLeftIcon, ChevronSmallRightIcon, SparkleIcon } from '@storybook/icons';
 
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
 import { ReviewHeader } from './components/ReviewHeader.tsx';
-import { AttentionBanner } from './components/AttentionBanner.tsx';
+import { ReviewNotice } from './components/StaleNotice.tsx';
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
@@ -147,11 +147,6 @@ export const ReviewToolbarHeader: FC = () => {
 
   return (
     <Root data-testid="review-toolbar-header">
-      {hasPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
       <HeaderWrap>
         <ProgressBar
           role="progressbar"
@@ -172,7 +167,7 @@ export const ReviewToolbarHeader: FC = () => {
             <Button variant="ghost" size="small" padding="small" ariaLabel="Back to review" asChild>
               <a href={buildReviewChangesSummaryHref()}>
                 <ChevronSmallLeftIcon />
-                <WandIcon />
+                <SparkleIcon />
               </a>
             </Button>
           }
@@ -180,6 +175,11 @@ export const ReviewToolbarHeader: FC = () => {
           subtitle={subtitle}
           actions={
             <>
+              <ReviewNotice
+                isStale={isStale}
+                hasPendingUpdate={hasPendingUpdate}
+                onAcceptPendingUpdate={onAcceptPendingUpdate}
+              />
               {counter}
               <Button
                 variant="ghost"

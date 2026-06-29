@@ -141,16 +141,6 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         await sb.presets.apply('experimental_devServer', polkaServer, sb);
         registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
 
-        server.middlewares.use(
-          baseNoSlash || '/',
-          createProxyMiddleware({
-            target: `http://localhost:${port}`,
-            changeOrigin: true,
-            ws: true,
-            pathRewrite: (path) =>
-              baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
-          })
-        );
         if (server.httpServer) {
           const channel = createServerChannel(
             server.httpServer as Parameters<typeof createServerChannel>[0],
@@ -184,6 +174,16 @@ async function main(options?: UserOptions): Promise<PluginOption> {
 
         registerEnvironmentModuleMiddleware(server);
 
+        server.middlewares.use(
+          baseNoSlash || '/',
+          createProxyMiddleware({
+            target: `http://localhost:${port}`,
+            changeOrigin: true,
+            ws: true,
+            pathRewrite: (path) =>
+              baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
+          })
+        );
         storyIndexGenerator.onInvalidated(() => {
           const virtualStoriesId = '\0virtual:/@storybook/builder-vite/storybook-stories.js';
           server.watcher.emit('change', virtualStoriesId);

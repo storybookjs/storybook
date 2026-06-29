@@ -112,7 +112,6 @@ export type UsePreviewThumbnailResult = {
   iframeRef: RefObject<HTMLIFrameElement>;
   src: string | undefined;
   rememberedDimensions: ContentDimensions | null;
-  frameWidth: number;
   forceStartCurrent: () => void;
   finishCurrent: () => void;
 };
@@ -132,7 +131,6 @@ export const usePreviewThumbnail = ({
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
   const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
-  const [frameWidth, setFrameWidth] = useState(0);
   const [src, setSrc] = useState<string | undefined>(undefined);
   const taskRef = useRef<PreviewTask | null>(null);
 
@@ -181,21 +179,6 @@ export const usePreviewThumbnail = ({
       mountObserver.disconnect();
       evictObserver.disconnect();
     };
-  }, []);
-
-  useLayoutEffect(() => {
-    const frame = frameElementRef.current;
-    if (!frame) {
-      return undefined;
-    }
-    const updateWidth = () => {
-      setFrameWidth(frame.clientWidth);
-    };
-    updateWidth();
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateWidth) : undefined;
-    resizeObserver?.observe(frame);
-    return () => resizeObserver?.disconnect();
   }, []);
 
   useEffect(() => {
@@ -279,7 +262,6 @@ export const usePreviewThumbnail = ({
     iframeRef,
     src,
     rememberedDimensions,
-    frameWidth,
     forceStartCurrent,
     finishCurrent,
   };

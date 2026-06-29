@@ -24,43 +24,22 @@ export const parseIframeResizeMessage = (data: unknown): ContentDimensions | nul
   }
 };
 
-const THUMBNAIL_THIRDS_MAX = 4;
 const THUMBNAIL_SCALE_MIN = 0.5;
 const THUMBNAIL_SCALE_STEP = 0.25;
+const THUMBNAIL_FRAME_ASPECT_WIDTH = 3;
+const THUMBNAIL_FRAME_ASPECT_HEIGHT = 2;
 
-/** Mirrors Frame `--scale`: fit width, then round down to 0.25 steps (floor 0.5). */
-export const computeThumbnailScale = (contentWidth: number, frameWidth: number): number => {
-  if (frameWidth <= 0 || contentWidth <= 0) {
-    return 1;
-  }
-  const fit = Math.min(1, frameWidth / contentWidth);
-  const stepped = Math.floor(fit / THUMBNAIL_SCALE_STEP) * THUMBNAIL_SCALE_STEP;
-  return Math.max(THUMBNAIL_SCALE_MIN, Math.min(1, stepped));
-};
-
-/** Mirrors Frame `--thirds`: smallest 3/n bucket that fits scaled content height. */
-export const computeThumbnailThirds = (
+/** Mirrors Frame `--scale`: fit content in a 3/2 frame, round down to 0.25 steps (floor 0.5). */
+export const computeThumbnailScale = (
   contentWidth: number,
   contentHeight: number,
   frameWidth: number
 ): number => {
   if (frameWidth <= 0 || contentWidth <= 0 || contentHeight <= 0) {
-    return 2;
+    return 1;
   }
-  const scale = computeThumbnailScale(contentWidth, frameWidth);
-  const scaledHeight = contentHeight * scale;
-  const thirds = Math.ceil((3 * scaledHeight) / frameWidth);
-  return Math.min(THUMBNAIL_THIRDS_MAX, Math.max(1, thirds));
-};
-
-/** Minimum preview frame height for subgrid row sizing. CSS `minHeight` on the
- * frame does not propagate through subgrid; this pixel value is applied inline.
- */
-export const computeThumbnailMinHeight = (
-  contentWidth: number,
-  contentHeight: number,
-  frameWidth: number
-): number => {
-  const thirds = computeThumbnailThirds(contentWidth, contentHeight, frameWidth);
-  return (frameWidth * thirds) / 3;
+  const frameHeight = (frameWidth * THUMBNAIL_FRAME_ASPECT_HEIGHT) / THUMBNAIL_FRAME_ASPECT_WIDTH;
+  const fit = Math.min(1, frameWidth / contentWidth, frameHeight / contentHeight);
+  const stepped = Math.floor(fit / THUMBNAIL_SCALE_STEP) * THUMBNAIL_SCALE_STEP;
+  return Math.max(THUMBNAIL_SCALE_MIN, Math.min(1, stepped));
 };

@@ -4,11 +4,7 @@ import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
-import {
-  computeThumbnailMinHeight,
-  DEFAULT_CONTENT_HEIGHT,
-  DEFAULT_CONTENT_WIDTH,
-} from './iframeResizeMessage.ts';
+import { DEFAULT_CONTENT_HEIGHT, DEFAULT_CONTENT_WIDTH } from './iframeResizeMessage.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -55,8 +51,7 @@ const Cell = styled.div({
   minWidth: 0,
 });
 
-// Visual fit (scale, aspect ratio) lives in CSS; subgrid row growth uses inline
-// minHeight from computeThumbnailMinHeight — CSS minHeight does not propagate.
+// Scale to fit measured content inside a fixed 3/2 frame; aspect ratio never changes.
 const Frame = styled.a(({ theme }) => ({
   position: 'relative',
   display: 'block',
@@ -67,11 +62,11 @@ const Frame = styled.a(({ theme }) => ({
   containerName: 'preview-frame',
   '--content-w': DEFAULT_CONTENT_WIDTH,
   '--content-h': DEFAULT_CONTENT_HEIGHT,
-  '--fit': 'min(1, calc(100cqw / (var(--content-w) * 1px)))',
+  '--fit-w': 'calc(100cqw / (var(--content-w) * 1px))',
+  '--fit-h': 'calc((100cqw * 2 / 3) / (var(--content-h) * 1px))',
+  '--fit': 'min(1, var(--fit-w), var(--fit-h))',
   '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
-  '--scaled-h': 'calc(var(--content-h) * var(--scale) * 1px)',
-  '--thirds': 'clamp(1, round(up, calc(3 * var(--scaled-h) / 100cqw), 1), 4)',
-  aspectRatio: 'calc(3 / var(--thirds))',
+  aspectRatio: '3 / 2',
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -178,26 +173,18 @@ const StoryPreviewCell: FC<{
     iframeRef,
     src,
     rememberedDimensions,
-    frameWidth,
     forceStartCurrent,
     finishCurrent,
   } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
 
   const { component, name } = deriveStoryInfo(info);
-  const contentWidth = rememberedDimensions?.width ?? DEFAULT_CONTENT_WIDTH;
-  const contentHeight = rememberedDimensions?.height ?? DEFAULT_CONTENT_HEIGHT;
-  const minHeight =
-    frameWidth > 0 ? computeThumbnailMinHeight(contentWidth, contentHeight, frameWidth) : undefined;
 
-  const frameStyle = {
-    ...(rememberedDimensions
-      ? ({
-          '--content-w': rememberedDimensions.width,
-          '--content-h': rememberedDimensions.height,
-        } as React.CSSProperties)
-      : undefined),
-    ...(minHeight !== undefined ? { minHeight } : undefined),
-  };
+  const frameStyle = rememberedDimensions
+    ? ({
+        '--content-w': rememberedDimensions.width,
+        '--content-h': rememberedDimensions.height,
+      } as React.CSSProperties)
+    : undefined;
 
   const preview = src ? (
     <Preview

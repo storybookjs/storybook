@@ -1,4 +1,5 @@
 import { SET_CONFIG } from 'storybook/internal/core-events';
+import { queryFromLocation } from 'storybook/internal/router';
 import type {
   API_Layout,
   API_LayoutCustomisations,
@@ -621,9 +622,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
   const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
   const initialOptions = api.getInitialOptions();
   const merged = merge(initialOptions, persisted);
+  const { full } = queryFromLocation(store.getState().location);
   const layout = applyLayoutOptions(
     merged.layout,
-    { layout: { showNav: merged.layout.showNav, showPanel: merged.layout.showPanel } },
+    full === '1' || full === 'true'
+      ? {}
+      : { layout: { showNav: merged.layout.showNav, showPanel: merged.layout.showPanel } },
     !!singleStory
   );
   const state = { ...merged, layout };

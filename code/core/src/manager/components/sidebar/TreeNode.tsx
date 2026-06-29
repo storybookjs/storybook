@@ -106,7 +106,7 @@ export const RootNode = styled.div(({ theme }) => ({
   '&:hover [data-displayed="off"], &:focus-within [data-displayed="off"]': {
     visibility: 'visible',
   },
-  '&:hover [data-displayed="off"] + *': {
+  '&:hover [data-displayed="off"] + *, &:focus-within [data-displayed="off"] + *': {
     visibility: 'hidden',
   },
 }));

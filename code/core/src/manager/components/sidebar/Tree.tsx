@@ -246,7 +246,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, isFullyExpanded, setFullyExpanded, onSelectStoryId, statuses, theme]);
+  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
 
   let contextMenu = useContextMenu(item, statusLinks, api);
   if (refId !== 'storybook_internal') {
@@ -370,7 +370,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       >
         <CollapseButton
           variant="ghost"
-          ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
+          ariaLabel={isExpanded ? `Collapse ${item.name}` : `Expand ${item.name}`}
           data-action="collapse-root"
           onClick={(event) => {
             event.preventDefault();
@@ -381,20 +381,24 @@ const Node = React.memo<NodeProps>(function Node(props) {
           <CollapseIcon isExpanded={isExpanded} />
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
-        <FloatingExpandCollapseButton
-          data-displayed="off"
-          data-testid="expand-collapse-all"
-          ariaLabel={isFullyExpanded ? 'Collapse all' : 'Expand all'}
-          variant="ghost"
-          padding="small"
-          type="button"
-          onClick={(e) => {
-            (e.currentTarget as HTMLButtonElement).blur();
-            setFullyExpanded?.();
-          }}
-        >
-          {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-        </FloatingExpandCollapseButton>
+        {isExpanded && (
+          <FloatingExpandCollapseButton
+            data-displayed="off"
+            data-testid="expand-collapse-all"
+            ariaLabel={isFullyExpanded ? `Collapse all in ${item.name}` : `Expand all in ${item.name}`}
+            variant="ghost"
+            padding="small"
+            type="button"
+            onClick={(e) => {
+              if (e.detail !== 0) {
+                (e.currentTarget as HTMLButtonElement).blur();
+              }
+              setFullyExpanded?.();
+            }}
+          >
+            {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
+          </FloatingExpandCollapseButton>
+        )}
         {contextMenu.node}
       </RootNode>
     );

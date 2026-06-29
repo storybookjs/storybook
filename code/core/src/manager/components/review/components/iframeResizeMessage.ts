@@ -15,7 +15,14 @@ export const parseIframeResizeMessage = (data: unknown): ContentDimensions | nul
     if (parsed?.context !== IFRAME_RESIZE_CONTEXT) {
       return null;
     }
-    if (typeof parsed.width !== 'number' || typeof parsed.height !== 'number') {
+    if (
+      typeof parsed.width !== 'number' ||
+      !Number.isFinite(parsed.width) ||
+      parsed.width <= 0 ||
+      typeof parsed.height !== 'number' ||
+      !Number.isFinite(parsed.height) ||
+      parsed.height <= 0
+    ) {
       return null;
     }
     return { width: parsed.width, height: parsed.height };

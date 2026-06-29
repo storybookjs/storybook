@@ -159,7 +159,7 @@ export class Preview<TRenderer extends Renderer> {
       // services in the preview — run at init. Plain (CSF1-3) previews don't fold core annotations
       // into `getProjectAnnotations()`, and core annotations would otherwise only be prepended later,
       // inside the store, which is too late for the `beforeAll` we run below.
-      const projectAnnotations = composeProjectAnnotationsWithCore([
+      const projectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
         await this.getProjectAnnotations(),
       ]);
 

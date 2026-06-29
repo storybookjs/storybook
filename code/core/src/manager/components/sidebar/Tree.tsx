@@ -385,7 +385,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
           <FloatingExpandCollapseButton
             data-displayed="off"
             data-testid="expand-collapse-all"
-            ariaLabel={isFullyExpanded ? `Collapse all in ${item.name}` : `Expand all in ${item.name}`}
+            ariaLabel={
+              isFullyExpanded ? `Collapse all in ${item.name}` : `Expand all in ${item.name}`
+            }
             variant="ghost"
             padding="small"
             type="button"

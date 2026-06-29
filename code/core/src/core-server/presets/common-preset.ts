@@ -234,6 +234,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   legacyDecoratorFileOrder: false,
   measure: true,
   outline: true,
+  menuOnboardingChecklist: true,
   sidebarOnboardingChecklist: true,
   viewport: true,
 });

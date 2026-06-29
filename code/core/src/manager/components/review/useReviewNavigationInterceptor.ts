@@ -10,7 +10,6 @@ import {
   navigateToReviewSummary,
 } from './review-actions.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   REVIEW_SUMMARY_BACK_ATTR,
   isReviewSummaryPath,
   parseReviewStoryHref,
@@ -23,14 +22,7 @@ const parseHrefPath = (href: string): string | null => {
   return new URLSearchParams(query).get('path');
 };
 
-const isReviewStoryHref = (href: string) => {
-  const path = parseHrefPath(href);
-  if (!path?.startsWith('/story/')) {
-    return false;
-  }
-  const query = href.startsWith('?') ? href.slice(1) : href;
-  return new URLSearchParams(query).has(REVIEW_COLLECTION_QUERY_PARAM);
-};
+const isReviewStoryHref = (href: string) => parseReviewStoryHref(href) !== null;
 
 const isReviewSummaryHref = (href: string) => {
   const path = parseHrefPath(href);

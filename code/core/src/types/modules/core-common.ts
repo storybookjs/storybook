@@ -540,6 +540,13 @@ export interface StorybookConfigRaw {
     sidebarOnboardingChecklist?: boolean;
 
     /**
+     * Enable the onboarding guide page in the menu
+     *
+     * @default true
+     */
+    menuOnboardingChecklist?: boolean;
+
+    /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
      *
      * Filter args with a "target" on the type from the render function (EXPERIMENTAL)

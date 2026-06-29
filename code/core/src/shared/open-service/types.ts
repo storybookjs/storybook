@@ -445,8 +445,12 @@ export type ServiceDefinition<
   TState,
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
+  // `TId` defaults to the wide `ServiceId`, so the common `ServiceDefinition<S, Q, C>` form is
+  // unchanged. `defineService` infers it as a literal (e.g. `'core/docgen'`) so callers that key off
+  // a definition's id — like the `core-service-types.ts` maps — can recover that literal.
+  TId extends ServiceId = ServiceId,
 > = {
-  id: ServiceId;
+  id: TId;
   description?: string;
   /**
    * When true, hides this service from `listServices()` output. Defaults to false. Does not disable

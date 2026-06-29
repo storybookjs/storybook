@@ -2,12 +2,7 @@ import { useCallback } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import {
-  type QueryState,
-  type StoryDocsService,
-  selectSnippetForStory,
-  selectStoryDoc,
-} from 'storybook/open-service';
+import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -29,7 +24,7 @@ export function useServiceStory<TSelected>(
   selector: (payload: StoryDocsPayload | undefined, storyId: string) => TSelected
 ): QueryState<TSelected> {
   const componentId = storyId.split('--')[0]!;
-  const service = getService<StoryDocsService>('core/story-docs');
+  const service = getService('core/story-docs');
 
   // Kept stable (selectors are compared by reference on the subscription) so we don't re-subscribe
   // every render.

@@ -10,9 +10,10 @@ import { global } from '@storybook/global';
 
 import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
-import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
+import { Consumer, addons, merge, types, type Combo } from 'storybook/manager-api';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
+import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
 import { ToolbarComp } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';
@@ -127,6 +128,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
       )}
       <ZoomProvider shouldScale={shouldScale}>
         <S.PreviewContainer>
+          {customisedShowToolbar && viewMode === 'story' ? <ReviewToolbarHeader /> : null}
           <ToolbarComp
             key="tools"
             isShown={customisedShowToolbar}

@@ -11,7 +11,6 @@ import type {
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
-import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 import type {
   ErrorLike,
@@ -151,7 +150,7 @@ export class ChangeDetectionService {
   }
 
   private getModuleGraph() {
-    return getService<ModuleGraphService>('core/module-graph');
+    return getService('core/module-graph');
   }
 
   /** True while the service is live and change-detection status publishing is enabled. */

@@ -100,8 +100,11 @@ export const defineService = <
   const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
   const TCommandInputSchemas extends OperationInputSchemas,
   const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+  // `const` keeps the id a literal (e.g. `'core/docgen'`) instead of widening to `string`, so a
+  // definition's id type can be reused as a key elsewhere.
+  const TId extends ServiceId = ServiceId,
 >(def: {
-  id: ServiceId;
+  id: TId;
   description?: string;
   internal?: boolean;
   initialState: ServiceState<TState>;
@@ -134,5 +137,6 @@ export const defineService = <
     TCommandOutputSchemas,
     TQueryInputSchemas,
     TQueryOutputSchemas
-  >
+  >,
+  TId
 > => def;

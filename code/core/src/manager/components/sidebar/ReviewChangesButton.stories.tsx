@@ -4,6 +4,8 @@ import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
+
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
@@ -240,6 +242,47 @@ export const ContextualTagFilter: Story = {
     const button = await canvas.findByRole('switch');
     await expect(button).toHaveTextContent('Review new stories');
     await expect(button.textContent).not.toMatch(/modified/);
+  },
+};
+
+/**
+ * AI-curated reviewing stories take precedence — hide this CTA when any exist.
+ */
+export const HiddenWhenReviewingStoriesPresent: Story = {
+  parameters: {
+    contextOptions: {
+      storyIds: ['s1', 's2'],
+    },
+  },
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId: 's1',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: '',
+      },
+      {
+        storyId: 's2',
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: '',
+      },
+      {
+        storyId: 's1',
+        typeId: REVIEW_STATUS_TYPE_ID,
+        value: 'status-value:reviewing',
+        title: 'Review',
+        description: '',
+      },
+    ]);
+    return () => internal_fullStatusStore.unset();
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByRole('switch')).toBeNull();
   },
 };
 

@@ -3,11 +3,13 @@ import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/p
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
+import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
 import { detectAgent } from '../../telemetry/detect-agent.ts';
 
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
@@ -57,10 +59,9 @@ export function getOrigin(address: string) {
 export function getMcpMetadataFromMainConfig(
   mainConfig: Pick<StorybookConfig, 'addons'>
 ): RuntimeInstanceRecord['mcp'] {
+  // Normalize entries so addons registered via `getAbsolutePath()` are recognized, not just bare names.
   const addon = mainConfig.addons?.find(
-    (entry) =>
-      entry === STORYBOOK_MCP_ADDON ||
-      (typeof entry === 'object' && entry.name === STORYBOOK_MCP_ADDON)
+    (entry) => normalizeAddonName(entry) === STORYBOOK_MCP_ADDON
   );
 
   if (!addon) {
@@ -76,7 +77,7 @@ export function getMcpMetadataFromMainConfig(
 }
 
 function detectRuntimeInstanceAgent() {
-  if (process.env.CLAUDE_AGENT_SDK_VERSION && !process.env.AI_AGENT) {
+  if (isClaudePreviewLaunch()) {
     return CLAUDE_PREVIEW_AGENT_NAME;
   }
 

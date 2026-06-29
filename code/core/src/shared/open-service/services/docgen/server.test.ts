@@ -3,28 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
-import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerDocgenServices } from './server.ts';
+import { registerDocgenService } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
 
-/** Registers only the `core/docgen` service (the story-docs service is left out of these tests). */
-function registerDocgenService(options: {
-  getIndex: () => Promise<StoryIndex>;
-  provider: DocgenProvider;
-}) {
-  const { docgen } = registerDocgenServices({
-    getIndex: options.getIndex,
-    docgenProvider: options.provider,
-  });
-  if (!docgen) {
-    throw new Error('docgen service was not registered');
-  }
-  return docgen;
-}
-
 beforeEach(() => {
-  // registerDocgenServices subscribes to `core/module-graph` and fails hard when it is missing, so
+  // registerDocgenService subscribes to `core/module-graph` and fails hard when it is missing, so
   // the dependency must be registered first (mirroring the dev-server, where it always is).
   registerTestModuleGraphService();
 });
@@ -71,7 +55,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([entry]),
-        provider,
+        docgenProvider: provider,
       });
 
       const returned = await service.commands.extractDocgen({ id: 'button' });
@@ -99,7 +83,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([docsEntry, storyEntry]),
-        provider,
+        docgenProvider: provider,
       });
 
       await service.commands.extractDocgen({ id: 'comp' });
@@ -110,7 +94,7 @@ describe('docgen open service', () => {
     it('returns undefined and leaves state untouched when the provider returns undefined', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => undefined,
+        docgenProvider: async () => undefined,
       });
 
       const returned = await service.commands.extractDocgen({ id: 'button' });
@@ -122,7 +106,7 @@ describe('docgen open service', () => {
     it('throws when no entry exists for the component id', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => undefined,
+        docgenProvider: async () => undefined,
       });
 
       await expect(service.commands.extractDocgen({ id: 'unknown' })).rejects.toThrow(
@@ -133,7 +117,7 @@ describe('docgen open service', () => {
     it('propagates provider errors out of the command', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => {
+        docgenProvider: async () => {
           throw new Error('provider blew up');
         },
       });
@@ -154,7 +138,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([manifestStory, otherStory]),
-        provider: async ({ entry }) =>
+        docgenProvider: async ({ entry }) =>
           makeDocgenPayload({
             id: entry.importPath.includes('button') ? 'button' : 'card',
             name: entry.importPath.includes('button') ? 'Button' : 'Card',
@@ -181,7 +165,7 @@ describe('docgen open service', () => {
     it('returns undefined synchronously when nothing has been extracted yet', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => makeDocgenPayload(),
+        docgenProvider: async () => makeDocgenPayload(),
       });
 
       expect(service.queries.docgen.get({ id: 'button' })).toBeUndefined();
@@ -190,7 +174,7 @@ describe('docgen open service', () => {
     it('.loaded() drives the load body which calls extractDocgen', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => makeDocgenPayload({ description: 'from-loaded' }),
+        docgenProvider: async () => makeDocgenPayload({ description: 'from-loaded' }),
       });
 
       await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
@@ -201,7 +185,7 @@ describe('docgen open service', () => {
     it('.loaded() surfaces missing-component errors from the command', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: async () => undefined,
+        docgenProvider: async () => undefined,
       });
 
       await expect(service.queries.docgen.loaded({ id: 'unknown' })).rejects.toThrow(
@@ -223,12 +207,12 @@ describe('docgen open service', () => {
       );
       const service = registerDocgenService({
         getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        provider,
+        docgenProvider: provider,
       });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
-      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx', './card.stories.tsx'],
@@ -254,12 +238,12 @@ describe('docgen open service', () => {
       );
       const service = registerDocgenService({
         getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        provider,
+        docgenProvider: provider,
       });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
-      const moduleGraph = getService<ModuleGraphService>('core/module-graph');
+      const moduleGraph = getService('core/module-graph');
       await moduleGraph.commands._applyGraphUpdate({
         storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
@@ -291,7 +275,7 @@ describe('docgen open service', () => {
 
       registerDocgenService({
         getIndex: makeGetIndex([storyEntry, unattachedDocs]),
-        provider,
+        docgenProvider: provider,
       });
 
       const store = await buildStaticFiles();
@@ -308,7 +292,7 @@ describe('docgen open service', () => {
           makeStoryEntry('button--secondary', 'Button'),
           makeStoryEntry('card--default', 'Card'),
         ]),
-        provider: async ({ entry }) => {
+        docgenProvider: async ({ entry }) => {
           const isButton = entry.importPath.includes('button');
           return makeDocgenPayload({
             id: isButton ? 'button' : 'card',
@@ -353,7 +337,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: outer,
+        docgenProvider: outer,
       });
 
       await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
@@ -382,7 +366,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: providerB,
+        docgenProvider: providerB,
       });
 
       await expect(service.queries.docgen.loaded({ id: 'button' })).resolves.toEqual(
@@ -399,7 +383,7 @@ describe('docgen open service', () => {
 
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        provider: passthrough,
+        docgenProvider: passthrough,
       });
 
       await service.commands.extractDocgen({ id: 'button' });

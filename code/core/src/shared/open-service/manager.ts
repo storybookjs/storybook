@@ -19,7 +19,11 @@
  * ```
  */
 
-import { getService, registerService as registerServiceCore } from './service-registry.ts';
+import type { ManagerCoreServices, TypedGetService } from './core-service-types.ts';
+import {
+  getService as getServiceCore,
+  registerService as registerServiceCore,
+} from './service-registry.ts';
 import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
@@ -32,7 +36,8 @@ import type {
 
 export { useServiceCommand } from './use-service-command.ts';
 export { useServiceQuery } from './use-service-query.ts';
-export { getService };
+
+export const getService = getServiceCore as TypedGetService<ManagerCoreServices>;
 
 /**
  * Registers a service in the manager and returns its runtime surface.

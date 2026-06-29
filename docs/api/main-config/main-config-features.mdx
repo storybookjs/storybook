@@ -21,6 +21,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   experimentalCodeExamples?: boolean;
+  experimentalDocgenServer?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -145,6 +146,8 @@ Default: `false`
 
 Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
 
+When combined with [`experimentalDocgenServer`](#experimentaldocgenserver), manifests use a ref-based format with per-component JSON snapshots for faster MCP loading.
+
 <CodeSnippets path="main-config-features-components-manifest.md" />
 
 </If>
@@ -181,11 +184,31 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 
 <If renderer="react">
 
+## `experimentalDocgenServer`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel.
+
+When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) — snippet generation is handled by the server-side story-docs service. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+
+Snippets are static: they won't update if you change values in the Controls table.
+
+This feature is currently only supported for [React](?renderer=react) projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/TODO) on the RFC.
+
+<CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
 ## `experimentalCodeExamples`
 
 (⚠️ **Experimental**)
 
 Type: `boolean`
+
+Prefer [`experimentalDocgenServer`](#experimentaldocgenserver) — it supersedes this flag and provides the same static snippet behavior along with faster, more accurate docgen.
 
 Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
 

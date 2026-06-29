@@ -100,15 +100,12 @@ async function main(options?: UserOptions): Promise<PluginOption> {
                 },
                 'serve'
               );
-              try {
-                sbConfig.webSocketToken = config.webSocketToken;
-              } catch {
-                Object.defineProperty(sbConfig, 'webSocketToken', {
-                  value: config.webSocketToken,
-                  configurable: !0,
-                  writable: !0,
-                });
-              }
+
+              Object.defineProperty(sbConfig, 'webSocketToken', {
+                value: config.webSocketToken,
+                configurable: !0,
+                writable: !0,
+              });
 
               return new DevEnvironment('client', sbConfig, {
                 ...context,

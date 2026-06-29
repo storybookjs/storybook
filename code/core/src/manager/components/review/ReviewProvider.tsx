@@ -241,11 +241,14 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Keep review chrome/filters in sync with `full=1` and review routes in the URL.
   useEffect(() => {
-    if (!isReviewRoute(path, collectionParam)) {
-      reviewStore.releaseUrlSyncSuppression();
-    }
     if (reviewStore.isUrlSyncSuppressed()) {
-      return;
+      const navigationSettled =
+        isReviewRoute(path, collectionParam) ||
+        (!isReviewModeActive() && !isReviewLayoutActive(location));
+      if (!navigationSettled) {
+        return;
+      }
+      reviewStore.releaseUrlSyncSuppression();
     }
 
     const reviewRoute = isReviewRoute(path, collectionParam);
@@ -254,7 +257,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     if (reviewRoute && !fullActive) {
       if (isSummaryVisible && !reviewModeActive) {
-        api.applyQueryParams({ full: '1' }, { replace: true });
+        api.navigateUrl(buildReviewChangesSummaryHref(), { replace: true });
         return;
       }
       if (reviewModeActive) {

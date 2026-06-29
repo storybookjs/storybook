@@ -32,7 +32,7 @@ type ArgTypesProps = ArgTypesParameters & {
 
 type ResolvedArgTypes = {
   parameters: Parameters;
-  componentId?: string;
+  componentId: string;
   storyId?: string;
   initialArgs?: Args;
   argTypes?: StrictArgTypes;
@@ -59,7 +59,7 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
       parameters: parameters as Parameters,
       // Bare `of={Component}` has no story/meta annotations; the docgen service is addressed by
       // component id, recovered from the CSF file that declares this component.
-      componentId: context.getComponentId(component),
+      componentId: context.getComponentId(component)!,
       argTypes: extractComponentArgTypes(component, parameters as Parameters),
       component,
     };
@@ -155,13 +155,17 @@ const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
 const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
   const { argTypes, parameters, componentId, storyId, initialArgs, filterProps, component } =
     useResolveArgTypes(props);
-  const serviceRows = useDocgenServiceRows({
+  const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
     componentId,
     storyId,
     parameters,
     initialArgs,
     customArgTypes: argTypes,
   });
+
+  if (isInitialLoading) {
+    return <PureArgsTable isLoading />;
+  }
 
   if (!serviceRows) {
     return null;

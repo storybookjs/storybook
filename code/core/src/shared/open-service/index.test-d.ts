@@ -19,7 +19,7 @@ const openServiceDef = defineService({
     valuesById: {} as Record<string, string | undefined>,
   },
   queries: {
-    getCount: {
+    count: {
       input: v.undefined(),
       output: v.number(),
       handler: (input, ctx) => {
@@ -30,10 +30,18 @@ const openServiceDef = defineService({
         // @ts-expect-error queries only receive a read-only self handle
         ctx.self.setState(() => {});
 
+        expectTypeOf(ctx.self.queries.value.get).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.count.get).returns.toEqualTypeOf<number>();
+        // @ts-expect-error value requires an entryId object, not a number
+        ctx.self.queries.value.get(1);
+
         return ctx.self.state.count;
       },
     },
-    getValue: {
+    value: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
       handler: (input, ctx) => {
@@ -50,6 +58,18 @@ const openServiceDef = defineService({
         }>();
         expectTypeOf(ctx.self.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
         await ctx.self.commands.preloadValue(input);
+
+        // `load` reads sibling queries with their inferred types too, synchronously via `.get()`
+        // or awaiting their own load via `.loaded()`.
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.count.get()).toEqualTypeOf<number>();
+        expectTypeOf(ctx.self.queries.value.loaded).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(await ctx.self.queries.value.loaded(input)).toEqualTypeOf<string | null>();
+        expectTypeOf(await ctx.self.queries.count.loaded()).toEqualTypeOf<number>();
+        // @ts-expect-error value.loaded requires an entryId object, not a number
+        await ctx.self.queries.value.loaded(1);
 
         // @ts-expect-error preloadValue requires an entryId object
         await ctx.self.commands.preloadValue({ entryId: 1 });
@@ -84,6 +104,10 @@ const openServiceDef = defineService({
           expectTypeOf(state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
           state.valuesById[input.entryId] = 'ready';
         });
+
+        // Command handlers also see sibling queries and commands with their inferred types.
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
       },
     },
   },
@@ -93,16 +117,16 @@ const openService = registerService(openServiceDef);
 
 describe('open-service type inference', () => {
   it('infers runtime query and command signatures from inline schemas', () => {
-    expectTypeOf(openService.queries.getCount).parameter(0).toEqualTypeOf<undefined>();
-    expectTypeOf(openService.queries.getCount).returns.toEqualTypeOf<number>();
-    expectTypeOf(openService.queries.getCount.loaded).returns.toEqualTypeOf<Promise<number>>();
+    expectTypeOf(openService.queries.count.get).parameter(0).toEqualTypeOf<undefined>();
+    expectTypeOf(openService.queries.count.get).returns.toEqualTypeOf<number>();
+    expectTypeOf(openService.queries.count.loaded).returns.toEqualTypeOf<Promise<number>>();
 
     const voidService = registerService(
       defineService({
         id: 'internal-fixture/void-query-types',
         initialState: {},
         queries: {
-          getAll: {
+          all: {
             input: v.void(),
             output: v.number(),
             handler: () => 1,
@@ -111,17 +135,15 @@ describe('open-service type inference', () => {
         commands: {},
       })
     );
-    expectTypeOf(voidService.queries.getAll).returns.toEqualTypeOf<number>();
-    expectTypeOf(voidService.queries.getAll()).toEqualTypeOf<number>();
-    expectTypeOf(voidService.queries.getAll.loaded()).toEqualTypeOf<Promise<number>>();
+    expectTypeOf(voidService.queries.all.get).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.all.get()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.all.loaded()).toEqualTypeOf<Promise<number>>();
 
-    expectTypeOf(openService.queries.getValue).parameter(0).toEqualTypeOf<{
+    expectTypeOf(openService.queries.value.get).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(openService.queries.getValue).returns.toEqualTypeOf<string | null>();
-    expectTypeOf(openService.queries.getValue.loaded).returns.toEqualTypeOf<
-      Promise<string | null>
-    >();
+    expectTypeOf(openService.queries.value.get).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(openService.queries.value.loaded).returns.toEqualTypeOf<Promise<string | null>>();
 
     expectTypeOf(openService.commands.increment).parameter(0).toEqualTypeOf<number>();
     expectTypeOf(openService.commands.increment).returns.toEqualTypeOf<Promise<void>>();
@@ -133,8 +155,8 @@ describe('open-service type inference', () => {
   });
 
   it('rejects invalid runtime call signatures', () => {
-    // @ts-expect-error getValue requires an entryId string
-    openService.queries.getValue({});
+    // @ts-expect-error value requires an entryId string
+    openService.queries.value.get({});
 
     // @ts-expect-error increment requires a numeric payload
     openService.commands.increment(undefined);
@@ -145,7 +167,7 @@ describe('open-service type inference', () => {
       id: 'internal-fixture/invalid-open-service-types',
       initialState: {} as Record<string, never>,
       queries: {
-        getBrokenValue: {
+        brokenValue: {
           input: v.undefined(),
           output: v.number(),
           // @ts-expect-error query handler output must match the output schema input type
@@ -161,7 +183,7 @@ describe('open-service type inference', () => {
       id: 'internal-fixture/invalid-definition-static-inputs',
       initialState: {} as OpenServiceState,
       queries: {
-        getValue: {
+        value: {
           input: entryIdInputSchema,
           output: v.nullable(v.string()),
           staticPath: () => 'value.json',
@@ -178,12 +200,12 @@ describe('open-service type inference', () => {
       id: 'internal-fixture/valid-internal-naming',
       initialState: {} as Record<string, never>,
       queries: {
-        getValue: {
+        value: {
           input: v.undefined(),
           output: v.number(),
           handler: () => 0,
         },
-        _getInternalValue: {
+        _internalValue: {
           internal: true,
           input: v.undefined(),
           output: v.number(),
@@ -228,7 +250,7 @@ describe('open-service type inference', () => {
       id: 'internal-fixture/interface-state',
       initialState: { color: 'red' } as InterfaceState,
       queries: {
-        getColor: {
+        color: {
           input: v.void(),
           output: v.string(),
           handler: (_input, ctx) => {

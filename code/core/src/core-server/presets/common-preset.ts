@@ -3,17 +3,16 @@ import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
-  STORY_FILE_TEST_REGEXP,
-  normalizeStories,
-  optionalEnvToBoolean,
-} from 'storybook/internal/common';
-import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  STORY_FILE_TEST_REGEXP,
+  getBabelPresetEnvMajor,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
+  normalizeStories,
+  optionalEnvToBoolean,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
@@ -27,17 +26,20 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
+  StoryDocsProvider,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
-import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
+import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
@@ -49,7 +51,6 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
-import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -118,6 +119,24 @@ export const babel = async (_: unknown, options: Options) => {
     string,
     any
   >;
+
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      // This is the same browser supports that we use to bundle our manager and preview code.
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  const shouldRemoveBugfixes =
+    options?.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
@@ -127,20 +146,7 @@ export const babel = async (_: unknown, options: Options) => {
       ...(babelDefault?.overrides ?? []),
       {
         include: /\.(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            '@babel/preset-env',
-            {
-              bugfixes: true,
-              targets: {
-                // This is the same browser supports that we use to bundle our manager and preview code.
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['@babel/preset-env', presetConfig]],
       },
     ],
   };
@@ -210,10 +216,13 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
+const babelPresetEnvMajor = getBabelPresetEnvMajor();
+
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
+  babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
   changeDetection: true,
   componentsManifest: false,
@@ -347,21 +356,22 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const provider = await options.presets.apply<DocgenProvider>(
-      'experimental_docgenProvider',
-      /**
-       * Seed provider for the experimental_docgenProvider middleware chain.
-       *
-       * Returns `undefined` so the bottom of the chain signals "no docgen here" — each upstream
-       * provider can either replace this with its own payload, return its own undefined, or call
-       * `nextDocgen` and merge with downstream output.
-       */
-      async () => undefined
-    );
+    const [docgenProvider, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+      options.presets.apply<StoryDocsProvider>(
+        'experimental_storyDocsProvider',
+        async () => undefined
+      ),
+    ]);
 
     registerDocgenService({
       getIndex: () => storyIndexGenerator.getIndex(),
-      provider,
+      docgenProvider,
+      workingDir: process.cwd(),
+    });
+    registerStoryDocsService({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      storyDocsProvider,
       workingDir: process.cwd(),
     });
   }

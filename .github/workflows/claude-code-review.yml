@@ -6,10 +6,10 @@ on:
 
 jobs:
   claude-review:
-    # Keep Claude reviews internal to avoid wasting money on AI slop.
+    # Claude Code reviews are estimated to cost $15-25. use only when necessary and only internally.
     if: |
       (github.event.pull_request.author_association == 'MEMBER' || github.event.pull_request.author_association == 'OWNER') &&
-      (github.event.pull_request.draft == false)
+      contains(github.event.pull_request.labels.*.name, 'claude-review')
 
     runs-on: ubuntu-latest
     permissions:

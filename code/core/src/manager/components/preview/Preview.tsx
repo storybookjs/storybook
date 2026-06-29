@@ -10,10 +10,10 @@ import { global } from '@storybook/global';
 
 import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
-import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
+import { Consumer, addons, merge, types, type Combo } from 'storybook/manager-api';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { ReviewToolbarHeader } from '../review/ReviewToolbarHeader.tsx';
+import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
 import { ToolbarComp } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';

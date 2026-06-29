@@ -509,13 +509,13 @@ export const MobileDocs = {
   },
 };
 
-export const MobilePages: Story = {
+export const MobileReview: Story = {
   ...Mobile,
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'review' },
   },
   play: async ({ canvas }) => {
-    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
-    expect(canvas.getByTestId('page')).toBeInTheDocument();
+    expect(canvas.getByLabelText('Open navigation menu')).toBeInTheDocument();
+    expect(canvas.getByTestId('preview')).toBeInTheDocument();
   },
 };

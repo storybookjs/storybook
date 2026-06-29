@@ -5,15 +5,15 @@ import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
-import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
-import { ReviewHeader } from './components/ReviewHeader.tsx';
-import { AttentionBanner } from './components/AttentionBanner.tsx';
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
   getAdjacentReviewEntries,
-} from './review-navigation.ts';
-import { useReview } from './review-store.ts';
+} from '../review-navigation.ts';
+import { useReview } from '../review-store.ts';
+import { AttentionBanner } from './AttentionBanner.tsx';
+import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
+import { ReviewHeader } from './ReviewHeader.tsx';
 
 const Root = styled.div(({ theme }) => ({
   display: 'flex',

@@ -93,10 +93,20 @@ async function main(options?: UserOptions): Promise<PluginOption> {
           },
           dev: {
             async createEnvironment(name, config, context) {
-              return new DevEnvironment('client', await resolveConfig(finalConfig, 'serve'), {
-                ...context,
-                hot: true,
-              });
+              return new DevEnvironment(
+                'client',
+                await resolveConfig(
+                  {
+                    ...finalConfig,
+                    cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                  },
+                  'serve'
+                ),
+                {
+                  ...context,
+                  hot: true,
+                }
+              );
             },
           },
         };

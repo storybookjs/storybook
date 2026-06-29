@@ -83,12 +83,13 @@ describe('isPassThroughContainer', () => {
 describe('isViewportOverlayUnderlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="underlay"></div>';
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    vi.stubGlobal('innerWidth', 800);
+    vi.stubGlobal('innerHeight', 600);
   });
 
   afterEach(() => {
     document.body.innerHTML = '';
+    vi.unstubAllGlobals();
   });
 
   const mockViewportRect = (element: HTMLElement) => {
@@ -160,25 +161,23 @@ describe('setupContentResizeBroadcast', () => {
   let postMessageSpy: ReturnType<typeof vi.spyOn>;
 
   const mockResizeObserver = () => {
-    const OriginalResizeObserver = window.ResizeObserver;
-    window.ResizeObserver = class {
-      private callback: ResizeObserverCallback;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private callback: ResizeObserverCallback;
 
-      constructor(callback: ResizeObserverCallback) {
-        this.callback = callback;
-      }
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback;
+        }
 
-      observe() {
-        this.callback([], this as unknown as ResizeObserver);
-      }
+        observe() {
+          this.callback([], this as unknown as ResizeObserver);
+        }
 
-      unobserve() {}
-      disconnect() {}
-    } as typeof ResizeObserver;
-
-    return () => {
-      window.ResizeObserver = OriginalResizeObserver;
-    };
+        unobserve() {}
+        disconnect() {}
+      } as typeof ResizeObserver
+    );
   };
 
   const mockRect = (
@@ -203,20 +202,14 @@ describe('setupContentResizeBroadcast', () => {
     window.history.replaceState({}, '', '/iframe.html?id=example--story&viewMode=story&embed=true');
     document.body.innerHTML = '<div id="storybook-root"><div id="content">Hello</div></div>';
     postMessageSpy = vi.fn();
-    Object.defineProperty(window, 'parent', {
-      configurable: true,
-      value: { postMessage: postMessageSpy },
-    });
+    vi.stubGlobal('parent', { postMessage: postMessageSpy });
   });
 
   afterEach(() => {
     window.history.replaceState({}, '', previousHref);
-    Object.defineProperty(window, 'parent', {
-      configurable: true,
-      value: window,
-    });
     document.body.innerHTML = '';
     document.head.querySelector('#storybook-embed-sizing')?.remove();
+    vi.unstubAllGlobals();
   });
 
   it('does not install when embed=true is absent', () => {
@@ -236,18 +229,13 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-      expect(document.getElementById('storybook-embed-sizing')).toBeNull();
-    } finally {
-      restoreResizeObserver();
-    }
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    expect(document.getElementById('storybook-embed-sizing')).toBeNull();
   });
 
   it('posts iframe.resize with content dimensions', async () => {
@@ -261,18 +249,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.context).toBe(IFRAME_RESIZE_CONTEXT);
@@ -313,18 +295,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 40,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.width).toBe(80);
@@ -345,18 +321,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 40,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.width).toBe(80);
@@ -367,8 +337,8 @@ describe('setupContentResizeBroadcast', () => {
     document.body.innerHTML =
       '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
 
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    vi.stubGlobal('innerWidth', 800);
+    vi.stubGlobal('innerHeight', 600);
 
     const button = document.getElementById('button') as HTMLButtonElement;
     const underlay = document.getElementById('underlay') as HTMLDivElement;
@@ -392,18 +362,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 600,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.width).toBe(160);
@@ -432,18 +396,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 300,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.width).toBe(332);
@@ -462,18 +420,12 @@ describe('setupContentResizeBroadcast', () => {
       height: 300,
     });
 
-    const restoreResizeObserver = mockResizeObserver();
+    mockResizeObserver();
+    setupContentResizeBroadcast();
 
-    try {
-      setupContentResizeBroadcast();
-
-      await vi.waitFor(() => {
-        expect(postMessageSpy).toHaveBeenCalled();
-      });
-    } finally {
-      restoreResizeObserver();
-    }
-
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     const payload = JSON.parse(message as string);
     expect(payload.width).toBe(300);
@@ -489,8 +441,8 @@ describe('setupContentResizeBroadcast', () => {
     document.body.innerHTML =
       '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
 
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    vi.stubGlobal('innerWidth', 800);
+    vi.stubGlobal('innerHeight', 600);
 
     const button = document.getElementById('button') as HTMLButtonElement;
     const underlay = document.getElementById('underlay') as HTMLDivElement;

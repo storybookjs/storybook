@@ -25,7 +25,7 @@ import {
   type StoryChangeStatus,
   type StoryInfo,
 } from './components/CollectionGrid.tsx';
-import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from './constants.ts';
+import { EVENTS, PRE_REVIEW_RETURN_KEY } from './constants.ts';
 import { navigateOutOfReview } from './review-actions.ts';
 import { enterReviewMode, exitReviewMode, isReviewModeActive } from './review-mode.ts';
 import {
@@ -95,8 +95,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         return;
       }
       setPendingReview(null);
-      // A fresh payload re-arms the one-time auto-enter.
-      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(next);
       setIsStale(!!next.stale);
 
@@ -113,7 +111,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
       previousReviewStoryIdsRef.current = new Set();
-      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(null);
       setPendingReview(null);
       setIsStale(false);
@@ -134,7 +131,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setState(pendingReview);
     setIsStale(!!pendingReview.stale);
     setPendingReview(null);
-    sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
     enterReview();
     navigate(buildReviewChangesSummaryHref(), { plain: true });
   }, [enterReview, navigate, pendingReview]);
@@ -358,5 +354,3 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   return children;
 };
-
-export const isReviewPath = (path: string): boolean => isReviewSummaryPath(path);

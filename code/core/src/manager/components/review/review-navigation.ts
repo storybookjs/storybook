@@ -50,11 +50,7 @@ export const stripReviewLayoutFromSearch = (search: string): string => {
 /** Marks summary-header back links for SPA navigation in useReviewNavigationInterceptor. */
 export const REVIEW_SUMMARY_BACK_ATTR = 'data-review-summary-back';
 
-/** Storybook router navigate target for a review story (no `?path=` wrapper). */
-export const buildReviewStoryTarget = (entry: ReviewNavEntry): string =>
-  `/story/${entry.storyId}&${REVIEW_COLLECTION_QUERY_PARAM}=${entry.collectionIndex}`;
-
-/** Full `?path=` href for a review story, derived from the router target. */
+/** Full `?path=` href for a review story. */
 export const buildReviewStoryHref = (entry: ReviewNavEntry): string =>
   buildReviewStoryNavigateHref(entry);
 

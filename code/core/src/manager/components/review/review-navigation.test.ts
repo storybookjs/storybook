@@ -6,7 +6,6 @@ import {
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
-  buildReviewStoryTarget,
   buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
   getAdjacentReviewEntries,
@@ -43,14 +42,6 @@ describe('buildReviewStoryHref', () => {
   it('builds a story URL with full layout and collection query params', () => {
     expect(buildReviewStoryHref({ storyId: 'story-a', collectionIndex: 1 })).toBe(
       `?${REVIEW_FULL_QUERY_PARAM}=1&path=/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
-    );
-  });
-});
-
-describe('buildReviewStoryTarget', () => {
-  it('builds a router navigate target without the query wrapper', () => {
-    expect(buildReviewStoryTarget({ storyId: 'story-a', collectionIndex: 1 })).toBe(
-      `/story/story-a&${REVIEW_COLLECTION_QUERY_PARAM}=1`
     );
   });
 });

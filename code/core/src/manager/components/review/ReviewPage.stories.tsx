@@ -360,8 +360,6 @@ export const PendingUpdateAccept = meta.story({
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
     emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
-    await expect(await canvas.findByRole('status')).toBeInTheDocument();
-
     clearNotificationMock.mockClear();
     addNotificationMock.mockClear();
     await expect(await canvas.findByRole('status')).toBeInTheDocument();

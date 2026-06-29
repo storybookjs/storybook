@@ -163,13 +163,17 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
   const { parameters, argTypes, component } = story;
   const filterProps = getControlsFilterProps(story, props);
   const interactiveState = useControlsInteractiveState(story, context);
-  const serviceRows = useDocgenServiceRows({
+  const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
     componentId: story.id.split('--')[0],
     storyId: story.id,
     parameters,
     initialArgs: story.initialArgs,
     customArgTypes: argTypes,
   });
+
+  if (isInitialLoading) {
+    return <PureArgsTable isLoading />;
+  }
 
   if (!serviceRows) {
     return null;

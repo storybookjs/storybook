@@ -8,7 +8,7 @@ import {
 } from './paths.ts';
 
 describe('docgen paths', () => {
-  it('keeps manifest refs aligned with getDocgen staticPath output', () => {
+  it('keeps manifest refs aligned with docgen staticPath output', () => {
     expect(docgenQueryStaticPath('button')).toBe('button.json');
     expect(docgenStaticStorePath('button')).toBe('core/docgen/button.json');
     expect(docgenPayloadJsonPointer('button')).toBe('/components/button');

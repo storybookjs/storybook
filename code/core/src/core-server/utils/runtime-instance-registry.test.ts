@@ -131,6 +131,54 @@ describe('getMcpMetadataFromMainConfig', () => {
       endpoint: '/custom-mcp',
     });
   });
+
+  it('detects addon-mcp registered as an absolute path via getAbsolutePath()', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['/Users/me/project/node_modules/@storybook/addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('detects addon-mcp registered as an object whose name is an absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: [
+          {
+            name: '/Users/me/project/node_modules/@storybook/addon-mcp',
+            options: { endpoint: '/custom-mcp' },
+          },
+        ],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/custom-mcp',
+    });
+  });
+
+  it('detects addon-mcp from a Windows-style absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['C:\\project\\node_modules\\@storybook\\addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('does not match unrelated addons that merely contain the addon-mcp name as a substring', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['@storybook/addon-mcp-extras', 'storybook-addon-mcp'],
+      })
+    ).toEqual({
+      status: 'not-installed',
+    });
+  });
 });
 
 describe('createRuntimeInstanceRecord', () => {

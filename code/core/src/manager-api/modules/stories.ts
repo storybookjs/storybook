@@ -600,14 +600,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     selectFirstStory: () => {
       const state = store.getState();
-      const hasAnyActiveFilters = hasActiveFilters(state);
+      const { filteredIndex } = state;
 
-      if (hasAnyActiveFilters) {
-        const { filteredIndex } = state;
-        if (!filteredIndex) {
-          return;
-        }
-
+      if (filteredIndex) {
         const firstStory = Object.keys(filteredIndex).find(
           (id) => filteredIndex[id].type === 'story'
         );
@@ -1077,11 +1072,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
          * - If the user started storybook with a specific page-URL like "/settings/about"
          */
         if (isCanvasRoute) {
-          const hasAnyActiveFilters = hasActiveFilters(state);
+          const { filteredIndex } = state;
 
-          if (hasAnyActiveFilters && !stateHasSelection) {
-            const { filteredIndex } = state;
-            const storyPassesFilter = filteredIndex && filteredIndex[storyId]?.type === 'story';
+          if (filteredIndex && !stateHasSelection) {
+            const storyPassesFilter = filteredIndex[storyId]?.type === 'story';
 
             if (!storyPassesFilter) {
               const firstFiltered = filteredIndex

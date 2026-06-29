@@ -2,7 +2,7 @@
 export const DOCGEN_SERVICE_ID = 'core/docgen';
 
 /**
- * Relative path segment for one component's static snapshot file, as returned by the `getDocgen`
+ * Relative path segment for one component's static snapshot file, as returned by the `docgen`
  * query's `staticPath`. Must stay aligned with {@link docgenServiceDef} and manifest `$ref`s.
  */
 export function docgenQueryStaticPath(id: string): string {

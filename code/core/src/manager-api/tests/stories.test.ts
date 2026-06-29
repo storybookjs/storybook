@@ -2048,6 +2048,38 @@ describe('stories API', () => {
       expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
 
+    /**
+     * Whilst the two of the built-in filters (status and tag) have easy ways to determine
+     * whether or not they are active, no other filters do - in particular, user-provided filters
+     * from experimental_setFilter.
+     *
+     * As such, the filtered index is now used if it is present, regardless of the heuristics that
+     * could be used to determine if the status/tag filters are active.
+     */
+    it('uses filteredIndex when status filters are not active', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1', depth: 0 } as any,
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          filteredIndex: {
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          includedStatusFilters: [],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.selectFirstStory();
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+
     it('suppresses navigation when status filters active but filteredIndex is empty', () => {
       const moduleArgs = createMockModuleArgs({
         initialState: {

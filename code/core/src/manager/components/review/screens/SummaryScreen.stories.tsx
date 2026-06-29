@@ -5,6 +5,7 @@ import { expect, within } from 'storybook/test';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
 import type { StoryInfo } from '../components/CollectionGrid.tsx';
+import { buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
@@ -555,6 +556,46 @@ export const LargeCollectionOverflow = meta.story({
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Large collection overflow')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: /Review all 40/i })).toBeInTheDocument();
+  },
+});
+
+// No story reviewed yet: the progress CTA reads "Start review" and links to the
+// first story in collection order.
+export const StartReview = meta.story({
+  args: { state: minimal },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cta = await canvas.findByRole('link', { name: 'Start review' });
+    await expect(cta).toHaveAttribute(
+      'href',
+      buildReviewStoryHref({ collectionIndex: 0, storyId: 'button-component--variants' })
+    );
+  },
+});
+
+// Some but not all reviewed: the CTA reads "Continue review" and links to the
+// first unreviewed story.
+export const ContinueReview = meta.story({
+  args: { state: minimal, reviewedStoryIds: new Set(['button-component--variants']) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cta = await canvas.findByRole('link', { name: 'Continue review' });
+    await expect(cta).toHaveAttribute(
+      'href',
+      buildReviewStoryHref({ collectionIndex: 0, storyId: 'button-component--base' })
+    );
+  },
+});
+
+// All reviewed: the CTA reads "Close review" and exits review mode (back link).
+export const CloseReview = meta.story({
+  args: {
+    state: minimal,
+    reviewedStoryIds: new Set(['button-component--variants', 'button-component--base']),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole('link', { name: 'Close review' })).toBeInTheDocument();
   },
 });
 

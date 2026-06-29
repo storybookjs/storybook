@@ -16,6 +16,7 @@ import { styled } from 'storybook/theming';
 import { REVIEW_EVENTS } from '../../../shared/review/index.ts';
 import { REVIEW_CHANGES_URL } from '../review/constants.ts';
 import { enterReviewMode } from '../review/review-mode.ts';
+import { useReview } from '../review/review-store.ts';
 import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
 
 type ReviewPayload = {
@@ -90,6 +91,7 @@ export const ReviewWidget = () => {
   const api = useStorybookApi();
   const storyCount = useReviewingStoryCount();
   const reviewTitle = useActiveReviewTitle();
+  const { reviewedCount } = useReview();
   const {
     includedStatusFilters = [],
     excludedStatusFilters = [],
@@ -129,9 +131,20 @@ export const ReviewWidget = () => {
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';
+  const remaining = Math.max(0, storyCount - reviewedCount);
+  const isComplete = remaining === 0;
+  const progressText = isComplete
+    ? 'Review complete'
+    : reviewedCount === 0
+      ? `Review ${storyCount} ${storyLabel}`
+      : `${remaining} ${remaining === 1 ? 'story' : 'stories'} left to review`;
 
   return (
-    <Card color="agentic" outlineAnimation="spin" id="storybook-review-widget">
+    <Card
+      color="agentic"
+      outlineAnimation={isComplete ? 'none' : 'spin'}
+      id="storybook-review-widget"
+    >
       <ActionList as="div">
         <ActionList.Item as="div">
           <HeaderContent>
@@ -146,19 +159,13 @@ export const ReviewWidget = () => {
       <ActionList>
         <ActionList.Item>
           <ActionList.Action
-            ariaLabel={
-              reviewTitle
-                ? `Review ${storyCount} ${storyLabel}: ${reviewTitle}`
-                : `Review ${storyCount} ${storyLabel}`
-            }
+            ariaLabel={reviewTitle ? `${progressText}: ${reviewTitle}` : progressText}
             disableAllTooltips
             appearance="agentic"
             onClick={onOpen}
           >
             <ActionList.Text>
-              <strong>
-                Review {storyCount} {storyLabel}
-              </strong>
+              <strong>{progressText}</strong>
               {reviewTitle ? <small>{reviewTitle}</small> : null}
             </ActionList.Text>
           </ActionList.Action>

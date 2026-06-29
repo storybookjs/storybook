@@ -27,9 +27,11 @@ import { AttentionBanner } from '../components/AttentionBanner.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
+  buildFlattenedNavEntries,
   buildReviewStoryHref,
   buildSummaryBackHref,
 } from '../review-navigation.ts';
+import { countReviewed, findFirstUnreviewedEntry } from '../review-progress.ts';
 import type { ReviewState } from '../review-state.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
@@ -206,6 +208,8 @@ export interface SummaryScreenProps {
   onDismiss: () => void;
   /** Pre-review canvas search, or root when none is recorded yet. */
   returnSearch?: string | null;
+  /** Stories already visited in this review, by unique storyId. */
+  reviewedStoryIds?: Set<string>;
 }
 
 export const SummaryScreen: FC<SummaryScreenProps> = ({
@@ -218,6 +222,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   previewsPaused = false,
   onDismiss,
   returnSearch = null,
+  reviewedStoryIds,
 }) => {
   const [expandedCollections, setExpandedCollections] = useState<Set<number>>(() => new Set());
   const [showAllCollections, setShowAllCollections] = useState<Set<number>>(() => new Set());
@@ -297,6 +302,23 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   const storyCount = new Set(state.collections.flatMap((collection) => collection.storyIds)).size;
   const createdAgo = state.createdAt ? formatCreatedAgo(state.createdAt, nowMs) : null;
 
+  // Progress CTA: walk the full set in collection order (ignoring the "new"
+  // filter) to the first unreviewed story, or offer to close once all are done.
+  const reviewed = reviewedStoryIds ?? new Set<string>();
+  const reviewedCount = countReviewed(
+    reviewed,
+    new Set(state.collections.flatMap((collection) => collection.storyIds))
+  );
+  const allReviewed = storyCount > 0 && reviewedCount >= storyCount;
+  const firstUnreviewed = allReviewed
+    ? null
+    : findFirstUnreviewedEntry(buildFlattenedNavEntries(state), reviewed);
+  const reviewCtaLabel = allReviewed
+    ? 'Close review'
+    : reviewedCount > 0
+      ? 'Continue review'
+      : 'Start review';
+
   const toggleCollection = (index: number) => {
     setExpandedCollections((previous) => {
       const next = new Set(previous);
@@ -345,19 +367,37 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
           </>
         }
         actions={
-          newStoryCount > 0 ? (
-            <Button
-              variant="ghost"
-              size="small"
-              padding="small"
-              ariaLabel={false}
-              tooltip="Toggle filtering of new stories"
-              active={showNewOnly}
-              onClick={() => setShowNewOnly((v) => !v)}
-            >
-              {newStoryCount} new
-            </Button>
-          ) : null
+          <>
+            {newStoryCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="small"
+                padding="small"
+                ariaLabel={false}
+                tooltip="Toggle filtering of new stories"
+                active={showNewOnly}
+                onClick={() => setShowNewOnly((v) => !v)}
+              >
+                {newStoryCount} new
+              </Button>
+            ) : null}
+            {storyCount > 0 ? (
+              allReviewed ? (
+                <Button variant="solid" size="small" padding="small" ariaLabel={false} asChild>
+                  <a
+                    href={buildSummaryBackHref(returnSearch)}
+                    {...{ [REVIEW_SUMMARY_BACK_ATTR]: '' }}
+                  >
+                    {reviewCtaLabel}
+                  </a>
+                </Button>
+              ) : firstUnreviewed ? (
+                <Button variant="solid" size="small" padding="small" ariaLabel={false} asChild>
+                  <a href={buildReviewStoryHref(firstUnreviewed)}>{reviewCtaLabel}</a>
+                </Button>
+              ) : null
+            ) : null}
+          </>
         }
       />
 

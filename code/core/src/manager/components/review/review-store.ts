@@ -18,6 +18,14 @@ export interface ReviewStoreState {
   isSummaryVisible: boolean;
   getStoryPreviewHref: (storyId: string) => string;
   dismissReview: () => void;
+  /** Stories visited (reviewed) in the active review, by unique storyId. */
+  reviewedStoryIds: Set<string>;
+  /** Reviewed stories that belong to the active review. */
+  reviewedCount: number;
+  /** Total unique stories in the active review. */
+  totalReviewCount: number;
+  /** Entry key of the arrival that just completed the set (one-shot), else null. */
+  justCompletedEntryKey: string | null;
 }
 
 const emptyStore: ReviewStoreState = {
@@ -34,6 +42,10 @@ const emptyStore: ReviewStoreState = {
   isSummaryVisible: false,
   getStoryPreviewHref: () => '',
   dismissReview: () => {},
+  reviewedStoryIds: new Set(),
+  reviewedCount: 0,
+  totalReviewCount: 0,
+  justCompletedEntryKey: null,
 };
 
 let currentStore: ReviewStoreState = emptyStore;

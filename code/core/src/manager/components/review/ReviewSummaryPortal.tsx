@@ -99,6 +99,7 @@ export const ReviewSummaryPortal: FC = () => {
     dismissReview,
     isInReviewMode,
     isSummaryVisible,
+    reviewedStoryIds,
   } = useReview();
   const overlayShown = useSummaryOverlayShown();
   const [portalHost, setPortalHost] = useState<HTMLDivElement | null>(null);
@@ -145,6 +146,7 @@ export const ReviewSummaryPortal: FC = () => {
             previewsPaused={!overlayShown}
             onDismiss={dismissReview}
             returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}
+            reviewedStoryIds={reviewedStoryIds}
           />,
           portalHost
         )}

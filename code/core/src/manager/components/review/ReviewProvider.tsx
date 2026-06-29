@@ -44,6 +44,13 @@ import {
   resolveActiveNavEntry,
   resolveNavIndex,
 } from './review-navigation.ts';
+import {
+  clearReviewProgress,
+  countReviewed,
+  readReviewProgress,
+  reviewEntryKey,
+  writeReviewProgress,
+} from './review-progress.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
@@ -63,9 +70,23 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [pendingReview, setPendingReview] = useState<ReviewState | null>(null);
   const [isStale, setIsStale] = useState(false);
   const [isInReviewMode, setIsInReviewMode] = useState(() => isReviewModeActive());
+  const [reviewedStoryIds, setReviewedStoryIds] = useState<Set<string>>(() => new Set());
+  const [justCompletedEntryKey, setJustCompletedEntryKey] = useState<string | null>(null);
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const displayedReviewRef = useRef<ReviewState | null>(null);
   displayedReviewRef.current = state;
+
+  // Reset reviewed-progress synchronously when the displayed review changes
+  // identity (new payload, accepted update, or dismissal). Keying off the
+  // displayed `createdAt` means deferred pushes — which only set pendingReview —
+  // never reset progress; only first display or accepting an update does.
+  const progressKeyRef = useRef<string | undefined>(undefined);
+  const progressKey = state ? `created:${state.createdAt ?? 'none'}` : undefined;
+  if (progressKey !== progressKeyRef.current) {
+    progressKeyRef.current = progressKey;
+    setReviewedStoryIds(state ? readReviewProgress(state.createdAt) : new Set());
+    setJustCompletedEntryKey(null);
+  }
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -104,6 +125,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     },
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
+      clearReviewProgress(displayedReviewRef.current?.createdAt);
       previousReviewStoryIdsRef.current = new Set();
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       setState(null);
@@ -225,6 +247,48 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       : null;
   const activeIndex = activeEntry ? resolveNavIndex(flattenedEntries, activeEntry) : -1;
 
+  const reviewStoryIds = useMemo(
+    () => (state ? collectReviewStoryIds(state) : new Set<string>()),
+    [state]
+  );
+  const reviewedCount = useMemo(
+    () => countReviewed(reviewedStoryIds, reviewStoryIds),
+    [reviewedStoryIds, reviewStoryIds]
+  );
+  const totalReviewCount = reviewStoryIds.size;
+
+  // Mark-on-arrival: the active review story counts as reviewed the moment its
+  // screen resolves (covers Next/Prev, picker, thumbnail, shortcut, reload). The
+  // arrival that flips the set from incomplete to complete records a one-shot
+  // "just completed" key so the toolbar can offer Done while staying on it; the
+  // key clears as soon as the active entry changes (including back to summary).
+  const activeStoryId = activeEntry?.storyId;
+  const activeCollectionIndex = activeEntry?.collectionIndex;
+  useEffect(() => {
+    if (!state || activeStoryId === undefined || activeCollectionIndex === undefined) {
+      setJustCompletedEntryKey(null);
+      return;
+    }
+    const key = reviewEntryKey({ storyId: activeStoryId, collectionIndex: activeCollectionIndex });
+    if (reviewedStoryIds.has(activeStoryId)) {
+      setJustCompletedEntryKey((previous) => (previous === key ? previous : null));
+      return;
+    }
+    const next = new Set(reviewedStoryIds).add(activeStoryId);
+    const before = countReviewed(reviewedStoryIds, reviewStoryIds);
+    const after = countReviewed(next, reviewStoryIds);
+    setReviewedStoryIds(next);
+    writeReviewProgress(state.createdAt, next);
+    setJustCompletedEntryKey(before < totalReviewCount && after === totalReviewCount ? key : null);
+  }, [
+    state,
+    activeStoryId,
+    activeCollectionIndex,
+    reviewedStoryIds,
+    reviewStoryIds,
+    totalReviewCount,
+  ]);
+
   const isSummaryVisible = isReviewSummaryPath(path);
 
   // Re-sync the persisted review-mode flag on every navigation. Enter/exit
@@ -277,6 +341,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       isSummaryVisible,
       getStoryPreviewHref,
       dismissReview,
+      reviewedStoryIds,
+      reviewedCount,
+      totalReviewCount,
+      justCompletedEntryKey,
     }),
     [
       state,
@@ -292,6 +360,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       isSummaryVisible,
       getStoryPreviewHref,
       dismissReview,
+      reviewedStoryIds,
+      reviewedCount,
+      totalReviewCount,
+      justCompletedEntryKey,
     ]
   );
 

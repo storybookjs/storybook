@@ -22,9 +22,6 @@ export function storybookConfigPlugin(options: StorybookConfigPluginOptions): Pl
       name: 'storybook:config-plugin',
       enforce: 'pre',
       async config(config) {
-        if (config.environments?.storybook) {
-          return;
-        }
         const { defaultClientConditions = [] } = await import('vite');
 
         const existingEnvPrefix = config.envPrefix;
@@ -43,16 +40,6 @@ export function storybookConfigPlugin(options: StorybookConfigPluginOptions): Pl
             preserveSymlinks: isPreservingSymlinks(),
           },
           envPrefix: mergedEnvPrefix,
-        };
-      },
-      configEnvironment(name) {
-        if (name !== 'storybook') {
-          return;
-        }
-        return {
-          resolve: {
-            conditions: ['storybook', 'stories', 'test'],
-          },
         };
       },
     },

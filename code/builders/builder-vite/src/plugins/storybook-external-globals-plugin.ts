@@ -92,9 +92,6 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
       if (command !== 'serve') {
         return undefined;
       }
-      if (config.environments?.storybook) {
-        return undefined;
-      }
       const aliases = await getAliases();
       const newAlias = mergeAlias([], config.resolve?.alias) as Alias[];
       newAlias.push(...aliases);

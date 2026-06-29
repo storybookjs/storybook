@@ -9,13 +9,7 @@ import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { resolve } from 'pathe';
 import polka from 'polka';
-import {
-  DevEnvironment,
-  type InlineConfig,
-  type Plugin,
-  type PluginOption,
-  resolveConfig,
-} from 'vite';
+import { DevEnvironment, type InlineConfig, type PluginOption, resolveConfig } from 'vite';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
@@ -204,45 +198,4 @@ async function main(options?: UserOptions): Promise<PluginOption> {
     },
     buildStorybookPlugin(sb),
   ];
-}
-
-/**
- * Wraps plugins for the storybook environment:
- * - Strips config() to prevent root-level config leakage
- * - Adds applyToEnvironment to scope per-env hooks (resolveId, load, transform)
- * - Wraps transformIndexHtml to only fire on storybook pages
- *
- * The plugins' configEnvironment hooks are preserved and fire naturally
- * since the plugins remain top-level (not inside applyToEnvironment).
- */
-function scopeToStorybookEnv(
-  plugins: Plugin[],
-  basePath: string,
-  apply: Plugin['apply']
-): Plugin[] {
-  return plugins.map((plugin) => {
-    return {
-      ...plugin,
-      apply,
-      applyToEnvironment(environment: { name: string }) {
-        return environment.name === 'storybook';
-      },
-      transformIndexHtml: plugin.transformIndexHtml
-        ? wrapTransformIndexHtml(plugin.transformIndexHtml, basePath)
-        : undefined,
-    } as Plugin;
-  });
-}
-
-function wrapTransformIndexHtml(
-  transform: Plugin['transformIndexHtml'],
-  basePath: string
-): Plugin['transformIndexHtml'] {
-  if (typeof transform === 'function') {
-    return async function (this: ThisParameterType<typeof transform>, html, ctx) {
-      if (ctx.path.startsWith(basePath)) {
-        return transform.call(this, html, ctx);
-      }
-    };
-  }
 }

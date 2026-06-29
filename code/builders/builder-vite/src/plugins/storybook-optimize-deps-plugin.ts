@@ -91,9 +91,6 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
       if (command !== 'serve') {
         return;
       }
-      if (config.environments?.storybook) {
-        return;
-      }
       const optimizeDeps = await getOptimizeDeps();
       return {
         optimizeDeps: {
@@ -106,12 +103,6 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
           include: [...optimizeDeps.include, ...(config.optimizeDeps?.include ?? [])],
         },
       };
-    },
-    async configEnvironment(name, _config, env) {
-      if (name !== 'storybook' || env.command !== 'serve') {
-        return;
-      }
-      return { optimizeDeps: await getOptimizeDeps() };
     },
   };
 }

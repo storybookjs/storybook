@@ -19,20 +19,9 @@ export async function storybookSanitizeEnvs(options: Options): Promise<Plugin[]>
     plugins.push({
       name: 'storybook:env-plugin',
       config(config) {
-        if (config.environments?.storybook) {
-          return;
-        }
         const envDefines = stringifyProcessEnvs(envs, config.envPrefix);
         return {
           define: envDefines,
-        };
-      },
-      configEnvironment(name) {
-        if (name !== 'storybook') {
-          return;
-        }
-        return {
-          define: stringifyProcessEnvs(envs, ['VITE_', 'STORYBOOK_']),
         };
       },
     });

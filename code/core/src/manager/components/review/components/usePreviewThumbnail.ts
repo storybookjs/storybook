@@ -194,7 +194,7 @@ export const usePreviewThumbnail = ({
     const previewHref = getPreviewHref(storyId);
     const task: PreviewTask = {
       start: () => {
-        setSrc((current) => current ?? previewHref);
+        setSrc(previewHref);
       },
       started: false,
       finished: false,
@@ -241,7 +241,13 @@ export const usePreviewThumbnail = ({
       if (!contentWindow) {
         return undefined;
       }
-      return registerResizeHandler(contentWindow, setRememberedDimensions);
+      return registerResizeHandler(contentWindow, (dimensions) => {
+        setRememberedDimensions((current) =>
+          current?.width === dimensions.width && current?.height === dimensions.height
+            ? current
+            : dimensions
+        );
+      });
     };
 
     let detach = attach();

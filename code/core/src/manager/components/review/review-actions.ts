@@ -34,6 +34,7 @@ export const navigateToReviewSummary = (
   filters: ReviewModeFilters
 ): void => {
   void enterReviewMode(api, filters);
+  reviewStore.suppressUrlSync();
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
   navigate(buildReviewChangesSummaryHref(), { plain: true });
 };

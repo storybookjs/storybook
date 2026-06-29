@@ -168,13 +168,14 @@ export const FortyStoriesOverflow = meta.story({
       expect((reviewAllFrame as HTMLElement).clientHeight).toBeGreaterThan(0);
     });
     const reviewAllHeight = (reviewAllFrame as HTMLElement).clientHeight;
-    const rowNeighborHeights = visibleCells
-      .slice(-3)
-      .map((cell) => (cell.firstElementChild as HTMLElement | null)?.clientHeight ?? 0);
+    const getRowNeighborHeights = () =>
+      visibleCells
+        .slice(-3)
+        .map((cell) => (cell.firstElementChild as HTMLElement | null)?.clientHeight ?? 0);
     await waitFor(() => {
-      expect(rowNeighborHeights.every((height) => height > 0)).toBe(true);
+      expect(getRowNeighborHeights().every((height) => height > 0)).toBe(true);
     });
-    for (const height of rowNeighborHeights) {
+    for (const height of getRowNeighborHeights()) {
       expect(height).toBe(reviewAllHeight);
     }
   },

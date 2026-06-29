@@ -93,20 +93,27 @@ async function main(options?: UserOptions): Promise<PluginOption> {
           },
           dev: {
             async createEnvironment(name, config, context) {
-              return new DevEnvironment(
-                'client',
-                await resolveConfig(
-                  {
-                    ...finalConfig,
-                    cacheDir: 'node_modules/.cache/storybook-vite-deps',
-                  },
-                  'serve'
-                ),
+              const sbConfig = await resolveConfig(
                 {
-                  ...context,
-                  hot: true,
-                }
+                  ...finalConfig,
+                  cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                },
+                'serve'
               );
+              try {
+                sbConfig.webSocketToken = config.webSocketToken;
+              } catch {
+                Object.defineProperty(sbConfig, 'webSocketToken', {
+                  value: config.webSocketToken,
+                  configurable: !0,
+                  writable: !0,
+                });
+              }
+
+              return new DevEnvironment('client', sbConfig, {
+                ...context,
+                hot: true,
+              });
             },
           },
         };

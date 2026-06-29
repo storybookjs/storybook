@@ -3,10 +3,11 @@ import { type API } from 'storybook/manager-api';
 
 import { enterReviewMode, exitReviewMode, type ReviewModeFilters } from './review-mode.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   buildReviewChangesSummaryHref,
   buildReviewStoryNavigateHref,
   isReviewReturnSearch,
+  REVIEW_COLLECTION_QUERY_PARAM,
+  stripReviewLayoutFromSearch,
   type ReviewNavEntry,
 } from './review-navigation.ts';
 import { reviewStore } from './review-store.ts';
@@ -51,13 +52,14 @@ export const navigateOutOfReview = (
 ): void => {
   reviewStore.releaseSummaryOverlaySuppression();
   reviewStore.suppressUrlSync();
-  api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-  void exitReviewMode(api);
 
   if (returnSearch && !isReviewReturnSearch(returnSearch)) {
-    navigate(returnSearch.startsWith('?') ? returnSearch : `?${returnSearch}`, { plain: true });
+    const normalized = returnSearch.startsWith('?') ? returnSearch : `?${returnSearch}`;
+    navigate(stripReviewLayoutFromSearch(normalized), { plain: true });
+    void exitReviewMode(api);
     return;
   }
 
+  void exitReviewMode(api);
   api.selectFirstStory();
 };

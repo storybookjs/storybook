@@ -9,6 +9,9 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useNavigate } from 'storybook/internal/router';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -16,9 +19,6 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { useNavigate } from 'storybook/internal/router';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import {
   fallbackStoryInfo,
@@ -29,9 +29,9 @@ import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from './const
 import { navigateOutOfReview } from './review-actions.ts';
 import { enterReviewMode, exitReviewMode, isReviewModeActive } from './review-mode.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
+  buildReviewStoryNavigateHref,
   isReviewLayoutActive,
   isReviewReturnSearch,
   isReviewRoute,
@@ -40,10 +40,11 @@ import {
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
+  REVIEW_COLLECTION_QUERY_PARAM,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
+import { reviewStore, type ReviewStoreState } from './review-store.ts';
 import { sessionStore } from './session-store.ts';
 import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
@@ -241,19 +242,23 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Keep review chrome/filters in sync with `full=1` and review routes in the URL.
   useEffect(() => {
+    const reviewRoute = isReviewRoute(path, collectionParam);
+    const fullActive = isReviewLayoutActive(location);
+    const reviewModeActive = isReviewModeActive();
+
     if (reviewStore.isUrlSyncSuppressed()) {
       const navigationSettled =
-        isReviewRoute(path, collectionParam) ||
-        (!isReviewModeActive() && !isReviewLayoutActive(location));
+        (isReviewModeActive() &&
+          isReviewRoute(path, collectionParam) &&
+          isReviewLayoutActive(location)) ||
+        (!isReviewModeActive() &&
+          !isReviewLayoutActive(location) &&
+          !isReviewRoute(path, collectionParam));
       if (!navigationSettled) {
         return;
       }
       reviewStore.releaseUrlSyncSuppression();
     }
-
-    const reviewRoute = isReviewRoute(path, collectionParam);
-    const fullActive = isReviewLayoutActive(location);
-    const reviewModeActive = isReviewModeActive();
 
     if (reviewRoute && !fullActive) {
       if (isSummaryVisible && !reviewModeActive) {
@@ -261,8 +266,17 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
         return;
       }
       if (reviewModeActive) {
-        void exitReviewMode(api);
-        setIsInReviewMode(false);
+        if (isSummaryVisible) {
+          api.navigateUrl(buildReviewChangesSummaryHref(), { replace: true });
+        } else {
+          const storyId = parseStoryIdFromPath(path);
+          const collectionIndex = parseCollectionIndex(collectionParam);
+          if (storyId && collectionIndex !== undefined) {
+            api.navigateUrl(buildReviewStoryNavigateHref({ storyId, collectionIndex }), {
+              replace: true,
+            });
+          }
+        }
       }
       return;
     }
@@ -275,11 +289,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return;
     }
 
-    if (isReviewModeActive()) {
+    if (!isReviewRoute(path, collectionParam) && !fullActive && isReviewModeActive()) {
       void exitReviewMode(api);
       setIsInReviewMode(false);
     } else {
-      setIsInReviewMode(false);
+      setIsInReviewMode(isReviewModeActive());
     }
   }, [api, collectionParam, filtersRef, isSummaryVisible, location, path]);
 

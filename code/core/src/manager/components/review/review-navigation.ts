@@ -38,6 +38,15 @@ export const STORYBOOK_ROOT_HREF = '/';
 export const buildSummaryBackHref = (returnSearch: string | null | undefined): string =>
   returnSearch || STORYBOOK_ROOT_HREF;
 
+/** Strip review layout params so exit/history navigation restores normal chrome. */
+export const stripReviewLayoutFromSearch = (search: string): string => {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  params.delete(REVIEW_FULL_QUERY_PARAM);
+  params.delete(REVIEW_COLLECTION_QUERY_PARAM);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
+
 /** Marks summary-header back links for SPA navigation in useReviewNavigationInterceptor. */
 export const REVIEW_SUMMARY_BACK_ATTR = 'data-review-summary-back';
 

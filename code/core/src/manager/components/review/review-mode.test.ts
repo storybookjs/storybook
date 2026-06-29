@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StatusValue } from 'storybook/internal/types';
 
+import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 import {
-  type ReviewModeFilters,
   enterReviewMode,
   exitReviewMode,
   isReviewModeActive,
+  type ReviewModeFilters,
 } from './review-mode.ts';
+import { sessionStore } from './session-store.ts';
 
 const emptyFilters: ReviewModeFilters = {
   includedStatusFilters: [],
@@ -31,6 +33,7 @@ const makeApi = (
 
 beforeEach(() => {
   sessionStorage.clear();
+  globalThis.history.replaceState({}, '', '/');
 });
 
 describe('enterReviewMode', () => {
@@ -61,6 +64,17 @@ describe('enterReviewMode', () => {
     expect(api.setAllTagFilters).toHaveBeenCalledWith(['play-fn'], []);
     expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
   });
+
+  it('snapshots nav as shown when chrome is collapsed by review layout in the URL', async () => {
+    globalThis.history.replaceState({}, '', '?full=1&path=/review/');
+    const api = makeApi({ getIsNavShown: () => false, getIsPanelShown: () => false });
+    await enterReviewMode(api, emptyFilters);
+
+    const restoreApi = makeApi();
+    await exitReviewMode(restoreApi);
+    expect(restoreApi.toggleNav).toHaveBeenCalledWith(true);
+    expect(restoreApi.togglePanel).toHaveBeenCalledWith(true);
+  });
 });
 
 describe('exitReviewMode', () => {
@@ -81,6 +95,24 @@ describe('exitReviewMode', () => {
     const api = makeApi();
     await exitReviewMode(api);
     expect(api.toggleNav).not.toHaveBeenCalled();
+    expect(isReviewModeActive()).toBe(false);
+  });
+
+  it('restores collapsed chrome when the snapshot was already consumed', async () => {
+    sessionStore.write(`${REVIEW_NAMESPACE}/review-mode`, '1');
+    const api = makeApi({ getIsNavShown: () => false, getIsPanelShown: () => false });
+    await exitReviewMode(api);
+    expect(api.toggleNav).toHaveBeenCalledWith(true);
+    expect(api.togglePanel).toHaveBeenCalledWith(true);
+    expect(isReviewModeActive()).toBe(false);
+  });
+
+  it('is idempotent when exit runs twice during history navigation', async () => {
+    await enterReviewMode(makeApi(), emptyFilters);
+    const api = makeApi();
+    await exitReviewMode(api);
+    await exitReviewMode(api);
+    expect(api.toggleNav).toHaveBeenCalledTimes(1);
     expect(isReviewModeActive()).toBe(false);
   });
 });

@@ -51,6 +51,8 @@ import type {
 
 import { global } from '@storybook/global';
 
+import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
+import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
@@ -63,8 +65,6 @@ import type { ModuleFn } from '../lib/types.tsx';
 import { buildNavigationUrl } from '../lib/url.ts';
 import type { ComposedRef } from '../root.tsx';
 import { fullStatusStore } from '../stores/status.ts';
-import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
-import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { computeStatusFilterFn, parseStatusesParam, serializeStatusesParam } from './statuses.ts';
 import {
   computeStaticFilterFn,
@@ -73,6 +73,7 @@ import {
   parseTagsParam,
   serializeTagsParam,
 } from './tags.ts';
+import { mergeNavigationQueryParams } from './url.ts';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -412,8 +413,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   docsOptions = {},
 }) => {
   const navigateWithQueryParams = (path: string, options?: NavigateOptions) => {
-    const { customQueryParams } = store.getState();
-    navigate(buildNavigationUrl(path, customQueryParams ?? {}), options);
+    const { customQueryParams, location } = store.getState();
+    navigate(
+      buildNavigationUrl(path, mergeNavigationQueryParams(customQueryParams ?? {}, location)),
+      options
+    );
   };
 
   const persistFilters = (inputPatch: Parameters<typeof store.setState>[0]) => {

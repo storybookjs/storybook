@@ -5,14 +5,14 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
-import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
+import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
-import { omit } from 'es-toolkit/object';
+import { omit, pick } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
 
 import merge from '../lib/merge.ts';
@@ -66,6 +66,19 @@ const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPane
 export const getCustomQueryParams = (
   location: Parameters<typeof queryFromLocation>[0]
 ): QueryParams => omit(queryFromLocation(location), LAYOUT_QUERY_PARAM_KEYS);
+
+/** Merge custom params with layout params from the current URL for manager navigation. */
+export const mergeNavigationQueryParams = (
+  customQueryParams: QueryParams,
+  location: Parameters<typeof queryFromLocation>[0],
+  patch: QueryParamInput = {}
+): QueryParams => {
+  const layoutParams = pick(
+    queryFromLocation(location),
+    LAYOUT_QUERY_PARAM_KEYS.filter((key) => key !== 'path')
+  );
+  return { ...customQueryParams, ...layoutParams, ...patch } as QueryParams;
+};
 
 // Initialize the state based on the URL.
 // NOTE:
@@ -327,9 +340,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       }
     },
     applyQueryParams(input, options) {
-      const { path, hash = '', queryParams } = api.getUrlState();
+      const { path, customQueryParams, location } = store.getState();
+      const hash = location?.hash ?? '';
 
-      navigateTo(`${path}${hash}`, { ...queryParams, ...input } as any, options);
+      navigateTo(
+        `${path}${hash}`,
+        mergeNavigationQueryParams(customQueryParams, location, input) as any,
+        options
+      );
       api.setQueryParams(input);
     },
     navigateUrl(url, options) {
@@ -342,7 +360,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
    * unserialized safely.
    */
   const updateArgsParam = () => {
-    const { path, hash = '', queryParams, viewMode } = api.getUrlState();
+    const { path, customQueryParams, location, viewMode } = store.getState();
+    const hash = location?.hash ?? '';
 
     if (viewMode !== 'story') {
       return;
@@ -356,7 +375,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString || null }, { replace: true });
+    navigateTo(
+      `${path}${hash}`,
+      mergeNavigationQueryParams(customQueryParams, location, {
+        args: argsString || null,
+      }) as any,
+      { replace: true }
+    );
     api.setQueryParams({ args: argsString || null });
   };
 
@@ -378,11 +403,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   });
 
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
-    const { path, hash = '', queryParams } = api.getUrlState();
+    const { path, customQueryParams, location } = store.getState();
+    const hash = location?.hash ?? '';
     const globalsString = buildArgsParam(initialGlobals, merge(initialGlobals, userGlobals));
     navigateTo(
       `${path}${hash}`,
-      { ...queryParams, globals: globalsString || null },
+      mergeNavigationQueryParams(customQueryParams, location, {
+        globals: globalsString || null,
+      }) as any,
       { replace: true }
     );
     api.setQueryParams({ globals: globalsString || null });

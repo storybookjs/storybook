@@ -184,6 +184,70 @@ describe('queryParams', () => {
     expect(state.customQueryParams).not.toHaveProperty('tags');
   });
 
+  it('preserves layout params from the current URL when updating custom params', () => {
+    let state = {
+      path: '/review/',
+      customQueryParams: { tags: 'a11y' },
+      location: { search: '?full=1&path=/review/&tags=a11y', hash: '' },
+    };
+    const store = {
+      setState: (change) => {
+        state = { ...state, ...change };
+      },
+      getState: () => state,
+    };
+    const navigate = vi.fn();
+    const { api } = initURL({
+      state,
+      navigate,
+      store,
+      provider: { channel: new EventEmitter() },
+    });
+
+    api.applyQueryParams({ tags: null, statuses: 'reviewing' }, { replace: true });
+
+    expect(navigate).toHaveBeenLastCalledWith(expect.stringContaining('full=1'), expect.anything());
+    expect(state.customQueryParams).toEqual({ statuses: 'reviewing' });
+  });
+
+  it('preserves layout params when args are synced to the URL', () => {
+    let state = {
+      path: '/story/test--story',
+      storyId: 'test--story',
+      viewMode: 'story',
+      customQueryParams: {},
+      location: {
+        search: '?full=1&path=/story/test--story&collection=0',
+        hash: '',
+      },
+    };
+    const store = {
+      setState: (change) => {
+        state = { ...state, ...change };
+      },
+      getState: () => state,
+    };
+    const channel = new EventEmitter();
+    const navigate = vi.fn();
+    initURL({
+      state,
+      navigate,
+      store,
+      provider: { channel },
+      fullAPI: {
+        getCurrentStoryData: () => ({
+          type: 'story',
+          args: {},
+          initialArgs: {},
+        }),
+      },
+    });
+
+    channel.emit(SET_CURRENT_STORY);
+
+    expect(navigate).toHaveBeenCalledWith(expect.stringContaining('full=1'), expect.anything());
+  });
+
   it('lets your read out parameters you set previously', () => {
     let state = {};
     const store = {

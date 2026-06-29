@@ -2,6 +2,7 @@ import type { StatusValue } from 'storybook/internal/types';
 import type { API } from 'storybook/manager-api';
 
 import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
+import { isReviewLayoutActive } from './review-navigation.ts';
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
 import { sessionStore } from './session-store.ts';
 
@@ -61,11 +62,13 @@ export const enterReviewMode = async (
   filters: ReviewModeFilters
 ): Promise<void> => {
   if (!isReviewModeActive()) {
+    // URL-driven `full=1` collapse is not the user's pre-review preference.
+    const layoutCollapsed = isReviewLayoutActive({ search: globalThis.location?.search });
     sessionStore.write(
       CHROME_SNAPSHOT_SESSION_KEY,
       JSON.stringify({
-        nav: api.getIsNavShown(),
-        panel: api.getIsPanelShown(),
+        nav: layoutCollapsed || api.getIsNavShown(),
+        panel: layoutCollapsed || api.getIsPanelShown(),
       })
     );
     sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
@@ -83,15 +86,24 @@ export const enterReviewMode = async (
  * the persisted review-mode flag. Always restores the pre-review snapshot.
  */
 export const exitReviewMode = async (api: ReviewModeApi): Promise<void> => {
+  if (!isReviewModeActive()) {
+    return;
+  }
+
   const chrome = readJson<{ nav: boolean; panel: boolean }>(CHROME_SNAPSHOT_SESSION_KEY);
+  const filters = readJson<ReviewModeFilters>(FILTERS_SNAPSHOT_SESSION_KEY);
+  sessionStore.remove(REVIEW_MODE_SESSION_KEY);
   if (chrome?.nav) {
+    api.toggleNav(true);
+  } else if (chrome === null && !api.getIsNavShown()) {
     api.toggleNav(true);
   }
   if (chrome?.panel) {
     api.togglePanel(true);
+  } else if (chrome === null && !api.getIsPanelShown()) {
+    api.togglePanel(true);
   }
 
-  const filters = readJson<ReviewModeFilters>(FILTERS_SNAPSHOT_SESSION_KEY);
   if (filters) {
     await api.setAllTagFilters(filters.includedTagFilters, filters.excludedTagFilters);
     await api.setAllStatusFilters(filters.includedStatusFilters, filters.excludedStatusFilters);
@@ -99,5 +111,4 @@ export const exitReviewMode = async (api: ReviewModeApi): Promise<void> => {
 
   sessionStore.remove(CHROME_SNAPSHOT_SESSION_KEY);
   sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);
-  sessionStore.remove(REVIEW_MODE_SESSION_KEY);
 };

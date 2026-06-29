@@ -31,8 +31,6 @@ import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
 import { ReviewSummaryPortal } from './screens/ReviewSummaryPortal.tsx';
 
-const REVIEW_CREATED_AT = 1_700_000_000_000;
-
 type EventListener = (payload?: unknown) => void;
 
 const eventListeners = new Map<string, Set<EventListener>>();
@@ -112,7 +110,7 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  createdAt: REVIEW_CREATED_AT,
+  createdAt: new Date().getTime(),
   collections: [
     {
       title: 'Settings',

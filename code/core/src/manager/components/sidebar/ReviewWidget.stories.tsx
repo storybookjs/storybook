@@ -4,12 +4,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { MemoryRouter, Location } from 'storybook/internal/router';
+import { Location, MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
 import { expect, fn, userEvent } from 'storybook/test';
 
-import { REVIEW_COLLECTION_QUERY_PARAM } from '../review/review-navigation.ts';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
+import { REVIEW_COLLECTION_QUERY_PARAM } from '../review/review-navigation.ts';
 import { reviewStore } from '../review/review-store.ts';
 import { ReviewWidget } from './ReviewWidget.tsx';
 
@@ -300,7 +300,7 @@ export const DismissReview: Story = {
   },
 };
 
-const INITIAL_CREATED_AT = 1_700_000_000_000;
+const INITIAL_CREATED_AT = new Date().getTime() - 100_000;
 
 export const KeepsDisplayedTitleDuringPendingUpdate: Story = {
   parameters: {

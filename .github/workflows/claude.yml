@@ -12,14 +12,24 @@ on:
 
 jobs:
   claude:
+    # Only org OWNERs and MEMBERs may trigger Claude. author_association is set by
+    # GitHub on the comment/review/issue payload; everything else (COLLABORATOR,
+    # CONTRIBUTOR, FIRST_TIME_CONTRIBUTOR, NONE) is rejected.
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (  
-        (github.event.action == 'opened' &&  
-          (contains(github.event.issue.body, '`@claude`') || contains(github.event.issue.title, '`@claude`'))) ||  
-        (github.event.action == 'assigned' && github.event.assignee.login == 'claude')  
+      (github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER", "MEMBER"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER", "MEMBER"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' &&
+        contains(github.event.review.body, '@claude') &&
+        contains(fromJSON('["OWNER", "MEMBER"]'), github.event.review.author_association)) ||
+      (github.event_name == 'issues' && (
+        (github.event.action == 'opened' &&
+          contains(fromJSON('["OWNER", "MEMBER"]'), github.event.issue.author_association) &&
+          (contains(github.event.issue.body, '`@claude`') || contains(github.event.issue.title, '`@claude`'))) ||
+        (github.event.action == 'assigned' && github.event.assignee.login == 'claude')
       ))
 
     runs-on: ubuntu-latest

@@ -44,8 +44,13 @@ on:
       - next
       - main
 
+# For PR events, group per-PR (github.ref is refs/pull/<n>/merge) so redundant
+# re-triggers on the same PR cancel each other. For pushes to a shared branch
+# (next/main), key on the commit SHA instead: otherwise two merges landing close
+# together share the refs/heads/<branch> group and the earlier merge's trigger is
+# cancelled before it can POST to CircleCI, silently skipping its `merged` workflow.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: true
 
 jobs:

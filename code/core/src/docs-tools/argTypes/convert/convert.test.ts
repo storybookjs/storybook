@@ -160,6 +160,7 @@ describe('storybook type system', () => {
         import React from 'react';
 
         type Kind = 'default' | 'action';
+        type NullableKind = 'default' | 'action' | null;
         enum DefaultEnum {
           TopLeft,
           TopRight,
@@ -173,6 +174,8 @@ describe('storybook type system', () => {
         type EnumUnion = DefaultEnum | NumericEnum;
         interface Props {
           kind?: Kind;
+          nullableKind: NullableKind;
+          inlinedNullableUnion: 'default' | 'action' | null;
           inlinedNumericLiteralUnion: 0 | 1;
           enumUnion: EnumUnion;
         }
@@ -187,6 +190,24 @@ describe('storybook type system', () => {
             "value": [
               "default",
               "action"
+            ]
+          },
+          "nullableKind": {
+            "raw": "'default' | 'action' | null",
+            "name": "enum",
+            "value": [
+              "default",
+              "action",
+              null
+            ]
+          },
+          "inlinedNullableUnion": {
+            "raw": "'default' | 'action' | null",
+            "name": "enum",
+            "value": [
+              "default",
+              "action",
+              null
             ]
           },
           "inlinedNumericLiteralUnion": {

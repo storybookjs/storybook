@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React from 'react';
 
 type Kind = 'default' | 'action';
+type NullableKind = 'default' | 'action' | null;
 enum DefaultEnum {
   TopLeft,
   TopRight,
@@ -15,6 +16,8 @@ enum NumericEnum {
 type EnumUnion = DefaultEnum | NumericEnum;
 interface Props {
   kind?: Kind;
+  nullableKind: NullableKind;
+  inlinedNullableUnion: 'default' | 'action' | null;
   inlinedNumericLiteralUnion: 0 | 1;
   enumUnion: EnumUnion;
 }

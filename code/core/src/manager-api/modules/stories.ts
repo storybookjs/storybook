@@ -54,7 +54,6 @@ import { global } from '@storybook/global';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
-import { hasActiveFilters } from '../../shared/utils/story-index-filters.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,

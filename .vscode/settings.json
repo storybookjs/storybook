@@ -60,8 +60,6 @@
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "vitest.workspaceConfig": "./code/vitest.workspace.ts",
-  "vitest.rootConfig": "./code/vitest.workspace.ts",
   "oxc.fmt.configPath": ".oxfmtrc.json",
   "oxc.enable.oxlint": false
 }

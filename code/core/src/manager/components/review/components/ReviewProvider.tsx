@@ -90,6 +90,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const current = displayedReviewRef.current;
       if (isDeferredReviewUpdate(current, next)) {
         setPendingReview(next);
+        reviewStore.setState(reviewStore.getState(), next);
         return;
       }
       setPendingReview(null);
@@ -129,6 +130,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return;
     }
     acceptReviewNotification(api, accepted.createdAt);
+    reviewStore.setState(reviewStore.getState(), null);
     setState(accepted);
     setIsStale(!!accepted.stale);
     setPendingReview(null);

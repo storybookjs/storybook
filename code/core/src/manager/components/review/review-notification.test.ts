@@ -12,6 +12,7 @@ import {
   clearReviewNotificationsOnDismiss,
   pickReviewToNotify,
   shouldAutoAcceptOnRoute,
+  shouldSkipArrivalNotification,
 } from './review-notification.ts';
 import type { ReviewState } from './review-state.ts';
 import { sessionStore } from './session-store.ts';
@@ -87,6 +88,33 @@ describe('clearReviewNotificationsOnDismiss', () => {
     clearReviewNotificationsOnDismiss({ clearNotification }, review(100, 'First'), null);
     expect(clearNotification).toHaveBeenCalledWith(reviewAvailableNotificationId(100));
     expect(sessionStore.read(VISITED_REVIEW_CREATED_AT_KEY)).toBeNull();
+  });
+});
+
+describe('shouldSkipArrivalNotification', () => {
+  it('skips deferred updates while already in review', () => {
+    const displayed = review(100, 'First');
+    const pending = review(200, 'Second');
+    expect(shouldSkipArrivalNotification('/review/', undefined, pending, displayed, pending)).toBe(
+      true
+    );
+    expect(
+      shouldSkipArrivalNotification('/story/example--default', 0, pending, displayed, pending)
+    ).toBe(true);
+  });
+
+  it('still notifies for unseen arrivals off review routes', () => {
+    const displayed = review(100, 'First');
+    const pending = review(200, 'Second');
+    expect(
+      shouldSkipArrivalNotification(
+        '/story/example--default',
+        undefined,
+        pending,
+        displayed,
+        pending
+      )
+    ).toBe(false);
   });
 });
 

@@ -14,6 +14,7 @@ import {
   pickReviewToNotify,
   readCollectionIndex,
   shouldAutoAcceptOnRoute,
+  shouldSkipArrivalNotification,
 } from '../review-notification.ts';
 import { reviewStore, useReview } from '../review-store.ts';
 import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
@@ -50,6 +51,10 @@ export const ReviewNotification: FC = () => {
     const deferred = reviewStore.getPendingReview();
     const review = pickReviewToNotify(displayed, deferred);
     if (!review) {
+      return;
+    }
+
+    if (shouldSkipArrivalNotification(path, collectionIndex, review, displayed, deferred)) {
       return;
     }
 

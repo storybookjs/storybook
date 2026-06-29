@@ -41,6 +41,26 @@ const readNotifiedCreatedAt = (): number | undefined => {
   return Number.isFinite(notified) ? notified : undefined;
 };
 
+export const isOnReviewRoute = (path: string, collectionIndex: number | undefined): boolean =>
+  isReviewSummaryPath(path) || (path.startsWith('/story/') && collectionIndex !== undefined);
+
+/** In-review pushes use the toolbar Update banner instead of the sidebar toast. */
+export const shouldSkipArrivalNotification = (
+  path: string,
+  collectionIndex: number | undefined,
+  review: ReviewState,
+  displayed: ReviewState | null,
+  deferred: ReviewState | null
+): boolean => {
+  if (!isOnReviewRoute(path, collectionIndex)) {
+    return false;
+  }
+  if (deferred?.createdAt !== undefined && deferred.createdAt === review.createdAt) {
+    return true;
+  }
+  return displayed?.createdAt !== undefined && displayed.createdAt === review.createdAt;
+};
+
 export const pickReviewToNotify = (
   displayed: ReviewState | null,
   deferred: ReviewState | null
@@ -70,9 +90,7 @@ export const shouldAutoAcceptOnRoute = (
   if (createdAt === undefined || !isUnseen(createdAt) || displayed?.createdAt !== createdAt) {
     return false;
   }
-  const onReviewRoute =
-    isReviewSummaryPath(path) || (path.startsWith('/story/') && collectionIndex !== undefined);
-  if (!onReviewRoute) {
+  if (!isOnReviewRoute(path, collectionIndex)) {
     return false;
   }
   if (deferred?.createdAt !== undefined && deferred.createdAt !== displayed.createdAt) {

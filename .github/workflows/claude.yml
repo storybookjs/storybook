@@ -58,7 +58,11 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Optional: Add claude_args to customize behavior and configuration
+          # Tool permissions Claude needs to follow AGENTS.md (install, compile,
+          # typecheck, lint, format, test). Bash is NOT allowed by default, so
+          # without this Claude cannot run any of the repo's build/test commands.
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr *)'
+          claude_args: |
+            --allowed-tools "Bash(yarn:*),Bash(cd:*),Bash(node:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+            --disallowed-tools "Bash(yarn start),Bash(yarn task dev)"

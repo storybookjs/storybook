@@ -9,11 +9,11 @@ export function getStorybookModulePrefix(): string {
 }
 
 /**
- * Middleware that serves files from `.vite/deps_storybook/` directly from disk.
+ * Middleware that serves files from `.cache/storybook-vite-deps/deps/` directly from disk.
  * TODO:  find out why Vite doesn't serve these files correctly when imported from the storybook environment and if there's a better way to handle this than a custom middleware.
  */
 export function createDepsStorybookMiddleware(server: ViteDevServer): Connect.NextHandleFunction {
-  const DEPS_STORYBOOK_PREFIX = '/node_modules/.vite/deps_storybook/';
+  const DEPS_STORYBOOK_PREFIX = '/node_modules/.cache/storybook-vite-deps/deps/';
 
   return async (req, res, next) => {
     const url = req.url?.split('?')[0];
@@ -58,7 +58,7 @@ function rewriteImportPaths(code: string): string {
  * through the storybook DevEnvironment instead of the default client environment.
  */
 function createEnvironmentModuleRouter(server: ViteDevServer): Connect.NextHandleFunction {
-  const DEPS_STORYBOOK_PREFIX = '/node_modules/.vite/deps_storybook/';
+  const DEPS_STORYBOOK_PREFIX = '/node_modules/.cache/storybook-vite-deps/deps/';
 
   return async (req, res, next) => {
     const url = req.url;

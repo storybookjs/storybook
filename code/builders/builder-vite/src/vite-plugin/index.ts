@@ -73,7 +73,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         }
         return {
           envPrefix: ['VITE_', 'STORYBOOK_'],
-          server: { fs: { allow: [finalOptions.configDir] } },
+          ...(mode === 'storybook' ? { server: { fs: { allow: [finalOptions.configDir] } } } : {}),
           environments: { storybook: { consumer: 'client' } },
         };
       },

@@ -297,10 +297,15 @@ export const setupStoryFreezer = (
 
   addPreFreezeStyles(documentRef);
   const freezer = createStoryFreezer(windowRef, documentRef);
+  let notifiedFrozen = false;
   channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
     if (newPhase === 'finished') {
       const runFreeze = () => {
+        if (notifiedFrozen) {
+          return;
+        }
         freezer.freeze();
+        notifiedFrozen = true;
         options.onFrozen?.();
       };
       if (typeof windowRef.queueMicrotask === 'function') {

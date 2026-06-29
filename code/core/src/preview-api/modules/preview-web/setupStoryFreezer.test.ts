@@ -264,8 +264,8 @@ describe('setupStoryFreezer', () => {
     expect(setupStoryFreezer(channel, { onFrozen })).toBe(true);
 
     channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'finished', storyId: 'example--story' });
-    await Promise.resolve();
-
-    expect(onFrozen).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(onFrozen).toHaveBeenCalledTimes(1);
+    });
   });
 });

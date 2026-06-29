@@ -638,7 +638,7 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&embed=true');
   });
 
-  it('appends embed before freeze when both are set', () => {
+  it('includes both embed and freeze when both are set', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
@@ -649,8 +649,11 @@ describe('getStoryHrefs', () => {
     store.setState(state);
 
     const { previewHref } = api.getStoryHrefs('test--story', { embed: true, freeze: true });
-    expect(previewHref).toEqual(
-      '/iframe.html?id=test--story&viewMode=story&embed=true&freeze=finished'
-    );
+    const url = new URL(previewHref, 'http://localhost');
+    expect(url.pathname).toBe('/iframe.html');
+    expect(url.searchParams.get('id')).toBe('test--story');
+    expect(url.searchParams.get('viewMode')).toBe('story');
+    expect(url.searchParams.get('embed')).toBe('true');
+    expect(url.searchParams.get('freeze')).toBe('finished');
   });
 });

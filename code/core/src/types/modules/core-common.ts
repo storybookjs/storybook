@@ -10,7 +10,7 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
+import type { DocgenProviderDescriptor } from '../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsProvider } from '../../shared/open-service/services/story-docs/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
@@ -20,11 +20,13 @@ import type { SupportedRenderer } from './renderers.ts';
 export type {
   DocgenError,
   DocgenJsDocTags,
+  DocgenMiddleware,
   DocgenPayload,
   DocgenProvider,
+  DocgenProviderDescriptor,
   DocgenProviderInput,
-  DocgenProviderPreset,
   DocgenSubcomponent,
+  DocgenWorkerModule,
 } from '../../shared/open-service/services/docgen/types.ts';
 export type {
   StoryDoc,
@@ -137,9 +139,9 @@ export interface Presets {
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
   apply(
     extension: 'experimental_docgenProvider',
-    config: DocgenProvider,
+    config: DocgenProviderDescriptor[],
     args?: any
-  ): Promise<DocgenProvider>;
+  ): Promise<DocgenProviderDescriptor[]>;
   apply(
     extension: 'experimental_storyDocsProvider',
     config: StoryDocsProvider,
@@ -469,7 +471,7 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
-  experimental_docgenProvider?: DocgenProvider;
+  experimental_docgenProvider?: DocgenProviderDescriptor[];
   experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
@@ -796,9 +798,10 @@ export interface StorybookConfig {
   services?: PresetValue<StorybookConfigRaw['services']>;
 
   /**
-   * Middleware-style provider for the experimental docgen service. Each registrant receives the
-   * previously accumulated provider as its config argument and returns a wrapping provider that
-   * may delegate to it via the input forwarding pattern.
+   * Provider descriptors for the experimental docgen service. Each registrant appends a
+   * structured-clone-safe {@link DocgenProviderDescriptor} (module specifier + config) to the
+   * accumulated array; core's docgen worker imports and composes them middleware-style off the main
+   * thread.
    */
   experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 

@@ -215,8 +215,9 @@ export type RegisterDocgenServicesOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`.
-   * Omit to skip registering the `core/docgen` service.
+   * Extraction function for one component, typically forwarding to the docgen worker. Receives the
+   * resolved index entry and returns the payload (or undefined when nothing was produced). Omit to
+   * skip registering the `core/docgen` service.
    */
   docgenProvider?: DocgenProvider;
   /**

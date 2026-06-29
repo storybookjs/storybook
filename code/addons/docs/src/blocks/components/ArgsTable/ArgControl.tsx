@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { Link } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
-
 import {
   BooleanControl,
   ColorControl,
@@ -26,15 +24,6 @@ export interface ArgControlProps {
   storyId?: string;
   controlsId?: string;
 }
-
-/** Parent row toggles visibility purely with CSS (see `StyledTr` in `ArgRow`).  */
-const SetupControlsLink = styled.span({
-  display: 'none',
-});
-
-const NoControlPlaceholder = styled.span({
-  display: 'inline',
-});
 
 const Controls: Record<string, FC<any>> = {
   array: ObjectControl,
@@ -97,7 +86,7 @@ export const ArgControl: FC<ArgControlProps> = ({
     // :hover and :focus-within, so the link stays reachable for keyboard users.
     return (
       <>
-        <span className="sbdocs sbdocs-argcontrol-placeholder">
+        <span className="sbdocs sbdocs-argcontrol-setup">
           <Link
             href="https://storybook.js.org/docs/essentials/controls?ref=ui"
             target="_blank"
@@ -106,7 +95,7 @@ export const ArgControl: FC<ArgControlProps> = ({
             Setup controls
           </Link>
         </span>
-        <span>
+        <span className="sbdocs sbdocs-argcontrol-placeholder">
           <NoControl />
         </span>
       </>

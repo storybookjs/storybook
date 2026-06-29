@@ -6,7 +6,7 @@ import { codeCommon } from 'storybook/internal/components';
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
 import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
@@ -83,15 +83,15 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
 // When a row has no usable control, the "Setup controls" link is hidden and a placeholder dash is
 // shown. Hovering or focusing within the row swaps them, so keyboard users reach the link too.
 const StyledTr = styled.tr({
-  [`span.sbdocs-argcontrol-placeholder`]: {
-    display: 'none',
+  [`span.sbdocs-argcontrol-setup`]: {
+    ...srOnlyStyles,
   },
   '&:hover, &:focus-within': {
-    [`span.sbdocs-argcontrol-placeholder`]: {
-      display: 'inline',
+    [`span.sbdocs-argcontrol-setup`]: {
+      ...srOnlyUnsetStyles,
     },
-    [`span:not(.sbdocs-argcontrol-placeholder)`]: {
-      display: 'none',
+    [`span.sbdocs-argcontrol-placeholder`]: {
+      ...srOnlyStyles,
     },
   },
 });
@@ -151,7 +151,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
       )}
       {updateArgs ? (
         <td>
-          <ArgControl {...(props as ArgControlProps)} isRequired={required} />
+          <ArgControl {...(props as ArgControlProps)} isRequired={!!required} />
         </td>
       ) : null}
     </StyledTr>

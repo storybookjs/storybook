@@ -6,6 +6,8 @@ import type { StoryInfo } from './review-types.ts';
 
 export interface ReviewStoreState {
   state: ReviewState | null;
+  /** Bumps when displayed or deferred review payloads change; drives notification sync. */
+  notificationKey: string;
   isStale: boolean;
   hasPendingUpdate: boolean;
   onAcceptPendingUpdate: () => void;
@@ -22,6 +24,7 @@ export interface ReviewStoreState {
 
 const emptyStore: ReviewStoreState = {
   state: null,
+  notificationKey: '',
   isStale: false,
   hasPendingUpdate: false,
   onAcceptPendingUpdate: () => {},
@@ -37,6 +40,7 @@ const emptyStore: ReviewStoreState = {
 };
 
 let currentStore: ReviewStoreState = emptyStore;
+let internalPendingReview: ReviewState | null = null;
 const listeners = new Set<() => void>();
 
 /** Synchronously hide the summary overlay before SPA navigation to a story. */
@@ -46,10 +50,17 @@ const notify = () => {
   listeners.forEach((listener) => listener());
 };
 
+export const reviewNotificationKey = (
+  displayed: ReviewState | null,
+  deferred: ReviewState | null
+): string => `${displayed?.createdAt ?? 'none'}:${deferred?.createdAt ?? 'none'}`;
+
 export const reviewStore = {
   getState: () => currentStore,
-  setState: (next: ReviewStoreState) => {
+  getPendingReview: () => internalPendingReview,
+  setState: (next: ReviewStoreState, pendingReview: ReviewState | null) => {
     currentStore = next;
+    internalPendingReview = pendingReview;
     notify();
   },
   subscribe: (listener: () => void) => {
@@ -69,6 +80,12 @@ export const reviewStore = {
     }
   },
   isSummaryOverlayShown: () => currentStore.isSummaryVisible && !summaryOverlaySuppressed,
+  reset: () => {
+    currentStore = emptyStore;
+    internalPendingReview = null;
+    summaryOverlaySuppressed = false;
+    notify();
+  },
 };
 
 export const useReview = (): ReviewStoreState =>

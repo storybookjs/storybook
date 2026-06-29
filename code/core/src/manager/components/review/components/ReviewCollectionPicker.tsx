@@ -2,12 +2,12 @@ import React, { useEffect, useRef, type FC } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { type StoryInfo } from './review-types.ts';
 import {
   buildReviewStoryHref,
   prettifyComponentId,
   type ReviewNavEntry,
-} from './review-navigation.ts';
+} from '../review-navigation.ts';
+import { type StoryInfo } from '../review-types.ts';
 
 const PopoverList = styled.div(({ theme }) => ({
   display: 'flex',

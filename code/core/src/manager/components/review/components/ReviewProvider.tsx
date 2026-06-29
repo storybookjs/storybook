@@ -11,7 +11,7 @@ import {
 
 import { useNavigate } from 'storybook/internal/router';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -20,14 +20,9 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import {
-  AUTO_ENTERED_SESSION_KEY,
-  EVENTS,
-  PRE_REVIEW_RETURN_KEY,
-  REVIEW_CHANGES_URL,
-} from './constants.ts';
-import { navigateOutOfReview } from './review-actions.ts';
-import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
+import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from '../constants.ts';
+import { navigateOutOfReview } from '../review-actions.ts';
+import { enterReviewMode, isReviewModeActive } from '../review-mode.ts';
 import {
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
@@ -38,13 +33,21 @@ import {
   resolveActiveNavEntry,
   resolveNavIndex,
   REVIEW_COLLECTION_QUERY_PARAM,
-} from './review-navigation.ts';
-import type { ReviewState } from './review-state.ts';
-import { clearReviewStatuses, collectReviewStoryIds, syncReviewStatuses } from './review-status.ts';
-import { reviewStore, type ReviewStoreState } from './review-store.ts';
-import { fallbackStoryInfo, type StoryChangeStatus, type StoryInfo } from './review-types.ts';
-import { sessionStore } from './session-store.ts';
-import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
+} from '../review-navigation.ts';
+import {
+  acceptReviewNotification,
+  clearReviewNotificationsOnDismiss,
+} from '../review-notification.ts';
+import type { ReviewState } from '../review-state.ts';
+import {
+  clearReviewStatuses,
+  collectReviewStoryIds,
+  syncReviewStatuses,
+} from '../review-status.ts';
+import { reviewNotificationKey, reviewStore, type ReviewStoreState } from '../review-store.ts';
+import { buildNewlyAddedStoryIds, buildStoryInfo } from '../review-story-info.ts';
+import { sessionStore } from '../session-store.ts';
+import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
 
 const reviewStatusStore = experimental_getStatusStore(REVIEW_STATUS_TYPE_ID);
 
@@ -87,6 +90,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const current = displayedReviewRef.current;
       if (isDeferredReviewUpdate(current, next)) {
         setPendingReview(next);
+        reviewStore.setState(reviewStore.getState(), next);
         return;
       }
       setPendingReview(null);
@@ -102,6 +106,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       clearReviewStatuses(reviewStatusStore);
       previousReviewStoryIdsRef.current = new Set();
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+      clearReviewNotificationsOnDismiss(
+        api,
+        reviewStore.getState().state,
+        reviewStore.getPendingReview()
+      );
       setState(null);
       setPendingReview(null);
       setIsStale(false);
@@ -116,16 +125,19 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [emit]);
 
   const acceptPendingReview = useCallback(() => {
-    if (!pendingReview) {
+    const accepted = reviewStore.getPendingReview();
+    if (!accepted) {
       return;
     }
-    setState(pendingReview);
-    setIsStale(!!pendingReview.stale);
+    acceptReviewNotification(api, accepted.createdAt);
+    reviewStore.setState(reviewStore.getState(), null);
+    setState(accepted);
+    setIsStale(!!accepted.stale);
     setPendingReview(null);
     sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
     enterReview();
     navigate(buildReviewChangesSummaryHref(), { plain: true });
-  }, [enterReview, navigate, pendingReview]);
+  }, [api, enterReview, navigate]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
@@ -148,70 +160,15 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const flattenedEntries = useMemo(() => (state ? buildFlattenedNavEntries(state) : []), [state]);
 
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
-  const newlyAddedStoryIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (!state) {
-      return ids;
-    }
-    const isChangeDetectedNew = (storyId: string) =>
-      Object.values(allStatuses[storyId] ?? {}).some(
-        (status) => status.value === 'status-value:new'
-      );
-    for (const collection of state.collections) {
-      for (const storyId of collection.storyIds) {
-        if (isChangeDetectedNew(storyId)) {
-          ids.add(storyId);
-        }
-      }
-    }
-    return ids;
-  }, [allStatuses, state]);
+  const newlyAddedStoryIds = useMemo(
+    () => (state ? buildNewlyAddedStoryIds(state, allStatuses) : new Set<string>()),
+    [allStatuses, state]
+  );
 
-  const storyInfo = useMemo(() => {
-    const info: Record<string, StoryInfo> = {};
-    if (!state) {
-      return info;
-    }
-    const getStoryChangeStatus = (storyId: string): StoryChangeStatus | undefined => {
-      const changeValue = Object.values(allStatuses[storyId] ?? {}).find(
-        (status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID
-      )?.value;
-      if (changeValue === 'status-value:new') {
-        return 'new';
-      }
-      if (changeValue === 'status-value:modified') {
-        return 'modified';
-      }
-      return undefined;
-    };
-    for (const collection of state.collections) {
-      for (const storyId of collection.storyIds) {
-        if (storyId in info) {
-          continue;
-        }
-        const direct = index?.[storyId];
-        const entry =
-          direct?.type === 'story' ? direct : index ? api.findLeafEntry(index, storyId) : undefined;
-        const shared = {
-          isNewlyAdded: newlyAddedStoryIds.has(storyId) || undefined,
-          changeStatus: getStoryChangeStatus(storyId),
-        };
-        if (entry?.type === 'story' && entry.title) {
-          info[storyId] = {
-            title: entry.title,
-            name: entry.name,
-            ...shared,
-          };
-        } else {
-          info[storyId] = {
-            ...fallbackStoryInfo(storyId),
-            ...shared,
-          };
-        }
-      }
-    }
-    return info;
-  }, [allStatuses, api, index, newlyAddedStoryIds, state]);
+  const storyInfo = useMemo(
+    () => (state ? buildStoryInfo(state, index, api, allStatuses, newlyAddedStoryIds) : {}),
+    [allStatuses, api, index, newlyAddedStoryIds, state]
+  );
 
   const collectionIndex = parseCollectionIndex(collectionParam);
   const storyIdFromPath = parseStoryIdFromPath(path);
@@ -261,6 +218,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const value = useMemo<ReviewStoreState>(
     () => ({
       state,
+      notificationKey: reviewNotificationKey(state, pendingReview),
       isStale,
       hasPendingUpdate: pendingReview !== null,
       onAcceptPendingUpdate: acceptPendingReview,
@@ -276,8 +234,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }),
     [
       state,
-      isStale,
       pendingReview,
+      isStale,
       acceptPendingReview,
       storyInfo,
       flattenedEntries,
@@ -293,8 +251,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Sync before paint so toolbar surfaces read current route on first frame.
   useLayoutEffect(() => {
-    reviewStore.setState(value);
-  }, [value]);
+    reviewStore.setState(value, pendingReview);
+  }, [value, pendingReview]);
 
   useLayoutEffect(() => {
     if (isSummaryVisible) {
@@ -304,6 +262,3 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   return children;
 };
-
-export const isReviewPath = (path: string): boolean =>
-  isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);

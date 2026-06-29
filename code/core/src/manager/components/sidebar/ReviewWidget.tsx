@@ -1,10 +1,11 @@
-import React, { type SyntheticEvent, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, type SyntheticEvent } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
 import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
+import { useNavigate } from 'storybook/internal/router';
 import {
   experimental_useStatusStore,
   useChannel,
@@ -13,14 +14,10 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { REVIEW_EVENTS } from '../../../shared/review/index.ts';
-import { REVIEW_CHANGES_URL } from '../review/constants.ts';
-import { enterReviewMode } from '../review/review-mode.ts';
+import { EVENTS } from '../review/constants.ts';
+import { navigateToReviewSummary } from '../review/review-actions.ts';
 import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
-
-type ReviewPayload = {
-  title: string;
-};
+import { useReview } from '../review/review-store.ts';
 
 const HeaderContent = styled(ActionList.Text)({
   display: 'flex',
@@ -68,26 +65,13 @@ export const useReviewingStoryCount = () => {
 };
 
 const useActiveReviewTitle = () => {
-  const [title, setTitle] = useState<string | null>(null);
-
-  const emit = useChannel({
-    [REVIEW_EVENTS.DISPLAY_REVIEW]: (review: ReviewPayload) => {
-      setTitle(review.title);
-    },
-    [REVIEW_EVENTS.REVIEW_DISMISSED]: () => {
-      setTitle(null);
-    },
-  });
-
-  useEffect(() => {
-    emit(REVIEW_EVENTS.REQUEST_REVIEW);
-  }, [emit]);
-
-  return title;
+  const { state } = useReview();
+  return state?.title ?? null;
 };
 
 export const ReviewWidget = () => {
   const api = useStorybookApi();
+  const navigate = useNavigate();
   const storyCount = useReviewingStoryCount();
   const reviewTitle = useActiveReviewTitle();
   const {
@@ -108,24 +92,17 @@ export const ReviewWidget = () => {
   }
 
   const onOpen = () => {
-    void (async () => {
-      try {
-        await enterReviewMode(api, {
-          includedStatusFilters,
-          excludedStatusFilters,
-          includedTagFilters,
-          excludedTagFilters,
-        });
-      } catch {
-        // Best-effort: still continue into the review route.
-      }
-      api.navigate(REVIEW_CHANGES_URL);
-    })();
+    navigateToReviewSummary(api, navigate, {
+      includedStatusFilters,
+      excludedStatusFilters,
+      includedTagFilters,
+      excludedTagFilters,
+    });
   };
 
   const onDismiss = (event: SyntheticEvent) => {
     event.stopPropagation();
-    emit(REVIEW_EVENTS.DISMISS_REVIEW);
+    emit(EVENTS.DISMISS_REVIEW);
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';

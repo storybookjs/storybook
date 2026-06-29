@@ -4,7 +4,7 @@ import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
-import { DEFAULT_CONTENT_HEIGHT, DEFAULT_CONTENT_WIDTH } from './iframeResizeMessage.ts';
+import { DEFAULT_CONTENT_WIDTH } from './iframeResizeMessage.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -51,7 +51,7 @@ const Cell = styled.div({
   minWidth: 0,
 });
 
-// Scale to fit measured content inside a fixed 3/2 frame; aspect ratio never changes.
+// Scale to fit content width in a fixed 3/2 frame; tall content is cropped.
 const Frame = styled.a(({ theme }) => ({
   position: 'relative',
   display: 'block',
@@ -61,10 +61,8 @@ const Frame = styled.a(({ theme }) => ({
   containerType: 'inline-size',
   containerName: 'preview-frame',
   '--content-w': DEFAULT_CONTENT_WIDTH,
-  '--content-h': DEFAULT_CONTENT_HEIGHT,
   '--fit-w': 'calc(100cqw / (var(--content-w) * 1px))',
-  '--fit-h': 'calc((100cqw * 2 / 3) / (var(--content-h) * 1px))',
-  '--fit': 'min(1, var(--fit-w), var(--fit-h))',
+  '--fit': 'min(1, var(--fit-w))',
   '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
   aspectRatio: '3 / 2',
   borderRadius: 6,

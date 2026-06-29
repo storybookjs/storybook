@@ -24,7 +24,7 @@ export const ReviewNotification: FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { path, customQueryParams } = useStorybookState();
-  const { state, notificationKey, onAcceptPendingUpdate } = useReview();
+  const { notificationKey, onAcceptPendingUpdate } = useReview();
   const filtersRef = useReviewFiltersRef();
   const collectionIndex = readCollectionIndex(customQueryParams);
 
@@ -46,7 +46,7 @@ export const ReviewNotification: FC = () => {
   );
 
   useLayoutEffect(() => {
-    const displayed = state;
+    const displayed = reviewStore.getState().state;
     const deferred = reviewStore.getPendingReview();
     const review = pickReviewToNotify(displayed, deferred);
     if (!review) {
@@ -78,7 +78,7 @@ export const ReviewNotification: FC = () => {
         onDismiss();
       },
     });
-  }, [api, collectionIndex, handleNotificationClick, notificationKey, path, state, theme]);
+  }, [api, collectionIndex, handleNotificationClick, notificationKey, path, theme]);
 
   return null;
 };

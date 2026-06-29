@@ -124,10 +124,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [emit]);
 
   const acceptPendingReview = useCallback(() => {
-    if (!pendingReview) {
+    const accepted = reviewStore.getPendingReview();
+    if (!accepted) {
       return;
     }
-    const accepted = pendingReview;
     acceptReviewNotification(api, accepted.createdAt);
     setState(accepted);
     setIsStale(!!accepted.stale);
@@ -135,7 +135,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
     enterReview();
     navigate(buildReviewChangesSummaryHref(), { plain: true });
-  }, [api, enterReview, navigate, pendingReview]);
+  }, [api, enterReview, navigate]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);

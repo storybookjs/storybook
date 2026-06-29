@@ -102,7 +102,8 @@ export const acceptReviewNotification = (
   }
   clearReviewNotifications(api, createdAt);
   sessionStore.write(VISITED_REVIEW_CREATED_AT_KEY, String(createdAt));
-  sessionStore.remove(NOTIFIED_REVIEW_CREATED_AT_KEY);
+  // Mark notified too so a layout-effect re-run cannot re-post the arrival toast.
+  sessionStore.write(NOTIFIED_REVIEW_CREATED_AT_KEY, String(createdAt));
 };
 
 export const clearReviewNotificationsOnDismiss = (

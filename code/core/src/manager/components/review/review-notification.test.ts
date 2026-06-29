@@ -57,6 +57,7 @@ describe('acceptReviewNotification', () => {
     acceptReviewNotification({ clearNotification }, 100);
     expect(clearNotification).toHaveBeenCalledWith(reviewAvailableNotificationId(100));
     expect(sessionStore.read(VISITED_REVIEW_CREATED_AT_KEY)).toBe('100');
+    expect(sessionStore.read(NOTIFIED_REVIEW_CREATED_AT_KEY)).toBe('100');
   });
 });
 

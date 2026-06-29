@@ -72,7 +72,7 @@ export const ReviewNotification: FC = () => {
         headline: 'New review available',
         subHeadline: review.title ?? 'Open the curated review to spot-check your changes',
       },
-      icon: <WandIcon color={theme.fgColor.agentic} />,
+      icon: <WandIcon />,
       onClick: ({ onDismiss }) => {
         handleNotificationClick(createdAt);
         onDismiss();

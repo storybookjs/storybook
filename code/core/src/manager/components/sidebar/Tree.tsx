@@ -366,6 +366,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         data-ref-id={refId}
         data-item-id={item.id}
         data-nodetype="root"
+        onMouseEnter={contextMenu.onMouseEnter}
       >
         <CollapseButton
           variant="ghost"
@@ -394,6 +395,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         >
           {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
         </FloatingExpandCollapseButton>
+        {contextMenu.node}
       </RootNode>
     );
   }

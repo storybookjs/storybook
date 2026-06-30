@@ -54,12 +54,12 @@ export const ReviewNotification: FC = () => {
       return;
     }
 
-    if (shouldSkipArrivalNotification(path, collectionIndex, review, displayed, deferred)) {
+    if (shouldAutoAcceptOnRoute(path, collectionIndex, review, displayed, deferred)) {
+      acceptReviewNotification(api, review.createdAt);
       return;
     }
 
-    if (shouldAutoAcceptOnRoute(path, collectionIndex, review, displayed, deferred)) {
-      acceptReviewNotification(api, review.createdAt);
+    if (shouldSkipArrivalNotification(path, collectionIndex, review, displayed, deferred)) {
       return;
     }
 

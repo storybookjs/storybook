@@ -19,6 +19,7 @@ import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
 import {
   EVENTS,
+  NOTIFIED_REVIEW_CREATED_AT_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
@@ -484,6 +485,32 @@ export const ShowsNotificationForUnseenReview = meta.story({
     );
     await expect(await canvas.findByText('New review available')).toBeInTheDocument();
     expect(canvas.queryByText('A new review is available.')).not.toBeInTheDocument();
+  },
+});
+
+export const DismissesNotificationOnReviewVisit = meta.story({
+  render: () => <ReviewOutsideWithNotificationsHarness />,
+  parameters: {
+    routerInitialEntries: ['/?path=/review/'],
+    managerState: {
+      path: '/review/',
+      viewMode: 'review',
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
+    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await waitFor(() =>
+      expect(clearNotificationMock).toHaveBeenCalledWith(
+        reviewAvailableNotificationId(reviewState.createdAt!)
+      )
+    );
+    expect(addNotificationMock).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBe(
+      String(reviewState.createdAt)
+    );
+    expect(canvas.queryByText('New review available')).not.toBeInTheDocument();
   },
 });
 

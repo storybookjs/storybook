@@ -497,20 +497,29 @@ export const DismissesNotificationOnReviewVisit = meta.story({
       viewMode: 'review',
     },
   },
+  beforeEach: () => {
+    sessionStorage.removeItem(NOTIFIED_REVIEW_CREATED_AT_KEY);
+    sessionStorage.removeItem(VISITED_REVIEW_CREATED_AT_KEY);
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
-    await waitFor(() =>
-      expect(clearNotificationMock).toHaveBeenCalledWith(
-        reviewAvailableNotificationId(reviewState.createdAt!)
-      )
-    );
-    expect(addNotificationMock).not.toHaveBeenCalled();
-    expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBe(
-      String(reviewState.createdAt)
-    );
-    expect(canvas.queryByText('New review available')).not.toBeInTheDocument();
+    try {
+      sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
+      emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+      await waitFor(() =>
+        expect(clearNotificationMock).toHaveBeenCalledWith(
+          reviewAvailableNotificationId(reviewState.createdAt!)
+        )
+      );
+      expect(addNotificationMock).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBe(
+        String(reviewState.createdAt)
+      );
+      expect(canvas.queryByText('New review available')).not.toBeInTheDocument();
+    } finally {
+      sessionStorage.removeItem(NOTIFIED_REVIEW_CREATED_AT_KEY);
+      sessionStorage.removeItem(VISITED_REVIEW_CREATED_AT_KEY);
+    }
   },
 });
 

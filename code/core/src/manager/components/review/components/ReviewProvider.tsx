@@ -20,7 +20,12 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from '../constants.ts';
+import {
+  AUTO_ENTERED_SESSION_KEY,
+  EVENTS,
+  PRE_REVIEW_RETURN_KEY,
+  REVIEW_EXITING_SESSION_KEY,
+} from '../constants.ts';
 import { navigateOutOfReview } from '../review-actions.ts';
 import { enterReviewMode, isReviewModeActive } from '../review-mode.ts';
 import {
@@ -115,7 +120,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setPendingReview(null);
       setIsStale(false);
       setIsInReviewMode(false);
-      navigateOutOfReview(api, navigate, returnSearch);
+      void navigateOutOfReview(api, navigate, returnSearch, { recordVisit: false });
     },
   });
 
@@ -191,6 +196,9 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
   useEffect(() => {
     if (!state || !isSummaryVisible || isReviewModeActive()) {
+      return;
+    }
+    if (sessionStore.read(REVIEW_EXITING_SESSION_KEY) === '1') {
       return;
     }
     if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === '1') {

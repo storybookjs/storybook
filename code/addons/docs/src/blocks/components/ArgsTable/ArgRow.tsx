@@ -1,12 +1,12 @@
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React from 'react';
 
 import { codeCommon } from 'storybook/internal/components';
 
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
 import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
@@ -81,6 +81,22 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
   paddingLeft: expandable ? '40px !important' : '20px !important',
 }));
 
+// When a row has no usable control, the "Setup controls" link is hidden and a placeholder dash is
+// shown. Hovering or focusing within the row swaps them, so keyboard users reach the link too.
+const StyledTr = styled.tr({
+  [`span.sbdocs-argcontrol-setup`]: {
+    ...srOnlyStyles,
+  },
+  '&:hover, &:focus-within': {
+    [`span.sbdocs-argcontrol-setup`]: {
+      ...srOnlyUnsetStyles,
+    },
+    [`span.sbdocs-argcontrol-placeholder`]: {
+      ...srOnlyStyles,
+    },
+  },
+});
+
 const toSummary = (value: any) => {
   if (!value) {
     return value;
@@ -90,7 +106,6 @@ const toSummary = (value: any) => {
 };
 
 export const ArgRow: FC<ArgRowProps> = (props) => {
-  const [isHovered, setIsHovered] = useState(false);
   const { row, updateArgs, compact, expandable, initialExpandedArgs, docsLang } = props;
   const { name, description } = row;
   const table = (row.table || {}) as TableAnnotation;
@@ -100,10 +115,14 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const hasDescription = description != null && description !== '';
 
   return (
-    <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <StyledTr>
       <StyledTd expandable={expandable ?? false}>
         <Name>{name}</Name>
-        {required ? <Required title="Required">*</Required> : null}
+        {required ? (
+          <Required aria-hidden title="Required">
+            *
+          </Required>
+        ) : null}
       </StyledTd>
       {compact ? null : (
         <td>
@@ -133,9 +152,9 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
       )}
       {updateArgs ? (
         <td>
-          <ArgControl {...(props as ArgControlProps)} isHovered={isHovered} />
+          <ArgControl {...(props as ArgControlProps)} isRequired={!!required} />
         </td>
       ) : null}
-    </tr>
+    </StyledTr>
   );
 };

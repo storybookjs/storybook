@@ -5,7 +5,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
-import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
+import { shortcutToAriaKeyshortcuts, type API_KeyCollection } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';

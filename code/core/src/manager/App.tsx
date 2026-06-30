@@ -10,7 +10,7 @@ import { Global, createGlobal } from 'storybook/theming';
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
-import { ReviewPersistentLayer } from './components/review/ReviewPersistentLayer.tsx';
+import { ReviewPersistentLayer } from './components/review/components/ReviewPersistentLayer.tsx';
 import Panel from './container/Panel.tsx';
 import Preview from './container/Preview.tsx';
 import Sidebar from './container/Sidebar.tsx';

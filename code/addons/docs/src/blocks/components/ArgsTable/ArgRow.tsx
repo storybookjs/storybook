@@ -23,6 +23,7 @@ interface ArgRowProps {
   initialExpandedArgs?: boolean;
   storyId?: string;
   controlsId?: string;
+  docsLang?: string;
 }
 
 const Name = styled.span({ fontWeight: 'bold' });
@@ -105,7 +106,7 @@ const toSummary = (value: any) => {
 };
 
 export const ArgRow: FC<ArgRowProps> = (props) => {
-  const { row, updateArgs, compact, expandable, initialExpandedArgs } = props;
+  const { row, updateArgs, compact, expandable, initialExpandedArgs, docsLang } = props;
   const { name, description } = row;
   const table = (row.table || {}) as TableAnnotation;
   const type = table.type || toSummary(row.type);
@@ -126,7 +127,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
       {compact ? null : (
         <td>
           {hasDescription && (
-            <Description>
+            <Description lang={docsLang}>
               <Markdown>{description}</Markdown>
             </Description>
           )}

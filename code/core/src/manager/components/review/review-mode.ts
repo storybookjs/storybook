@@ -52,10 +52,15 @@ export const enterReviewMode = async (
   }
 
   sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
-  sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
 
-  await api.setAllTagFilters([], []);
-  await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+  try {
+    await api.setAllTagFilters([], []);
+    await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+    sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
+  } catch (error) {
+    sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);
+    throw error;
+  }
 };
 
 /**

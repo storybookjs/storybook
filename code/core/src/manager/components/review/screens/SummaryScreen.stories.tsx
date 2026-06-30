@@ -58,8 +58,6 @@ const largeCascade: ReviewState = {
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
       storyIds: [
         'manager-main--default',
-        'manager-main--about-page',
-        'manager-main--guide-page',
         'manager-sidebar-sidebar--simple',
         'manager-sidebar-sidebar--with-refs',
         'manager-sidebar-sidebar--statuses-open',
@@ -123,7 +121,7 @@ const pagesAndBench: ReviewState = {
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
-        'manager-main--about-page',
+        'manager-main--default',
         'bench--es-build-analyzer',
       ],
     },

@@ -80,6 +80,9 @@ export const shouldEmbed = ({ search }: { search: string }) => {
   return new URLSearchParams(search).get('embed') === 'true';
 };
 
+/** Embedded review thumbnails are too narrow for manager interaction plays. */
+export const shouldAutoplay = ({ search }: { search: string }) => !shouldEmbed({ search });
+
 const isTransparentColor = (color: string): boolean => {
   if (!color || color === 'transparent') {
     return true;
@@ -391,7 +394,7 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
   };
 
   if (freezing) {
-    // Thumbnail embeds use freeze=finished so play functions can settle first.
+    // Thumbnail embeds use freeze=finished so the preview can settle before measuring.
     // Measuring earlier (e.g. while a portaled dismiss underlay is mounted) would
     // report the iframe viewport instead of the story chrome.
     return {

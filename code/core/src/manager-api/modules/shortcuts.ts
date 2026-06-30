@@ -11,10 +11,12 @@ import copy from 'copy-to-clipboard';
 
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
-import type { ModuleFn } from '../lib/types.tsx';
+import type { ModuleFn, State } from '../lib/types.tsx';
 import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
+
+const isSidebarShortcutBlocked = (state: State) => state.viewMode === 'review';
 
 function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
@@ -257,15 +259,18 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // warning: event might not have a full prototype chain because it may originate from the channel
     handleShortcutFeature(feature, event) {
+      const state = store.getState();
       const {
         ui: { enableShortcuts },
         storyId,
         refId,
         viewMode,
-      } = store.getState();
+      } = state;
       if (!enableShortcuts) {
         return;
       }
+
+      const sidebarShortcutBlocked = isSidebarShortcutBlocked(state);
 
       // Event.prototype.preventDefault is missing when received from the MessageChannel.
       if (event?.preventDefault) {
@@ -287,6 +292,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
 
         case 'focusNav': {
+          if (sidebarShortcutBlocked) {
+            break;
+          }
           if (fullAPI.getIsFullscreen()) {
             fullAPI.toggleFullscreen(false);
           }
@@ -298,6 +306,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'search': {
+          if (sidebarShortcutBlocked) {
+            break;
+          }
           if (fullAPI.getIsFullscreen()) {
             fullAPI.toggleFullscreen(false);
           }
@@ -391,6 +402,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'toggleNav': {
+          if (sidebarShortcutBlocked) {
+            break;
+          }
           const wasNavShown = fullAPI.getIsNavShown();
           const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
 

@@ -515,7 +515,7 @@ export const MobileReview: Story = {
     managerLayoutState: { ...defaultState, viewMode: 'review' },
   },
   play: async ({ canvas }) => {
-    expect(canvas.getByLabelText('Open navigation menu')).toBeInTheDocument();
+    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
     expect(canvas.getByTestId('preview')).toBeInTheDocument();
   },
 };

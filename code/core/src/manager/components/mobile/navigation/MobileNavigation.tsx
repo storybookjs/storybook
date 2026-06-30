@@ -18,6 +18,7 @@ import { MobileMenuDrawer } from './MobileMenuDrawer.tsx';
 interface MobileNavigationProps {
   menu?: React.ReactNode;
   panel?: React.ReactNode;
+  showMenu?: boolean;
   showPanel: boolean;
 }
 
@@ -75,6 +76,7 @@ interface MobileBottomBarContentProps {
   setMobileMenuOpen: (isOpen: boolean) => void;
   isMobilePanelOpen: boolean;
   setMobilePanelOpen: (isOpen: boolean) => void;
+  showMenu: boolean;
   showPanel: boolean;
 }
 
@@ -91,6 +93,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
   setMobileMenuOpen,
   isMobilePanelOpen,
   setMobilePanelOpen,
+  showMenu,
   showPanel,
 }) => {
   const headingId = useId();
@@ -105,17 +108,19 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
       <h2 id={headingId} className="sb-sr-only">
         Navigation controls
       </h2>
-      <BottomBarButton
-        padding="small"
-        variant="ghost"
-        onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-        ariaLabel="Open navigation menu"
-        aria-expanded={isMobileMenuOpen}
-        aria-controls="storybook-mobile-menu"
-      >
-        <MenuIcon />
-        <Text>{fullStoryName}</Text>
-      </BottomBarButton>
+      {showMenu && (
+        <BottomBarButton
+          padding="small"
+          variant="ghost"
+          onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+          ariaLabel="Open navigation menu"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="storybook-mobile-menu"
+        >
+          <MenuIcon />
+          <Text>{fullStoryName}</Text>
+        </BottomBarButton>
+      )}
       <span className="sb-sr-only" aria-current="page">
         {fullStoryName}
       </span>
@@ -138,6 +143,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
 export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
   menu,
   panel,
+  showMenu = true,
   showPanel,
   ...props
 }) => {
@@ -147,13 +153,15 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 
   return (
     <Container {...props}>
-      <MobileMenuDrawer
-        id="storybook-mobile-menu"
-        isOpen={isMobileMenuOpen}
-        onOpenChange={setMobileMenuOpen}
-      >
-        {menu}
-      </MobileMenuDrawer>
+      {showMenu && (
+        <MobileMenuDrawer
+          id="storybook-mobile-menu"
+          isOpen={isMobileMenuOpen}
+          onOpenChange={setMobileMenuOpen}
+        >
+          {menu}
+        </MobileMenuDrawer>
+      )}
 
       <MobileAddonsDrawer
         id="storybook-mobile-addon-panel"
@@ -163,13 +171,14 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
         {panel}
       </MobileAddonsDrawer>
 
-      {!isMobilePanelOpen && (
+      {!isMobilePanelOpen && (showMenu || showPanel) && (
         <MobileBottomBarContent
           fullStoryName={fullStoryName}
           isMobileMenuOpen={isMobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
           isMobilePanelOpen={isMobilePanelOpen}
           setMobilePanelOpen={setMobilePanelOpen}
+          showMenu={showMenu}
           showPanel={showPanel}
         />
       )}

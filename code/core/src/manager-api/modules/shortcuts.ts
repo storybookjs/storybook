@@ -9,17 +9,13 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
-import type { State } from '../root.tsx';
-import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
-
-const isSidebarShortcutBlocked = (state: State) =>
-  isReviewManagerRoute(state.path, state.customQueryParams);
 
 function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
@@ -273,7 +269,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         return;
       }
 
-      const sidebarShortcutBlocked = isSidebarShortcutBlocked(state);
+      const isSidebarShortcutBlocked = isReviewManagerRoute(state.path, state.customQueryParams);
+      const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
+      if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
+        return;
+      }
 
       // Event.prototype.preventDefault is missing when received from the MessageChannel.
       if (event?.preventDefault) {
@@ -295,9 +295,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
 
         case 'focusNav': {
-          if (sidebarShortcutBlocked) {
-            break;
-          }
           if (fullAPI.getIsFullscreen()) {
             fullAPI.toggleFullscreen(false);
           }
@@ -309,9 +306,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'search': {
-          if (sidebarShortcutBlocked) {
-            break;
-          }
           if (fullAPI.getIsFullscreen()) {
             fullAPI.toggleFullscreen(false);
           }
@@ -405,9 +399,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'toggleNav': {
-          if (sidebarShortcutBlocked) {
-            break;
-          }
           const wasNavShown = fullAPI.getIsNavShown();
           const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
 

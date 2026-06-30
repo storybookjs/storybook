@@ -184,24 +184,6 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 
 <If renderer="react">
 
-## `experimentalDocgenServer`
-
-(⚠️ **Experimental**)
-
-Type: `boolean`
-
-Default: `false`
-
-Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel.
-
-When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) — snippet generation is handled by the server-side story-docs service. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
-
-Snippets are static: they won't update if you change values in the Controls table.
-
-This feature is currently only supported for [React](?renderer=react) projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/TODO) on the RFC.
-
-<CodeSnippets path="main-config-features-experimental-docgen-server.md" />
-
 ## `experimentalCodeExamples`
 
 (⚠️ **Experimental**)
@@ -215,6 +197,24 @@ Enable the new code example generation method for React components (as seen in t
 Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
 
 <CodeSnippets path="main-config-features-experimental-code-examples.md" />
+
+## `experimentalDocgenServer`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+
+When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) because snippet generation is handled by the server-side story-docs service.
+
+Snippets are static: they won't update if you change values in the Controls table.
+
+This feature is currently only supported for React projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/TODO) on the RFC.
+
+<CodeSnippets path="main-config-features-experimental-docgen-server.md" />
 
 ## `experimentalTestSyntax`
 

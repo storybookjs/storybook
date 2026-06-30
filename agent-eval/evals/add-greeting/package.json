@@ -1,0 +1,15 @@
+{
+  "name": "add-greeting",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -15,8 +15,6 @@ import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, getService, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import type { DocgenService } from 'storybook/open-service';
-
 import { ControlsPanel } from './components/ControlsPanel.tsx';
 import { Title } from './components/Title.tsx';
 import { ADDON_ID, PARAM_KEY } from './constants.ts';
@@ -27,7 +25,7 @@ export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.controls) {
     const channel = addons.getChannel();
     const docgenService = globalThis.FEATURES?.experimentalDocgenServer
-      ? getService<DocgenService>('core/docgen')
+      ? getService('core/docgen')
       : undefined;
 
     const saveStory = async () => {

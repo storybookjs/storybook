@@ -65,7 +65,11 @@ export const Toolbar: FC<ToolbarProps> = ({
   onReloadStory,
   ...rest
 }) => (
-  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
+  <AbsoluteBar
+    innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }}
+    lang="en"
+    {...rest}
+  >
     <Wrapper key="left">
       {isLoading ? (
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)

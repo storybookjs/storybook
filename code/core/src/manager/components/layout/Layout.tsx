@@ -3,7 +3,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
-import { type API, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
@@ -107,7 +107,8 @@ const useLayoutSyncingState = ({
   const isPagesShown =
     managerLayoutState.viewMode !== undefined &&
     managerLayoutState.viewMode !== 'story' &&
-    managerLayoutState.viewMode !== 'docs';
+    managerLayoutState.viewMode !== 'docs' &&
+    managerLayoutState.viewMode !== 'review';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
@@ -187,7 +188,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
           </SidebarContainer>
         )}
-        {isMobile && (
+        {isMobile && !showPages && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
@@ -212,7 +213,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotPanel}
           </PanelContainer>
         )}
-        {isMobile && <Notifications />}
+        {isMobile && !showPages && <Notifications />}
       </>
     </LayoutContainer>
   );

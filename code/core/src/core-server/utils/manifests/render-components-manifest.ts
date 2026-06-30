@@ -17,10 +17,11 @@ import type {
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 
@@ -886,7 +887,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -966,7 +967,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
     engine: cardEngine,
     filePath,
     exportName,
-  } = getDocgenRenderData(c, a.hasPropTypeError);
+  } = docgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -1132,7 +1133,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1146,7 +1147,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`
@@ -1190,7 +1191,7 @@ type DocgenRenderData = {
   exportName?: string;
 };
 
-const getDocgenRenderData = (
+const docgenRenderData = (
   component: ComponentManifestLikeWithDocgen,
   hasPropTypeError: boolean
 ): DocgenRenderData => {
@@ -1233,10 +1234,7 @@ function renderSubcomponentNote(
   subcomponent: ComponentManifestLikeWithDocgen
 ) {
   const hasPropTypeError = Boolean(subcomponent.error);
-  const { parsed, engine, filePath, exportName } = getDocgenRenderData(
-    subcomponent,
-    hasPropTypeError
-  );
+  const { parsed, engine, filePath, exportName } = docgenRenderData(subcomponent, hasPropTypeError);
   const propEntries = Object.entries(parsed?.props ?? {});
   const tags =
     subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'

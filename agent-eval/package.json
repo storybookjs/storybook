@@ -1,15 +1,22 @@
 {
-  "name": "agent-eval",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@vercel/agent-eval": "^1.2.0",
-    "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
-  },
-  "dependencies": {
-    "vercel": "^54.18.5"
-  }
+	"name": "agent-eval",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"eval": "agent-eval",
+		"eval:dry": "agent-eval --dry",
+		"playground": "agent-eval playground",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"vercel": "^54.18.5"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"@vercel/agent-eval": "^1.2.0",
+		"@vercel/agent-eval-playground": "0.1.3",
+		"next": "16.1.6",
+		"typescript": "^5.6.0"
+	}
 }

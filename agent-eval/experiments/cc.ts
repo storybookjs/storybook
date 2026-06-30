@@ -1,12 +1,7 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
+import { defaultExperimentConfig } from '../lib/experiment';
 
-const config: ExperimentConfig = {
+export default {
+	...defaultExperimentConfig,
 	agent: 'vercel-ai-gateway/claude-code',
-	runs: 1,
-	earlyExit: true,
-	scripts: ['build'],
-	timeout: 600,
-	sandbox: 'docker',
-};
-
-export default config;
+} satisfies ExperimentConfig;

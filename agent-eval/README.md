@@ -5,11 +5,13 @@ Test AI coding agents to measure what actually works.
 ## Setup
 
 1. **Install dependencies:**
+
    ```bash
-   npm install
+   pnpm install
    ```
 
 2. **Configure environment variables:**
+
    ```bash
    cp .env.example .env.local
    ```
@@ -25,30 +27,29 @@ Test AI coding agents to measure what actually works.
 See what will run without making API calls:
 
 ```bash
-npx @vercel/agent-eval cc --dry
+pnpm eval:dry
 ```
 
 ### Run Experiments
 
-Run the Claude Code experiment:
+Run all configured experiments:
 
 ```bash
-npx @vercel/agent-eval cc
+pnpm eval
 ```
 
-Run the Codex experiment:
+Run a single experiment:
 
 ```bash
-npx @vercel/agent-eval codex
+pnpm exec agent-eval cc
 ```
+
+Pull requests with the `ci:eval` label run all experiments in CI.
 
 ### View Results
 
-Launch the web-based results viewer:
-
 ```bash
-npx @vercel/agent-eval playground
+pnpm playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
-

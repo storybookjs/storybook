@@ -1,16 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "lib": [
-      "ES2022"
-    ]
-  },
-  "include": [
-    "experiments"
-  ]
+	"extends": "../tsconfig.json",
+	"include": ["experiments/**/*.ts", "lib/**/*.ts"]
 }

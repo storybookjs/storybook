@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
 import type { ComponentProps, FC } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
@@ -150,6 +150,12 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
+
+  useLayoutEffect(() => {
+    if (!showMenu) {
+      setMobileMenuOpen(false);
+    }
+  }, [showMenu, setMobileMenuOpen]);
 
   return (
     <Container {...props}>

@@ -1,9 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../getComponentImports.ts';
-import { extractFromStory, withProject } from './componentMetaExtractor.test-helpers.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
+import { findExactComponentMatch } from '../subcomponents.ts';
+import {
+  extractFromStory,
+  loadDeclaredSubcomponentComponents,
+  resetProjectVolume,
+  withProject,
+} from './componentMetaExtractor.test-helpers.ts';
+
+afterEach(() => {
+  resetProjectVolume();
+});
 
 describe('compound component extraction', () => {
   it('extracts props for Accordion.Root, not Item or Trigger', async () => {
@@ -374,6 +385,205 @@ describe('compound component extraction', () => {
         expect(entries[1]?.component?.reactComponentMeta).toMatchObject({
           props: { label: expect.anything(), variant: expect.anything() },
         });
+      }
+    );
+  });
+
+  it('extracts declared compound subcomponent without JSX when meta.component is the base export', async () => {
+    await withProject(
+      {
+        'button.tsx': dedent`
+          import React from 'react';
+
+          interface ButtonProps {
+            variant?: 'solid' | 'outline';
+          }
+          const Button = (props: ButtonProps) => <button />;
+
+          interface AlignerProps {
+            side?: 'start' | 'end';
+          }
+          const Aligner = (props: AlignerProps) => <div />;
+
+          const ButtonRoot = Button as typeof Button & {
+            Aligner: typeof Aligner;
+          };
+          ButtonRoot.Aligner = Aligner;
+
+          export default ButtonRoot;
+        `,
+        'button.stories.tsx': dedent`
+          import type { Meta } from '@storybook/react';
+          import Button from './button';
+
+          const meta = {
+            title: 'Example/Button',
+            component: Button,
+            subcomponents: { Aligner: Button.Aligner },
+          } satisfies Meta<typeof Button>;
+
+          export default meta;
+        `,
+      },
+      async (project, filePaths) => {
+        const { storyPath, csf, components } = await loadDeclaredSubcomponentComponents({
+          filePaths,
+          storyFileName: 'button.stories.tsx',
+          title: 'Example/Button',
+        });
+
+        const mainComponent = findMatchingComponent(components, csf._meta?.component, 'Button');
+        const alignerEntry = {
+          storyPath,
+          component: findExactComponentMatch(components, 'Button.Aligner'),
+        };
+
+        project.extractPropsFromStories([{ storyPath, component: mainComponent }, alignerEntry]);
+
+        expect(mainComponent?.reactComponentMeta?.props?.variant).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.side).toBeUndefined();
+
+        expect(alignerEntry.component?.reactComponentMeta?.props?.side).toBeDefined();
+        expect(alignerEntry.component?.reactComponentMeta?.props?.variant).toBeUndefined();
+      }
+    );
+  });
+
+  it('extracts declared subcomponents from namespace import without JSX', async () => {
+    await withProject(
+      {
+        'controls-parameters.tsx': dedent`
+          import React from 'react';
+
+          type MainProps = { a?: string; b: string };
+          export const ControlsParameters = ({ a = 'a', b }: MainProps) => <div>{a}{b}</div>;
+
+          type SubcomponentAProps = { e: boolean; c: boolean; d?: boolean };
+          export const SubcomponentA = ({ d = false }: SubcomponentAProps) => <div />;
+
+          type SubcomponentBProps = { g: number; h: number; f?: number };
+          export const SubcomponentB = ({ f = 42 }: SubcomponentBProps) => <div />;
+        `,
+        'controls-parameters.stories.tsx': dedent`
+          import type { Meta } from '@storybook/react';
+          import * as UI from './controls-parameters';
+
+          const meta = {
+            title: 'Example/ControlsParameters',
+            component: UI.ControlsParameters,
+            subcomponents: { SubcomponentA: UI.SubcomponentA, SubcomponentB: UI.SubcomponentB },
+          } satisfies Meta<typeof UI.ControlsParameters>;
+
+          export default meta;
+        `,
+      },
+      async (project, filePaths) => {
+        const { storyPath, csf, declaredSubcomponents, components } =
+          await loadDeclaredSubcomponentComponents({
+            filePaths,
+            storyFileName: 'controls-parameters.stories.tsx',
+            title: 'Example/ControlsParameters',
+          });
+
+        const mainComponent = findMatchingComponent(
+          components,
+          csf._meta?.component,
+          'ControlsParameters'
+        );
+        const subcomponentEntries = declaredSubcomponents.map((declared) => ({
+          storyPath,
+          component: findExactComponentMatch(components, declared.componentName),
+        }));
+
+        project.extractPropsFromStories([
+          { storyPath, component: mainComponent },
+          ...subcomponentEntries,
+        ]);
+
+        expect(mainComponent?.reactComponentMeta?.props?.a).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.b).toBeDefined();
+
+        const subcomponentA = subcomponentEntries[0].component;
+        const subcomponentB = subcomponentEntries[1].component;
+
+        expect(subcomponentA?.reactComponentMeta?.props?.e).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.c).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.a).toBeUndefined();
+
+        expect(subcomponentB?.reactComponentMeta?.props?.g).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.h).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.b).toBeUndefined();
+      }
+    );
+  });
+
+  it('extracts declared subcomponents from meta without JSX', async () => {
+    await withProject(
+      {
+        'controls-parameters.tsx': dedent`
+          import React from 'react';
+
+          type MainProps = { a?: string; b: string };
+          export const ControlsParameters = ({ a = 'a', b }: MainProps) => <div>{a}{b}</div>;
+
+          type SubcomponentAProps = { e: boolean; c: boolean; d?: boolean };
+          export const SubcomponentA = ({ d = false }: SubcomponentAProps) => <div />;
+
+          type SubcomponentBProps = { g: number; h: number; f?: number };
+          export const SubcomponentB = ({ f = 42 }: SubcomponentBProps) => <div />;
+        `,
+        'controls-parameters.stories.tsx': dedent`
+          import type { Meta } from '@storybook/react';
+          import { ControlsParameters, SubcomponentA, SubcomponentB } from './controls-parameters';
+
+          const meta = {
+            title: 'Example/ControlsParameters',
+            component: ControlsParameters,
+            subcomponents: { SubcomponentA, SubcomponentB },
+          } satisfies Meta<typeof ControlsParameters>;
+
+          export default meta;
+        `,
+      },
+      async (project, filePaths) => {
+        const { storyPath, csf, declaredSubcomponents, components } =
+          await loadDeclaredSubcomponentComponents({
+            filePaths,
+            storyFileName: 'controls-parameters.stories.tsx',
+            title: 'Example/ControlsParameters',
+          });
+
+        const mainComponent = findMatchingComponent(
+          components,
+          csf._meta?.component,
+          'ControlsParameters'
+        );
+        const subcomponentEntries = declaredSubcomponents.map((declared) => ({
+          storyPath,
+          component: findExactComponentMatch(components, declared.componentName),
+        }));
+
+        project.extractPropsFromStories([
+          { storyPath, component: mainComponent },
+          ...subcomponentEntries,
+        ]);
+
+        expect(mainComponent?.reactComponentMeta?.props?.a).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.b).toBeDefined();
+        expect(mainComponent?.reactComponentMeta?.props?.e).toBeUndefined();
+
+        const subcomponentA = subcomponentEntries[0].component;
+        const subcomponentB = subcomponentEntries[1].component;
+
+        expect(subcomponentA?.reactComponentMeta?.props?.e).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.c).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.d).toBeDefined();
+        expect(subcomponentA?.reactComponentMeta?.props?.a).toBeUndefined();
+
+        expect(subcomponentB?.reactComponentMeta?.props?.g).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.h).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.f).toBeDefined();
+        expect(subcomponentB?.reactComponentMeta?.props?.b).toBeUndefined();
       }
     );
   });

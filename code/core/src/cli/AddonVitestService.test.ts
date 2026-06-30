@@ -683,13 +683,20 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject arrow function vitest config (unsupported)', async () => {
+    it('should reject arrow function vitest config with dynamic control flow (unsupported)', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
+      // A callback config that returns object literals directly is supported; one with branching
+      // control flow in a block body is not, and must be rejected.
       vi.mocked(fs.readFile).mockResolvedValue(
         `import { defineConfig } from 'vitest/config';
-export default defineConfig(() => ({ test: {} }))`
+export default defineConfig(({ mode }) => {
+  if (mode === 'production') {
+    return { test: { name: 'prod' } };
+  }
+  return { test: { name: 'dev' } };
+})`
       );
 
       const result = await service.validateConfigFiles('.storybook');

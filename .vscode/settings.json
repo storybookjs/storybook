@@ -11,9 +11,6 @@
   "[javascriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
-  "[typescript]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode"
-  },
   "[typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
@@ -23,9 +20,15 @@
   "[jsonc]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true
+  },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.fixAll.oxc": "explicit"
+    "source.fixAll.oxc": "explicit",
+    "source.organizeImports": "never",
+    "source.sortImports": "explicit"
   },
   "editor.tabSize": 2,
   "eslint.options": {
@@ -57,8 +60,6 @@
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "vitest.workspaceConfig": "./code/vitest.workspace.ts",
-  "vitest.rootConfig": "./code/vitest.workspace.ts",
   "oxc.fmt.configPath": ".oxfmtrc.json",
   "oxc.enable.oxlint": false
 }

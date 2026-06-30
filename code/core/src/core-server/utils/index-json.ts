@@ -38,9 +38,13 @@ export function registerIndexJsonRoute({
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
-  const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
-    edges: ['leading', 'trailing'],
-  });
+  const maybeInvalidate = debounce(
+    () => {
+      channel.emit(STORY_INDEX_INVALIDATED);
+    },
+    DEBOUNCE,
+    { edges: ['leading', 'trailing'] }
+  );
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
     (await storyIndexGeneratorPromise).invalidate(path, removed);
     maybeInvalidate();
@@ -54,7 +58,7 @@ export function registerIndexJsonRoute({
     });
   }
 
-  app.use('/index.json', async (req, res) => {
+  app.use('/index.json', async (_req, res) => {
     try {
       const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');

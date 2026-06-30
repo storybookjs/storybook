@@ -24,6 +24,8 @@ import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import { Filter } from './Filter.tsx';
+import ReviewWidget, { useReviewingStoryCount } from './ReviewWidget.tsx';
+import ReviewSidebarFilters from './ReviewSidebarFilters.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -139,6 +141,13 @@ export const Sidebar = React.memo(function Sidebar({
 
   const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
+  const reviewingStoryCount = useReviewingStoryCount();
+  const showReviewWidget = reviewingStoryCount > 0;
+  const showOnboardingChecklist =
+    !isLoading &&
+    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    global.FEATURES?.sidebarOnboardingChecklist !== false &&
+    !showReviewWidget;
 
   return (
     <Container
@@ -162,10 +171,9 @@ export const Sidebar = React.memo(function Sidebar({
               isLoading={isLoading}
               onMenuClick={onMenuClick}
             />
-            {!isLoading &&
-              global.CONFIG_TYPE === 'DEVELOPMENT' &&
-              global.FEATURES?.sidebarOnboardingChecklist !== false && <ChecklistWidget />}
+            {!showOnboardingChecklist ? null : <ChecklistWidget />}
           </div>
+          {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}
@@ -191,6 +199,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
+            belowSearchContent={<ReviewSidebarFilters />}
             {...lastViewedProps}
           >
             {({

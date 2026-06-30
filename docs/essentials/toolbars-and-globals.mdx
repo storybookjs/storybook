@@ -2,7 +2,6 @@
 title: 'Toolbars & globals'
 sidebar:
   order: 7
-  title: Toolbars & globals
 ---
 
 Storybook ships with features to control the [viewport](./viewport.mdx) and [background](./backgrounds.mdx) the story renders in. Similarly, you can use built-in features to create toolbar items which control special “globals”. You can then read the global values to create [decorators](../writing-stories/decorators.mdx) to control story rendering.
@@ -19,15 +18,11 @@ When the globals change, the story re-renders and the decorators rerun with the 
 
 Storybook has a simple, declarative syntax for configuring toolbar menus. In your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering), you can add your own toolbars by creating `globalTypes` with a `toolbar` annotation:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-preview-configure-globaltypes.md" />
-
-{/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
 
- As globals are *global* you can *only* set `globalTypes` and `initialGlobals` in [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering).
+As globals are _global_ you can _only_ set `globalTypes` and `initialGlobals` in [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering).
 
 </Callout>
 
@@ -37,45 +32,37 @@ When you start your Storybook, your toolbar should have a new dropdown menu with
 
 We have a `global` implemented. Let's wire it up! We can consume our new `theme` global in a decorator using the `context.globals.theme` value.
 
-<IfRenderer renderer="react">
- For example, suppose you are using [`styled-components`](https://styled-components.com/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
+<If renderer="react">
 
-  {/* prettier-ignore-start */}
+For example, suppose you are using [`styled-components`](https://styled-components.com/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
 
-  <CodeSnippets path="storybook-preview-use-global-type.md" />
+<CodeSnippets path="storybook-preview-use-global-type.md" />
 
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
-<IfRenderer renderer="vue">
- For example, suppose you are using [`Vuetify`](https://vuetifyjs.com/en/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
+<If renderer="vue">
 
-  {/* prettier-ignore-start */}
+For example, suppose you are using [`Vuetify`](https://vuetifyjs.com/en/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
 
-  <CodeSnippets path="storybook-preview-use-global-type.md" />
+<CodeSnippets path="storybook-preview-use-global-type.md" />
 
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
-<IfRenderer renderer="angular">
- For example, suppose you are using [`Angular Material`](https://material.angular.io/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
+<If renderer="angular">
 
-  {/* prettier-ignore-start */}
+For example, suppose you are using [`Angular Material`](https://material.angular.io/). You can add a theme provider decorator to your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) config:
 
-  <CodeSnippets path="storybook-preview-use-global-type.md" />
+<CodeSnippets path="storybook-preview-use-global-type.md" />
 
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
-<IfRenderer renderer={['ember', 'html', 'preact', 'qwik', 'svelte', 'solid', 'web-components' ]}>
- Depending on your framework and theming library, you can extend your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) and provide a decorator to load the theme. For example:
+<If renderer={['ember', 'html', 'preact', 'qwik', 'svelte', 'solid', 'web-components' ]}>
 
-  {/* prettier-ignore-start */}
+Depending on your framework and theming library, you can extend your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering) and provide a decorator to load the theme. For example:
 
-  <CodeSnippets path="storybook-preview-use-global-type.md" />
+<CodeSnippets path="storybook-preview-use-global-type.md" />
 
-  {/* prettier-ignore-end */}
-</IfRenderer>
+</If>
 
 ## Setting globals on a story
 
@@ -83,11 +70,7 @@ When a global value is changed with a toolbar menu in Storybook, that value cont
 
 To ensure that a story always uses a specific global value, regardless of what has been chosen in the toolbar, you can set the `globals` annotation on a story or component. This overrides the global value for those stories and disables the toolbar menu for that global when viewing the stories.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-backgrounds-define-globals.md" />
-
-{/* prettier-ignore-end */}
 
 In the example above, Storybook will force all Button stories to use a gray background color, except the `OnDark` story, which will use the dark background. For all Button stories, the toolbar menu will be disabled for the `backgrounds` global, with a tooltip explaining that the global is set at the story level.
 
@@ -105,16 +88,12 @@ Now, let's take a look at a more complex example. Suppose we wanted to implement
 
 In your [`.storybook/preview.*`](../configure/index.mdx#configure-story-rendering), add the following:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-preview-locales-globaltype.md" />
-
-{/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡" style={{ marginBottom: '10px' }}>
 
 The `icon` element used in the examples loads the icons from the `@storybook/icons` package. See [here](../faq.mdx#what-icons-are-available-for-my-toolbar-or-my-addon) for the list of available icons that you can use.
-  
+
 </Callout>
 
 Adding the configuration element `right` will display the text on the right side in the toolbar menu once you connect it to a decorator.
@@ -136,11 +115,7 @@ But we're aware that sometimes it's more beneficial to use toolbar options on a 
 
 Using the example above, you can modify any story to retrieve the **Locale** `global` from the story context:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="my-component-story-use-globaltype.md" />
-
-{/* prettier-ignore-end */}
 
 ## Consuming globals from within an addon
 
@@ -148,11 +123,7 @@ If you're working on a Storybook addon and need to retrieve globals, you can do 
 
 Using the ThemeProvider example above, you could expand it to display which theme is active inside a panel as such:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-consume-globaltype.md" />
-
-{/* prettier-ignore-end */}
 
 ## Updating globals from within an addon
 
@@ -160,8 +131,4 @@ If you're working on a Storybook addon that needs to update the global and refre
 
 For example, if you were working on a [toolbar addon](../addons/addon-types.mdx#toolbars), and you want to refresh the UI and update the global once the user clicks on a button:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="addon-consume-and-update-globaltype.md" />
-
-{/* prettier-ignore-end */}

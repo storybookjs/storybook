@@ -96,13 +96,14 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('starts browser process on Linux when BROWSER is not a shell script', () => {
     process.env.BROWSER = 'google chrome';
+    process.env.BROWSER_ARGS = '--incognito';
     platformSpy.mockReturnValue('linux');
 
     openBrowser('http://localhost:6006/');
 
     expect(vi.mocked(spawn)).not.toHaveBeenCalled();
     expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
-      app: 'google chrome',
+      app: { name: 'google chrome', arguments: ['--incognito'] },
       wait: false,
       url: true,
     });

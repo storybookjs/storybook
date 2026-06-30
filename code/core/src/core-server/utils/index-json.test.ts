@@ -13,7 +13,7 @@ import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 import type { ServerChannel } from './get-server-channel.ts';
-import { DEBOUNCE, registerIndexJsonRoute } from './index-json.ts';
+import { registerIndexJsonRoute } from './index-json.ts';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });

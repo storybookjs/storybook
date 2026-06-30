@@ -147,6 +147,7 @@ export async function generateBundle({
       'storybook/measure': './src/measure',
       'storybook/actions': './src/actions',
       'storybook/viewport': './src/viewport',
+      'storybook/open-service': './src/shared/open-service',
       // The following aliases ensures that the manager has a single version of React,
       // even if transitive dependencies would depend on other versions.
       react: resolvePackageDir('react'),
@@ -169,6 +170,11 @@ export async function generateBundle({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
+        alias: {
+          // Keep a single bundled acorn copy when CommonJS dependencies such as
+          // acorn-jsx require('acorn') alongside ESM imports.
+          acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+        },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
           /*

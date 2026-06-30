@@ -5,9 +5,7 @@ import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templ
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  CACHE_KEYS,
   artifact,
-  cache,
   server,
   testResults,
   toId,
@@ -15,8 +13,8 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -26,8 +24,8 @@ function getSandboxSetupSteps(template: string) {
     extraSteps.push({
       'node/install': {
         'install-yarn': true,
-        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
-        'node-version': '22.22.1',
+        // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
+        'node-version': '22.22.3',
       },
     });
   }
@@ -111,7 +109,7 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Running E2E Tests',
                   command: [
-                    'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                    'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
                     `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
@@ -247,7 +245,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        cache.attach(CACHE_KEYS()),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {
@@ -273,7 +270,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),
@@ -284,6 +281,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
+        // Diagnostics for browser-mode crashes ("Browser connection was closed"). `store_artifacts`
+        // has an implicit `when: always`, so these upload even when the Vitest step above fails.
+        artifact.persist(
+          join(LINUX_ROOT_DIR, SANDBOX_DIR, path, 'vitest-artifacts'),
+          'vitest-artifacts'
+        ),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
@@ -311,7 +314,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           run: {
             name: 'Running E2E Tests',
             command: [
-              `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+              `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
               `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
             ].join('\n'),
           },

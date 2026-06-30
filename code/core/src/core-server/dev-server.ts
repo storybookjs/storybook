@@ -1,5 +1,4 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
-import { DOCS_PREPARED, STORY_RENDERED } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
@@ -8,9 +7,10 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
+import type { ChangeDetectionAdapter } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
+import { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
-import { ChangeDetectionService } from './change-detection/index.ts';
-import { setChangeDetectionReadiness } from './change-detection/readiness.ts';
+import { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -48,6 +48,16 @@ export async function storybookDevServer(
 
   const storyIndexGeneratorPromise =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  const changeDetectionService = new ChangeDetectionService({
+    storyIndexGeneratorPromise,
+    statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
+    workingDir,
+  });
+
+  const disposeChangeDetectionRuntime = async () => {
+    await changeDetectionService.dispose().catch(() => undefined);
+  };
 
   app.use(compression({ level: 1 }));
 
@@ -117,16 +127,6 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    const changeDetectionService = new ChangeDetectionService({
-      storyIndexGeneratorPromise,
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      workingDir,
-    });
-
-    if (features?.changeDetection === false) {
-      changeDetectionService.start(previewBuilder.onModuleGraphChange, false);
-    }
-
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -140,7 +140,7 @@ export async function storybookDevServer(
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
-        await changeDetectionService.dispose().catch(() => undefined);
+        await disposeChangeDetectionRuntime();
         await managerBuilder?.bail().catch(() => undefined);
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
@@ -152,27 +152,21 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features?.changeDetection !== false) {
-      let changeDetectionStarted = false;
-      const startChangeDetection = () => {
-        if (changeDetectionStarted) {
-          return;
-        }
-        try {
-          changeDetectionStarted = true;
-          changeDetectionService.start(previewBuilder.onModuleGraphChange, true);
-        } catch (error) {
-          logger.error('Failed to start change detection');
-          logger.error(error instanceof Error ? error : String(error));
-          setChangeDetectionReadiness({
-            status: 'error',
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        }
-      };
+    let adapter: ChangeDetectionAdapter | undefined;
+    try {
+      adapter = previewBuilder.changeDetectionAdapter?.();
+    } catch (err) {
+      logger.warn('Change detection: adapter initialisation failed');
+      logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+    }
 
-      options.channel.once(STORY_RENDERED, startChangeDetection);
-      options.channel.once(DOCS_PREPARED, startChangeDetection);
+    resolveChangeDetectionAdapter(adapter);
+
+    const isChangeDetectionStatusEnabled = features.changeDetection !== false;
+    if (isChangeDetectionStatusEnabled) {
+      changeDetectionService.start(true);
+    } else {
+      changeDetectionService.start(false);
     }
   }
 
@@ -191,6 +185,7 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
+    await disposeChangeDetectionRuntime();
     await managerBuilder?.bail().catch(() => undefined);
     await previewBuilder?.bail().catch(() => undefined);
     throw e;
@@ -203,24 +198,29 @@ export async function storybookDevServer(
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
-    if (!isTelemetryModuleEnabled()) {
-      return;
-    }
-
-    const payload = { eventType: 'dev' };
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const indexAndStats = await generator?.getIndexAndStats();
-      // compute stats so we can get more accurate story counts
-      if (indexAndStats) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(indexAndStats.storyIndex),
-          storyStats: indexAndStats.stats,
-        });
+      if (!isTelemetryModuleEnabled()) {
+        return;
       }
-    } catch {}
-    await telemetry('canceled', payload, { immediate: true });
-    process.exit(0);
+
+      const payload = { eventType: 'dev' };
+      try {
+        const generator = await storyIndexGeneratorPromise;
+        const indexAndStats = await generator?.getIndexAndStats();
+        // compute stats so we can get more accurate story counts
+        if (indexAndStats) {
+          Object.assign(payload, {
+            storyIndex: summarizeIndex(indexAndStats.storyIndex),
+            storyStats: indexAndStats.stats,
+          });
+        }
+      } catch {}
+      await telemetry('canceled', payload, { immediate: true });
+    } finally {
+      await disposeChangeDetectionRuntime();
+      // Always terminate on signal, even when telemetry is disabled.
+      process.exit(0);
+    }
   }
 
   process.on('SIGINT', cancelTelemetry);

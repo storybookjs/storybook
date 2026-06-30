@@ -806,9 +806,8 @@ export interface StorybookConfig {
 
   /**
    * Provider descriptors for the experimental docgen service. Each registrant appends a
-   * structured-clone-safe {@link DocgenProviderDescriptor} (module specifier + config) to the
-   * accumulated array; core's docgen worker imports and composes them middleware-style off the main
-   * thread.
+   * structured-clone-safe {@link DocgenProviderDescriptor} (a module specifier) to the accumulated
+   * array; core's docgen worker imports and composes them middleware-style off the main thread.
    */
   experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
 

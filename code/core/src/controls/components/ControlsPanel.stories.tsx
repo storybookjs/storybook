@@ -235,10 +235,13 @@ export const ServiceDocgenWaitsForStoryFinishedInDev: Story = {
       <ManagerContext.Provider value={serviceManagerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],
-  play: async () => {
-    // No STORY_FINISHED has been emitted, so the docgen query is never mounted and never subscribes
-    // (and thus never triggers extraction) — even though the story is prepared.
-    await waitFor(() => expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled());
+  play: async ({ canvas }) => {
+    // No STORY_FINISHED is emitted, so the gate stays closed and the panel shows the story's own
+    // annotation controls. Wait for that row to render (a stable signal that the gate hook mounted),
+    // then assert synchronously that docgen was never queried — a `waitFor` on the negative passes
+    // before mount settles and would miss a next-tick subscription regression.
+    await expect(await canvas.findByText('variant')).toBeInTheDocument();
+    expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled();
   },
 };
 
@@ -300,8 +303,10 @@ export const ServiceDocgenLoadsAfterStoryFinishedInDev: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    // Before the story finishes: deferred, no subscription.
-    await waitFor(() => expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled());
+    // Before the story finishes: the gate is closed, so only annotation controls render. Anchor on
+    // that row, then assert synchronously that docgen wasn't queried (deferred, no subscription).
+    await expect(await canvas.findByText('variant')).toBeInTheDocument();
+    expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled();
     // Simulate the preview reporting the story as finished.
     serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
     await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
@@ -336,11 +341,15 @@ export const ServiceDocgenLoadsAfterStoryPreparedInDev: Story = {
     ),
   ],
   play: async ({ canvas }) => {
-    // Before any lifecycle event: deferred, no subscription.
-    await waitFor(() => expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled());
-    // STORY_FINISHED must not open the gate while waiting for STORY_PREPARED.
+    // Before any lifecycle event: the gate is closed, only annotation controls render. Anchor on that
+    // row, then assert synchronously that docgen wasn't queried (deferred, no subscription).
+    await expect(await canvas.findByText('variant')).toBeInTheDocument();
+    expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled();
+    // STORY_FINISHED must not open the gate while waiting for STORY_PREPARED. Give a potential
+    // erroneous subscription time to land, then assert it never happened.
     serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
-    await waitFor(() => expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(serviceGetDocgen.subscribe).not.toHaveBeenCalled();
     // STORY_PREPARED opens it.
     serviceRenderChannel.emit(STORY_PREPARED, { id: serviceStoryData.id });
     await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();

@@ -54,6 +54,9 @@ class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly ready: Promise<void>;
+  // Captured from the `ready` promise executor (which runs synchronously) so `fail()` can settle
+  // `ready` if the worker dies before sending `init`. No-op default keeps TS definite-assignment happy.
+  private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
   private dead = false;
 
@@ -74,6 +77,7 @@ class DocgenWorker implements DocgenWorkerClient {
     });
 
     this.ready = new Promise<void>((resolve, reject) => {
+      this.rejectReady = reject;
       const onMessage = (msg: DocgenWorkerResponse) => {
         if (msg.type !== 'init') {
           return;
@@ -143,6 +147,9 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     logger.debug(`docgen worker failure: ${error.message}`);
     this.dead = true;
+    // If the worker dies before `init`, `ready` would otherwise never settle and an in-flight
+    // `extract` awaiting it would hang. Rejecting is a no-op once `ready` has already settled.
+    this.rejectReady(error);
     this.rejectAllPending(error);
     this.worker.terminate().catch(() => 0);
   }

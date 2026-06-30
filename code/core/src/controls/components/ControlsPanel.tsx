@@ -222,11 +222,11 @@ function LoadedServiceControlsPanel({
 function useStoryDocgenGateReady(storyId: StoryId): boolean {
   const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
   const requestAtStoryPrepared = global.DOCGEN_STORY_PREPARED === true;
-  const [ready, setReady] = useState(!isDevelopment);
-
-  useEffect(() => {
-    setReady(!isDevelopment);
-  }, [storyId, isDevelopment]);
+  // Key readiness by the story it was opened for (derived during render, not via an effect). On a
+  // story switch this is immediately false for the new id, so we never render one frame with a stale
+  // `ready=true` that would mount the query before the new story emits its gate event.
+  const [readyStoryId, setReadyStoryId] = useState<StoryId | null>(null);
+  const ready = !isDevelopment || readyStoryId === storyId;
 
   // STORY_PREPARED carries `{ id }`; STORY_FINISHED carries `{ storyId }`.
   const gateEvent = requestAtStoryPrepared ? STORY_PREPARED : STORY_FINISHED;
@@ -235,7 +235,7 @@ function useStoryDocgenGateReady(storyId: StoryId): boolean {
       [gateEvent]: (payload: { id?: StoryId; storyId?: StoryId }) => {
         const eventStoryId = requestAtStoryPrepared ? payload?.id : payload?.storyId;
         if (eventStoryId === storyId) {
-          setReady(true);
+          setReadyStoryId(storyId);
         }
       },
     },
@@ -258,7 +258,10 @@ function ServiceControlsPanel({
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
   const isStory = storyData.type === 'story';
-  const isStoryPrepared = isStory ? storyData.prepared : true;
+  // In a static build docgen is precomputed and there is no gate, so the loading decision must not
+  // hang on `prepared` — treat non-development as always prepared. In dev this is unchanged.
+  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
+  const isStoryPrepared = !isDevelopment || (isStory ? storyData.prepared : true);
   // Docs entries don't emit the story lifecycle events the gate listens for, so it only applies to
   // actual stories; everything else falls through and queries docgen right away.
   const gateReady = useStoryDocgenGateReady(storyData.id);

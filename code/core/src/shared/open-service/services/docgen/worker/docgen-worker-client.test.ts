@@ -147,6 +147,19 @@ describe('DocgenWorkerClient.extract', () => {
     await expect(promise).rejects.toThrow('boom');
   });
 
+  it('rejects an extract awaiting init when the worker exits before init', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const promise = client.extract({ id: 'x' } as any);
+    const worker = fakeWorkers[0];
+    // Worker dies during boot, before its `init` ack — `ready` must reject so the awaiting extract
+    // fails fast instead of hanging forever.
+    worker.emit('exit', 1);
+
+    await expect(promise).rejects.toThrow(/exited unexpectedly/);
+  });
+
   it('rejects with the error name/message from a failed extraction', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;

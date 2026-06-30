@@ -50,7 +50,7 @@ on:
 # together share the refs/heads/<branch> group and the earlier merge's trigger is
 # cancelled before it can POST to CircleCI, silently skipping its `merged` workflow.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:

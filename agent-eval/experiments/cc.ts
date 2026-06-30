@@ -1,5 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { defaultExperimentConfig } from '../lib/experiment';
+import { defaultExperimentConfig } from '../lib/experiment.ts';
 
 export default {
 	...defaultExperimentConfig,

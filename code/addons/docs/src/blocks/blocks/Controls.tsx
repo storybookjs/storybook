@@ -6,8 +6,8 @@ import { useId } from '@react-aria/utils';
 import type { Args, Globals, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { DocsContextProps, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
-import { filterArgTypes } from 'storybook/preview-api';
 import type { PropDescriptor } from 'storybook/preview-api';
+import { filterArgTypes } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
 import { ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
@@ -50,6 +50,7 @@ type ControlsTablesProps = ControlsInteractiveState & {
   exclude?: PropDescriptor;
   sort?: SortType;
   storyId: string;
+  docsLang?: string;
 };
 
 function getControlsFilterProps(story: PreparedStory, props: ControlsProps): ControlsParameters {
@@ -89,6 +90,7 @@ const ControlsTables: FC<ControlsTablesProps> = ({
   globals,
   updateArgs,
   resetArgs,
+  docsLang,
 }) => {
   const filteredMainRows = filterArgTypes(mainRows, include, exclude);
 
@@ -107,6 +109,7 @@ const ControlsTables: FC<ControlsTablesProps> = ({
         globals={globals}
         updateArgs={updateArgs}
         resetArgs={resetArgs}
+        docsLang={docsLang}
       />
     );
   }
@@ -134,6 +137,7 @@ const ControlsTables: FC<ControlsTablesProps> = ({
       resetArgs={resetArgs}
       storyId={storyId}
       controlsId={controlsId}
+      docsLang={docsLang}
     />
   );
 };
@@ -155,6 +159,7 @@ const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) =>
       {...filterProps}
       storyId={story.id}
       {...interactiveState}
+      docsLang={parameters?.docs?.lang}
     />
   );
 };
@@ -187,6 +192,7 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
       {...filterProps}
       storyId={story.id}
       {...interactiveState}
+      docsLang={parameters?.docs?.lang}
     />
   );
 };

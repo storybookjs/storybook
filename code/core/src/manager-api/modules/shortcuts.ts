@@ -11,12 +11,15 @@ import copy from 'copy-to-clipboard';
 
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
-import type { ModuleFn, State } from '../lib/types.tsx';
+import type { ModuleFn } from '../lib/types.tsx';
+import type { State } from '../root.tsx';
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
 
-const isSidebarShortcutBlocked = (state: State) => state.viewMode === 'review';
+const isSidebarShortcutBlocked = (state: State) =>
+  isReviewManagerRoute(state.path, state.customQueryParams);
 
 function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);

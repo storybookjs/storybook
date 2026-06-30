@@ -3,8 +3,10 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
-import { useStorybookApi, type API } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
+
+import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
 import { Notifications } from '../../container/Notifications.tsx';
@@ -110,7 +112,6 @@ const useLayoutSyncingState = ({
     managerLayoutState.viewMode !== 'docs' &&
     managerLayoutState.viewMode !== 'review';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
-  const showSidebar = managerLayoutState.viewMode !== 'review';
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
     ? internalDraggingSizeState
@@ -139,7 +140,6 @@ const useLayoutSyncingState = ({
     panelMaxSize,
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
-    showSidebar,
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
@@ -151,6 +151,8 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
+  const { path, customQueryParams } = useStorybookState();
+  const showSidebar = !isReviewManagerRoute(path, customQueryParams);
 
   const {
     navSize,
@@ -163,7 +165,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelMaxSize,
     showPages,
     showPanel,
-    showSidebar,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.

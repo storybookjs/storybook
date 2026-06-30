@@ -30,6 +30,7 @@ import {
 } from 'storybook/theming';
 
 import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
+import { safeStringify } from '../addons/docs/src/blocks/controls/helpers.ts';
 import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
 import * as templatePreview from '../core/template/stories/preview.ts';
 import '../renderers/react/template/components/index.js';
@@ -348,7 +349,8 @@ const decorators = [
         />
         <div style={{ marginTop: '1rem' }}>
           Current <code>{parameters.withRawArg}</code>:{' '}
-          <pre>{JSON.stringify(args[parameters.withRawArg], null, 2) || 'undefined'}</pre>
+          {/* safeStringify so a non-serializable arg (e.g. a circular Vue VNode) doesn't crash the story. */}
+          <pre>{safeStringify(args[parameters.withRawArg], 2) || 'undefined'}</pre>
         </div>
       </>
     );

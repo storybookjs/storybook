@@ -1,10 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils.ts';
+import { logger } from 'storybook/internal/client-logger';
+
+import { buildArgsParam, getMatch, parsePath } from './utils.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
+  logger: { warn: vi.fn() },
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('getMatch', () => {
   it('gets startsWithTarget match', () => {
@@ -84,46 +91,25 @@ describe('parsePath', () => {
   });
 });
 
-describe('deepDiff', () => {
-  it('returns DEEPLY_EQUAL when the values are deeply equal', () => {
-    expect(deepDiff({ foo: [{ bar: 1 }] }, { foo: [{ bar: 1 }] })).toBe(DEEPLY_EQUAL);
-  });
-
-  it('returns the update when the types are different', () => {
-    expect(deepDiff(true, 1)).toBe(1);
-  });
-
-  it('returns a sparse array when updating an array', () => {
-    expect(deepDiff([1, 2], [1, 3])).toStrictEqual([, 3]);
-  });
-
-  it('returns undefined for removed array values', () => {
-    expect(deepDiff([1, 2], [1])).toStrictEqual([, undefined]);
-  });
-
-  it('returns a longer array when adding to an array', () => {
-    expect(deepDiff([1, 2], [1, 2, 3])).toStrictEqual([, , 3]);
-  });
-
-  it('returns a partial when updating an object', () => {
-    expect(deepDiff({ foo: 1, bar: 2 }, { foo: 1, bar: 3 })).toStrictEqual({ bar: 3 });
-  });
-
-  it('returns undefined for omitted object properties', () => {
-    expect(deepDiff({ foo: 1, bar: 2 }, { foo: 1 })).toStrictEqual({ bar: undefined });
-  });
-
-  it('traverses into objects', () => {
-    expect(deepDiff({ foo: { bar: [1, 2], baz: [3, 4] } }, { foo: { bar: [3] } })).toStrictEqual({
-      foo: { bar: [3, undefined], baz: undefined },
-    });
-  });
-});
-
 describe('buildArgsParam', () => {
   it('builds a simple key-value pair', () => {
     const param = buildArgsParam({}, { key: 'val' });
     expect(param).toEqual('key:val');
+  });
+
+  it('does not overflow the stack while validating a pathologically deep arg', () => {
+    // validateArgs recurses through nested arrays/objects; without a depth guard a deeply nested
+    // arg (e.g. a Vue VNode graph) overflows the stack. The arg is unsafe to serialize, so it's
+    // simply omitted.
+    const buildDeep = (depth: number) => {
+      let node: any = { leaf: 1 };
+      for (let i = 0; i < depth; i += 1) {
+        node = { child: node };
+      }
+      return node;
+    };
+
+    expect(() => buildArgsParam({}, { deep: buildDeep(50_000) })).not.toThrow();
   });
 
   it('builds multiple values', () => {
@@ -243,6 +229,68 @@ describe('buildArgsParam', () => {
         { obj: { nested: [{ one: 1 }, { two: 2, three: 3 }] } }
       );
       expect(param).toEqual('obj.nested[1].three:3');
+    });
+  });
+
+  describe('non-plain value diagnostics', () => {
+    it('does not warn for plain serializable args', () => {
+      buildArgsParam({}, { str: 'a', num: 1, nested: { arr: [1, 2] }, when: new Date(0) });
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('flags a Vue reactive proxy by its reactivity flag', () => {
+      const reactive = { __v_isReactive: true, label: 'hello' };
+      buildArgsParam({}, { component: reactive });
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      const [, suspects] = (logger.warn as Mock).mock.calls[0];
+      expect(suspects).toContainEqual({ source: 'args', path: 'component', kind: 'vue-reactive' });
+    });
+
+    it('flags a React element by its $$typeof symbol', () => {
+      const reactElement = { $$typeof: Symbol.for('react.element'), type: 'div', props: {} };
+      buildArgsParam({}, { node: reactElement });
+
+      const [, suspects] = (logger.warn as Mock).mock.calls[0];
+      expect(suspects).toContainEqual({
+        source: 'args',
+        path: 'node',
+        kind: 'react-element (react.element)',
+      });
+    });
+
+    it('flags a class instance with a custom prototype', () => {
+      class Widget {
+        x = 1;
+      }
+      buildArgsParam({}, { widget: new Widget() });
+
+      const [, suspects] = (logger.warn as Mock).mock.calls[0];
+      expect(suspects).toContainEqual({
+        source: 'args',
+        path: 'widget',
+        kind: 'class-instance (Widget)',
+      });
+    });
+
+    it('flags a functions value', () => {
+      buildArgsParam({}, { onClick: () => {} });
+
+      const [, suspects] = (logger.warn as Mock).mock.calls[0];
+      expect(suspects).toContainEqual({ source: 'args', path: 'onClick', kind: 'function' });
+    });
+
+    it('flags a circular reference reachable through plain objects', () => {
+      const args: any = { a: { b: {} } };
+      args.a.b.loop = args.a;
+      buildArgsParam({}, args);
+
+      const [, suspects] = (logger.warn as Mock).mock.calls[0];
+      expect(suspects).toContainEqual({
+        source: 'args',
+        path: 'a.b.loop',
+        kind: 'circular-reference',
+      });
     });
   });
 });

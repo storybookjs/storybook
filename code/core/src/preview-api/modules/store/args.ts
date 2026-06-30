@@ -8,7 +8,7 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
+import { isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';
 
 const INCOMPATIBLE = Symbol('incompatible');
@@ -163,40 +163,6 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
 
     return acc;
   }, {} as Args);
-};
-
-// TODO -- copied from router, needs to be in a shared location
-export const DEEPLY_EQUAL = Symbol('Deeply equal');
-export const deepDiff = (value: any, update: any): any => {
-  if (typeof value !== typeof update) {
-    return update;
-  }
-
-  if (deepEqual(value, update)) {
-    return DEEPLY_EQUAL;
-  }
-  if (Array.isArray(value) && Array.isArray(update)) {
-    const res = update.reduce((acc, upd, index) => {
-      const diff = deepDiff(value[index], upd);
-
-      if (diff !== DEEPLY_EQUAL) {
-        acc[index] = diff;
-      }
-      return acc;
-    }, new Array(update.length));
-
-    if (update.length >= value.length) {
-      return res;
-    }
-    return res.concat(new Array(value.length - update.length).fill(undefined));
-  }
-  if (isPlainObject(value) && isPlainObject(update)) {
-    return Object.keys({ ...value, ...update }).reduce((acc, key) => {
-      const diff = deepDiff(value?.[key], update?.[key]);
-      return diff === DEEPLY_EQUAL ? acc : Object.assign(acc, { [key]: diff });
-    }, {});
-  }
-  return update;
 };
 
 export const UNTARGETED = 'UNTARGETED';

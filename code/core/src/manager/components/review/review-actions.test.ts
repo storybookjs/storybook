@@ -36,6 +36,7 @@ const makeApi = () => {
     api: {
       setAllStatusFilters,
       setAllTagFilters,
+      removeStatusFilters: vi.fn(async () => {}),
       setQueryParams: vi.fn(),
       selectFirstStory: vi.fn(),
       clearNotification: vi.fn(),

@@ -22,7 +22,18 @@ export interface ReviewModeFilters {
   excludedTagFilters: string[];
 }
 
-type ReviewModeApi = Pick<API, 'setAllStatusFilters' | 'setAllTagFilters'>;
+type ReviewModeApi = Pick<API, 'setAllStatusFilters' | 'setAllTagFilters' | 'removeStatusFilters'>;
+
+/** Reviewing is owned by review mode and must never be restored after exit. */
+const stripReviewingStatusFilter = (filters: ReviewModeFilters): ReviewModeFilters => ({
+  ...filters,
+  includedStatusFilters: filters.includedStatusFilters.filter(
+    (value) => value !== REVIEWING_STATUS_VALUE
+  ),
+  excludedStatusFilters: filters.excludedStatusFilters.filter(
+    (value) => value !== REVIEWING_STATUS_VALUE
+  ),
+});
 
 /** Whether the manager is currently in review mode (persisted across reloads). */
 export const isReviewModeActive = (): boolean => sessionStore.read(REVIEW_MODE_SESSION_KEY) === '1';
@@ -51,7 +62,10 @@ export const enterReviewMode = async (
     return;
   }
 
-  sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
+  sessionStore.write(
+    FILTERS_SNAPSHOT_SESSION_KEY,
+    JSON.stringify(stripReviewingStatusFilter(filters))
+  );
 
   try {
     await api.setAllTagFilters([], []);
@@ -70,8 +84,11 @@ export const enterReviewMode = async (
 export const exitReviewMode = async (api: ReviewModeApi): Promise<void> => {
   const filters = readJson<ReviewModeFilters>(FILTERS_SNAPSHOT_SESSION_KEY);
   if (filters) {
-    await api.setAllTagFilters(filters.includedTagFilters, filters.excludedTagFilters);
-    await api.setAllStatusFilters(filters.includedStatusFilters, filters.excludedStatusFilters);
+    const restored = stripReviewingStatusFilter(filters);
+    await api.setAllTagFilters(restored.includedTagFilters, restored.excludedTagFilters);
+    await api.setAllStatusFilters(restored.includedStatusFilters, restored.excludedStatusFilters);
+  } else {
+    await api.removeStatusFilters([REVIEWING_STATUS_VALUE]);
   }
 
   sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);

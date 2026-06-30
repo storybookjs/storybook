@@ -9,6 +9,7 @@ import {
   isReviewModeActive,
   type ReviewModeFilters,
 } from './review-mode.ts';
+import { REVIEWING_STATUS_VALUE } from './review-status.ts';
 
 const emptyFilters: ReviewModeFilters = {
   includedStatusFilters: [],
@@ -20,6 +21,7 @@ const emptyFilters: ReviewModeFilters = {
 const makeApi = () => ({
   setAllStatusFilters: vi.fn(async () => {}),
   setAllTagFilters: vi.fn(async () => {}),
+  removeStatusFilters: vi.fn(async () => {}),
 });
 
 beforeEach(() => {
@@ -61,6 +63,18 @@ describe('enterReviewMode', () => {
     expect(api.setAllTagFilters).not.toHaveBeenCalled();
     expect(api.setAllStatusFilters).not.toHaveBeenCalled();
   });
+
+  it('omits reviewing from the snapshot even when the current filters include it', async () => {
+    const api = makeApi();
+    await enterReviewMode(api, {
+      ...emptyFilters,
+      includedStatusFilters: ['status-value:error' as StatusValue, REVIEWING_STATUS_VALUE],
+    });
+
+    const exitApi = makeApi();
+    await exitReviewMode(exitApi);
+    expect(exitApi.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
+  });
 });
 
 describe('exitReviewMode', () => {
@@ -84,6 +98,23 @@ describe('exitReviewMode', () => {
     const api = makeApi();
     await exitReviewMode(api);
     expect(api.setAllTagFilters).not.toHaveBeenCalled();
+    expect(api.setAllStatusFilters).not.toHaveBeenCalled();
+    expect(api.removeStatusFilters).toHaveBeenCalledWith([REVIEWING_STATUS_VALUE]);
     expect(isReviewModeActive()).toBe(false);
+  });
+
+  it('never restores the reviewing status filter', async () => {
+    await enterReviewMode(makeApi(), {
+      ...emptyFilters,
+      includedStatusFilters: ['status-value:error' as StatusValue],
+    });
+
+    const api = makeApi();
+    await exitReviewMode(api);
+    expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
+    expect(api.setAllStatusFilters).not.toHaveBeenCalledWith(
+      expect.arrayContaining([REVIEWING_STATUS_VALUE]),
+      expect.anything()
+    );
   });
 });

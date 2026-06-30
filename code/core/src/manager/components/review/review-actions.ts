@@ -57,12 +57,7 @@ export const navigateOutOfReview = async (
   returnSearch: string | null | undefined,
   { recordVisit = true }: NavigateOutOfReviewOptions = {}
 ): Promise<void> => {
-  if (recordVisit) {
-    const displayed = reviewStore.getState().state;
-    if (displayed?.createdAt !== undefined) {
-      acceptReviewNotification(api, displayed.createdAt);
-    }
-  }
+  const visitCreatedAt = recordVisit ? reviewStore.getState().state?.createdAt : undefined;
 
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
   reviewStore.releaseSummaryOverlaySuppression();
@@ -70,6 +65,10 @@ export const navigateOutOfReview = async (
   sessionStore.write(REVIEW_EXITING_SESSION_KEY, '1');
   try {
     await exitReviewMode(api);
+
+    if (visitCreatedAt !== undefined) {
+      acceptReviewNotification(api, visitCreatedAt);
+    }
 
     if (returnSearch && !isReviewReturnSearch(returnSearch)) {
       navigate(returnSearch.startsWith('?') ? returnSearch : `?${returnSearch}`, { plain: true });

@@ -131,6 +131,30 @@ describe('navigateOutOfReview', () => {
     expect(sessionStorage.getItem(NOTIFIED_REVIEW_CREATED_AT_KEY)).toBeNull();
   });
 
+  it('does not mark the review as visited when filter restoration fails', async () => {
+    const { api, setAllTagFilters } = makeApi();
+    const navigate = vi.fn() as unknown as NavigateFunction;
+
+    await enterReviewMode(api, emptyFilters);
+    vi.clearAllMocks();
+    setAllTagFilters.mockRejectedValueOnce(new Error('restore failed'));
+
+    reviewStore.setState(
+      {
+        ...reviewStore.getState(),
+        state: review,
+      },
+      null
+    );
+
+    await expect(
+      navigateOutOfReview(api, navigate, '?path=/story/example--default')
+    ).rejects.toThrow('restore failed');
+
+    expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBeNull();
+    expect(api.clearNotification).not.toHaveBeenCalled();
+  });
+
   it('falls back to the first story when the return search points at a review route', async () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;

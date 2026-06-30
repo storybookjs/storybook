@@ -17,16 +17,9 @@ const emptyFilters: ReviewModeFilters = {
   excludedTagFilters: [],
 };
 
-const makeApi = (
-  overrides: Partial<{ getIsNavShown: () => boolean; getIsPanelShown: () => boolean }> = {}
-) => ({
-  toggleNav: vi.fn(),
-  togglePanel: vi.fn(),
-  getIsNavShown: () => true,
-  getIsPanelShown: () => true,
+const makeApi = () => ({
   setAllStatusFilters: vi.fn(async () => {}),
   setAllTagFilters: vi.fn(async () => {}),
-  ...overrides,
 });
 
 beforeEach(() => {
@@ -34,12 +27,10 @@ beforeEach(() => {
 });
 
 describe('enterReviewMode', () => {
-  it('collapses chrome, narrows filters to reviewing, and sets the flag', async () => {
+  it('narrows filters to reviewing and sets the flag without changing chrome', async () => {
     const api = makeApi();
     await enterReviewMode(api, emptyFilters);
 
-    expect(api.toggleNav).toHaveBeenCalledWith(false);
-    expect(api.togglePanel).toHaveBeenCalledWith(false);
     expect(api.setAllTagFilters).toHaveBeenCalledWith([], []);
     expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:reviewing'], []);
     expect(isReviewModeActive()).toBe(true);
@@ -62,36 +53,37 @@ describe('enterReviewMode', () => {
     expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
   });
 
-  it('does not re-collapse chrome or re-apply filters when already in review mode', async () => {
+  it('does not re-apply filters when already in review mode', async () => {
     const api = makeApi();
     await enterReviewMode(api, emptyFilters);
     vi.clearAllMocks();
     await enterReviewMode(api, emptyFilters);
-    expect(api.toggleNav).not.toHaveBeenCalled();
-    expect(api.togglePanel).not.toHaveBeenCalled();
     expect(api.setAllTagFilters).not.toHaveBeenCalled();
     expect(api.setAllStatusFilters).not.toHaveBeenCalled();
   });
 });
 
 describe('exitReviewMode', () => {
-  it('restores only the chrome that was shown before entry and clears the flag', async () => {
-    await enterReviewMode(
-      makeApi({ getIsNavShown: () => true, getIsPanelShown: () => false }),
-      emptyFilters
-    );
+  it('restores snapshotted filters and clears the flag', async () => {
+    const preReviewFilters: ReviewModeFilters = {
+      includedStatusFilters: ['status-value:error' as StatusValue],
+      excludedStatusFilters: [],
+      includedTagFilters: ['play-fn'],
+      excludedTagFilters: [],
+    };
+    await enterReviewMode(makeApi(), preReviewFilters);
 
     const api = makeApi();
     await exitReviewMode(api);
-    expect(api.toggleNav).toHaveBeenCalledWith(true);
-    expect(api.togglePanel).not.toHaveBeenCalledWith(true);
+    expect(api.setAllTagFilters).toHaveBeenCalledWith(['play-fn'], []);
+    expect(api.setAllStatusFilters).toHaveBeenCalledWith(['status-value:error'], []);
     expect(isReviewModeActive()).toBe(false);
   });
 
   it('is inert when there is no snapshot to restore', async () => {
     const api = makeApi();
     await exitReviewMode(api);
-    expect(api.toggleNav).not.toHaveBeenCalled();
+    expect(api.setAllTagFilters).not.toHaveBeenCalled();
     expect(isReviewModeActive()).toBe(false);
   });
 });

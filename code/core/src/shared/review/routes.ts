@@ -5,9 +5,11 @@ export const isReviewSummaryPath = (path: string): boolean =>
 
 /** True when the manager URL targets the review summary or a curated review story. */
 export const isReviewManagerRoute = (
-  path: string,
+  path: string | undefined,
   customQueryParams?: Readonly<Record<string, string | undefined>> | null
 ): boolean =>
-  isReviewSummaryPath(path) ||
-  path.startsWith('/review/') ||
-  (path.startsWith('/story/') && customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] !== undefined);
+  !!path &&
+  (isReviewSummaryPath(path) ||
+    path.startsWith('/review/') ||
+    (path.startsWith('/story/') &&
+      customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] !== undefined));

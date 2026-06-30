@@ -152,7 +152,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
   const { path, customQueryParams } = useStorybookState();
-  const showSidebar = !isReviewManagerRoute(path, customQueryParams);
+  const showSidebar =
+    (api.getIsNavShown?.() ?? true) && !isReviewManagerRoute(path, customQueryParams);
 
   const {
     navSize,

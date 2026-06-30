@@ -531,11 +531,7 @@ export const MobileReview: Story = {
           },
         }}
       >
-        <LocationProvider>
-          <LayoutProvider>
-            <Story />
-          </LayoutProvider>
-        </LocationProvider>
+        <Story />
       </ManagerContext.Provider>
     ),
   ],

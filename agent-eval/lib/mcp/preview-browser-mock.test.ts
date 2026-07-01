@@ -100,7 +100,7 @@ async function isChromiumInstalled(): Promise<boolean> {
 
 const FIXTURE_SERVER_SCRIPT = `import { createServer } from 'node:http';
 
-const port = Number(process.argv[2]);
+const port = Number(process.env.PORT ?? process.argv[2]);
 createServer((request, response) => {
 	if (request.url === '/api/data') {
 		response.setHeader('content-type', 'application/json');
@@ -240,6 +240,64 @@ describe('preview-browser MCP protocol', () => {
 
 		const stopped = await client.callTool('preview_stop', { serverId });
 		expect(toolText(stopped)).toContain('Stopped');
+	}, 60_000);
+
+	test('preview_start applies the documented autoPort semantics on port conflicts', async () => {
+		const busyPort = await findFreePort();
+		const blocker = createServer();
+		await new Promise<void>((resolve) => {
+			blocker.listen(busyPort, '127.0.0.1', () => resolve());
+		});
+
+		try {
+			writeFileSync(path.join(workspace, 'server.mjs'), FIXTURE_SERVER_SCRIPT);
+			mkdirSync(path.join(workspace, '.claude'), { recursive: true });
+			const writeConfig = (autoPort: boolean | undefined) => {
+				writeFileSync(
+					path.join(workspace, '.claude', 'launch.json'),
+					JSON.stringify({
+						version: '0.0.1',
+						configurations: [
+							{
+								name: 'ConflictApp',
+								program: 'server.mjs',
+								args: [String(busyPort)],
+								port: busyPort,
+								...(autoPort === undefined ? {} : { autoPort }),
+							},
+						],
+					}),
+				);
+			};
+
+			// Unset: the agent must decide by setting autoPort.
+			writeConfig(undefined);
+			const unset = await client.callTool('preview_start', { name: 'ConflictApp' });
+			expect(unset.isError).toBe(true);
+			expect(toolText(unset)).toContain(`Port ${busyPort} is already in use. Set "autoPort"`);
+
+			// false: the exact port is required, so the conflict is fatal.
+			writeConfig(false);
+			const strict = await client.callTool('preview_start', { name: 'ConflictApp' });
+			expect(strict.isError).toBe(true);
+			expect(toolText(strict)).toContain('requires that exact port');
+
+			// true: a free port is assigned and passed to the server via PORT.
+			writeConfig(true);
+			const started = await client.callTool('preview_start', { name: 'ConflictApp' });
+			expect(started.isError).not.toBe(true);
+			const match = /serverId: (preview-\d+)\) at http:\/\/localhost:(\d+)/.exec(toolText(started));
+			expect(match).not.toBeNull();
+			const [, serverId, assignedPort] = match as unknown as [string, string, string];
+			expect(Number(assignedPort)).not.toBe(busyPort);
+
+			const logs = await client.callTool('preview_logs', { serverId });
+			expect(toolText(logs)).toContain(`fixture server listening on ${assignedPort}`);
+
+			await client.callTool('preview_stop', { serverId });
+		} finally {
+			blocker.close();
+		}
 	}, 60_000);
 
 	test('page tools fail for unknown server ids', async () => {

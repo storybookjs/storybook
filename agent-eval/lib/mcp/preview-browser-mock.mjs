@@ -4,15 +4,18 @@
  * agent evals. Tool names, schemas, and descriptions mirror the real server
  * verbatim. Behavior is real where the sandbox allows it:
  *
- * - `preview_start` validates `.claude/launch.json`, reuses a server that is
- *   already responding on the configured port, and otherwise spawns the
- *   configured command and waits for it to become ready.
+ * - `preview_start` validates `.claude/launch.json`, spawns the configured
+ *   command, and waits for it to become ready. Port conflicts follow the
+ *   documented `autoPort` semantics: `true` starts on a free port (passed to
+ *   the server via the `PORT` env var), `false` fails, and unset asks the
+ *   agent to decide by setting `autoPort`.
  * - Page tools (click/fill/eval/screenshot/snapshot/inspect/console/network/
  *   resize) drive a real headless Chromium, resolved from the workspace's
  *   `playwright` install (the eval template installs it during postinstall).
  */
 import { spawn } from 'node:child_process';
 import { closeSync, existsSync, openSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { createInterface } from 'node:readline';
@@ -374,6 +377,25 @@ async function isServing(url) {
 	}
 }
 
+function isPortFree(port) {
+	return new Promise((resolve) => {
+		const probe = createServer();
+		probe.once('error', () => resolve(false));
+		probe.listen(port, '127.0.0.1', () => {
+			probe.close(() => resolve(true));
+		});
+	});
+}
+
+async function findFreePort(startPort) {
+	for (let candidate = startPort; candidate < startPort + 100; candidate++) {
+		if (await isPortFree(candidate)) {
+			return candidate;
+		}
+	}
+	throw new Error(`No free port found near ${startPort}.`);
+}
+
 function tailLogFile(logPath, limit = 20) {
 	try {
 		return lastLines(readFileSync(logPath, 'utf-8').split('\n').filter(Boolean), limit).join('\n');
@@ -386,7 +408,7 @@ function tailLogFile(logPath, limit = 20) {
 // to the project root (with `${workspaceFolder}` for the root itself), `env`
 // is merged into the server's environment, and either `runtimeExecutable` +
 // `runtimeArgs` or `program` + `args` (a script run with node) starts the server.
-function spawnLaunchEntry(name, entry, logPath) {
+function spawnLaunchEntry(name, entry, logPath, extraEnv = {}) {
 	const cwd =
 		typeof entry.cwd === 'string'
 			? path.resolve(process.cwd(), entry.cwd.replaceAll('${workspaceFolder}', process.cwd()))
@@ -400,7 +422,7 @@ function spawnLaunchEntry(name, entry, logPath) {
 		cwd,
 		detached: true,
 		stdio: ['ignore', log, log],
-		env: { ...process.env, ...entryEnv, BROWSER: 'none', CI: '1' },
+		env: { ...process.env, ...entryEnv, ...extraEnv, BROWSER: 'none', CI: '1' },
 	};
 
 	let child;
@@ -554,44 +576,66 @@ const HANDLERS = {
 			return errorText(error.message);
 		}
 
+		// Port conflicts follow the documented autoPort semantics. Only servers
+		// started by preview_start itself are ever reused (see the name check above).
+		let assignedPort = port;
+		if (!(await isPortFree(port))) {
+			if (entry.autoPort === true) {
+				try {
+					assignedPort = await findFreePort(port + 1);
+				} catch (error) {
+					return errorText(`Failed to start "${name}": ${error.message}`);
+				}
+			} else if (entry.autoPort === false) {
+				return errorText(
+					`Port ${port} is already in use and configuration "${name}" sets "autoPort": false, so the server requires that exact port. Free the port and call preview_start again.`,
+				);
+			} else {
+				return errorText(
+					`Port ${port} is already in use. Set "autoPort" on the "${name}" configuration in ${LAUNCH_CONFIG_PATH}: true to start on a free port automatically, or false if the server must use port ${port} exactly.`,
+				);
+			}
+		}
+
 		const id = `preview-${nextServerId++}`;
-		const url = `http://localhost:${port}`;
+		const url = `http://localhost:${assignedPort}`;
 		const logPath = path.join(tmpdir(), `${SERVER_INFO.name}-${process.pid}-${id}.log`);
-		const server = {
+
+		let child;
+		try {
+			// Per the docs, a re-assigned port reaches the server via the PORT env var.
+			child = spawnLaunchEntry(
+				name,
+				entry,
+				logPath,
+				assignedPort === port ? {} : { PORT: String(assignedPort) },
+			);
+			await waitForServer(url, child, logPath);
+		} catch (error) {
+			if (child?.pid) {
+				try {
+					process.kill(-child.pid, 'SIGTERM');
+				} catch {
+					// Already gone.
+				}
+			}
+			return errorText(`Failed to start "${name}": ${error.message}`);
+		}
+
+		servers.set(id, {
 			id,
 			name,
 			url,
-			port,
+			port: assignedPort,
 			viewport: { ...PRESETS.desktop },
 			colorScheme: 'light',
-			child: undefined,
-			logPath: undefined,
+			child,
+			logPath,
 			pagePromise: undefined,
 			context: undefined,
 			consoleMessages: [],
 			responses: [],
-		};
-
-		if (!(await isServing(url))) {
-			let child;
-			try {
-				child = spawnLaunchEntry(name, entry, logPath);
-				await waitForServer(url, child, logPath);
-			} catch (error) {
-				if (child?.pid) {
-					try {
-						process.kill(-child.pid, 'SIGTERM');
-					} catch {
-						// Already gone.
-					}
-				}
-				return errorText(`Failed to start "${name}": ${error.message}`);
-			}
-			server.child = child;
-			server.logPath = logPath;
-		}
-
-		servers.set(id, server);
+		});
 		return text(`Started "${name}" (serverId: ${id}) at ${url}`);
 	},
 
@@ -793,13 +837,10 @@ const HANDLERS = {
 	async preview_logs({ serverId, search, level, lines }) {
 		return withServer(serverId, async (server) => {
 			const limit = lineLimit(lines);
-			const logPath = server.logPath ?? process.env.STORYBOOK_MCP_LOG_PATH ?? null;
-			// Adopted servers (already running before preview_start) were not
-			// spawned by this process, so their output was not captured.
-			if (logPath === null || !existsSync(logPath)) {
+			if (!existsSync(server.logPath)) {
 				return text('No server output captured.');
 			}
-			let logLines = readFileSync(logPath, 'utf-8').split('\n').filter(Boolean);
+			let logLines = readFileSync(server.logPath, 'utf-8').split('\n').filter(Boolean);
 			if (level === 'error') {
 				logLines = logLines.filter((line) => /error|exception|failed|fatal/i.test(line));
 				if (logLines.length === 0) {

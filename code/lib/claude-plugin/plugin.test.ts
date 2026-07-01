@@ -40,17 +40,14 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 	};
 }
 
-describe('Claude launch skill guidance', () => {
-	it('keeps Claude launch guidance scoped to autoPort without shell interpolation', () => {
-		const launchSkill = readFileSync(
-			resolve(packageRoot, 'skills/storybook-setup-claude-launch/SKILL.md'),
-			'utf8',
-		);
+describe('Claude story skill launch guidance', () => {
+	it('keeps Claude launch guidance scoped to preview tooling without shell interpolation', () => {
+		const launchSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
 
 		expect(launchSkill).toContain('autoPort: true');
 		expect(launchSkill).toContain('preferred package manager');
-		expect(launchSkill).toContain('existing Storybook script');
-		expect(launchSkill).toContain('Storybook invocation directory');
+		expect(launchSkill).toContain('existing `package.json` Storybook script');
+		expect(launchSkill).toContain('preview_start');
 		expect(launchSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
 		expect(launchSkill).not.toMatch(/runtimeArgs[\s\S]+storybook[\s\S]+dev/i);
 		expect(launchSkill).not.toContain('--ci');

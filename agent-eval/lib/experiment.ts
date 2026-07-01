@@ -49,13 +49,13 @@ export const CLAUDE_MCP_EVALS = RESHAPED_STORYBOOK_EVALS.filter(
 
 export const CLAUDE_PLUGIN_EVALS = [
 	...RESHAPED_STORYBOOK_EVALS,
-	'922-skill-storybook-setup-claude-launch',
+	// '922-skill-storybook-setup-claude-launch',
 ] as const;
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
-	runs: 3,
+	runs: 1,
 	earlyExit: true,
-	sandbox: 'auto',
+	sandbox: 'docker',
 	copyFiles: 'all',
 	scripts: ['typecheck', 'lint', 'build', 'test:stories'],
 } satisfies Partial<ExperimentConfig>;

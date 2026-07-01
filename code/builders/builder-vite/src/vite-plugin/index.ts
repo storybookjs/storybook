@@ -9,7 +9,13 @@ import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { resolve } from 'pathe';
 import polka from 'polka';
-import { DevEnvironment, type InlineConfig, type PluginOption, resolveConfig } from 'vite';
+import {
+  BuildEnvironment,
+  DevEnvironment,
+  type InlineConfig,
+  type PluginOption,
+  resolveConfig,
+} from 'vite';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
@@ -89,6 +95,17 @@ async function main(options?: UserOptions): Promise<PluginOption> {
             [bundlerOptionsKey]: {
               input: iframePath,
               external: [/\.\/sb-common-assets\/.*\.woff2/],
+            },
+            async createEnvironment() {
+              const sbConfig = await resolveConfig(
+                {
+                  ...finalConfig,
+                  cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                },
+                'serve'
+              );
+
+              return new BuildEnvironment('client', sbConfig);
             },
           },
           dev: {

@@ -119,8 +119,8 @@ const parseGlobals = (
     };
   }
 
-  if (value && keys.length) {
-    const { name, styles, type = 'other' } = options[value] ?? options[keys[0]];
+  if (value && options[value]) {
+    const { name, styles, type = 'other' } = options[value];
     return {
       name,
       type,

@@ -1,5 +1,5 @@
 import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import { createRequire, registerHooks } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -69,8 +69,8 @@ export async function importModule(
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
   if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
+    const { load } = await import('storybook/internal/bin/loader');
+    registerHooks({ load });
     isTypescriptLoaderRegistered = true;
   }
 

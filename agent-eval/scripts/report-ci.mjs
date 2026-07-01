@@ -7,11 +7,6 @@ const rawExitCode = readRawExitCode();
 
 const resultRows = readResultRows();
 
-if (rawExitCode !== 0 && resultRows.length === 0) {
-	console.error(`agent-eval exited with ${rawExitCode} before writing analyzable results.`);
-	process.exit(1);
-}
-
 const passed = [];
 const infra = [];
 const failed = [];
@@ -31,7 +26,15 @@ for (const row of resultRows) {
 
 printSummary();
 
-if (infra.length > 0 || failed.length > 0) {
+if (resultRows.length === 0) {
+	console.error('\nNo analyzable agent-eval result summaries were found.');
+}
+if (rawExitCode !== 0) {
+	console.error(
+		`\nagent-eval exited with ${rawExitCode}; partial parsed summaries cannot make CI green.`,
+	);
+}
+if (resultRows.length === 0 || rawExitCode !== 0 || infra.length > 0 || failed.length > 0) {
 	process.exitCode = 1;
 }
 

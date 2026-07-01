@@ -74,6 +74,8 @@ export async function importModule(
     // versions, which Storybook still supports. `nodeModule.registerHooks` (rather than a named
     // import) is required here: a named import of an export that doesn't exist on a given Node
     // version throws a SyntaxError at module-load time, before this feature check ever runs.
+    // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
+    // the `register` fallback below, and switch back to a plain named `registerHooks` import.
     if (typeof nodeModule.registerHooks === 'function') {
       const { load } = await import('storybook/internal/bin/loader');
       nodeModule.registerHooks({ load });

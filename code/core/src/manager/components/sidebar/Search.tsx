@@ -1,6 +1,7 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -192,7 +193,11 @@ export const Search = React.memo<SearchProps>(function Search({
           ...Object.values(index).map((item) => {
             const storyStatuses = allStatuses?.[item.id];
             const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+              ? getMostCriticalStatusValue(
+                  Object.values(storyStatuses)
+                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+                    .map((status) => status.value)
+                )
               : null;
             return {
               ...searchItem(item, dataset.hash[refId]),

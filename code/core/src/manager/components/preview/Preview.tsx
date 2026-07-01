@@ -10,9 +10,11 @@ import { global } from '@storybook/global';
 
 import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
-import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
+import { Consumer, addons, merge, types, type Combo } from 'storybook/manager-api';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
+import { REVIEW_COLLECTION_QUERY_PARAM } from '../../../shared/review/routes.ts';
+import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
 import { ToolbarComp } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';
@@ -58,6 +60,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
     tabs,
     wrappers,
     tabId,
+    queryParams,
   } = props;
 
   // SB11: remove code
@@ -89,6 +92,8 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
   const shouldScale = viewMode === 'story';
   const { showToolbar } = options;
   const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
+  const isReviewCollectionStory =
+    viewMode === 'story' && queryParams?.[REVIEW_COLLECTION_QUERY_PARAM] !== undefined;
 
   const previousStoryId = useRef(storyId);
 
@@ -127,6 +132,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
       )}
       <ZoomProvider shouldScale={shouldScale}>
         <S.PreviewContainer>
+          {customisedShowToolbar && isReviewCollectionStory ? <ReviewToolbarHeader /> : null}
           <ToolbarComp
             key="tools"
             isShown={customisedShowToolbar}

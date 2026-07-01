@@ -426,6 +426,27 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+export const docgenMemoryGate = defineJob(
+  'Docgen memory gate',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Docgen-server re-extraction memory gate',
+          working_directory: 'scripts',
+          command: 'yarn bench:docgen-memory',
+        },
+      },
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
 export const benchmarkPackages = defineJob(
   'Benchmark packages',
   () => ({

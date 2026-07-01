@@ -508,3 +508,35 @@ export const MobileDocs = {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
   },
 };
+
+export const MobileReview: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'review' },
+  },
+  decorators: [
+    (Story) => (
+      <ManagerContext.Provider
+        value={{
+          ...mockManagerStore,
+          state: {
+            ...mockManagerStore.state,
+            path: '/review/',
+            viewMode: 'review',
+            customQueryParams: {},
+          },
+          api: {
+            ...mockManagerStore.api,
+            getIsNavShown: fn(() => true),
+          },
+        }}
+      >
+        <Story />
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
+    expect(canvas.getByTestId('preview')).toBeInTheDocument();
+  },
+};

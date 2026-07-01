@@ -7,6 +7,7 @@ import type { Sandbox } from '@vercel/agent-eval';
 type FixturePackageJson = {
 	evals?: {
 		template?: unknown;
+		claudePreviewBrowserMock?: unknown;
 	};
 };
 
@@ -43,6 +44,7 @@ const LOCAL_STORYBOOK_MCP_SPEC = 'file:./local-packages/mcp';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
+const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
 	REPO_ROOT,
@@ -519,19 +521,9 @@ async function collectFiles(options: {
 }
 
 export async function writeClaudeMcpConfig(sandbox: Sandbox): Promise<void> {
-	await sandbox.writeFiles({
-		'.mcp.json': JSON.stringify(
-			{
-				mcpServers: {
-					[STORYBOOK_MCP_SERVER_NAME]: {
-						type: 'http',
-						url: STORYBOOK_MCP_URL,
-					},
-				},
-			},
-			null,
-			2,
-		).concat('\n'),
+	await writeClaudeMcpServer(sandbox, STORYBOOK_MCP_SERVER_NAME, {
+		type: 'http',
+		url: STORYBOOK_MCP_URL,
 	});
 }
 
@@ -556,26 +548,21 @@ export async function writeCodexPluginSkills(sandbox: Sandbox): Promise<void> {
 	await writePluginSkills(sandbox, CODEX_PLUGIN_SKILLS_DIR, path.posix.join('.agents', 'skills'));
 }
 
+export async function usesClaudePreviewBrowserMock(sandbox: Sandbox): Promise<boolean> {
+	const packageJson = await readFixturePackageJson(sandbox);
+	return packageJson.evals?.claudePreviewBrowserMock === true;
+}
+
 export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {
-	// Preview-only plugin evals intentionally replace `.mcp.json` with the mock server.
-	// Future fixtures that need both servers should merge with the existing config instead.
 	await sandbox.writeFiles({
 		[PREVIEW_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(
 			PREVIEW_BROWSER_MOCK_SOURCE_PATH,
 			'utf8',
 		),
-		'.mcp.json': JSON.stringify(
-			{
-				mcpServers: {
-					[PREVIEW_BROWSER_MCP_SERVER_NAME]: {
-						command: 'node',
-						args: [PREVIEW_BROWSER_MOCK_SANDBOX_PATH],
-					},
-				},
-			},
-			null,
-			2,
-		).concat('\n'),
+	});
+	await writeClaudeMcpServer(sandbox, PREVIEW_BROWSER_MCP_SERVER_NAME, {
+		command: 'node',
+		args: [PREVIEW_BROWSER_MOCK_SANDBOX_PATH],
 	});
 }
 
@@ -587,6 +574,44 @@ async function writePluginSkills(
 	const files: Record<string, string> = {};
 	await collectFiles({ sourceDir, targetDir, files });
 	await sandbox.writeFiles(files);
+}
+
+async function writeClaudeMcpServer(
+	sandbox: Sandbox,
+	serverName: string,
+	serverConfig: Record<string, unknown>,
+): Promise<void> {
+	const config = await readClaudeMcpConfig(sandbox);
+	const mcpServers = isRecord(config.mcpServers) ? config.mcpServers : {};
+
+	await sandbox.writeFiles({
+		[CLAUDE_MCP_CONFIG_PATH]: JSON.stringify(
+			{
+				...config,
+				mcpServers: {
+					...mcpServers,
+					[serverName]: serverConfig,
+				},
+			},
+			null,
+			2,
+		).concat('\n'),
+	});
+}
+
+async function readClaudeMcpConfig(sandbox: Sandbox): Promise<Record<string, unknown>> {
+	let rawConfig: string;
+	try {
+		rawConfig = await sandbox.readFile(CLAUDE_MCP_CONFIG_PATH);
+	} catch {
+		return {};
+	}
+
+	const config = JSON.parse(rawConfig) as unknown;
+	if (!isRecord(config)) {
+		throw new Error(`${CLAUDE_MCP_CONFIG_PATH} must contain a JSON object`);
+	}
+	return config;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

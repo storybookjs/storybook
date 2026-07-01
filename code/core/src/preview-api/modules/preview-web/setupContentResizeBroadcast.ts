@@ -407,11 +407,14 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     return {};
   }
 
-  injectEmbedUiStyles(documentRef);
-
   lastDimensions = null;
 
   const freezing = shouldFreeze({ search: documentRef.location.search });
+
+  if (freezing) {
+    // Review thumbnails draw their own loader in the manager grid.
+    injectEmbedUiStyles(documentRef);
+  }
   let contentFrozen = false;
 
   const measureAndSend = () => {

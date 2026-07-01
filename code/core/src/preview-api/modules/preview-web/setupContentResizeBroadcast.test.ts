@@ -339,11 +339,21 @@ describe('setupContentResizeBroadcast', () => {
     });
   });
 
-  it('hides the in-iframe preparing loader for embed thumbnails', () => {
+  it('hides the in-iframe preparing loader for frozen embed thumbnails', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
+    );
     installBroadcast();
     const style = document.getElementById('storybook-embed-ui');
     expect(style?.textContent).toContain('.sb-preparing-story');
     expect(style?.textContent).toContain('display: none');
+  });
+
+  it('does not hide the in-iframe preparing loader for embed without freeze', () => {
+    installBroadcast();
+    expect(document.getElementById('storybook-embed-ui')).toBeNull();
   });
 
   it('re-measures when the parent requests dimensions', async () => {

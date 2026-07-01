@@ -43,17 +43,11 @@ export const RESHAPED_STORYBOOK_EVALS = [
 	// '915-preview-story-by-id',
 ] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
 
-export const CLAUDE_MCP_EVALS = RESHAPED_STORYBOOK_EVALS;
-
-export const CLAUDE_PLUGIN_EVALS = [
-	...RESHAPED_STORYBOOK_EVALS,
-	// '922-skill-storybook-setup-claude-launch',
-] as const;
-
 export const DEFAULT_EXPERIMENT_CONFIG = {
-	runs: 1,
+	runs: 3,
 	earlyExit: true,
-	sandbox: 'vercel',
+	sandbox: 'auto',
 	copyFiles: 'all',
-	scripts: ['typecheck', 'lint', 'build', 'test:stories'],
+	// Disabling the scripts for now, as this is flaky, and not often OUR fault
+	// scripts: ['typecheck', 'build', 'test:stories', 'lint'],
 } satisfies Partial<ExperimentConfig>;

@@ -1,5 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { CLAUDE_PLUGIN_EVALS, DEFAULT_EXPERIMENT_CONFIG } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
 	setupSandbox,
 	writeClaudePluginSkills,
@@ -9,7 +9,7 @@ import {
 export default {
 	...DEFAULT_EXPERIMENT_CONFIG,
 	agent: 'claude-code', // requires ANTHROPIC_API_KEY
-	evals: [...CLAUDE_PLUGIN_EVALS],
+	evals: RESHAPED_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });
 		await writeClaudePluginSkills(sandbox);

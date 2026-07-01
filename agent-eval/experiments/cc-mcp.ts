@@ -4,7 +4,7 @@ import { setupSandbox, writeClaudeMcpConfig } from '../lib/templates.ts';
 
 export default {
 	...DEFAULT_EXPERIMENT_CONFIG,
-	agent: 'claude-code', // requires ANTHROPIC_API_KEY
+	agent: 'vercel-ai-gateway/claude-code', // requires AI_GATEWAY_API_KEY
 	evals: RESHAPED_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp' });

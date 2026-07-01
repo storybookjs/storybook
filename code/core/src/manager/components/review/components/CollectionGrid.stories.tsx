@@ -146,7 +146,8 @@ export const Default = meta.story({
         const frame = cell.querySelector<HTMLElement>(
           '[data-testid="review-collection-grid-frame"]'
         );
-        expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+        expect(frame).toBeTruthy();
+        expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(cellWidth + 1);
       }
     });
   },
@@ -247,7 +248,8 @@ export const FewStories = meta.story({
         const frame = cell.querySelector<HTMLElement>(
           '[data-testid="review-collection-grid-frame"]'
         );
-        expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+        expect(frame).toBeTruthy();
+        expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(cellWidth + 1);
       }
     });
     const [firstHeight, secondHeight] = frames.map(
@@ -318,7 +320,8 @@ export const FrameFitsCellAfterResize = meta.story({
     await waitFor(() => {
       const cellWidth = cell.getBoundingClientRect().width;
       const frame = cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]');
-      expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+      expect(frame).toBeTruthy();
+      expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(cellWidth + 1);
     });
   },
 });

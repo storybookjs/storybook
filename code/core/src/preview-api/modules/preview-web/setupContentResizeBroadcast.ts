@@ -365,10 +365,10 @@ const sendResizeMessage = (
   }
 };
 
-const debounce = (callback: () => void): (() => void) => {
+const debounce = (callback: () => void): (() => void) & { cancel: () => void } => {
   let rafId: number | null = null;
 
-  return () => {
+  const debounced = () => {
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
     }
@@ -377,6 +377,15 @@ const debounce = (callback: () => void): (() => void) => {
       rafId = null;
     });
   };
+
+  debounced.cancel = () => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  };
+
+  return debounced;
 };
 
 export type ContentResizeBroadcast = {
@@ -484,6 +493,7 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
 
   windowRef.addEventListener('resize', debouncedUpdate);
   cleanups.push(
+    () => debouncedUpdate.cancel(),
     () => resizeObserver.disconnect(),
     () => mutationObserver.disconnect(),
     () => windowRef.removeEventListener('resize', debouncedUpdate)

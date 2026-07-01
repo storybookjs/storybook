@@ -5,7 +5,7 @@
 		"useDefineForClassFields": true,
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
-		"types": ["vite/client"],
+		"types": ["node", "vite/client"],
 		"typeRoots": ["./node_modules/@types/", "./node_modules"],
 		"skipLibCheck": true,
 
@@ -25,5 +25,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true
 	},
-	"include": ["src"]
+	"include": ["src", "stories", ".storybook", "vite.config.ts", "vitest.storybook.config.ts"]
 }

@@ -10,8 +10,8 @@
 		"build": "vite build",
 		"typecheck": "tsc --noEmit --project ./tsconfig.app.json",
 		"lint": "eslint .",
-		"test:stories": "vitest run --project storybook",
-		"test:stories:coverage": "vitest run --project storybook --coverage",
+		"test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
+		"test:stories:coverage": "vitest run --config ./vitest.storybook.config.ts --project storybook --coverage",
 		"postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
 		"storybook": "storybook dev",
 		"build-storybook": "storybook build"

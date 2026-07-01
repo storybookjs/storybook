@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { loadTranscript } from '@vercel/agent-eval';
 import type { Transcript } from '@vercel/agent-eval';
@@ -125,6 +126,72 @@ export function expectDisplayReviewForVisualChange(): void {
 
 	expectValidDisplayReviewPayload(displayReview.input);
 	expectFinalResponseEndsWithReviewSection();
+}
+
+// Hard-floor completeness (Agentic Review Eval instructions §6a.2): every story
+// exported from the story files written during the run must appear in the
+// published review. Assumes the template starts without story files, so every
+// story file on disk was created by the agent.
+export function expectAllStoryExportsInDisplayReview(): void {
+	const displayReview = getWorkflowCalls('display-review').at(-1);
+	if (displayReview === undefined) {
+		expect.fail('Expected display-review to be called');
+	}
+
+	const payloadStoryIds = getDisplayReviewStoryIds(displayReview.input);
+	const storyFiles = findStoryFiles('.');
+	expect(storyFiles.length, 'Expected the agent to write at least one story file').toBeGreaterThan(
+		0,
+	);
+
+	for (const storyFile of storyFiles) {
+		for (const exportName of getStoryExportNames(readFileSync(storyFile, 'utf8'))) {
+			const suffix = `--${kebabCase(exportName)}`;
+			expect(
+				payloadStoryIds.some((storyId) => storyId.endsWith(suffix)),
+				`Expected story "${exportName}" from ${storyFile} in the display-review payload. Received storyIds: ${JSON.stringify(payloadStoryIds)}`,
+			).toBe(true);
+		}
+	}
+}
+
+function getDisplayReviewStoryIds(input: Record<string, unknown>): string[] {
+	if (!Array.isArray(input.collections)) {
+		return [];
+	}
+
+	return input.collections.flatMap((collection) =>
+		isRecord(collection) && Array.isArray(collection.storyIds)
+			? collection.storyIds.filter((storyId): storyId is string => typeof storyId === 'string')
+			: [],
+	);
+}
+
+const STORY_FILE_PATTERN = /\.stories\.[jt]sx?$/;
+const SKIPPED_SCAN_DIRECTORIES = new Set(['node_modules', 'dist', '.git', '__agent_eval__']);
+
+function findStoryFiles(rootDir: string): string[] {
+	return readdirSync(rootDir, { withFileTypes: true }).flatMap((entry) => {
+		const entryPath = join(rootDir, entry.name);
+		if (entry.isDirectory()) {
+			return SKIPPED_SCAN_DIRECTORIES.has(entry.name) ? [] : findStoryFiles(entryPath);
+		}
+		return STORY_FILE_PATTERN.test(entry.name) ? [entryPath] : [];
+	});
+}
+
+function getStoryExportNames(storyFileSource: string): string[] {
+	return [...storyFileSource.matchAll(/^export (?:const|function) ([A-Za-z0-9_$]+)/gm)].flatMap(
+		(match) => match[1] ?? [],
+	);
+}
+
+function kebabCase(value: string): string {
+	return value
+		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+		.replace(/[^a-zA-Z0-9]+/g, '-')
+		.replace(/(^-|-$)/g, '')
+		.toLowerCase();
 }
 
 const DOCUMENTATION_WORKFLOW_NAMES = [
@@ -283,6 +350,10 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		lines.some((line) => /^##\s+.*Review your changes\s*$/.test(line.trim())),
 		'Final response must include a dedicated review heading',
 	).toBe(true);
+	expect(
+		trimmed,
+		'Final response must explain the review is AI-curated and may be inaccurate',
+	).toMatch(/AI[-\s]?curated/i);
 	expect(
 		trimmed,
 		'Final response must not also include individual story preview links',

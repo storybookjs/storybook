@@ -18,7 +18,7 @@ Test AI coding agents to measure what actually works.
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
    - **Agent keys**: `AI_GATEWAY_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments.
-   - **Sandbox access**: the checked-in experiments use Docker for stable GitHub Actions runs.
+   - **Sandbox access**: `sandbox: 'auto'` uses Vercel Sandbox when Vercel credentials are set, and falls back to Docker without them.
 
 ## Running Evals
 
@@ -50,7 +50,8 @@ pnpm exec agent-eval cc-mcp
 
 Pull requests with the `ci:eval` label run all experiments in CI.
 
-CI uses Docker sandboxing for the checked-in experiments. Do not store a static
+CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
+`VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
 `VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
 Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
 runtime/build contexts.

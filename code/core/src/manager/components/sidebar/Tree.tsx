@@ -78,6 +78,11 @@ const CollapseButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+// Fallback expand/collapse-all control shown only when the root context menu is
+// unavailable (e.g. a production build where CONFIG_TYPE !== 'DEVELOPMENT', or a
+// composed Storybook). It occupies the same spot as the menu's floating button
+// and is hover-revealed by RootNode's data-displayed rules, so the two never
+// coexist.
 const FloatingExpandCollapseButton = styled(Button)({
   background: 'var(--tree-node-background-hover)',
   boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
@@ -223,9 +228,18 @@ const Node = React.memo<NodeProps>(function Node(props) {
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'root') {
-      // Root expand/collapse is handled by a direct button on the node row,
-      // not through the context menu — so no links needed here.
-      return [];
+      // Expand/collapse-all lives in the root's context menu alongside any test
+      // provider actions, rather than as a separate icon button on the row.
+      return [
+        {
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />,
+          onClick: () => {
+            setFullyExpanded?.();
+          },
+        },
+      ];
     }
 
     if (item.type === 'story' || item.type === 'docs') {
@@ -246,7 +260,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
+  }, [item.id, item.type, isFullyExpanded, setFullyExpanded, onSelectStoryId, statuses, theme]);
 
   let contextMenu = useContextMenu(item, statusLinks, api);
   if (refId !== 'storybook_internal') {
@@ -381,7 +395,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           <CollapseIcon isExpanded={isExpanded} />
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
-        {isExpanded && (
+        {contextMenu.node ?? (
           <FloatingExpandCollapseButton
             data-displayed="off"
             data-testid="expand-collapse-all"
@@ -391,17 +405,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
             variant="ghost"
             padding="small"
             type="button"
-            onClick={(e) => {
-              if (e.detail !== 0) {
-                (e.currentTarget as HTMLButtonElement).blur();
-              }
+            onClick={(event) => {
+              event.preventDefault();
               setFullyExpanded?.();
             }}
           >
             {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
           </FloatingExpandCollapseButton>
         )}
-        {contextMenu.node}
       </RootNode>
     );
   }

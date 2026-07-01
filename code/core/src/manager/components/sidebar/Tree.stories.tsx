@@ -427,6 +427,17 @@ const rootMenuData = {
 } as unknown as IndexHash;
 
 const rootNodeBase: Story = {
+  // The context menu is gated on CONFIG_TYPE === 'DEVELOPMENT'. In a static
+  // Storybook build (Chromatic URL viewed manually, storybook:ui:build) the
+  // builder injects 'PRODUCTION', so preview.tsx leaves it untouched and the
+  // button never renders. Force it here so the stories work everywhere.
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
   args: {
     docsMode: false,
     isBrowsing: true,
@@ -451,12 +462,32 @@ const rootNodeBase: Story = {
 };
 
 /**
- * Hover the root heading to reveal the direct expand/collapse button, then click it.
- * Input starts collapsed; after clicking "Expand all" its "Empty" story appears.
+ * Hover the root heading to reveal its context menu, then open it.
+ * Verifies the "Expand all" action is shown (Input is collapsed initially).
  */
-export const RootExpandAll: Story = {
+export const RootContextMenuOpen: Story = {
   ...rootNodeBase,
   parameters: { chromatic: { viewports: [380] } },
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+    await userEvent.hover(rootEl);
+
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const dialog = await screen.findByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * Clicking "Expand all" in the root context menu expands all collapsed
+ * component nodes. Input starts collapsed; after expand all its "Empty"
+ * story should appear.
+ */
+export const RootContextMenuExpandAll: Story = {
+  ...rootNodeBase,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
@@ -464,33 +495,69 @@ export const RootExpandAll: Story = {
     expect(canvas.queryByText('Empty')).toBeNull();
 
     await userEvent.hover(rootEl);
-    // findByTestId doesn't filter by CSS visibility, which is needed because the
-    // button uses data-displayed="off" (visibility:hidden until hover reveals it).
-    const btn = await within(rootEl).findByTestId('expand-collapse-all');
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+    await userEvent.click(await screen.findByText('Expand all'));
 
-    await userEvent.click(btn);
     await expect(await canvas.findByText('Empty')).toBeInTheDocument();
   },
 };
 
 /**
- * After expanding all, clicking the button again collapses and hides child stories.
+ * After expanding all, the root context menu switches to "Collapse all".
  */
-export const RootCollapseAll: Story = {
+export const RootContextMenuCollapseAll: Story = {
   ...rootNodeBase,
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    // Expand all first so the tree is fully expanded
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+    await userEvent.click(await screen.findByText('Expand all'));
+
+    // Close the popover, then re-open — should now offer "Collapse all"
+    await userEvent.keyboard('{Escape}');
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+
+    const dialog = await screen.findByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * When the context menu is unavailable — e.g. a production/static build where
+ * CONFIG_TYPE !== 'DEVELOPMENT' — the root still exposes expand/collapse-all via
+ * a direct hover-revealed button in place of the menu. Verifies no context menu
+ * button renders, and that the fallback button expands the collapsed tree.
+ */
+export const RootExpandCollapseFallback: Story = {
+  ...rootNodeBase,
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
+  parameters: { chromatic: { viewports: [380] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
 
-    // Expand all first
-    await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
-    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
+    // No context menu in a production build...
+    expect(within(rootEl).queryByTestId('context-menu')).toBeNull();
+    expect(canvas.queryByText('Empty')).toBeNull();
 
-    // Collapse all
+    // ...but the fallback expand/collapse-all button is still reachable on hover.
     await userEvent.hover(rootEl);
-    await userEvent.click(await within(rootEl).findByTestId('expand-collapse-all'));
-    await expect(canvas.queryByText('Empty')).toBeNull();
+    // findByTestId ignores CSS visibility (button is data-displayed="off" until hover).
+    const btn = await within(rootEl).findByTestId('expand-collapse-all');
+    await userEvent.click(btn);
+
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
   },
 };
 
@@ -504,15 +571,6 @@ export const RootCollapseAll: Story = {
  */
 export const StoryContextMenuWithStatusAndProvider: Story = {
   ...rootNodeBase,
-  // The context menu for story/component nodes is gated on CONFIG_TYPE === 'DEVELOPMENT'.
-  // Force it here so this story works in static Storybook builds too.
-  beforeEach: () => {
-    const original = (globalThis as any).CONFIG_TYPE;
-    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
-    return () => {
-      (globalThis as any).CONFIG_TYPE = original;
-    };
-  },
   parameters: { chromatic: { disableSnapshot: true } },
   args: {
     ...rootNodeBase.args,

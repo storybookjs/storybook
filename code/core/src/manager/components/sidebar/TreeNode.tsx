@@ -95,7 +95,7 @@ export const RootNode = styled.div(({ theme }) => ({
     marginTop: 0,
   },
 
-  '&:hover, &:focus-within': {
+  '&:hover': {
     '--tree-node-background-hover': theme.background.hoverable,
     background: 'var(--tree-node-background-hover)',
   },
@@ -103,10 +103,10 @@ export const RootNode = styled.div(({ theme }) => ({
   '& [data-displayed="off"]': {
     visibility: 'hidden',
   },
-  '&:hover [data-displayed="off"], &:focus-within [data-displayed="off"]': {
+  '&:hover [data-displayed="off"]': {
     visibility: 'visible',
   },
-  '&:hover [data-displayed="off"] + *, &:focus-within [data-displayed="off"] + *': {
+  '&:hover [data-displayed="off"] + *': {
     visibility: 'hidden',
   },
 }));

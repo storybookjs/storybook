@@ -5,7 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
 const mcpUrl = 'http://127.0.0.1:' + port + '/mcp';
 const logPath = process.env.STORYBOOK_MCP_LOG_PATH || '/tmp/storybook-mcp.log';
-const timeoutMs = Number(process.env.STORYBOOK_MCP_TIMEOUT_MS || 60_000);
+const parsedTimeoutMs = Number(process.env.STORYBOOK_MCP_TIMEOUT_MS);
+const timeoutMs = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 60_000;
 
 if (await isReady()) {
 	process.exit(0);

@@ -255,7 +255,18 @@ describe('preview-browser MCP protocol', () => {
 	}, 60_000);
 
 	test('preview_start falls back to the only configuration when the name is unknown', async () => {
-		// The launch.json written by the previous test has a single ProgramApp entry.
+		// Self-contained config: reusing the previous test's port races against its
+		// stopped server fully releasing the port on slower CI runners.
+		const port = await findFreePort();
+		writeFileSync(path.join(workspace, 'server.mjs'), FIXTURE_SERVER_SCRIPT);
+		writeFileSync(
+			path.join(workspace, '.claude', 'launch.json'),
+			JSON.stringify({
+				version: '0.0.1',
+				configurations: [{ name: 'ProgramApp', program: 'server.mjs', args: [String(port)], port }],
+			}),
+		);
+
 		const started = await client.callTool('preview_start', { name: 'WrongName' });
 		expect(started.isError).not.toBe(true);
 		expect(toolText(started)).toContain('"name": "ProgramApp"');

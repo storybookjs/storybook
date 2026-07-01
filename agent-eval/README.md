@@ -18,7 +18,7 @@ Test AI coding agents to measure what actually works.
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
    - **Choose ONE agent key**: `AI_GATEWAY_API_KEY` (for Vercel agents), `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`
-   - **Choose ONE sandbox option**: `VERCEL_TOKEN`, `VERCEL_OIDC_TOKEN`, or use Docker (set `sandbox: 'docker'` in config)
+   - **Sandbox access**: by default the experiments use `sandbox: 'auto'`. Set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID` to use Vercel Sandbox; leave `VERCEL_TOKEN` unset to fall back to Docker.
 
 ## Running Evals
 
@@ -45,6 +45,12 @@ pnpm exec agent-eval cc-mcp
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI.
+
+CI uses Vercel Sandbox only when the repository has `VERCEL_TOKEN`,
+`VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID` configured. Do not store a static
+`VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
+Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
+runtime/build contexts.
 
 Configured experiments:
 

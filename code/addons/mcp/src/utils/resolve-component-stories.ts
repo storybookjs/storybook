@@ -72,7 +72,7 @@ function toStoryIndexPath(importPath: string): string {
 
 /**
  * Map story-index-relative story-file path → story IDs declared in that file. Skips virtual entries.
- * Keys match the `storyFile` values returned by the module graph's `getStoriesForFiles`.
+ * Keys match the `storyFile` values returned by the module graph's `storiesForFiles`.
  */
 function buildStoryIdsByFile(storyIndex: StoryIndex): Map<string, Set<string>> {
 	const storyIdsByFile = new Map<string, Set<string>>();
@@ -100,6 +100,10 @@ function reasonForStatus(status: ModuleGraphStatus): string {
 			return `Storybook's story module graph failed to build: ${status.error.message}`;
 		case 'ready':
 			return "Storybook's story module graph is ready.";
+		default: {
+			const exhaustive: never = status;
+			return exhaustive;
+		}
 	}
 }
 
@@ -159,9 +163,9 @@ export async function resolveComponentStories(
 		};
 	}
 
-	// `getStatus.loaded` awaits the graph's settle barrier, so by the time it resolves the status is
+	// `status.loaded` awaits the graph's settle barrier, so by the time it resolves the status is
 	// no longer `booting` unless the graph genuinely never built — handle every non-ready case.
-	const status = await moduleGraph.queries.getStatus.loaded(undefined);
+	const status = await moduleGraph.queries.status.loaded(undefined);
 	if (status.value !== 'ready') {
 		return { available: false, reason: reasonForStatus(status) };
 	}
@@ -203,7 +207,7 @@ export async function resolveComponentStories(
 	const allTargets = [...new Set(resolved.flatMap((c) => c.targets))];
 	const hitsByTarget = new Map<string, ModuleGraphStoryHit[]>();
 	if (allTargets.length > 0) {
-		const batched = await moduleGraph.queries.getStoriesForFiles.loaded({ files: allTargets });
+		const batched = await moduleGraph.queries.storiesForFiles.loaded({ files: allTargets });
 		// Output is positional: result `i` corresponds to input `allTargets[i]`.
 		allTargets.forEach((target, i) => {
 			hitsByTarget.set(target, batched[i] ?? []);

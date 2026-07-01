@@ -1,4 +1,4 @@
-import { lstatSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { basename, dirname, relative, resolve } from 'node:path';
 
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
@@ -16,7 +16,12 @@ export const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';
 
 const isDirectory = (configDir: string, entry: string) => {
   try {
-    return lstatSync(resolve(configDir, entry)).isDirectory();
+    // statSync (not lstatSync) follows symlinks, so a `stories` entry that's
+    // a symlink to a directory - e.g. a stories folder shared between
+    // packages in a pnpm/yarn workspace - is correctly recognized as a
+    // directory instead of being misclassified as a single file. A dangling
+    // symlink still throws (ENOENT) and is caught below, same as before.
+    return statSync(resolve(configDir, entry)).isDirectory();
   } catch (err) {
     return false;
   }

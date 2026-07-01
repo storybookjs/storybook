@@ -14,6 +14,7 @@ const SERVER_SCRIPT = path.resolve(
 );
 
 const BROWSER_TEST_TIMEOUT_MS = 120_000;
+const UUID_PATTERN = /"serverId": "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/;
 
 type JsonRpcResponse = {
 	id: number;
@@ -72,6 +73,12 @@ function toolText(result: ToolResult): string {
 		.filter((item) => item.type === 'text')
 		.map((item) => item.text)
 		.join('\n');
+}
+
+function startedServerId(result: ToolResult): string {
+	const match = UUID_PATTERN.exec(toolText(result));
+	expect(match, `expected a serverId in: ${toolText(result)}`).not.toBeNull();
+	return (match as RegExpExecArray)[1] as string;
 }
 
 async function findFreePort(): Promise<number> {
@@ -191,23 +198,27 @@ describe('preview-browser MCP protocol', () => {
 	test('preview_start fails with launch.json instructions when the file is missing', async () => {
 		const result = await client.callTool('preview_start', { name: 'Storybook' });
 		expect(result.isError).toBe(true);
-		expect(toolText(result)).toContain(".claude/launch.json doesn't exist");
+		expect(toolText(result)).toContain('Failed to start server: No .claude/launch.json found.');
 		expect(toolText(result)).toContain('"configurations"');
+		expect(toolText(result)).toContain('Check the command in .claude/launch.json and try again.');
 	});
 
-	test('preview_start fails when the named configuration does not exist', async () => {
+	test('preview_start lists available servers when the name matches none of several', async () => {
 		mkdirSync(path.join(workspace, '.claude'), { recursive: true });
 		writeFileSync(
 			path.join(workspace, '.claude', 'launch.json'),
 			JSON.stringify({
 				version: '0.0.1',
-				configurations: [{ name: 'Other', runtimeExecutable: 'npm', port: 4000 }],
+				configurations: [
+					{ name: 'Other', runtimeExecutable: 'npm', port: 4000 },
+					{ name: 'Second', runtimeExecutable: 'npm', port: 4001 },
+				],
 			}),
 		);
 		const result = await client.callTool('preview_start', { name: 'Storybook' });
 		expect(result.isError).toBe(true);
-		expect(toolText(result)).toContain('No configuration named "Storybook"');
-		expect(toolText(result)).toContain('Available configurations: Other');
+		expect(toolText(result)).toContain('No server named "Storybook" found');
+		expect(toolText(result)).toContain('Available servers: Other, Second');
 	});
 
 	test('preview_start spawns a "program" entry with its env, preview_stop stops it', async () => {
@@ -232,17 +243,27 @@ describe('preview-browser MCP protocol', () => {
 
 		const started = await client.callTool('preview_start', { name: 'ProgramApp' });
 		expect(started.isError).not.toBe(true);
-		expect(toolText(started)).toContain('Started "ProgramApp"');
-		const serverId = /serverId: (preview-\d+)/.exec(toolText(started))?.[1];
+		expect(toolText(started)).toContain('"reused": false');
+		expect(toolText(started)).toContain(`Server started successfully on port ${port}.`);
+		const serverId = startedServerId(started);
 
 		const logs = await client.callTool('preview_logs', { serverId });
 		expect(toolText(logs)).toContain('greeting: hello-from-env');
 
 		const stopped = await client.callTool('preview_stop', { serverId });
-		expect(toolText(stopped)).toContain('Stopped');
+		expect(toolText(stopped)).toBe(`Server ${serverId} stopped`);
 	}, 60_000);
 
-	test('preview_start applies the documented autoPort semantics on port conflicts', async () => {
+	test('preview_start falls back to the only configuration when the name is unknown', async () => {
+		// The launch.json written by the previous test has a single ProgramApp entry.
+		const started = await client.callTool('preview_start', { name: 'WrongName' });
+		expect(started.isError).not.toBe(true);
+		expect(toolText(started)).toContain('"name": "ProgramApp"');
+		const serverId = startedServerId(started);
+		await client.callTool('preview_stop', { serverId });
+	}, 60_000);
+
+	test('preview_start applies the real autoPort semantics on port conflicts', async () => {
 		const busyPort = await findFreePort();
 		const blocker = createServer();
 		await new Promise<void>((resolve) => {
@@ -251,7 +272,6 @@ describe('preview-browser MCP protocol', () => {
 
 		try {
 			writeFileSync(path.join(workspace, 'server.mjs'), FIXTURE_SERVER_SCRIPT);
-			mkdirSync(path.join(workspace, '.claude'), { recursive: true });
 			const writeConfig = (autoPort: boolean | undefined) => {
 				writeFileSync(
 					path.join(workspace, '.claude', 'launch.json'),
@@ -274,22 +294,27 @@ describe('preview-browser MCP protocol', () => {
 			writeConfig(undefined);
 			const unset = await client.callTool('preview_start', { name: 'ConflictApp' });
 			expect(unset.isError).toBe(true);
-			expect(toolText(unset)).toContain(`Port ${busyPort} is already in use. Set "autoPort"`);
+			expect(toolText(unset)).toContain(`Port ${busyPort} is in use by`);
+			expect(toolText(unset)).toContain('Ask the user:');
+			expect(toolText(unset)).toContain('via the PORT environment variable. Then retry.');
 
 			// false: the exact port is required, so the conflict is fatal.
 			writeConfig(false);
 			const strict = await client.callTool('preview_start', { name: 'ConflictApp' });
 			expect(strict.isError).toBe(true);
-			expect(toolText(strict)).toContain('requires that exact port');
+			expect(toolText(strict)).toContain(
+				`Port ${busyPort} is required by this server but is in use by`,
+			);
 
-			// true: a free port is assigned and passed to the server via PORT.
+			// true: an ephemeral port is assigned and passed to the server via PORT.
 			writeConfig(true);
 			const started = await client.callTool('preview_start', { name: 'ConflictApp' });
 			expect(started.isError).not.toBe(true);
-			const match = /serverId: (preview-\d+)\) at http:\/\/localhost:(\d+)/.exec(toolText(started));
-			expect(match).not.toBeNull();
-			const [, serverId, assignedPort] = match as unknown as [string, string, string];
-			expect(Number(assignedPort)).not.toBe(busyPort);
+			expect(toolText(started)).toContain(`Configured port ${busyPort} was in use, so port `);
+			expect(toolText(started)).toContain('was assigned instead (autoPort is enabled).');
+			const serverId = startedServerId(started);
+			const assignedPort = Number(/"port": (\d+)/.exec(toolText(started))?.[1]);
+			expect(assignedPort).not.toBe(busyPort);
 
 			const logs = await client.callTool('preview_logs', { serverId });
 			expect(toolText(logs)).toContain(`fixture server listening on ${assignedPort}`);
@@ -300,13 +325,19 @@ describe('preview-browser MCP protocol', () => {
 		}
 	}, 60_000);
 
-	test('page tools fail for unknown server ids', async () => {
+	test('preview_stop reports unknown server ids', async () => {
+		const result = await client.callTool('preview_stop', { serverId: 'unknown-id-123' });
+		expect(result.isError).toBe(true);
+		expect(toolText(result)).toBe('Server unknown-id-123 not found');
+	});
+
+	test('page tools fail only when no preview server is running', async () => {
 		const result = await client.callTool('preview_click', {
 			serverId: 'preview-99',
 			selector: 'button',
 		});
 		expect(result.isError).toBe(true);
-		expect(toolText(result)).toContain('Unknown serverId');
+		expect(toolText(result)).toBe('No preview server is running. Call preview_start first.');
 	});
 });
 
@@ -314,6 +345,7 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	let workspace: string;
 	let client: McpClient;
 	let port: number;
+	let serverId: string;
 
 	beforeAll(async () => {
 		workspace = mkdtempSync(path.join(tmpdir(), 'preview-browser-e2e-'));
@@ -352,15 +384,23 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 		async () => {
 			const started = await client.callTool('preview_start', { name: 'App' });
 			expect(started.isError).not.toBe(true);
-			expect(toolText(started)).toContain('Started "App" (serverId: preview-1)');
+			expect(toolText(started)).toContain('"reused": false');
+			expect(toolText(started)).toContain(`Server started successfully on port ${port}.`);
+			serverId = startedServerId(started);
 
 			const reused = await client.callTool('preview_start', { name: 'App' });
-			expect(toolText(reused)).toContain('Reusing running server "App"');
+			expect(toolText(reused)).toContain('"reused": true');
+			expect(toolText(reused)).toContain(
+				'Server was already running and has been reused. No new process was started.',
+			);
+			expect(startedServerId(reused)).toBe(serverId);
 
 			const list = await client.callTool('preview_list');
-			expect(JSON.parse(toolText(list))).toMatchObject([
-				{ serverId: 'preview-1', name: 'App', status: 'running' },
-			]);
+			const entries = JSON.parse(toolText(list)) as Array<Record<string, unknown>>;
+			expect(entries).toHaveLength(1);
+			expect(entries[0]).toMatchObject({ serverId, name: 'App', port, status: 'running' });
+			expect(String(entries[0]?.sessionId)).toMatch(/^local_/);
+			expect(entries[0]?.startedAt).toBeTruthy();
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
@@ -369,7 +409,7 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 		'preview_eval runs real JavaScript in the page',
 		async () => {
 			const result = await client.callTool('preview_eval', {
-				serverId: 'preview-1',
+				serverId,
 				expression: 'document.title',
 			});
 			expect(result.isError).not.toBe(true);
@@ -379,14 +419,34 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	);
 
 	test(
+		'preview_eval reports errors like the real tool',
+		async () => {
+			const result = await client.callTool('preview_eval', {
+				serverId,
+				expression: 'nonexistentVariable.foo',
+			});
+			expect(result.isError).toBe(true);
+			expect(toolText(result)).toContain('Eval failed: ');
+			expect(toolText(result)).toContain('nonexistentVariable is not defined');
+		},
+		BROWSER_TEST_TIMEOUT_MS,
+	);
+
+	test(
 		'preview_click mutates the live DOM',
 		async () => {
-			await client.callTool('preview_click', { serverId: 'preview-1', selector: '#counter' });
+			const clicked = await client.callTool('preview_click', { serverId, selector: '#counter' });
+			expect(toolText(clicked)).toBe('Successfully clicked: #counter');
+
 			const result = await client.callTool('preview_eval', {
-				serverId: 'preview-1',
+				serverId,
 				expression: "document.querySelector('#counter').textContent",
 			});
 			expect(toolText(result)).toBe('"clicked"');
+
+			const missing = await client.callTool('preview_click', { serverId, selector: '#nope' });
+			expect(missing.isError).toBe(true);
+			expect(toolText(missing)).toBe('Failed to click element: #nope');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
@@ -394,13 +454,15 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	test(
 		'preview_fill fills real inputs',
 		async () => {
-			await client.callTool('preview_fill', {
-				serverId: 'preview-1',
+			const filled = await client.callTool('preview_fill', {
+				serverId,
 				selector: '#name',
 				value: 'Kasper',
 			});
+			expect(toolText(filled)).toBe('Successfully filled: #name');
+
 			const result = await client.callTool('preview_eval', {
-				serverId: 'preview-1',
+				serverId,
 				expression: "document.querySelector('#name').value",
 			});
 			expect(toolText(result)).toBe('"Kasper"');
@@ -409,41 +471,46 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	);
 
 	test(
-		'preview_inspect returns real computed styles',
+		'preview_inspect returns real computed styles in the real format',
 		async () => {
 			const result = await client.callTool('preview_inspect', {
-				serverId: 'preview-1',
+				serverId,
 				selector: '#counter',
 				styles: ['color'],
 			});
 			const details = JSON.parse(toolText(result)) as {
 				tagName: string;
-				computedStyles: Record<string, string>;
-				boundingBox: { width: number; height: number };
+				text: string;
+				styles: Record<string, string>;
+				boundingBox: { width: number };
 			};
-			expect(details.tagName).toBe('BUTTON');
-			expect(details.computedStyles.color).toBe('rgb(255, 0, 0)');
+			expect(details.tagName).toBe('button');
+			expect(details.text).toBe('clicked');
+			expect(details.styles.color).toBe('rgb(255, 0, 0)');
 			expect(details.boundingBox.width).toBeGreaterThan(0);
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
 
 	test(
-		'preview_snapshot returns the real accessibility tree',
+		'preview_snapshot returns the Chrome accessibility tree format',
 		async () => {
-			const result = await client.callTool('preview_snapshot', { serverId: 'preview-1' });
+			const result = await client.callTool('preview_snapshot', { serverId });
 			const snapshot = toolText(result);
-			expect(snapshot).toContain('Fixture App');
+			expect(snapshot).toMatch(/\[\d+\] RootWebArea: "Fixture App"/);
+			expect(snapshot).toMatch(/\[\d+\] heading: "Fixture App"/);
 			expect(snapshot).not.toContain('mock');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
 
 	test(
-		'preview_screenshot returns a real JPEG',
+		'preview_screenshot returns only a JPEG image',
 		async () => {
-			const result = await client.callTool('preview_screenshot', { serverId: 'preview-1' });
-			const image = result.content.find((item) => item.type === 'image');
+			const result = await client.callTool('preview_screenshot', { serverId });
+			expect(result.content).toHaveLength(1);
+			const image = result.content[0];
+			expect(image?.type).toBe('image');
 			expect(image?.mimeType).toBe('image/jpeg');
 			expect((image?.data ?? '').length).toBeGreaterThan(1_000);
 		},
@@ -453,29 +520,24 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	test(
 		'preview_console_logs captures real console output',
 		async () => {
-			const result = await client.callTool('preview_console_logs', { serverId: 'preview-1' });
-			expect(toolText(result)).toContain('fixture loaded');
+			const result = await client.callTool('preview_console_logs', { serverId });
+			expect(toolText(result)).toContain('[log] fixture loaded');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
 
 	test(
-		'preview_network lists real requests and returns response bodies',
+		'preview_network lists requests and pretty-prints JSON bodies',
 		async () => {
-			const listing = await client.callTool('preview_network', { serverId: 'preview-1' });
-			const requests = JSON.parse(toolText(listing)) as Array<{
-				requestId: string;
-				url: string;
-				status: number;
-			}>;
-			const apiRequest = requests.find((request) => request.url.endsWith('/api/data'));
-			expect(apiRequest?.status).toBe(200);
+			const listing = await client.callTool('preview_network', { serverId });
+			const line = toolText(listing)
+				.split('\n')
+				.find((candidate) => candidate.includes('/api/data'));
+			expect(line).toMatch(/^\[\d+\.\d+\] GET http:\/\/localhost:\d+\/api\/data → 200/);
 
-			const body = await client.callTool('preview_network', {
-				serverId: 'preview-1',
-				requestId: apiRequest?.requestId,
-			});
-			expect(JSON.parse(toolText(body))).toMatchObject({ body: '{"ok":true}' });
+			const requestId = /^\[([\d.]+)\]/.exec(line ?? '')?.[1];
+			const body = await client.callTool('preview_network', { serverId, requestId });
+			expect(toolText(body)).toBe('{\n  "ok": true\n}');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
@@ -483,17 +545,22 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	test(
 		'preview_resize applies presets to the live viewport',
 		async () => {
-			const result = await client.callTool('preview_resize', {
-				serverId: 'preview-1',
-				preset: 'mobile',
-			});
-			expect(toolText(result)).toContain('375x812');
+			const result = await client.callTool('preview_resize', { serverId, preset: 'mobile' });
+			expect(toolText(result)).toBe('Viewport set to 375x812 (mobile).');
 
 			const width = await client.callTool('preview_eval', {
-				serverId: 'preview-1',
+				serverId,
 				expression: 'window.innerWidth',
 			});
 			expect(toolText(width)).toBe('375');
+
+			const custom = await client.callTool('preview_resize', {
+				serverId,
+				width: 1000,
+				height: 700,
+				colorScheme: 'dark',
+			});
+			expect(toolText(custom)).toBe('Viewport set to 1000x700. Color scheme set to dark.');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
 	);
@@ -501,7 +568,7 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	test(
 		'preview_logs returns the spawned server output',
 		async () => {
-			const result = await client.callTool('preview_logs', { serverId: 'preview-1' });
+			const result = await client.callTool('preview_logs', { serverId });
 			expect(toolText(result)).toContain('fixture server listening');
 		},
 		BROWSER_TEST_TIMEOUT_MS,
@@ -510,8 +577,8 @@ describe.skipIf(!(await isChromiumInstalled()))('preview-browser with a real bro
 	test(
 		'preview_stop stops the server',
 		async () => {
-			const result = await client.callTool('preview_stop', { serverId: 'preview-1' });
-			expect(toolText(result)).toBe('Stopped server preview-1.');
+			const result = await client.callTool('preview_stop', { serverId });
+			expect(toolText(result)).toBe(`Server ${serverId} stopped`);
 
 			const list = await client.callTool('preview_list');
 			expect(JSON.parse(toolText(list))).toEqual([]);

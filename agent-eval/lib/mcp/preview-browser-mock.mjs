@@ -2,18 +2,22 @@
 /**
  * Stand-in MCP server for Claude's native desktop "preview" tools, used in
  * agent evals. Tool names, schemas, and descriptions mirror the real server
- * verbatim. Behavior is real where the sandbox allows it:
+ * verbatim, and response wordings were captured from the real tools. Behavior
+ * is real where the sandbox allows it:
  *
  * - `preview_start` validates `.claude/launch.json`, spawns the configured
  *   command, and waits for it to become ready. Port conflicts follow the
- *   documented `autoPort` semantics: `true` starts on a free port (passed to
- *   the server via the `PORT` env var), `false` fails, and unset asks the
- *   agent to decide by setting `autoPort`.
+ *   documented `autoPort` semantics: `true` starts on an OS-assigned free
+ *   port (passed to the server via the `PORT` env var), `false` fails, and
+ *   unset asks the agent to decide by setting `autoPort`.
  * - Page tools (click/fill/eval/screenshot/snapshot/inspect/console/network/
  *   resize) drive a real headless Chromium, resolved from the workspace's
  *   `playwright` install (the eval template installs it during postinstall).
+ *   Like the real tools, they fall back to the most recently started preview
+ *   when the given serverId is unknown.
  */
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { closeSync, existsSync, openSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -24,9 +28,11 @@ import { createInterface } from 'node:readline';
 const SERVER_INFO = { name: 'preview-browser', version: '2.0.0' };
 
 const LAUNCH_CONFIG_PATH = '.claude/launch.json';
+const DEFAULT_PORT = 3000;
 const SERVER_READY_TIMEOUT_MS = 120_000;
 const ACTION_TIMEOUT_MS = 5_000;
 const NAVIGATION_TIMEOUT_MS = 30_000;
+const SESSION_ID = `local_${randomUUID()}`;
 
 // Matches the format block in the real preview_start tool description.
 const LAUNCH_CONFIG_FORMAT = `{
@@ -43,12 +49,12 @@ const LAUNCH_CONFIG_FORMAT = `{
 
 /**
  * serverId -> {
- *   id, name, url, port, viewport, colorScheme,
+ *   id, name, url, port, startedAt, viewport, colorScheme,
  *   child, logPath, pagePromise, context, consoleMessages, responses
  * }
  */
 const servers = new Map();
-let nextServerId = 1;
+let requestSequence = 0;
 let browserPromise;
 
 function text(value) {
@@ -59,13 +65,14 @@ function errorText(value) {
 	return { content: [{ type: 'text', text: value }], isError: true };
 }
 
-/** Run `fn` against a started server, or return a helpful error if unknown. */
+/**
+ * Resolve a serverId like the real tools: exact match first, otherwise fall
+ * back to the most recently started preview. Only errors when nothing runs.
+ */
 async function withServer(serverId, fn) {
-	const server = servers.get(serverId);
+	const server = servers.get(serverId) ?? [...servers.values()].at(-1);
 	if (!server) {
-		return errorText(
-			`Unknown serverId "${serverId}". Call preview_start first, or preview_list to see running servers.`,
-		);
+		return errorText('No preview server is running. Call preview_start first.');
 	}
 	return fn(server);
 }
@@ -331,10 +338,12 @@ const PRESETS = {
 	desktop: { width: 1280, height: 800 },
 };
 
-function readLaunchEntry(name) {
+function readLaunchConfig() {
 	if (!existsSync(LAUNCH_CONFIG_PATH)) {
 		throw new Error(
-			`${LAUNCH_CONFIG_PATH} doesn't exist. Create it first with this format:\n${LAUNCH_CONFIG_FORMAT}\nSet "runtimeExecutable" to the command (e.g. "npm"), "runtimeArgs" to the arguments (e.g. ["run", "dev"]), and "port" to the server port. Then call preview_start again.`,
+			`Failed to start server: No .claude/launch.json found. Create ${path.resolve(
+				LAUNCH_CONFIG_PATH,
+			)} with this format:\n${LAUNCH_CONFIG_FORMAT}\nSet "runtimeExecutable" to the command (e.g. "npm"), "runtimeArgs" to the arguments (e.g. ["run", "dev"]), and "port" to the server port. Only include servers you actually need to preview. Then call preview_start with the server name.\n\nCheck the command in .claude/launch.json and try again.`,
 		);
 	}
 
@@ -342,26 +351,38 @@ function readLaunchEntry(name) {
 	try {
 		config = JSON.parse(readFileSync(LAUNCH_CONFIG_PATH, 'utf-8'));
 	} catch (error) {
-		throw new Error(`Failed to parse ${LAUNCH_CONFIG_PATH}: ${error?.message ?? error}`);
+		throw new Error(
+			`Failed to start server: Could not parse ${LAUNCH_CONFIG_PATH}: ${error?.message ?? error}\n\nCheck the command in .claude/launch.json and try again.`,
+		);
 	}
 
-	const configurations = Array.isArray(config?.configurations) ? config.configurations : [];
-	const entry = configurations.find((candidate) => candidate?.name === name);
+	return Array.isArray(config?.configurations) ? config.configurations : [];
+}
+
+function readLaunchEntry(name) {
+	const configurations = readLaunchConfig();
+	let entry = configurations.find((candidate) => candidate?.name === name);
+
+	// The real tool starts the only configuration when the name doesn't match.
+	if (!entry && configurations.length === 1) {
+		entry = configurations[0];
+	}
+
 	if (!entry) {
 		const available = configurations
 			.map((candidate) => candidate?.name)
 			.filter((candidateName) => typeof candidateName === 'string');
 		throw new Error(
-			`No configuration named "${name}" in ${LAUNCH_CONFIG_PATH}. Available configurations: ${
-				available.length > 0 ? available.join(', ') : '(none)'
-			}.`,
+			`Failed to start server: No server named "${name}" found in ${LAUNCH_CONFIG_PATH}. Available servers: ${available.join(
+				', ',
+			)}. Pass one of these names, or add a new configuration for "${name}".\n\nCheck the command in .claude/launch.json and try again.`,
 		);
 	}
 
-	const port = Number(entry.port);
+	const port = entry.port === undefined ? DEFAULT_PORT : Number(entry.port);
 	if (!Number.isInteger(port) || port <= 0) {
 		throw new Error(
-			`Configuration "${name}" in ${LAUNCH_CONFIG_PATH} must set "port" to the server port.`,
+			`Failed to start server: Configuration "${entry.name}" in ${LAUNCH_CONFIG_PATH} has an invalid "port".\n\nCheck the command in .claude/launch.json and try again.`,
 		);
 	}
 
@@ -387,13 +408,42 @@ function isPortFree(port) {
 	});
 }
 
-async function findFreePort(startPort) {
-	for (let candidate = startPort; candidate < startPort + 100; candidate++) {
-		if (await isPortFree(candidate)) {
-			return candidate;
+/** OS-assigned ephemeral port, matching the real tool's autoPort behavior. */
+function getEphemeralPort() {
+	return new Promise((resolve, reject) => {
+		const probe = createServer();
+		probe.once('error', reject);
+		probe.listen(0, '127.0.0.1', () => {
+			const address = probe.address();
+			if (address === null || typeof address === 'string') {
+				probe.close(() => reject(new Error('Failed to allocate a free port')));
+				return;
+			}
+			probe.close(() => resolve(address.port));
+		});
+	});
+}
+
+/** Best-effort description of what holds a port, like the real conflict errors. */
+function describePortHolder(port) {
+	for (const server of servers.values()) {
+		if (server.port === port) {
+			return { label: `preview server "${server.name}" (${server.id})`, isPreview: true };
 		}
 	}
-	throw new Error(`No free port found near ${startPort}.`);
+	try {
+		const output = execFileSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], {
+			encoding: 'utf-8',
+		});
+		const pid = /^p(\d+)$/m.exec(output)?.[1];
+		const command = /^c(.+)$/m.exec(output)?.[1];
+		if (pid && command) {
+			return { label: `"${command}" (PID ${pid})`, isPreview: false };
+		}
+	} catch {
+		// lsof unavailable or no match; fall through to the generic label.
+	}
+	return { label: 'another process', isPreview: false };
 }
 
 function tailLogFile(logPath, limit = 20) {
@@ -435,7 +485,7 @@ function spawnLaunchEntry(name, entry, logPath, extraEnv = {}) {
 	} else {
 		closeSync(log);
 		throw new Error(
-			`Configuration "${name}" must set "runtimeExecutable" (with optional "runtimeArgs") or "program" (with optional "args").`,
+			`Failed to start server: Configuration "${name}" must set "runtimeExecutable" (with optional "runtimeArgs") or "program" (with optional "args").\n\nCheck the command in .claude/launch.json and try again.`,
 		);
 	}
 
@@ -463,9 +513,9 @@ async function waitForServer(url, child, logPath) {
 		if (exited) {
 			const logTail = tailLogFile(logPath);
 			throw new Error(
-				`Server process exited before ${url} became ready.${spawnError ? ` ${spawnError.message}.` : ''}${
+				`Failed to start server: Server process exited before ${url} became ready.${spawnError ? ` ${spawnError.message}.` : ''}${
 					logTail ? `\nServer output:\n${logTail}` : ''
-				}`,
+				}\n\nCheck the command in .claude/launch.json and try again.`,
 			);
 		}
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -473,10 +523,30 @@ async function waitForServer(url, child, logPath) {
 
 	const logTail = tailLogFile(logPath);
 	throw new Error(
-		`Server did not become ready at ${url} within ${SERVER_READY_TIMEOUT_MS}ms.${
+		`Failed to start server: Server did not become ready at ${url} within ${SERVER_READY_TIMEOUT_MS}ms.${
 			logTail ? `\nServer output:\n${logTail}` : ''
-		}`,
+		}\n\nCheck the command in .claude/launch.json and try again.`,
 	);
+}
+
+function startResponse(server, { reused, configuredPort }) {
+	const payload = {
+		serverId: server.id,
+		port: server.port,
+		name: server.name,
+		reused,
+		previewId: server.id,
+		tabId: 'seed',
+	};
+	let sentence;
+	if (reused) {
+		sentence = 'Server was already running and has been reused. No new process was started.';
+	} else if (configuredPort !== server.port) {
+		sentence = `Server started successfully. Configured port ${configuredPort} was in use, so port ${server.port} was assigned instead (autoPort is enabled). The preview is available at http://localhost:${server.port}.`;
+	} else {
+		sentence = `Server started successfully on port ${server.port}.`;
+	}
+	return text(`${JSON.stringify(payload, null, 2)}\n${sentence}`);
 }
 
 async function getBrowser() {
@@ -505,26 +575,32 @@ async function getPage(server) {
 			const page = await context.newPage();
 			page.setDefaultTimeout(ACTION_TIMEOUT_MS);
 			page.on('console', (message) => {
-				server.consoleMessages.push({ level: message.type(), text: message.text() });
+				const type = message.type();
+				server.consoleMessages.push({
+					level: type === 'warning' ? 'warn' : type,
+					text: message.text(),
+				});
 			});
 			page.on('pageerror', (error) => {
 				server.consoleMessages.push({ level: 'error', text: String(error) });
 			});
 			page.on('response', (response) => {
 				server.responses.push({
-					requestId: `req-${server.responses.length + 1}`,
+					requestId: `${process.pid}.${++requestSequence}`,
 					method: response.request().method(),
 					url: response.url(),
 					status: response.status(),
+					statusText: response.statusText(),
 					response,
 				});
 			});
 			page.on('requestfailed', (request) => {
 				server.responses.push({
-					requestId: `req-${server.responses.length + 1}`,
+					requestId: `${process.pid}.${++requestSequence}`,
 					method: request.method(),
 					url: request.url(),
 					status: 0,
+					statusText: '',
 					error: request.failure()?.errorText ?? 'request failed',
 				});
 			});
@@ -557,15 +633,47 @@ async function locateInFrames(page, selector) {
 	return null;
 }
 
+/** Render the Chrome accessibility tree in the real tool's `[id] role: "name"` format. */
+async function renderAccessibilityTree(page) {
+	const client = await page.context().newCDPSession(page);
+	try {
+		const { nodes } = await client.send('Accessibility.getFullAXTree');
+		const nodesById = new Map(nodes.map((node) => [node.nodeId, node]));
+		const lines = [];
+		const render = (nodeId, depth) => {
+			const node = nodesById.get(nodeId);
+			if (!node) {
+				return;
+			}
+			if (node.ignored) {
+				for (const childId of node.childIds ?? []) {
+					render(childId, depth);
+				}
+				return;
+			}
+			const role = node.role?.value ?? 'unknown';
+			const name = node.name?.value;
+			lines.push(
+				`${'  '.repeat(depth)}[${node.nodeId}] ${role}${name ? `: ${JSON.stringify(name)}` : ''}`,
+			);
+			for (const childId of node.childIds ?? []) {
+				render(childId, depth + 1);
+			}
+		};
+		const root = nodes.find((node) => node.parentId === undefined);
+		if (root) {
+			render(root.nodeId, 0);
+		}
+		return lines.join('\n');
+	} finally {
+		await client.detach().catch(() => {});
+	}
+}
+
 const HANDLERS = {
 	async preview_start({ name }) {
 		if (typeof name !== 'string' || name.length === 0) {
 			return errorText(`preview_start requires a "name" from ${LAUNCH_CONFIG_PATH}.`);
-		}
-		for (const server of servers.values()) {
-			if (server.name === name) {
-				return text(`Reusing running server "${name}" (serverId: ${server.id}) at ${server.url}`);
-			}
 		}
 
 		let entry;
@@ -576,28 +684,35 @@ const HANDLERS = {
 			return errorText(error.message);
 		}
 
-		// Port conflicts follow the documented autoPort semantics. Only servers
-		// started by preview_start itself are ever reused (see the name check above).
+		for (const server of servers.values()) {
+			if (server.name === entry.name) {
+				return startResponse(server, { reused: true, configuredPort: port });
+			}
+		}
+
+		// Port conflicts follow the real tool's autoPort semantics. Only servers
+		// started by preview_start itself are ever reused (see the check above).
 		let assignedPort = port;
 		if (!(await isPortFree(port))) {
+			const holder = describePortHolder(port);
 			if (entry.autoPort === true) {
 				try {
-					assignedPort = await findFreePort(port + 1);
+					assignedPort = await getEphemeralPort();
 				} catch (error) {
-					return errorText(`Failed to start "${name}": ${error.message}`);
+					return errorText(`Failed to start server: ${error.message}`);
 				}
 			} else if (entry.autoPort === false) {
 				return errorText(
-					`Port ${port} is already in use and configuration "${name}" sets "autoPort": false, so the server requires that exact port. Free the port and call preview_start again.`,
+					`Port ${port} is required by this server but is in use by ${holder.label}. Stop that process to free port ${port} and try again.`,
 				);
 			} else {
 				return errorText(
-					`Port ${port} is already in use. Set "autoPort" on the "${name}" configuration in ${LAUNCH_CONFIG_PATH}: true to start on a free port automatically, or false if the server must use port ${port} exactly.`,
+					`Port ${port} is in use by ${holder.isPreview ? holder.label : `${holder.label} (not a preview server)`}. Ask the user: does this server need port ${port} specifically (e.g. for OAuth callbacks, webhooks, or CORS)? If yes, set "autoPort": false in .claude/launch.json and free port ${port}. If no, set "autoPort": true in .claude/launch.json AND check the start command for hardcoded port flags (e.g. --port, -p) — remove them so the server uses the assigned port via the PORT environment variable. Then retry.`,
 				);
 			}
 		}
 
-		const id = `preview-${nextServerId++}`;
+		const id = randomUUID();
 		const url = `http://localhost:${assignedPort}`;
 		const logPath = path.join(tmpdir(), `${SERVER_INFO.name}-${process.pid}-${id}.log`);
 
@@ -605,7 +720,7 @@ const HANDLERS = {
 		try {
 			// Per the docs, a re-assigned port reaches the server via the PORT env var.
 			child = spawnLaunchEntry(
-				name,
+				entry.name,
 				entry,
 				logPath,
 				assignedPort === port ? {} : { PORT: String(assignedPort) },
@@ -619,14 +734,15 @@ const HANDLERS = {
 					// Already gone.
 				}
 			}
-			return errorText(`Failed to start "${name}": ${error.message}`);
+			return errorText(error.message);
 		}
 
-		servers.set(id, {
+		const server = {
 			id,
-			name,
+			name: entry.name,
 			url,
 			port: assignedPort,
+			startedAt: new Date().toISOString(),
 			viewport: { ...PRESETS.desktop },
 			colorScheme: 'light',
 			child,
@@ -635,14 +751,15 @@ const HANDLERS = {
 			context: undefined,
 			consoleMessages: [],
 			responses: [],
-		});
-		return text(`Started "${name}" (serverId: ${id}) at ${url}`);
+		};
+		servers.set(id, server);
+		return startResponse(server, { reused: false, configuredPort: port });
 	},
 
 	async preview_stop({ serverId }) {
 		const server = servers.get(serverId);
 		if (!server) {
-			return errorText(`No running server with serverId "${serverId}". Call preview_list.`);
+			return errorText(`Server ${serverId} not found`);
 		}
 		servers.delete(serverId);
 		await server.context?.close().catch(() => {});
@@ -653,15 +770,18 @@ const HANDLERS = {
 				// Already gone.
 			}
 		}
-		return text(`Stopped server ${serverId}.`);
+		return text(`Server ${serverId} stopped`);
 	},
 
 	preview_list() {
 		const list = [...servers.values()].map((server) => ({
 			serverId: server.id,
 			name: server.name,
-			url: server.url,
+			port: server.port,
 			status: 'running',
+			startedAt: server.startedAt,
+			cwd: process.cwd(),
+			sessionId: SESSION_ID,
 		}));
 		return text(JSON.stringify(list, null, 2));
 	},
@@ -671,17 +791,21 @@ const HANDLERS = {
 			return errorText('preview_click requires a "selector".');
 		}
 		return withServer(serverId, async (server) => {
-			const page = await getPage(server);
-			const locator = await locateInFrames(page, selector);
-			if (!locator) {
-				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
+			try {
+				const page = await getPage(server);
+				const locator = await locateInFrames(page, selector);
+				if (!locator) {
+					return errorText(`Failed to click element: ${selector}`);
+				}
+				if (doubleClick) {
+					await locator.dblclick();
+				} else {
+					await locator.click();
+				}
+				return text(`Successfully clicked: ${selector}`);
+			} catch {
+				return errorText(`Failed to click element: ${selector}`);
 			}
-			if (doubleClick) {
-				await locator.dblclick();
-			} else {
-				await locator.click();
-			}
-			return text(`${doubleClick ? 'Double-clicked' : 'Clicked'} "${selector}" on ${server.url}.`);
 		});
 	},
 
@@ -690,22 +814,26 @@ const HANDLERS = {
 			return errorText('preview_fill requires "selector" and "value".');
 		}
 		return withServer(serverId, async (server) => {
-			const page = await getPage(server);
-			const locator = await locateInFrames(page, selector);
-			if (!locator) {
-				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
-			}
-			const tagName = await locator.evaluate((element) => element.tagName);
-			if (tagName === 'SELECT') {
-				try {
-					await locator.selectOption({ value });
-				} catch {
-					await locator.selectOption({ label: value });
+			try {
+				const page = await getPage(server);
+				const locator = await locateInFrames(page, selector);
+				if (!locator) {
+					return errorText(`Failed to fill element: ${selector}`);
 				}
-			} else {
-				await locator.fill(value);
+				const tagName = await locator.evaluate((element) => element.tagName);
+				if (tagName === 'SELECT') {
+					try {
+						await locator.selectOption({ value });
+					} catch {
+						await locator.selectOption({ label: value });
+					}
+				} else {
+					await locator.fill(value);
+				}
+				return text(`Successfully filled: ${selector}`);
+			} catch {
+				return errorText(`Failed to fill element: ${selector}`);
 			}
-			return text(`Filled "${selector}" with "${value}" on ${server.url}.`);
 		});
 	},
 
@@ -726,11 +854,12 @@ const HANDLERS = {
 				}, expression);
 				return text(serialized);
 			} catch (error) {
-				if (String(error).includes('Execution context was destroyed')) {
+				const message = String(error?.message ?? error).replace(/^page\.evaluate: /, '');
+				if (message.includes('Execution context was destroyed')) {
 					await page.waitForLoadState('domcontentloaded').catch(() => {});
-					return text(`Navigation occurred during evaluation; page is now at ${page.url()}`);
+					return text('undefined');
 				}
-				return errorText(`preview_eval failed: ${error?.message ?? error}`);
+				return errorText(`Eval failed: ${message}`);
 			}
 		});
 	},
@@ -740,13 +869,7 @@ const HANDLERS = {
 			const page = await getPage(server);
 			const screenshot = await page.screenshot({ type: 'jpeg', quality: 80 });
 			return {
-				content: [
-					{
-						type: 'text',
-						text: `Screenshot of ${page.url()} (${server.viewport.width}x${server.viewport.height}).`,
-					},
-					{ type: 'image', data: screenshot.toString('base64'), mimeType: 'image/jpeg' },
-				],
+				content: [{ type: 'image', data: screenshot.toString('base64'), mimeType: 'image/jpeg' }],
 			};
 		});
 	},
@@ -754,21 +877,12 @@ const HANDLERS = {
 	async preview_snapshot({ serverId }) {
 		return withServer(serverId, async (server) => {
 			const page = await getPage(server);
-			const sections = [`Accessibility snapshot of ${page.url()}:`];
-			for (const frame of page.frames()) {
-				try {
-					const snapshot = await frame.locator('body').ariaSnapshot({ timeout: ACTION_TIMEOUT_MS });
-					if (snapshot.trim().length === 0) {
-						continue;
-					}
-					sections.push(
-						frame === page.mainFrame() ? snapshot : `[iframe: ${frame.url()}]\n${snapshot}`,
-					);
-				} catch {
-					// Detached or cross-origin frame; skip it.
-				}
+			try {
+				return text(await renderAccessibilityTree(page));
+			} catch {
+				// CDP unavailable; fall back to Playwright's aria snapshot.
+				return text(await page.locator('body').ariaSnapshot({ timeout: ACTION_TIMEOUT_MS }));
 			}
-			return text(sections.join('\n\n'));
 		});
 	},
 
@@ -795,25 +909,25 @@ const HANDLERS = {
 			const page = await getPage(server);
 			const locator = await locateInFrames(page, selector);
 			if (!locator) {
-				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
+				return errorText(`Failed to inspect element: ${selector}`);
 			}
 			const details = await locator.evaluate((element, properties) => {
 				const computed = getComputedStyle(element);
-				const computedStyles = {};
+				const elementStyles = {};
 				for (const property of properties) {
-					computedStyles[property] = computed.getPropertyValue(property);
+					elementStyles[property] = computed.getPropertyValue(property);
 				}
 				const rect = element.getBoundingClientRect();
 				return {
-					tagName: element.tagName,
-					id: element.id,
+					tagName: element.tagName.toLowerCase(),
+					text: (element.textContent ?? '').trim(),
 					className: typeof element.className === 'string' ? element.className : '',
-					textContent: (element.textContent ?? '').trim().slice(0, 500),
-					computedStyles,
+					id: element.id,
+					styles: elementStyles,
 					boundingBox: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
 				};
 			}, requested);
-			return text(JSON.stringify({ selector, ...details }, null, 2));
+			return text(JSON.stringify(details));
 		});
 	},
 
@@ -825,12 +939,12 @@ const HANDLERS = {
 				level === 'error'
 					? new Set(['error'])
 					: level === 'warn'
-						? new Set(['error', 'warning', 'warn'])
+						? new Set(['error', 'warn'])
 						: null;
 			const messages = server.consoleMessages
 				.filter((message) => levels === null || levels.has(message.level))
 				.map((message) => `[${message.level}] ${message.text}`);
-			return text(lastLines(messages, limit).join('\n') || 'No console messages.');
+			return text(lastLines(messages, limit).join('\n') || 'No console logs.');
 		});
 	},
 
@@ -871,41 +985,36 @@ const HANDLERS = {
 				} catch {
 					body = '(response body no longer available)';
 				}
-				return text(
-					JSON.stringify(
-						{
-							requestId: entry.requestId,
-							method: entry.method,
-							url: entry.url,
-							status: entry.status,
-							body,
-						},
-						null,
-						2,
-					),
-				);
+				// The real tool pretty-prints JSON response bodies.
+				try {
+					body = JSON.stringify(JSON.parse(body), null, 2);
+				} catch {
+					// Not JSON; return the raw body.
+				}
+				return text(body);
 			}
-			const requests = server.responses.map((entry) => ({
-				requestId: entry.requestId,
-				method: entry.method,
-				url: entry.url,
-				status: entry.status,
-				...(entry.error ? { error: entry.error } : {}),
-			}));
-			const filtered =
+			const entries =
 				filter === 'failed'
-					? requests.filter((request) => request.status >= 400 || request.status === 0)
-					: requests;
-			return text(JSON.stringify(filtered, null, 2));
+					? server.responses.filter((entry) => entry.status >= 400 || entry.status === 0)
+					: server.responses;
+			const lines = entries.map((entry) =>
+				entry.status === 0
+					? `[${entry.requestId}] ${entry.method} ${entry.url} → failed (${entry.error})`
+					: `[${entry.requestId}] ${entry.method} ${entry.url} → ${entry.status}${entry.statusText ? ` ${entry.statusText}` : ''}`,
+			);
+			return text(lines.join('\n') || 'No network requests.');
 		});
 	},
 
 	async preview_resize({ serverId, preset, width, height, colorScheme }) {
 		return withServer(serverId, async (server) => {
+			let viewportChanged = false;
 			if (preset && PRESETS[preset]) {
 				server.viewport = { ...PRESETS[preset] };
+				viewportChanged = true;
 			} else if (Number.isFinite(width) && Number.isFinite(height)) {
 				server.viewport = { width: Math.round(width), height: Math.round(height) };
+				viewportChanged = true;
 			}
 			if (colorScheme === 'light' || colorScheme === 'dark') {
 				server.colorScheme = colorScheme;
@@ -915,9 +1024,16 @@ const HANDLERS = {
 				await page.setViewportSize(server.viewport);
 				await page.emulateMedia({ colorScheme: server.colorScheme });
 			}
-			return text(
-				`Resized ${server.url} to ${server.viewport.width}x${server.viewport.height} (${server.colorScheme} mode).`,
-			);
+			const parts = [];
+			if (viewportChanged || !colorScheme) {
+				parts.push(
+					`Viewport set to ${server.viewport.width}x${server.viewport.height}${preset && PRESETS[preset] ? ` (${preset})` : ''}.`,
+				);
+			}
+			if (colorScheme === 'light' || colorScheme === 'dark') {
+				parts.push(`Color scheme set to ${colorScheme}.`);
+			}
+			return text(parts.join(' '));
 		});
 	},
 };

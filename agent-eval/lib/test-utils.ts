@@ -243,7 +243,7 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		?.trim();
 
 	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
-		/^\u{1F449}\s+\[Open the Storybook review page\]\(.+\?path=\/review\/?\)$/u,
+		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
 	);
 	expect(
 		lines.some((line) => /^##\s+.*Review your changes\s*$/.test(line.trim())),

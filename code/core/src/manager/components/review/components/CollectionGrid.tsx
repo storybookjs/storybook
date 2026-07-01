@@ -19,7 +19,7 @@ const band = (cols: number) => {
         display: 'none',
       },
     [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-review-all]`]: {
-      display: 'grid',
+      display: 'flex',
     },
   };
 };
@@ -28,8 +28,6 @@ const GridContainer = styled.div({
   containerType: 'inline-size',
   containerName: 'review-grid',
 });
-
-const GRID_CHILD_ROW_SPAN = 2;
 
 const Grid = styled.div({
   display: 'grid',
@@ -44,30 +42,33 @@ const Grid = styled.div({
 });
 
 const Cell = styled.div({
-  display: 'grid',
-  gridTemplateRows: 'subgrid',
-  gridRow: `span ${GRID_CHILD_ROW_SPAN}`,
-  gap: 0,
+  display: 'flex',
+  flexDirection: 'column',
   minWidth: 0,
   overflow: 'hidden',
 });
 
-// Scale to fit content width in a fixed 3/2 frame; tall content is cropped.
-const Frame = styled.a(({ theme }) => ({
-  position: 'relative',
-  display: 'block',
+const FrameShell = styled.div({
   width: '100%',
-  maxWidth: '100%',
   minWidth: 0,
-  height: '100%',
-  alignSelf: 'stretch',
+  maxWidth: '100%',
+  aspectRatio: '3 / 2',
+  position: 'relative',
+});
+
+// Frame fills FrameShell absolutely so layout width comes from the shell,
+// not subgrid row height interacting with aspect-ratio on the grid item.
+const Frame = styled.a(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'block',
+  boxSizing: 'border-box',
   containerType: 'inline-size',
   containerName: 'preview-frame',
   '--content-w': DEFAULT_CONTENT_WIDTH,
   '--fit-w': 'calc(100cqw / (var(--content-w) * 1px))',
   '--fit': 'min(1, var(--fit-w))',
   '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
-  aspectRatio: '3 / 2',
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -124,6 +125,7 @@ const ActionBar = styled.div({
   justifyContent: 'space-between',
   gap: 8,
   minHeight: 36,
+  marginTop: 'auto',
 });
 
 const Label = styled.div({
@@ -165,13 +167,20 @@ const ReviewAllCell = styled(Cell)({
   display: 'none',
 });
 
+const ReviewAllShell = styled.div({
+  width: '100%',
+  minWidth: 0,
+  maxWidth: '100%',
+  aspectRatio: '3 / 2',
+  minHeight: 50,
+});
+
 const ReviewAllFrame = styled.div(({ theme }) => ({
   display: 'grid',
   placeItems: 'center',
   width: '100%',
   height: '100%',
-  minHeight: 50,
-  alignSelf: 'stretch',
+  boxSizing: 'border-box',
   borderRadius: 6,
   background: theme.background.app,
   border: `1px dashed ${theme.appBorderColor}`,
@@ -230,22 +239,25 @@ const StoryPreviewCell: FC<{
 
   return (
     <Cell ref={cellRef} data-cell data-testid="review-collection-grid-cell">
-      <Frame
-        as={href ? 'a' : 'div'}
-        {...(href ? { href } : {})}
-        ref={frameRef as React.Ref<HTMLAnchorElement>}
-        style={frameStyle}
-        aria-label={href ? `Review story ${storyId}` : undefined}
-        onMouseEnter={forceStartCurrent}
-        onFocus={forceStartCurrent}
-      >
-        {isPreviewLoading ? (
-          <PreviewLoading data-testid="review-preview-loading">
-            <Loader />
-          </PreviewLoading>
-        ) : null}
-        {preview}
-      </Frame>
+      <FrameShell>
+        <Frame
+          as={href ? 'a' : 'div'}
+          {...(href ? { href } : {})}
+          ref={frameRef as React.Ref<HTMLAnchorElement>}
+          data-testid="review-collection-grid-frame"
+          style={frameStyle}
+          aria-label={href ? `Review story ${storyId}` : undefined}
+          onMouseEnter={forceStartCurrent}
+          onFocus={forceStartCurrent}
+        >
+          {isPreviewLoading ? (
+            <PreviewLoading data-testid="review-preview-loading">
+              <Loader />
+            </PreviewLoading>
+          ) : null}
+          {preview}
+        </Frame>
+      </FrameShell>
       <ActionBar>
         <Label>
           <LabelComponent>{component}</LabelComponent>
@@ -302,11 +314,13 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
         );
       })}
       <ReviewAllCell data-review-all>
-        <ReviewAllFrame>
-          <Button size="medium" onClick={() => onShowAll?.()}>
-            Review all {storyIds.length}
-          </Button>
-        </ReviewAllFrame>
+        <ReviewAllShell>
+          <ReviewAllFrame>
+            <Button size="medium" onClick={() => onShowAll?.()}>
+              Review all {storyIds.length}
+            </Button>
+          </ReviewAllFrame>
+        </ReviewAllShell>
         <ActionBar aria-hidden="true" />
       </ReviewAllCell>
     </Grid>

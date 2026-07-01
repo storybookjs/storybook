@@ -143,7 +143,9 @@ export const Default = meta.story({
     await waitFor(() => {
       for (const cell of cells) {
         const cellWidth = cell.getBoundingClientRect().width;
-        const frame = cell.firstElementChild as HTMLElement | null;
+        const frame = cell.querySelector<HTMLElement>(
+          '[data-testid="review-collection-grid-frame"]'
+        );
         expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
       }
     });
@@ -235,12 +237,23 @@ export const FewStories = meta.story({
       canvasElement.querySelector<HTMLButtonElement>('[data-review-all] button')
     ).not.toBeVisible();
 
-    const frames = Array.from(cells).map((cell) => cell.firstElementChild as HTMLElement | null);
+    const frames = Array.from(cells).map((cell) =>
+      cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]')
+    );
     await waitFor(() => {
       expect(frames.every((frame) => (frame?.clientHeight ?? 0) > 0)).toBe(true);
+      for (const cell of cells) {
+        const cellWidth = (cell as HTMLElement).getBoundingClientRect().width;
+        const frame = cell.querySelector<HTMLElement>(
+          '[data-testid="review-collection-grid-frame"]'
+        );
+        expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+      }
     });
-    const [firstHeight, secondHeight] = frames.map((frame) => frame?.clientHeight ?? 0);
-    expect(firstHeight).toBe(secondHeight);
+    const [firstHeight, secondHeight] = frames.map(
+      (frame) => frame?.getBoundingClientRect().height ?? 0
+    );
+    expect(Math.abs(firstHeight - secondHeight)).toBeLessThanOrEqual(2);
   },
 });
 
@@ -291,5 +304,21 @@ export const SingleCellClamped = meta.story({
     const cell = canvasElement.querySelector('[data-testid="review-collection-grid-cell"]');
     await expect(cell).toBeTruthy();
     await expect((cell as HTMLElement).getBoundingClientRect().width).toBeLessThanOrEqual(401);
+  },
+});
+
+export const FrameFitsCellAfterResize = meta.story({
+  args: {
+    storyIds: ['manager-main--default'],
+  },
+  globals: { viewport: { value: 'desktop' } },
+  play: async ({ canvasElement }) => {
+    const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
+    await waitForCellPreviewSettled(cell, { width: 1280, height: 800 });
+    await waitFor(() => {
+      const cellWidth = cell.getBoundingClientRect().width;
+      const frame = cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]');
+      expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+    });
   },
 });

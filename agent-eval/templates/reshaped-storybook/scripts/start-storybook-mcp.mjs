@@ -24,11 +24,20 @@ const child = spawn('npm', ['run', 'storybook', '--', '--port', port], {
 	stdio: ['ignore', log, log],
 });
 
+let spawnError;
+child.on('error', (error) => {
+	spawnError = error;
+});
+
 child.unref();
 closeSync(log);
 
 const deadline = Date.now() + timeoutMs;
 while (Date.now() < deadline) {
+	if (spawnError !== undefined) {
+		throw new Error('Failed to spawn Storybook: ' + spawnError.message);
+	}
+
 	if (await isReady()) {
 		process.exit(0);
 	}
@@ -38,10 +47,12 @@ while (Date.now() < deadline) {
 
 // Kill the detached process group so a failed start does not leak a background
 // Storybook that keeps the port occupied for the next attempt.
-try {
-	process.kill(-child.pid, 'SIGTERM');
-} catch {
-	// Already exited.
+if (child.pid !== undefined) {
+	try {
+		process.kill(-child.pid, 'SIGTERM');
+	} catch {
+		// Already exited.
+	}
 }
 
 throw new Error(

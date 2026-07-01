@@ -44,7 +44,9 @@ export const RESHAPED_STORYBOOK_EVALS = [
 ] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
-	runs: 3,
+	// Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
+	// aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
+	runs: 1,
 	earlyExit: true,
 	sandbox: 'auto',
 	copyFiles: 'all',

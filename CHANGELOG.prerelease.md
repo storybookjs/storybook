@@ -1,3 +1,19 @@
+## 10.5.0-alpha.10
+
+- A11y: Handle lang attribute throughout preview - [#35321](https://github.com/storybookjs/storybook/pull/35321), thanks @Sidnioulz!
+- A11y: Surface required args and keyboard-reachable Setup controls in ArgsTable - [#35306](https://github.com/storybookjs/storybook/pull/35306), thanks @Sidnioulz!
+- Addon-Vitest: Subscribe for run completion before triggering it - [#35291](https://github.com/storybookjs/storybook/pull/35291), thanks @tsushanth!
+- Core: Compose core annotations before preview beforeAll - [#35323](https://github.com/storybookjs/storybook/pull/35323), thanks @JReinhold!
+- Docgen: Run experimentalDocgenServer extraction in a worker thread - [#35324](https://github.com/storybookjs/storybook/pull/35324), thanks @JReinhold!
+- DocgenServer: Fix OOM by recycling the shared TS program - [#35305](https://github.com/storybookjs/storybook/pull/35305), thanks @ndelangen!
+- Next: Call link onClick before preventing default - [#35311](https://github.com/storybookjs/storybook/pull/35311), thanks @yatishgoel!
+- Review: Dynamic thumbnail scaling based on content dimensions - [#35282](https://github.com/storybookjs/storybook/pull/35282), thanks @ghengeveld!
+- Review: Improve review thumbnail scaling and loading UX - [#35335](https://github.com/storybookjs/storybook/pull/35335), thanks @ghengeveld!
+- Review: Notify on review arrival instead of auto-navigating - [#35276](https://github.com/storybookjs/storybook/pull/35276), thanks @ghengeveld!
+- Review: Simplify layout handling - [#35322](https://github.com/storybookjs/storybook/pull/35322), thanks @ghengeveld!
+- UI: Hide onboarding menu with feature flag - [#35299](https://github.com/storybookjs/storybook/pull/35299), thanks @Sidnioulz!
+- Vue: Fix Unicode Default Values In Docs - [#34909](https://github.com/storybookjs/storybook/pull/34909), thanks @Arunsiva003!
+
 ## 10.5.0-alpha.9
 
 - Addon Vitest: Avoid erroring out on benign Win process exits - [#35287](https://github.com/storybookjs/storybook/pull/35287), thanks @Sidnioulz!

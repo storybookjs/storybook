@@ -34,6 +34,19 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		).toBe(true);
 	});
 
+	test('parses inline storybook ai JSON input', () => {
+		const calls = parseStorybookWorkflowShellCommands([
+			'storybook ai run-story-tests --json=\'{"stories":[{"storyId":"example-button--primary"}],"a11y":false}\'',
+		]);
+
+		expect(calls).toHaveLength(1);
+		expect(calls[0]?.name).toBe('run-story-tests');
+		expect(calls[0]?.input.a11y).toBe(false);
+		expect(
+			calls.some((call) => workflowCallIncludesStory(call, { storyId: 'example-button--primary' })),
+		).toBe(true);
+	});
+
 	test('parses mcp-call script workflow input', () => {
 		const calls = parseStorybookWorkflowShellCommands([
 			'node scripts/mcp-call.mjs run-story-tests \'{"stories":[{"storyId":"example-button--primary"}]}\'',

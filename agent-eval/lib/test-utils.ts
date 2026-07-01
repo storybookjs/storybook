@@ -496,6 +496,10 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 
 			const key = kebabToCamel(rawKey);
 			if (inlineValue !== undefined) {
+				if (key === 'json') {
+					mergeJsonInput(input, parseCliValue(inlineValue), 'json');
+					continue;
+				}
 				input[key] = parseCliValue(inlineValue);
 				continue;
 			}

@@ -34,7 +34,14 @@ const ALL_RESHAPED_STORYBOOK_EVALS = [
 	'915-preview-story-by-id-docs-first',
 ] as const;
 
-export const RESHAPED_STORYBOOK_EVALS = ALL_RESHAPED_STORYBOOK_EVALS;
+// Small subset for now to keep costs low, and iterate on CI
+export const RESHAPED_STORYBOOK_EVALS = [
+	'901-create-component-atom-reshaped-concise',
+	'908-run-story-tests',
+	'912-fix-a11y-violations',
+	'914-preview-story-by-path',
+	'915-preview-story-by-id',
+] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
 
 export const CLAUDE_PLUGIN_EVALS = [
 	...RESHAPED_STORYBOOK_EVALS,

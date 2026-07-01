@@ -3,9 +3,9 @@ import React, { type FC } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
+import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { StoryInfo } from '../review-types.ts';
-import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 import { CollectionGrid, type CollectionGridProps } from './CollectionGrid.tsx';
 
 // 40 unique story IDs drawn from real internal stories.

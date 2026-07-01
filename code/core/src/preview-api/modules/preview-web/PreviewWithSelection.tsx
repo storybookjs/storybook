@@ -42,12 +42,12 @@ import type { MaybePromise } from './Preview.tsx';
 import { Preview } from './Preview.tsx';
 import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
+import { shouldAutoplay } from './embedMode.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
 import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
-import { shouldAutoplay } from './embedMode.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;

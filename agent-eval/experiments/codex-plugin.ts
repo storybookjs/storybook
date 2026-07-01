@@ -8,7 +8,9 @@ export default {
 	// The MCP variant cannot use the AI Gateway path yet:
 	// https://github.com/openai/codex/issues/26234
 	agent: 'codex',
-	evals: [],
+	// No Codex credits left for now; switch back to RESHAPED_STORYBOOK_EVALS
+	// once the budget allows. See storybookjs/mcp#315.
+	evals: [] satisfies (typeof RESHAPED_STORYBOOK_EVALS)[number][],
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin' });
 		await writeCodexPluginSkills(sandbox);

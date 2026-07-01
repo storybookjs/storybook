@@ -8,7 +8,9 @@ export default {
 	// handle Codex's Responses namespace tool shape yet:
 	// https://github.com/openai/codex/issues/26234
 	agent: 'codex',
-	evals: [],
+	// No Codex credits left for now; switch back to RESHAPED_STORYBOOK_EVALS
+	// once the budget allows. See storybookjs/mcp#315.
+	evals: [] satisfies (typeof RESHAPED_STORYBOOK_EVALS)[number][],
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp' });
 		await writeCodexMcpConfig(sandbox);

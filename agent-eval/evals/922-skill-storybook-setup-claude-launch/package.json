@@ -1,8 +1,0 @@
-{
-	"name": "922-skill-storybook-setup-claude-launch",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook",
-		"claudePreviewBrowserMock": true
-	}
-}

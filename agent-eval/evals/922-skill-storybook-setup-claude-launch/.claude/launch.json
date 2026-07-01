@@ -1,9 +1,0 @@
-{
-	"configurations": [
-		{
-			"name": "App dev server",
-			"command": "pnpm dev",
-			"autoPort": true
-		}
-	]
-}

@@ -34,7 +34,9 @@ const ALL_RESHAPED_STORYBOOK_EVALS = [
 	'915-preview-story-by-id-docs-first',
 ] as const;
 
-// Small subset for now to keep costs low, and iterate on CI
+// Deliberately starting with a single eval to keep sandbox/token costs low
+// while we stabilize CI; we will work our way up to the full
+// ALL_RESHAPED_STORYBOOK_EVALS list. See storybookjs/mcp#315.
 export const RESHAPED_STORYBOOK_EVALS = [
 	'901-create-component-atom-reshaped-concise',
 	// '908-run-story-tests',

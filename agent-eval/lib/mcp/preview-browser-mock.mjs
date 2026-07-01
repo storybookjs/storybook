@@ -1,38 +1,52 @@
 #!/usr/bin/env node
 /**
- * Mock MCP server that simulates Claude's native desktop "preview" tools
+ * Stand-in MCP server for Claude's native desktop "preview" tools, used in
+ * agent evals. Tool names, schemas, and descriptions mirror the real server
+ * verbatim. Behavior is real where the sandbox allows it:
+ *
+ * - `preview_start` validates `.claude/launch.json`, reuses a server that is
+ *   already responding on the configured port, and otherwise spawns the
+ *   configured command and waits for it to become ready.
+ * - Page tools (click/fill/eval/screenshot/snapshot/inspect/console/network/
+ *   resize) drive a real headless Chromium, resolved from the workspace's
+ *   `playwright` install (the eval template installs it during postinstall).
  */
-import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { closeSync, existsSync, openSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
 import { createInterface } from 'node:readline';
 
 // Name kept as `preview-browser` so scoring can recognize browser tool calls.
-const SERVER_INFO = { name: 'preview-browser', version: '1.0.0' };
+const SERVER_INFO = { name: 'preview-browser', version: '2.0.0' };
 
-const DEFAULT_PORT = 6006;
+const LAUNCH_CONFIG_PATH = '.claude/launch.json';
+const SERVER_READY_TIMEOUT_MS = 60_000;
+const ACTION_TIMEOUT_MS = 5_000;
+const NAVIGATION_TIMEOUT_MS = 30_000;
 
-// 1x1 placeholder returned by the screenshot tool.
-const TINY_JPEG =
-	'/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB' +
-	'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAA' +
-	'AAAAAAAAAAAAAAAAAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA' +
-	'/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AfwD/2Q==';
+// Matches the format block in the real preview_start tool description.
+const LAUNCH_CONFIG_FORMAT = `{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "<unique-name>",
+      "runtimeExecutable": "<command>",
+      "runtimeArgs": ["<args>"],
+      "port": <port>
+    }
+  ]
+}`;
 
-/** serverId -> { id, name, url, port, viewport, colorScheme } */
+/**
+ * serverId -> {
+ *   id, name, url, port, viewport, colorScheme,
+ *   child, logPath, pagePromise, context, consoleMessages, responses
+ * }
+ */
 const servers = new Map();
 let nextServerId = 1;
-
-/** Resolve a launch.json server's port; default to Storybook's 6006 if unknown. */
-function readLaunchPort(name) {
-	try {
-		const config = JSON.parse(readFileSync('.claude/launch.json', 'utf-8'));
-		const configurations = Array.isArray(config?.configurations) ? config.configurations : [];
-		const match = configurations.find((entry) => entry?.name === name);
-		const port = Number(match?.port);
-		return Number.isInteger(port) && port > 0 ? port : DEFAULT_PORT;
-	} catch {
-		return DEFAULT_PORT;
-	}
-}
+let browserPromise;
 
 function text(value) {
 	return { content: [{ type: 'text', text: value }] };
@@ -43,7 +57,7 @@ function errorText(value) {
 }
 
 /** Run `fn` against a started server, or return a helpful error if unknown. */
-function withServer(serverId, fn) {
+async function withServer(serverId, fn) {
 	const server = servers.get(serverId);
 	if (!server) {
 		return errorText(
@@ -70,7 +84,9 @@ const TOOLS = [
 		name: 'preview_start',
 		title: 'Start Preview Server',
 		description:
-			'Start a dev server by name from .claude/launch.json. Reuses the server if already running. ALWAYS use this instead of Bash for running servers.',
+			"Start a dev server by name from .claude/launch.json. If .claude/launch.json doesn't exist, create it first with this format:\n" +
+			LAUNCH_CONFIG_FORMAT +
+			'\nSet "runtimeExecutable" to the command (e.g. "npm"), "runtimeArgs" to the arguments (e.g. ["run", "dev"]), and "port" to the server port. Only include servers you actually need to preview. Reuses the server if already running. ALWAYS use this instead of Bash for running servers.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -139,7 +155,7 @@ const TOOLS = [
 		name: 'preview_eval',
 		title: 'Evaluate JavaScript',
 		description:
-			'Execute JavaScript in the preview page for DEBUGGING and INSPECTION only. Use for reading page state, DOM queries, checking variables, navigation, page reload, hover/type/key events. Do NOT use this to implement UI changes the user requests — edit the source code instead. Wrap multi-step logic in an IIFE.',
+			'Execute JavaScript in the preview page for DEBUGGING and INSPECTION only. Use for reading page state, DOM queries, checking variables, navigation, page reload, hover/type/key events. Do NOT use this to implement UI changes the user requests — edit the source code instead. Any DOM modifications via eval are temporary and lost on reload. Wrap multi-step logic in an IIFE.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -269,7 +285,7 @@ const TOOLS = [
 				requestId: {
 					type: 'string',
 					description:
-						'If provided, returns the response body for this specific request instead of listing all requests.',
+						'If provided, returns the response body for this specific request instead of listing all requests. Get requestIds from the listing output.',
 				},
 			},
 			required: ['serverId'],
@@ -312,33 +328,277 @@ const PRESETS = {
 	desktop: { width: 1280, height: 800 },
 };
 
+function readLaunchEntry(name) {
+	if (!existsSync(LAUNCH_CONFIG_PATH)) {
+		throw new Error(
+			`${LAUNCH_CONFIG_PATH} doesn't exist. Create it first with this format:\n${LAUNCH_CONFIG_FORMAT}\nSet "runtimeExecutable" to the command (e.g. "npm"), "runtimeArgs" to the arguments (e.g. ["run", "dev"]), and "port" to the server port. Then call preview_start again.`,
+		);
+	}
+
+	let config;
+	try {
+		config = JSON.parse(readFileSync(LAUNCH_CONFIG_PATH, 'utf-8'));
+	} catch (error) {
+		throw new Error(`Failed to parse ${LAUNCH_CONFIG_PATH}: ${error?.message ?? error}`);
+	}
+
+	const configurations = Array.isArray(config?.configurations) ? config.configurations : [];
+	const entry = configurations.find((candidate) => candidate?.name === name);
+	if (!entry) {
+		const available = configurations
+			.map((candidate) => candidate?.name)
+			.filter((candidateName) => typeof candidateName === 'string');
+		throw new Error(
+			`No configuration named "${name}" in ${LAUNCH_CONFIG_PATH}. Available configurations: ${
+				available.length > 0 ? available.join(', ') : '(none)'
+			}.`,
+		);
+	}
+
+	const port = Number(entry.port);
+	if (!Number.isInteger(port) || port <= 0) {
+		throw new Error(
+			`Configuration "${name}" in ${LAUNCH_CONFIG_PATH} must set "port" to the server port.`,
+		);
+	}
+
+	return { entry, port };
+}
+
+async function isServing(url) {
+	try {
+		await fetch(url, { signal: AbortSignal.timeout(1_500) });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function tailLogFile(logPath, limit = 20) {
+	try {
+		return lastLines(readFileSync(logPath, 'utf-8').split('\n').filter(Boolean), limit).join('\n');
+	} catch {
+		return '';
+	}
+}
+
+function spawnLaunchEntry(name, entry, logPath) {
+	const cwd =
+		typeof entry.cwd === 'string'
+			? entry.cwd.replaceAll('${workspaceFolder}', process.cwd())
+			: process.cwd();
+	const log = openSync(logPath, 'a');
+	const options = {
+		cwd,
+		detached: true,
+		stdio: ['ignore', log, log],
+		env: { ...process.env, BROWSER: 'none', CI: '1' },
+	};
+
+	let child;
+	if (typeof entry.command === 'string' && entry.command.length > 0) {
+		child = spawn(entry.command, { ...options, shell: true });
+	} else if (typeof entry.runtimeExecutable === 'string' && entry.runtimeExecutable.length > 0) {
+		const args = Array.isArray(entry.runtimeArgs) ? entry.runtimeArgs.map(String) : [];
+		child = spawn(entry.runtimeExecutable, args, options);
+	} else {
+		closeSync(log);
+		throw new Error(
+			`Configuration "${name}" must set "runtimeExecutable" (with optional "runtimeArgs") or "command".`,
+		);
+	}
+
+	child.unref();
+	closeSync(log);
+	return child;
+}
+
+async function waitForServer(url, child, logPath) {
+	let exited = false;
+	let spawnError;
+	child.on('exit', () => {
+		exited = true;
+	});
+	child.on('error', (error) => {
+		spawnError = error;
+		exited = true;
+	});
+
+	const deadline = Date.now() + SERVER_READY_TIMEOUT_MS;
+	while (Date.now() < deadline) {
+		if (await isServing(url)) {
+			return;
+		}
+		if (exited) {
+			const logTail = tailLogFile(logPath);
+			throw new Error(
+				`Server process exited before ${url} became ready.${spawnError ? ` ${spawnError.message}.` : ''}${
+					logTail ? `\nServer output:\n${logTail}` : ''
+				}`,
+			);
+		}
+		await new Promise((resolve) => setTimeout(resolve, 500));
+	}
+
+	const logTail = tailLogFile(logPath);
+	throw new Error(
+		`Server did not become ready at ${url} within ${SERVER_READY_TIMEOUT_MS}ms.${
+			logTail ? `\nServer output:\n${logTail}` : ''
+		}`,
+	);
+}
+
+async function getBrowser() {
+	if (!browserPromise) {
+		browserPromise = (async () => {
+			// Resolved from the workspace install (eval templates depend on
+			// playwright and install Chromium during postinstall).
+			const { chromium } = await import('playwright');
+			return chromium.launch({ headless: true });
+		})().catch((error) => {
+			browserPromise = undefined;
+			throw new Error(`Failed to launch the preview browser: ${error?.message ?? error}`);
+		});
+	}
+	return browserPromise;
+}
+
+async function getPage(server) {
+	if (!server.pagePromise) {
+		server.pagePromise = (async () => {
+			const browser = await getBrowser();
+			const context = await browser.newContext({
+				viewport: { ...server.viewport },
+				colorScheme: server.colorScheme,
+			});
+			const page = await context.newPage();
+			page.setDefaultTimeout(ACTION_TIMEOUT_MS);
+			page.on('console', (message) => {
+				server.consoleMessages.push({ level: message.type(), text: message.text() });
+			});
+			page.on('pageerror', (error) => {
+				server.consoleMessages.push({ level: 'error', text: String(error) });
+			});
+			page.on('response', (response) => {
+				server.responses.push({
+					requestId: `req-${server.responses.length + 1}`,
+					method: response.request().method(),
+					url: response.url(),
+					status: response.status(),
+					response,
+				});
+			});
+			page.on('requestfailed', (request) => {
+				server.responses.push({
+					requestId: `req-${server.responses.length + 1}`,
+					method: request.method(),
+					url: request.url(),
+					status: 0,
+					error: request.failure()?.errorText ?? 'request failed',
+				});
+			});
+			await page.goto(server.url, {
+				waitUntil: 'domcontentloaded',
+				timeout: NAVIGATION_TIMEOUT_MS,
+			});
+			server.context = context;
+			return page;
+		})().catch((error) => {
+			server.pagePromise = undefined;
+			throw error;
+		});
+	}
+	return server.pagePromise;
+}
+
+/** Find `selector` in the main frame first, then in child frames (e.g. the Storybook canvas iframe). */
+async function locateInFrames(page, selector) {
+	for (const frame of page.frames()) {
+		try {
+			const locator = frame.locator(selector).first();
+			if ((await locator.count()) > 0) {
+				return locator;
+			}
+		} catch {
+			// Detached or cross-origin frame; keep looking.
+		}
+	}
+	return null;
+}
+
 const HANDLERS = {
-	preview_start({ name }) {
+	async preview_start({ name }) {
 		if (typeof name !== 'string' || name.length === 0) {
-			return errorText('preview_start requires a "name" from .claude/launch.json.');
+			return errorText(`preview_start requires a "name" from ${LAUNCH_CONFIG_PATH}.`);
 		}
 		for (const server of servers.values()) {
 			if (server.name === name) {
 				return text(`Reusing running server "${name}" (serverId: ${server.id}) at ${server.url}`);
 			}
 		}
-		const port = readLaunchPort(name);
+
+		let entry;
+		let port;
+		try {
+			({ entry, port } = readLaunchEntry(name));
+		} catch (error) {
+			return errorText(error.message);
+		}
+
 		const id = `preview-${nextServerId++}`;
 		const url = `http://localhost:${port}`;
-		servers.set(id, {
+		const logPath = path.join(tmpdir(), `${SERVER_INFO.name}-${process.pid}-${id}.log`);
+		const server = {
 			id,
 			name,
 			url,
 			port,
 			viewport: { ...PRESETS.desktop },
 			colorScheme: 'light',
-		});
+			child: undefined,
+			logPath: undefined,
+			pagePromise: undefined,
+			context: undefined,
+			consoleMessages: [],
+			responses: [],
+		};
+
+		if (!(await isServing(url))) {
+			let child;
+			try {
+				child = spawnLaunchEntry(name, entry, logPath);
+				await waitForServer(url, child, logPath);
+			} catch (error) {
+				if (child?.pid) {
+					try {
+						process.kill(-child.pid, 'SIGTERM');
+					} catch {
+						// Already gone.
+					}
+				}
+				return errorText(`Failed to start "${name}": ${error.message}`);
+			}
+			server.child = child;
+			server.logPath = logPath;
+		}
+
+		servers.set(id, server);
 		return text(`Started "${name}" (serverId: ${id}) at ${url}`);
 	},
 
-	preview_stop({ serverId }) {
-		if (!servers.delete(serverId)) {
+	async preview_stop({ serverId }) {
+		const server = servers.get(serverId);
+		if (!server) {
 			return errorText(`No running server with serverId "${serverId}". Call preview_list.`);
+		}
+		servers.delete(serverId);
+		await server.context?.close().catch(() => {});
+		if (server.child?.pid) {
+			try {
+				process.kill(-server.child.pid, 'SIGTERM');
+			} catch {
+				// Already gone.
+			}
 		}
 		return text(`Stopped server ${serverId}.`);
 	},
@@ -353,145 +613,257 @@ const HANDLERS = {
 		return text(JSON.stringify(list, null, 2));
 	},
 
-	preview_click({ serverId, selector, doubleClick }) {
+	async preview_click({ serverId, selector, doubleClick }) {
 		if (typeof selector !== 'string' || selector.length === 0) {
 			return errorText('preview_click requires a "selector".');
 		}
-		return withServer(serverId, (server) =>
-			text(`${doubleClick ? 'Double-clicked' : 'Clicked'} "${selector}" on ${server.url}.`),
-		);
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			const locator = await locateInFrames(page, selector);
+			if (!locator) {
+				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
+			}
+			if (doubleClick) {
+				await locator.dblclick();
+			} else {
+				await locator.click();
+			}
+			return text(`${doubleClick ? 'Double-clicked' : 'Clicked'} "${selector}" on ${server.url}.`);
+		});
 	},
 
-	preview_fill({ serverId, selector, value }) {
+	async preview_fill({ serverId, selector, value }) {
 		if (typeof selector !== 'string' || typeof value !== 'string') {
 			return errorText('preview_fill requires "selector" and "value".');
 		}
-		return withServer(serverId, (server) =>
-			text(`Filled "${selector}" with "${value}" on ${server.url}.`),
-		);
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			const locator = await locateInFrames(page, selector);
+			if (!locator) {
+				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
+			}
+			const tagName = await locator.evaluate((element) => element.tagName);
+			if (tagName === 'SELECT') {
+				try {
+					await locator.selectOption({ value });
+				} catch {
+					await locator.selectOption({ label: value });
+				}
+			} else {
+				await locator.fill(value);
+			}
+			return text(`Filled "${selector}" with "${value}" on ${server.url}.`);
+		});
 	},
 
-	preview_eval({ serverId, expression }) {
+	async preview_eval({ serverId, expression }) {
 		if (typeof expression !== 'string' || expression.length === 0) {
 			return errorText('preview_eval requires an "expression".');
 		}
-		return withServer(serverId, (server) =>
-			text(
-				`Evaluated on ${server.url}:\n${expression}\n=> null (mock preview — no live DOM is executed)`,
-			),
-		);
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			try {
+				const serialized = await page.evaluate((code) => {
+					const value = window.eval(code);
+					try {
+						return JSON.stringify(value, null, 2) ?? 'undefined';
+					} catch {
+						return String(value);
+					}
+				}, expression);
+				return text(serialized);
+			} catch (error) {
+				if (String(error).includes('Execution context was destroyed')) {
+					await page.waitForLoadState('domcontentloaded').catch(() => {});
+					return text(`Navigation occurred during evaluation; page is now at ${page.url()}`);
+				}
+				return errorText(`preview_eval failed: ${error?.message ?? error}`);
+			}
+		});
 	},
 
-	preview_screenshot({ serverId }) {
-		return withServer(serverId, (server) => ({
-			content: [
-				{
-					type: 'text',
-					text: `Screenshot of ${server.url} (${server.viewport.width}x${server.viewport.height}).`,
-				},
-				{ type: 'image', data: TINY_JPEG, mimeType: 'image/jpeg' },
-			],
-		}));
+	async preview_screenshot({ serverId }) {
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			const screenshot = await page.screenshot({ type: 'jpeg', quality: 80 });
+			return {
+				content: [
+					{
+						type: 'text',
+						text: `Screenshot of ${page.url()} (${server.viewport.width}x${server.viewport.height}).`,
+					},
+					{ type: 'image', data: screenshot.toString('base64'), mimeType: 'image/jpeg' },
+				],
+			};
+		});
 	},
 
-	preview_snapshot({ serverId }) {
-		return withServer(serverId, (server) =>
-			text(
-				[
-					`Accessibility snapshot of ${server.url} (mock):`,
-					'- document "Storybook" [uid=1]',
-					'  - navigation "Sidebar" [uid=2]',
-					'  - main [uid=3]',
-					'    - iframe "storybook-preview-iframe" [uid=4]',
-					'      - region "Canvas" [uid=5]',
-				].join('\n'),
-			),
-		);
+	async preview_snapshot({ serverId }) {
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			const sections = [`Accessibility snapshot of ${page.url()}:`];
+			for (const frame of page.frames()) {
+				try {
+					const snapshot = await frame.locator('body').ariaSnapshot({ timeout: ACTION_TIMEOUT_MS });
+					if (snapshot.trim().length === 0) {
+						continue;
+					}
+					sections.push(
+						frame === page.mainFrame() ? snapshot : `[iframe: ${frame.url()}]\n${snapshot}`,
+					);
+				} catch {
+					// Detached or cross-origin frame; skip it.
+				}
+			}
+			return text(sections.join('\n\n'));
+		});
 	},
 
-	preview_inspect({ serverId, selector, styles }) {
+	async preview_inspect({ serverId, selector, styles }) {
 		if (typeof selector !== 'string' || selector.length === 0) {
 			return errorText('preview_inspect requires a "selector".');
 		}
 		const requested =
-			Array.isArray(styles) && styles.length > 0 ? styles : ['color', 'font-size', 'padding'];
-		const MOCK_STYLES = {
-			color: 'rgb(17, 24, 39)',
-			'font-size': '16px',
-			'font-family': 'Inter, sans-serif',
-			'background-color': 'rgb(255, 255, 255)',
-			padding: '8px 16px',
-			margin: '0px',
-			display: 'block',
-		};
-		const computed = {};
-		for (const property of requested) {
-			computed[property] = MOCK_STYLES[property] ?? 'normal';
-		}
-		return withServer(serverId, () =>
-			text(
-				JSON.stringify(
-					{
-						selector,
-						tagName: 'DIV',
-						id: '',
-						className: 'sb-show-main',
-						textContent: '(mock preview — no live DOM)',
-						computedStyles: computed,
-						boundingBox: { x: 0, y: 0, width: 320, height: 48 },
-					},
-					null,
-					2,
-				),
-			),
-		);
+			Array.isArray(styles) && styles.length > 0
+				? styles.map(String)
+				: [
+						'color',
+						'background-color',
+						'font-size',
+						'font-family',
+						'font-weight',
+						'padding',
+						'margin',
+						'display',
+						'width',
+						'height',
+					];
+		return withServer(serverId, async (server) => {
+			const page = await getPage(server);
+			const locator = await locateInFrames(page, selector);
+			if (!locator) {
+				return errorText(`No element matches selector "${selector}" on ${server.url}.`);
+			}
+			const details = await locator.evaluate((element, properties) => {
+				const computed = getComputedStyle(element);
+				const computedStyles = {};
+				for (const property of properties) {
+					computedStyles[property] = computed.getPropertyValue(property);
+				}
+				const rect = element.getBoundingClientRect();
+				return {
+					tagName: element.tagName,
+					id: element.id,
+					className: typeof element.className === 'string' ? element.className : '',
+					textContent: (element.textContent ?? '').trim().slice(0, 500),
+					computedStyles,
+					boundingBox: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+				};
+			}, requested);
+			return text(JSON.stringify({ selector, ...details }, null, 2));
+		});
 	},
 
-	preview_console_logs({ serverId, level, lines }) {
-		return withServer(serverId, () => {
+	async preview_console_logs({ serverId, level, lines }) {
+		return withServer(serverId, async (server) => {
+			await getPage(server);
 			const limit = lineLimit(lines);
-			const messages =
-				level === 'error' || level === 'warn' ? [] : ['[log] (mock) Storybook preview loaded.'];
+			const levels =
+				level === 'error'
+					? new Set(['error'])
+					: level === 'warn'
+						? new Set(['error', 'warning', 'warn'])
+						: null;
+			const messages = server.consoleMessages
+				.filter((message) => levels === null || levels.has(message.level))
+				.map((message) => `[${message.level}] ${message.text}`);
 			return text(lastLines(messages, limit).join('\n') || 'No console messages.');
 		});
 	},
 
-	preview_logs({ serverId, search, level, lines }) {
-		return withServer(serverId, (server) => {
+	async preview_logs({ serverId, search, level, lines }) {
+		return withServer(serverId, async (server) => {
 			const limit = lineLimit(lines);
-			if (level === 'error') return text('No errors in server output.');
-			const logLines = [`Storybook started on => ${server.url}`, 'webpack compiled successfully'];
-			const filtered =
-				typeof search === 'string' && search.length > 0
-					? logLines.filter((line) => line.includes(search))
-					: logLines;
-			return text(lastLines(filtered, limit).join('\n') || `(no log lines matching "${search}")`);
+			const logPath = server.logPath ?? process.env.STORYBOOK_MCP_LOG_PATH ?? null;
+			// Adopted servers (already running before preview_start) were not
+			// spawned by this process, so their output was not captured.
+			if (logPath === null || !existsSync(logPath)) {
+				return text('No server output captured.');
+			}
+			let logLines = readFileSync(logPath, 'utf-8').split('\n').filter(Boolean);
+			if (level === 'error') {
+				logLines = logLines.filter((line) => /error|exception|failed|fatal/i.test(line));
+				if (logLines.length === 0) {
+					return text('No errors in server output.');
+				}
+			}
+			if (typeof search === 'string' && search.length > 0) {
+				logLines = logLines.filter((line) => line.includes(search));
+				if (logLines.length === 0) {
+					return text(`(no log lines matching "${search}")`);
+				}
+			}
+			return text(lastLines(logLines, limit).join('\n') || 'No server output captured.');
 		});
 	},
 
-	preview_network({ serverId, filter, requestId }) {
-		return withServer(serverId, (server) => {
+	async preview_network({ serverId, filter, requestId }) {
+		return withServer(serverId, async (server) => {
+			await getPage(server);
 			if (typeof requestId === 'string' && requestId.length > 0) {
-				return text(JSON.stringify({ requestId, body: '(mock response body)' }, null, 2));
+				const entry = server.responses.find((candidate) => candidate.requestId === requestId);
+				if (!entry) {
+					return errorText(`No request with requestId "${requestId}".`);
+				}
+				let body;
+				try {
+					body = entry.response ? await entry.response.text() : (entry.error ?? '');
+				} catch {
+					body = '(response body no longer available)';
+				}
+				return text(
+					JSON.stringify(
+						{
+							requestId: entry.requestId,
+							method: entry.method,
+							url: entry.url,
+							status: entry.status,
+							body,
+						},
+						null,
+						2,
+					),
+				);
 			}
-			const requests = [
-				{ requestId: 'req-1', method: 'GET', url: `${server.url}/iframe.html`, status: 200 },
-			];
+			const requests = server.responses.map((entry) => ({
+				requestId: entry.requestId,
+				method: entry.method,
+				url: entry.url,
+				status: entry.status,
+				...(entry.error ? { error: entry.error } : {}),
+			}));
 			const filtered =
-				filter === 'failed' ? requests.filter((request) => request.status >= 400) : requests;
+				filter === 'failed'
+					? requests.filter((request) => request.status >= 400 || request.status === 0)
+					: requests;
 			return text(JSON.stringify(filtered, null, 2));
 		});
 	},
 
-	preview_resize({ serverId, preset, width, height, colorScheme }) {
-		return withServer(serverId, (server) => {
+	async preview_resize({ serverId, preset, width, height, colorScheme }) {
+		return withServer(serverId, async (server) => {
 			if (preset && PRESETS[preset]) {
 				server.viewport = { ...PRESETS[preset] };
 			} else if (Number.isFinite(width) && Number.isFinite(height)) {
-				server.viewport = { width, height };
+				server.viewport = { width: Math.round(width), height: Math.round(height) };
 			}
 			if (colorScheme === 'light' || colorScheme === 'dark') {
 				server.colorScheme = colorScheme;
+			}
+			if (server.pagePromise) {
+				const page = await getPage(server);
+				await page.setViewportSize(server.viewport);
+				await page.emulateMedia({ colorScheme: server.colorScheme });
 			}
 			return text(
 				`Resized ${server.url} to ${server.viewport.width}x${server.viewport.height} (${server.colorScheme} mode).`,
@@ -512,7 +884,7 @@ function fail(id, code, message) {
 	send({ jsonrpc: '2.0', id, error: { code, message } });
 }
 
-function handle(request) {
+async function handle(request) {
 	const { id, method, params } = request;
 
 	if (method === 'initialize') {
@@ -521,6 +893,11 @@ function handle(request) {
 			capabilities: { tools: {} },
 			serverInfo: SERVER_INFO,
 		});
+		return;
+	}
+
+	if (method === 'ping') {
+		reply(id, {});
 		return;
 	}
 
@@ -537,9 +914,10 @@ function handle(request) {
 			return;
 		}
 		try {
-			reply(id, handler(params?.arguments ?? {}));
+			reply(id, await handler(params?.arguments ?? {}));
 		} catch (error) {
-			fail(id, -32603, `Tool ${name} failed: ${error?.message ?? error}`);
+			// Tool-level failures become isError results so the agent can react.
+			reply(id, errorText(`Tool ${name} failed: ${error?.message ?? error}`));
 		}
 		return;
 	}
@@ -550,13 +928,32 @@ function handle(request) {
 	}
 }
 
+async function shutdown() {
+	for (const server of servers.values()) {
+		if (server.child?.pid) {
+			try {
+				process.kill(-server.child.pid, 'SIGTERM');
+			} catch {
+				// Already gone.
+			}
+		}
+	}
+	if (browserPromise) {
+		await browserPromise.then((browser) => browser.close()).catch(() => {});
+	}
+	process.exit(0);
+}
+
 const rl = createInterface({ input: process.stdin });
 rl.on('line', (line) => {
 	const trimmed = line.trim();
 	if (!trimmed) return;
 	try {
-		handle(JSON.parse(trimmed));
+		handle(JSON.parse(trimmed)).catch(() => {});
 	} catch {
 		// Ignore malformed lines; MCP clients resend on protocol errors.
 	}
+});
+rl.on('close', () => {
+	void shutdown();
 });

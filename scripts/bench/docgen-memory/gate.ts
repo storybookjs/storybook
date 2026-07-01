@@ -11,10 +11,9 @@
  *   2. The OOM fix itself, as a **crash → survive negative control** (`live` configs): the live path
  *      (many per-component `batchExtract` calls on the shared program) is run under a tight heap cap
  *      both WITH and WITHOUT program recycling.
- *        - recycle OFF (`--recycle off`, ratio Infinity) MUST OOM — proving the cap, not luck, makes
- *          the workload crash without the fix.
- *        - recycle ON (default) MUST survive — proving the fix prevents that crash.
- *      Asserting the flip (not just survival) is what makes this guard the fix rather than the cap.
+ *        - recycle OFF (`--recycle off`, ratio Infinity) MUST OOM.
+ *        - recycle ON (default) MUST survive.
+ *      Asserting the flip (not just survival) is what guards the fix rather than the cap.
  *
  * Run:
  *   yarn bench:docgen-memory          # from scripts/
@@ -67,8 +66,8 @@ const OOM_SIGNATURE = /heap out of memory|Reached heap limit|Allocation failed/i
 const CONFIGS: GateConfig[] = [
   {
     // The fixed steady state we protect: each save re-extracts only the changed component. Budgets sit
-    // well above observed values (transient ~8–30MB, retained flat) so the gate is not flaky, while
-    // still failing hard if a regression reintroduces whole-index re-extraction (hundreds of MB/save).
+    // well above observed values so the gate is not flaky, while still failing hard if a regression
+    // reintroduces whole-index re-extraction.
     name: 'changed-scope steady state (N=600, props=10, 20 saves)',
     args: [
       '--components', '600',
@@ -101,8 +100,7 @@ const CONFIGS: GateConfig[] = [
   },
   {
     // Negative control: the SAME workload + cap, with recycling disabled, MUST OOM. If this ever
-    // survives, the cap is too loose (or the workload shrank) and the positive control above proves
-    // nothing — fail so the pair is re-tuned.
+    // survives, the cap is too loose (or the workload shrank), so fail and re-tune the pair.
     name: 'live path OOMs WITHOUT recycling — negative control (N=800, --heavy, cap 1536MB)',
     args: [
       '--components', '800',

@@ -213,7 +213,7 @@ function buildEntries(componentPaths: string[], storyPaths: string[]): StoryRef[
  * Run under a `--max-old-space-size` cap:
  *   - recycle on (default): the heap sawtooths as the shared program is recycled, and survives.
  *   - `--recycle off` (ratio Infinity): the type cache climbs to the cap and the process OOMs —
- *     the negative control the gate asserts (proving the fix, not the cap, is what prevents the OOM).
+ *     the negative control the gate asserts.
  */
 function runLiveMode(
   manager: ComponentMetaManagerLike,

@@ -41,13 +41,12 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
  * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
  * of the V8 heap limit.
  *
- * In docgen-server dev mode every save re-extracts the edited component's many dependents through the
- * shared program. Its resident type-resolution cache is the dominant retained set (~2 GB on the
- * internal Storybook) and sits permanently near the heap cap, so the next extraction's spike OOMs the
- * dev server. Disposing the program reclaims that cache; extracted docs already live in the
- * open-service state, so nothing user-visible is lost. The chosen ratio leaves headroom for one
- * extraction's transient before the cap and was verified to flip a deterministic crash → survive at a
- * tight cap (see the `bench:docgen-memory` gate in `scripts/bench/docgen-memory/gate.ts`).
+ * In docgen-server dev mode every save re-extracts the edited component's dependents through the
+ * shared program, whose resident type-resolution cache is the dominant retained set and sits near the
+ * heap cap — so the next extraction's spike can OOM the dev server. Disposing the program reclaims
+ * that cache; extracted docs live in the open-service state, so nothing user-visible is lost. The
+ * ratio leaves headroom for one extraction's transient before the cap (verified by the
+ * `bench:docgen-memory` gate in `scripts/bench/docgen-memory/gate.ts`).
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 

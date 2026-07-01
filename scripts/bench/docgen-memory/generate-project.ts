@@ -8,9 +8,8 @@
  * https://github.com/storybookjs/storybook/issues/34824.
  *
  * The `--heavy` lever (optionally scaled with `--heavy-factor N`) grows the TypeScript checker
- * working set to a realistic per-component density (~2.6 MB/component, matching real libraries) by
- * emitting inline literal-union props that `serializeType` expands into retained enum arrays. That is
- * what lets the in-process harness actually OOM.
+ * working set by emitting inline literal-union props that `serializeType` expands into retained enum
+ * arrays — the density that lets the in-process harness actually OOM.
  *
  * Run directly:
  *   node --import jiti/register scripts/bench/docgen-memory/generate-project.ts --out ../storybook-sandboxes/docgen-stress --components 5000 --variants 5

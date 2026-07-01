@@ -129,6 +129,13 @@ describe('shouldAutoAcceptOnRoute', () => {
     expect(shouldAutoAcceptOnRoute('/review/', undefined, displayed, displayed, null)).toBe(true);
   });
 
+  it('accepts on a review story route with a collection param', () => {
+    const displayed = review(200, 'Second');
+    expect(shouldAutoAcceptOnRoute('/story/example--default', 0, displayed, displayed, null)).toBe(
+      true
+    );
+  });
+
   it('skips while a deferred update is showing', () => {
     const displayed = review(100, 'First');
     const pending = review(200, 'Second');

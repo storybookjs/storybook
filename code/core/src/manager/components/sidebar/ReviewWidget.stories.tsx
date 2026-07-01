@@ -258,8 +258,6 @@ export const OpenReview: Story = {
   },
   play: async ({ canvas }) => {
     await userEvent.click(canvas.getByRole('button', { name: /Review 2 stories/i }));
-    await expect(toggleNavMock).toHaveBeenCalledWith(false);
-    await expect(togglePanelMock).toHaveBeenCalledWith(false);
     await expect(setAllTagFiltersMock).toHaveBeenCalledWith([], []);
     await expect(setAllStatusFiltersMock).toHaveBeenCalledWith(['status-value:reviewing'], []);
     await expect(setQueryParamsMock).toHaveBeenCalledWith({

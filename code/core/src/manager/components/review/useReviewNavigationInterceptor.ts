@@ -53,7 +53,7 @@ export const useReviewNavigationInterceptor = () => {
 
       if (anchor?.hasAttribute(REVIEW_SUMMARY_BACK_ATTR)) {
         event.preventDefault();
-        navigateOutOfReview(api, navigate, sessionStore.read(PRE_REVIEW_RETURN_KEY));
+        void navigateOutOfReview(api, navigate, sessionStore.read(PRE_REVIEW_RETURN_KEY));
         return;
       }
 

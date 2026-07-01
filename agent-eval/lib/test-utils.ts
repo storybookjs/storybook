@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { loadTranscript } from '@vercel/agent-eval';
 import type { Transcript } from '@vercel/agent-eval';
+import { expect } from 'vitest';
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
 const RESULTS_PATH = '__agent_eval__/results.json';
@@ -106,6 +107,16 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 			(rawCall) => !parsedCalls.some((parsedCall) => isSameWorkflowCall(parsedCall, rawCall)),
 		),
 	];
+}
+
+export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
+	return getStorybookWorkflowCalls().filter((call) => call.name === name);
+}
+
+export function expectWorkflowCalls(expectedNames: string[]): void {
+	for (const name of expectedNames) {
+		expect(getWorkflowCalls(name).length, `Expected ${name} to be called`).toBeGreaterThan(0);
+	}
 }
 
 function readAgentContext(): AgentContext {

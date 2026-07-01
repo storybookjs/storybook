@@ -1,4 +1,3 @@
-/// <reference path="./eval-matchers.d.ts" />
 // Ambient types for @vercel/agent-eval 1.2.0's agentic judge subjects.
 //
 // 1.2.0 ships the eval helper as a runtime-only module
@@ -8,9 +7,8 @@
 // exist only so the type-checker can resolve the import + matchers locally.
 //
 // This is a SCRIPT (global) d.ts — no top-level import/export — so `declare module`
-// *declares* the ambient module rather than augmenting one. The reference above pulls in
-// the vitest matcher augmentation (which must live in a module d.ts). Use from an EVAL.ts:
-//   /// <reference path="../../eval.d.ts" />
+// *declares* the ambient module rather than augmenting one. The matcher augmentation
+// lives in eval-matchers.d.ts; agent-eval/tsconfig.json includes both files.
 
 declare module '@vercel/agent-eval/eval' {
 	/** Opaque sentinels passed to `expect(...)`; the matcher routes by which one it is. */

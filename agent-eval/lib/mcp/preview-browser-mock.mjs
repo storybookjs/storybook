@@ -58,7 +58,7 @@ const TOOLS = [
 		name: 'preview_start',
 		title: 'Start Preview Server',
 		description:
-			"Start a dev server by name from .claude/launch.json. Reuses the server if already running. ALWAYS use this instead of Bash for running servers.",
+			'Start a dev server by name from .claude/launch.json. Reuses the server if already running. ALWAYS use this instead of Bash for running servers.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -203,7 +203,8 @@ const TOOLS = [
 				level: {
 					type: 'string',
 					enum: ['all', 'error', 'warn'],
-					description: "Filter by level: 'all' (default), 'error' (errors only), 'warn' (warnings + errors)",
+					description:
+						"Filter by level: 'all' (default), 'error' (errors only), 'warn' (warnings + errors)",
 				},
 				lines: { type: 'number', description: 'Max lines to return (default: 50, max: 200)' },
 			},
@@ -372,7 +373,10 @@ const HANDLERS = {
 	preview_screenshot({ serverId }) {
 		return withServer(serverId, (server) => ({
 			content: [
-				{ type: 'text', text: `Screenshot of ${server.url} (${server.viewport.width}x${server.viewport.height}).` },
+				{
+					type: 'text',
+					text: `Screenshot of ${server.url} (${server.viewport.width}x${server.viewport.height}).`,
+				},
 				{ type: 'image', data: TINY_JPEG, mimeType: 'image/jpeg' },
 			],
 		}));
@@ -397,7 +401,8 @@ const HANDLERS = {
 		if (typeof selector !== 'string' || selector.length === 0) {
 			return errorText('preview_inspect requires a "selector".');
 		}
-		const requested = Array.isArray(styles) && styles.length > 0 ? styles : ['color', 'font-size', 'padding'];
+		const requested =
+			Array.isArray(styles) && styles.length > 0 ? styles : ['color', 'font-size', 'padding'];
 		const MOCK_STYLES = {
 			color: 'rgb(17, 24, 39)',
 			'font-size': '16px',
@@ -440,10 +445,7 @@ const HANDLERS = {
 	preview_logs({ serverId, search, level }) {
 		return withServer(serverId, (server) => {
 			if (level === 'error') return text('No errors in server output.');
-			const lines = [
-				`Storybook started on => ${server.url}`,
-				'webpack compiled successfully',
-			];
+			const lines = [`Storybook started on => ${server.url}`, 'webpack compiled successfully'];
 			const filtered =
 				typeof search === 'string' && search.length > 0
 					? lines.filter((line) => line.includes(search))

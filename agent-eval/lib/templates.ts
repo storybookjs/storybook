@@ -116,7 +116,9 @@ export async function setupSandbox(
 		]);
 
 		if (result.exitCode !== 0) {
-			throw new Error(`Failed to install Playwright system dependencies: ${result.stderr || result.stdout}`);
+			throw new Error(
+				`Failed to install Playwright system dependencies: ${result.stderr || result.stdout}`,
+			);
 		}
 	}
 

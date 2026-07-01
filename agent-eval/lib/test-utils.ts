@@ -37,7 +37,10 @@ export function getEvalContext(): EvalContext {
 
 	if (integration !== 'mcp' && integration !== 'plugin') {
 		throw new Error(
-			'Expected ' + AGENT_CONTEXT_PATH + ' to contain an integration. Received: ' + String(integration),
+			'Expected ' +
+				AGENT_CONTEXT_PATH +
+				' to contain an integration. Received: ' +
+				String(integration),
 		);
 	}
 
@@ -67,10 +70,7 @@ export function getToolCalls(): string[] {
 		return [event.tool.originalName];
 	});
 
-	return [
-		...parsedToolCalls,
-		...getRawCodexMcpToolCalls(),
-	];
+	return [...parsedToolCalls, ...getRawCodexMcpToolCalls()];
 }
 
 function readAgentContext(): AgentContext {

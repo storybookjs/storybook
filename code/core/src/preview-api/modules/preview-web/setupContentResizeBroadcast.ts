@@ -371,20 +371,6 @@ const sendResizeMessage = (
   }
 };
 
-const debounce = (callback: () => void): (() => void) => {
-  let rafId: number | null = null;
-
-  return () => {
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
-    }
-    rafId = requestAnimationFrame(() => {
-      callback();
-      rafId = null;
-    });
-  };
-};
-
 export type ContentResizeBroadcast = {
   /** Final measure after freeze; only set when freeze is also active. */
   onContentFrozen?: () => void;
@@ -457,43 +443,6 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     };
   }
 
-  const trackedElements = getTrackedElements();
-  const update = () => sendResizeMessage(trackedElements, windowRef, documentRef);
-  const debouncedUpdate = debounce(update);
-
-  const resizeObserver = new ResizeObserver(debouncedUpdate);
-  for (const element of trackedElements) {
-    resizeObserver.observe(element);
-  }
-
-  const mutationObserver = new MutationObserver(() => {
-    debouncedUpdate();
-
-    const updatedElements = getTrackedElements();
-    for (const element of updatedElements) {
-      if (!trackedElements.has(element)) {
-        resizeObserver.observe(element);
-        trackedElements.add(element);
-      }
-    }
-    for (const element of trackedElements) {
-      if (!updatedElements.has(element)) {
-        resizeObserver.unobserve(element);
-        trackedElements.delete(element);
-      }
-    }
-  });
-  mutationObserver.observe(documentRef.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  windowRef.addEventListener('resize', debouncedUpdate);
-  cleanups.push(
-    () => resizeObserver.disconnect(),
-    () => mutationObserver.disconnect(),
-    () => windowRef.removeEventListener('resize', debouncedUpdate)
-  );
-
+  // Thumbnail embeds always use freeze=finished; parent remeasure requests still work.
   return { cleanup: () => cleanups.forEach((fn) => fn()) };
 };

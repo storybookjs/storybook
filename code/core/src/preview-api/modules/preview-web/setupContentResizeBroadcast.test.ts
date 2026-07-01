@@ -183,24 +183,25 @@ describe('setupContentResizeBroadcast', () => {
     return result;
   };
 
-  const mockResizeObserver = () => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        private callback: ResizeObserverCallback;
-
-        constructor(callback: ResizeObserverCallback) {
-          this.callback = callback;
-        }
-
-        observe() {
-          this.callback([], this as unknown as ResizeObserver);
-        }
-
-        unobserve() {}
-        disconnect() {}
-      } as typeof ResizeObserver
+  const measureAfterFreeze = async (setupBody?: () => void) => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
     );
+    setupBody?.();
+    const { onContentFrozen } = installBroadcast();
+    onContentFrozen?.();
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    return JSON.parse(message as string) as {
+      context: string;
+      width: number;
+      height: number;
+      src: string;
+    };
   };
 
   const mockRect = (
@@ -367,13 +368,8 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    mockResizeObserver();
     installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    postMessageSpy.mockClear();
+    expect(postMessageSpy).not.toHaveBeenCalled();
 
     const parent = window.parent as Window;
     window.dispatchEvent(
@@ -388,6 +384,11 @@ describe('setupContentResizeBroadcast', () => {
     });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
+  });
+
+  it('does not auto-measure embed previews without freeze', () => {
+    installBroadcast();
+    expect(postMessageSpy).not.toHaveBeenCalled();
   });
 
   it('does not install when embed=true is absent', () => {
@@ -407,12 +408,7 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
+    await measureAfterFreeze();
     expect(document.getElementById('storybook-embed-sizing')).toBeNull();
   });
 
@@ -427,14 +423,7 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
+    const payload = await measureAfterFreeze();
     expect(payload.context).toBe(IFRAME_RESIZE_CONTEXT);
     expect(payload.width).toBeGreaterThan(0);
     expect(payload.height).toBeGreaterThan(0);
@@ -442,160 +431,125 @@ describe('setupContentResizeBroadcast', () => {
   });
 
   it('ignores pass-through wrappers when measuring nested content', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><div id="wrapper"><button id="button">Click</button></div></div>';
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><div id="wrapper"><button id="button">Click</button></div></div>';
 
-    const root = document.getElementById('storybook-root') as HTMLDivElement;
-    const wrapper = document.getElementById('wrapper') as HTMLDivElement;
-    const button = document.getElementById('button') as HTMLButtonElement;
-    mockRect(root, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 800,
-      width: 800,
-      height: 40,
+      const root = document.getElementById('storybook-root') as HTMLDivElement;
+      const wrapper = document.getElementById('wrapper') as HTMLDivElement;
+      const button = document.getElementById('button') as HTMLButtonElement;
+      mockRect(root, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 800,
+        width: 800,
+        height: 40,
+      });
+      mockRect(wrapper, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 800,
+        width: 800,
+        height: 40,
+      });
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 80,
+        width: 80,
+        height: 40,
+      });
     });
-    mockRect(wrapper, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 800,
-      width: 800,
-      height: 40,
-    });
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 80,
-      width: 80,
-      height: 40,
-    });
-
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
     expect(payload.width).toBe(80);
     expect(payload.height).toBe(40);
   });
 
   it('does not apply fit-content sizing to inline icon sprites while measuring', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><svg data-chromatic="ignore" style="position:absolute;width:0;height:0"><symbol id="icon"><path d="M0 0h300v20H0z"></path></symbol></svg><button id="button">Filter</button></div>';
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><svg data-chromatic="ignore" style="position:absolute;width:0;height:0"><symbol id="icon"><path d="M0 0h300v20H0z"></path></symbol></svg><button id="button">Filter</button></div>';
 
-    const button = document.getElementById('button') as HTMLButtonElement;
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 80,
-      width: 80,
-      height: 40,
+      const button = document.getElementById('button') as HTMLButtonElement;
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 80,
+        width: 80,
+        height: 40,
+      });
     });
-
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
     expect(payload.width).toBe(80);
     expect(payload.height).toBe(40);
   });
 
   it('ignores full-viewport fixed underlays portaled to the body', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
 
-    vi.stubGlobal('innerWidth', 800);
-    vi.stubGlobal('innerHeight', 600);
+      vi.stubGlobal('innerWidth', 800);
+      vi.stubGlobal('innerHeight', 600);
 
-    const button = document.getElementById('button') as HTMLButtonElement;
-    const underlay = document.getElementById('underlay') as HTMLDivElement;
-    underlay.style.position = 'fixed';
-    underlay.style.inset = '0';
+      const button = document.getElementById('button') as HTMLButtonElement;
+      const underlay = document.getElementById('underlay') as HTMLDivElement;
+      underlay.style.position = 'fixed';
+      underlay.style.inset = '0';
 
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 160,
-      width: 160,
-      height: 40,
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 160,
+        width: 160,
+        height: 40,
+      });
+      mockRect(underlay, {
+        top: 0,
+        left: 0,
+        bottom: 600,
+        right: 800,
+        width: 800,
+        height: 600,
+      });
     });
-    mockRect(underlay, {
-      top: 0,
-      left: 0,
-      bottom: 600,
-      right: 800,
-      width: 800,
-      height: 600,
-    });
-
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
     expect(payload.width).toBe(160);
     expect(payload.height).toBe(40);
   });
 
   it('adds measured body padding symmetrically around content bounds', async () => {
-    document.body.style.padding = '16px';
-    const content = document.getElementById('content') as HTMLDivElement;
-    mockRect(content, {
-      top: 16,
-      left: 16,
-      bottom: 316,
-      right: 316,
-      width: 300,
-      height: 300,
+    const payload = await measureAfterFreeze(() => {
+      document.body.style.padding = '16px';
+      const content = document.getElementById('content') as HTMLDivElement;
+      mockRect(content, {
+        top: 16,
+        left: 16,
+        bottom: 316,
+        right: 316,
+        width: 300,
+        height: 300,
+      });
     });
-
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
     expect(payload.width).toBe(332);
     expect(payload.height).toBe(332);
   });
 
   it('does not add padding when the iframe body has none', async () => {
-    document.body.style.padding = '0';
-    const content = document.getElementById('content') as HTMLDivElement;
-    mockRect(content, {
-      top: 0,
-      left: 0,
-      bottom: 300,
-      right: 300,
-      width: 300,
-      height: 300,
+    const payload = await measureAfterFreeze(() => {
+      document.body.style.padding = '0';
+      const content = document.getElementById('content') as HTMLDivElement;
+      mockRect(content, {
+        top: 0,
+        left: 0,
+        bottom: 300,
+        right: 300,
+        width: 300,
+        height: 300,
+      });
     });
-
-    mockResizeObserver();
-    installBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
     expect(payload.width).toBe(300);
     expect(payload.height).toBe(300);
   });

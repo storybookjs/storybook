@@ -1,23 +1,24 @@
-import React from 'react';
+import type { FC, PropsWithChildren } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit/string';
-import { ManagerContext } from 'storybook/manager-api';
-import { fn, screen, userEvent } from 'storybook/test';
+import { ManagerContext, useStorybookApi } from 'storybook/manager-api';
+import { expect, fn, screen, userEvent } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
 import { MobileNavigation } from './MobileNavigation.tsx';
 
 const MockMenu = () => {
-  const { setMobileMenuOpen } = useLayout();
+  const api = useStorybookApi();
   return (
     <div>
       menu
       <button
         type="button"
         aria-label="Close navigation menu"
-        onClick={() => setMobileMenuOpen(false)}
+        onClick={() => api.setMobileNavigation(false)}
       >
         close
       </button>
@@ -43,37 +44,74 @@ const MockPanel = () => {
 
 const renderLabel = ({ name }: { name: string }) => startCase(name);
 
-const mockManagerStore: any = {
-  state: {
-    index: {
-      someRootId: {
-        type: 'root',
-        id: 'someRootId',
-        name: 'root',
-        renderLabel,
-      },
-      someComponentId: {
-        type: 'component',
-        id: 'someComponentId',
-        name: 'component',
-        parent: 'someRootId',
-        renderLabel,
-      },
-      someStoryId: {
-        type: 'story',
-        subtype: 'story',
-        id: 'someStoryId',
-        name: 'story',
-        parent: 'someComponentId',
-        renderLabel,
-      },
-    },
+const baseIndex = {
+  someRootId: {
+    type: 'root',
+    id: 'someRootId',
+    name: 'root',
+    renderLabel,
   },
-  api: {
-    getCurrentStoryData: fn(() => {
-      return mockManagerStore.state.index.someStoryId;
-    }),
+  someComponentId: {
+    type: 'component',
+    id: 'someComponentId',
+    name: 'component',
+    parent: 'someRootId',
+    renderLabel,
   },
+  someStoryId: {
+    type: 'story',
+    subtype: 'story',
+    id: 'someStoryId',
+    name: 'story',
+    parent: 'someComponentId',
+    renderLabel,
+  },
+};
+
+/**
+ * The live mock `api` for the default decorator, so play functions can drive the same mobile path
+ * the sidebar keyboard shortcut uses (`api.toggleNav()`), like the real manager API.
+ */
+let defaultApi: {
+  toggleNav: (nextState?: boolean) => void;
+  setMobileNavigation: (show: boolean) => void;
+} | null = null;
+
+/**
+ * Reactive mock of `ManagerContext`. The mobile drawer reads its open state from the manager-api
+ * layout field `showMobileNavigation`, so the mock owns that field in React state and exposes
+ * `toggleNav` / `setMobileNavigation` that update it, mirroring the real store behavior on mobile.
+ */
+const MockManagerProvider: FC<
+  PropsWithChildren & { index?: typeof baseIndex; exposeApi?: boolean }
+> = ({ children, index = baseIndex, exposeApi = false }) => {
+  const [showMobileNavigation, setShowMobileNavigation] = useState(false);
+
+  const value: any = useMemo(() => {
+    const api = {
+      getCurrentStoryData: fn(() => index.someStoryId),
+      getShortcutKeys: () => ({ toggleNav: ['alt', 'S'] }),
+      setMobileNavigation: (show: boolean) => setShowMobileNavigation(show),
+      toggleNav: (nextState?: boolean) =>
+        setShowMobileNavigation((open) => (typeof nextState === 'boolean' ? nextState : !open)),
+    };
+    return {
+      state: {
+        index,
+        showMobileNavigation,
+      },
+      api,
+    };
+  }, [index, showMobileNavigation, exposeApi]);
+
+  // Expose the live api for the shortcut story on commit, not during render.
+  useEffect(() => {
+    if (exposeApi) {
+      defaultApi = value.api;
+    }
+  }, [exposeApi, value]);
+
+  return <ManagerContext.Provider value={value}>{children}</ManagerContext.Provider>;
 };
 
 const meta = {
@@ -81,14 +119,14 @@ const meta = {
   title: 'Mobile/Navigation',
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider value={mockManagerStore}>
+      <MockManagerProvider exposeApi>
         <LayoutProvider>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100svh' }}>
             <div style={{ flex: 1 }} />
             {storyFn()}
           </div>
         </LayoutProvider>
-      </ManagerContext.Provider>
+      </MockManagerProvider>
     ),
   ],
   parameters: {
@@ -119,10 +157,10 @@ export const Dark: Story = {
 
 export const LongStoryName: Story = {
   decorators: [
-    (storyFn) => {
-      const mockManagerStoreWithLongNames: any = {
-        state: {
-          index: {
+    (storyFn) => (
+      <MockManagerProvider
+        index={
+          {
             someRootId: {
               type: 'root',
               id: 'someRootId',
@@ -144,20 +182,12 @@ export const LongStoryName: Story = {
               parent: 'someComponentId',
               renderLabel,
             },
-          },
-        },
-        api: {
-          getCurrentStoryData() {
-            return mockManagerStoreWithLongNames.state.index.someStoryId;
-          },
-        },
-      };
-      return (
-        <ManagerContext.Provider value={mockManagerStoreWithLongNames}>
-          {storyFn()}
-        </ManagerContext.Provider>
-      );
-    },
+          } as typeof baseIndex
+        }
+      >
+        {storyFn()}
+      </MockManagerProvider>
+    ),
   ],
 };
 
@@ -175,6 +205,26 @@ export const MenuClosed: Story = {
     await new Promise((resolve) => setTimeout(resolve, 500));
     const overlay = await screen.findByLabelText('Close navigation menu');
     await userEvent.click(overlay);
+  },
+};
+
+// Below the mobile breakpoint `api.toggleNav()` flips the `showMobileNavigation` layout field, which
+// the drawer reads as its single source of truth, so the sidebar keyboard shortcut opens the drawer
+// on mobile too (regression test for #32278).
+export const ToggleNavShortcut: Story = {
+  play: async () => {
+    await expect(screen.queryByLabelText('Close navigation menu')).not.toBeInTheDocument();
+
+    expect(defaultApi).toBeTruthy();
+    // Mirrors the mobile keyboard-shortcut path: `toggleNav()` sets the store field, opening the drawer.
+    defaultApi?.toggleNav();
+
+    const closeButton = await screen.findByLabelText(
+      'Close navigation menu',
+      {},
+      { timeout: 3000 }
+    );
+    await expect(closeButton).toBeInTheDocument();
   },
 };
 
@@ -206,42 +256,36 @@ export const ReactNodeRenderLabel: Story = {
     (storyFn) => {
       const renderReactNodeLabel = ({ name }: { name: string }) => <em>{startCase(name)}</em>;
 
-      const mockManagerStoreWithReactNodeLabels: any = {
-        state: {
-          index: {
-            someRootId: {
-              type: 'root',
-              id: 'someRootId',
-              name: 'root',
-              renderLabel: renderReactNodeLabel,
-            },
-            someComponentId: {
-              type: 'component',
-              id: 'someComponentId',
-              name: 'component',
-              parent: 'someRootId',
-              renderLabel: renderReactNodeLabel,
-            },
-            someStoryId: {
-              type: 'story',
-              subtype: 'story',
-              id: 'someStoryId',
-              name: 'story',
-              parent: 'someComponentId',
-              renderLabel: renderReactNodeLabel,
-            },
-          },
-        },
-        api: {
-          getCurrentStoryData() {
-            return mockManagerStoreWithReactNodeLabels.state.index.someStoryId;
-          },
-        },
-      };
       return (
-        <ManagerContext.Provider value={mockManagerStoreWithReactNodeLabels}>
+        <MockManagerProvider
+          index={
+            {
+              someRootId: {
+                type: 'root',
+                id: 'someRootId',
+                name: 'root',
+                renderLabel: renderReactNodeLabel,
+              },
+              someComponentId: {
+                type: 'component',
+                id: 'someComponentId',
+                name: 'component',
+                parent: 'someRootId',
+                renderLabel: renderReactNodeLabel,
+              },
+              someStoryId: {
+                type: 'story',
+                subtype: 'story',
+                id: 'someStoryId',
+                name: 'story',
+                parent: 'someComponentId',
+                renderLabel: renderReactNodeLabel,
+              },
+            } as unknown as typeof baseIndex
+          }
+        >
           {storyFn()}
-        </ManagerContext.Provider>
+        </MockManagerProvider>
       );
     },
   ],

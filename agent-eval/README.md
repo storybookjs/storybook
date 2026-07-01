@@ -18,7 +18,7 @@ Test AI coding agents to measure what actually works.
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
    - **Agent keys**: `ANTHROPIC_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments. `AI_GATEWAY_API_KEY` is optional for failure classification and any experiments that explicitly use Vercel AI Gateway agents.
-   - **Sandbox access**: this suite is configured with `sandbox: 'vercel'`, so Vercel Sandbox access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`) are required. For local Docker-only experiments, change the eval config to `sandbox: 'docker'`.
+   - **Sandbox access**: this suite is configured with `sandbox: 'auto'`, which uses Vercel Sandbox when access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`) are present and falls back to local Docker otherwise. Set `sandbox: 'docker'` to force Docker-only experiments.
 
 ## Running Evals
 

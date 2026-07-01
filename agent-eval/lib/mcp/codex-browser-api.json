@@ -1,0 +1,1635 @@
+{
+  "interfaces": {
+    "Agent": {
+      "browsers": {
+        "declarations": [
+          {
+            "text": "browsers: Browsers; // API for finding and selecting browsers.",
+            "references": [
+              "Browsers"
+            ]
+          }
+        ]
+      },
+      "documentation": {
+        "declarations": [
+          {
+            "text": "documentation: Documentation; // API for reading packaged browser-use documentation by name.",
+            "references": [
+              "Documentation"
+            ]
+          }
+        ]
+      }
+    },
+    "Browsers": {
+      "get": {
+        "declarations": [
+          {
+            "text": "get(id: string): Promise<Browser>; // Get a browser by id or client type.",
+            "references": [
+              "Browser"
+            ]
+          }
+        ]
+      },
+      "getDefault": {
+        "declarations": [
+          {
+            "text": "getDefault(): Promise<Browser>; // Get the default browser from those currently available.",
+            "references": [
+              "Browser"
+            ]
+          }
+        ],
+        "documented": false
+      },
+      "getForUrl": {
+        "declarations": [
+          {
+            "text": "getForUrl(url: string): Promise<Browser>; // Get the browser best suited to interact with the provided URL.",
+            "references": [
+              "Browser"
+            ]
+          }
+        ],
+        "documented": false
+      },
+      "list": {
+        "declarations": [
+          {
+            "text": "list(): Promise<Array<{ apiSupportOverrides?: Record<string, boolean>; capabilities: { browser?: Array<{ description: string; id: string }>; tab?: Array<{ description: string; id: string }> }; id: string; metadata?: Record<string, string>; name: string; type: \"iab\" | \"extension\" | \"cdp\" }>>; // List available browsers.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "Browser": {
+      "browserId": {
+        "declarations": [
+          {
+            "text": "browserId: string; // Browser id selected by `agent.browsers.get()`.",
+            "references": []
+          }
+        ]
+      },
+      "capabilities": {
+        "declarations": [
+          {
+            "text": "capabilities: BrowserCapabilityCollection; // Browser-scoped optional capabilities advertised by the connected backend; discover IDs with `await browser.capabilities.list()`, then call `await (await browser.capabilities.get(id)).documentation()` for method details.",
+            "references": [
+              "BrowserCapabilityCollection"
+            ]
+          }
+        ]
+      },
+      "tabs": {
+        "declarations": [
+          {
+            "text": "tabs: Tabs; // API for interacting with browser tabs.",
+            "references": [
+              "Tabs"
+            ]
+          }
+        ]
+      },
+      "user": {
+        "declarations": [
+          {
+            "text": "user: BrowserUser; // Readonly context about the user's browser state.",
+            "references": [
+              "BrowserUser"
+            ]
+          }
+        ]
+      },
+      "documentation": {
+        "declarations": [
+          {
+            "text": "documentation(): Promise<string>; // Read browser guidance and the core API reference.",
+            "references": []
+          }
+        ]
+      },
+      "nameSession": {
+        "declarations": [
+          {
+            "text": "nameSession(name: string): Promise<void>; // Name the current browser automation session.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "BrowserUser": {
+      "claimTab": {
+        "declarations": [
+          {
+            "text": "claimTab(tab: string | BrowserUserTabInfo): Promise<Tab>; // Claim a user tab returned by `openTabs()` and return it as a controllable agent tab.",
+            "references": [
+              "BrowserUserTabInfo",
+              "Tab"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "cdp"
+        ]
+      },
+      "history": {
+        "declarations": [
+          {
+            "text": "history(options: BrowserHistoryOptions): Promise<Array<BrowserHistoryEntry>>; // List recent browsing history ordered by `dateVisited` descending.",
+            "references": [
+              "BrowserHistoryOptions",
+              "BrowserHistoryEntry"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "cdp"
+        ]
+      },
+      "openTabs": {
+        "declarations": [
+          {
+            "text": "openTabs(): Promise<Array<BrowserUserTabInfo>>; // List open top-level tabs across the user's browser windows ordered by `lastOpened` descending.",
+            "references": [
+              "BrowserUserTabInfo"
+            ]
+          }
+        ]
+      }
+    },
+    "Tabs": {
+      "content": {
+        "declarations": [
+          {
+            "text": "content(options: TabsContentOptions): Promise<Array<TabsContentResult>>; // Load one or more URLs in temporary background tabs and extract their content without changing the selected tab.",
+            "references": [
+              "TabsContentOptions",
+              "TabsContentResult"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "extension",
+          "cdp"
+        ]
+      },
+      "finalize": {
+        "declarations": [
+          {
+            "text": "finalize(options: FinalizeTabsOptions): Promise<void>; // Finalize the browser session's tabs by cleaning up tabs that are no longer needed.",
+            "references": [
+              "FinalizeTabsOptions"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "cdp"
+        ]
+      },
+      "get": {
+        "declarations": [
+          {
+            "text": "get(id: string): Promise<Tab>; // Get a tab by id.",
+            "references": [
+              "Tab"
+            ]
+          }
+        ]
+      },
+      "list": {
+        "declarations": [
+          {
+            "text": "list(): Promise<Array<TabInfo>>; // List open tabs in the browser.",
+            "references": [
+              "TabInfo"
+            ]
+          }
+        ]
+      },
+      "new": {
+        "declarations": [
+          {
+            "text": "new(): Promise<Tab>; // Create and return a new tab in the browser.",
+            "references": [
+              "Tab"
+            ]
+          }
+        ]
+      },
+      "selected": {
+        "declarations": [
+          {
+            "text": "selected(): Promise<undefined | Tab>; // Return the currently selected tab, if any.",
+            "references": [
+              "Tab"
+            ]
+          }
+        ]
+      }
+    },
+    "Tab": {
+      "capabilities": {
+        "declarations": [
+          {
+            "text": "capabilities: TabCapabilityCollection; // Tab-scoped optional capabilities advertised by the connected backend; discover IDs with `await tab.capabilities.list()`, then call `await (await tab.capabilities.get(id)).documentation()` for method details.",
+            "references": [
+              "TabCapabilityCollection"
+            ]
+          }
+        ]
+      },
+      "clipboard": {
+        "declarations": [
+          {
+            "text": "clipboard: TabClipboardAPI; // API for interacting with the browser session's clipboard.",
+            "references": [
+              "TabClipboardAPI"
+            ]
+          }
+        ]
+      },
+      "content": {
+        "declarations": [
+          {
+            "text": "content: ContentAPI; // API for exporting tab content.",
+            "references": [
+              "ContentAPI"
+            ]
+          }
+        ],
+        "documented": false
+      },
+      "cua": {
+        "declarations": [
+          {
+            "text": "cua: CUAAPI; // API for interacting with the tab via the cua api",
+            "references": [
+              "CUAAPI"
+            ]
+          }
+        ]
+      },
+      "dev": {
+        "declarations": [
+          {
+            "text": "dev: TabDevAPI; // API for developer-oriented tab inspection.",
+            "references": [
+              "TabDevAPI"
+            ]
+          }
+        ]
+      },
+      "dom_cua": {
+        "declarations": [
+          {
+            "text": "dom_cua: DomCUAAPI; // API for interacting with the tab via the dom based cua api",
+            "references": [
+              "DomCUAAPI"
+            ]
+          }
+        ]
+      },
+      "id": {
+        "declarations": [
+          {
+            "text": "id: string; // A tab's unique identifier",
+            "references": []
+          }
+        ]
+      },
+      "playwright": {
+        "declarations": [
+          {
+            "text": "playwright: PlaywrightAPI; // API for interacting with the tab via the playwright api",
+            "references": [
+              "PlaywrightAPI"
+            ]
+          }
+        ]
+      },
+      "back": {
+        "declarations": [
+          {
+            "text": "back(): Promise<void>; // Navigate this tab back in history.",
+            "references": []
+          }
+        ]
+      },
+      "close": {
+        "declarations": [
+          {
+            "text": "close(): Promise<void>; // Close this tab.",
+            "references": []
+          }
+        ]
+      },
+      "forward": {
+        "declarations": [
+          {
+            "text": "forward(): Promise<void>; // Navigate this tab forward in history.",
+            "references": []
+          }
+        ]
+      },
+      "getJsDialog": {
+        "declarations": [
+          {
+            "text": "getJsDialog(): Promise<undefined | Dialog>; // Get the active JavaScript dialog for this tab, if one is currently open.",
+            "references": [
+              "Dialog"
+            ]
+          }
+        ]
+      },
+      "goto": {
+        "declarations": [
+          {
+            "text": "goto(url: string): Promise<void>; // Open a URL in this tab.",
+            "references": []
+          }
+        ]
+      },
+      "markDeliverable": {
+        "declarations": [
+          {
+            "text": "markDeliverable(): Promise<void>; // Keep this tab as a deliverable after the turn completes.",
+            "references": []
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "cdp"
+        ]
+      },
+      "markHandoff": {
+        "declarations": [
+          {
+            "text": "markHandoff(): Promise<void>; // Keep this tab available for a later turn after the current turn completes.",
+            "references": []
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab",
+          "cdp"
+        ]
+      },
+      "reload": {
+        "declarations": [
+          {
+            "text": "reload(): Promise<void>; // Reload this tab.",
+            "references": []
+          }
+        ]
+      },
+      "screenshot": {
+        "declarations": [
+          {
+            "text": "screenshot(options: ScreenshotOptions): Promise<Uint8Array>; // Capture a screenshot of this tab.",
+            "references": [
+              "ScreenshotOptions"
+            ]
+          }
+        ]
+      },
+      "title": {
+        "declarations": [
+          {
+            "text": "title(): Promise<undefined | string>; // Get the current title for this tab.",
+            "references": []
+          }
+        ]
+      },
+      "url": {
+        "declarations": [
+          {
+            "text": "url(): Promise<undefined | string>; // Get the current URL for this tab.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "ContentAPI": {
+      "export": {
+        "declarations": [
+          {
+            "text": "export(): Promise<string>; // Export the tab's content to a file on disk using the default asset-loader path.",
+            "references": []
+          }
+        ]
+      },
+      "exportGsuite": {
+        "declarations": [
+          {
+            "text": "exportGsuite(type: \"pdf\" | \"md\" | \"xlsx\" | \"csv\" | \"docx\" | \"pptx\"): Promise<string>; // Export a Google Workspace tab using an explicit GSuite export type.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "CUAAPI": {
+      "click": {
+        "declarations": [
+          {
+            "text": "click(options: ClickOptions): Promise<void>; // Click at a coordinate in the current viewport.",
+            "references": [
+              "ClickOptions"
+            ]
+          }
+        ]
+      },
+      "double_click": {
+        "declarations": [
+          {
+            "text": "double_click(options: DoubleClickOptions): Promise<void>; // Double click at a coordinate in the current viewport.",
+            "references": [
+              "DoubleClickOptions"
+            ]
+          }
+        ]
+      },
+      "downloadMedia": {
+        "declarations": [
+          {
+            "text": "downloadMedia(options: CuaDownloadMediaOptions): Promise<void>; // Trigger a media download at a viewport coordinate.",
+            "references": [
+              "CuaDownloadMediaOptions"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab"
+        ],
+        "documented": false
+      },
+      "drag": {
+        "declarations": [
+          {
+            "text": "drag(options: DragOptions): Promise<void>; // Drag from a point to a point by the provided path.",
+            "references": [
+              "DragOptions"
+            ]
+          }
+        ]
+      },
+      "keypress": {
+        "declarations": [
+          {
+            "text": "keypress(options: KeypressOptions): Promise<void>; // Press control characters at the current focused element (focus it first via click/dblclick).",
+            "references": [
+              "KeypressOptions"
+            ]
+          }
+        ]
+      },
+      "move": {
+        "declarations": [
+          {
+            "text": "move(options: MoveOptions): Promise<void>; // Move the mouse to a point by the provided x and y coordinates.",
+            "references": [
+              "MoveOptions"
+            ]
+          }
+        ]
+      },
+      "scroll": {
+        "declarations": [
+          {
+            "text": "scroll(options: ScrollOptions): Promise<void>; // Scroll by a delta from a specific viewport coordinate.",
+            "references": [
+              "ScrollOptions"
+            ]
+          }
+        ]
+      },
+      "type": {
+        "declarations": [
+          {
+            "text": "type(options: TypeOptions): Promise<void>; // Type text at the current focus.",
+            "references": [
+              "TypeOptions"
+            ]
+          }
+        ]
+      }
+    },
+    "DomCUAAPI": {
+      "click": {
+        "declarations": [
+          {
+            "text": "click(options: DomClickOptions): Promise<void>; // Click a DOM node by its id from the visible DOM snapshot.",
+            "references": [
+              "DomClickOptions"
+            ]
+          }
+        ]
+      },
+      "double_click": {
+        "declarations": [
+          {
+            "text": "double_click(options: DomClickOptions): Promise<void>; // Double-click a DOM node by its id.",
+            "references": [
+              "DomClickOptions"
+            ]
+          }
+        ]
+      },
+      "downloadMedia": {
+        "declarations": [
+          {
+            "text": "downloadMedia(options: DomDownloadMediaOptions): Promise<void>; // Trigger a media download for a DOM node.",
+            "references": [
+              "DomDownloadMediaOptions"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab"
+        ],
+        "documented": false
+      },
+      "get_visible_dom": {
+        "declarations": [
+          {
+            "text": "get_visible_dom(): Promise<unknown>; // Return a filtered DOM with node ids for interactable elements.",
+            "references": []
+          }
+        ]
+      },
+      "keypress": {
+        "declarations": [
+          {
+            "text": "keypress(options: DomKeypressOptions): Promise<void>; // Press control characters at the currently focused element (focus it first via click/dblclick).",
+            "references": [
+              "DomKeypressOptions"
+            ]
+          }
+        ]
+      },
+      "scroll": {
+        "declarations": [
+          {
+            "text": "scroll(options: DomScrollOptions): Promise<void>; // Scroll either the page or a specific node (if node_id provided) by deltas.",
+            "references": [
+              "DomScrollOptions"
+            ]
+          }
+        ]
+      },
+      "type": {
+        "declarations": [
+          {
+            "text": "type(options: DomTypeOptions): Promise<void>; // Type text into the currently focused element (focus via click first).",
+            "references": [
+              "DomTypeOptions"
+            ]
+          }
+        ]
+      }
+    },
+    "PlaywrightAPI": {
+      "domSnapshot": {
+        "declarations": [
+          {
+            "text": "domSnapshot(): Promise<string>; // Return a snapshot of the current DOM as a string, including expanded iframe body content when available.",
+            "references": []
+          }
+        ]
+      },
+      "elementInfo": {
+        "declarations": [
+          {
+            "text": "elementInfo(options: ElementInfoOptions): Promise<Array<ElementInfo>>; // Return locator-oriented metadata for elements at a screenshot coordinate.",
+            "references": [
+              "ElementInfoOptions",
+              "ElementInfo"
+            ]
+          }
+        ],
+        "documented": false
+      },
+      "elementScreenshot": {
+        "declarations": [
+          {
+            "text": "elementScreenshot(options: ElementScreenshotOptions): Promise<Uint8Array>; // Capture a screenshot of the current viewport annotated with matching element bounds and the probed point.",
+            "references": [
+              "ElementScreenshotOptions"
+            ]
+          }
+        ],
+        "documented": false
+      },
+      "evaluate": {
+        "declarations": [
+          {
+            "text": "evaluate<TResult, TArg>(pageFunction: PlaywrightEvaluateFunction<TArg, TResult>, arg?: TArg, options?: PlaywrightEvaluateOptions): Promise<TResult>; // Evaluate JavaScript in a read-only page scope.",
+            "references": [
+              "PlaywrightEvaluateFunction",
+              "PlaywrightEvaluateOptions"
+            ]
+          }
+        ]
+      },
+      "expectNavigation": {
+        "declarations": [
+          {
+            "text": "expectNavigation<T>(action: () => Promise<T>, options: { timeoutMs?: number; url?: string; waitUntil?: LoadState }): Promise<T>; // Expect a navigation triggered by an action.",
+            "references": [
+              "LoadState"
+            ]
+          }
+        ]
+      },
+      "frameLocator": {
+        "declarations": [
+          {
+            "text": "frameLocator(frameSelector: string): PlaywrightFrameLocator; // Create a frame-scoped locator builder.",
+            "references": [
+              "PlaywrightFrameLocator"
+            ]
+          }
+        ]
+      },
+      "getByLabel": {
+        "declarations": [
+          {
+            "text": "getByLabel(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by label text within the page.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByPlaceholder": {
+        "declarations": [
+          {
+            "text": "getByPlaceholder(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by placeholder text within the page.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByRole": {
+        "declarations": [
+          {
+            "text": "getByRole(role: string, options: { exact?: boolean; name?: TextMatcher }): PlaywrightLocator; // Find elements by ARIA role within the page.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByTestId": {
+        "declarations": [
+          {
+            "text": "getByTestId(testId: string): PlaywrightLocator; // Find elements by test id within the page.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByText": {
+        "declarations": [
+          {
+            "text": "getByText(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by text within the page.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "locator": {
+        "declarations": [
+          {
+            "text": "locator(selector: string): PlaywrightLocator; // Create a locator scoped to this tab.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "waitForEvent": {
+        "declarations": [
+          {
+            "text": "waitForEvent(event: \"download\", options?: WaitForEventOptions): Promise<PlaywrightDownload>; // Wait for the next event on the page.",
+            "references": [
+              "WaitForEventOptions",
+              "PlaywrightDownload"
+            ]
+          },
+          {
+            "text": "waitForEvent(event: \"filechooser\", options?: WaitForEventOptions): Promise<PlaywrightFileChooser>;",
+            "references": [
+              "WaitForEventOptions",
+              "PlaywrightFileChooser"
+            ],
+            "unsupportedByDefaultIn": [
+              "iab"
+            ]
+          }
+        ]
+      },
+      "waitForLoadState": {
+        "declarations": [
+          {
+            "text": "waitForLoadState(options: PageWaitForLoadStateOptions): Promise<void>; // Wait for the page to reach a specific load state.",
+            "references": [
+              "PageWaitForLoadStateOptions"
+            ]
+          }
+        ]
+      },
+      "waitForTimeout": {
+        "declarations": [
+          {
+            "text": "waitForTimeout(timeoutMs: number): Promise<void>; // Wait for a fixed duration.",
+            "references": []
+          }
+        ]
+      },
+      "waitForURL": {
+        "declarations": [
+          {
+            "text": "waitForURL(url: string, options: PageWaitForURLOptions): Promise<void>; // Wait for the page URL to match the provided value.",
+            "references": [
+              "PageWaitForURLOptions"
+            ]
+          }
+        ]
+      }
+    },
+    "PlaywrightFrameLocator": {
+      "frameLocator": {
+        "declarations": [
+          {
+            "text": "frameLocator(frameSelector: string): PlaywrightFrameLocator; // Create a locator scoped to a nested frame.",
+            "references": [
+              "PlaywrightFrameLocator"
+            ]
+          }
+        ]
+      },
+      "getByLabel": {
+        "declarations": [
+          {
+            "text": "getByLabel(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by label within this frame.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByPlaceholder": {
+        "declarations": [
+          {
+            "text": "getByPlaceholder(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by placeholder within this frame.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByRole": {
+        "declarations": [
+          {
+            "text": "getByRole(role: string, options: { exact?: boolean; name?: TextMatcher }): PlaywrightLocator; // Find elements by ARIA role within this frame.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByTestId": {
+        "declarations": [
+          {
+            "text": "getByTestId(testId: string): PlaywrightLocator; // Find elements by test id within this frame.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByText": {
+        "declarations": [
+          {
+            "text": "getByText(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by text within this frame.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "locator": {
+        "declarations": [
+          {
+            "text": "locator(selector: string): PlaywrightLocator; // Create a locator scoped to this frame.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      }
+    },
+    "PlaywrightLocator": {
+      "all": {
+        "declarations": [
+          {
+            "text": "all(): Promise<Array<PlaywrightLocator>>; // Resolve to a list of locators for each matched element.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "allTextContents": {
+        "declarations": [
+          {
+            "text": "allTextContents(options: { timeoutMs?: number }): Promise<Array<string>>; // Return `textContent` for *all* elements matched by this locator.",
+            "references": []
+          }
+        ]
+      },
+      "and": {
+        "declarations": [
+          {
+            "text": "and(locator: PlaywrightLocator): PlaywrightLocator; // Return a locator matching elements that satisfy both this locator and `locator`.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "check": {
+        "declarations": [
+          {
+            "text": "check(options: LocatorCheckOptions): Promise<void>; // Check a checkbox or switch-like control.",
+            "references": [
+              "LocatorCheckOptions"
+            ]
+          }
+        ]
+      },
+      "click": {
+        "declarations": [
+          {
+            "text": "click(options: LocatorClickOptions): Promise<void>; // Click the element matched by this locator.",
+            "references": [
+              "LocatorClickOptions"
+            ]
+          }
+        ]
+      },
+      "count": {
+        "declarations": [
+          {
+            "text": "count(): Promise<number>; // Number of elements matching this locator.",
+            "references": []
+          }
+        ]
+      },
+      "dblclick": {
+        "declarations": [
+          {
+            "text": "dblclick(options: LocatorClickOptions): Promise<void>; // Double-click the element matched by this locator.",
+            "references": [
+              "LocatorClickOptions"
+            ]
+          }
+        ]
+      },
+      "downloadMedia": {
+        "declarations": [
+          {
+            "text": "downloadMedia(options: LocatorDownloadMediaOptions): Promise<void>; // Trigger a download for the media or file link in the first matched element.",
+            "references": [
+              "LocatorDownloadMediaOptions"
+            ]
+          }
+        ]
+      },
+      "fill": {
+        "declarations": [
+          {
+            "text": "fill(value: string, options: { timeoutMs?: number }): Promise<void>; // Replace the element's value with the provided text.",
+            "references": []
+          }
+        ]
+      },
+      "filter": {
+        "declarations": [
+          {
+            "text": "filter(options: LocatorFilterOptions): PlaywrightLocator; // Narrow this locator by additional constraints.",
+            "references": [
+              "LocatorFilterOptions",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "first": {
+        "declarations": [
+          {
+            "text": "first(): PlaywrightLocator; // Return a locator pointing at the first matched element.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getAttribute": {
+        "declarations": [
+          {
+            "text": "getAttribute(name: string, options: { timeoutMs?: number }): Promise<null | string>; // Return an attribute value from the first matched element.",
+            "references": []
+          }
+        ]
+      },
+      "getByLabel": {
+        "declarations": [
+          {
+            "text": "getByLabel(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by label text, scoped to this locator.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByPlaceholder": {
+        "declarations": [
+          {
+            "text": "getByPlaceholder(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by placeholder text, scoped to this locator.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByRole": {
+        "declarations": [
+          {
+            "text": "getByRole(role: string, options: { exact?: boolean; name?: TextMatcher }): PlaywrightLocator; // Find elements by ARIA role, scoped to this locator.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByTestId": {
+        "declarations": [
+          {
+            "text": "getByTestId(testId: string): PlaywrightLocator; // Find elements by test id, scoped to this locator.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "getByText": {
+        "declarations": [
+          {
+            "text": "getByText(text: TextMatcher, options: { exact?: boolean }): PlaywrightLocator; // Find elements by text content, scoped to this locator.",
+            "references": [
+              "TextMatcher",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "innerText": {
+        "declarations": [
+          {
+            "text": "innerText(options: { timeoutMs?: number }): Promise<string>; // Return the rendered (visible) text of the first matched element.",
+            "references": []
+          }
+        ]
+      },
+      "isEnabled": {
+        "declarations": [
+          {
+            "text": "isEnabled(): Promise<boolean>; // Whether the first matched element is currently enabled.",
+            "references": []
+          }
+        ]
+      },
+      "isVisible": {
+        "declarations": [
+          {
+            "text": "isVisible(): Promise<boolean>; // Whether the first matched element is currently visible.",
+            "references": []
+          }
+        ]
+      },
+      "last": {
+        "declarations": [
+          {
+            "text": "last(): PlaywrightLocator; // Return a locator pointing at the last matched element.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "locator": {
+        "declarations": [
+          {
+            "text": "locator(selector: string, options: LocatorLocatorOptions): PlaywrightLocator; // Create a descendant locator scoped to this locator.",
+            "references": [
+              "LocatorLocatorOptions",
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "nth": {
+        "declarations": [
+          {
+            "text": "nth(index: number): PlaywrightLocator; // Return a locator pointing at the Nth matched element.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "or": {
+        "declarations": [
+          {
+            "text": "or(locator: PlaywrightLocator): PlaywrightLocator; // Return a locator matching elements that satisfy either this locator or `locator`.",
+            "references": [
+              "PlaywrightLocator"
+            ]
+          }
+        ]
+      },
+      "press": {
+        "declarations": [
+          {
+            "text": "press(value: string, options: { timeoutMs?: number }): Promise<void>; // Press a keyboard key while this locator is focused.",
+            "references": []
+          }
+        ]
+      },
+      "selectOption": {
+        "declarations": [
+          {
+            "text": "selectOption(value: SelectOptionInput | Array<SelectOptionInput>, options: { timeoutMs?: number }): Promise<void>; // Select one or more options on a native `<select>` element.",
+            "references": [
+              "SelectOptionInput"
+            ]
+          }
+        ]
+      },
+      "setChecked": {
+        "declarations": [
+          {
+            "text": "setChecked(checked: boolean, options: LocatorCheckOptions): Promise<void>; // Set a checkbox or switch-like control to a checked/unchecked state.",
+            "references": [
+              "LocatorCheckOptions"
+            ]
+          }
+        ]
+      },
+      "textContent": {
+        "declarations": [
+          {
+            "text": "textContent(options: { timeoutMs?: number }): Promise<null | string>; // Return the raw textContent of the first matched element (or null if missing).",
+            "references": []
+          }
+        ]
+      },
+      "type": {
+        "declarations": [
+          {
+            "text": "type(value: string, options: { timeoutMs?: number }): Promise<void>; // Type text into the element without clearing existing content.",
+            "references": []
+          }
+        ]
+      },
+      "uncheck": {
+        "declarations": [
+          {
+            "text": "uncheck(options: LocatorCheckOptions): Promise<void>; // Uncheck a checkbox or switch-like control.",
+            "references": [
+              "LocatorCheckOptions"
+            ]
+          }
+        ]
+      },
+      "waitFor": {
+        "declarations": [
+          {
+            "text": "waitFor(options: LocatorWaitForOptions): Promise<void>; // Wait for the element to reach a specific state.",
+            "references": [
+              "LocatorWaitForOptions"
+            ]
+          }
+        ]
+      }
+    },
+    "PlaywrightDownload": {
+      "path": {
+        "declarations": [
+          {
+            "text": "path(options: { timeoutMs?: number }): Promise<null | string>; // Return the local path to the downloaded file, if available.",
+            "references": []
+          }
+        ],
+        "documented": false
+      }
+    },
+    "PlaywrightFileChooser": {
+      "isMultiple": {
+        "declarations": [
+          {
+            "text": "isMultiple(): boolean; // Whether the input allows selecting multiple files.",
+            "references": []
+          }
+        ]
+      },
+      "setFiles": {
+        "declarations": [
+          {
+            "text": "setFiles(files: FileChooserFiles, options: { timeoutMs?: number }): Promise<void>; // Set the files for this chooser.",
+            "references": [
+              "FileChooserFiles"
+            ]
+          }
+        ],
+        "unsupportedByDefaultIn": [
+          "iab"
+        ]
+      }
+    },
+    "TabClipboardAPI": {
+      "read": {
+        "declarations": [
+          {
+            "text": "read(): Promise<Array<TabClipboardItem>>; // Read clipboard items, including text and binary payloads.",
+            "references": [
+              "TabClipboardItem"
+            ]
+          }
+        ]
+      },
+      "readText": {
+        "declarations": [
+          {
+            "text": "readText(): Promise<string>; // Read plain text from the browser clipboard.",
+            "references": []
+          }
+        ]
+      },
+      "write": {
+        "declarations": [
+          {
+            "text": "write(items: Array<TabClipboardItem>): Promise<void>; // Write clipboard items.",
+            "references": [
+              "TabClipboardItem"
+            ]
+          }
+        ]
+      },
+      "writeText": {
+        "declarations": [
+          {
+            "text": "writeText(text: string): Promise<void>; // Write plain text to the browser clipboard.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "TabDevAPI": {
+      "logs": {
+        "declarations": [
+          {
+            "text": "logs(options: TabDevLogsOptions): Promise<Array<TabDevLogEntry>>; // Read console log messages captured for this tab.",
+            "references": [
+              "TabDevLogsOptions",
+              "TabDevLogEntry"
+            ]
+          }
+        ]
+      }
+    },
+    "AlertDialog": {
+      "type": {
+        "declarations": [
+          {
+            "text": "type: \"alert\";",
+            "references": []
+          }
+        ]
+      },
+      "dismiss": {
+        "declarations": [
+          {
+            "text": "dismiss(): Promise<void>;",
+            "references": []
+          }
+        ]
+      }
+    },
+    "BeforeUnloadDialog": {
+      "type": {
+        "declarations": [
+          {
+            "text": "type: \"beforeunload\";",
+            "references": []
+          }
+        ]
+      },
+      "dismiss": {
+        "declarations": [
+          {
+            "text": "dismiss(): Promise<void>;",
+            "references": []
+          }
+        ]
+      }
+    },
+    "BrowserDocumentation": {
+      "api": {
+        "declarations": [
+          {
+            "text": "api(): Promise<string>; // Read the API reference for the selected browser surface.",
+            "references": []
+          }
+        ]
+      },
+      "get": {
+        "declarations": [
+          {
+            "text": "get(name: string): Promise<string>; // Read packaged documentation by its extensionless relative path.",
+            "references": []
+          }
+        ]
+      },
+      "guidance": {
+        "declarations": [
+          {
+            "text": "guidance(): Promise<unknown>; // Read guidance included for the effective browser surface.",
+            "references": []
+          }
+        ]
+      },
+      "lookupCatalog": {
+        "declarations": [
+          {
+            "text": "lookupCatalog(): undefined | string; // Format documents available for explicit lookup on this browser surface.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "ConfirmDialog": {
+      "type": {
+        "declarations": [
+          {
+            "text": "type: \"confirm\";",
+            "references": []
+          }
+        ]
+      },
+      "accept": {
+        "declarations": [
+          {
+            "text": "accept(): Promise<void>;",
+            "references": []
+          }
+        ]
+      },
+      "dismiss": {
+        "declarations": [
+          {
+            "text": "dismiss(): Promise<void>;",
+            "references": []
+          }
+        ]
+      }
+    },
+    "Documentation": {
+      "get": {
+        "declarations": [
+          {
+            "text": "get(name: string): Promise<string>; // Read packaged documentation by its extensionless relative path.",
+            "references": []
+          }
+        ]
+      }
+    },
+    "PromptDialog": {
+      "type": {
+        "declarations": [
+          {
+            "text": "type: \"prompt\";",
+            "references": []
+          }
+        ]
+      },
+      "accept": {
+        "declarations": [
+          {
+            "text": "accept(text: string): Promise<void>;",
+            "references": []
+          }
+        ]
+      },
+      "dismiss": {
+        "declarations": [
+          {
+            "text": "dismiss(): Promise<void>;",
+            "references": []
+          }
+        ]
+      }
+    }
+  },
+  "root": "Agent",
+  "types": {
+    "BrowserCapabilityCollection": {
+      "text": "type BrowserCapabilityCollection = {\n  get(id: string): Promise<unknown>;\n  list(): Promise<Array<{ id: string; description: string }>>;\n};",
+      "references": []
+    },
+    "BrowserUserTabInfo": {
+      "text": "interface BrowserUserTabInfo {\n  id: string; // Opaque identifier for this browser tab.\n  lastOpened?: string; // ISO 8601 timestamp for the last time the tab was opened or focused.\n  tabGroup?: string; // User-visible tab group name when the tab belongs to one.\n  title?: string; // User-visible tab title.\n  url?: string; // Current tab URL.\n}",
+      "references": []
+    },
+    "BrowserHistoryOptions": {
+      "text": "interface BrowserHistoryOptions {\n  from?: string | Date; // Lower bound for visit timestamps.\n  limit?: number; // Maximum number of history entries to return.\n  queries?: Array<string>; // Optional terms to filter browser history with.\n  to?: string | Date; // Upper bound for visit timestamps.\n}",
+      "references": []
+    },
+    "BrowserHistoryEntry": {
+      "text": "interface BrowserHistoryEntry {\n  dateVisited: string; // ISO 8601 timestamp for the visit.\n  title?: string; // Page title captured for the visit.\n  url: string; // Visited URL.\n}",
+      "references": []
+    },
+    "TabsContentOptions": {
+      "text": "interface TabsContentOptions {\n  contentType: TabsContentType; // Content representation to extract from each page.\n  timeoutMs?: number; // Maximum time to wait for each page load, in milliseconds.\n  urls: Array<string>; // URLs to load in temporary background tabs.\n}",
+      "references": [
+        "TabsContentType"
+      ]
+    },
+    "TabsContentResult": {
+      "text": "interface TabsContentResult {\n  content: null | string; // Extracted page content or null if the page failed to load or extract.\n  title: null | string; // The resolved page title when available.\n  url: string; // The resolved page URL when available, otherwise the requested URL.\n}",
+      "references": []
+    },
+    "FinalizeTabsOptions": {
+      "text": "interface FinalizeTabsOptions {\n  keep?: Array<FinalizeTabsKeep>; // Explicit tab dispositions to preserve after cleanup.\n}",
+      "references": [
+        "FinalizeTabsKeep"
+      ]
+    },
+    "TabInfo": {
+      "text": "interface TabInfo {\n  id: string; // Metadata describing an open tab.\n  title?: string;\n  url?: string;\n}",
+      "references": []
+    },
+    "TabCapabilityCollection": {
+      "text": "type TabCapabilityCollection = {\n  get(id: string): Promise<unknown>;\n  list(): Promise<Array<{ id: string; description: string }>>;\n};",
+      "references": []
+    },
+    "Dialog": {
+      "text": "type Dialog = AlertDialog | BeforeUnloadDialog | ConfirmDialog | PromptDialog;",
+      "references": [
+        "AlertDialog",
+        "BeforeUnloadDialog",
+        "ConfirmDialog",
+        "PromptDialog"
+      ]
+    },
+    "ScreenshotOptions": {
+      "text": "type ScreenshotOptions = {\n  clip?: ClipRect; // Crop to a specific rectangle instead of the full viewport.\n  fullPage?: boolean; // Capture the full page instead of the viewport.\n};",
+      "references": [
+        "ClipRect"
+      ]
+    },
+    "ClickOptions": {
+      "text": "type ClickOptions = {\n  button?: number; // Mouse button (1-left, 2-middle/wheel, 3-right, 4-back, 5-forward).\n  keypress?: Array<string>; // Modifier keys held during the click.\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "DoubleClickOptions": {
+      "text": "type DoubleClickOptions = {\n  keypress?: Array<string>; // Modifier keys held during the double click.\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "CuaDownloadMediaOptions": {
+      "text": "type CuaDownloadMediaOptions = {\n  timeoutMs?: number;\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "DragOptions": {
+      "text": "type DragOptions = {\n  keys?: Array<string>; // Optional modifier keys held during the drag.\n  path: Array<{ x: number; y: number }>; // Drag path as a list of points.\n};",
+      "references": []
+    },
+    "KeypressOptions": {
+      "text": "type KeypressOptions = {\n  keys: Array<string>; // Key combination to press.\n};",
+      "references": []
+    },
+    "MoveOptions": {
+      "text": "type MoveOptions = {\n  keys?: Array<string>; // Optional modifier keys held while moving.\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "ScrollOptions": {
+      "text": "type ScrollOptions = {\n  keypress?: Array<string>; // Modifier keys held during scroll.\n  scrollX: number;\n  scrollY: number;\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "TypeOptions": {
+      "text": "type TypeOptions = {\n  text: string;\n};",
+      "references": []
+    },
+    "DomClickOptions": {
+      "text": "type DomClickOptions = {\n  node_id: string; // Node id from `get_visible_dom()`.\n};",
+      "references": []
+    },
+    "DomDownloadMediaOptions": {
+      "text": "type DomDownloadMediaOptions = {\n  node_id: string; // Node id from `get_visible_dom()`.\n  timeoutMs?: number;\n};",
+      "references": []
+    },
+    "DomKeypressOptions": {
+      "text": "type DomKeypressOptions = {\n  keys: Array<string>; // Key combination to press.\n};",
+      "references": []
+    },
+    "DomScrollOptions": {
+      "text": "type DomScrollOptions = {\n  node_id?: string; // Optional node id to scroll within.\n  x: number; // Horizontal scroll delta.\n  y: number; // Vertical scroll delta.\n};",
+      "references": []
+    },
+    "DomTypeOptions": {
+      "text": "type DomTypeOptions = {\n  text: string; // Text to type into the currently focused element.\n};",
+      "references": []
+    },
+    "ElementInfoOptions": {
+      "text": "type ElementInfoOptions = {\n  includeNonInteractable?: boolean; // When true, include non-interactable elements in addition to interactable targets.\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "ElementInfo": {
+      "text": "type ElementInfo = {\n  ariaName?: string | null; // Accessible name if available.\n  boundingBox?: ElementInfoRect | null; // Element bounds in screenshot coordinates.\n  nodeId?: number | null; // Backend node id that can be passed to DOM-inspection APIs when available.\n  preview: string; // Compact human-readable node preview.\n  role?: string | null; // Computed ARIA role if available.\n  selector: ElementInfoSelector; // Suggested selector data for this element.\n  tagName: string; // Lowercased HTML tag name.\n  testId?: string | null; // Configured test id attribute if present.\n  visibleText?: string | null; // Rendered visible text, selected option text, or visible form value when available.\n};",
+      "references": [
+        "ElementInfoRect",
+        "ElementInfoSelector"
+      ]
+    },
+    "ElementScreenshotOptions": {
+      "text": "type ElementScreenshotOptions = {\n  includeNonInteractable?: boolean; // When true, highlight non-interactable elements in addition to interactable targets.\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "PlaywrightEvaluateFunction": {
+      "text": "type PlaywrightEvaluateFunction<TArg, TResult> = string | (arg: TArg) => TResult | Promise<TResult>;",
+      "references": []
+    },
+    "PlaywrightEvaluateOptions": {
+      "text": "type PlaywrightEvaluateOptions = {\n  timeoutMs?: number; // Maximum time to spend setting up the read-only DOM scope and running the script.\n};",
+      "references": []
+    },
+    "LoadState": {
+      "text": "type LoadState = \"load\" | \"domcontentloaded\" | \"networkidle\";",
+      "references": []
+    },
+    "TextMatcher": {
+      "text": "type TextMatcher = string | RegExp;",
+      "references": []
+    },
+    "WaitForEventOptions": {
+      "text": "type WaitForEventOptions = {\n  timeoutMs?: number;\n};",
+      "references": []
+    },
+    "PageWaitForLoadStateOptions": {
+      "text": "type PageWaitForLoadStateOptions = {\n  state?: LoadState;\n  timeoutMs?: number;\n};",
+      "references": [
+        "LoadState"
+      ]
+    },
+    "PageWaitForURLOptions": {
+      "text": "type PageWaitForURLOptions = {\n  timeoutMs?: number;\n  waitUntil?: WaitUntil;\n};",
+      "references": [
+        "WaitUntil"
+      ]
+    },
+    "LocatorCheckOptions": {
+      "text": "type LocatorCheckOptions = {\n  force?: boolean;\n  timeoutMs?: number;\n};",
+      "references": []
+    },
+    "LocatorClickOptions": {
+      "text": "type LocatorClickOptions = {\n  button?: MouseButton;\n  force?: boolean;\n  modifiers?: Array<KeyboardModifier>;\n  timeoutMs?: number;\n};",
+      "references": [
+        "MouseButton",
+        "KeyboardModifier"
+      ]
+    },
+    "LocatorDownloadMediaOptions": {
+      "text": "type LocatorDownloadMediaOptions = {\n  timeoutMs?: number;\n};",
+      "references": []
+    },
+    "LocatorFilterOptions": {
+      "text": "type LocatorFilterOptions = {\n  has?: PlaywrightLocator;\n  hasNot?: PlaywrightLocator;\n  hasNotText?: TextMatcher;\n  hasText?: TextMatcher;\n  visible?: boolean;\n};",
+      "references": [
+        "PlaywrightLocator",
+        "TextMatcher"
+      ]
+    },
+    "LocatorLocatorOptions": {
+      "text": "type LocatorLocatorOptions = {\n  has?: PlaywrightLocator;\n  hasNot?: PlaywrightLocator;\n  hasNotText?: TextMatcher;\n  hasText?: TextMatcher;\n};",
+      "references": [
+        "PlaywrightLocator",
+        "TextMatcher"
+      ]
+    },
+    "SelectOptionInput": {
+      "text": "type SelectOptionInput = string | SelectOptionDescriptor;",
+      "references": [
+        "SelectOptionDescriptor"
+      ]
+    },
+    "LocatorWaitForOptions": {
+      "text": "type LocatorWaitForOptions = {\n  state: WaitForState;\n  timeoutMs?: number;\n};",
+      "references": [
+        "WaitForState"
+      ]
+    },
+    "FileChooserFiles": {
+      "text": "type FileChooserFiles = string | Array<string>;",
+      "references": []
+    },
+    "TabClipboardItem": {
+      "text": "type TabClipboardItem = {\n  entries: Array<TabClipboardEntry>;\n  presentationStyle?: \"unspecified\" | \"inline\" | \"attachment\";\n};",
+      "references": [
+        "TabClipboardEntry"
+      ]
+    },
+    "TabDevLogsOptions": {
+      "text": "interface TabDevLogsOptions {\n  filter?: string; // Optional substring filter applied to the rendered log message.\n  levels?: Array<\"debug\" | \"info\" | \"log\" | \"warn\" | \"error\" | \"warning\">; // Optional levels to include.\n  limit?: number; // Maximum number of logs to return.\n}",
+      "references": []
+    },
+    "TabDevLogEntry": {
+      "text": "interface TabDevLogEntry {\n  level: \"debug\" | \"info\" | \"log\" | \"warn\" | \"error\"; // Console log level.\n  message: string; // Rendered log message text.\n  timestamp: string; // ISO 8601 timestamp for when the runtime captured the log.\n  url?: string; // Source URL reported by the browser runtime, when available.\n}",
+      "references": []
+    },
+    "TabsContentType": {
+      "text": "type TabsContentType = \"html\" | \"text\" | \"domSnapshot\";",
+      "references": []
+    },
+    "FinalizeTabsKeep": {
+      "text": "interface FinalizeTabsKeep {\n  status: FinalizeTabStatus; // Where the kept tab belongs after cleanup.\n  tab: string | Tab | TabInfo; // Tab object to keep open after browser cleanup.\n}",
+      "references": [
+        "FinalizeTabStatus",
+        "Tab",
+        "TabInfo"
+      ]
+    },
+    "ClipRect": {
+      "text": "type ClipRect = {\n  height: number;\n  width: number;\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "ElementInfoRect": {
+      "text": "type ElementInfoRect = {\n  height: number;\n  width: number;\n  x: number;\n  y: number;\n};",
+      "references": []
+    },
+    "ElementInfoSelector": {
+      "text": "type ElementInfoSelector = {\n  candidates: Array<string>; // Ranked selector candidates for the element.\n  frameSelectors?: Array<string>; // Frame selectors to enter before using the element selector.\n  primary?: string | null; // The preferred selector for the element when available.\n};",
+      "references": []
+    },
+    "WaitUntil": {
+      "text": "type WaitUntil = LoadState | \"commit\";",
+      "references": [
+        "LoadState"
+      ]
+    },
+    "MouseButton": {
+      "text": "type MouseButton = \"left\" | \"right\" | \"middle\";",
+      "references": []
+    },
+    "KeyboardModifier": {
+      "text": "type KeyboardModifier = \"Alt\" | \"Control\" | \"ControlOrMeta\" | \"Meta\" | \"Shift\";",
+      "references": []
+    },
+    "SelectOptionDescriptor": {
+      "text": "type SelectOptionDescriptor = {\n  index?: number;\n  label?: string;\n  value?: string;\n};",
+      "references": []
+    },
+    "WaitForState": {
+      "text": "type WaitForState = \"attached\" | \"detached\" | \"visible\" | \"hidden\";",
+      "references": []
+    },
+    "TabClipboardEntry": {
+      "text": "type TabClipboardEntry = {\n  base64?: string;\n  mimeType: string;\n  text?: string;\n};",
+      "references": []
+    },
+    "FinalizeTabStatus": {
+      "text": "type FinalizeTabStatus = \"handoff\" | \"deliverable\";",
+      "references": []
+    }
+  }
+}

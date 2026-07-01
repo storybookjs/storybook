@@ -17,8 +17,10 @@ context only and should not be encoded as expected behavior.
   quality. Do not make every eval depend on a judge yet.
 - Add new eval fixtures only for behavior branches the current 901-915 corpus does not
   naturally cover.
-- Port all old 901-915 eval fixtures into `agent-eval`; experiment configs should run
-  the complete selected corpus for each agent/integration rather than a smoke subset.
+- Port all old 901-915 eval fixtures into `agent-eval`. Rollout is incremental: CI
+  starts from a small smoke subset to control sandbox/token costs and scales toward
+  the complete corpus per agent/integration as the pipeline stabilizes (see
+  storybookjs/mcp#315 for the current scope).
 - Keep known product/model failures out of ad hoc JSON allowlists. If a failure is
   intentionally not fixed, track it in the GitHub issue and document the relaxation
   immediately above the relevant assertion or shared assertion helper.

@@ -277,6 +277,18 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 	return getStoryInputs(call.input).some((input) => typeof input.storyId === 'string');
 }
 
+// Soft-quality curation model from the Agentic Review Eval instructions (§5/§6b):
+// scored by the LLM judge rather than gated mechanically, because "meaningful
+// grouping" and "useful rationale" are judgment calls.
+export const DISPLAY_REVIEW_CURATION_CRITERION = [
+	'The final display-review tool call publishes a well-curated review.',
+	'It groups stories into 2 to 5 collections.',
+	'No collection contains only a single story, unless there are too few stories to avoid it.',
+	"Collections follow a meaningful layering, such as the changed component's visual states, its interaction behavior, or the surfaces that consume it — not arbitrary groupings.",
+	'Each collection has a rationale that explains why those stories are worth reviewing for this change.',
+	'The review title and description use plain language and avoid internal tooling jargon such as "collection" or "trigger".',
+].join(' ');
+
 export const A11Y_VISUAL_CHANGE_APPROVAL_CRITERION = [
 	'The final response explains the remaining visual color contrast accessibility concern.',
 	'It asks the user before changing visual or design colors.',

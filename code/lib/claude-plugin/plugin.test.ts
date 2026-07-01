@@ -40,6 +40,23 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 	};
 }
 
+describe('Claude launch skill guidance', () => {
+	it('keeps Claude launch guidance scoped to autoPort without shell interpolation', () => {
+		const launchSkill = readFileSync(
+			resolve(packageRoot, 'skills/storybook-setup-claude-launch/SKILL.md'),
+			'utf8',
+		);
+
+		expect(launchSkill).toContain('autoPort: true');
+		expect(launchSkill).toContain('preferred package manager');
+		expect(launchSkill).toContain('existing Storybook script');
+		expect(launchSkill).toContain('Storybook invocation directory');
+		expect(launchSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
+		expect(launchSkill).not.toMatch(/runtimeArgs[\s\S]+storybook[\s\S]+dev/i);
+		expect(launchSkill).not.toContain('--ci');
+	});
+});
+
 describe('Storybook Claude plugin CLI validation', () => {
 	it('keeps root and package-local marketplaces in sync', () => {
 		const packageMarketplace = readMarketplace(

@@ -50,7 +50,10 @@ export interface NumberConfig {
 export type RangeConfig = NumberConfig;
 
 export type ObjectValue = any;
-export interface ObjectConfig {}
+export interface ObjectConfig {
+  /** Show the raw JSON editor by default for object controls. */
+  useRaw?: boolean;
+}
 
 export type OptionsSingleSelection = any;
 export type OptionsMultiSelection = any[];

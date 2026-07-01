@@ -283,12 +283,15 @@ export const usePreviewThumbnail = ({
       finished: false,
     };
     taskRef.current = task;
+    // Spinner while queued for a concurrency slot, not only after src is assigned.
+    setIsPreviewLoading(true);
     enqueuePreview(task);
     return () => {
       finishPreview(task);
       taskRef.current = null;
+      resetLoad();
     };
-  }, [isInView, storyId, getPreviewHref]);
+  }, [isInView, storyId, getPreviewHref, resetLoad]);
 
   const finishCurrent = useCallback(() => {
     if (taskRef.current) {

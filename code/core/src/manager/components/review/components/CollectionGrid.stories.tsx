@@ -153,6 +153,36 @@ export const Default = meta.story({
   },
 });
 
+export const QueuedPreviewShowsLoader = meta.story({
+  args: {
+    storyIds: [
+      'manager-main--default',
+      'manager-settings-aboutscreen--default',
+      'manager-sidebar-sidebar--simple',
+      'button-component--base',
+      'button-component--variants',
+    ],
+    showAll: true,
+  },
+  globals: { viewport: { value: 'desktop' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cells = await canvas.findAllByTestId('review-collection-grid-cell');
+    expect(cells.length).toBe(5);
+
+    await waitFor(() => {
+      const started = cells.filter((cell) => cell.querySelector('iframe[src]'));
+      expect(started.length).toBeGreaterThanOrEqual(3);
+    });
+
+    const queuedCells = cells.filter((cell) => !cell.querySelector('iframe[src]'));
+    expect(queuedCells.length).toBeGreaterThan(0);
+    for (const cell of queuedCells) {
+      expect(within(cell).getByTestId('review-preview-loading')).toBeInTheDocument();
+    }
+  },
+});
+
 export const PreviewLoadingSettle = meta.story({
   args: {
     storyIds: ['manager-main--default'],

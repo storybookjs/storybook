@@ -25,7 +25,7 @@ import { inspect } from 'node:util';
 const SERVER_INFO = { name: 'node_repl', version: '1.5.0' };
 
 const SERVER_INSTRUCTIONS =
-	'Use `js` to run JavaScript in the persistent Node-backed kernel. When a skill or prompt says to use `node_repl`, call this server\'s `js` execution tool. Calls default to a 30000 ms (30 seconds) timeout when `timeout_ms` is omitted. The runtime exposes `nodeRepl.cwd`, `nodeRepl.homeDir`, `nodeRepl.tmpDir`, `nodeRepl.requestMeta`, `nodeRepl.setResponseMeta(...)`, and `await nodeRepl.emitImage(...)`.';
+	"Use `js` to run JavaScript in the persistent Node-backed kernel. When a skill or prompt says to use `node_repl`, call this server's `js` execution tool. Calls default to a 30000 ms (30 seconds) timeout when `timeout_ms` is omitted. The runtime exposes `nodeRepl.cwd`, `nodeRepl.homeDir`, `nodeRepl.tmpDir`, `nodeRepl.requestMeta`, `nodeRepl.setResponseMeta(...)`, and `await nodeRepl.emitImage(...)`.";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -71,7 +71,8 @@ const TOOLS = [
 				path: {
 					type: 'string',
 					minLength: 1,
-					description: 'Absolute path to a node_modules directory to add to Node package resolution.',
+					description:
+						'Absolute path to a node_modules directory to add to Node package resolution.',
 				},
 			},
 			required: ['path'],

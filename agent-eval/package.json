@@ -12,6 +12,7 @@
 		"eval:report": "node ./scripts/report-ci.mjs",
 		"playground": "agent-eval playground",
 		"playground:build": "next build --webpack",
+		"playground:check-routes": "node ./scripts/check-playground-routes.mjs",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

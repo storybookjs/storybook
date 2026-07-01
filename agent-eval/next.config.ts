@@ -10,7 +10,7 @@ const playgroundRoot = dirname(require.resolve('@vercel/agent-eval-playground/pa
 const nextConfig: NextConfig = {
 	outputFileTracingRoot: projectRoot,
 	outputFileTracingIncludes: {
-		'/*': ['./evals/**/*', './results/**/*'],
+		'/**': ['./evals/**/*', './results/**/*'],
 	},
 	typescript: {
 		tsconfigPath: 'tsconfig.playground.json',
@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
 	webpack(config) {
 		config.resolve ??= {};
 		config.resolve.alias = {
-			...(config.resolve.alias ?? {}),
+			...config.resolve.alias,
+			// playground:build uses --webpack; keep this in sync with tsconfig.playground.json and the route shim checker.
 			'@': playgroundRoot,
 		};
 

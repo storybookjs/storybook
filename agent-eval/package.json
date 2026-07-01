@@ -9,6 +9,7 @@
 	"scripts": {
 		"eval": "agent-eval",
 		"eval:dry": "agent-eval --dry",
+		"eval:report": "node ./scripts/report-ci.mjs",
 		"playground": "agent-eval playground",
 		"typecheck": "tsc --noEmit"
 	},

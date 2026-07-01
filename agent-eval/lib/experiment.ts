@@ -42,7 +42,7 @@ export const CLAUDE_PLUGIN_EVALS = [
 export const defaultExperimentConfig = {
 	runs: 1,
 	earlyExit: true,
-	sandbox: 'auto',
+	sandbox: 'docker',
 	copyFiles: 'all',
 	scripts: ['typecheck', 'lint', 'build', 'test:stories'],
 } satisfies Partial<ExperimentConfig>;

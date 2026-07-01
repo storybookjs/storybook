@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { type FC } from 'react';
 
-import { expect, waitFor, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { StoryInfo } from '../review-types.ts';
-import { CollectionGrid } from './CollectionGrid.tsx';
+import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
+import { CollectionGrid, type CollectionGridProps } from './CollectionGrid.tsx';
 
 // 40 unique story IDs drawn from real internal stories.
 const fortyStoryIds = [
@@ -103,6 +104,39 @@ const meta = preview.meta({
   },
 });
 
+const previewHref = (storyId: string) =>
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
+
+const dispatchIframeResize = (cell: HTMLElement, width: number, height: number) => {
+  const contentWindow = cell.querySelector('iframe')?.contentWindow;
+  if (!contentWindow) {
+    throw new Error('Preview iframe has no contentWindow');
+  }
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      data: JSON.stringify({ context: IFRAME_RESIZE_CONTEXT, width, height }),
+      source: contentWindow,
+    })
+  );
+};
+
+/** Loader cleared after iframe src is assigned and resize is applied. */
+const waitForCellPreviewSettled = async (
+  cell: HTMLElement,
+  dimensions = { width: 320, height: 240 }
+) => {
+  await waitFor(() => {
+    expect(cell.querySelector('iframe')?.getAttribute('src')).toContain('embed=true');
+  });
+  dispatchIframeResize(cell, dimensions.width, dimensions.height);
+  await waitFor(() => {
+    expect(within(cell).queryByTestId('review-preview-loading')).not.toBeInTheDocument();
+    expect(Number(cell.querySelector('iframe')?.getAttribute('data-content-width'))).toBe(
+      dimensions.width
+    );
+  });
+};
+
 export const Default = meta.story({
   play: async ({ canvasElement }) => {
     const cells = await within(canvasElement).findAllByTestId('review-collection-grid-cell');
@@ -113,6 +147,62 @@ export const Default = meta.story({
         expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
       }
     });
+  },
+});
+
+export const PreviewLoadingSettle = meta.story({
+  args: {
+    storyIds: ['manager-main--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cell = await canvas.findByTestId('review-collection-grid-cell');
+    await waitForCellPreviewSettled(cell);
+
+    // Duplicate iframe.resize payloads should not leave the loader stuck.
+    dispatchIframeResize(cell, 320, 240);
+    expect(within(cell).queryByTestId('review-preview-loading')).not.toBeInTheDocument();
+  },
+});
+
+const StorySwapHarness: FC<Partial<CollectionGridProps>> = () => {
+  const [storyIds, setStoryIds] = React.useState(['manager-main--default']);
+  const storyInfo: Record<string, StoryInfo> = {
+    'manager-main--default': demoStoryInfo['manager-main--default'],
+    'manager-settings-aboutscreen--default': demoStoryInfo['manager-settings-aboutscreen--default'],
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        data-testid="swap-preview-story"
+        onClick={() => setStoryIds(['manager-settings-aboutscreen--default'])}
+      >
+        Swap story
+      </button>
+      <CollectionGrid storyIds={storyIds} storyInfo={storyInfo} getStoryPreviewHref={previewHref} />
+    </div>
+  );
+};
+
+export const PreviewRemountOnStoryChange = meta.story({
+  render: () => <StorySwapHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cell = await canvas.findByTestId('review-collection-grid-cell');
+    await waitForCellPreviewSettled(cell);
+
+    expect(cell.querySelector('iframe')?.title).toBe('manager-main--default');
+
+    await userEvent.click(canvas.getByTestId('swap-preview-story'));
+
+    let nextCell: HTMLElement | undefined;
+    await waitFor(async () => {
+      nextCell = await canvas.findByTestId('review-collection-grid-cell');
+      expect(nextCell.querySelector('iframe')?.title).toBe('manager-settings-aboutscreen--default');
+    });
+    await waitForCellPreviewSettled(nextCell!, { width: 280, height: 180 });
   },
 });
 

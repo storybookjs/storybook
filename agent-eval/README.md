@@ -113,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000) to browse results.
 ### Deploy Results Playground
 
 The GitHub Actions workflow in `.github/workflows/agent-eval-playground.yml`
-deploys the playground to Vercel project `project-mi8oz`.
+deploys the playground to Vercel project `storybook-evals`.
 
 - Pull requests from the main repository create preview deployments.
 - Pushes to `main` create production deployments.

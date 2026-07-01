@@ -25,7 +25,7 @@ export interface ModuleGraphErrorLike {
 	stack?: string;
 }
 
-/** Lifecycle status of the module graph; mirrors the service's `getStatus` query output. */
+/** Lifecycle status of the module graph; mirrors the service's `status` query output. */
 export type ModuleGraphStatus =
 	| { value: 'booting' }
 	| { value: 'ready' }
@@ -40,12 +40,15 @@ export interface ModuleGraphStoryHit {
 	depth: number;
 }
 
-/** The subset of the `core/module-graph` runtime service surface that addon-mcp consumes. */
+type ModuleGraphStatusQuery = Query<undefined, ModuleGraphStatus>;
+type ModuleGraphStoriesForFilesQuery = Query<{ files: string[] }, ModuleGraphStoryHit[][]>;
+
+/** The subset of the `core/module-graph` runtime service surface addon-mcp consumes. */
 export interface ModuleGraphService {
 	queries: {
-		getStatus: Query<undefined, ModuleGraphStatus>;
+		status: ModuleGraphStatusQuery;
 		/** Positional: result `i` corresponds to input `files[i]`. */
-		getStoriesForFiles: Query<{ files: string[] }, ModuleGraphStoryHit[][]>;
+		storiesForFiles: ModuleGraphStoriesForFilesQuery;
 	};
 }
 
@@ -97,7 +100,7 @@ export async function isModuleGraphSupportedByBuilder(
  * Resolves the `core/module-graph` runtime service, or `undefined` when Storybook doesn't ship the
  * open-service API or the service isn't registered (e.g. a builder without change detection, or the
  * dev server isn't running). A non-undefined result doesn't mean the graph is built — await
- * `queries.getStatus.loaded(undefined)` and check for the `ready` status.
+ * `queries.status.loaded(undefined)` and check for the `ready` status.
  */
 export async function getModuleGraphService(): Promise<ModuleGraphService | undefined> {
 	const getService = await probe();

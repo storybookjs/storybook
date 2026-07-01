@@ -28,15 +28,15 @@ vi.mock('storybook/internal/core-server', () => ({
 }));
 
 /**
- * Builds a `core/module-graph` runtime stub. `getStoriesForFiles` maps the batched input files to
+ * Builds a `core/module-graph` runtime stub. `storiesForFiles` maps the batched input files to
  * positional hit lists — an empty list marks a file as unreachable from every story.
  */
-function moduleGraphStub(getStoriesForFiles: (files: string[]) => Array<Array<unknown>>) {
+function moduleGraphStub(storiesForFiles: (files: string[]) => Array<Array<unknown>>) {
 	return {
 		queries: {
-			getStatus: { loaded: async () => ({ value: 'ready' as const }) },
-			getStoriesForFiles: {
-				loaded: async ({ files }: { files: string[] }) => getStoriesForFiles(files),
+			status: { loaded: async () => ({ value: 'ready' as const }) },
+			storiesForFiles: {
+				loaded: async ({ files }: { files: string[] }) => storiesForFiles(files),
 			},
 		},
 	};

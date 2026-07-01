@@ -51,8 +51,8 @@ function setupService(opts: {
 	const storiesByFile = opts.storiesByFile ?? {};
 	const stub = {
 		queries: {
-			getStatus: { loaded: async () => status },
-			getStoriesForFiles: {
+			status: { loaded: async () => status },
+			storiesForFiles: {
 				loaded: async ({ files }: { files: string[] }) => files.map((f) => storiesByFile[f] ?? []),
 			},
 		},

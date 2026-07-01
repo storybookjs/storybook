@@ -15,7 +15,8 @@
  * Plus our own file watching layer (fs.watch + debounce) since we're a standalone Node.js process,
  * not running inside an IDE.
  */
-import { logger } from 'storybook/internal/node-logger';
+import { logger, once } from 'storybook/internal/node-logger';
+import { ReactDocgenServerMemoryLimitError } from 'storybook/internal/server-errors';
 
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
@@ -133,6 +134,12 @@ export class ComponentMetaManager {
     if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
       return;
     }
+
+    // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
+    // the crash, but a single extraction can still exceed the cap — warn once so the user can raise
+    // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
+    const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
+    once.warn(new ReactDocgenServerMemoryLimitError({ heapLimitMb }).message);
 
     for (const project of this.configProjects.values()) {
       project.dispose();

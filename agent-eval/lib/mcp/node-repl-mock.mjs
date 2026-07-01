@@ -343,14 +343,21 @@ async function handle(request) {
 }
 
 const rl = createInterface({ input: process.stdin });
+// Serialize request handling: handle() is async and shares the REPL kernel and
+// active output sink, so overlapping requests would interleave their output.
+let requestQueue = Promise.resolve();
 rl.on('line', (line) => {
 	const trimmed = line.trim();
 	if (!trimmed) return;
-	try {
-		handle(JSON.parse(trimmed)).catch(() => {});
-	} catch {
-		// Ignore malformed lines; MCP clients resend on protocol errors.
-	}
+	requestQueue = requestQueue.then(() => {
+		try {
+			return handle(JSON.parse(trimmed));
+		} catch {
+			// Ignore malformed lines; MCP clients resend on protocol errors.
+			return undefined;
+		}
+	});
+	requestQueue = requestQueue.catch(() => {});
 });
 rl.on('close', () => {
 	process.exit(0);

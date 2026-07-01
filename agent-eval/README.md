@@ -58,9 +58,9 @@ runtime/build contexts.
 
 Configured experiments:
 
-- `cc-mcp`: Claude Code through the direct `claude-code` agent with project-local Storybook MCP config in `.mcp.json`.
+- `cc-mcp`: Claude Code through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
 - `codex-mcp`: Codex with project-local Storybook MCP config in `.codex/config.toml`.
-- `cc-plugin`: Claude Code through the direct `claude-code` agent with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin`: Claude Code through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-plugin`: Codex with Storybook plugin skills copied to `.agents/skills`.
 
 ## Shared Templates

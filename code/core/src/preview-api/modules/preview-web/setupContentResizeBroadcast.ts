@@ -5,6 +5,7 @@ import {
   IFRAME_RESIZE_REQUEST_CONTEXT,
 } from '../../../shared/constants/iframe-resize.ts';
 
+import { shouldEmbed } from './embedMode.ts';
 import { shouldFreeze } from './setupStoryFreezer.ts';
 
 const EMBED_STYLE_ID = 'storybook-embed-sizing';
@@ -79,13 +80,6 @@ const BLOCK_LEVEL_TAGS = [
 const descendantSelector = `* ${Array.from(IGNORE_TAGS)
   .map((tag) => `:not(${tag})`)
   .join('')}`;
-
-export const shouldEmbed = ({ search }: { search: string }) => {
-  return new URLSearchParams(search).get('embed') === 'true';
-};
-
-/** Embedded review thumbnails are too narrow for manager interaction plays. */
-export const shouldAutoplay = ({ search }: { search: string }) => !shouldEmbed({ search });
 
 const isTransparentColor = (color: string): boolean => {
   if (!color || color === 'transparent') {

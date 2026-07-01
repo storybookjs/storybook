@@ -46,7 +46,8 @@ import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
-import { setupContentResizeBroadcast, shouldAutoplay } from './setupContentResizeBroadcast.ts';
+import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
+import { shouldAutoplay } from './embedMode.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;

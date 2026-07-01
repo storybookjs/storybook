@@ -1,5 +1,5 @@
 import { statSync } from 'node:fs';
-import { createRequire, registerHooks } from 'node:module';
+import nodeModule, { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -69,8 +69,18 @@ export async function importModule(
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
   if (!isTypescriptLoaderRegistered) {
-    const { load } = await import('storybook/internal/bin/loader');
-    registerHooks({ load });
+    // `registerHooks` avoids the DEP0205 deprecation warning that `register` emits on Node.js 26+,
+    // but it's only available from Node.js 22.15.0 onwards. Fall back to `register` on older Node
+    // versions, which Storybook still supports. `nodeModule.registerHooks` (rather than a named
+    // import) is required here: a named import of an export that doesn't exist on a given Node
+    // version throws a SyntaxError at module-load time, before this feature check ever runs.
+    if (typeof nodeModule.registerHooks === 'function') {
+      const { load } = await import('storybook/internal/bin/loader');
+      nodeModule.registerHooks({ load });
+    } else {
+      const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+      register(typescriptLoaderUrl, import.meta.url);
+    }
     isTypescriptLoaderRegistered = true;
   }
 

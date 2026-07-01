@@ -18,7 +18,7 @@ Test AI coding agents to measure what actually works.
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
    - **Agent keys**: `ANTHROPIC_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments. `AI_GATEWAY_API_KEY` is optional for failure classification and any experiments that explicitly use Vercel AI Gateway agents.
-   - **Sandbox access**: `sandbox: 'auto'` uses Vercel Sandbox when Vercel credentials are set, and falls back to Docker without them.
+   - **Sandbox access**: this suite is configured with `sandbox: 'vercel'`, so Vercel Sandbox access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`) are required. For local Docker-only experiments, change the eval config to `sandbox: 'docker'`.
 
 ## Running Evals
 
@@ -123,13 +123,20 @@ project `storybook-evals` after eval results have been written to
 
 The workflow deploys from the same runner that produced `agent-eval/results`,
 so failed evals can still publish a playground with partial results. The final
-workflow status still fails when the eval or report step fails.
+workflow status still fails when the eval, build, or deploy step fails.
 
 The workflow links the Vercel project at runtime instead of committing
-`.vercel/project.json`. Configure these GitHub secrets before enabling deploys:
+`.vercel/project.json`. It uses the same Vercel access token for the Sandbox
+evals and the Vercel CLI preview deployment, but those are separate steps:
+Sandbox auth happens in `pnpm eval`, while the preview playground deployment
+runs `vercel link`, `vercel pull`, `vercel build`, and
+`vercel deploy --prebuilt`.
 
-- `VERCEL_TOKEN`: Vercel access token with deploy access to the Storybook team.
+Configure these GitHub secrets before enabling the workflow:
+
+- `VERCEL_TOKEN`: Vercel access token with Sandbox and deploy access to the Storybook team.
 - `VERCEL_TEAM_ID`: Vercel team ID or slug for the Storybook account.
+- `VERCEL_PROJECT_ID`: Vercel project ID used by Vercel Sandbox access-token auth.
 
 The thin app wrapper in `agent-eval/app` re-exports routes from
 `@vercel/agent-eval-playground` so Next.js can discover them from this package.

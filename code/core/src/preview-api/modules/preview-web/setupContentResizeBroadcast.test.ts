@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
+import {
+  IFRAME_RESIZE_CONTEXT,
+  IFRAME_RESIZE_REQUEST_CONTEXT,
+} from '../../../shared/constants/iframe-resize.ts';
 
 import {
   isPassThroughContainer,
@@ -221,7 +224,49 @@ describe('setupContentResizeBroadcast', () => {
     window.history.replaceState({}, '', previousHref);
     document.body.innerHTML = '';
     document.head.querySelector('#storybook-embed-sizing')?.remove();
+    document.head.querySelector('#storybook-embed-ui')?.remove();
     vi.unstubAllGlobals();
+  });
+
+  it('hides the in-iframe preparing loader for embed thumbnails', () => {
+    setupContentResizeBroadcast();
+    const style = document.getElementById('storybook-embed-ui');
+    expect(style?.textContent).toContain('.sb-preparing-story');
+    expect(style?.textContent).toContain('display: none');
+  });
+
+  it('re-measures when the parent requests dimensions', async () => {
+    const content = document.getElementById('content') as HTMLDivElement;
+    mockRect(content, {
+      top: 0,
+      left: 0,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
+    });
+
+    mockResizeObserver();
+    setupContentResizeBroadcast();
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    postMessageSpy.mockClear();
+
+    const parent = window.parent as Window;
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }),
+        source: parent,
+      })
+    );
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
   });
 
   it('does not install when embed=true is absent', () => {

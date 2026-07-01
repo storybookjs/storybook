@@ -31,8 +31,11 @@ export const parseIframeResizeMessage = (data: unknown): ContentDimensions | nul
   }
 };
 
-const THUMBNAIL_SCALE_MIN = 0.5;
+export const THUMBNAIL_SCALE_MIN = 0.5;
 const THUMBNAIL_SCALE_STEP = 0.25;
+
+/** Pre-measurement scale so the embed iframe viewport is 2× the frame width (100% / 0.5). */
+export const THUMBNAIL_BOOTSTRAP_SCALE = THUMBNAIL_SCALE_MIN;
 
 /** Mirrors Frame `--scale`: fit content width in the frame; tall content is cropped. */
 export const computeThumbnailScale = (contentWidth: number, frameWidth: number): number => {

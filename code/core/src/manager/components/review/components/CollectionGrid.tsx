@@ -1,10 +1,10 @@
 import React, { type FC } from 'react';
 
-import { Badge, Button } from 'storybook/internal/components';
+import { Badge, Button, Loader } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
-import { DEFAULT_CONTENT_WIDTH } from './iframeResizeMessage.ts';
+import { DEFAULT_CONTENT_WIDTH, THUMBNAIL_BOOTSTRAP_SCALE } from './iframeResizeMessage.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -49,6 +49,7 @@ const Cell = styled.div({
   gridRow: `span ${GRID_CHILD_ROW_SPAN}`,
   gap: 0,
   minWidth: 0,
+  overflow: 'hidden',
 });
 
 // Scale to fit content width in a fixed 3/2 frame; tall content is cropped.
@@ -56,6 +57,8 @@ const Frame = styled.a(({ theme }) => ({
   position: 'relative',
   display: 'block',
   width: '100%',
+  maxWidth: '100%',
+  minWidth: 0,
   height: '100%',
   alignSelf: 'stretch',
   containerType: 'inline-size',
@@ -81,16 +84,37 @@ const Frame = styled.a(({ theme }) => ({
   },
 }));
 
-const Preview = styled.iframe(({ theme }) => ({
+// Frame-sized clip; scaling happens on PreviewScale so layout overflow stays inside.
+const PreviewClip = styled.div({
   position: 'absolute',
   inset: 0,
+  overflow: 'hidden',
+});
+
+const PreviewScale = styled.div({
   width: 'calc(100% / var(--scale))',
   height: 'calc(100% / var(--scale))',
-  background: theme.background.preview,
-  border: 0,
-  display: 'block',
   transform: 'scale(var(--scale))',
   transformOrigin: 'top left',
+});
+
+const Preview = styled.iframe(({ theme }) => ({
+  display: 'block',
+  width: '100%',
+  height: '100%',
+  background: theme.background.preview,
+  border: 0,
+  pointerEvents: 'none',
+}));
+
+// Outside PreviewScale so bootstrap scaling does not shrink the loading indicator.
+const PreviewLoading = styled.div(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 1,
+  display: 'grid',
+  placeItems: 'center',
+  background: theme.background.app,
   pointerEvents: 'none',
 }));
 
@@ -170,6 +194,7 @@ const StoryPreviewCell: FC<{
     frameRef,
     iframeRef,
     src,
+    isPreviewLoading,
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,
@@ -182,20 +207,28 @@ const StoryPreviewCell: FC<{
         '--content-w': rememberedDimensions.width,
         '--content-h': rememberedDimensions.height,
       } as React.CSSProperties)
-    : undefined;
+    : ({
+        // Widen the embed viewport before iframe.resize so stories don't measure
+        // and layout in a narrow/mobile breakpoint inside a small thumbnail frame.
+        '--scale': THUMBNAIL_BOOTSTRAP_SCALE,
+      } as React.CSSProperties);
 
   const preview = src ? (
-    <Preview
-      ref={iframeRef}
-      title={storyId}
-      src={src}
-      data-content-width={rememberedDimensions?.width}
-      data-content-height={rememberedDimensions?.height}
-      tabIndex={-1}
-      scrolling="no"
-      onLoad={finishCurrent}
-      onError={finishCurrent}
-    />
+    <PreviewClip>
+      <PreviewScale>
+        <Preview
+          ref={iframeRef}
+          title={storyId}
+          src={src}
+          data-content-width={rememberedDimensions?.width}
+          data-content-height={rememberedDimensions?.height}
+          tabIndex={-1}
+          scrolling="no"
+          onLoad={finishCurrent}
+          onError={finishCurrent}
+        />
+      </PreviewScale>
+    </PreviewClip>
   ) : null;
 
   return (
@@ -209,6 +242,11 @@ const StoryPreviewCell: FC<{
         onMouseEnter={forceStartCurrent}
         onFocus={forceStartCurrent}
       >
+        {isPreviewLoading ? (
+          <PreviewLoading data-testid="review-preview-loading">
+            <Loader role="progressbar" />
+          </PreviewLoading>
+        ) : null}
         {preview}
       </Frame>
       <ActionBar>

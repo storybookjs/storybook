@@ -8,6 +8,7 @@ import {
   type RefObject,
 } from 'react';
 
+import { IFRAME_RESIZE_REQUEST_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 import { parseIframeResizeMessage, type ContentDimensions } from './iframeResizeMessage.ts';
 import {
   PREVIEW_SETTLE_TIMEOUT_MS,
@@ -17,8 +18,10 @@ import {
   type PreviewTask,
 } from './previewScheduler.ts';
 
+/** If iframe.resize never arrives, don't block the thumbnail forever. */
+const PREVIEW_SCALE_SETTLE_FALLBACK_MS = PREVIEW_SETTLE_TIMEOUT_MS * 3;
+
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
-// iframe within half a root-height of the fold, evict it past one and a half.
 // The gap is hysteresis so scrolling near a boundary doesn't thrash.
 const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
@@ -57,6 +60,14 @@ const registerResizeHandler = (
   return () => {
     resizeHandlers.delete(contentWindow);
   };
+};
+
+const requestEmbedRemeasure = (contentWindow: Window): void => {
+  try {
+    contentWindow.postMessage(JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }), '*');
+  } catch {
+    // Cross-origin or detached iframe; ignore.
+  }
 };
 
 const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
@@ -111,6 +122,8 @@ export type UsePreviewThumbnailResult = {
   frameRef: Ref<HTMLDivElement>;
   iframeRef: RefObject<HTMLIFrameElement>;
   src: string | undefined;
+  /** True until iframe.resize arrives and the measured scale has painted. */
+  isPreviewLoading: boolean;
   rememberedDimensions: ContentDimensions | null;
   forceStartCurrent: () => void;
   finishCurrent: () => void;
@@ -131,6 +144,7 @@ export const usePreviewThumbnail = ({
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
   const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [src, setSrc] = useState<string | undefined>(undefined);
   const taskRef = useRef<PreviewTask | null>(null);
 
@@ -188,6 +202,11 @@ export const usePreviewThumbnail = ({
   }, [isInView, previewsPaused]);
 
   useEffect(() => {
+    setRememberedDimensions(null);
+    setIsPreviewLoading(false);
+  }, [storyId]);
+
+  useEffect(() => {
     if (!isInView) {
       return undefined;
     }
@@ -227,6 +246,34 @@ export const usePreviewThumbnail = ({
     return () => clearTimeout(timer);
   }, [src, finishCurrent]);
 
+  useEffect(() => {
+    if (!src) {
+      setRememberedDimensions(null);
+      setIsPreviewLoading(false);
+      return undefined;
+    }
+    setIsPreviewLoading(true);
+    const fallback = setTimeout(() => setIsPreviewLoading(false), PREVIEW_SCALE_SETTLE_FALLBACK_MS);
+    return () => clearTimeout(fallback);
+  }, [src]);
+
+  // Keep the overlay until measured scale is committed and painted (post-bootstrap).
+  useLayoutEffect(() => {
+    if (!rememberedDimensions) {
+      return undefined;
+    }
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setIsPreviewLoading(false);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [rememberedDimensions]);
+
   useLayoutEffect(() => {
     if (!src) {
       return undefined;
@@ -241,13 +288,15 @@ export const usePreviewThumbnail = ({
       if (!contentWindow) {
         return undefined;
       }
-      return registerResizeHandler(contentWindow, (dimensions) => {
+      const detachHandler = registerResizeHandler(contentWindow, (dimensions) => {
         setRememberedDimensions((current) =>
           current?.width === dimensions.width && current?.height === dimensions.height
             ? current
             : dimensions
         );
       });
+      requestEmbedRemeasure(contentWindow);
+      return detachHandler;
     };
 
     let detach = attach();
@@ -267,6 +316,7 @@ export const usePreviewThumbnail = ({
     frameRef,
     iframeRef,
     src,
+    isPreviewLoading,
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,

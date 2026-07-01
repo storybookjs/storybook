@@ -1,10 +1,14 @@
 import { global } from '@storybook/global';
 
-import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
+import {
+  IFRAME_RESIZE_CONTEXT,
+  IFRAME_RESIZE_REQUEST_CONTEXT,
+} from '../../../shared/constants/iframe-resize.ts';
 
 import { shouldFreeze } from './setupStoryFreezer.ts';
 
 const EMBED_STYLE_ID = 'storybook-embed-sizing';
+const EMBED_UI_STYLE_ID = 'storybook-embed-ui';
 
 const IGNORE_TAGS = new Set([
   'area',
@@ -314,6 +318,23 @@ const removeEmbedSizingStyles = (documentRef: Document): void => {
   documentRef.getElementById(EMBED_STYLE_ID)?.remove();
 };
 
+/** Review thumbnails draw their own loader outside the scale wrapper. */
+const injectEmbedUiStyles = (documentRef: Document): void => {
+  if (documentRef.getElementById(EMBED_UI_STYLE_ID)) {
+    return;
+  }
+
+  const style = documentRef.createElement('style');
+  style.id = EMBED_UI_STYLE_ID;
+  style.textContent = `
+    .sb-preparing-story,
+    .sb-preparing-docs {
+      display: none !important;
+    }
+  `;
+  documentRef.head.appendChild(style);
+};
+
 let lastDimensions: { width: number; height: number } | null = null;
 
 const sendResizeMessage = (
@@ -384,6 +405,8 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     return {};
   }
 
+  injectEmbedUiStyles(documentRef);
+
   lastDimensions = null;
 
   const freezing = shouldFreeze({ search: documentRef.location.search });
@@ -392,6 +415,22 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     const elements = getTrackedElements();
     sendResizeMessage(elements, windowRef, documentRef);
   };
+
+  const onParentMessage = (event: MessageEvent) => {
+    if (event.source !== windowRef.parent) {
+      return;
+    }
+    try {
+      const parsed = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (parsed?.context === IFRAME_RESIZE_REQUEST_CONTEXT) {
+        lastDimensions = null;
+        measureAndSend();
+      }
+    } catch {
+      // Ignore malformed parent messages.
+    }
+  };
+  windowRef.addEventListener('message', onParentMessage);
 
   if (freezing) {
     // Thumbnail embeds use freeze=finished so the preview can settle before measuring.

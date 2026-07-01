@@ -103,7 +103,18 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({});
+export const Default = meta.story({
+  play: async ({ canvasElement }) => {
+    const cells = await within(canvasElement).findAllByTestId('review-collection-grid-cell');
+    await waitFor(() => {
+      for (const cell of cells) {
+        const cellWidth = cell.getBoundingClientRect().width;
+        const frame = cell.firstElementChild as HTMLElement | null;
+        expect(frame?.getBoundingClientRect().width ?? 0).toBeLessThanOrEqual(cellWidth + 1);
+      }
+    });
+  },
+});
 
 // On a narrow (mobile) container the grid drops to a single column and caps at
 // two rows, so eight stories overflow into the "Review all" affordance.

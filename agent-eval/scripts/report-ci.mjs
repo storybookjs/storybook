@@ -2,7 +2,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const RESULTS_DIR = path.resolve(process.env.AGENT_EVAL_RESULTS_DIR ?? 'results');
-const TRACKING_ISSUE = 'https://github.com/storybookjs/mcp/issues/317';
+const TRACKING_ISSUE =
+	process.env.AGENT_EVAL_TRACKING_ISSUE_URL ?? 'https://github.com/storybookjs/mcp/issues/317';
 const rawExitCode = readRawExitCode();
 
 const resultRows = readResultRows();

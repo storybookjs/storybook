@@ -241,7 +241,7 @@ const StoryPreviewCell: FC<{
       >
         {isPreviewLoading ? (
           <PreviewLoading data-testid="review-preview-loading">
-            <Loader role="progressbar" />
+            <Loader />
           </PreviewLoading>
         ) : null}
         {preview}

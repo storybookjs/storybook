@@ -44,6 +44,9 @@ const STORYBOOK_WORKFLOW_TOOL_NAMES = [
 	'run-story-tests',
 ] as const;
 
+const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
+let cachedStorybookWorkflowCalls: StorybookWorkflowCall[] | undefined;
+
 export function getEvalContext(): EvalContext {
 	const agentContext = readAgentContext();
 	const { agent, integration } = agentContext;
@@ -93,20 +96,26 @@ export function getToolCalls(): string[] {
 }
 
 export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
+	if (cachedStorybookWorkflowCalls !== undefined) {
+		return cachedStorybookWorkflowCalls;
+	}
+
 	const { integration } = getEvalContext();
 
 	if (integration === 'plugin') {
-		return getShellCommands().flatMap(parseStorybookAiWorkflowCalls);
+		cachedStorybookWorkflowCalls = getShellCommands().flatMap(parseStorybookAiWorkflowCalls);
+		return cachedStorybookWorkflowCalls;
 	}
 
 	const parsedCalls = getParsedMcpWorkflowCalls();
 	const rawCalls = getRawCodexMcpWorkflowCalls();
-	return [
+	cachedStorybookWorkflowCalls = [
 		...parsedCalls,
 		...rawCalls.filter(
 			(rawCall) => !parsedCalls.some((parsedCall) => isSameWorkflowCall(parsedCall, rawCall)),
 		),
 	];
+	return cachedStorybookWorkflowCalls;
 }
 
 export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
@@ -199,43 +208,57 @@ function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[]
 	}
 
 	const tokens = tokenizeShellCommand(command);
-	const storybookIndex = tokens.findIndex(
-		(token, index) => token === 'storybook' && tokens[index + 1] === 'ai',
+	const calls: StorybookWorkflowCall[] = [];
+
+	for (let index = 0; index < tokens.length - 1; index += 1) {
+		if (tokens[index] !== 'storybook' || tokens[index + 1] !== 'ai') {
+			continue;
+		}
+
+		const invocation = parseStorybookAiInvocation(tokens.slice(index + 2));
+		if (invocation !== undefined) {
+			calls.push(invocation.call);
+			index += invocation.consumed + 1;
+		}
+	}
+
+	return calls;
+}
+
+function parseStorybookAiInvocation(
+	aiArgs: string[],
+): { call: StorybookWorkflowCall; consumed: number } | undefined {
+	const endIndex = aiArgs.findIndex(
+		(token, index) =>
+			SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && aiArgs[index + 1] === 'ai'),
 	);
+	const segmentEnd = endIndex === -1 ? aiArgs.length : endIndex;
+	const segment = aiArgs.slice(0, segmentEnd);
+	const consumed = endIndex === -1 ? aiArgs.length : endIndex;
 
-	if (storybookIndex === -1) {
-		return [];
+	if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
+		return undefined;
 	}
 
-	const aiArgs = tokens.slice(storybookIndex + 2);
-	if (aiArgs.includes('--help') || aiArgs.includes('-h') || aiArgs[0] === 'help') {
-		return [];
-	}
-
-	const commandIndex = aiArgs.findIndex(
+	const commandIndex = segment.findIndex(
 		(token) => normalizeStorybookWorkflowName(token) !== undefined,
 	);
-	if (commandIndex === -1) {
-		return [];
-	}
+	const commandToken = commandIndex === -1 ? undefined : segment[commandIndex];
+	const name =
+		commandToken === undefined ? undefined : normalizeStorybookWorkflowName(commandToken);
 
-	const commandToken = aiArgs[commandIndex];
-	if (commandToken === undefined) {
-		return [];
-	}
-
-	const name = normalizeStorybookWorkflowName(commandToken);
 	if (name === undefined) {
-		return [];
+		return undefined;
 	}
 
-	return [
-		{
+	return {
+		call: {
 			name,
-			input: parseStorybookAiInput(aiArgs.slice(commandIndex + 1)),
+			input: parseStorybookAiInput(segment.slice(commandIndex + 1)),
 			source: 'storybook-ai',
 		},
-	];
+		consumed,
+	};
 }
 
 function getNestedShellCommand(command: string): string | undefined {
@@ -324,7 +347,12 @@ function tokenizeShellCommand(command: string): string[] {
 	let quote: '"' | "'" | undefined;
 	let escaping = false;
 
-	for (const char of command) {
+	for (let index = 0; index < command.length; index += 1) {
+		const char = command[index];
+		if (char === undefined) {
+			continue;
+		}
+
 		if (escaping) {
 			token += char;
 			escaping = false;
@@ -350,22 +378,44 @@ function tokenizeShellCommand(command: string): string[] {
 			continue;
 		}
 
+		if (char === '&' && command[index + 1] === '&') {
+			pushToken();
+			tokens.push('&&');
+			index += 1;
+			continue;
+		}
+
+		if (char === '|' && command[index + 1] === '|') {
+			pushToken();
+			tokens.push('||');
+			index += 1;
+			continue;
+		}
+
+		if (char === ';' || char === '|') {
+			pushToken();
+			tokens.push(char);
+			continue;
+		}
+
 		if (/\s/.test(char)) {
-			if (token.length > 0) {
-				tokens.push(token);
-				token = '';
-			}
+			pushToken();
 			continue;
 		}
 
 		token += char;
 	}
 
-	if (token.length > 0) {
-		tokens.push(token);
-	}
-
+	pushToken();
 	return tokens;
+
+	function pushToken(): void {
+		if (token.length === 0) {
+			return;
+		}
+		tokens.push(token);
+		token = '';
+	}
 }
 
 function normalizeStorybookWorkflowName(name: string): string | undefined {

@@ -1,3 +1,3 @@
-import config from 'reshaped/config/postcss';
+import { config } from 'reshaped/config/postcss';
 
 export default config;

@@ -17,17 +17,13 @@ export default defineConfig([
 		files: ['**/*.{ts,tsx}'],
 		extends: [
 			js.configs.recommended,
-			tseslint.configs.recommendedTypeChecked,
+			tseslint.configs.recommended,
 			reactHooks.configs.flat['recommended-latest'],
 			reactRefresh.configs.vite,
 		],
 		languageOptions: {
 			ecmaVersion: 2020,
-			globals: globals.browser,
-			parserOptions: {
-				tsconfigRootDir: import.meta.dirname,
-				projectService: true,
-			},
+			globals: { ...globals.browser, ...globals.node },
 		},
 		rules: {
 			'@typescript-eslint/no-unused-vars': 'off',

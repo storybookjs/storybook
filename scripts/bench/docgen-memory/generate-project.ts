@@ -10,14 +10,15 @@
  * The `--heavy` lever (optionally scaled with `--heavy-factor N`) grows the TypeScript checker
  * working set to a realistic per-component density (~2.6 MB/component, matching real libraries) by
  * emitting inline literal-union props that `serializeType` expands into retained enum arrays. That is
- * what lets the in-process harness actually OOM (see `INVESTIGATION.md` §3).
+ * what lets the in-process harness actually OOM.
  *
  * Run directly:
- *   node --import tsx scripts/bench/docgen-memory/generate.ts --out ../storybook-sandboxes/docgen-stress --components 5000 --variants 5
+ *   node --import jiti/register scripts/bench/docgen-memory/generate-project.ts --out ../storybook-sandboxes/docgen-stress --components 5000 --variants 5
  */
 import { createRequire } from 'node:module';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
 
@@ -292,7 +293,7 @@ function parseArgs(argv: string[]): GenerateOptions {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const options = parseArgs(process.argv.slice(2));
   const start = Date.now();
   const result = generateProject(options);

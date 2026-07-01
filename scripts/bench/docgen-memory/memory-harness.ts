@@ -340,6 +340,9 @@ async function main() {
         base64Kb: options.base64Kb,
       })
     );
+    // Bump project versions so the next extraction re-reads the mutated file (matches the dev
+    // server's file-watcher → onFilesChanged flow); without this the program serves stale snapshots.
+    manager.onFilesChanged([{ filePath: componentPath, type: 'changed' }]);
 
     const saveStart = Date.now();
     const toExtract = options.scope === 'changed' ? [entries[i]] : entries;

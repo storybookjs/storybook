@@ -47,7 +47,7 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
  * dev server. Disposing the program reclaims that cache; extracted docs already live in the
  * open-service state, so nothing user-visible is lost. The chosen ratio leaves headroom for one
  * extraction's transient before the cap and was verified to flip a deterministic crash → survive at a
- * tight cap. See `scripts/bench/docgen-memory/FINDINGS.md`.
+ * tight cap (see the `bench:docgen-memory` gate in `scripts/bench/docgen-memory/gate.ts`).
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 

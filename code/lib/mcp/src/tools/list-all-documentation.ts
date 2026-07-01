@@ -1,7 +1,13 @@
 import type { McpServer } from 'tmcp';
 import * as v from 'valibot';
-import type { StorybookContext } from '../types.ts';
-import { getManifests, getMultiSourceManifests, errorToMCPContent } from '../utils/get-manifest.ts';
+import type { ComponentManifestEntry, StorybookContext } from '../types.ts';
+import {
+	getManifests,
+	getMultiSourceManifests,
+	errorToMCPContent,
+	resolveComponentStories,
+} from '../utils/get-manifest.ts';
+import { mapWithConcurrency } from '../utils/map-with-concurrency.ts';
 import {
 	formatMultiSourceManifestsToLists,
 	formatManifestsToLists,
@@ -52,6 +58,40 @@ export async function addListAllDocumentationTool(
 						ctx.manifestProvider,
 					);
 
+					// Like single-source mode, split/ref (v1) sources keep stories behind a
+					// `$ref`; resolve them per source so story sub-bullets render. Failures
+					// are isolated to a source so one bad source can't break the whole list.
+					if (withStoryIds) {
+						await Promise.all(
+							multiSourceManifests.map(async (sourceManifest) => {
+								if (sourceManifest.error || sourceManifest.notice) return;
+								try {
+									const components: Record<string, ComponentManifestEntry> =
+										sourceManifest.componentManifest.components;
+									const entries = Object.entries(components);
+									const resolved = await mapWithConcurrency(
+										entries,
+										16,
+										async ([id, component]) => {
+											const storiesResolved = await resolveComponentStories(
+												component,
+												ctx.request,
+												ctx.manifestProvider,
+												sourceManifest.source,
+											);
+											return [id, storiesResolved] as const;
+										},
+									);
+									for (const [id, component] of resolved) {
+										components[id] = component;
+									}
+								} catch {
+									// Leave this source's rows unresolved rather than failing the listing.
+								}
+							}),
+						);
+					}
+
 					const lists = formatMultiSourceManifestsToLists(multiSourceManifests, {
 						withStoryIds,
 					});
@@ -81,6 +121,27 @@ export async function addListAllDocumentationTool(
 
 				// Single-source mode: existing behavior
 				const manifests = await getManifests(ctx?.request, ctx?.manifestProvider);
+
+				// Split/ref format keeps stories behind a `$ref`; resolve them only when story
+				// ids are requested so plain listing stays cheap.
+				if (withStoryIds) {
+					// Widened so resolved (inline) components can be written back regardless of the
+					// parsed map's version. Resolution mutates the entries in place for formatting.
+					const components: Record<string, ComponentManifestEntry> =
+						manifests.componentManifest.components;
+					const entries = Object.entries(components);
+					const resolved = await mapWithConcurrency(entries, 16, async ([id, component]) => {
+						const storiesResolved = await resolveComponentStories(
+							component,
+							ctx?.request,
+							ctx?.manifestProvider,
+						);
+						return [id, storiesResolved] as const;
+					});
+					for (const [id, component] of resolved) {
+						components[id] = component;
+					}
+				}
 
 				const lists = formatManifestsToLists(manifests, {
 					withStoryIds,

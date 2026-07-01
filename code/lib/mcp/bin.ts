@@ -23,13 +23,22 @@ import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { basename, resolve, dirname } from 'node:path';
+import { resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const serverInstructions = readFileSync(
 	resolve(dirname(fileURLToPath(import.meta.url)), './src/instructions.md'),
 	'utf-8',
 );
+
+function resolveManifestFile(base: string, rel: string): string {
+	const resolvedBase = resolve(base);
+	const resolved = resolve(resolvedBase, rel);
+	if (resolved !== resolvedBase && !resolved.startsWith(resolvedBase + sep)) {
+		throw new Error(`Refusing to read manifest outside base: ${rel}`);
+	}
+	return resolved;
+}
 
 const adapter = new ValibotJsonSchemaAdapter();
 const server = new McpServer(
@@ -64,12 +73,25 @@ const args = parseArgs({
 transport.listen({
 	manifestProvider: async (_request, path) => {
 		const { manifestsDir } = args.values;
-		const fullPath = `${manifestsDir}/${basename(path)}`;
+		const isRemote = manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://');
 
-		if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
-			const res = await fetch(fullPath);
+		// Top-level manifests (`./manifests/<name>.json`) live in `manifestsDir`; split/ref
+		// payloads (`./services/<service>/<id>.json`) live in a sibling `services/` directory.
+		const normalized = path.replace(/^\.?\//, '');
+		const { base, rel } = normalized.startsWith('manifests/')
+			? { base: manifestsDir, rel: normalized.slice('manifests/'.length) }
+			: {
+					base: isRemote ? manifestsDir.replace(/\/[^/]+\/?$/, '') : dirname(manifestsDir),
+					rel: normalized,
+				};
+
+		if (isRemote) {
+			const res = await fetch(`${base.replace(/\/$/, '')}/${rel}`);
+			if (!res.ok) {
+				throw new Error(`Failed to fetch manifest (${res.status}) from ${res.url}`);
+			}
 			return await res.text();
 		}
-		return await fs.readFile(fullPath, 'utf-8');
+		return await fs.readFile(resolveManifestFile(base, rel), 'utf-8');
 	},
 });

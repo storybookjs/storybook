@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { addListAllDocumentationTool, LIST_TOOL_NAME } from './list-all-documentation.ts';
-import type { StorybookContext } from '../types.ts';
-import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
-import smallDocsManifestFixture from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
+import type { ComponentManifestMap, DocsManifestMap, StorybookContext } from '../types.ts';
+import smallManifestFixtureRaw from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
+import smallDocsManifestFixtureRaw from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
 import * as getManifest from '../utils/get-manifest.ts';
+
+// JSON imports widen the `v` literal to `number`, so re-type the fixtures against
+// the discriminated-union schema for use in strongly-typed mocks.
+const smallManifestFixture = smallManifestFixtureRaw as unknown as ComponentManifestMap;
+const smallDocsManifestFixture = smallDocsManifestFixtureRaw as unknown as DocsManifestMap;
 
 describe('listAllDocumentationTool', () => {
 	let server: McpServer<any, StorybookContext>;
@@ -111,8 +116,8 @@ describe('listAllDocumentationTool', () => {
 			{ id: 'remote', title: 'Remote', url: 'http://remote.example.com' },
 		];
 
-		const remoteManifest = {
-			v: 1,
+		const remoteManifest: ComponentManifestMap = {
+			v: 0,
 			components: {
 				badge: {
 					id: 'badge',

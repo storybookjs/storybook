@@ -14,6 +14,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
+import { createDocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
 	existingAnnotations = [],
@@ -36,7 +37,18 @@ export const experimental_devServer: PresetPropertyFn<
 	const origin = `http://localhost:${options.port}`;
 	const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
-	const { refs, compositionAuth, sources } = await resolveCompositionSources(options);
+	const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
+
+	// Single source of truth for manifest access. In `experimentalDocgenServer` mode the
+	// local Storybook's `/manifests/*.json` are 404'd by core, so its manifest data is read
+	// in-process from the open services instead of over loopback HTTP. This access is created
+	// here (the one place that owns provider selection) and reused for both the standalone
+	// local source and the local branch of the composition provider.
+	const rawAvailability = await getToolAvailability(options);
+	const docgenServerAccess = rawAvailability.docgenServer
+		? createDocgenServerManifestAccess(options)
+		: undefined;
+
 	let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
 
 	if (refs.length > 0) {
@@ -47,9 +59,23 @@ export const experimental_devServer: PresetPropertyFn<
 
 		logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
 
-		// Create manifest provider that handles multi-source
-		createManifestProvider = () => compositionAuth.createManifestProvider(origin);
+		// Composition provider fetches remote sources over HTTP; the local source delegates
+		// to the in-process docgen-server access when that mode is on.
+		createManifestProvider = () =>
+			compositionAuth.createManifestProvider(origin, docgenServerAccess?.manifestProvider);
 	}
+
+	// Resolves the manifest access passed to `mcpServerHandler` for one request: the
+	// composition provider when refs are configured, otherwise the in-process provider when
+	// docgen-server mode is on, otherwise core's default HTTP provider (undefined). The
+	// in-process `resolveEntry` is always forwarded — the doc tools only consult it for the
+	// local source, so it is harmless in multi-source mode.
+	const manifestAccessFor = (req: IncomingMessage) => ({
+		manifestProvider: createManifestProvider
+			? createManifestProvider(req)
+			: docgenServerAccess?.manifestProvider,
+		resolveEntry: docgenServerAccess?.resolveEntry,
+	});
 
 	// Serve .well-known/oauth-protected-resource for MCP auth
 	app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
@@ -87,15 +113,13 @@ export const experimental_devServer: PresetPropertyFn<
 			addonOptions,
 			endpoint,
 			sources,
-			manifestProvider: createManifestProvider?.(req),
+			...manifestAccessFor(req),
 			compositionAuth,
 		});
 	});
 
 	// Same gates the MCP server uses to register these tools, so the page can't
 	// claim a tool is available when it isn't (and vice versa).
-	const multiSource = sources?.some((source) => !!source.url) ?? false;
-	const rawAvailability = await getToolAvailability(options);
 	const {
 		moduleGraphSupported,
 		changeDetectionEnabled,
@@ -122,7 +146,7 @@ export const experimental_devServer: PresetPropertyFn<
 				addonOptions,
 				endpoint,
 				sources,
-				manifestProvider: createManifestProvider?.(req),
+				...manifestAccessFor(req),
 				compositionAuth,
 			});
 		}

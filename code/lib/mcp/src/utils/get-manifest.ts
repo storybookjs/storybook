@@ -1,12 +1,20 @@
 import {
-	ComponentManifest,
 	ComponentManifestMap,
 	DocsManifestMap,
 	type AllManifests,
+	type ComponentManifest,
+	type ComponentManifestEntry,
+	type CoreDocgenComponent,
+	type CoreDocgenPayload,
+	type CoreMdxDoc,
+	type CoreStoryDocsPayload,
+	type Doc,
+	type DocEntry,
 	type Source,
 	type SourceManifests,
 } from '../types.ts';
 import * as v from 'valibot';
+import { adaptCoreComponent, adaptCoreDoc, adaptCoreStories } from './adapt-core-manifest.ts';
 import { formatRequiresOwnMcpNotice, getSourceMcpEndpoint } from './requires-own-mcp.ts';
 
 type SourceWithUrl = Source & { url: string };
@@ -22,6 +30,9 @@ type ManifestProvider = (
  */
 export const COMPONENT_MANIFEST_PATH = './manifests/components.json';
 export const DOCS_MANIFEST_PATH = './manifests/docs.json';
+
+/** Empty placeholder manifest used for sources that errored or need their own MCP endpoint. */
+const EMPTY_COMPONENT_MANIFEST: ComponentManifestMap = { v: 1, components: {} };
 
 /**
  * Error thrown when getting or parsing a manifest fails
@@ -199,15 +210,16 @@ export async function getManifests(
 }
 
 /**
- * Resolves a docgen `$ref` into the provider path of the referenced file and the
+ * Resolves a `$ref` into the provider path of the referenced file and the
  * JSON-pointer segments into it.
  *
  * The `$ref` file path is relative to the component manifest's location, e.g.
  * `"../services/core/docgen/button.json#/components/button"` from
  * `./manifests/components.json` resolves to `./services/core/docgen/button.json`
- * with pointer `["components", "button"]`.
+ * with pointer `["components", "button"]`. The same base (`manifests/`) applies to
+ * docgen, story-docs and MDX refs.
  */
-export function parseDocgenRef(ref: string): { path: string; pointer: string[] } {
+export function parseManifestRef(ref: string): { path: string; pointer: string[] } {
 	const [filePath = '', hash = ''] = ref.split('#');
 
 	// Directory of the component manifest (e.g. "manifests/"), used as the base for
@@ -227,23 +239,16 @@ export function parseDocgenRef(ref: string): { path: string; pointer: string[] }
 }
 
 /**
- * Resolves a stub component (externalized-docgen manifest format) into a full
- * component manifest by fetching the referenced docgen file and reading the
- * pointed-to entry. Components without a `docgen.$ref` are returned unchanged.
+ * Fetches the file a `$ref` points at (verbatim — never a fabricated path) and
+ * walks its JSON pointer, returning the pointed-to value.
  */
-export async function resolveComponentDocgen(
-	component: ComponentManifest,
-	request?: Request,
-	manifestProvider?: ManifestProvider,
-	source?: Source,
-): Promise<ComponentManifest> {
-	const ref = component.docgen?.$ref;
-	if (!ref) {
-		return component;
-	}
-
-	const { path, pointer } = parseDocgenRef(ref);
-	const provider = manifestProvider ?? defaultManifestProvider;
+async function fetchRefValue<T>(
+	ref: string,
+	request: Request | undefined,
+	provider: ManifestProvider,
+	source: Source | undefined,
+): Promise<T> {
+	const { path, pointer } = parseManifestRef(ref);
 	const jsonString = await provider(request, path, source);
 
 	let target: unknown;
@@ -251,7 +256,7 @@ export async function resolveComponentDocgen(
 		target = JSON.parse(jsonString);
 	} catch (error) {
 		throw new ManifestGetError(
-			`Failed to parse externalized docgen referenced by "${ref}"`,
+			`Failed to parse externalized payload referenced by "${ref}"`,
 			path,
 			error instanceof Error ? error : undefined,
 		);
@@ -262,22 +267,156 @@ export async function resolveComponentDocgen(
 			target = (target as Record<string, unknown>)[key];
 		} else {
 			throw new ManifestGetError(
-				`Docgen reference "${ref}" could not be resolved: missing "${key}".`,
+				`Reference "${ref}" could not be resolved: missing "${key}".`,
 				path,
 			);
 		}
 	}
 
-	const resolved = parseManifest({
-		jsonString: JSON.stringify(target),
-		schema: ComponentManifest,
-		name: 'component docgen',
-		url: path,
-	});
+	return target as T;
+}
 
-	// Stub fields (id/name/description) are authoritative for identity; the resolved
-	// entry supplies path/stories/docgen data.
-	return { ...component, ...resolved };
+/**
+ * Resolves a component index entry into a full component manifest by following any
+ * `$ref`s it carries (docgen, story-docs, attached MDX docs), then adapting the
+ * core-format payloads into `@storybook/mcp`'s internal shape.
+ *
+ * Refs are read verbatim from the entry — never fabricated from an id — so a
+ * provider is only ever asked for top-level manifest paths or paths a manifest
+ * already pointed at. Components without any `$ref` (inline/v0 format, or entries
+ * already resolved in-process) are returned unchanged.
+ */
+export async function resolveComponentEntry(
+	component: ComponentManifestEntry,
+	request?: Request,
+	manifestProvider?: ManifestProvider,
+	source?: Source,
+): Promise<ComponentManifest> {
+	const docgenRef = 'docgen' in component ? component.docgen?.$ref : undefined;
+	const storiesRef =
+		component.stories && !Array.isArray(component.stories) ? component.stories.$ref : undefined;
+	const docEntries: [string, DocEntry][] = component.docs ? Object.entries(component.docs) : [];
+	const docRefs = docEntries.filter(([, doc]) => 'mdx' in doc && !!doc.mdx?.$ref);
+
+	if (!docgenRef && !storiesRef && docRefs.length === 0) {
+		// No `$ref`s to follow: this is an inline (v0) entry already in resolved form
+		// (or a v1 row with nothing to resolve).
+		return component as ComponentManifest;
+	}
+
+	const provider = manifestProvider ?? defaultManifestProvider;
+
+	// Identity fields from the index entry are authoritative; the docgen payload
+	// supplies path/props/jsDocTags/subcomponents.
+	let core: CoreDocgenComponent = {
+		id: component.id,
+		name: component.name,
+		...(component.description !== undefined ? { description: component.description } : {}),
+		...(component.summary !== undefined ? { summary: component.summary } : {}),
+		...(component.error !== undefined ? { error: component.error } : {}),
+	};
+
+	if (docgenRef) {
+		const payload = await fetchRefValue<CoreDocgenPayload>(docgenRef, request, provider, source);
+		core = {
+			...core,
+			...payload,
+			id: component.id,
+			name: component.name,
+			...(component.description !== undefined ? { description: component.description } : {}),
+			...(component.summary !== undefined ? { summary: component.summary } : {}),
+			...(component.error !== undefined ? { error: component.error } : {}),
+		};
+	}
+
+	// Preserve inline stories (mixed/v0) when there's no story-docs ref to follow.
+	if (Array.isArray(component.stories)) {
+		core.stories = component.stories;
+	}
+
+	if (storiesRef) {
+		const storyDocs = await fetchRefValue<CoreStoryDocsPayload | null>(
+			storiesRef,
+			request,
+			provider,
+			source,
+		);
+		if (storyDocs?.stories) {
+			core.stories = storyDocs.stories;
+		}
+		if (storyDocs?.import) {
+			core.import = storyDocs.import;
+		}
+	}
+
+	if (docEntries.length > 0) {
+		const docs: Record<string, CoreMdxDoc> = {};
+		for (const [docId, doc] of docEntries) {
+			const mdxRef = 'mdx' in doc ? doc.mdx?.$ref : undefined;
+			docs[docId] = mdxRef
+				? await fetchRefValue<CoreMdxDoc>(mdxRef, request, provider, source)
+				: (doc as CoreMdxDoc);
+		}
+		core.docs = docs;
+	}
+
+	return adaptCoreComponent(core);
+}
+
+/**
+ * Resolves only a component's stories `$ref` (story-docs payload) into a `Story[]`,
+ * leaving docgen/docs refs untouched. Used by `list-all-documentation` when story
+ * ids are requested, so listing doesn't pay for docgen/MDX resolution it won't show.
+ */
+export async function resolveComponentStories(
+	component: ComponentManifestEntry,
+	request?: Request,
+	manifestProvider?: ManifestProvider,
+	source?: Source,
+): Promise<ComponentManifest> {
+	if (!component.stories || Array.isArray(component.stories)) {
+		// Already inline (v0) or no stories: nothing to follow.
+		return component as ComponentManifest;
+	}
+
+	const provider = manifestProvider ?? defaultManifestProvider;
+	const storyDocs = await fetchRefValue<CoreStoryDocsPayload | null>(
+		component.stories.$ref,
+		request,
+		provider,
+		source,
+	);
+
+	return {
+		...component,
+		stories: storyDocs?.stories ? adaptCoreStories(storyDocs.stories) : [],
+	} as ComponentManifest;
+}
+
+/**
+ * Resolves a standalone docs entry, following its `mdx.$ref` when present.
+ * Inline docs (v0) are returned unchanged.
+ */
+export async function resolveDoc(
+	doc: DocEntry,
+	request?: Request,
+	manifestProvider?: ManifestProvider,
+	source?: Source,
+): Promise<Doc> {
+	const ref = 'mdx' in doc ? doc.mdx?.$ref : undefined;
+	if (!ref) {
+		// Inline (v0) doc, already in resolved form.
+		return doc as Doc;
+	}
+
+	const provider = manifestProvider ?? defaultManifestProvider;
+	const payload = await fetchRefValue<CoreMdxDoc>(ref, request, provider, source);
+
+	return adaptCoreDoc({
+		...payload,
+		id: payload.id ?? doc.id,
+		name: payload.name ?? doc.name,
+	});
 }
 
 /**
@@ -356,7 +495,7 @@ export async function getMultiSourceManifests(
 				if (error instanceof RequiresOwnMcpError) {
 					return {
 						source,
-						componentManifest: { v: 1, components: {} },
+						componentManifest: EMPTY_COMPONENT_MANIFEST,
 						notice: {
 							kind: 'requires-own-mcp' as const,
 							endpoint: error.endpoint,
@@ -366,7 +505,7 @@ export async function getMultiSourceManifests(
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				return {
 					source,
-					componentManifest: { v: 1, components: {} },
+					componentManifest: EMPTY_COMPONENT_MANIFEST,
 					error: errorMessage,
 				};
 			}

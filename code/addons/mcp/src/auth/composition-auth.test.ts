@@ -178,6 +178,55 @@ describe('CompositionAuth', () => {
 			);
 		});
 
+		it('delegates the local source to localManifestProvider when provided (docgen-server mode)', async () => {
+			const auth = new CompositionAuth();
+
+			const mockFetch = vi.fn();
+			vi.stubGlobal('fetch', mockFetch);
+
+			const localManifestProvider = vi
+				.fn()
+				.mockResolvedValue('{"v":1,"components":{"button":{"id":"button","name":"Button"}}}');
+
+			const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
+			const request = new Request('http://localhost:6006/mcp');
+			const source = { id: 'local', title: 'Local' };
+
+			const result = await provider(request, './manifests/components.json', source);
+
+			// Read in-process, never over loopback HTTP.
+			expect(localManifestProvider).toHaveBeenCalledWith(
+				request,
+				'./manifests/components.json',
+				source,
+			);
+			expect(mockFetch).not.toHaveBeenCalled();
+			expect(result).toContain('button');
+		});
+
+		it('still fetches remote sources over HTTP even when localManifestProvider is provided', async () => {
+			const auth = new CompositionAuth();
+
+			const mockFetch = vi.fn().mockResolvedValue({
+				ok: true,
+				text: () => Promise.resolve('{"v":1,"components":{}}'),
+			});
+			vi.stubGlobal('fetch', mockFetch);
+			const localManifestProvider = vi.fn();
+
+			const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
+			const request = new Request('http://localhost:6006/mcp');
+			const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+			await provider(request, './manifests/components.json', source);
+
+			expect(localManifestProvider).not.toHaveBeenCalled();
+			expect(mockFetch).toHaveBeenCalledWith(
+				'http://remote.example.com/manifests/components.json',
+				expect.any(Object),
+			);
+		});
+
 		it('fetches from source URL when source provided', async () => {
 			const auth = new CompositionAuth();
 
@@ -282,6 +331,60 @@ describe('CompositionAuth', () => {
 
 			const result = await provider(request, './manifests/components.json');
 			expect(result).toBe(manifestJson);
+		});
+
+		it('returns split/ref service payloads from a remote source (v1)', async () => {
+			const auth = new CompositionAuth();
+			// A `core/story-docs` service file: `stories` is a record keyed by story id, which
+			// does NOT match the top-level component-manifest shape. The provider must return it
+			// verbatim rather than rejecting it as an "invalid manifest".
+			const storyDocsJson = JSON.stringify({
+				components: {
+					button: {
+						id: 'button',
+						name: 'Button',
+						path: 'src/Button.tsx',
+						stories: {
+							'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+						},
+					},
+				},
+			});
+
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					text: () => Promise.resolve(storyDocsJson),
+				}),
+			);
+
+			const provider = auth.createManifestProvider('http://localhost:6006');
+			const request = new Request('http://localhost:6006/mcp');
+			const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+			const result = await provider(request, './services/core/story-docs/button.json', source);
+			expect(result).toBe(storyDocsJson);
+		});
+
+		it('rejects a remote service payload that is not valid JSON', async () => {
+			const auth = new CompositionAuth();
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					// HTML login page masquerading as a 200 — not JSON.
+					text: () => Promise.resolve('<!doctype html><html><body>Login</body></html>'),
+				}),
+			);
+
+			const provider = auth.createManifestProvider('http://localhost:6006');
+			const request = new Request('http://localhost:6006/mcp');
+			const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+			await expect(
+				provider(request, './services/core/story-docs/button.json', source),
+			).rejects.toThrow(/Invalid manifest response|Authorization/);
 		});
 
 		it('throws when fetch returns non-ok response', async () => {

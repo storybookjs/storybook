@@ -8,18 +8,25 @@ function createMockOptions({
 	hasManifests = false,
 	hasLegacyComponentManifestGenerator = false,
 	hasFeaturesObject = true,
+	docgenServer = false,
 }: {
 	featureFlag?: boolean;
 	featureFlagName?: 'componentsManifest' | 'experimentalComponentsManifest';
 	hasManifests?: boolean;
 	hasLegacyComponentManifestGenerator?: boolean;
 	hasFeaturesObject?: boolean;
+	docgenServer?: boolean;
 } = {}): Options {
 	return {
 		presets: {
 			apply: vi.fn(async (key: string) => {
 				if (key === 'features') {
-					return hasFeaturesObject ? { [featureFlagName]: featureFlag } : {};
+					return hasFeaturesObject
+						? {
+								[featureFlagName]: featureFlag,
+								...(docgenServer ? { experimentalDocgenServer: true } : {}),
+							}
+						: {};
 				}
 				if (key === 'experimental_manifests') {
 					return hasManifests ? { components: { v: 1, components: {} } } : undefined;
@@ -38,22 +45,32 @@ describe('getManifestStatus', () => {
 		{
 			description: 'both feature flag and manifests are present',
 			options: { featureFlag: true, hasManifests: true },
-			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true, docgenServer: false },
 		},
 		{
 			description: 'both feature flag and legacy component manifest generator are present',
 			options: { featureFlag: true, hasLegacyComponentManifestGenerator: true },
-			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true, docgenServer: false },
 		},
 		{
 			description: 'missing manifests (unsupported framework)',
 			options: { featureFlag: true, hasManifests: false },
-			expected: { available: false, hasManifests: false, hasFeatureFlag: true },
+			expected: {
+				available: false,
+				hasManifests: false,
+				hasFeatureFlag: true,
+				docgenServer: false,
+			},
 		},
 		{
 			description: 'missing feature flag',
 			options: { featureFlag: false, hasManifests: true },
-			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
+			expected: {
+				available: false,
+				hasManifests: true,
+				hasFeatureFlag: false,
+				docgenServer: false,
+			},
 		},
 		{
 			description: 'both are missing',
@@ -62,12 +79,18 @@ describe('getManifestStatus', () => {
 				available: false,
 				hasManifests: false,
 				hasFeatureFlag: false,
+				docgenServer: false,
 			},
 		},
 		{
 			description: 'features object is missing the flag',
 			options: { hasManifests: true, hasFeaturesObject: false },
-			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
+			expected: {
+				available: false,
+				hasManifests: true,
+				hasFeatureFlag: false,
+				docgenServer: false,
+			},
 		},
 		{
 			description: 'legacy experimentalComponentsManifest flag is true (backwards compat)',
@@ -76,7 +99,7 @@ describe('getManifestStatus', () => {
 				featureFlagName: 'experimentalComponentsManifest' as const,
 				hasManifests: true,
 			},
-			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true, docgenServer: false },
 		},
 		{
 			description: 'legacy experimentalComponentsManifest flag is false (backwards compat)',
@@ -85,7 +108,17 @@ describe('getManifestStatus', () => {
 				featureFlagName: 'experimentalComponentsManifest' as const,
 				hasManifests: true,
 			},
-			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
+			expected: {
+				available: false,
+				hasManifests: true,
+				hasFeatureFlag: false,
+				docgenServer: false,
+			},
+		},
+		{
+			description: 'experimentalDocgenServer mode reports manifests available via the services',
+			options: { featureFlag: true, hasManifests: false, docgenServer: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true, docgenServer: true },
 		},
 	])('should return correct status when $description', async ({ options, expected }) => {
 		const mockOptions = createMockOptions(options);
@@ -113,6 +146,7 @@ describe('getManifestStatus', () => {
 			available: false,
 			hasManifests: false,
 			hasFeatureFlag: true,
+			docgenServer: false,
 		});
 	});
 });

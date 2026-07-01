@@ -33,10 +33,30 @@ export {
 	DOCS_MANIFEST_PATH,
 	RequiresOwnMcpError,
 	getMultiSourceManifests,
+	resolveComponentEntry,
+	resolveComponentStories,
+	resolveDoc,
 } from './utils/get-manifest.ts';
 
+// Adapters from Storybook's open-service ("core format") payloads to the internal shape.
+export { adaptCoreComponent, adaptCoreDoc, adaptCoreStories } from './utils/adapt-core-manifest.ts';
+
 // Export types for reuse
-export type { RequiresOwnMcpNotice, StorybookContext, Source, SourceManifests } from './types.ts';
+export type {
+	RequiresOwnMcpNotice,
+	StorybookContext,
+	ResolvedEntry,
+	Source,
+	SourceManifests,
+	Doc,
+	Story,
+	CoreDocgenPayload,
+	CoreDocgenComponent,
+	CoreMdxPayload,
+	CoreMdxDoc,
+	CoreStoryDocsPayload,
+	CoreStoryDoc,
+} from './types.ts';
 
 // copied from tmcp internals as it's not exposed
 type InitializeRequestParams = {

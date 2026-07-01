@@ -9,7 +9,11 @@ import {
 } from 'react';
 
 import { IFRAME_RESIZE_REQUEST_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
-import { parseIframeResizeMessage, type ContentDimensions } from './iframeResizeMessage.ts';
+import {
+  contentDimensionsEqual,
+  parseIframeResizeMessage,
+  type ContentDimensions,
+} from './iframeResizeMessage.ts';
 import {
   PREVIEW_SETTLE_TIMEOUT_MS,
   enqueuePreview,
@@ -204,9 +208,7 @@ export const usePreviewThumbnail = ({
     (dimensions: ContentDimensions) => {
       const generation = loadGenerationRef.current;
       setRememberedDimensions((current) =>
-        current?.width === dimensions.width && current?.height === dimensions.height
-          ? current
-          : dimensions
+        contentDimensionsEqual(current, dimensions) ? current : dimensions
       );
       scheduleLoadingClearAfterPaint(generation);
     },

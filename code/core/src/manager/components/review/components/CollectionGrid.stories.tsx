@@ -3,7 +3,11 @@ import React, { type FC } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
-import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
+import {
+  IFRAME_RESIZE_CONTEXT,
+  type IframeResizeViewport,
+} from '../../../../shared/constants/iframe-resize.ts';
+import { RESPONSIVE_VIEWPORT_VALUE } from '../../../../viewport/constants.ts';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { StoryInfo } from '../review-types.ts';
 import { CollectionGrid, type CollectionGridProps } from './CollectionGrid.tsx';
@@ -107,14 +111,24 @@ const meta = preview.meta({
 const previewHref = (storyId: string) =>
   `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
 
-const dispatchIframeResize = (cell: HTMLElement, width: number, height: number) => {
+const dispatchIframeResize = (
+  cell: HTMLElement,
+  width: number,
+  height: number,
+  viewport?: IframeResizeViewport
+) => {
   const contentWindow = cell.querySelector('iframe')?.contentWindow;
   if (!contentWindow) {
     throw new Error('Preview iframe has no contentWindow');
   }
   window.dispatchEvent(
     new MessageEvent('message', {
-      data: JSON.stringify({ context: IFRAME_RESIZE_CONTEXT, width, height }),
+      data: JSON.stringify({
+        context: IFRAME_RESIZE_CONTEXT,
+        width,
+        height,
+        ...(viewport ? { viewport } : {}),
+      }),
       source: contentWindow,
     })
   );
@@ -123,12 +137,16 @@ const dispatchIframeResize = (cell: HTMLElement, width: number, height: number) 
 /** Loader cleared after iframe src is assigned and resize is applied. */
 const waitForCellPreviewSettled = async (
   cell: HTMLElement,
-  dimensions = { width: 320, height: 240 }
+  dimensions: {
+    width: number;
+    height: number;
+    viewport?: IframeResizeViewport;
+  } = { width: 320, height: 240 }
 ) => {
   await waitFor(() => {
     expect(cell.querySelector('iframe')?.getAttribute('src')).toContain('embed=true');
   });
-  dispatchIframeResize(cell, dimensions.width, dimensions.height);
+  dispatchIframeResize(cell, dimensions.width, dimensions.height, dimensions.viewport);
   await waitFor(() => {
     expect(within(cell).queryByTestId('review-preview-loading')).not.toBeInTheDocument();
     expect(Number(cell.querySelector('iframe')?.getAttribute('data-content-width'))).toBe(
@@ -346,12 +364,66 @@ export const FrameFitsCellAfterResize = meta.story({
   globals: { viewport: { value: 'desktop' } },
   play: async ({ canvasElement }) => {
     const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
-    await waitForCellPreviewSettled(cell, { width: 1280, height: 800 });
+    await waitForCellPreviewSettled(cell, {
+      width: 1280,
+      height: 800,
+      viewport: { name: 'Desktop', value: 'desktop', width: 1280, height: 1024 },
+    });
     await waitFor(() => {
       const cellWidth = cell.getBoundingClientRect().width;
       const frame = cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]');
       expect(frame).toBeTruthy();
       expect(frame!.getBoundingClientRect().width).toBeLessThanOrEqual(cellWidth + 1);
     });
+  },
+});
+
+export const ViewportAspectRatio = meta.story({
+  args: {
+    storyIds: ['manager-main--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
+    await waitForCellPreviewSettled(cell, {
+      width: 120,
+      height: 48,
+      viewport: { name: 'Small mobile', value: 'mobile1', width: 320, height: 568 },
+    });
+
+    const shell = cell.firstElementChild as HTMLElement;
+    const frame = cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]');
+    expect(frame?.hasAttribute('data-viewport-fill')).toBe(true);
+
+    const shellRect = shell.getBoundingClientRect();
+    const frameRect = frame!.getBoundingClientRect();
+    expect(frameRect.width).toBeCloseTo(shellRect.width, 0);
+    expect(frameRect.height).toBeCloseTo(shellRect.height, 0);
+
+    const previewScale = frame?.querySelector('[data-preview-scale]') as HTMLElement | null;
+    expect(previewScale).toBeTruthy();
+    expect(previewScale!.getBoundingClientRect().height).toBeGreaterThan(frameRect.height);
+  },
+});
+
+export const ResponsiveViewportFillsCell = meta.story({
+  args: {
+    storyIds: ['manager-main--default'],
+  },
+  play: async ({ canvasElement }) => {
+    const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
+    await waitForCellPreviewSettled(cell, {
+      width: 320,
+      height: 240,
+      viewport: { name: 'Responsive', value: RESPONSIVE_VIEWPORT_VALUE, width: 800, height: 600 },
+    });
+
+    const shell = cell.firstElementChild as HTMLElement;
+    const frame = cell.querySelector<HTMLElement>('[data-testid="review-collection-grid-frame"]');
+    expect(frame?.hasAttribute('data-viewport-fill')).toBe(false);
+
+    const shellRect = shell.getBoundingClientRect();
+    const frameRect = frame!.getBoundingClientRect();
+    expect(frameRect.width).toBeCloseTo(shellRect.width, 0);
+    expect(frameRect.height).toBeCloseTo(shellRect.height, 0);
   },
 });

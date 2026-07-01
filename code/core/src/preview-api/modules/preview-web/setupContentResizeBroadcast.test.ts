@@ -427,6 +427,42 @@ describe('setupContentResizeBroadcast', () => {
     expect(payload.src).toContain('embed=true');
   });
 
+  it('includes viewport metadata when getViewport is provided', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
+    );
+    const content = document.getElementById('content') as HTMLDivElement;
+    mockRect(content, {
+      top: 0,
+      left: 0,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
+    });
+
+    const { onContentFrozen } = setupContentResizeBroadcast({
+      getViewport: () => ({
+        name: 'Small mobile',
+        value: 'mobile1',
+        width: 320,
+        height: 568,
+      }),
+    });
+    onContentFrozen?.();
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    expect(JSON.parse(message as string)).toMatchObject({
+      context: IFRAME_RESIZE_CONTEXT,
+      viewport: { name: 'Small mobile', value: 'mobile1', width: 320, height: 568 },
+    });
+  });
+
   it('ignores pass-through wrappers when measuring nested content', async () => {
     const payload = await measureAfterFreeze(() => {
       document.body.innerHTML =

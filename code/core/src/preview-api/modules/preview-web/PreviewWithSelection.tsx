@@ -43,6 +43,7 @@ import { Preview } from './Preview.tsx';
 import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
 import { shouldAutoplay } from './embedMode.ts';
+import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
@@ -104,7 +105,19 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
-    const { onContentFrozen } = setupContentResizeBroadcast();
+    const { onContentFrozen } = setupContentResizeBroadcast({
+      getViewport: () => {
+        const render = this.currentRender;
+        if (!render || !isStoryRender(render)) {
+          return undefined;
+        }
+
+        return getEmbedResizeViewport(this.storyStoreValue, render, {
+          width: globalWindow.innerWidth,
+          height: globalWindow.innerHeight,
+        });
+      },
+    });
     setupStoryFreezer(this.channel, { onFrozen: onContentFrozen });
 
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));

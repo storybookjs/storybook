@@ -4,7 +4,11 @@ import { Badge, Button, Loader } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
-import { DEFAULT_CONTENT_WIDTH, THUMBNAIL_BOOTSTRAP_SCALE } from './iframeResizeMessage.ts';
+import {
+  DEFAULT_CONTENT_WIDTH,
+  getPreviewFrameStyle,
+  hasFixedViewportAspect,
+} from './iframeResizeMessage.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -56,8 +60,6 @@ const FrameShell = styled.div({
   position: 'relative',
 });
 
-// Frame fills FrameShell absolutely so layout width comes from the shell,
-// not subgrid row height interacting with aspect-ratio on the grid item.
 const Frame = styled.a(({ theme }) => ({
   position: 'absolute',
   inset: 0,
@@ -69,6 +71,7 @@ const Frame = styled.a(({ theme }) => ({
   '--fit-w': 'calc(100cqw / (var(--content-w) * 1px))',
   '--fit': 'min(1, var(--fit-w))',
   '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
+  '--vp-scale': 'calc(100cqw / (var(--vp-w) * 1px))',
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -76,6 +79,22 @@ const Frame = styled.a(({ theme }) => ({
   transition: 'border-color 120ms ease',
   textDecoration: 'none',
   outline: 'none',
+  '& [data-preview-scale]': {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left',
+  },
+  '&[data-viewport-fill] [data-preview-scale]': {
+    width: 'calc(var(--vp-w) * 1px)',
+    height: 'calc(var(--vp-h) * 1px)',
+    transform: 'scale(var(--vp-scale))',
+  },
+  '&:not([data-viewport-fill]) [data-preview-scale]': {
+    width: 'calc(100% / var(--scale))',
+    height: 'calc(100% / var(--scale))',
+    transform: 'scale(var(--scale))',
+  },
   '&[href]:hover': {
     borderColor: theme.color.secondary,
   },
@@ -84,20 +103,6 @@ const Frame = styled.a(({ theme }) => ({
     outlineOffset: 2,
   },
 }));
-
-// Frame-sized clip; scaling happens on PreviewScale so layout overflow stays inside.
-const PreviewClip = styled.div({
-  position: 'absolute',
-  inset: 0,
-  overflow: 'hidden',
-});
-
-const PreviewScale = styled.div({
-  width: 'calc(100% / var(--scale))',
-  height: 'calc(100% / var(--scale))',
-  transform: 'scale(var(--scale))',
-  transformOrigin: 'top left',
-});
 
 const Preview = styled.iframe(({ theme }) => ({
   display: 'block',
@@ -210,31 +215,24 @@ const StoryPreviewCell: FC<{
   } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
 
   const { component, name } = deriveStoryInfo(info);
-
-  const frameStyle = rememberedDimensions
-    ? ({ '--content-w': rememberedDimensions.width } as React.CSSProperties)
-    : ({
-        // Widen the embed viewport before iframe.resize so stories don't measure
-        // and layout in a narrow/mobile breakpoint inside a small thumbnail frame.
-        '--scale': THUMBNAIL_BOOTSTRAP_SCALE,
-      } as React.CSSProperties);
+  const viewport = rememberedDimensions?.viewport;
+  const viewportFill = hasFixedViewportAspect(viewport);
+  const frameStyle = getPreviewFrameStyle(rememberedDimensions);
 
   const preview = src ? (
-    <PreviewClip>
-      <PreviewScale>
-        <Preview
-          ref={iframeRef}
-          title={storyId}
-          src={src}
-          data-content-width={rememberedDimensions?.width}
-          data-content-height={rememberedDimensions?.height}
-          tabIndex={-1}
-          scrolling="no"
-          onLoad={finishCurrent}
-          onError={finishCurrent}
-        />
-      </PreviewScale>
-    </PreviewClip>
+    <div data-preview-scale>
+      <Preview
+        ref={iframeRef}
+        title={storyId}
+        src={src}
+        data-content-width={rememberedDimensions?.width}
+        data-content-height={rememberedDimensions?.height}
+        tabIndex={-1}
+        scrolling="no"
+        onLoad={finishCurrent}
+        onError={finishCurrent}
+      />
+    </div>
   ) : null;
 
   return (
@@ -245,6 +243,7 @@ const StoryPreviewCell: FC<{
           {...(href ? { href } : {})}
           ref={frameRef as React.Ref<HTMLAnchorElement>}
           data-testid="review-collection-grid-frame"
+          data-viewport-fill={viewportFill || undefined}
           style={frameStyle}
           aria-label={href ? `Review story ${storyId}` : undefined}
           onMouseEnter={forceStartCurrent}

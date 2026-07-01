@@ -3,7 +3,9 @@ import { global } from '@storybook/global';
 import {
   IFRAME_RESIZE_CONTEXT,
   IFRAME_RESIZE_REQUEST_CONTEXT,
+  iframeResizeViewportsEqual,
 } from '../../../shared/constants/iframe-resize.ts';
+import type { ResolvedViewportDimensions } from '../../../viewport/resolveViewport.ts';
 
 import { shouldEmbed } from './embedMode.ts';
 import { shouldFreeze } from './setupStoryFreezer.ts';
@@ -329,12 +331,17 @@ const injectEmbedUiStyles = (documentRef: Document): void => {
   documentRef.head.appendChild(style);
 };
 
-let lastDimensions: { width: number; height: number } | null = null;
+let lastDimensions: {
+  width: number;
+  height: number;
+  viewport?: ResolvedViewportDimensions;
+} | null = null;
 
 const sendResizeMessage = (
   elements: Set<Element>,
   windowRef: Window,
-  documentRef: Document
+  documentRef: Document,
+  getViewport?: () => ResolvedViewportDimensions | undefined
 ): void => {
   if (!elements.size) {
     return;
@@ -343,8 +350,13 @@ const sendResizeMessage = (
   injectEmbedSizingStyles(documentRef);
   const dimensions = getDimensions(elements, documentRef);
   removeEmbedSizingStyles(documentRef);
+  const viewport = getViewport?.();
 
-  if (dimensions.width === lastDimensions?.width && dimensions.height === lastDimensions?.height) {
+  if (
+    dimensions.width === lastDimensions?.width &&
+    dimensions.height === lastDimensions?.height &&
+    iframeResizeViewportsEqual(viewport, lastDimensions?.viewport)
+  ) {
     return;
   }
 
@@ -353,8 +365,9 @@ const sendResizeMessage = (
     context: IFRAME_RESIZE_CONTEXT,
     width: dimensions.width,
     height: dimensions.height,
+    ...(viewport ? { viewport } : {}),
   });
-  lastDimensions = dimensions;
+  lastDimensions = { ...dimensions, viewport };
 
   try {
     if (windowRef.parent !== windowRef) {
@@ -388,6 +401,11 @@ const debounce = (callback: () => void): (() => void) & { cancel: () => void } =
   return debounced;
 };
 
+export type ContentResizeBroadcastOptions = {
+  /** Resolve the active viewport for the current story when posting iframe.resize. */
+  getViewport?: () => ResolvedViewportDimensions | undefined;
+};
+
 export type ContentResizeBroadcast = {
   /** Final measure after freeze; only set when freeze is also active. */
   onContentFrozen?: () => void;
@@ -399,7 +417,10 @@ export type ContentResizeBroadcast = {
  * When `embed=true`, measure story content and notify the parent frame via
  * postMessage so embedded thumbnails can size themselves to the content.
  */
-export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
+export const setupContentResizeBroadcast = (
+  options: ContentResizeBroadcastOptions = {}
+): ContentResizeBroadcast => {
+  const { getViewport } = options;
   const windowRef = global.window;
   const documentRef = global.document;
   if (!windowRef || !documentRef) {
@@ -422,7 +443,7 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
 
   const measureAndSend = () => {
     const elements = getTrackedElements();
-    sendResizeMessage(elements, windowRef, documentRef);
+    sendResizeMessage(elements, windowRef, documentRef, getViewport);
   };
 
   const onParentMessage = (event: MessageEvent) => {
@@ -461,7 +482,7 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
   }
 
   const trackedElements = getTrackedElements();
-  const update = () => sendResizeMessage(trackedElements, windowRef, documentRef);
+  const update = () => sendResizeMessage(trackedElements, windowRef, documentRef, getViewport);
   const debouncedUpdate = debounce(update);
 
   const resizeObserver = new ResizeObserver(debouncedUpdate);

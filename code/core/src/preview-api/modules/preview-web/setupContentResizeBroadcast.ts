@@ -388,6 +388,8 @@ const debounce = (callback: () => void): (() => void) => {
 export type ContentResizeBroadcast = {
   /** Final measure after freeze; only set when freeze is also active. */
   onContentFrozen?: () => void;
+  /** Tear down listeners/observers; for tests and hot reload. */
+  cleanup?: () => void;
 };
 
 /**
@@ -410,6 +412,7 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
   lastDimensions = null;
 
   const freezing = shouldFreeze({ search: documentRef.location.search });
+  let contentFrozen = false;
 
   const measureAndSend = () => {
     const elements = getTrackedElements();
@@ -423,6 +426,9 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     try {
       const parsed = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
       if (parsed?.context === IFRAME_RESIZE_REQUEST_CONTEXT) {
+        if (freezing && !contentFrozen) {
+          return;
+        }
         lastDimensions = null;
         measureAndSend();
       }
@@ -431,13 +437,20 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
     }
   };
   windowRef.addEventListener('message', onParentMessage);
+  const cleanups: Array<() => void> = [
+    () => windowRef.removeEventListener('message', onParentMessage),
+  ];
 
   if (freezing) {
     // Thumbnail embeds use freeze=finished so the preview can settle before measuring.
     // Measuring earlier (e.g. while a portaled dismiss underlay is mounted) would
     // report the iframe viewport instead of the story chrome.
     return {
-      onContentFrozen: measureAndSend,
+      onContentFrozen: () => {
+        contentFrozen = true;
+        measureAndSend();
+      },
+      cleanup: () => cleanups.forEach((fn) => fn()),
     };
   }
 
@@ -473,6 +486,11 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
   });
 
   windowRef.addEventListener('resize', debouncedUpdate);
+  cleanups.push(
+    () => resizeObserver.disconnect(),
+    () => mutationObserver.disconnect(),
+    () => windowRef.removeEventListener('resize', debouncedUpdate)
+  );
 
-  return {};
+  return { cleanup: () => cleanups.forEach((fn) => fn()) };
 };

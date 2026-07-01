@@ -118,13 +118,9 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
 }
 
 export function expectDisplayReviewForVisualChange(): void {
-	const displayReviewCalls = getWorkflowCalls('display-review');
-	expect(displayReviewCalls.length, 'Expected display-review to be called').toBeGreaterThan(0);
-
-	const displayReview = displayReviewCalls.at(-1);
-	expect(displayReview, 'Expected a display-review call').toBeDefined();
+	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {
-		return;
+		expect.fail('Expected display-review to be called');
 	}
 
 	expectValidDisplayReviewPayload(displayReview.input);
@@ -149,38 +145,21 @@ export function expectValidStorybookLaunchConfig(): void {
 		return;
 	}
 
-	expect(existsSync(LAUNCH_CONFIG_PATH), `Expected ${LAUNCH_CONFIG_PATH} to be written`).toBe(true);
+	if (!existsSync(LAUNCH_CONFIG_PATH)) {
+		expect.fail(`Expected ${LAUNCH_CONFIG_PATH} to be written`);
+	}
 
 	const launchConfig = parseJson(readFileSync(LAUNCH_CONFIG_PATH, 'utf8'));
-	expect(isRecord(launchConfig), `Expected ${LAUNCH_CONFIG_PATH} to contain a JSON object`).toBe(
-		true,
-	);
-	if (!isRecord(launchConfig)) {
-		return;
-	}
+	expectRecord(launchConfig, LAUNCH_CONFIG_PATH);
+	expectNonEmptyArray(launchConfig.configurations, `${LAUNCH_CONFIG_PATH} configurations`);
 
-	const configurations = launchConfig.configurations;
-	expect(
-		Array.isArray(configurations),
-		`Expected ${LAUNCH_CONFIG_PATH} to have a configurations array`,
-	).toBe(true);
-	if (!Array.isArray(configurations)) {
-		return;
-	}
-
-	const storybookEntry = configurations.find(
+	const storybookEntry = launchConfig.configurations.find(
 		(configuration) =>
 			isRecord(configuration) &&
 			Array.isArray(configuration.runtimeArgs) &&
 			configuration.runtimeArgs.includes('storybook'),
 	);
-	expect(
-		isRecord(storybookEntry),
-		`Expected ${LAUNCH_CONFIG_PATH} to have a configuration running the storybook script`,
-	).toBe(true);
-	if (!isRecord(storybookEntry)) {
-		return;
-	}
+	expectRecord(storybookEntry, `${LAUNCH_CONFIG_PATH} configuration running the storybook script`);
 
 	expect(storybookEntry.port, 'Storybook launch entry must use port 6006').toBe(6006);
 	expect(storybookEntry.autoPort, 'Storybook launch entry must set autoPort: true').toBe(true);
@@ -248,88 +227,54 @@ function readAgentContext(): AgentContext {
 }
 
 function expectValidDisplayReviewPayload(input: Record<string, unknown>): void {
-	expect(input.title, 'display-review needs a title').toEqual(expect.any(String));
-	expect(
-		String(input.title).trim().length,
-		'display-review title must not be empty',
-	).toBeGreaterThan(0);
-	expect(input.description, 'display-review needs a description').toEqual(expect.any(String));
-	expect(
-		String(input.description).trim().length,
-		'display-review description must not be empty',
-	).toBeGreaterThan(0);
+	expectNonEmptyString(input.title, 'display-review title');
+	expectNonEmptyString(input.description, 'display-review description');
+	expectNonEmptyArray(input.collections, 'display-review collections');
 
-	const collections = input.collections;
-	expect(Array.isArray(collections), 'display-review needs collections').toBe(true);
-	if (!Array.isArray(collections)) {
-		return;
-	}
-	expect(collections.length, 'display-review needs at least one collection').toBeGreaterThan(0);
-
-	for (const [index, collection] of collections.entries()) {
-		expect(isRecord(collection), `display-review collection ${index} must be an object`).toBe(true);
-		if (!isRecord(collection)) {
-			continue;
-		}
-
-		expect(collection.title, `display-review collection ${index} needs a title`).toEqual(
-			expect.any(String),
+	for (const [index, collection] of input.collections.entries()) {
+		const label = `display-review collection ${index}`;
+		expectRecord(collection, label);
+		expectNonEmptyString(collection.title, `${label} title`);
+		expectNonEmptyString(collection.rationale, `${label} rationale`);
+		expectNonEmptyArray(collection.storyIds, `${label} storyIds`);
+		collection.storyIds.forEach((storyId, storyIndex) =>
+			expectNonEmptyString(storyId, `${label} storyIds[${storyIndex}]`),
 		);
-		expect(
-			String(collection.title).trim().length,
-			`display-review collection ${index} title must not be empty`,
-		).toBeGreaterThan(0);
-		expect(collection.rationale, `display-review collection ${index} needs a rationale`).toEqual(
-			expect.any(String),
-		);
-		expect(
-			String(collection.rationale).trim().length,
-			`display-review collection ${index} rationale must not be empty`,
-		).toBeGreaterThan(0);
-
-		const storyIds = collection.storyIds;
-		expect(Array.isArray(storyIds), `display-review collection ${index} needs storyIds`).toBe(true);
-		if (!Array.isArray(storyIds)) {
-			continue;
-		}
-		expect(
-			storyIds.length,
-			`display-review collection ${index} needs at least one story`,
-		).toBeGreaterThan(0);
-		expect(
-			storyIds.every((storyId) => typeof storyId === 'string' && storyId.trim().length > 0),
-			`display-review collection ${index} storyIds must be non-empty strings`,
-		).toBe(true);
 	}
 
-	const changedFiles = input.changedFiles;
-	expect(Array.isArray(changedFiles), 'visual change display-review needs changedFiles').toBe(true);
-	if (!Array.isArray(changedFiles)) {
-		return;
+	expectNonEmptyArray(input.changedFiles, 'visual change display-review changedFiles');
+	input.changedFiles.forEach((filePath, fileIndex) =>
+		expectNonEmptyString(filePath, `visual change display-review changedFiles[${fileIndex}]`),
+	);
+}
+
+function expectNonEmptyString(value: unknown, label: string): asserts value is string {
+	if (typeof value !== 'string' || value.trim().length === 0) {
+		expect.fail(`${label} must be a non-empty string. Received: ${JSON.stringify(value)}`);
 	}
-	expect(
-		changedFiles.length,
-		'visual change display-review changedFiles must not be empty',
-	).toBeGreaterThan(0);
-	expect(
-		changedFiles.every((filePath) => typeof filePath === 'string' && filePath.trim().length > 0),
-		'visual change display-review changedFiles must be non-empty strings',
-	).toBe(true);
+}
+
+function expectNonEmptyArray(value: unknown, label: string): asserts value is unknown[] {
+	if (!Array.isArray(value) || value.length === 0) {
+		expect.fail(`${label} must be a non-empty array. Received: ${JSON.stringify(value)}`);
+	}
+}
+
+function expectRecord(value: unknown, label: string): asserts value is Record<string, unknown> {
+	if (!isRecord(value)) {
+		expect.fail(`${label} must be an object. Received: ${JSON.stringify(value)}`);
+	}
 }
 
 function expectFinalResponseEndsWithReviewSection(): void {
 	const finalMessage = getFinalAssistantMessage();
-	expect(finalMessage, 'Expected a final assistant response').toBeDefined();
 	if (finalMessage === undefined) {
-		return;
+		expect.fail('Expected a final assistant response');
 	}
 
 	const trimmed = finalMessage.trimEnd();
 	const lines = trimmed.split('\n');
-	const lastNonEmptyLine = [...lines]
-		.reverse()
-		.find((line) => line.trim().length > 0)
-		?.trim();
+	const lastNonEmptyLine = lines.findLast((line) => line.trim().length > 0)?.trim();
 
 	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
 		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,

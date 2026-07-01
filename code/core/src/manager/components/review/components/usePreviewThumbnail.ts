@@ -147,6 +147,71 @@ export const usePreviewThumbnail = ({
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [src, setSrc] = useState<string | undefined>(undefined);
   const taskRef = useRef<PreviewTask | null>(null);
+  const loadGenerationRef = useRef(0);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const settleRafRef = useRef({ raf1: 0, raf2: 0 });
+
+  const clearSettleTimers = useCallback(() => {
+    if (fallbackTimerRef.current !== undefined) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = undefined;
+    }
+    cancelAnimationFrame(settleRafRef.current.raf1);
+    cancelAnimationFrame(settleRafRef.current.raf2);
+    settleRafRef.current.raf1 = 0;
+    settleRafRef.current.raf2 = 0;
+  }, []);
+
+  const finishLoadingForGeneration = useCallback((generation: number) => {
+    if (loadGenerationRef.current !== generation) {
+      return;
+    }
+    setIsPreviewLoading(false);
+  }, []);
+
+  const scheduleLoadingClearAfterPaint = useCallback(
+    (generation: number) => {
+      cancelAnimationFrame(settleRafRef.current.raf1);
+      cancelAnimationFrame(settleRafRef.current.raf2);
+      settleRafRef.current.raf1 = requestAnimationFrame(() => {
+        settleRafRef.current.raf2 = requestAnimationFrame(() => {
+          finishLoadingForGeneration(generation);
+        });
+      });
+    },
+    [finishLoadingForGeneration]
+  );
+
+  const resetLoad = useCallback(() => {
+    clearSettleTimers();
+    setRememberedDimensions(null);
+    setIsPreviewLoading(false);
+  }, [clearSettleTimers]);
+
+  const beginLoad = useCallback(() => {
+    clearSettleTimers();
+    loadGenerationRef.current += 1;
+    const generation = loadGenerationRef.current;
+    setRememberedDimensions(null);
+    setIsPreviewLoading(true);
+    fallbackTimerRef.current = setTimeout(
+      () => finishLoadingForGeneration(generation),
+      PREVIEW_SCALE_SETTLE_FALLBACK_MS
+    );
+  }, [clearSettleTimers, finishLoadingForGeneration]);
+
+  const handleResize = useCallback(
+    (dimensions: ContentDimensions) => {
+      const generation = loadGenerationRef.current;
+      setRememberedDimensions((current) =>
+        current?.width === dimensions.width && current?.height === dimensions.height
+          ? current
+          : dimensions
+      );
+      scheduleLoadingClearAfterPaint(generation);
+    },
+    [scheduleLoadingClearAfterPaint]
+  );
 
   useEffect(() => {
     const host = cellRef.current;
@@ -202,9 +267,8 @@ export const usePreviewThumbnail = ({
   }, [isInView, previewsPaused]);
 
   useEffect(() => {
-    setRememberedDimensions(null);
-    setIsPreviewLoading(false);
-  }, [storyId]);
+    resetLoad();
+  }, [storyId, resetLoad]);
 
   useEffect(() => {
     if (!isInView) {
@@ -240,39 +304,20 @@ export const usePreviewThumbnail = ({
 
   useEffect(() => {
     if (!src) {
+      resetLoad();
+      return undefined;
+    }
+    beginLoad();
+    return clearSettleTimers;
+  }, [src, beginLoad, resetLoad, clearSettleTimers]);
+
+  useEffect(() => {
+    if (!src) {
       return undefined;
     }
     const timer = setTimeout(finishCurrent, PREVIEW_SETTLE_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [src, finishCurrent]);
-
-  useEffect(() => {
-    if (!src) {
-      setRememberedDimensions(null);
-      setIsPreviewLoading(false);
-      return undefined;
-    }
-    setIsPreviewLoading(true);
-    const fallback = setTimeout(() => setIsPreviewLoading(false), PREVIEW_SCALE_SETTLE_FALLBACK_MS);
-    return () => clearTimeout(fallback);
-  }, [src]);
-
-  // Keep the overlay until measured scale is committed and painted (post-bootstrap).
-  useLayoutEffect(() => {
-    if (!rememberedDimensions) {
-      return undefined;
-    }
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        setIsPreviewLoading(false);
-      });
-    });
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
-  }, [rememberedDimensions]);
 
   useLayoutEffect(() => {
     if (!src) {
@@ -288,13 +333,7 @@ export const usePreviewThumbnail = ({
       if (!contentWindow) {
         return undefined;
       }
-      const detachHandler = registerResizeHandler(contentWindow, (dimensions) => {
-        setRememberedDimensions((current) =>
-          current?.width === dimensions.width && current?.height === dimensions.height
-            ? current
-            : dimensions
-        );
-      });
+      const detachHandler = registerResizeHandler(contentWindow, handleResize);
       requestEmbedRemeasure(contentWindow);
       return detachHandler;
     };
@@ -309,7 +348,7 @@ export const usePreviewThumbnail = ({
       iframe.removeEventListener('load', onLoad);
       detach?.();
     };
-  }, [src]);
+  }, [src, handleResize]);
 
   return {
     cellRef,

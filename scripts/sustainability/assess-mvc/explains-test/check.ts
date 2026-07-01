@@ -9,26 +9,16 @@ const Schema = z.object({
 });
 
 /**
- * Check 5 — Explains how to test (happy path).
+ * PURPOSE: A PR is only reviewable if a maintainer can verify it works.
+ * The bar is "a third party can run these steps and observe the fix".
  *
- * Purpose: a PR is only reviewable if a maintainer (not the author) can
- * verify it works. The bar is "a third party can run these steps and observe
- * the fix" — not "the author says they tested it locally".
+ * TYPE: LLM.
  *
- * What we verify:
- *   - PR body has concrete steps (or the linked issue's body reads as a
- *     verification recipe and we can use it as fallback).
- *   - Steps are framed as user actions a reviewer can take (CLI commands, UI
- *     navigation, project setup), not as the author's self-report.
- *   - Steps exercise what the diff actually changes.
- *
- * Out of scope: media (screenshots, videos). LLMs can't reliably evaluate
- * whether a screenshot proves a fix, and we explicitly want to avoid demands
- * that humans have to judge.
- *
- * Why LLM-judged: the failure modes here are too prose-y to detect with
- * regex. We need to distinguish "I tested locally" from "Run `yarn storybook`
- * in the `react-vite` sandbox and observe X" — that's judgement.
+ * OUTCOME: The LLM verifies:
+ * - PR body has concrete steps (or the linked issue's body does as a fallback)
+ * - Steps are framed as user actions a reviewer can take (CLI commands, UI
+ *   navigation, project setup), not as the author's self-report
+ * - Steps exercise what the diff actually changes
  */
 export async function checkExplainsHowToTest(pr: PrContext): Promise<CheckResult> {
   const prompt = buildPrompt(pr);
@@ -39,19 +29,20 @@ export async function checkExplainsHowToTest(pr: PrContext): Promise<CheckResult
     evidence: `${j.verdict.toUpperCase()}: ${j.reasoning}`,
     guidance:
       j.verdict === 'fail'
-        ? 'Add a "Manual testing" section with reproducible user-facing steps (CLI/UI). Avoid self-reports and unit-only assertions.'
+        ? 'Add a "Manual testing" section with reproducible user-facing steps (CLI/UI), in a real-world project scenario. Do not report how *you* tested and do not merely tell users to run a test suite.'
         : undefined,
   };
 }
 
 function buildPrompt(pr: Pick<PrContext, 'body' | 'files' | 'linkedIssues'>): string {
   return [
-    'You are evaluating the MVC "explains how to test" check on a Storybook PR.',
+    'You are evaluating whether a Storybook PR correctly explains how to reproduce the original issue and test that the PR addresses it.',
     'PASS only if a third-party reader can verify the fix works.',
     '- Steps must be user-action framed (CLI commands, UI navigation), NOT unit-test invocations decoupled from user behavior.',
     '- Steps must be reproducible — NOT author self-report ("I tested it locally").',
     '- Steps must exercise what the diff actually changes.',
-    'FAIL otherwise. Media (screenshots/videos) is out of scope; do NOT require it.',
+    '- Steps must be provided in plain text and be reasonably comprehensible for an experienced maintainer.',
+    'FAIL otherwise.',
     '',
     'PR body:',
     pr.body,

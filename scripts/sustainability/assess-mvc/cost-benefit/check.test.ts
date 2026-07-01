@@ -12,30 +12,29 @@ vi.mock('../../../utils/llm/client', () => ({
   resetLlmClient: vi.fn(),
 }));
 
+const PR_COORDS = { owner: 'storybookjs', repo: 'storybook', number: 1 };
+
+/**
+ * Every LLM-path test needs handlers for the PR's own issue-comments and
+ * the three maintainer teams (comments + team lists are fetched
+ * unconditionally). Tests that link issues also need one comments handler
+ * per linked issue. This helper covers the always-required baseline; call
+ * `server.use(...)` afterwards to override specific endpoints.
+ */
+function baselineHandlers() {
+  return [
+    commentsHandler(PR_COORDS, []),
+    teamMembersHandler({ org: 'storybookjs', slug: 'core' }, []),
+    teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, []),
+    teamMembersHandler({ org: 'storybookjs', slug: 'maintainers' }, []),
+  ];
+}
+
 describe('checkCostBenefit', () => {
   const { server } = setupMsw();
-  beforeEach(() => mockJudge.mockReset());
-
-  /**
-   * Most LLM-path tests link an open issue so the check can fetch its
-   * comments + maintainers. These default handlers serve empty bodies; tests
-   * that care about specific counts override them with `server.use`.
-   */
-  function defaultPopularityHandlers(issue: { owner: string; repo: string; number: number }) {
-    return [
-      commentsHandler(issue, []),
-      teamMembersHandler({ org: 'storybookjs', slug: 'core' }, []),
-      teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, []),
-      teamMembersHandler({ org: 'storybookjs', slug: 'maintainers' }, []),
-    ];
-  }
-
-  it('PASS for trivial diff regardless of LLM (no LLM call)', async () => {
-    const r = await checkCostBenefit(
-      mvcPr({ files: [{ path: 'a.ts', additions: 5, deletions: 1, status: 'modified' }] })
-    );
-    expect(r.status).toBe('pass');
-    expect(mockJudge).not.toHaveBeenCalled();
+  beforeEach(() => {
+    mockJudge.mockReset();
+    server.use(...baselineHandlers());
   });
 
   it('relays LLM PASS for larger changes without a linked issue', async () => {
@@ -55,10 +54,7 @@ describe('checkCostBenefit', () => {
   });
 
   it('relays LLM FAIL with guidance', async () => {
-    mockJudge.mockResolvedValueOnce({
-      verdict: 'fail',
-      reasoning: 'edge-case + huge diff',
-    });
+    mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'edge-case + huge diff' });
     const r = await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 800, deletions: 100, status: 'modified' }] })
     );
@@ -83,7 +79,7 @@ describe('checkCostBenefit', () => {
         rocket: 0,
       },
     });
-    server.use(...defaultPopularityHandlers(issue));
+    server.use(commentsHandler(issue, []));
     mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({
@@ -97,22 +93,22 @@ describe('checkCostBenefit', () => {
     expect(prompt).toContain('+5');
   });
 
-  it('counts external commenters (excluding author + maintainers) as participants', async () => {
+  it('excludes the issue-thread author, maintainers, and bots from that issue', async () => {
     const issue = mvcIssue({ number: 77, author: 'opener' });
     server.use(
       commentsHandler(issue, [
-        { login: 'opener' }, // filtered: issue author
-        { login: 'opener' }, // filtered (dupe)
+        { login: 'opener' }, // filtered: issue author on its own thread
         { login: 'shilman' }, // filtered: maintainer
         { login: 'kasperpeulen' }, // filtered: maintainer
+        { login: 'renovate[bot]', type: 'Bot' }, // filtered: bot via type
+        { login: 'ci-runner[bot]' }, // filtered: bot via [bot] suffix
         { login: 'random-user-1' },
         { login: 'random-user-2' },
-        { login: 'random-user-2' }, // dedup → 1
+        { login: 'random-user-2' }, // dedup
         { login: null }, // dropped: deleted account
       ]),
       teamMembersHandler({ org: 'storybookjs', slug: 'core' }, ['shilman']),
-      teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, ['kasperpeulen']),
-      teamMembersHandler({ org: 'storybookjs', slug: 'maintainers' }, [])
+      teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, ['kasperpeulen'])
     );
     mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
@@ -122,16 +118,49 @@ describe('checkCostBenefit', () => {
       })
     );
     const prompt = mockJudge.mock.calls[0][0] as string;
-    expect(prompt).toMatch(/External participants on the linked issue.*: 2\./);
+    expect(prompt).toMatch(/External participants[^:]*: 2\./);
   });
 
-  it('reports "no linked issue" in the participants line when none is open', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'warn', reasoning: 'ok' });
+  it('filters each item author only on that item — cross-thread comments still count', async () => {
+    // Bob authored #1 and comments on #2 → counts as a participant.
+    // 'someone' is the PR author and comments on #1 → counts (issue author is only filtered locally).
+    // Alice authored #2 and comments on the PR → counts.
+    const issue1 = mvcIssue({ number: 10, author: 'bob' });
+    const issue2 = mvcIssue({ number: 20, author: 'alice' });
+    server.use(
+      commentsHandler(PR_COORDS, [
+        { login: 'someone' }, // filtered: PR author on the PR
+        { login: 'alice' }, // counted: not the PR author
+      ]),
+      commentsHandler(issue1, [
+        { login: 'bob' }, // filtered: issue1 author on issue1
+        { login: 'someone' }, // counted: PR author outside their own thread
+      ]),
+      commentsHandler(issue2, [
+        { login: 'alice' }, // filtered: issue2 author on issue2
+        { login: 'bob' }, // counted: #1's author on #2
+      ])
+    );
+    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
+    await checkCostBenefit(
+      mvcPr({
+        files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }],
+        linkedIssues: [issue1, issue2],
+      })
+    );
+    const prompt = mockJudge.mock.calls[0][0] as string;
+    // Union {alice, someone, bob} = 3 distinct external participants.
+    expect(prompt).toMatch(/External participants[^:]*: 3\./);
+  });
+
+  it('counts PR-only participants when no issue is linked', async () => {
+    server.use(commentsHandler(PR_COORDS, [{ login: 'alice' }, { login: 'bob' }]));
+    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
     const prompt = mockJudge.mock.calls[0][0] as string;
-    expect(prompt).toContain('External participants on the linked issue: (no linked issue).');
+    expect(prompt).toMatch(/External participants[^:]*: 2\./);
   });
 
   it('uses pr labels for severity when no linked issue is present', async () => {

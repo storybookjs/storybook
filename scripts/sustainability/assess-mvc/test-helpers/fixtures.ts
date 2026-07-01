@@ -92,14 +92,15 @@ export function crossRefsHandler(refs: CrossRefEvent[] = []) {
 }
 
 /**
- * msw handler for `/issues/{n}/comments`. Takes a list of `{ login }`
+ * msw handler for `/issues/{n}/comments`. Takes a list of `{ login, type? }`
  * entries (one per comment) and emits the minimal REST shape consumed by
- * `getIssueOrPrComments`. Returns a single un-paginated page; pass at most
- * 99 entries to avoid the helper looking for a next page.
+ * `getIssueOrPrComments`. `type` defaults to `'User'`; pass `'Bot'` to
+ * exercise the bot-detection path. Returns a single un-paginated page; pass
+ * at most 99 entries to avoid the helper looking for a next page.
  */
 export function commentsHandler(
   issue: { owner: string; repo: string; number: number },
-  comments: Array<{ login: string | null }> = []
+  comments: Array<{ login: string | null; type?: 'User' | 'Bot' }> = []
 ) {
   return http.get(
     `https://api.github.com/repos/${issue.owner}/${issue.repo}/issues/${issue.number}/comments`,
@@ -107,9 +108,39 @@ export function commentsHandler(
       HttpResponse.json(
         comments.map((c, i) => ({
           id: i + 1,
-          user: c.login ? { login: c.login } : null,
+          user: c.login ? { login: c.login, type: c.type ?? 'User' } : null,
           created_at: new Date(0).toISOString(),
           body: '',
+        }))
+      )
+  );
+}
+
+/**
+ * msw handler for `/pulls/{n}/reviews`. Takes `{ login, state, body?, type? }`
+ * entries and emits the minimal REST shape consumed by `getPrReviews`.
+ * Defaults: `state` = `COMMENTED`, `body` = '', `type` = `'User'`.
+ */
+export function reviewsHandler(
+  pr: { owner: string; repo: string; number: number },
+  reviews: Array<{
+    login: string | null;
+    state?: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED';
+    body?: string;
+    type?: 'User' | 'Bot';
+    submittedAt?: string;
+  }> = []
+) {
+  return http.get(
+    `https://api.github.com/repos/${pr.owner}/${pr.repo}/pulls/${pr.number}/reviews`,
+    () =>
+      HttpResponse.json(
+        reviews.map((r, i) => ({
+          id: i + 1,
+          user: r.login ? { login: r.login, type: r.type ?? 'User' } : null,
+          state: r.state ?? 'COMMENTED',
+          body: r.body ?? '',
+          submitted_at: r.submittedAt ?? new Date(0).toISOString(),
         }))
       )
   );

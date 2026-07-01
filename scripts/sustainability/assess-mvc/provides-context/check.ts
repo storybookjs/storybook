@@ -10,28 +10,17 @@ const Schema = z.object({
 });
 
 /**
- * Check 6 — Provides context & justification.
- *
- * Purpose: a reviewer shouldn't have to guess at why the author chose their
+ * PURPOSE: A reviewer shouldn't have to guess at why the author chose their
  * approach. For non-trivial PRs we expect a short "why" — alternatives
  * considered, why this approach won, what was validated. For obviously-
- * trivial PRs (typo fixes, version bumps, etc.) we don't want to demand
- * essays, but we also don't want to short-circuit on LOC alone: a 3-line
- * change that flips a feature flag in a central file has the same review
- * burden as a 300-line refactor. The LLM judges with the full diff in hand.
+ * trivial PRs, context can be skipped. We let a LLM judge that.
  *
- * What we verify:
- *   - PR body has any rationale OR
- *   - LLM judges the PR is simple enough / well-aligned enough with the
- *     linked issue that "why" is self-evident from the diff and issue alone.
+ * TYPE: LLM.
  *
- * Bias: skew toward PASS for well-aligned PRs. The check should not block on
- * paper-essay requirements; it should fail only when a reviewer would
- * genuinely have to guess at intent.
- *
- * Boundary against Check 5: Check 5 = "how a reviewer verifies the fix
- * works" (third-party reproducible recipe). Check 6 = "why the author chose
- * this approach" (rationale, alternatives, validation thinking).
+ * OUTCOME: The LLM verifies:
+ * - PR body has any rationale OR
+ * - LLM judges the PR is simple enough / well-aligned enough with the
+ *   linked issue that "why" is self-evident from the diff and issue alone
  */
 export async function checkProvidesContext(pr: PrContext): Promise<CheckResult> {
   const diffMetrics = computeDiffMetrics(pr.files);
@@ -53,12 +42,16 @@ function buildPrompt(
   diffMetrics: ReturnType<typeof computeDiffMetrics>
 ): string {
   return [
-    'You are evaluating the MVC "provides context" check on a Storybook PR.',
-    'PASS if the PR body explains WHY the author chose this approach, OR the rationale is self-evident from the diff + linked issue.',
-    'FAIL only if a reviewer would have to guess at intent.',
-    'Bias toward PASS for well-aligned PRs. Small diffs are NOT automatically self-evident: a',
-    'flag flip or one-line tweak in a central file can have major impact and still needs rationale.',
-    'Look at what the change actually does, not just its size.',
+    'You are evaluating whether a PR provides good context on why the approach chosen in the PR is appropriate.',
+    'In some PRs, maintainers must know why this specific approach was the right one. In other PRs, maintainers need to know why the seemingly unrelated code change addresses the issue (especially if issue root cause was not known).',
+    'PASS if both conditions are met:',
+    '  1. the PR body explains WHY the author chose their approach, OR the rationale is self-evident from the diff + linked issue',
+    '  2. the code change is obviously related to the issue, OR the PR body or code comments explain WHY the seemingly unrelated code change addresses the issue',
+    "WARN if the author does not explain their chosen approach and alternatives exist (don't be nitpicky about code standards here; examples include a PR using RegExp instead of AST manipulation, or Channel events instead of manager API state)",
+    'FAIL only if a reviewer would have to guess at author intent and guess the relationship between the code and the PR description.',
+    'Bias toward PASS for well-aligned PRs.',
+    '',
+    'IMPORTANT: Small diffs are NOT automatically self-evident: a feature flag flip or one-line tweak in a central file can have major impact and still needs rationale.',
     '',
     'PR body:',
     pr.body,
@@ -70,6 +63,6 @@ function buildPrompt(
     '',
     `Diff: +${diffMetrics.added}/-${diffMetrics.removed} across ${diffMetrics.filesChanged} files (${diffMetrics.files.join(', ')}).`,
     '',
-    'Return JSON: { verdict: "pass"|"fail", reasoning: "one short sentence" }',
+    'Return JSON: { verdict: "pass"|"warn"|"fail", reasoning: "one short sentence" }',
   ].join('\n');
 }

@@ -5,31 +5,19 @@ const WARN_LABEL = 'agent-scan:ignore';
 const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
 
 /**
- * Human-monitored.
+ * PURPOSE: We only want to review contributions where a human author is in
+ * the loop. The agent-scan classifier labels every PR, which we use to reject
+ * automated PRs. A maintainer override (`ignore`) lets us accept PRs from
+ * automated accounts later confirmed to be driven by a human.
  *
- * Purpose: MVC review is reserved for contributions where a human author is in
- * the loop. The agent-scan classifier labels every PR; this check turns those
- * labels into a verdict. A maintainer override (`ignore`) lets us accept PRs
- * from automated accounts that are confirmed to be driven by a human in real
- * time.
+ * TYPE: Deterministic.
  *
- * What we verify (purely from PR labels, no I/O):
- *   - `agent-scan:human`                → PASS
- *   - `agent-scan:ignore` → WARN (maintainer-applied; an agent
- *     account verified to be remotely controlled by a human)
- *   - `agent-scan:mixed` /
- *     `agent-scan:automated`            → FAIL
- *   - no `agent-scan:*` label yet       → DEFERRED (caller exits 0, no labels,
- *                                          no review; CI retries later)
- *
- * Priority: PASS beats WARN beats FAIL beats DEFERRED. If a maintainer has
- * applied `ignore` on a PR also labeled `automated`, the
- * maintainer's override wins (WARN, not FAIL).
- *
- * Why deterministic: this is the cheapest possible gate and the most
- * confidently structural — if a PR is automated and no human override exists,
- * no amount of LLM judgement changes the answer. Failing here lets us skip
- * the LLM phase entirely.
+ * OUTCOME:
+ * - `agent-scan:human`     → PASS
+ * - `agent-scan:ignore`    → WARN (maintainer-applied)
+ * - `agent-scan:mixed`     → FAIL
+ * - `agent-scan:automated` → FAIL
+ * - no label yet           → DEFERRED (interrupts MVC assessment)
  */
 export function checkHumanMonitored(pr: Pick<PrContext, 'labels'>): CheckResult {
   if (pr.labels.includes(PASS_LABEL)) {
@@ -41,7 +29,7 @@ export function checkHumanMonitored(pr: Pick<PrContext, 'labels'>): CheckResult 
       status: 'warn',
       evidence: `Labeled ${WARN_LABEL}.`,
       guidance:
-        'This account is automated but a maintainer has confirmed it is operated by a human in real time. Proceeding with caution.',
+        'This account is automated but a maintainer has confirmed it is operated by a human. Proceeding with caution.',
     };
   }
   const failHit = pr.labels.find((l) => FAIL_LABELS.has(l));

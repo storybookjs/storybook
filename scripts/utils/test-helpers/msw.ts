@@ -16,6 +16,7 @@ import { resolveOperator } from '../github/copilot.ts';
 import { fetchIssue } from '../github/issue.ts';
 import { resolveLinkedIssues } from '../github/linked-issues.ts';
 import { fetchPr } from '../github/pr.ts';
+import { getPrReviews } from '../github/reviews.ts';
 import { isMaintainer, listTeamMembers } from '../github/teams.ts';
 
 const server = setupServer();
@@ -30,6 +31,7 @@ const MEMOIZED_FNS: MemoizedFn[] = [
   fetchIssue as unknown as MemoizedFn,
   fetchPr as unknown as MemoizedFn,
   getIssueOrPrComments as unknown as MemoizedFn,
+  getPrReviews as unknown as MemoizedFn,
   isMaintainer as unknown as MemoizedFn,
   listTeamMembers as unknown as MemoizedFn,
   resolveLinkedIssues as unknown as MemoizedFn,

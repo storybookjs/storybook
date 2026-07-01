@@ -1,3 +1,5 @@
+import memoize from 'memoizerific';
+
 import { getGithubClient } from './client.ts';
 import type { IssueOrPrId } from './types.ts';
 
@@ -63,3 +65,58 @@ export async function dismissPriorReviews(pr: IssueOrPrId, marker: string): Prom
     );
   }
 }
+
+/**
+ * Non-`PENDING` states from GitHub's PR-review endpoint. `PENDING` reviews
+ * are drafts only visible to their author, so they never appear in the
+ * REST response we consume and we intentionally omit them from the type.
+ */
+export type PrReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED';
+
+export interface PrReview {
+  authorLogin: string | null;
+  submittedAt: string | null;
+  state: PrReviewState;
+  body: string;
+  isBot: boolean;
+}
+
+function looksLikeBotLogin(login: string | null): boolean {
+  return typeof login === 'string' && login.endsWith('[bot]');
+}
+
+async function getPrReviewsImpl(coords: IssueOrPrId): Promise<PrReview[]> {
+  const client = getGithubClient();
+  const reviews: PrReview[] = [];
+  let page = 1;
+  while (true) {
+    const { data } = await client.rest('GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
+      owner: coords.owner,
+      repo: coords.repo,
+      pull_number: coords.number,
+      per_page: 100,
+      page,
+    });
+    if (data.length === 0) break;
+    for (const r of data) {
+      const login = r.user?.login ?? null;
+      reviews.push({
+        authorLogin: login,
+        submittedAt: r.submitted_at ?? null,
+        state: r.state as PrReviewState,
+        body: r.body ?? '',
+        isBot: r.user?.type === 'Bot' || looksLikeBotLogin(login),
+      });
+    }
+    if (data.length < 100) break;
+    page += 1;
+  }
+  return reviews;
+}
+
+/**
+ * Fetch every submitted review on a pull request. `PENDING` (draft) reviews
+ * aren't returned by GitHub in this endpoint. Paginated, memoized by
+ * coords identity.
+ */
+export const getPrReviews = memoize(1000)(getPrReviewsImpl);

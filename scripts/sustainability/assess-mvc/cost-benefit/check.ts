@@ -8,8 +8,6 @@ import type { CheckResult, PrContext } from '../types.ts';
 import { computeDependencyDiff, type DependencyDiff } from './utils/dependencies.ts';
 import { computeDiffMetrics } from './utils/diff-metrics.ts';
 
-const SMALL_CHANGE_NET_LOC = 30;
-
 const Schema = z.object({
   verdict: z.enum(['pass', 'warn', 'fail']),
   reasoning: z.string(),
@@ -28,49 +26,23 @@ const Schema = z.object({
  * - Diff size (net LOC, files changed)
  * - Dependency change diff
  * - Linked-issue severity label and reaction count as benefit signals
- * - External-participant count on the linked issue (comments by non-author,
- *   non-maintainer accounts) as a popularity signal
+ * - External-participant count aggregated across every linked issue AND the
+ *   PR's own issue-comments — commenters who are NOT the issue/PR author,
+ *   NOT a maintainer, and NOT a bot. Measures how many independent users
+ *   engaged with this work.
  *
- * OUTCOME: Default behavior: small changes (≤ {@link SMALL_CHANGE_NET_LOC} net LOC,
- * no dep changes either way) short-circuit to PASS without spending tokens.
- * Otherwise the LLM weighs cost against benefit with a bias toward leniency
+ * OUTCOME: The LLM weighs cost against benefit with a bias toward leniency
  * — FAIL only on clear mismatch, WARN under uncertainty, PASS otherwise.
  */
 export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
   const diffMetrics = computeDiffMetrics(pr.files);
   const deps = computeDependencyDiff(pr.files);
 
-  if (
-    diffMetrics.net <= SMALL_CHANGE_NET_LOC &&
-    deps.added.length === 0 &&
-    deps.removed.length === 0
-  ) {
-    return {
-      id: 'cost-benefit',
-      status: 'pass',
-      evidence: `Small change (${diffMetrics.net} net LOC); cost/benefit defaults to PASS.`,
-    };
-  }
-
   const firstIssue = pr.linkedIssues.find((i) => i.state === 'open');
   const severity = firstIssue ? getMostSevereLabel(firstIssue) : getMostSevereLabel(pr);
   const reactions = firstIssue?.reactions;
 
-  let externalParticipantCount = 0;
-  if (firstIssue) {
-    const [comments, maintainers] = await Promise.all([
-      getIssueOrPrComments({
-        owner: firstIssue.owner,
-        repo: firstIssue.repo,
-        number: firstIssue.number,
-      }),
-      listMaintainerLogins(),
-    ]);
-    const participants = getUniqueParticipants(comments);
-    if (firstIssue.author) participants.delete(firstIssue.author);
-    for (const m of maintainers) participants.delete(m);
-    externalParticipantCount = participants.size;
-  }
+  const externalParticipantCount = await countExternalParticipants(pr);
 
   const prompt = buildPrompt({
     body: pr.body,
@@ -94,11 +66,47 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
   };
 }
 
+/**
+ * Union of external participants across every linked issue and the PR's own
+ * issue-comments (not review comments — those are almost entirely
+ * maintainer triage noise). "External" excludes maintainers and bots
+ * globally, and each item's OWN author locally: the PR author is filtered
+ * from PR comments, and each linked issue's author is filtered from that
+ * issue's comments. An issue author who comments on a different linked
+ * issue (or on the PR) still counts — they're an independent voice on the
+ * bug outside their own thread.
+ */
+async function countExternalParticipants(pr: PrContext): Promise<number> {
+  const issues = [pr, ...pr.linkedIssues];
+
+  const [maintainers, ...commentSets] = await Promise.all([
+    listMaintainerLogins(),
+    ...issues.map(async (item) => ({
+      author: item.author,
+      comments: await getIssueOrPrComments(item),
+    })),
+  ]);
+
+  const external = new Set<string>();
+  for (const set of commentSets) {
+    for (const login of getUniqueParticipants(set.comments, [...maintainers, set.author])) {
+      external.add(login);
+    }
+  }
+  return external.size;
+}
+
 function describeDeps(deps: DependencyDiff): string {
   const parts: string[] = [];
-  if (deps.added.length > 0) parts.push(`added: ${deps.added.join(', ')}`);
-  if (deps.removed.length > 0) parts.push(`removed: ${deps.removed.join(', ')}`);
-  if (parts.length === 0) return '(no dependency changes)';
+  if (deps.added.length > 0) {
+    parts.push(`added: ${deps.added.join(', ')}`);
+  }
+  if (deps.removed.length > 0) {
+    parts.push(`removed: ${deps.removed.join(', ')}`);
+  }
+  if (parts.length === 0) {
+    return '(no dependency changes)';
+  }
   const sign = deps.delta > 0 ? '+' : '';
   parts.push(`net delta: ${sign}${deps.delta}`);
   return parts.join(' · ');
@@ -123,13 +131,14 @@ function buildPrompt(input: {
   externalParticipantCount: number;
   hasLinkedIssue: boolean;
 }): string {
-  const participantsLine = input.hasLinkedIssue
-    ? `External participants on the linked issue (commenters who are not the issue author or a maintainer): ${input.externalParticipantCount}. Treat a high count as strong popularity evidence — multiple unrelated users hitting the same bug is a clear benefit signal.`
-    : 'External participants on the linked issue: (no linked issue).';
   return [
     'You are reviewing a Storybook pull request to judge if it is a viable external contribution. You will decide how much benefit the PR provides relative to its maintenance cost.',
     'FAIL requires CLEAR evidence of mismatch. Default to WARN under uncertainty. Default to PASS for small changes.',
-    'Edge-case linked issues warrant a stricter maintenance ceiling than broad ones.',
+    'Fixes for high severity issues can incur more maintenance cost. Fixes to edge-case problems that affect few users warrant a stricter maintenance ceiling.',
+    '',
+    'Small code changes are not automatically self-evident: a feature flag flip or one-line tweak in a central file can have major impact and still be a poor trade-off for maintainers.',
+    '',
+    "Removal of public APIs that weren't already deprecated has a high maintenance cost as it will cause breaking changes.",
     '',
     'IMPORTANT framing for dependency changes:',
     '  - A net-positive dep delta is a maintenance COST (more surface to audit, update, secure).',
@@ -144,9 +153,9 @@ function buildPrompt(input: {
     '',
     `Linked-issue severity: ${input.severity ?? '(none)'}`,
     `Reactions: +${input.reactions?.['+1'] ?? 0} -${input.reactions?.['-1'] ?? 0} laugh=${input.reactions?.laugh ?? 0} confused=${input.reactions?.confused ?? 0} heart=${input.reactions?.heart ?? 0} hooray=${input.reactions?.hooray ?? 0} eyes=${input.reactions?.eyes ?? 0} rocket=${input.reactions?.rocket ?? 0} total=${input.reactions?.total_count ?? 0}`,
-    participantsLine,
+    `External participants (unique commenters across every linked issue and this PR, excluding the PR/issue authors, maintainers, and bots): ${input.externalParticipantCount}. Treat a high count as strong popularity evidence — multiple independent users engaged with this work is a clear benefit signal.`,
     '',
-    'PR body (look for dep-change rationale, security mentions, refactor explanations):',
+    'PR body (look for change rationale, security mentions, refactor explanations):',
     input.body || '(empty)',
     '',
     'Return JSON: { verdict: "pass"|"warn"|"fail", reasoning: "one short sentence" }',

@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setupMsw } from '../utils/test-helpers/msw.ts';
-import { crossRefsHandler, mvcIssue, mvcPr } from './assess-mvc/test-helpers/fixtures.ts';
+import {
+  commentsHandler,
+  crossRefsHandler,
+  mvcIssue,
+  mvcPr,
+  reviewsHandler,
+  teamMembersHandler,
+} from './assess-mvc/test-helpers/fixtures.ts';
 import { runAssessment } from './assess-mvc.ts';
 
 const { mockJudge, mockJudgeText } = vi.hoisted(() => ({
@@ -32,9 +39,19 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
   beforeEach(() => {
     mockJudge.mockReset();
     mockJudgeText.mockReset();
-    // checkDuplicate hits cross-refs for each linked issue. Default to empty
-    // responses; individual tests override when they care.
-    server.use(crossRefsHandler());
+    // checkDuplicate hits cross-refs; cost-benefit + real-problem hit PR
+    // comments, PR reviews, linked-issue comments, and the maintainer
+    // teams. Default to empty responses; individual tests override when
+    // they care.
+    server.use(
+      crossRefsHandler(),
+      commentsHandler({ owner: 'storybookjs', repo: 'storybook', number: 1 }),
+      commentsHandler({ owner: 'storybookjs', repo: 'storybook', number: 42 }),
+      reviewsHandler({ owner: 'storybookjs', repo: 'storybook', number: 1 }),
+      teamMembersHandler({ org: 'storybookjs', slug: 'core' }, []),
+      teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, []),
+      teamMembersHandler({ org: 'storybookjs', slug: 'maintainers' }, [])
+    );
   });
 
   it('FAILs and early-aborts when human check fails; only synthesis runs', async () => {
@@ -54,8 +71,9 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
     const result = await runAssessment(basePr);
     expect(result.verdict).toBe('pass');
     expect(result.earlyAbort).toBe(false);
-    // cost-benefit short-circuits to PASS for a 0-LOC diff so its judge call
-    // is skipped → at least the other 3 judge calls run.
+    // Four LLM checks (real-problem, duplicate, cost-benefit,
+    // explains-test / provides-context) all call judge; synthesis calls
+    // judgeText separately.
     expect(mockJudge.mock.calls.length).toBeGreaterThanOrEqual(2);
     expect(mockJudgeText).toHaveBeenCalledOnce();
     expect(result.labelsToAdd).toContain('mvc:success');

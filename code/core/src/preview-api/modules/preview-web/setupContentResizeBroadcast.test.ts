@@ -336,6 +336,26 @@ describe('setupContentResizeBroadcast', () => {
     expect(document.getElementById('storybook-embed-ui')).toBeNull();
   });
 
+  it('auto-measures embed previews without freeze', async () => {
+    const content = document.getElementById('content') as HTMLDivElement;
+    mockRect(content, {
+      top: 0,
+      left: 0,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
+    });
+
+    installBroadcast();
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
+  });
+
   it('re-measures when the parent requests dimensions', async () => {
     const content = document.getElementById('content') as HTMLDivElement;
     mockRect(content, {
@@ -348,7 +368,10 @@ describe('setupContentResizeBroadcast', () => {
     });
 
     installBroadcast();
-    expect(postMessageSpy).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    postMessageSpy.mockClear();
 
     const parent = window.parent as Window;
     window.dispatchEvent(
@@ -363,11 +386,6 @@ describe('setupContentResizeBroadcast', () => {
     });
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
     expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
-  });
-
-  it('does not auto-measure embed previews without freeze', () => {
-    installBroadcast();
-    expect(postMessageSpy).not.toHaveBeenCalled();
   });
 
   it('does not install when embed=true is absent', () => {

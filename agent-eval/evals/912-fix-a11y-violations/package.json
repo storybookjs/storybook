@@ -1,0 +1,7 @@
+{
+	"name": "912-fix-a11y-violations",
+	"type": "module",
+	"evals": {
+		"template": "reshaped-storybook"
+	}
+}

@@ -1,19 +1,16 @@
 import { expect, test } from 'vitest';
-import { getEvalContext, getShellCommands, getToolCalls } from '#test-utils';
+import { getStorybookWorkflowCalls, type StorybookWorkflowCall } from '#test-utils';
 
-test('uses the configured Storybook workflow', () => {
-	const { integration } = getEvalContext();
-
-	if (integration === 'plugin') {
-		expect(getShellCommands()).toEqual(
-			expect.arrayContaining([expect.stringContaining('storybook ai')]),
-		);
-	} else {
-		expect(getToolCalls()).toEqual(
-			expect.arrayContaining([
-				expect.stringContaining('get-storybook-story-instructions'),
-				expect.stringMatching(/preview-stories|display-review/),
-			]),
-		);
+function expectWorkflowCalls(expectedNames: string[]): void {
+	for (const name of expectedNames) {
+		expect(workflowCalls(name).length).toBeGreaterThan(0);
 	}
+}
+
+function workflowCalls(name: string): StorybookWorkflowCall[] {
+	return getStorybookWorkflowCalls().filter((call) => call.name === name);
+}
+
+test('uses Storybook story instructions and publishes a display review', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 });

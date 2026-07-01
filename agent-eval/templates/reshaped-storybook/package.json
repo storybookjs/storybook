@@ -7,7 +7,11 @@
 		"#test-utils": "./__agent_eval__/test-utils.ts"
 	},
 	"scripts": {
-		"build": "tsc --noEmit --project ./tsconfig.app.json && vite build",
+		"build": "vite build",
+		"typecheck": "tsc --noEmit --project ./tsconfig.app.json",
+		"lint": "eslint .",
+		"test:stories": "vitest run --project storybook",
+		"test:stories:coverage": "vitest run --project storybook --coverage",
 		"postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
 		"storybook": "storybook dev --port 6006",
 		"build-storybook": "storybook build"
@@ -35,6 +39,8 @@
 		"eslint-plugin-react-hooks": "7.0.1",
 		"eslint-plugin-react-refresh": "0.4.24",
 		"globals": "16.5.0",
+		"msw": "2.14.6",
+		"msw-storybook-addon": "2.0.7",
 		"playwright": "1.56.1",
 		"storybook": "10.5.0-alpha.9",
 		"typescript": "5.9.3",

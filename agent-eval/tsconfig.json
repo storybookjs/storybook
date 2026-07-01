@@ -8,6 +8,13 @@
 			"@storybook/mcp": ["../packages/mcp/src/index.ts"]
 		}
 	},
-	"include": ["**/*.ts", "**/*.tsx", "eval.d.ts", "eval-matchers.d.ts"],
+	"include": [
+		"eval.d.ts",
+		"eval-matchers.d.ts",
+		"experiments/**/*.ts",
+		"evals/**/EVAL.ts",
+		"evals/**/EVAL.tsx",
+		"lib/**/*.ts"
+	],
 	"exclude": ["results/**", "templates/**"]
 }

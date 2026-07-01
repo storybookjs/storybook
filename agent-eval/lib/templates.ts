@@ -77,6 +77,7 @@ export async function setupSandbox(
 	await writeEvalSupportFiles(sandbox, options);
 
 	const packageJson = await readFixturePackageJson(sandbox);
+	const fixtureFiles = await readSandboxWorkspaceFiles(sandbox);
 	const templateName = packageJson.evals?.template;
 
 	if (templateName === undefined) {
@@ -122,7 +123,7 @@ export async function setupSandbox(
 		}
 	}
 
-	await sandbox.writeFiles(files);
+	await sandbox.writeFiles(mergeTemplateAndFixtureFiles(files, fixtureFiles));
 }
 
 async function writeEvalSupportFiles(
@@ -157,6 +158,85 @@ async function readTemplateFiles(templateDir: string): Promise<Record<string, st
 	const files: Record<string, string> = {};
 	await collectTemplateFiles(templateDir, '', files);
 	return files;
+}
+
+async function readSandboxWorkspaceFiles(sandbox: Sandbox): Promise<Record<string, string>> {
+	const result = await sandbox.runCommand('bash', [
+		'-lc',
+		[
+			'find . -type f',
+			'  ! -path "./.git/*"',
+			'  ! -path "./node_modules/*"',
+			'  ! -path "./__agent_eval__/*"',
+			'  ! -name "PROMPT.md"',
+			'  ! -name "EVAL.ts"',
+			'  ! -name "EVAL.tsx"',
+			'  -print',
+		].join(' \\\n'),
+	]);
+
+	if (result.exitCode !== 0) {
+		throw new Error(`Failed to list fixture files in sandbox: ${result.stderr || result.stdout}`);
+	}
+
+	const files: Record<string, string> = {};
+	for (const rawPath of result.stdout.split('\n')) {
+		const filePath = rawPath.trim().replace(/^\.\//, '');
+		if (filePath.length === 0) {
+			continue;
+		}
+		files[filePath] = await sandbox.readFile(filePath);
+	}
+
+	return files;
+}
+
+function mergeTemplateAndFixtureFiles(
+	templateFiles: Record<string, string>,
+	fixtureFiles: Record<string, string>,
+): Record<string, string> {
+	const files = { ...templateFiles };
+
+	for (const [filePath, fixtureContent] of Object.entries(fixtureFiles)) {
+		const templateContent = templateFiles[filePath];
+		if (templateContent === undefined || !filePath.endsWith('.json')) {
+			files[filePath] = fixtureContent;
+			continue;
+		}
+
+		const merged = deepMergeJson(
+			parseJsonFile(filePath, templateContent, 'template'),
+			parseJsonFile(filePath, fixtureContent, 'fixture'),
+		);
+		files[filePath] = JSON.stringify(merged, null, 2).concat('\n');
+	}
+
+	return files;
+}
+
+function parseJsonFile(filePath: string, content: string, source: 'fixture' | 'template'): unknown {
+	try {
+		return JSON.parse(content) as unknown;
+	} catch (error) {
+		throw new Error(
+			`Failed to parse ${source} JSON file ${filePath}: ${
+				error instanceof Error ? error.message : String(error)
+			}`,
+		);
+	}
+}
+
+function deepMergeJson(templateValue: unknown, fixtureValue: unknown): unknown {
+	if (!isRecord(templateValue) || !isRecord(fixtureValue)) {
+		return fixtureValue;
+	}
+
+	const result: Record<string, unknown> = { ...templateValue };
+	for (const [key, value] of Object.entries(fixtureValue)) {
+		result[key] = key in result ? deepMergeJson(result[key], value) : value;
+	}
+
+	return result;
 }
 
 function usesLocalStorybookAddonMcp(files: Record<string, string>): boolean {

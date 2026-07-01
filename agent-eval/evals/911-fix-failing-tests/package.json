@@ -1,0 +1,7 @@
+{
+	"name": "911-fix-failing-tests",
+	"type": "module",
+	"evals": {
+		"template": "reshaped-storybook"
+	}
+}

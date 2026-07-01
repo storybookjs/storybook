@@ -1,7 +1,10 @@
 import type { Preview } from '@storybook/react-vite';
 import React from 'react';
+import { initialize, mswLoader } from 'msw-storybook-addon';
 import { Reshaped } from 'reshaped';
 import 'reshaped/themes/slate/theme.css';
+
+initialize();
 
 const preview: Preview = {
 	decorators: [
@@ -11,6 +14,7 @@ const preview: Preview = {
 			</Reshaped>
 		),
 	],
+	loaders: [mswLoader],
 	parameters: {
 		options: {
 			storySort: {

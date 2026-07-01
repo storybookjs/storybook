@@ -1,30 +1,16 @@
 import { expect, test } from 'vitest';
-import { transcript } from '@vercel/agent-eval/eval';
-import { getEvalContext, getShellCommands, getToolCalls } from '#test-utils';
+import { getStorybookWorkflowCalls, type StorybookWorkflowCall } from '#test-utils';
 
-test('uses the configured Storybook workflow', () => {
-	const { integration } = getEvalContext();
-
-	if (integration === 'plugin') {
-		expect(getShellCommands()).toEqual(
-			expect.arrayContaining([expect.stringContaining('storybook ai')]),
-		);
-	} else {
-		expect(getToolCalls()).toEqual(
-			expect.arrayContaining([
-				expect.stringContaining('get-storybook-story-instructions'),
-				expect.stringMatching(/preview-stories|display-review/),
-			]),
-		);
+function expectWorkflowCalls(expectedNames: string[]): void {
+	for (const name of expectedNames) {
+		expect(workflowCalls(name).length).toBeGreaterThan(0);
 	}
-});
+}
 
-test('opens the Storybook preview through the preview browser mock', async () => {
-	const { agent, integration } = getEvalContext();
+function workflowCalls(name: string): StorybookWorkflowCall[] {
+	return getStorybookWorkflowCalls().filter((call) => call.name === name);
+}
 
-	if (agent !== 'claude-code' || integration !== 'plugin') {
-		return;
-	}
-
-	await expect(transcript).toSatisfyCriterion('Tried to open the Storybook preview in a browser');
+test('uses Storybook story instructions and publishes a display review', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 });

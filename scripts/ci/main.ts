@@ -11,6 +11,7 @@ import {
   check,
   commonJobsNoOpJob,
   defineCircleciCompletion,
+  docgenMemoryGate,
   knip,
   lint,
   fmt,
@@ -54,7 +55,7 @@ function generateConfig(workflow: Workflow) {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows);
+      jobs.push(build_windows, testUnit_windows, docgenMemoryGate);
     }
 
     jobs.push(

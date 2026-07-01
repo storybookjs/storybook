@@ -4,8 +4,6 @@ import { WandIcon } from '@storybook/icons';
 
 import { useNavigate } from 'storybook/internal/router';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { useTheme } from 'storybook/theming';
-
 import { reviewAvailableNotificationId } from '../constants.ts';
 import { navigateToReviewSummary } from '../review-actions.ts';
 import {
@@ -22,7 +20,6 @@ import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
 /** Sidebar notification for unseen review pushes. Does not auto-navigate. */
 export const ReviewNotification: FC = () => {
   const api = useStorybookApi();
-  const theme = useTheme();
   const navigate = useNavigate();
   const { path, customQueryParams } = useStorybookState();
   const { notificationKey, onAcceptPendingUpdate } = useReview();
@@ -54,12 +51,12 @@ export const ReviewNotification: FC = () => {
       return;
     }
 
-    if (shouldSkipArrivalNotification(path, collectionIndex, review, displayed, deferred)) {
+    if (shouldAutoAcceptOnRoute(path, collectionIndex, review, displayed, deferred)) {
+      acceptReviewNotification(api, review.createdAt);
       return;
     }
 
-    if (shouldAutoAcceptOnRoute(path, collectionIndex, review, displayed, deferred)) {
-      acceptReviewNotification(api, review.createdAt);
+    if (shouldSkipArrivalNotification(path, collectionIndex, review, displayed, deferred)) {
       return;
     }
 
@@ -83,7 +80,7 @@ export const ReviewNotification: FC = () => {
         onDismiss();
       },
     });
-  }, [api, collectionIndex, handleNotificationClick, notificationKey, path, theme]);
+  }, [api, collectionIndex, handleNotificationClick, notificationKey, path]);
 
   return null;
 };

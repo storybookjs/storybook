@@ -17,6 +17,7 @@ describe('isReviewManagerRoute', () => {
   });
 
   it('does not match normal canvas routes', () => {
+    expect(isReviewManagerRoute(undefined)).toBe(false);
     expect(isReviewManagerRoute('/story/foo--bar')).toBe(false);
     expect(isReviewManagerRoute('/docs/foo--bar')).toBe(false);
     expect(isReviewManagerRoute('/settings/about')).toBe(false);

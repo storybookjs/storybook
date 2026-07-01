@@ -1,23 +1,24 @@
 import React, { useRef } from 'react';
 
 import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
-import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
+import { Addon_TypesEnum, type Addon_BaseType } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
 import type { TabListState } from '@react-stately/tabs';
 import {
-  type API,
-  type Combo,
   Consumer,
-  type LeafEntry,
-  type State,
   addons,
   merge,
   types,
+  type API,
+  type Combo,
+  type LeafEntry,
+  type State,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { PreviewProps } from './utils/types.tsx';
@@ -32,6 +33,7 @@ const fullScreenMapper = ({ api, state }: Combo) => {
     shortcut: api.getShortcutKeys().fullScreen,
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
+    isReviewRoute: isReviewManagerRoute(state.path, state.customQueryParams),
   };
 };
 
@@ -50,7 +52,8 @@ export const fullScreenTool: Addon_BaseType = {
 
     return (
       <Consumer filter={fullScreenMapper}>
-        {({ toggle, isFullscreen, shortcut, hasPanel, singleStory }) =>
+        {({ toggle, isFullscreen, shortcut, hasPanel, singleStory, isReviewRoute }) =>
+          !isReviewRoute &&
           (!singleStory || (singleStory && hasPanel)) && (
             <Button
               key="full"

@@ -40,13 +40,6 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 /**
  * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
  * of the V8 heap limit.
- *
- * In docgen-server dev mode every save re-extracts the edited component's dependents through the
- * shared program, whose resident type-resolution cache is the dominant retained set and sits near the
- * heap cap — so the next extraction's spike can OOM the dev server. Disposing the program reclaims
- * that cache; extracted docs live in the open-service state, so nothing user-visible is lost. The
- * ratio leaves headroom for one extraction's transient before the cap (verified by the
- * `bench:docgen-memory` gate in `scripts/bench/docgen-memory/gate.ts`).
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 
@@ -132,12 +125,6 @@ export class ComponentMetaManager {
   /**
    * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
    * limit, preventing the next extraction's spike from OOMing the dev server.
-   *
-   * tsconfig discovery (`rootTsConfigs` / `searchedDirs`), the file-snapshot cache, and the directory
-   * watchers are intentionally preserved: the next `getProjectForFile` recreates only the program it
-   * needs (a one-time cold build, the same cost paid once at startup) while file events keep flowing.
-   *
-   * Small projects never cross the threshold, so this is a no-op for them.
    */
   private recycleProjectsIfHeapPressured(): void {
     if (this.configProjects.size === 0 && !this.inferredProject) {

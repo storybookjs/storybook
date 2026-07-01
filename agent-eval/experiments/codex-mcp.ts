@@ -8,7 +8,7 @@ export default {
 	// handle Codex's Responses namespace tool shape yet:
 	// https://github.com/openai/codex/issues/26234
 	agent: 'codex',
-	evals: [...RESHAPED_STORYBOOK_EVALS],
+	evals: [],
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp' });
 		await writeCodexMcpConfig(sandbox);

@@ -10,3 +10,4 @@ results/
 .vercel
 .env.*
 !.env.example
+.env*.local

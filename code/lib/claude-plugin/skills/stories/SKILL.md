@@ -16,3 +16,20 @@ Some commands require a running Storybook dev server. When Claude preview toolin
 
 1. Ensure there is a Storybook launch entry in `.claude/launch.json` with `autoPort: true` and `port: 6006`. Use the project's preferred package manager and existing `package.json` Storybook script instead of inventing a new command whenever possible.
 2. Start the Storybook launch entry with the `preview_start` tool.
+
+Example `.claude/launch.json` config:
+
+```json
+{
+	"configurations": [
+		{
+			"name": "Storybook",
+			"cwd": "${workspaceFolder}",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "storybook"],
+			"port": 6006,
+			"autoPort": true
+		}
+	]
+}
+```

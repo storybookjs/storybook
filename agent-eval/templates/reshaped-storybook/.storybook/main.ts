@@ -10,5 +10,11 @@ const config: StorybookConfig = {
 		'@storybook/addon-mcp',
 	],
 	framework: '@storybook/react-vite',
+	refs: {
+		reshaped: {
+			title: 'Reshaped',
+			url: 'https://6a4591e9e7caa5800ab7c0c6-jdcmvailri.chromatic.com',
+		},
+	},
 };
 export default config;

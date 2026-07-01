@@ -34,6 +34,42 @@ const PREVIEW_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
 	'mcp',
 	'preview-browser-mock.mjs',
 );
+const NODE_REPL_MOCK_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'node-repl-mock.mjs');
+const NODE_REPL_MOCK_SANDBOX_PATH = path.posix.join('.agent-eval', 'mcp', 'node-repl-mock.mjs');
+const CODEX_BROWSER_MOCK_SOURCE_PATH = path.join(
+	AGENT_EVAL_ROOT,
+	'lib',
+	'mcp',
+	'codex-browser-client-mock.mjs',
+);
+const CODEX_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
+	'.agent-eval',
+	'mcp',
+	'codex-browser-client-mock.mjs',
+);
+const CODEX_BROWSER_API_SOURCE_PATH = path.join(
+	AGENT_EVAL_ROOT,
+	'lib',
+	'mcp',
+	'codex-browser-api.json',
+);
+const CODEX_BROWSER_API_SANDBOX_PATH = path.posix.join(
+	'.agent-eval',
+	'mcp',
+	'codex-browser-api.json',
+);
+const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
+	AGENT_EVAL_ROOT,
+	'lib',
+	'mcp',
+	'codex-browser-skill.md',
+);
+const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
+	'.agents',
+	'skills',
+	'control-in-app-browser',
+	'SKILL.md',
+);
 const TRANSCRIPT_HELPER_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'test-utils.ts');
 const TRANSCRIPT_HELPER_SANDBOX_PATH = path.posix.join('__agent_eval__', 'test-utils.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
@@ -44,6 +80,7 @@ const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
+const CODEX_CONFIG_PATH = '.codex/config.toml';
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
 	REPO_ROOT,
@@ -534,8 +571,49 @@ startup_timeout_sec = 30
 tool_timeout_sec = 120
 `;
 
+	await appendCodexConfig(sandbox, config);
+}
+
+/**
+ * Ship the Codex in-app-browser stand-in: a `node_repl` MCP server (the real
+ * one is a native binary bundled only with the Codex desktop app), the
+ * browser runtime mock it imports, and the `control-in-app-browser` skill
+ * that teaches Codex the same bootstrap flow the app uses.
+ */
+export async function writeCodexInAppBrowserMock(sandbox: Sandbox): Promise<void> {
 	await sandbox.writeFiles({
-		'.codex/config.toml': config,
+		[NODE_REPL_MOCK_SANDBOX_PATH]: await fs.readFile(NODE_REPL_MOCK_SOURCE_PATH, 'utf8'),
+		[CODEX_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
+		[CODEX_BROWSER_API_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_API_SOURCE_PATH, 'utf8'),
+		[CODEX_BROWSER_SKILL_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_SKILL_SOURCE_PATH, 'utf8'),
+	});
+
+	const config = `[mcp_servers.node_repl]
+command = "node"
+args = ["${NODE_REPL_MOCK_SANDBOX_PATH}"]
+default_tools_approval_mode = "auto"
+startup_timeout_sec = 30
+tool_timeout_sec = 180
+`;
+
+	await appendCodexConfig(sandbox, config);
+}
+
+async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {
+	let existing = '';
+	try {
+		existing = await sandbox.readFile(CODEX_CONFIG_PATH);
+	} catch {
+		// No config yet.
+	}
+
+	if (existing.includes(section.split('\n', 1)[0] ?? section)) {
+		return;
+	}
+
+	const config = existing.length > 0 ? `${existing.trimEnd()}\n\n${section}` : section;
+	await sandbox.writeFiles({
+		[CODEX_CONFIG_PATH]: config,
 	});
 }
 

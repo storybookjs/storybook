@@ -95,6 +95,8 @@ const moduleDirs = new Set();
 /** Current `js` call sink; `nodeRepl.write`/`emitImage` and console output land here. */
 let activeSink = null;
 let kernel = null;
+/** Settles the in-flight eval when the REPL routes a throw to its domain. */
+let settleActiveEval = null;
 
 function registerModuleDir(dir) {
 	const resolved = path.resolve(dir);
@@ -165,6 +167,20 @@ function createKernel() {
 
 	installHelpers(server.context);
 	server.on('reset', (context) => installHelpers(context));
+
+	// The REPL routes synchronous throws (and some async ones) to its internal
+	// domain and never invokes the eval callback — it just prints "Uncaught …"
+	// to the output stream. Replace that handler so the in-flight `js` call can
+	// settle with the error instead of hanging until its timeout.
+	const domain = server._domain;
+	if (domain) {
+		domain.removeAllListeners('error');
+		domain.on('error', (error) => {
+			server.clearBufferedCommand?.();
+			settleActiveEval?.({ error });
+		});
+	}
+
 	return server;
 }
 
@@ -177,34 +193,32 @@ function evalInKernel(code, timeoutMs) {
 	const server = getKernel();
 	return new Promise((resolve) => {
 		let settled = false;
+		const settle = (outcome) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			settleActiveEval = null;
+			resolve(outcome);
+		};
 		const timer = setTimeout(() => {
-			if (!settled) {
-				settled = true;
-				resolve({
-					error: new Error(
-						`Execution timed out after ${timeoutMs} ms. The kernel may still be busy; call js_reset if the session stops responding.`,
-					),
-				});
-			}
+			settle({
+				error: new Error(
+					`Execution timed out after ${timeoutMs} ms. The kernel may still be busy; call js_reset if the session stops responding.`,
+				),
+			});
 		}, timeoutMs);
+		settleActiveEval = settle;
 
 		try {
 			server.eval(code, server.context, '<node_repl>', (error, result) => {
-				if (settled) return;
-				settled = true;
-				clearTimeout(timer);
 				if (error instanceof repl.Recoverable) {
-					resolve({ error: error.err ?? error });
+					settle({ error: error.err ?? error });
 					return;
 				}
-				resolve(error ? { error } : { result });
+				settle(error ? { error } : { result });
 			});
 		} catch (error) {
-			if (!settled) {
-				settled = true;
-				clearTimeout(timer);
-				resolve({ error });
-			}
+			settle({ error });
 		}
 	});
 }

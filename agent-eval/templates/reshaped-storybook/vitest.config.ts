@@ -19,7 +19,7 @@ export default defineConfig({
 	},
 	test: {
 		coverage: {
-			exclude: ['preview.tsx', '**/*.{css,scss,sass}', ...defaultExclude],
+			exclude: ['**/.storybook/preview.tsx', '**/*.{css,scss,sass}', ...defaultExclude],
 			reportOnFailure: true,
 		},
 		projects: [
@@ -38,6 +38,7 @@ export default defineConfig({
 						provider: playwright({}),
 						instances: [{ browser: 'chromium' }],
 					},
+					setupFiles: ['.storybook/vitest.setup.ts'],
 				},
 			},
 		],

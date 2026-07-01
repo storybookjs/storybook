@@ -108,12 +108,17 @@ export async function setupSandbox(
 	}
 
 	if (templateName === 'reshaped-storybook') {
+		const packageList = PLAYWRIGHT_AMAZON_LINUX_PACKAGES.join(' ');
 		const result = await sandbox.runCommand('bash', [
 			'-lc',
 			[
 				'set -e',
 				'if grep -q \'ID="amzn"\' /etc/os-release && command -v dnf >/dev/null; then',
-				`  sudo dnf install -y ${PLAYWRIGHT_AMAZON_LINUX_PACKAGES.join(' ')}`,
+				'  if command -v sudo >/dev/null; then',
+				`    sudo dnf install -y ${packageList}`,
+				'  else',
+				`    dnf install -y ${packageList}`,
+				'  fi',
 				'fi',
 			].join('\n'),
 		]);
@@ -284,10 +289,10 @@ async function readLocalStorybookMcpPackages(): Promise<Record<string, string>> 
 
 async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<string, string>> {
 	const sourceDir = path.join(REPO_ROOT, 'packages', 'mcp');
-	const targetDir = path.join('local-packages', 'mcp');
+	const targetDir = path.posix.join('local-packages', 'mcp');
 	const files = await readPackageDistFiles(sourceDir, targetDir);
 
-	files[path.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
+	files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
 		catalog,
 	});
 
@@ -298,14 +303,14 @@ async function readLocalStorybookAddonMcpPackage(
 	catalog: Catalog,
 ): Promise<Record<string, string>> {
 	const sourceDir = path.join(REPO_ROOT, 'packages', 'addon-mcp');
-	const targetDir = path.join('local-packages', 'addon-mcp');
+	const targetDir = path.posix.join('local-packages', 'addon-mcp');
 	const files = await readPackageDistFiles(sourceDir, targetDir);
 
-	files[path.join(targetDir, 'preset.js')] = await fs.readFile(
+	files[path.posix.join(targetDir, 'preset.js')] = await fs.readFile(
 		path.join(sourceDir, 'preset.js'),
 		'utf8',
 	);
-	files[path.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
+	files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
 		catalog,
 		dependencyOverrides: {
 			'@storybook/mcp': 'file:../mcp',
@@ -437,11 +442,15 @@ async function readPackageDistFiles(
 	targetDir: string,
 ): Promise<Record<string, string>> {
 	const distDir = path.join(sourceDir, 'dist');
+	const packageName = path.basename(sourceDir);
 	try {
-		await fs.access(distDir);
+		const distStat = await fs.stat(distDir);
+		if (!distStat.isDirectory()) {
+			throw new Error(`${distDir} exists but is not a directory`);
+		}
 	} catch {
 		throw new Error(
-			`Missing package build output at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`,
+			`Missing build output for ${packageName} at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`,
 		);
 	}
 
@@ -460,16 +469,20 @@ async function collectPackageFiles(
 	const entries = await fs.readdir(dir, { withFileTypes: true });
 
 	for (const entry of entries) {
-		const relativePath = path.join(relativeDir, entry.name);
-		const fullPath = path.join(sourceDir, relativePath);
+		const sourceRelativePath = path.join(relativeDir, entry.name);
+		const sandboxRelativePath = path.posix.join(toPosixPath(relativeDir), entry.name);
+		const fullPath = path.join(sourceDir, sourceRelativePath);
 
 		if (entry.isDirectory()) {
-			await collectPackageFiles(sourceDir, relativePath, targetDir, files);
+			await collectPackageFiles(sourceDir, sourceRelativePath, targetDir, files);
 			continue;
 		}
 
 		if (entry.isFile()) {
-			files[path.join(targetDir, relativePath)] = await fs.readFile(fullPath, 'utf8');
+			files[path.posix.join(toPosixPath(targetDir), sandboxRelativePath)] = await fs.readFile(
+				fullPath,
+				'utf8',
+			);
 		}
 	}
 }
@@ -483,16 +496,19 @@ async function collectTemplateFiles(
 	const entries = await fs.readdir(dir, { withFileTypes: true });
 
 	for (const entry of entries) {
-		const relativePath = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
-		const fullPath = path.join(baseDir, relativePath);
+		const sourceRelativePath = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
+		const sandboxRelativePath = relativeDir
+			? path.posix.join(toPosixPath(relativeDir), entry.name)
+			: entry.name;
+		const fullPath = path.join(baseDir, sourceRelativePath);
 
 		if (entry.isDirectory()) {
-			await collectTemplateFiles(baseDir, relativePath, files);
+			await collectTemplateFiles(baseDir, sourceRelativePath, files);
 			continue;
 		}
 
 		if (entry.isFile()) {
-			files[relativePath] = await fs.readFile(fullPath, 'utf8');
+			files[sandboxRelativePath] = await fs.readFile(fullPath, 'utf8');
 		}
 	}
 }
@@ -528,11 +544,11 @@ tool_timeout_sec = 120
 }
 
 export async function writeClaudePluginSkills(sandbox: Sandbox): Promise<void> {
-	await writePluginSkills(sandbox, CLAUDE_PLUGIN_SKILLS_DIR, path.join('.claude', 'skills'));
+	await writePluginSkills(sandbox, CLAUDE_PLUGIN_SKILLS_DIR, path.posix.join('.claude', 'skills'));
 }
 
 export async function writeCodexPluginSkills(sandbox: Sandbox): Promise<void> {
-	await writePluginSkills(sandbox, CODEX_PLUGIN_SKILLS_DIR, path.join('.agents', 'skills'));
+	await writePluginSkills(sandbox, CODEX_PLUGIN_SKILLS_DIR, path.posix.join('.agents', 'skills'));
 }
 
 export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {
@@ -568,4 +584,8 @@ async function writePluginSkills(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toPosixPath(filePath: string): string {
+	return filePath.split(path.sep).join(path.posix.sep);
 }

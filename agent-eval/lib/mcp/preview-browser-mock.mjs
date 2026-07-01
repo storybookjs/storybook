@@ -53,6 +53,18 @@ function withServer(serverId, fn) {
 	return fn(server);
 }
 
+function lineLimit(value, { defaultValue = 50, max = 200 } = {}) {
+	const limit = Number(value);
+	if (!Number.isInteger(limit) || limit <= 0) {
+		return defaultValue;
+	}
+	return Math.min(limit, max);
+}
+
+function lastLines(lines, limit) {
+	return lines.slice(-limit);
+}
+
 const TOOLS = [
 	{
 		name: 'preview_start',
@@ -435,37 +447,39 @@ const HANDLERS = {
 		);
 	},
 
-	preview_console_logs({ serverId, level }) {
+	preview_console_logs({ serverId, level, lines }) {
 		return withServer(serverId, () => {
-			if (level === 'error' || level === 'warn') return text('No console messages.');
-			return text('[log] (mock) Storybook preview loaded.');
+			const limit = lineLimit(lines);
+			const messages =
+				level === 'error' || level === 'warn' ? [] : ['[log] (mock) Storybook preview loaded.'];
+			return text(lastLines(messages, limit).join('\n') || 'No console messages.');
 		});
 	},
 
-	preview_logs({ serverId, search, level }) {
+	preview_logs({ serverId, search, level, lines }) {
 		return withServer(serverId, (server) => {
+			const limit = lineLimit(lines);
 			if (level === 'error') return text('No errors in server output.');
-			const lines = [`Storybook started on => ${server.url}`, 'webpack compiled successfully'];
+			const logLines = [`Storybook started on => ${server.url}`, 'webpack compiled successfully'];
 			const filtered =
 				typeof search === 'string' && search.length > 0
-					? lines.filter((line) => line.includes(search))
-					: lines;
-			return text(filtered.join('\n') || `(no log lines matching "${search}")`);
+					? logLines.filter((line) => line.includes(search))
+					: logLines;
+			return text(lastLines(filtered, limit).join('\n') || `(no log lines matching "${search}")`);
 		});
 	},
 
-	preview_network({ serverId, requestId }) {
+	preview_network({ serverId, filter, requestId }) {
 		return withServer(serverId, (server) => {
 			if (typeof requestId === 'string' && requestId.length > 0) {
 				return text(JSON.stringify({ requestId, body: '(mock response body)' }, null, 2));
 			}
-			return text(
-				JSON.stringify(
-					[{ requestId: 'req-1', method: 'GET', url: `${server.url}/iframe.html`, status: 200 }],
-					null,
-					2,
-				),
-			);
+			const requests = [
+				{ requestId: 'req-1', method: 'GET', url: `${server.url}/iframe.html`, status: 200 },
+			];
+			const filtered =
+				filter === 'failed' ? requests.filter((request) => request.status >= 400) : requests;
+			return text(JSON.stringify(filtered, null, 2));
 		});
 	},
 

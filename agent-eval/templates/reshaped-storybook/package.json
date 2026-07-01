@@ -13,7 +13,7 @@
 		"test:stories": "vitest run --project storybook",
 		"test:stories:coverage": "vitest run --project storybook --coverage",
 		"postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
-		"storybook": "storybook dev --port 6006",
+		"storybook": "storybook dev",
 		"build-storybook": "storybook build"
 	},
 	"dependencies": {

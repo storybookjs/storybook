@@ -1,0 +1,93 @@
+diff --git a/dist/lib/agents/codex/run.mjs b/dist/lib/agents/codex/run.mjs
+index 12ff2d6758852593b29792c9b7ad0e7fdb9b56d2..a6a3c5e0d3764cc0b83757988299b5ff32c35195 100644
+--- a/dist/lib/agents/codex/run.mjs
++++ b/dist/lib/agents/codex/run.mjs
+@@ -287,12 +287,14 @@ export async function runAgent(input) {
+   const agentExitCode = res.status == null ? -1 : res.status;
+ 
+   // Capture transcript + observed model regardless of success (the old adapter did
+-  // this even on the non-zero-exit path). The inline --json on stdout is the
+-  // transcript; observedModel comes from the saved session file under ~/.codex.
+-  const transcript = extractTranscriptFromOutput(output) ?? null;
++  // this even on the non-zero-exit path). Prefer the inline --json stdout, but
++  // fall back to the saved session file under ~/.codex; newer Codex builds may
++  // write the session transcript there without echoing the full JSONL to stdout.
++  const stdoutTranscript = extractTranscriptFromOutput(output);
+   const threadId = extractCodexThreadId(output);
+   const sessionTranscript = captureCodexSessionTranscript(threadId);
+-  const observedModel = extractObservedModelFromCodexSession(sessionTranscript) ?? null;
++  const transcript = stdoutTranscript ?? sessionTranscript ?? null;
++  const observedModel = extractObservedModelFromCodexSession(sessionTranscript ?? stdoutTranscript) ?? null;
+ 
+   if (res.error || agentExitCode !== 0) {
+     // Mirror the old error string: last 5 lines of output, else a coded fallback.
+diff --git a/dist/lib/docker-sandbox.js b/dist/lib/docker-sandbox.js
+index 399cbbdc6bd2f7ff3a24e037f99590cb8af9409c..da1e3b948b902116be5fef17eb2a8ea36286ec9d 100644
+--- a/dist/lib/docker-sandbox.js
++++ b/dist/lib/docker-sandbox.js
+@@ -3,6 +3,7 @@
+  * Uses dockerode to manage Docker containers as sandboxes.
+  */
+ import Docker from 'dockerode';
++import { PassThrough } from 'node:stream';
+ import * as tar from 'tar-stream';
+ /**
+  * Docker images for each Node.js runtime.
+@@ -184,47 +185,19 @@ export class DockerSandboxManager {
+         });
+         const stream = await exec.start({ hijack: true, stdin: false });
+         return new Promise((resolve, reject) => {
+-            let stdout = '';
+-            let stderr = '';
+-            // Docker multiplexes stdout/stderr in the stream
+-            // We need to demux it
+             const stdoutChunks = [];
+             const stderrChunks = [];
+-            stream.on('data', (chunk) => {
+-                // Docker stream format: 8-byte header + payload
+-                // Header: [stream_type (1 byte), 0, 0, 0, size (4 bytes)]
+-                // stream_type: 1 = stdout, 2 = stderr
+-                let offset = 0;
+-                while (offset < chunk.length) {
+-                    if (offset + 8 > chunk.length) {
+-                        // Incomplete header, treat rest as stdout
+-                        stdoutChunks.push(chunk.slice(offset));
+-                        break;
+-                    }
+-                    const streamType = chunk[offset];
+-                    const size = chunk.readUInt32BE(offset + 4);
+-                    if (offset + 8 + size > chunk.length) {
+-                        // Incomplete payload, treat rest as stdout
+-                        stdoutChunks.push(chunk.slice(offset + 8));
+-                        break;
+-                    }
+-                    const payload = chunk.slice(offset + 8, offset + 8 + size);
+-                    if (streamType === 1) {
+-                        stdoutChunks.push(payload);
+-                    }
+-                    else if (streamType === 2) {
+-                        stderrChunks.push(payload);
+-                    }
+-                    else {
+-                        // Unknown type, assume stdout
+-                        stdoutChunks.push(payload);
+-                    }
+-                    offset += 8 + size;
+-                }
+-            });
++            const stdoutStream = new PassThrough();
++            const stderrStream = new PassThrough();
++            stdoutStream.on('data', (chunk) => stdoutChunks.push(chunk));
++            stderrStream.on('data', (chunk) => stderrChunks.push(chunk));
++            // Docker multiplexes stdout/stderr in the stream.
++            this.docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+             stream.on('end', async () => {
+-                stdout = Buffer.concat(stdoutChunks).toString('utf-8');
+-                stderr = Buffer.concat(stderrChunks).toString('utf-8');
++                stdoutStream.end();
++                stderrStream.end();
++                const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
++                const stderr = Buffer.concat(stderrChunks).toString('utf-8');
+                 try {
+                     const inspection = await exec.inspect();
+                     resolve({

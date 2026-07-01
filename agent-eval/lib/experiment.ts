@@ -43,9 +43,7 @@ export const RESHAPED_STORYBOOK_EVALS = [
 	// '915-preview-story-by-id',
 ] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
 
-export const CLAUDE_MCP_EVALS = RESHAPED_STORYBOOK_EVALS.filter(
-	(evalName) => evalName !== '901-create-component-atom-reshaped-concise',
-);
+export const CLAUDE_MCP_EVALS = RESHAPED_STORYBOOK_EVALS;
 
 export const CLAUDE_PLUGIN_EVALS = [
 	...RESHAPED_STORYBOOK_EVALS,
@@ -55,7 +53,7 @@ export const CLAUDE_PLUGIN_EVALS = [
 export const DEFAULT_EXPERIMENT_CONFIG = {
 	runs: 1,
 	earlyExit: true,
-	sandbox: 'docker',
+	sandbox: 'vercel',
 	copyFiles: 'all',
 	scripts: ['typecheck', 'lint', 'build', 'test:stories'],
 } satisfies Partial<ExperimentConfig>;

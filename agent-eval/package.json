@@ -31,5 +31,10 @@
 		"tailwindcss": "^4.3.2",
 		"typescript": "catalog:trials",
 		"vitest": "catalog:"
+	},
+	"pnpm": {
+		"patchedDependencies": {
+			"@vercel/agent-eval@1.2.0": "patches/@vercel__agent-eval@1.2.0.patch"
+		}
 	}
 }

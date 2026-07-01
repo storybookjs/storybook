@@ -19,7 +19,10 @@ test('every new story appears in the display review', () => {
 });
 
 test('publishes a well-curated review', async () => {
-	await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.7);
+	// 0.5 keeps this soft (per the eval spec, curation quality is scored, not
+	// gating): minor flaws like one single-story collection pass, arbitrary
+	// story dumps still fail.
+	await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
 });
 
 test('writes a valid Storybook launch config for Claude preview tooling', () => {

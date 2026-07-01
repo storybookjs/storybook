@@ -107,6 +107,7 @@ function renderArgTypesTables({
   include,
   exclude,
   sort,
+  docsLang,
 }: {
   mainName?: string;
   mainRows: StrictArgTypes;
@@ -114,11 +115,12 @@ function renderArgTypesTables({
   include?: PropDescriptor;
   exclude?: PropDescriptor;
   sort?: SortType;
+  docsLang?: string;
 }) {
   const filteredMainRows = filterArgTypes(mainRows, include, exclude);
 
   if (Object.keys(subcomponentRows).length === 0) {
-    return <PureArgsTable rows={filteredMainRows as any} sort={sort} />;
+    return <PureArgsTable rows={filteredMainRows as any} sort={sort} docsLang={docsLang} />;
   }
 
   const tabs = {
@@ -134,7 +136,7 @@ function renderArgTypesTables({
     ),
   };
 
-  return <TabbedArgsTable tabs={tabs as any} sort={sort} />;
+  return <TabbedArgsTable tabs={tabs as any} sort={sort} docsLang={docsLang} />;
 }
 
 const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
@@ -148,6 +150,7 @@ const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
     mainName: getComponentName(component),
     mainRows: argTypes,
     subcomponentRows: extractSubcomponentArgTypes(subcomponents, parameters),
+    docsLang: parameters?.docs?.lang,
     ...filterProps,
   });
 };
@@ -175,6 +178,7 @@ const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
     mainName: getComponentName(component) ?? serviceRows.serviceComponentName,
     mainRows: serviceRows.mainRows,
     subcomponentRows: serviceRows.subcomponentRows,
+    docsLang: parameters?.docs?.lang,
     ...filterProps,
   });
 };

@@ -17,10 +17,14 @@ Test AI coding agents to measure what actually works.
    ```
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
-   - **Choose ONE agent key**: `AI_GATEWAY_API_KEY` (for Vercel agents), `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`
+   - **Agent keys**: `AI_GATEWAY_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments.
    - **Sandbox access**: by default the experiments use `sandbox: 'auto'`. Set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID` to use Vercel Sandbox; leave `VERCEL_TOKEN` unset to fall back to Docker.
 
 ## Running Evals
+
+Commands below assume you are in `agent-eval/`. From the repository root, prefix
+them with `pnpm --dir agent-eval`, for example `pnpm --dir agent-eval run
+eval:dry`.
 
 ### Preview (no cost)
 

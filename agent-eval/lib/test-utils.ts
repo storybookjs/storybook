@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { loadTranscript } from '@vercel/agent-eval';
 import type { Transcript } from '@vercel/agent-eval';
@@ -129,6 +129,95 @@ export function expectDisplayReviewForVisualChange(): void {
 
 	expectValidDisplayReviewPayload(displayReview.input);
 	expectFinalResponseEndsWithReviewSection();
+}
+
+const DOCUMENTATION_WORKFLOW_NAMES = [
+	'get-documentation',
+	'get-documentation-for-story',
+	'list-all-documentation',
+] as const;
+
+const LAUNCH_CONFIG_PATH = '.claude/launch.json';
+
+function usesClaudePreviewTooling(): boolean {
+	const { agent, integration } = getEvalContext();
+	return agent === 'claude-code' && integration === 'plugin';
+}
+
+export function expectValidStorybookLaunchConfig(): void {
+	if (!usesClaudePreviewTooling()) {
+		return;
+	}
+
+	expect(existsSync(LAUNCH_CONFIG_PATH), `Expected ${LAUNCH_CONFIG_PATH} to be written`).toBe(true);
+
+	const launchConfig = parseJson(readFileSync(LAUNCH_CONFIG_PATH, 'utf8'));
+	expect(isRecord(launchConfig), `Expected ${LAUNCH_CONFIG_PATH} to contain a JSON object`).toBe(
+		true,
+	);
+	if (!isRecord(launchConfig)) {
+		return;
+	}
+
+	const configurations = launchConfig.configurations;
+	expect(
+		Array.isArray(configurations),
+		`Expected ${LAUNCH_CONFIG_PATH} to have a configurations array`,
+	).toBe(true);
+	if (!Array.isArray(configurations)) {
+		return;
+	}
+
+	const storybookEntry = configurations.find(
+		(configuration) =>
+			isRecord(configuration) &&
+			Array.isArray(configuration.runtimeArgs) &&
+			configuration.runtimeArgs.includes('storybook'),
+	);
+	expect(
+		isRecord(storybookEntry),
+		`Expected ${LAUNCH_CONFIG_PATH} to have a configuration running the storybook script`,
+	).toBe(true);
+	if (!isRecord(storybookEntry)) {
+		return;
+	}
+
+	expect(storybookEntry.port, 'Storybook launch entry must use port 6006').toBe(6006);
+	expect(storybookEntry.autoPort, 'Storybook launch entry must set autoPort: true').toBe(true);
+
+	const packageJson = parseJson(readFileSync('package.json', 'utf8'));
+	const scripts = isRecord(packageJson) && isRecord(packageJson.scripts) ? packageJson.scripts : {};
+	expect(
+		typeof scripts.storybook,
+		'Launch entry references the storybook script, so package.json must define it',
+	).toBe('string');
+}
+
+export function expectPreviewBrowserStarted(): void {
+	if (!usesClaudePreviewTooling()) {
+		return;
+	}
+
+	const started = getTranscript().events.some(
+		(event) =>
+			event.type === 'tool_call' &&
+			typeof event.tool?.originalName === 'string' &&
+			/__preview_start$/.test(event.tool.originalName),
+	);
+	expect(
+		started,
+		'Expected the Claude preview browser to be opened via the preview_start tool',
+	).toBe(true);
+}
+
+export function expectDocumentationToolingCalled(): void {
+	const documentationCalls = getStorybookWorkflowCalls().filter((call) =>
+		(DOCUMENTATION_WORKFLOW_NAMES as readonly string[]).includes(call.name),
+	);
+	expect(
+		documentationCalls.length,
+		`Expected at least one documentation tool call (${DOCUMENTATION_WORKFLOW_NAMES.join(', ')})`,
+	).toBeGreaterThan(0);
 }
 
 export function workflowCallIncludesStory(

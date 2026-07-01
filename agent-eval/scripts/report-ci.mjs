@@ -2,13 +2,9 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const RESULTS_DIR = path.resolve(process.env.AGENT_EVAL_RESULTS_DIR ?? 'results');
-const KNOWN_FAILURES_PATH = path.resolve(
-	process.env.AGENT_EVAL_KNOWN_FAILURES_PATH ?? 'known-failures.json',
-);
 const TRACKING_ISSUE = 'https://github.com/storybookjs/mcp/issues/317';
 const rawExitCode = readRawExitCode();
 
-const knownFailures = readKnownFailures();
 const resultRows = readResultRows();
 
 if (rawExitCode !== 0 && resultRows.length === 0) {
@@ -17,63 +13,26 @@ if (rawExitCode !== 0 && resultRows.length === 0) {
 }
 
 const passed = [];
-const known = [];
-const unexpectedPasses = [];
 const infra = [];
-const untracked = [];
+const failed = [];
 
 for (const row of resultRows) {
-	const key = failureKey(row);
-	const knownFailure = knownFailures.get(key);
-
 	if (row.passed) {
-		if (knownFailure) {
-			unexpectedPasses.push({ ...row, knownFailure });
-		} else {
-			passed.push(row);
-		}
+		passed.push(row);
 		continue;
 	}
 
-	if (knownFailure) {
-		known.push({ ...row, knownFailure });
-	} else if (row.failureKind === 'infra') {
+	if (row.failureKind === 'infra') {
 		infra.push(row);
 	} else {
-		untracked.push(row);
+		failed.push(row);
 	}
 }
 
 printSummary();
 
-if (untracked.length > 0) {
+if (failed.length > 0) {
 	process.exitCode = 1;
-}
-
-function readKnownFailures() {
-	const raw = JSON.parse(readFileSync(KNOWN_FAILURES_PATH, 'utf8'));
-	if (raw.issue !== TRACKING_ISSUE) {
-		throw new Error(`known-failures.json must use ${TRACKING_ISSUE}`);
-	}
-
-	const failures = new Map();
-	for (const entry of raw.failures ?? []) {
-		if (
-			typeof entry.experiment !== 'string' ||
-			typeof entry.eval !== 'string' ||
-			typeof entry.issue !== 'string' ||
-			typeof entry.reason !== 'string'
-		) {
-			throw new Error('Each known failure needs experiment, eval, issue, and reason');
-		}
-		if (entry.issue !== TRACKING_ISSUE) {
-			throw new Error(
-				`Known failure ${entry.experiment}/${entry.eval} must link to ${TRACKING_ISSUE}`,
-			);
-		}
-		failures.set(`${entry.experiment}/${entry.eval}`, entry);
-	}
-	return failures;
 }
 
 function readRawExitCode() {
@@ -219,22 +178,16 @@ function printSummary() {
 	console.log('\nAgent eval CI report');
 	console.log('====================');
 	console.log(`Passed: ${passed.length}`);
-	console.log(`Known failures: ${known.length}`);
-	console.log(`Unexpected known-failure passes: ${unexpectedPasses.length}`);
 	console.log(`Infrastructure/provider failures: ${infra.length}`);
-	console.log(`Untracked eval failures: ${untracked.length}`);
+	console.log(`Eval failures: ${failed.length}`);
 
-	printRows('\nKnown failures', known, (row) => row.knownFailure.reason);
-	printRows(
-		'\nUnexpected known-failure passes',
-		unexpectedPasses,
-		(row) => row.knownFailure.reason,
-	);
 	printRows('\nInfrastructure/provider failures', infra, firstFailureReason);
-	printRows('\nUntracked eval failures', untracked, firstFailureReason);
+	printRows('\nEval failures', failed, firstFailureReason);
 
-	if (untracked.length > 0) {
-		console.error(`\nUntracked eval failures must be fixed or listed in ${TRACKING_ISSUE}.`);
+	if (failed.length > 0) {
+		console.error(
+			`\nEval failures must be fixed or intentionally documented above the relevant expect and tracked in ${TRACKING_ISSUE}.`,
+		);
 	}
 }
 

@@ -24,7 +24,7 @@ import { createInterface } from 'node:readline';
 const SERVER_INFO = { name: 'preview-browser', version: '2.0.0' };
 
 const LAUNCH_CONFIG_PATH = '.claude/launch.json';
-const SERVER_READY_TIMEOUT_MS = 60_000;
+const SERVER_READY_TIMEOUT_MS = 120_000;
 const ACTION_TIMEOUT_MS = 5_000;
 const NAVIGATION_TIMEOUT_MS = 30_000;
 

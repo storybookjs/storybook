@@ -14,7 +14,8 @@
 		"experiments/**/*.ts",
 		"evals/**/EVAL.ts",
 		"evals/**/EVAL.tsx",
-		"lib/**/*.ts"
+		"lib/**/*.ts",
+		"vitest.config.ts"
 	],
 	"exclude": ["results/**", "templates/**"]
 }

@@ -97,20 +97,13 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 	const { integration } = getEvalContext();
 
 	if (integration === 'plugin') {
-		cachedStorybookWorkflowCalls = dedupeWorkflowCalls(
-			getShellCommands().flatMap(parsePluginWorkflowCalls),
-		);
+		cachedStorybookWorkflowCalls = parseStorybookWorkflowShellCommands(getShellCommands());
 		return cachedStorybookWorkflowCalls;
 	}
 
 	const parsedCalls = getParsedMcpWorkflowCalls();
 	const rawCalls = getRawCodexMcpWorkflowCalls();
-	cachedStorybookWorkflowCalls = [
-		...parsedCalls,
-		...rawCalls.filter(
-			(rawCall) => !parsedCalls.some((parsedCall) => isSameWorkflowCall(parsedCall, rawCall)),
-		),
-	];
+	cachedStorybookWorkflowCalls = mergeMcpWorkflowCalls(parsedCalls, rawCalls);
 	return cachedStorybookWorkflowCalls;
 }
 
@@ -156,6 +149,10 @@ export const A11Y_VISUAL_CHANGE_APPROVAL_CRITERION = [
 	'It does not claim the visual contrast issue was already fixed.',
 	'It distinguishes semantic accessibility issues that can be fixed directly from visual design changes that need user approval.',
 ].join(' ');
+
+export function parseStorybookWorkflowShellCommands(commands: string[]): StorybookWorkflowCall[] {
+	return commands.flatMap(parsePluginWorkflowCalls);
+}
 
 function readAgentContext(): AgentContext {
 	return JSON.parse(readFileSync(AGENT_CONTEXT_PATH, 'utf8')) as AgentContext;
@@ -329,6 +326,18 @@ function getRawMcpInput(item: Record<string, unknown>): Record<string, unknown> 
 	return {};
 }
 
+function mergeMcpWorkflowCalls(
+	parsedCalls: StorybookWorkflowCall[],
+	rawCalls: StorybookWorkflowCall[],
+): StorybookWorkflowCall[] {
+	return [
+		...parsedCalls,
+		...rawCalls.filter(
+			(rawCall) => !parsedCalls.some((parsedCall) => isSameWorkflowCall(parsedCall, rawCall)),
+		),
+	];
+}
+
 function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 	const nestedCommand = getNestedShellCommand(command);
 	if (nestedCommand !== undefined) {
@@ -420,9 +429,8 @@ function parseStorybookAiInvocation(
 		(token, index) =>
 			SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && aiArgs[index + 1] === 'ai'),
 	);
-	const segmentEnd = endIndex === -1 ? aiArgs.length : endIndex;
-	const segment = aiArgs.slice(0, segmentEnd);
 	const consumed = endIndex === -1 ? aiArgs.length : endIndex;
+	const segment = aiArgs.slice(0, consumed);
 
 	if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
 		return undefined;
@@ -622,11 +630,7 @@ function storyInputMatches(
 		return true;
 	}
 
-	return (
-		expected.storyId !== undefined &&
-		typeof input.storyId === 'string' &&
-		input.storyId === expected.storyId
-	);
+	return false;
 }
 
 function pathsMatch(actual: string, expected: string): boolean {

@@ -557,6 +557,8 @@ export async function writeCodexPluginSkills(sandbox: Sandbox): Promise<void> {
 }
 
 export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {
+	// Preview-only plugin evals intentionally replace `.mcp.json` with the mock server.
+	// Future fixtures that need both servers should merge with the existing config instead.
 	await sandbox.writeFiles({
 		[PREVIEW_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(
 			PREVIEW_BROWSER_MOCK_SOURCE_PATH,
@@ -587,7 +589,7 @@ async function writePluginSkills(
 	await sandbox.writeFiles(files);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 

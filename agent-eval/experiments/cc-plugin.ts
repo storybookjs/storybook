@@ -1,6 +1,7 @@
 import type { ExperimentConfig, Sandbox } from '@vercel/agent-eval';
 import { CLAUDE_PLUGIN_EVALS, DEFAULT_EXPERIMENT_CONFIG } from '../lib/experiment.ts';
 import {
+	isRecord,
 	setupSandbox,
 	writeClaudePluginSkills,
 	writeClaudePreviewBrowserMock,
@@ -29,8 +30,4 @@ async function usesPreviewBrowserMock(sandbox: Sandbox): Promise<boolean> {
 		typeof packageJson.name === 'string' &&
 		PREVIEW_BROWSER_MOCK_EVALS.has(packageJson.name)
 	);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

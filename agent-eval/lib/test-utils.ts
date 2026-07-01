@@ -508,7 +508,8 @@ function parseMcpCallScriptWorkflowCalls(command: string): StorybookWorkflowCall
 		calls.push({
 			name,
 			input: parseStorybookAiInput(segment),
-			source: 'storybook-ai',
+			// MCP-protocol invocation, just captured from a shell command.
+			source: 'mcp',
 		});
 	}
 
@@ -532,7 +533,8 @@ function parseCurlWorkflowCalls(command: string): StorybookWorkflowCall[] {
 		calls.push({
 			name: toolName,
 			input,
-			source: 'storybook-ai',
+			// MCP-protocol invocation over HTTP, captured from a shell command.
+			source: 'mcp',
 		});
 	}
 

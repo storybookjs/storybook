@@ -778,6 +778,17 @@ function tokenizeShellCommand(command: string): string[] {
 			continue;
 		}
 
+		// POSIX: inside single quotes everything is literal, including backslashes.
+		// Agents rely on this when passing JSON payloads (e.g. --json '{"a": "\"x\""}').
+		if (quote === "'") {
+			if (char === "'") {
+				quote = undefined;
+			} else {
+				token += char;
+			}
+			continue;
+		}
+
 		if (escaping) {
 			token += char;
 			escaping = false;
@@ -789,8 +800,8 @@ function tokenizeShellCommand(command: string): string[] {
 			continue;
 		}
 
-		if (quote !== undefined) {
-			if (char === quote) {
+		if (quote === '"') {
+			if (char === '"') {
 				quote = undefined;
 			} else {
 				token += char;

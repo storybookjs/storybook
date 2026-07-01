@@ -58,6 +58,38 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		).toBe(true);
 	});
 
+	test('keeps backslashes literal inside single-quoted JSON payloads', () => {
+		// POSIX single quotes preserve backslashes, so the CLI receives valid JSON
+		// with escaped inner quotes. The tokenizer must not consume them.
+		const command = [
+			"STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 39497 display-review --json '{",
+			'  "title": "Accessible ToggleSwitch component",',
+			'  "description": "A switch with `role=\\"switch\\"` semantics.",',
+			'  "collections": [',
+			'    {',
+			'      "title": "ToggleSwitch states",',
+			'      "rationale": "All states.",',
+			'      "storyIds": ["components-toggleswitch--off"]',
+			'    }',
+			'  ]',
+			"}' 2>&1 | tail -30",
+		].join('\n');
+
+		const calls = parseStorybookWorkflowShellCommands([command]);
+
+		expect(calls).toHaveLength(1);
+		expect(calls[0]?.name).toBe('display-review');
+		expect(calls[0]?.input.title).toBe('Accessible ToggleSwitch component');
+		expect(calls[0]?.input.description).toBe('A switch with `role="switch"` semantics.');
+		expect(calls[0]?.input.collections).toEqual([
+			{
+				title: 'ToggleSwitch states',
+				rationale: 'All states.',
+				storyIds: ['components-toggleswitch--off'],
+			},
+		]);
+	});
+
 	test('parses mcp-call script workflow input', () => {
 		const calls = parseStorybookWorkflowShellCommands([
 			'node scripts/mcp-call.mjs run-story-tests \'{"stories":[{"storyId":"example-button--primary"}]}\'',

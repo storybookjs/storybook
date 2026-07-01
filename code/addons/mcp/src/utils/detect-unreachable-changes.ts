@@ -44,7 +44,7 @@ function parsePorcelain(output: string): string[] {
 export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]> {
 	const moduleGraph = await getModuleGraphService();
 	if (!moduleGraph) return [];
-	const status = await moduleGraph.queries.getStatus.loaded(undefined);
+	const status = await moduleGraph.queries.status.loaded(undefined);
 	if (status.value !== 'ready') return [];
 	// Matches what the dev server uses, so paths line up with the reverse-index keys.
 	const workingDir = process.cwd();
@@ -77,7 +77,7 @@ export async function detectUnreachableChanges(maxFiles = 10): Promise<string[]>
 		// reachable files.
 		const absChunk = chunk.map((rel) => slash(path.resolve(workingDir, rel)));
 		// One batched lookup per chunk; output is positional (result `i` corresponds to `absChunk[i]`).
-		const hits = await moduleGraph.queries.getStoriesForFiles.loaded({ files: absChunk });
+		const hits = await moduleGraph.queries.storiesForFiles.loaded({ files: absChunk });
 		for (const [i, rel] of chunk.entries()) {
 			if (unreachable.length >= maxFiles) break;
 			if ((hits[i]?.length ?? 0) === 0) unreachable.push(rel);

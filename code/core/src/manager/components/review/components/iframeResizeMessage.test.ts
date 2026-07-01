@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
-import {
-  computeThumbnailScale,
-  parseIframeResizeMessage,
-  THUMBNAIL_BOOTSTRAP_SCALE,
-} from './iframeResizeMessage.ts';
+import { parseIframeResizeMessage, THUMBNAIL_BOOTSTRAP_SCALE } from './iframeResizeMessage.ts';
 
 describe('parseIframeResizeMessage', () => {
   it('accepts valid resize payloads', () => {
@@ -34,19 +30,8 @@ describe('parseIframeResizeMessage', () => {
   });
 });
 
-describe('computeThumbnailScale', () => {
-  it('uses 0.5 bootstrap scale before embed measurement', () => {
+describe('THUMBNAIL_BOOTSTRAP_SCALE', () => {
+  it('widens the embed viewport to 2× the frame width before measurement', () => {
     expect(THUMBNAIL_BOOTSTRAP_SCALE).toBe(0.5);
-  });
-
-  it('rounds width fit down to 0.25 steps with a 0.5 floor', () => {
-    expect(computeThumbnailScale(298, 293)).toBe(0.75);
-    expect(computeThumbnailScale(200, 293)).toBe(1);
-    expect(computeThumbnailScale(800, 293)).toBe(0.5);
-  });
-
-  it('does not shrink tall content that already fits the frame width', () => {
-    expect(computeThumbnailScale(298, 293)).toBe(0.75);
-    expect(computeThumbnailScale(298, 388)).toBe(1);
   });
 });

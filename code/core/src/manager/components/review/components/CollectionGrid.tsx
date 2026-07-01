@@ -203,10 +203,7 @@ const StoryPreviewCell: FC<{
   const { component, name } = deriveStoryInfo(info);
 
   const frameStyle = rememberedDimensions
-    ? ({
-        '--content-w': rememberedDimensions.width,
-        '--content-h': rememberedDimensions.height,
-      } as React.CSSProperties)
+    ? ({ '--content-w': rememberedDimensions.width } as React.CSSProperties)
     : ({
         // Widen the embed viewport before iframe.resize so stories don't measure
         // and layout in a narrow/mobile breakpoint inside a small thumbnail frame.

@@ -1,8 +1,7 @@
 import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 
-/** Default `--content-w` / `--content-h` before the embed iframe reports its size. */
+/** Default `--content-w` before the embed iframe reports its size. */
 export const DEFAULT_CONTENT_WIDTH = 300;
-export const DEFAULT_CONTENT_HEIGHT = 200;
 
 export type ContentDimensions = {
   width: number;
@@ -31,18 +30,5 @@ export const parseIframeResizeMessage = (data: unknown): ContentDimensions | nul
   }
 };
 
-export const THUMBNAIL_SCALE_MIN = 0.5;
-const THUMBNAIL_SCALE_STEP = 0.25;
-
 /** Pre-measurement scale so the embed iframe viewport is 2× the frame width (100% / 0.5). */
-export const THUMBNAIL_BOOTSTRAP_SCALE = THUMBNAIL_SCALE_MIN;
-
-/** Mirrors Frame `--scale`: fit content width in the frame; tall content is cropped. */
-export const computeThumbnailScale = (contentWidth: number, frameWidth: number): number => {
-  if (frameWidth <= 0 || contentWidth <= 0) {
-    return 1;
-  }
-  const fit = Math.min(1, frameWidth / contentWidth);
-  const stepped = Math.floor(fit / THUMBNAIL_SCALE_STEP) * THUMBNAIL_SCALE_STEP;
-  return Math.max(THUMBNAIL_SCALE_MIN, Math.min(1, stepped));
-};
+export const THUMBNAIL_BOOTSTRAP_SCALE = 0.5;

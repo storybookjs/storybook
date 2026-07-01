@@ -58,6 +58,7 @@ describe('buildStorybookAiMetadata', () => {
 			available: true,
 			hasManifests: true,
 			hasFeatureFlag: true,
+			docgenServer: false,
 		});
 		vi.mocked(getAddonVitestConstants).mockResolvedValue({
 			TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
@@ -292,6 +293,7 @@ describe('buildStorybookAiMetadata', () => {
 			available: false,
 			hasManifests: false,
 			hasFeatureFlag: true,
+			docgenServer: false,
 		});
 		const options = createOptions({
 			refs: {
@@ -469,6 +471,7 @@ function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvai
 		docsFeatureEnabled: true,
 		testSupported: true,
 		a11yEnabled: true,
+		docgenServer: false,
 		...overrides,
 	};
 }

@@ -1103,7 +1103,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should format a single component', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1126,7 +1126,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should format multiple components', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1161,7 +1161,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should include story sub-bullets when withStoryIds is true', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1192,7 +1192,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should include summary when provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1216,7 +1216,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should prefer summary over description', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1238,7 +1238,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should use description when summary is not provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1262,7 +1262,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should truncate long descriptions to 90 characters', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1288,7 +1288,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should not truncate descriptions under 90 characters', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1309,7 +1309,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should omit summary when neither summary nor description provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1334,7 +1334,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should include docs section when docsManifest is provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1344,7 +1344,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 					},
 				},
 				docsManifest: {
-					v: 1,
+					v: 0,
 					docs: {
 						'getting-started': {
 							id: 'getting-started',
@@ -1373,7 +1373,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should format multiple docs entries', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1383,7 +1383,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 					},
 				},
 				docsManifest: {
-					v: 1,
+					v: 0,
 					docs: {
 						'getting-started': {
 							id: 'getting-started',
@@ -1414,7 +1414,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should omit docs section when docsManifest is not provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1433,7 +1433,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should use doc.summary when provided instead of extracting from content', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1443,7 +1443,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 					},
 				},
 				docsManifest: {
-					v: 1,
+					v: 0,
 					docs: {
 						'custom-summary': {
 							id: 'custom-summary',
@@ -1474,7 +1474,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 		it('should extract summary from content when doc.summary is not provided', () => {
 			const manifests: AllManifests = {
 				componentManifest: {
-					v: 1,
+					v: 0,
 					components: {
 						button: {
 							id: 'button',
@@ -1484,7 +1484,7 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 					},
 				},
 				docsManifest: {
-					v: 1,
+					v: 0,
 					docs: {
 						'auto-summary': {
 							id: 'auto-summary',

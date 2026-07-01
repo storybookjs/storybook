@@ -597,6 +597,63 @@ describe('getDocumentationTool', () => {
 			expect(getManifestsSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[0]);
 		});
 
+		it('resolves the local source in-process via resolveEntry (composition + docgen-server)', async () => {
+			getManifestsSpy.mockClear();
+			const resolveEntry = vi.fn().mockResolvedValue({
+				kind: 'component',
+				component: {
+					id: 'button',
+					name: 'Button',
+					stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+				},
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'button', storybookId: 'local' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, sources, resolveEntry },
+			});
+
+			// The urlless local source is resolved in-process; the all-component index is never built.
+			expect(resolveEntry).toHaveBeenCalledWith('button', sources[0]);
+			expect(getManifestsSpy).not.toHaveBeenCalled();
+			expect((response.result as any).content[0].text).toContain('# Button');
+		});
+
+		it('does not use resolveEntry for a remote source even when one is present', async () => {
+			const resolveEntry = vi.fn();
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: remoteManifest,
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: GET_TOOL_NAME,
+					arguments: { id: 'badge', storybookId: 'remote' },
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			await server.receive(request, {
+				custom: { request: mockHttpRequest, sources, resolveEntry },
+			});
+
+			expect(resolveEntry).not.toHaveBeenCalled();
+			expect(getManifestsSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[1]);
+		});
+
 		it('should pass remote source to getManifests', async () => {
 			getManifestsSpy.mockResolvedValue({
 				componentManifest: remoteManifest,
@@ -838,6 +895,86 @@ http://remote.example.com/mcp`);
 				}),
 				resultText: expect.any(String),
 			});
+		});
+	});
+
+	describe('resolveEntry hook (dev / experimentalDocgenServer)', () => {
+		beforeEach(() => {
+			getManifestsSpy.mockClear();
+		});
+
+		it('resolves a single component via resolveEntry without building the index', async () => {
+			const resolveEntry = vi.fn().mockResolvedValue({
+				kind: 'component',
+				component: {
+					id: 'button',
+					name: 'Button',
+					stories: [
+						{ id: 'button--primary', name: 'Primary', snippet: '<Button variant="primary" />' },
+					],
+				},
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_TOOL_NAME, arguments: { id: 'button' } },
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, resolveEntry },
+			});
+
+			// The single-entry hook is used, and the all-component manifest index is never fetched.
+			expect(resolveEntry).toHaveBeenCalledWith('button', undefined);
+			expect(getManifestsSpy).not.toHaveBeenCalled();
+			expect((response.result as any).content[0].text).toContain('# Button');
+			expect((response.result as any).content[0].text).toContain('button--primary');
+		});
+
+		it('resolves a single docs entry via resolveEntry', async () => {
+			const resolveEntry = vi.fn().mockResolvedValue({
+				kind: 'doc',
+				doc: { id: 'intro', name: 'Intro', title: 'Introduction', content: '# Welcome' },
+			});
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_TOOL_NAME, arguments: { id: 'intro' } },
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, resolveEntry },
+			});
+
+			expect(resolveEntry).toHaveBeenCalledWith('intro', undefined);
+			expect(getManifestsSpy).not.toHaveBeenCalled();
+			expect((response.result as any).content[0].text).toContain('# Welcome');
+		});
+
+		it('returns not-found when resolveEntry yields nothing', async () => {
+			const resolveEntry = vi.fn().mockResolvedValue(undefined);
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_TOOL_NAME, arguments: { id: 'nope' } },
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, resolveEntry },
+			});
+
+			expect(getManifestsSpy).not.toHaveBeenCalled();
+			expect((response.result as any).isError).toBe(true);
+			expect((response.result as any).content[0].text).toContain('not found');
 		});
 	});
 });

@@ -83,11 +83,31 @@ export type StorybookContext = {
 			| { foundDocumentation?: never; resultText?: never }
 		),
 	) => void | Promise<void>;
+	/**
+	 * Optional in-process resolver for a single component or docs entry, used in
+	 * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
+	 * single-entry tools (`get-documentation`, `get-documentation-for-story`) call
+	 * this instead of fetching the (potentially all-component) manifest index, so a
+	 * single lookup never triggers docgen extraction for every component.
+	 *
+	 * Returns the fully-resolved component or doc in `@storybook/mcp`'s internal
+	 * shape (already adapted from the open-service payloads), or `undefined` when the
+	 * id is unknown.
+	 */
+	resolveEntry?: (id: string, source?: Source) => Promise<ResolvedEntry | undefined>;
 };
+
+/**
+ * Result of resolving a single id via {@link StorybookContext.resolveEntry}: either a
+ * fully-resolved component manifest or a standalone docs entry.
+ */
+export type ResolvedEntry =
+	| { kind: 'component'; component: ComponentManifest }
+	| { kind: 'doc'; doc: Doc };
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));
 
-const Error = v.object({
+const ManifestError = v.object({
 	name: v.string(),
 	message: v.string(),
 });
@@ -96,7 +116,7 @@ const BaseManifest = v.object({
 	name: v.string(),
 	description: v.optional(v.string()),
 	jsDocTags: v.optional(JSDocTag),
-	error: v.optional(Error),
+	error: v.optional(ManifestError),
 });
 
 const Story = v.object({
@@ -108,19 +128,13 @@ const Story = v.object({
 export type Story = v.InferOutput<typeof Story>;
 
 /**
- * A docs entry represents MDX documentation that can be attached to a component
- * or standalone (unattached).
+ * A JSON Reference (`{ $ref }`) pointing at a value in another manifest document.
+ * Used by the v1 (split/ref) manifest format for docgen, story-docs and MDX payloads.
  */
-const Doc = v.object({
-	id: v.string(),
-	name: v.string(),
-	title: v.string(),
-	path: v.string(),
-	content: v.string(),
-	summary: v.optional(v.string()),
-	error: v.optional(Error),
+export const JsonRef = v.object({
+	$ref: v.string(),
 });
-export type Doc = v.InferOutput<typeof Doc>;
+export type JsonRef = v.InferOutput<typeof JsonRef>;
 
 /**
  * Component documentation from react-docgen-typescript, extended with export name.
@@ -128,22 +142,44 @@ export type Doc = v.InferOutput<typeof Doc>;
  */
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
-/**
- * A JSON Reference to externalized component data, e.g.
- * `"../services/core/docgen/button.json#/components/button"`. Used by the
- * externalized-docgen manifest format, where the top-level component manifest
- * only carries lightweight stubs and the full data lives in a referenced file.
- * The path is resolved relative to the component manifest's location.
- */
-export const DocgenRef = v.object({
-	$ref: v.string(),
-});
-export type DocgenRef = v.InferOutput<typeof DocgenRef>;
+// ---------------------------------------------------------------------------
+// Manifest formats
+//
+// Storybook writes one of two manifest formats, distinguished by the top-level
+// `v` field on `components.json` / `docs.json` (see Storybook core:
+// `renderers/react/.../componentManifest/generator.ts` emits `v: 0`,
+// `core-server/.../components-ref-manifest.ts` emits `v: 1`):
+//
+//   • v0 — inline/legacy: every component carries its docgen, stories array and
+//     attached docs (with MDX `content`) inline.
+//   • v1 — split/ref: `components.json`/`docs.json` are shallow indexes; the heavy
+//     docgen, story-docs and MDX payloads live in sibling `services/*.json` files
+//     and are referenced via `$ref`. (Storybook's in-process dev provider emits an
+//     even shallower v1 index — `docgen`/`mdx` refs omitted — because single
+//     entries are resolved in-process instead, see `StorybookContext.resolveEntry`.)
+//
+// The two formats are kept as separate schemas so each version's exact shape is
+// explicit, then combined into a `v`-discriminated union at the map level. Anything
+// that needs to branch on the version can read `map.v` or match the per-version
+// schemas directly.
+// ---------------------------------------------------------------------------
 
-const BaseComponentProperties = v.object({
+// ---- v0: inline / legacy ----
+
+/** Inline (v0) docs entry: the full MDX `content` is embedded. */
+export const DocV0 = v.object({
+	id: v.string(),
+	name: v.string(),
+	title: v.optional(v.string()),
+	path: v.optional(v.string()),
+	content: v.optional(v.string()),
+	summary: v.optional(v.string()),
+	error: v.optional(ManifestError),
+});
+export type DocV0 = v.InferOutput<typeof DocV0>;
+
+const BaseInlineComponentProperties = v.object({
 	...BaseManifest.entries,
-	// Optional: stub entries in the externalized-docgen manifest format omit `path`
-	// (it lives in the referenced docgen file alongside the rest of the component data).
 	path: v.optional(v.string()),
 	summary: v.optional(v.string()),
 	import: v.optional(v.string()),
@@ -153,44 +189,202 @@ const BaseComponentProperties = v.object({
 });
 
 export const SubcomponentManifest = v.object({
-	...BaseComponentProperties.entries,
+	...BaseInlineComponentProperties.entries,
 });
-
 export type SubcomponentManifest = v.InferOutput<typeof SubcomponentManifest>;
 
-export const ComponentManifest = v.object({
-	...BaseComponentProperties.entries,
+/** Inline (v0) component: docgen, stories and attached docs are all embedded. */
+export const ComponentManifestV0 = v.object({
+	...BaseInlineComponentProperties.entries,
 	id: v.string(),
 	stories: v.optional(v.array(Story)),
 	subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
-	docs: v.optional(v.record(v.string(), Doc)),
-	// Present on stub entries in the externalized-docgen manifest format. When set,
-	// the full component data must be resolved from the referenced file.
-	docgen: v.optional(DocgenRef),
+	docs: v.optional(v.record(v.string(), DocV0)),
 });
-export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;
+export type ComponentManifestV0 = v.InferOutput<typeof ComponentManifestV0>;
 
-export const ComponentManifestMap = v.object({
-	// Optional: externalized docgen files (referenced via `docgen.$ref`) are shaped
-	// like a component manifest map but omit the top-level version field.
-	v: v.optional(v.number()),
-	components: v.record(v.string(), ComponentManifest),
+export const ComponentManifestMapV0 = v.object({
+	v: v.literal(0),
+	components: v.record(v.string(), ComponentManifestV0),
 });
+export type ComponentManifestMapV0 = v.InferOutput<typeof ComponentManifestMapV0>;
+
+export const DocsManifestMapV0 = v.object({
+	v: v.literal(0),
+	docs: v.record(v.string(), DocV0),
+});
+export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
+
+// ---- v1: split / ref ----
+
+/**
+ * Shallow (v1) docs entry. The full MDX payload (title/path/content) lives behind
+ * `mdx.$ref`; `mdx` is optional because Storybook's in-process dev index omits it
+ * (those entries are resolved in-process via {@link StorybookContext.resolveEntry}).
+ */
+export const DocV1 = v.object({
+	id: v.string(),
+	name: v.string(),
+	summary: v.optional(v.string()),
+	mdx: v.optional(JsonRef),
+	error: v.optional(ManifestError),
+});
+export type DocV1 = v.InferOutput<typeof DocV1>;
+
+/**
+ * Shallow (v1) component index row. Identity + summary are inlined for cheap
+ * listing; docgen and story-docs live behind `$ref`s, attached docs behind nested
+ * `mdx.$ref`s. `docgen`/`stories` are optional (the in-process dev index omits
+ * `docgen`, and docs-only components have neither).
+ */
+export const ComponentManifestV1 = v.object({
+	id: v.string(),
+	name: v.string(),
+	description: v.optional(v.string()),
+	summary: v.optional(v.string()),
+	error: v.optional(ManifestError),
+	docgen: v.optional(JsonRef),
+	stories: v.optional(JsonRef),
+	docs: v.optional(v.record(v.string(), DocV1)),
+});
+export type ComponentManifestV1 = v.InferOutput<typeof ComponentManifestV1>;
+
+export const ComponentManifestMapV1 = v.object({
+	v: v.literal(1),
+	components: v.record(v.string(), ComponentManifestV1),
+});
+export type ComponentManifestMapV1 = v.InferOutput<typeof ComponentManifestMapV1>;
+
+export const DocsManifestMapV1 = v.object({
+	v: v.literal(1),
+	docs: v.record(v.string(), DocV1),
+});
+export type DocsManifestMapV1 = v.InferOutput<typeof DocsManifestMapV1>;
+
+// ---- discriminated unions (the wire schema for top-level manifests) ----
+
+/** `components.json`, discriminated on `v` (0 = inline, 1 = split/ref). */
+export const ComponentManifestMap = v.variant('v', [
+	ComponentManifestMapV0,
+	ComponentManifestMapV1,
+]);
 export type ComponentManifestMap = v.InferOutput<typeof ComponentManifestMap>;
 
 /**
- * Manifest for unattached/standalone documentation entries.
- * Served at /manifests/docs.json
+ * `docs.json` for unattached/standalone documentation entries (served at
+ * `/manifests/docs.json`), discriminated on `v`.
  */
-export const DocsManifestMap = v.object({
-	v: v.number(),
-	docs: v.record(v.string(), Doc),
-});
+export const DocsManifestMap = v.variant('v', [DocsManifestMapV0, DocsManifestMapV1]);
 export type DocsManifestMap = v.InferOutput<typeof DocsManifestMap>;
+
+// ---- working / resolved types ----
+
+/**
+ * A component index row as it appears in either format: inline (v0) or shallow
+ * ref (v1). This is what {@link resolveComponentEntry} consumes before following any
+ * `$ref`s.
+ */
+export type ComponentManifestEntry = ComponentManifestV0 | ComponentManifestV1;
+
+/** A docs index row as it appears in either format: inline (v0) or shallow ref (v1). */
+export type DocEntry = DocV0 | DocV1;
+
+/**
+ * A fully-resolved component, as consumed by the tools and formatters: inline shape
+ * (stories as an array, attached docs with `content`, docgen inlined). Identical to
+ * the v0 shape — v1 rows are resolved into it by following their `$ref`s
+ * (`resolveComponentEntry`) or built in-process (`adaptCoreComponent`).
+ */
+export type ComponentManifest = ComponentManifestV0;
+
+/** A fully-resolved docs entry (inline `content`), as consumed by tools and formatters. */
+export type Doc = DocV0;
 
 export type AllManifests = {
 	componentManifest: ComponentManifestMap;
 	docsManifest?: DocsManifestMap;
+};
+
+/**
+ * Open-service payload contracts (the "core format") that Storybook's
+ * `experimentalDocgenServer` mode produces. `@storybook/mcp` adapts these into its
+ * internal {@link ComponentManifest}/{@link Doc} shapes in one place
+ * (`adaptCoreComponent`/`adaptCoreDoc`). Defined structurally (not as schemas) so
+ * the addon can build them in-process without importing Storybook core.
+ */
+
+/** One story snippet from the `core/story-docs` service. */
+export type CoreStoryDoc = {
+	id: string;
+	name: string;
+	snippet?: string;
+	description?: string;
+	summary?: string;
+	error?: { name: string; message: string };
+};
+
+/** One MDX doc from the `addon-docs/mdx` service. */
+export type CoreMdxDoc = {
+	id: string;
+	name: string;
+	path?: string;
+	title?: string;
+	content?: string;
+	summary?: string;
+	error?: { name: string; message: string };
+};
+
+/**
+ * Payload returned by the `addon-docs/mdx` service for a component or standalone
+ * docs entry.
+ */
+export type CoreMdxPayload = {
+	id: string;
+	name: string;
+	docs: Record<string, CoreMdxDoc>;
+};
+
+/** Payload returned by the `core/story-docs` service for one component. */
+export type CoreStoryDocsPayload = {
+	id: string;
+	name: string;
+	path: string;
+	import?: string;
+	stories: Record<string, CoreStoryDoc>;
+	error?: { name: string; message: string };
+};
+
+/**
+ * Payload returned by the `core/docgen` service for one component. `argTypes` (a
+ * UI-normalized view) is intentionally ignored by the adapter; prop types come
+ * from `reactComponentMeta`/`react*` fields.
+ */
+export type CoreDocgenPayload = {
+	id: string;
+	name: string;
+	path?: string;
+	description?: string;
+	summary?: string;
+	jsDocTags?: Record<string, string[]>;
+	import?: string;
+	reactComponentMeta?: unknown;
+	reactDocgen?: unknown;
+	reactDocgenTypescript?: unknown;
+	subcomponents?: Record<string, unknown>;
+	error?: { name: string; message: string };
+	[key: string]: unknown;
+};
+
+/**
+ * A component assembled from the `core/docgen` payload plus the `core/story-docs`
+ * stories and resolved attached MDX docs.
+ */
+export type CoreDocgenComponent = CoreDocgenPayload & {
+	import?: string;
+	/** Story snippets, either as a story-docs record or an already-resolved array. */
+	stories?: Record<string, CoreStoryDoc> | Story[];
+	/** Attached docs keyed by doc id (resolved MDX payloads). */
+	docs?: Record<string, CoreMdxDoc>;
 };
 
 /**

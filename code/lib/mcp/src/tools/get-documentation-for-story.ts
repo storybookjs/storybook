@@ -2,7 +2,8 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
 import { StorybookIdField } from '../types.ts';
-import { errorToMCPContent, getManifests, resolveComponentDocgen } from '../utils/get-manifest.ts';
+import { errorToMCPContent, getManifests, resolveComponentEntry } from '../utils/get-manifest.ts';
+import type { ComponentManifest } from '../types.ts';
 import { formatStoryDocumentation } from '../utils/manifest-formatter/markdown.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 
@@ -79,9 +80,34 @@ export async function addGetStoryDocumentationTool(
 					}
 				}
 
-				const manifest = await getManifests(ctx?.request, ctx?.manifestProvider, source);
+				let component: ComponentManifest | undefined;
 
-				let component = manifest.componentManifest?.components[componentId];
+				// Dev (experimentalDocgenServer): resolve a single entry in-process, bypassing
+				// the all-component manifest index so one lookup never triggers all-docgen.
+				// The in-process services back the local Storybook only, so this is used for the
+				// local source — single-source (no `source`) or the urlless `local` source in a
+				// composition. Remote sources (with a `url`) fall through to the fetch path.
+				if (ctx?.resolveEntry && !source?.url) {
+					const resolved = await ctx.resolveEntry(componentId, source);
+					if (resolved?.kind === 'component') {
+						component = resolved.component;
+					}
+				} else {
+					const manifest = await getManifests(ctx?.request, ctx?.manifestProvider, source);
+					const componentEntry = manifest.componentManifest?.components[componentId];
+
+					// Built/static/remote. v1 (split/ref) index rows carry `$ref`s to externalized
+					// payloads, which these helpers follow; v0 (inline) rows have no `$ref`s and are
+					// returned unchanged. Either way the result is a fully-resolved entry.
+					if (componentEntry) {
+						component = await resolveComponentEntry(
+							componentEntry,
+							ctx?.request,
+							ctx?.manifestProvider,
+							source,
+						);
+					}
+				}
 
 				if (!component) {
 					return {
@@ -95,20 +121,14 @@ export async function addGetStoryDocumentationTool(
 					};
 				}
 
-				// Externalized-docgen manifests carry only a stub here; fetch the full data.
-				if (component.docgen?.$ref) {
-					component = await resolveComponentDocgen(
-						component,
-						ctx?.request,
-						ctx?.manifestProvider,
-						source,
-					);
-				}
-
-				const story = component.stories?.find((s) => s.name === storyName);
+				const story = Array.isArray(component.stories)
+					? component.stories.find((s) => s.name === storyName)
+					: undefined;
 
 				if (!story) {
-					const availableStories = component.stories?.map((s) => s.name).join(', ') ?? 'none';
+					const availableStories = Array.isArray(component.stories)
+						? component.stories.map((s) => s.name).join(', ')
+						: 'none';
 					return {
 						content: [
 							{

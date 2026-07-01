@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
-import type { StoryInfo } from './components/CollectionGrid.tsx';
 import type { ReviewNavEntry } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import type { StoryInfo } from './review-types.ts';
 
 export interface ReviewStoreState {
   state: ReviewState | null;

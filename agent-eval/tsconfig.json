@@ -1,4 +1,14 @@
 {
 	"extends": "../tsconfig.json",
-	"include": ["experiments/**/*.ts", "lib/**/*.ts"]
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"moduleResolution": "bundler",
+		"baseUrl": ".",
+		"paths": {
+			"#test-utils": ["./lib/test-utils.ts"],
+			"@storybook/mcp": ["../packages/mcp/src/index.ts"]
+		}
+	},
+	"include": ["**/*.ts", "**/*.tsx", "eval.d.ts", "eval-matchers.d.ts"],
+	"exclude": ["results/**", "templates/**"]
 }

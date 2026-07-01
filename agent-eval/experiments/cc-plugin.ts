@@ -9,7 +9,7 @@ import {
 
 export default {
 	...DEFAULT_EXPERIMENT_CONFIG,
-	agent: 'vercel-ai-gateway/claude-code',
+	agent: 'claude-code', // requires ANTHROPIC_API_KEY
 	evals: [...CLAUDE_PLUGIN_EVALS],
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });

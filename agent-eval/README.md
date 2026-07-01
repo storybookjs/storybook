@@ -17,7 +17,7 @@ Test AI coding agents to measure what actually works.
    ```
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
-   - **Agent keys**: `AI_GATEWAY_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments.
+   - **Agent keys**: `ANTHROPIC_API_KEY` is required for the Claude Code experiments, and `OPENAI_API_KEY` is required for the Codex experiments. `AI_GATEWAY_API_KEY` is optional for failure classification and any experiments that explicitly use Vercel AI Gateway agents.
    - **Sandbox access**: `sandbox: 'auto'` uses Vercel Sandbox when Vercel credentials are set, and falls back to Docker without them.
 
 ## Running Evals
@@ -58,9 +58,9 @@ runtime/build contexts.
 
 Configured experiments:
 
-- `cc-mcp`: Claude Code with project-local Storybook MCP config in `.mcp.json`.
+- `cc-mcp`: Claude Code through the direct `claude-code` agent with project-local Storybook MCP config in `.mcp.json`.
 - `codex-mcp`: Codex with project-local Storybook MCP config in `.codex/config.toml`.
-- `cc-plugin`: Claude Code with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin`: Claude Code through the direct `claude-code` agent with Storybook plugin skills copied to `.claude/skills`.
 - `codex-plugin`: Codex with Storybook plugin skills copied to `.agents/skills`.
 
 ## Shared Templates
@@ -109,3 +109,28 @@ pnpm playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
+
+### Deploy Results Playground
+
+The `Agent eval` GitHub Actions workflow deploys the playground to Vercel
+project `storybook-evals` after eval results have been written to
+`agent-eval/results`.
+
+- Pull requests from the main repository with the `ci:eval` label create
+  preview deployments.
+- Manual runs on non-`main` branches create preview deployments.
+- Manual runs on `main` create production deployments.
+
+The workflow deploys from the same runner that produced `agent-eval/results`,
+so failed evals can still publish a playground with partial results. The final
+workflow status still fails when the eval or report step fails.
+
+The workflow links the Vercel project at runtime instead of committing
+`.vercel/project.json`. Configure these GitHub secrets before enabling deploys:
+
+- `VERCEL_TOKEN`: Vercel access token with deploy access to the Storybook team.
+- `VERCEL_TEAM_ID`: Vercel team ID or slug for the Storybook account.
+
+The thin app wrapper in `agent-eval/app` re-exports routes from
+`@vercel/agent-eval-playground` so Next.js can discover them from this package.
+Run `pnpm playground:check-routes` after upgrading the playground package.

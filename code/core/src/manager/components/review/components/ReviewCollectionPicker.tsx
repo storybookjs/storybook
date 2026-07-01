@@ -7,7 +7,7 @@ import {
   prettifyComponentId,
   type ReviewNavEntry,
 } from '../review-navigation.ts';
-import { type StoryInfo } from './CollectionGrid.tsx';
+import { type StoryInfo } from '../review-types.ts';
 
 const PopoverList = styled.div(({ theme }) => ({
   display: 'flex',

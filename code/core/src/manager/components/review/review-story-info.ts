@@ -2,11 +2,7 @@ import type { API_IndexHash, StatusesByStoryIdAndTypeId } from 'storybook/intern
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { API } from 'storybook/manager-api';
 
-import {
-  fallbackStoryInfo,
-  type StoryChangeStatus,
-  type StoryInfo,
-} from './components/CollectionGrid.tsx';
+import { fallbackStoryInfo, type StoryChangeStatus, type StoryInfo } from './review-types.ts';
 import type { ReviewState } from './review-state.ts';
 
 const getStoryChangeStatus = (

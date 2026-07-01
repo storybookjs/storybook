@@ -46,6 +46,7 @@ import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
+import { setupContentResizeBroadcast, shouldAutoplay } from './setupContentResizeBroadcast.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
@@ -102,7 +103,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
-    setupStoryFreezer(this.channel);
+    const { onContentFrozen } = setupContentResizeBroadcast();
+    setupStoryFreezer(this.channel, { onFrozen: onContentFrozen });
 
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));
     this.channel.on(UPDATE_QUERY_PARAMS, this.onUpdateQueryParams.bind(this));
@@ -327,7 +329,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         renderToCanvas,
         this.mainStoryCallbacks(storyId),
         storyId,
-        'story'
+        'story',
+        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(

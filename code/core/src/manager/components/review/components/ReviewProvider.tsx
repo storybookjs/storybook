@@ -24,7 +24,6 @@ import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from '../cons
 import { navigateOutOfReview } from '../review-actions.ts';
 import { enterReviewMode, isReviewModeActive } from '../review-mode.ts';
 import {
-  REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   isReviewReturnSearch,
@@ -33,6 +32,7 @@ import {
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
+  REVIEW_COLLECTION_QUERY_PARAM,
 } from '../review-navigation.ts';
 import {
   acceptReviewNotification,
@@ -81,7 +81,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [api, filtersRef]);
 
   const getStoryPreviewHref = useCallback(
-    (storyId: string) => api.getStoryHrefs(storyId, { freeze: true }).previewHref,
+    (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
   );
 

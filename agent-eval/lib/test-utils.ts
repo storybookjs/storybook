@@ -857,12 +857,6 @@ function isSameWorkflowCall(first: StorybookWorkflowCall, second: StorybookWorkf
 	return first.name === second.name && JSON.stringify(first.input) === JSON.stringify(second.input);
 }
 
-function dedupeWorkflowCalls(calls: StorybookWorkflowCall[]): StorybookWorkflowCall[] {
-	return calls.filter(
-		(call, index) => calls.findIndex((candidate) => isSameWorkflowCall(candidate, call)) === index,
-	);
-}
-
 function parseJson(value: string): unknown {
 	try {
 		return JSON.parse(value) as unknown;

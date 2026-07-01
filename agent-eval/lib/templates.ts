@@ -7,7 +7,6 @@ import type { Sandbox } from '@vercel/agent-eval';
 type FixturePackageJson = {
 	evals?: {
 		template?: unknown;
-		claudePreviewBrowserMock?: unknown;
 	};
 };
 
@@ -546,11 +545,6 @@ export async function writeClaudePluginSkills(sandbox: Sandbox): Promise<void> {
 
 export async function writeCodexPluginSkills(sandbox: Sandbox): Promise<void> {
 	await writePluginSkills(sandbox, CODEX_PLUGIN_SKILLS_DIR, path.posix.join('.agents', 'skills'));
-}
-
-export async function usesClaudePreviewBrowserMock(sandbox: Sandbox): Promise<boolean> {
-	const packageJson = await readFixturePackageJson(sandbox);
-	return packageJson.evals?.claudePreviewBrowserMock === true;
 }
 
 export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {

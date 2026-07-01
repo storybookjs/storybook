@@ -382,29 +382,38 @@ function tailLogFile(logPath, limit = 20) {
 	}
 }
 
+// Supports the documented .claude/launch.json entry fields: `cwd` is relative
+// to the project root (with `${workspaceFolder}` for the root itself), `env`
+// is merged into the server's environment, and either `runtimeExecutable` +
+// `runtimeArgs` or `program` + `args` (a script run with node) starts the server.
 function spawnLaunchEntry(name, entry, logPath) {
 	const cwd =
 		typeof entry.cwd === 'string'
-			? entry.cwd.replaceAll('${workspaceFolder}', process.cwd())
+			? path.resolve(process.cwd(), entry.cwd.replaceAll('${workspaceFolder}', process.cwd()))
 			: process.cwd();
+	const entryEnv =
+		typeof entry.env === 'object' && entry.env !== null && !Array.isArray(entry.env)
+			? entry.env
+			: {};
 	const log = openSync(logPath, 'a');
 	const options = {
 		cwd,
 		detached: true,
 		stdio: ['ignore', log, log],
-		env: { ...process.env, BROWSER: 'none', CI: '1' },
+		env: { ...process.env, ...entryEnv, BROWSER: 'none', CI: '1' },
 	};
 
 	let child;
-	if (typeof entry.command === 'string' && entry.command.length > 0) {
-		child = spawn(entry.command, { ...options, shell: true });
-	} else if (typeof entry.runtimeExecutable === 'string' && entry.runtimeExecutable.length > 0) {
+	if (typeof entry.runtimeExecutable === 'string' && entry.runtimeExecutable.length > 0) {
 		const args = Array.isArray(entry.runtimeArgs) ? entry.runtimeArgs.map(String) : [];
 		child = spawn(entry.runtimeExecutable, args, options);
+	} else if (typeof entry.program === 'string' && entry.program.length > 0) {
+		const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
+		child = spawn(process.execPath, [entry.program, ...args], options);
 	} else {
 		closeSync(log);
 		throw new Error(
-			`Configuration "${name}" must set "runtimeExecutable" (with optional "runtimeArgs") or "command".`,
+			`Configuration "${name}" must set "runtimeExecutable" (with optional "runtimeArgs") or "program" (with optional "args").`,
 		);
 	}
 

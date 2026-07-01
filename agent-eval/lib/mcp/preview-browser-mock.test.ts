@@ -123,6 +123,9 @@ createServer((request, response) => {
 </html>\`);
 }).listen(port, () => {
 	console.log('fixture server listening on ' + port);
+	if (process.env.FIXTURE_GREETING) {
+		console.log('greeting: ' + process.env.FIXTURE_GREETING);
+	}
 });
 `;
 
@@ -206,6 +209,38 @@ describe('preview-browser MCP protocol', () => {
 		expect(toolText(result)).toContain('No configuration named "Storybook"');
 		expect(toolText(result)).toContain('Available configurations: Other');
 	});
+
+	test('preview_start spawns a "program" entry with its env, preview_stop stops it', async () => {
+		const port = await findFreePort();
+		writeFileSync(path.join(workspace, 'server.mjs'), FIXTURE_SERVER_SCRIPT);
+		mkdirSync(path.join(workspace, '.claude'), { recursive: true });
+		writeFileSync(
+			path.join(workspace, '.claude', 'launch.json'),
+			JSON.stringify({
+				version: '0.0.1',
+				configurations: [
+					{
+						name: 'ProgramApp',
+						program: 'server.mjs',
+						args: [String(port)],
+						port,
+						env: { FIXTURE_GREETING: 'hello-from-env' },
+					},
+				],
+			}),
+		);
+
+		const started = await client.callTool('preview_start', { name: 'ProgramApp' });
+		expect(started.isError).not.toBe(true);
+		expect(toolText(started)).toContain('Started "ProgramApp"');
+		const serverId = /serverId: (preview-\d+)/.exec(toolText(started))?.[1];
+
+		const logs = await client.callTool('preview_logs', { serverId });
+		expect(toolText(logs)).toContain('greeting: hello-from-env');
+
+		const stopped = await client.callTool('preview_stop', { serverId });
+		expect(toolText(stopped)).toContain('Stopped');
+	}, 60_000);
 
 	test('page tools fail for unknown server ids', async () => {
 		const result = await client.callTool('preview_click', {

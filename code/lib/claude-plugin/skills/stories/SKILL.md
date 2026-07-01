@@ -14,22 +14,5 @@ Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` and read the output in 
 
 Some commands require a running Storybook dev server. When Claude preview tooling is available, start the dev server through that tooling:
 
-1. Ensure there is a Storybook launch entry in `.claude/launch.json` with `autoPort: true` and `port: 6006`. Use the project's preferred package manager and existing `package.json` Storybook script instead of inventing a new command whenever possible.
+1. Ensure there is a Storybook launch entry in `.claude/launch.json` (the `preview_start` tool description documents the file format) with `autoPort: true` and `port: 6006`. Use the project's preferred package manager and existing `package.json` Storybook script instead of inventing a new command whenever possible.
 2. Start the Storybook launch entry with the `preview_start` tool.
-
-Example `.claude/launch.json` config:
-
-```json
-{
-	"configurations": [
-		{
-			"name": "Storybook",
-			"cwd": "${workspaceFolder}",
-			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "storybook"],
-			"port": 6006,
-			"autoPort": true
-		}
-	]
-}
-```

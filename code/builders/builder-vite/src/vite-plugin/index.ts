@@ -29,7 +29,6 @@ import { registerEnvironmentModuleMiddleware } from './middlewares/module-router
 import { createStaticMiddlewares } from './middlewares/static.ts';
 import { registerStoryIndexMiddleware } from './middlewares/story-index.ts';
 import type { UserOptions } from './types.ts';
-export type { UserOptions } from './types.ts';
 
 // use to guard against duplicate plugin activation
 const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
@@ -227,6 +226,5 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         },
       },
     },
-    buildStorybookPlugin(sb),
   ];
 }

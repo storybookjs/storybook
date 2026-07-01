@@ -29,6 +29,7 @@ import {
 import { navigateOutOfReview } from '../review-actions.ts';
 import { enterReviewMode, isReviewModeActive } from '../review-mode.ts';
 import {
+  REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   isReviewReturnSearch,
@@ -37,7 +38,6 @@ import {
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
-  REVIEW_COLLECTION_QUERY_PARAM,
 } from '../review-navigation.ts';
 import {
   acceptReviewNotification,
@@ -61,6 +61,9 @@ const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState):
   current.createdAt !== undefined &&
   next.createdAt !== undefined &&
   current.createdAt !== next.createdAt;
+
+const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): boolean =>
+  current?.createdAt !== undefined && current.createdAt === next.createdAt;
 
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<ReviewState | null>(null);
@@ -96,6 +99,12 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       if (isDeferredReviewUpdate(current, next)) {
         setPendingReview(next);
         reviewStore.setState(reviewStore.getState(), next);
+        return;
+      }
+      // REQUEST_REVIEW replays the cached payload to every tab when another tab
+      // mounts; ignore identical reviews so summary UI state is not reset.
+      if (isSameReviewPayload(current, next)) {
+        setIsStale(!!next.stale);
         return;
       }
       setPendingReview(null);

@@ -8,7 +8,12 @@ import {
   type RefObject,
 } from 'react';
 
-import { parseIframeResizeMessage, type ContentDimensions } from './iframeResizeMessage.ts';
+import { IFRAME_RESIZE_REQUEST_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
+import {
+  contentDimensionsEqual,
+  parseIframeResizeMessage,
+  type ContentDimensions,
+} from './iframeResizeMessage.ts';
 import {
   PREVIEW_SETTLE_TIMEOUT_MS,
   enqueuePreview,
@@ -17,8 +22,10 @@ import {
   type PreviewTask,
 } from './previewScheduler.ts';
 
+/** If iframe.resize never arrives, don't block the thumbnail forever. */
+const PREVIEW_SCALE_SETTLE_FALLBACK_MS = PREVIEW_SETTLE_TIMEOUT_MS * 3;
+
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
-// iframe within half a root-height of the fold, evict it past one and a half.
 // The gap is hysteresis so scrolling near a boundary doesn't thrash.
 const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
@@ -57,6 +64,14 @@ const registerResizeHandler = (
   return () => {
     resizeHandlers.delete(contentWindow);
   };
+};
+
+const requestEmbedRemeasure = (contentWindow: Window): void => {
+  try {
+    contentWindow.postMessage(JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }), '*');
+  } catch {
+    // Cross-origin or detached iframe; ignore.
+  }
 };
 
 const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
@@ -111,6 +126,8 @@ export type UsePreviewThumbnailResult = {
   frameRef: Ref<HTMLDivElement>;
   iframeRef: RefObject<HTMLIFrameElement>;
   src: string | undefined;
+  /** True until iframe.resize arrives and the measured scale has painted. */
+  isPreviewLoading: boolean;
   rememberedDimensions: ContentDimensions | null;
   forceStartCurrent: () => void;
   finishCurrent: () => void;
@@ -131,8 +148,72 @@ export const usePreviewThumbnail = ({
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
   const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [src, setSrc] = useState<string | undefined>(undefined);
   const taskRef = useRef<PreviewTask | null>(null);
+  const loadGenerationRef = useRef(0);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const settleRafRef = useRef({ raf1: 0, raf2: 0 });
+
+  const clearSettleTimers = useCallback(() => {
+    if (fallbackTimerRef.current !== undefined) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = undefined;
+    }
+    cancelAnimationFrame(settleRafRef.current.raf1);
+    cancelAnimationFrame(settleRafRef.current.raf2);
+    settleRafRef.current.raf1 = 0;
+    settleRafRef.current.raf2 = 0;
+  }, []);
+
+  const finishLoadingForGeneration = useCallback((generation: number) => {
+    if (loadGenerationRef.current !== generation) {
+      return;
+    }
+    setIsPreviewLoading(false);
+  }, []);
+
+  const scheduleLoadingClearAfterPaint = useCallback(
+    (generation: number) => {
+      cancelAnimationFrame(settleRafRef.current.raf1);
+      cancelAnimationFrame(settleRafRef.current.raf2);
+      settleRafRef.current.raf1 = requestAnimationFrame(() => {
+        settleRafRef.current.raf2 = requestAnimationFrame(() => {
+          finishLoadingForGeneration(generation);
+        });
+      });
+    },
+    [finishLoadingForGeneration]
+  );
+
+  const resetLoad = useCallback(() => {
+    clearSettleTimers();
+    setRememberedDimensions(null);
+    setIsPreviewLoading(false);
+  }, [clearSettleTimers]);
+
+  const beginLoad = useCallback(() => {
+    clearSettleTimers();
+    loadGenerationRef.current += 1;
+    const generation = loadGenerationRef.current;
+    setRememberedDimensions(null);
+    setIsPreviewLoading(true);
+    fallbackTimerRef.current = setTimeout(
+      () => finishLoadingForGeneration(generation),
+      PREVIEW_SCALE_SETTLE_FALLBACK_MS
+    );
+  }, [clearSettleTimers, finishLoadingForGeneration]);
+
+  const handleResize = useCallback(
+    (dimensions: ContentDimensions) => {
+      const generation = loadGenerationRef.current;
+      setRememberedDimensions((current) =>
+        contentDimensionsEqual(current, dimensions) ? current : dimensions
+      );
+      scheduleLoadingClearAfterPaint(generation);
+    },
+    [scheduleLoadingClearAfterPaint]
+  );
 
   useEffect(() => {
     const host = cellRef.current;
@@ -188,6 +269,10 @@ export const usePreviewThumbnail = ({
   }, [isInView, previewsPaused]);
 
   useEffect(() => {
+    resetLoad();
+  }, [storyId, resetLoad]);
+
+  useEffect(() => {
     if (!isInView) {
       return undefined;
     }
@@ -200,12 +285,15 @@ export const usePreviewThumbnail = ({
       finished: false,
     };
     taskRef.current = task;
+    // Spinner while queued for a concurrency slot, not only after src is assigned.
+    setIsPreviewLoading(true);
     enqueuePreview(task);
     return () => {
       finishPreview(task);
       taskRef.current = null;
+      resetLoad();
     };
-  }, [isInView, storyId, getPreviewHref]);
+  }, [isInView, storyId, getPreviewHref, resetLoad]);
 
   const finishCurrent = useCallback(() => {
     if (taskRef.current) {
@@ -218,6 +306,15 @@ export const usePreviewThumbnail = ({
       forceStartPreview(taskRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (!src) {
+      resetLoad();
+      return undefined;
+    }
+    beginLoad();
+    return clearSettleTimers;
+  }, [src, beginLoad, resetLoad, clearSettleTimers]);
 
   useEffect(() => {
     if (!src) {
@@ -241,13 +338,9 @@ export const usePreviewThumbnail = ({
       if (!contentWindow) {
         return undefined;
       }
-      return registerResizeHandler(contentWindow, (dimensions) => {
-        setRememberedDimensions((current) =>
-          current?.width === dimensions.width && current?.height === dimensions.height
-            ? current
-            : dimensions
-        );
-      });
+      const detachHandler = registerResizeHandler(contentWindow, handleResize);
+      requestEmbedRemeasure(contentWindow);
+      return detachHandler;
     };
 
     let detach = attach();
@@ -260,13 +353,14 @@ export const usePreviewThumbnail = ({
       iframe.removeEventListener('load', onLoad);
       detach?.();
     };
-  }, [src]);
+  }, [src, handleResize]);
 
   return {
     cellRef,
     frameRef,
     iframeRef,
     src,
+    isPreviewLoading,
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,

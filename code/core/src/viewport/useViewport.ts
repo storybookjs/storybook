@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
 import { ADDON_ID, PARAM_KEY } from './constants.ts';
 import { MINIMAL_VIEWPORTS } from './defaults.ts';
-import type {
-  GlobalState,
-  GlobalStateUpdate,
-  ViewportMap,
-  ViewportParameters,
-  ViewportType,
-} from './types.ts';
+import { VIEWPORT_MIN_HEIGHT, VIEWPORT_MIN_WIDTH, resolveViewport } from './resolveViewport.ts';
+import type { GlobalState, GlobalStateUpdate, ViewportMap, ViewportParameters } from './types.ts';
 
-// Custom viewport format, e.g. '100pct-200px' (width-height)
-const URL_VALUE_PATTERN = /^([0-9]{1,4})([a-z]{0,4})-([0-9]{1,4})([a-z]{0,4})$/;
-
-export const VIEWPORT_MIN_WIDTH = 40;
-export const VIEWPORT_MIN_HEIGHT = 40;
+export { VIEWPORT_MIN_HEIGHT, VIEWPORT_MIN_WIDTH };
 
 const cycle = (
   viewports: ViewportMap,
@@ -44,111 +34,6 @@ const normalizeGlobal = (
     ? { value, isRotated: defaultIsRotated }
     : { value: value?.value, isRotated: value?.isRotated ?? defaultIsRotated };
 
-const parseGlobals = (
-  globals: Globals,
-  storyGlobals: Globals,
-  userGlobals: Globals,
-  options: ViewportMap,
-  lastSelectedOption: string | undefined,
-  disable: boolean,
-  viewMode: string | undefined
-): {
-  name: string;
-  type: ViewportType;
-  width: string;
-  height: string;
-  value: string;
-  option: string | undefined;
-  isCustom: boolean;
-  isDefault: boolean;
-  isLocked: boolean;
-  isRotated: boolean;
-} => {
-  if (viewMode !== 'story') {
-    return {
-      name: 'Responsive',
-      type: 'desktop',
-      width: '100%',
-      height: '100%',
-      value: '100pct-100pct',
-      option: undefined,
-      isCustom: false,
-      isDefault: true,
-      isLocked: true,
-      isRotated: false,
-    };
-  }
-
-  const global = normalizeGlobal(globals?.[PARAM_KEY]);
-  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
-  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
-  const storyHasViewport = PARAM_KEY in storyGlobals;
-
-  // Story-level viewport globals override user globals for the current story.
-  const primaryGlobal = storyHasViewport ? storyGlobal : userGlobal;
-  const secondaryGlobal = storyHasViewport ? userGlobal : storyGlobal;
-  const value = primaryGlobal?.value ?? secondaryGlobal?.value ?? global?.value;
-  const isRotated =
-    primaryGlobal?.isRotated ?? secondaryGlobal?.isRotated ?? global?.isRotated ?? false;
-
-  const keys = Object.keys(options);
-  const isLocked = disable || PARAM_KEY in storyGlobals || !keys.length;
-  const [match, vx, ux, vy, uy] = value?.match(URL_VALUE_PATTERN) || [];
-
-  if (match) {
-    // Clamp pixel values to at least MIN_WIDTH / MIN_HEIGHT
-    const x = ux && ux !== 'px' ? vx : Math.max(Number(vx), VIEWPORT_MIN_WIDTH);
-    const y = uy && uy !== 'px' ? vy : Math.max(Number(vy), VIEWPORT_MIN_HEIGHT);
-
-    // Ensure we have a valid CSS value, including unit
-    const width = `${x}${ux === 'pct' ? '%' : ux || 'px'}`;
-    const height = `${y}${uy === 'pct' ? '%' : uy || 'px'}`;
-
-    const selection = lastSelectedOption ? options[lastSelectedOption] : undefined;
-    return {
-      name: selection?.name ?? 'Custom',
-      type: selection?.type ?? 'other',
-      width: isRotated ? height : width,
-      height: isRotated ? width : height,
-      value: match,
-      option: undefined,
-      isCustom: true,
-      isDefault: false,
-      isLocked,
-      isRotated,
-    };
-  }
-
-  if (value && keys.length) {
-    const { name, styles, type = 'other' } = options[value] ?? options[keys[0]];
-    return {
-      name,
-      type,
-      width: isRotated ? styles.height : styles.width,
-      height: isRotated ? styles.width : styles.height,
-      value,
-      option: value,
-      isCustom: false,
-      isDefault: false,
-      isLocked,
-      isRotated,
-    };
-  }
-
-  return {
-    name: 'Responsive',
-    type: 'desktop',
-    width: '100%',
-    height: '100%',
-    value: '100pct-100pct',
-    option: undefined,
-    isCustom: false,
-    isDefault: true,
-    isLocked,
-    isRotated: false,
-  };
-};
-
 export const useViewport = () => {
   const api = useStorybookApi();
   const { viewMode } = api.getUrlState();
@@ -171,15 +56,15 @@ export const useViewport = () => {
 
   const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
   const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =
-    parseGlobals(
+    resolveViewport({
       globals,
       storyGlobals,
       userGlobals,
       options,
-      lastSelectedOption.current,
+      lastSelectedOption: lastSelectedOption.current,
       disable,
-      viewMode
-    );
+      viewMode,
+    });
 
   const update = useCallback(
     (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: normalizeGlobal(input, false) }),

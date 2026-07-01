@@ -95,11 +95,13 @@ export async function setupSandbox(
 	}
 
 	const templateDir = path.join(TEMPLATES_DIR, templateName);
-	const files = await readTemplateFiles(templateDir);
+	let files = await readTemplateFiles(templateDir);
 
 	if (Object.keys(files).length === 0) {
 		throw new Error(`Template "${templateName}" does not contain any files`);
 	}
+
+	files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
 	if (usesLocalStorybookMcpPackages(files)) {
 		Object.assign(files, await readLocalStorybookMcpPackages());
@@ -123,7 +125,7 @@ export async function setupSandbox(
 		}
 	}
 
-	await sandbox.writeFiles(mergeTemplateAndFixtureFiles(files, fixtureFiles));
+	await sandbox.writeFiles(files);
 }
 
 async function writeEvalSupportFiles(
@@ -434,6 +436,15 @@ async function readPackageDistFiles(
 	sourceDir: string,
 	targetDir: string,
 ): Promise<Record<string, string>> {
+	const distDir = path.join(sourceDir, 'dist');
+	try {
+		await fs.access(distDir);
+	} catch {
+		throw new Error(
+			`Missing package build output at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`,
+		);
+	}
+
 	const files: Record<string, string> = {};
 	await collectPackageFiles(sourceDir, 'dist', targetDir, files);
 	return files;

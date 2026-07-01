@@ -16,10 +16,10 @@
  * not running inside an IDE.
  */
 import { logger, once } from 'storybook/internal/node-logger';
-import { ReactDocgenServerMemoryLimitError } from 'storybook/internal/server-errors';
 
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
+import { dedent } from 'ts-dedent';
 import type ts from 'typescript';
 import * as v8 from 'v8';
 
@@ -139,7 +139,12 @@ export class ComponentMetaManager {
     // the crash, but a single extraction can still exceed the cap — warn once so the user can raise
     // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
     const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
-    once.warn(new ReactDocgenServerMemoryLimitError({ heapLimitMb }).message);
+    once.warn(dedent`
+      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
+
+      If this happens often, raise Node's memory limit before starting Storybook, for example:
+        NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
+    `);
 
     for (const project of this.configProjects.values()) {
       project.dispose();

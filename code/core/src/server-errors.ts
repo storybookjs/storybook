@@ -287,25 +287,6 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
   }
 }
 
-export class ReactDocgenServerMemoryLimitError extends StorybookError {
-  constructor(public data: { heapLimitMb: number }) {
-    super({
-      name: 'ReactDocgenServerMemoryLimitError',
-      category: Category.CORE_COMMON,
-      code: 16,
-      // We recover from this by recycling the TypeScript program, so it is not fatal.
-      isHandledError: true,
-      documentation: 'https://github.com/storybookjs/storybook/issues/34824',
-      message: dedent`
-        Storybook's experimental docgen server is approaching the Node.js heap limit (~${data.heapLimitMb} MB) while extracting TypeScript types for your components. It recycled its type checker to avoid an out-of-memory crash, which may briefly slow down the docs and Controls panels.
-
-        If this happens often, raise Node's memory limit before starting Storybook, for example:
-
-          NODE_OPTIONS="--max-old-space-size=${data.heapLimitMb * 2}"`,
-    });
-  }
-}
-
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

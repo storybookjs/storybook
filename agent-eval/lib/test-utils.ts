@@ -47,6 +47,12 @@ const STORYBOOK_WORKFLOW_TOOL_NAMES = [
 const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
 let cachedStorybookWorkflowCalls: StorybookWorkflowCall[] | undefined;
 
+export type StoryInputExpectation = {
+	absoluteStoryPath?: string;
+	exportName?: string;
+	storyId?: string;
+};
+
 export function getEvalContext(): EvalContext {
 	const agentContext = readAgentContext();
 	const { agent, integration } = agentContext;
@@ -83,18 +89,6 @@ export function getShellCommands(): string[] {
 	);
 }
 
-export function getToolCalls(): string[] {
-	const parsedToolCalls = getTranscript().events.flatMap((event) => {
-		if (event.type !== 'tool_call' || typeof event.tool?.originalName !== 'string') {
-			return [];
-		}
-
-		return [event.tool.originalName];
-	});
-
-	return [...parsedToolCalls, ...getRawCodexMcpToolCalls()];
-}
-
 export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 	if (cachedStorybookWorkflowCalls !== undefined) {
 		return cachedStorybookWorkflowCalls;
@@ -103,7 +97,9 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 	const { integration } = getEvalContext();
 
 	if (integration === 'plugin') {
-		cachedStorybookWorkflowCalls = getShellCommands().flatMap(parseStorybookAiWorkflowCalls);
+		cachedStorybookWorkflowCalls = dedupeWorkflowCalls(
+			getShellCommands().flatMap(parsePluginWorkflowCalls),
+		);
 		return cachedStorybookWorkflowCalls;
 	}
 
@@ -141,6 +137,25 @@ export function expectDisplayReviewForVisualChange(): void {
 	expectValidDisplayReviewPayload(displayReview.input);
 	expectFinalResponseEndsWithReviewSection();
 }
+
+export function workflowCallIncludesStory(
+	call: StorybookWorkflowCall,
+	expected: StoryInputExpectation,
+): boolean {
+	return getStoryInputs(call.input).some((input) => storyInputMatches(input, expected));
+}
+
+export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
+	return getStoryInputs(call.input).some((input) => typeof input.storyId === 'string');
+}
+
+export const A11Y_VISUAL_CHANGE_APPROVAL_CRITERION = [
+	'The final response explains the remaining visual color contrast accessibility concern.',
+	'It asks the user before changing visual or design colors.',
+	'It offers two or three concrete options for fixing the contrast issue.',
+	'It does not claim the visual contrast issue was already fixed.',
+	'It distinguishes semantic accessibility issues that can be fixed directly from visual design changes that need user approval.',
+].join(' ');
 
 function readAgentContext(): AgentContext {
 	return JSON.parse(readFileSync(AGENT_CONTEXT_PATH, 'utf8')) as AgentContext;
@@ -249,10 +264,6 @@ function getFinalAssistantMessage(): string | undefined {
 		.at(-1)?.content;
 }
 
-function getRawCodexMcpToolCalls(): string[] {
-	return getRawCodexMcpWorkflowCalls().map((call) => call.name);
-}
-
 function getParsedMcpWorkflowCalls(): StorybookWorkflowCall[] {
 	return getTranscript().events.flatMap((event) => {
 		if (event.type !== 'tool_call' || typeof event.tool?.originalName !== 'string') {
@@ -318,12 +329,20 @@ function getRawMcpInput(item: Record<string, unknown>): Record<string, unknown> 
 	return {};
 }
 
-function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {
+function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 	const nestedCommand = getNestedShellCommand(command);
 	if (nestedCommand !== undefined) {
-		return parseStorybookAiWorkflowCalls(nestedCommand);
+		return parsePluginWorkflowCalls(nestedCommand);
 	}
 
+	return dedupeWorkflowCalls([
+		...parseStorybookAiWorkflowCalls(command),
+		...parseMcpCallScriptWorkflowCalls(command),
+		...parseCurlWorkflowCalls(command),
+	]);
+}
+
+function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {
 	const tokens = tokenizeShellCommand(command);
 	const calls: StorybookWorkflowCall[] = [];
 
@@ -337,6 +356,58 @@ function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[]
 			calls.push(invocation.call);
 			index += invocation.consumed + 1;
 		}
+	}
+
+	return calls;
+}
+
+function parseMcpCallScriptWorkflowCalls(command: string): StorybookWorkflowCall[] {
+	const tokens = tokenizeShellCommand(command);
+	const calls: StorybookWorkflowCall[] = [];
+
+	for (let index = 0; index < tokens.length - 1; index += 1) {
+		const token = tokens[index];
+		if (token === undefined || !token.endsWith('mcp-call.mjs')) {
+			continue;
+		}
+
+		const name = normalizeStorybookWorkflowName(tokens[index + 1] ?? '');
+		if (name === undefined) {
+			continue;
+		}
+
+		const args = tokens.slice(index + 2);
+		const endIndex = args.findIndex((arg) => SHELL_COMMAND_SEPARATORS.has(arg));
+		const segment = endIndex === -1 ? args : args.slice(0, endIndex);
+		calls.push({
+			name,
+			input: parseStorybookAiInput(segment),
+			source: 'storybook-ai',
+		});
+	}
+
+	return calls;
+}
+
+function parseCurlWorkflowCalls(command: string): StorybookWorkflowCall[] {
+	const tokens = tokenizeShellCommand(command);
+	if (!tokens.includes('curl')) {
+		return [];
+	}
+
+	const calls: StorybookWorkflowCall[] = [];
+	const input = getCurlWorkflowInput(tokens);
+
+	for (const toolName of STORYBOOK_WORKFLOW_TOOL_NAMES) {
+		if (!tokens.some((token) => token.includes(toolName))) {
+			continue;
+		}
+
+		calls.push({
+			name: toolName,
+			input,
+			source: 'storybook-ai',
+		});
 	}
 
 	return calls;
@@ -439,7 +510,7 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 
 function mergeJsonInput(input: Record<string, unknown>, value: unknown, fallbackKey: string): void {
 	if (isRecord(value)) {
-		Object.assign(input, value);
+		Object.assign(input, unwrapWorkflowInput(value));
 		return;
 	}
 
@@ -456,6 +527,118 @@ function parseCliValue(value: string): unknown {
 
 function kebabToCamel(value: string): string {
 	return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function getCurlWorkflowInput(tokens: string[]): Record<string, unknown> {
+	for (let index = 0; index < tokens.length; index += 1) {
+		const token = tokens[index];
+		if (token === undefined) {
+			continue;
+		}
+
+		const inlineData = getInlineCurlData(token);
+		if (inlineData !== undefined) {
+			return parseWorkflowInputValue(inlineData);
+		}
+
+		if (['-d', '--data', '--data-raw', '--data-binary'].includes(token)) {
+			const value = tokens[index + 1];
+			if (value !== undefined) {
+				return parseWorkflowInputValue(value);
+			}
+		}
+	}
+
+	return {};
+}
+
+function getInlineCurlData(token: string): string | undefined {
+	for (const prefix of ['--data=', '--data-raw=', '--data-binary=']) {
+		if (token.startsWith(prefix)) {
+			return token.slice(prefix.length);
+		}
+	}
+
+	return undefined;
+}
+
+function parseWorkflowInputValue(value: string): Record<string, unknown> {
+	const parsed = parseCliValue(value);
+	return isRecord(parsed) ? unwrapWorkflowInput(parsed) : {};
+}
+
+function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unknown> {
+	for (const key of ['arguments', 'input', 'args']) {
+		const nested = value[key];
+		if (isRecord(nested)) {
+			return nested;
+		}
+	}
+
+	const params = value.params;
+	if (isRecord(params)) {
+		for (const key of ['arguments', 'input', 'args']) {
+			const nested = params[key];
+			if (isRecord(nested)) {
+				return nested;
+			}
+		}
+	}
+
+	return value;
+}
+
+function getStoryInputs(input: Record<string, unknown>): Record<string, unknown>[] {
+	const stories = input.stories;
+	if (Array.isArray(stories)) {
+		return stories.filter(isRecord);
+	}
+
+	return [input];
+}
+
+function storyInputMatches(
+	input: Record<string, unknown>,
+	expected: StoryInputExpectation,
+): boolean {
+	if (
+		expected.storyId !== undefined &&
+		typeof input.storyId === 'string' &&
+		input.storyId === expected.storyId
+	) {
+		return true;
+	}
+
+	if (expected.absoluteStoryPath === undefined || expected.exportName === undefined) {
+		return false;
+	}
+
+	if (
+		typeof input.absoluteStoryPath === 'string' &&
+		typeof input.exportName === 'string' &&
+		input.exportName === expected.exportName &&
+		pathsMatch(input.absoluteStoryPath, expected.absoluteStoryPath)
+	) {
+		return true;
+	}
+
+	return (
+		expected.storyId !== undefined &&
+		typeof input.storyId === 'string' &&
+		input.storyId === expected.storyId
+	);
+}
+
+function pathsMatch(actual: string, expected: string): boolean {
+	const normalizedActual = normalizePath(actual);
+	const normalizedExpected = normalizePath(expected);
+	return (
+		normalizedActual === normalizedExpected || normalizedActual.endsWith(`/${normalizedExpected}`)
+	);
+}
+
+function normalizePath(value: string): string {
+	return value.replace(/\\/g, '/').replace(/^\.\//, '');
 }
 
 function tokenizeShellCommand(command: string): string[] {
@@ -547,6 +730,12 @@ function normalizeStorybookWorkflowName(name: string): string | undefined {
 
 function isSameWorkflowCall(first: StorybookWorkflowCall, second: StorybookWorkflowCall): boolean {
 	return first.name === second.name && JSON.stringify(first.input) === JSON.stringify(second.input);
+}
+
+function dedupeWorkflowCalls(calls: StorybookWorkflowCall[]): StorybookWorkflowCall[] {
+	return calls.filter(
+		(call, index) => calls.findIndex((candidate) => isSameWorkflowCall(candidate, call)) === index,
+	);
 }
 
 function parseJson(value: string): unknown {

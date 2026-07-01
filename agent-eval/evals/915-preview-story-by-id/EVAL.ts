@@ -1,23 +1,23 @@
 import { expect, test } from 'vitest';
-import { expectWorkflowCalls, getWorkflowCalls, type StorybookWorkflowCall } from '#test-utils';
-
-function usesStoryId(call: StorybookWorkflowCall): boolean {
-	if (typeof call.input.storyId === 'string') {
-		return true;
-	}
-
-	const stories = call.input.stories;
-	return (
-		Array.isArray(stories) &&
-		stories.some((story) => isRecord(story) && typeof story.storyId === 'string')
-	);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import {
+	expectWorkflowCalls,
+	getWorkflowCalls,
+	workflowCallIncludesStory,
+	workflowCallUsesStoryId,
+} from '#test-utils';
 
 test('previews stories using story IDs', () => {
+	const previewCalls = getWorkflowCalls('preview-stories');
 	expectWorkflowCalls(['preview-stories']);
-	expect(getWorkflowCalls('preview-stories').some(usesStoryId)).toBe(true);
+	expect(previewCalls.some(workflowCallUsesStoryId)).toBe(true);
+	expect(
+		previewCalls.some((call) =>
+			workflowCallIncludesStory(call, { storyId: 'example-button--primary' }),
+		),
+	).toBe(true);
+	expect(
+		previewCalls.some((call) =>
+			workflowCallIncludesStory(call, { storyId: 'example-button--secondary' }),
+		),
+	).toBe(true);
 });

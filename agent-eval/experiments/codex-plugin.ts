@@ -1,9 +1,9 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { RESHAPED_STORYBOOK_EVALS, defaultExperimentConfig } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import { setupSandbox, writeCodexPluginSkills } from '../lib/templates.ts';
 
 export default {
-	...defaultExperimentConfig,
+	...DEFAULT_EXPERIMENT_CONFIG,
 	// Keep Codex plugin and MCP experiments on the same direct Codex runner.
 	// The MCP variant cannot use the AI Gateway path yet:
 	// https://github.com/openai/codex/issues/26234

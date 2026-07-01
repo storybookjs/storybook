@@ -14,11 +14,15 @@ type EvalAgent = 'claude-code' | 'codex';
 type EvalIntegration = 'mcp' | 'plugin';
 type Catalog = Record<string, string>;
 type DependencyOverrides = Record<string, string>;
+type TemplateMetadata = {
+	amazonLinuxPackages?: unknown;
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AGENT_EVAL_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
+const TEMPLATE_METADATA_FILE = 'eval-template.json';
 const PREVIEW_BROWSER_MOCK_SOURCE_PATH = path.join(
 	AGENT_EVAL_ROOT,
 	'lib',
@@ -39,27 +43,6 @@ const LOCAL_STORYBOOK_MCP_SPEC = 'file:./local-packages/mcp';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
-const PLAYWRIGHT_AMAZON_LINUX_PACKAGES = [
-	'alsa-lib',
-	'at-spi2-atk',
-	'at-spi2-core',
-	'atk',
-	'cairo',
-	'cups-libs',
-	'dbus-libs',
-	'libX11',
-	'libXcomposite',
-	'libXdamage',
-	'libXext',
-	'libXfixes',
-	'libXrandr',
-	'libxcb',
-	'libxkbcommon',
-	'mesa-libgbm',
-	'nspr',
-	'nss',
-	'pango',
-];
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
 	REPO_ROOT,
@@ -95,6 +78,7 @@ export async function setupSandbox(
 	}
 
 	const templateDir = path.join(TEMPLATES_DIR, templateName);
+	const templateMetadata = await readTemplateMetadata(templateDir);
 	let files = await readTemplateFiles(templateDir);
 
 	if (Object.keys(files).length === 0) {
@@ -107,29 +91,7 @@ export async function setupSandbox(
 		Object.assign(files, await readLocalStorybookMcpPackages());
 	}
 
-	if (templateName === 'reshaped-storybook') {
-		const packageList = PLAYWRIGHT_AMAZON_LINUX_PACKAGES.join(' ');
-		const result = await sandbox.runCommand('bash', [
-			'-lc',
-			[
-				'set -e',
-				'if grep -q \'ID="amzn"\' /etc/os-release && command -v dnf >/dev/null; then',
-				'  if command -v sudo >/dev/null; then',
-				`    sudo dnf install -y ${packageList}`,
-				'  else',
-				`    dnf install -y ${packageList}`,
-				'  fi',
-				'fi',
-			].join('\n'),
-		]);
-
-		if (result.exitCode !== 0) {
-			throw new Error(
-				`Failed to install Playwright system dependencies: ${result.stderr || result.stdout}`,
-			);
-		}
-	}
-
+	await setupTemplateSandbox(sandbox, templateMetadata);
 	await sandbox.writeFiles(files);
 }
 
@@ -163,8 +125,30 @@ async function readFixturePackageJson(sandbox: Sandbox): Promise<FixturePackageJ
 
 async function readTemplateFiles(templateDir: string): Promise<Record<string, string>> {
 	const files: Record<string, string> = {};
-	await collectTemplateFiles(templateDir, '', files);
+	await collectFiles({
+		sourceDir: templateDir,
+		targetDir: '',
+		files,
+		exclude: (filePath) => filePath === TEMPLATE_METADATA_FILE,
+	});
 	return files;
+}
+
+async function readTemplateMetadata(templateDir: string): Promise<TemplateMetadata> {
+	const metadataPath = path.join(templateDir, TEMPLATE_METADATA_FILE);
+
+	try {
+		const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8')) as unknown;
+		if (!isRecord(metadata)) {
+			throw new Error(`${metadataPath} must contain a JSON object`);
+		}
+		return metadata;
+	} catch (error) {
+		if (isNodeError(error) && error.code === 'ENOENT') {
+			return {};
+		}
+		throw error;
+	}
 }
 
 async function readSandboxWorkspaceFiles(sandbox: Sandbox): Promise<Record<string, string>> {
@@ -246,28 +230,67 @@ function deepMergeJson(templateValue: unknown, fixtureValue: unknown): unknown {
 	return result;
 }
 
-function usesLocalStorybookAddonMcp(files: Record<string, string>): boolean {
-	const packageJson = JSON.parse(files['package.json'] ?? '{}') as unknown;
-
-	if (!isRecord(packageJson)) {
-		return false;
+async function setupTemplateSandbox(
+	sandbox: Sandbox,
+	templateMetadata: TemplateMetadata,
+): Promise<void> {
+	const amazonLinuxPackages = templateMetadata.amazonLinuxPackages;
+	if (amazonLinuxPackages === undefined) {
+		return;
 	}
 
-	return getDependencySpec(packageJson, '@storybook/addon-mcp') === LOCAL_STORYBOOK_ADDON_MCP_SPEC;
+	if (
+		!Array.isArray(amazonLinuxPackages) ||
+		!amazonLinuxPackages.every(
+			(packageName) => typeof packageName === 'string' && /^[a-zA-Z0-9_.+-]+$/.test(packageName),
+		)
+	) {
+		throw new Error(
+			`${TEMPLATE_METADATA_FILE} amazonLinuxPackages must be an array of package-name strings`,
+		);
+	}
+
+	await installAmazonLinuxPackages(sandbox, amazonLinuxPackages);
 }
 
-function usesLocalStorybookMcpPackage(files: Record<string, string>): boolean {
-	const packageJson = JSON.parse(files['package.json'] ?? '{}') as unknown;
-
-	if (!isRecord(packageJson)) {
-		return false;
+async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string[]): Promise<void> {
+	if (packageNames.length === 0) {
+		return;
 	}
 
-	return getDependencySpec(packageJson, '@storybook/mcp') === LOCAL_STORYBOOK_MCP_SPEC;
+	const packageList = packageNames.join(' ');
+	const result = await sandbox.runCommand('bash', [
+		'-lc',
+		[
+			'set -e',
+			'if grep -q \'ID="amzn"\' /etc/os-release && command -v dnf >/dev/null; then',
+			'  if command -v sudo >/dev/null; then',
+			`    sudo dnf install -y ${packageList}`,
+			'  else',
+			`    dnf install -y ${packageList}`,
+			'  fi',
+			'fi',
+		].join('\n'),
+	]);
+
+	if (result.exitCode !== 0) {
+		throw new Error(
+			`Failed to install template system dependencies: ${result.stderr || result.stdout}`,
+		);
+	}
 }
 
 function usesLocalStorybookMcpPackages(files: Record<string, string>): boolean {
-	return usesLocalStorybookAddonMcp(files) || usesLocalStorybookMcpPackage(files);
+	const packageJson = JSON.parse(files['package.json'] ?? '{}') as unknown;
+
+	if (!isRecord(packageJson)) {
+		return false;
+	}
+
+	return (
+		getDependencySpec(packageJson, '@storybook/addon-mcp') === LOCAL_STORYBOOK_ADDON_MCP_SPEC ||
+		getDependencySpec(packageJson, '@storybook/mcp') === LOCAL_STORYBOOK_MCP_SPEC
+	);
 }
 
 function getDependencySpec(packageJson: Record<string, unknown>, name: string): string | undefined {
@@ -404,6 +427,8 @@ async function readDefaultCatalog(): Promise<Catalog> {
 	const catalog: Catalog = {};
 	let inDefaultCatalog = false;
 
+	// This intentionally supports only the repo-owned two-space default `catalog:` shape.
+	// Named catalogs stay unsupported here and still fail explicitly in `rewriteDependencySpec`.
 	for (const line of workspaceYaml.split('\n')) {
 		if (line.trim() === 'catalog:') {
 			inDefaultCatalog = true;
@@ -455,60 +480,40 @@ async function readPackageDistFiles(
 	}
 
 	const files: Record<string, string> = {};
-	await collectPackageFiles(sourceDir, 'dist', targetDir, files);
+	await collectFiles({ sourceDir, relativeDir: 'dist', targetDir, files });
 	return files;
 }
 
-async function collectPackageFiles(
-	sourceDir: string,
-	relativeDir: string,
-	targetDir: string,
-	files: Record<string, string>,
-): Promise<void> {
-	const dir = path.join(sourceDir, relativeDir);
-	const entries = await fs.readdir(dir, { withFileTypes: true });
-
-	for (const entry of entries) {
-		const sourceRelativePath = path.join(relativeDir, entry.name);
-		const sandboxRelativePath = path.posix.join(toPosixPath(relativeDir), entry.name);
-		const fullPath = path.join(sourceDir, sourceRelativePath);
-
-		if (entry.isDirectory()) {
-			await collectPackageFiles(sourceDir, sourceRelativePath, targetDir, files);
-			continue;
-		}
-
-		if (entry.isFile()) {
-			files[path.posix.join(toPosixPath(targetDir), sandboxRelativePath)] = await fs.readFile(
-				fullPath,
-				'utf8',
-			);
-		}
-	}
-}
-
-async function collectTemplateFiles(
-	baseDir: string,
-	relativeDir: string,
-	files: Record<string, string>,
-): Promise<void> {
-	const dir = path.join(baseDir, relativeDir);
+async function collectFiles(options: {
+	sourceDir: string;
+	targetDir: string;
+	files: Record<string, string>;
+	relativeDir?: string;
+	exclude?: (filePath: string) => boolean;
+}): Promise<void> {
+	const relativeDir = options.relativeDir ?? '';
+	const dir = path.join(options.sourceDir, relativeDir);
 	const entries = await fs.readdir(dir, { withFileTypes: true });
 
 	for (const entry of entries) {
 		const sourceRelativePath = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
-		const sandboxRelativePath = relativeDir
-			? path.posix.join(toPosixPath(relativeDir), entry.name)
-			: entry.name;
-		const fullPath = path.join(baseDir, sourceRelativePath);
+		const sandboxRelativePath = toPosixPath(sourceRelativePath);
+		if (options.exclude?.(sandboxRelativePath)) {
+			continue;
+		}
+
+		const fullPath = path.join(options.sourceDir, sourceRelativePath);
 
 		if (entry.isDirectory()) {
-			await collectTemplateFiles(baseDir, sourceRelativePath, files);
+			await collectFiles({ ...options, relativeDir: sourceRelativePath });
 			continue;
 		}
 
 		if (entry.isFile()) {
-			files[sandboxRelativePath] = await fs.readFile(fullPath, 'utf8');
+			options.files[toSandboxPath(options.targetDir, sandboxRelativePath)] = await fs.readFile(
+				fullPath,
+				'utf8',
+			);
 		}
 	}
 }
@@ -578,7 +583,7 @@ async function writePluginSkills(
 	targetDir: string,
 ): Promise<void> {
 	const files: Record<string, string> = {};
-	await collectPackageFiles(sourceDir, '', targetDir, files);
+	await collectFiles({ sourceDir, targetDir, files });
 	await sandbox.writeFiles(files);
 }
 
@@ -588,4 +593,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function toPosixPath(filePath: string): string {
 	return filePath.split(path.sep).join(path.posix.sep);
+}
+
+function toSandboxPath(targetDir: string, filePath: string): string {
+	return targetDir.length > 0 ? path.posix.join(toPosixPath(targetDir), filePath) : filePath;
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+	return error instanceof Error && 'code' in error;
 }

@@ -1,5 +1,5 @@
 import type { ExperimentConfig, Sandbox } from '@vercel/agent-eval';
-import { CLAUDE_PLUGIN_EVALS, defaultExperimentConfig } from '../lib/experiment.ts';
+import { CLAUDE_PLUGIN_EVALS, DEFAULT_EXPERIMENT_CONFIG } from '../lib/experiment.ts';
 import {
 	setupSandbox,
 	writeClaudePluginSkills,
@@ -9,7 +9,7 @@ import {
 const PREVIEW_BROWSER_MOCK_EVALS = new Set(['922-skill-storybook-setup-claude-launch']);
 
 export default {
-	...defaultExperimentConfig,
+	...DEFAULT_EXPERIMENT_CONFIG,
 	agent: 'vercel-ai-gateway/claude-code',
 	evals: [...CLAUDE_PLUGIN_EVALS],
 	setup: async (sandbox) => {

@@ -1,9 +1,9 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { RESHAPED_STORYBOOK_EVALS, defaultExperimentConfig } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import { setupSandbox, writeCodexMcpConfig } from '../lib/templates.ts';
 
 export default {
-	...defaultExperimentConfig,
+	...DEFAULT_EXPERIMENT_CONFIG,
 	// Use direct Codex for MCP evals. The AI Gateway Codex path does not reliably
 	// handle Codex's Responses namespace tool shape yet:
 	// https://github.com/openai/codex/issues/26234

@@ -1,6 +1,4 @@
-// @ts-nocheck
-/* eslint-disable */
-import path from 'node:path';
+import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig, defaultExclude } from 'vitest/config';

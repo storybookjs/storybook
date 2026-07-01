@@ -31,7 +31,7 @@ for (const row of resultRows) {
 
 printSummary();
 
-if (failed.length > 0) {
+if (infra.length > 0 || failed.length > 0) {
 	process.exitCode = 1;
 }
 
@@ -65,13 +65,14 @@ function readResultRows() {
 				const passedRuns = Number(summary.passedRuns ?? 0);
 				const totalRuns = Number(summary.totalRuns ?? 0);
 				const failedRuns = readFailedRuns(evalDir);
-				const failureKind = failedRuns.every(isInfraFailure) ? 'infra' : 'eval';
+				const failureKind =
+					failedRuns.length > 0 && failedRuns.every(isInfraFailure) ? 'infra' : 'eval';
 
 				rows.push({
 					experiment,
 					eval: evalName,
 					timestamp,
-					passed: totalRuns > 0 && passedRuns > 0,
+					passed: totalRuns > 0 && passedRuns === totalRuns,
 					passRate: String(summary.passRate ?? 'unknown'),
 					failureKind,
 					failures: failedRuns,
@@ -188,6 +189,9 @@ function printSummary() {
 		console.error(
 			`\nEval failures must be fixed or intentionally documented above the relevant expect and tracked in ${TRACKING_ISSUE}.`,
 		);
+	}
+	if (infra.length > 0) {
+		console.error('\nInfrastructure/provider failures block the required eval CI job.');
 	}
 }
 

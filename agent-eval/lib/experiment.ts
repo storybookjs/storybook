@@ -34,14 +34,14 @@ const ALL_RESHAPED_STORYBOOK_EVALS = [
 	'915-preview-story-by-id-docs-first',
 ] as const;
 
-export const RESHAPED_STORYBOOK_EVALS = [
-	'908-run-story-tests',
-	'914-preview-story-by-path',
-] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
+export const RESHAPED_STORYBOOK_EVALS = ALL_RESHAPED_STORYBOOK_EVALS;
 
-export const CLAUDE_PLUGIN_EVALS = RESHAPED_STORYBOOK_EVALS;
+export const CLAUDE_PLUGIN_EVALS = [
+	...RESHAPED_STORYBOOK_EVALS,
+	'922-skill-storybook-setup-claude-launch',
+] as const;
 
-export const defaultExperimentConfig = {
+export const DEFAULT_EXPERIMENT_CONFIG = {
 	runs: 1,
 	earlyExit: true,
 	sandbox: 'auto',

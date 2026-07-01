@@ -1,9 +1,9 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { RESHAPED_STORYBOOK_EVALS, defaultExperimentConfig } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import { setupSandbox, writeClaudeMcpConfig } from '../lib/templates.ts';
 
 export default {
-	...defaultExperimentConfig,
+	...DEFAULT_EXPERIMENT_CONFIG,
 	agent: 'vercel-ai-gateway/claude-code',
 	evals: [...RESHAPED_STORYBOOK_EVALS],
 	setup: async (sandbox) => {

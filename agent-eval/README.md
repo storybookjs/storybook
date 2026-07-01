@@ -109,3 +109,19 @@ pnpm playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
+
+### Deploy Results Playground
+
+The GitHub Actions workflow in `.github/workflows/agent-eval-playground.yml`
+deploys the playground to Vercel project `project-mi8oz`.
+
+- Pull requests from the main repository create preview deployments.
+- Pushes to `main` create production deployments.
+- Manual runs can choose either `preview` or `production`.
+
+The workflow links the Vercel project at runtime instead of committing
+`.vercel/project.json`. Configure these GitHub secrets before enabling the
+workflow:
+
+- `VERCEL_TOKEN`: Vercel access token with deploy access to the Storybook team.
+- `VERCEL_TEAM_ID`: Vercel team ID or slug for the Storybook account.

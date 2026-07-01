@@ -1,0 +1,14 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noUncheckedIndexedAccess": false
+	},
+	"include": [
+		"next-env.d.ts",
+		"next.config.ts",
+		"app/**/*.ts",
+		"app/**/*.tsx",
+		".next/types/**/*.ts"
+	],
+	"exclude": ["results/**", "templates/**"]
+}

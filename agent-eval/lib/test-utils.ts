@@ -344,11 +344,11 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 		return parsePluginWorkflowCalls(nestedCommand);
 	}
 
-	return dedupeWorkflowCalls([
+	return [
 		...parseStorybookAiWorkflowCalls(command),
 		...parseMcpCallScriptWorkflowCalls(command),
 		...parseCurlWorkflowCalls(command),
-	]);
+	];
 }
 
 function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {

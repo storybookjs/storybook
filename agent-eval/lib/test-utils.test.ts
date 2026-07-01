@@ -17,6 +17,17 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		expect(calls.every(workflowCallUsesStoryId)).toBe(true);
 	});
 
+	test('preserves repeated workflow calls chained in one plugin command', () => {
+		const command =
+			'storybook ai run-story-tests --json \'{"stories":[{"storyId":"example-button--primary"}]}\' && storybook ai run-story-tests --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
+
+		const calls = parseStorybookWorkflowShellCommands([command]);
+
+		expect(calls).toHaveLength(2);
+		expect(calls.map((call) => call.name)).toEqual(['run-story-tests', 'run-story-tests']);
+		expect(calls.every(workflowCallUsesStoryId)).toBe(true);
+	});
+
 	test('parses storybook ai path and export JSON input', () => {
 		const calls = parseStorybookWorkflowShellCommands([
 			'storybook ai preview-stories --json \'{"stories":[{"absoluteStoryPath":"stories/Button.stories.tsx","exportName":"Primary"}]}\'',

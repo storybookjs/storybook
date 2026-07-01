@@ -43,6 +43,10 @@ export const RESHAPED_STORYBOOK_EVALS = [
 	// '915-preview-story-by-id',
 ] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
 
+export const CLAUDE_MCP_EVALS = RESHAPED_STORYBOOK_EVALS.filter(
+	(evalName) => evalName !== '901-create-component-atom-reshaped-concise',
+);
+
 export const CLAUDE_PLUGIN_EVALS = [
 	...RESHAPED_STORYBOOK_EVALS,
 	'922-skill-storybook-setup-claude-launch',

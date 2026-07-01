@@ -128,8 +128,125 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
 	}
 }
 
+export function expectDisplayReviewForVisualChange(): void {
+	const displayReviewCalls = getWorkflowCalls('display-review');
+	expect(displayReviewCalls.length, 'Expected display-review to be called').toBeGreaterThan(0);
+
+	const displayReview = displayReviewCalls.at(-1);
+	expect(displayReview, 'Expected a display-review call').toBeDefined();
+	if (displayReview === undefined) {
+		return;
+	}
+
+	expectValidDisplayReviewPayload(displayReview.input);
+	expectFinalResponseEndsWithReviewSection();
+}
+
 function readAgentContext(): AgentContext {
 	return JSON.parse(readFileSync(AGENT_CONTEXT_PATH, 'utf8')) as AgentContext;
+}
+
+function expectValidDisplayReviewPayload(input: Record<string, unknown>): void {
+	expect(input.title, 'display-review needs a title').toEqual(expect.any(String));
+	expect(
+		String(input.title).trim().length,
+		'display-review title must not be empty',
+	).toBeGreaterThan(0);
+	expect(input.description, 'display-review needs a description').toEqual(expect.any(String));
+	expect(
+		String(input.description).trim().length,
+		'display-review description must not be empty',
+	).toBeGreaterThan(0);
+
+	const collections = input.collections;
+	expect(Array.isArray(collections), 'display-review needs collections').toBe(true);
+	if (!Array.isArray(collections)) {
+		return;
+	}
+	expect(collections.length, 'display-review needs at least one collection').toBeGreaterThan(0);
+
+	for (const [index, collection] of collections.entries()) {
+		expect(isRecord(collection), `display-review collection ${index} must be an object`).toBe(true);
+		if (!isRecord(collection)) {
+			continue;
+		}
+
+		expect(collection.title, `display-review collection ${index} needs a title`).toEqual(
+			expect.any(String),
+		);
+		expect(
+			String(collection.title).trim().length,
+			`display-review collection ${index} title must not be empty`,
+		).toBeGreaterThan(0);
+		expect(collection.rationale, `display-review collection ${index} needs a rationale`).toEqual(
+			expect.any(String),
+		);
+		expect(
+			String(collection.rationale).trim().length,
+			`display-review collection ${index} rationale must not be empty`,
+		).toBeGreaterThan(0);
+
+		const storyIds = collection.storyIds;
+		expect(Array.isArray(storyIds), `display-review collection ${index} needs storyIds`).toBe(true);
+		if (!Array.isArray(storyIds)) {
+			continue;
+		}
+		expect(
+			storyIds.length,
+			`display-review collection ${index} needs at least one story`,
+		).toBeGreaterThan(0);
+		expect(
+			storyIds.every((storyId) => typeof storyId === 'string' && storyId.trim().length > 0),
+			`display-review collection ${index} storyIds must be non-empty strings`,
+		).toBe(true);
+	}
+
+	const changedFiles = input.changedFiles;
+	expect(Array.isArray(changedFiles), 'visual change display-review needs changedFiles').toBe(true);
+	if (!Array.isArray(changedFiles)) {
+		return;
+	}
+	expect(
+		changedFiles.length,
+		'visual change display-review changedFiles must not be empty',
+	).toBeGreaterThan(0);
+	expect(
+		changedFiles.every((filePath) => typeof filePath === 'string' && filePath.trim().length > 0),
+		'visual change display-review changedFiles must be non-empty strings',
+	).toBe(true);
+}
+
+function expectFinalResponseEndsWithReviewSection(): void {
+	const finalMessage = getFinalAssistantMessage();
+	expect(finalMessage, 'Expected a final assistant response').toBeDefined();
+	if (finalMessage === undefined) {
+		return;
+	}
+
+	const trimmed = finalMessage.trimEnd();
+	const lines = trimmed.split('\n');
+	const lastNonEmptyLine = [...lines]
+		.reverse()
+		.find((line) => line.trim().length > 0)
+		?.trim();
+
+	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
+		/^\u{1F449}\s+\[Open the Storybook review page\]\(.+\?path=\/review\/?\)$/u,
+	);
+	expect(
+		lines.some((line) => /^##\s+.*Review your changes\s*$/.test(line.trim())),
+		'Final response must include a dedicated review heading',
+	).toBe(true);
+	expect(
+		trimmed,
+		'Final response must not also include individual story preview links',
+	).not.toMatch(/(?:\?path=\/story\/|\/iframe\.html\?id=)/);
+}
+
+function getFinalAssistantMessage(): string | undefined {
+	return getTranscript()
+		.events.filter((event) => event.type === 'message' && event.role === 'assistant')
+		.at(-1)?.content;
 }
 
 function getRawCodexMcpToolCalls(): string[] {

@@ -36,6 +36,14 @@ while (Date.now() < deadline) {
 	await delay(1_000);
 }
 
+// Kill the detached process group so a failed start does not leak a background
+// Storybook that keeps the port occupied for the next attempt.
+try {
+	process.kill(-child.pid, 'SIGTERM');
+} catch {
+	// Already exited.
+}
+
 throw new Error(
 	'Storybook MCP server did not become ready at ' +
 		mcpUrl +

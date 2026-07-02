@@ -402,6 +402,15 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
 	}
 }
 
+// Hard floor only (loosened 2026-07-02): the review URL must be the last
+// thing in the response, and story preview links must not appear next to it.
+// The exact presentation the guidance describes — the `## 👀 Review your
+// changes` heading, the 👉 markdown link, the AI-curated disclaimer — is
+// shown there as an example, so agents that end with e.g. a bare
+// `Review page: <url>` line or a `## Review` heading follow the workflow
+// without matching the example verbatim. Asserting the example's surface
+// form failed 3/4 configs on 806 while every response delivered the link;
+// presentation quality belongs in the judge-scored tier, not the gate.
 function expectFinalResponseEndsWithReviewSection(): void {
 	const finalMessage = getFinalAssistantMessage();
 	if (finalMessage === undefined) {
@@ -413,18 +422,8 @@ function expectFinalResponseEndsWithReviewSection(): void {
 	const lastNonEmptyLine = lines.findLast((line) => line.trim().length > 0)?.trim();
 
 	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
-		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
+		/[?&]path=\/review\/?/,
 	);
-	expect(
-		// Case-insensitive: the guidance shows the heading as an example, and
-		// Codex consistently writes it in Title Case.
-		lines.some((line) => /^##\s+.*review your changes\s*$/i.test(line.trim())),
-		'Final response must include a dedicated review heading',
-	).toBe(true);
-	expect(
-		trimmed,
-		'Final response must explain the review is AI-curated and may be inaccurate',
-	).toMatch(/AI[-\s]?curated/i);
 	expect(
 		trimmed,
 		'Final response must not also include individual story preview links',

@@ -40,6 +40,43 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 	};
 }
 
+// Claude Code silently drops a skill's description from the agent-visible
+// skill listing when it exceeds a shared listing budget — the skill then shows
+// as a bare name with no trigger text and agents stop invoking it (this broke
+// the 806-browse-request eval on 2026-07-02). The budget shrinks as more
+// skills/plugins are installed; ~384 UTF-8 bytes was the empirical cutoff in a
+// minimal sandbox, so stay well below it to survive plugin-heavy environments.
+const MAX_SKILL_DESCRIPTION_BYTES = 350;
+
+function readSkillDescription(skillPath: string) {
+	const skill = readFileSync(skillPath, 'utf8');
+	const description = skill.match(/^description: (.*)$/m)?.[1];
+	if (description === undefined) {
+		throw new Error(`No description frontmatter found in ${skillPath}`);
+	}
+	return description;
+}
+
+describe('stories skill description', () => {
+	it.each([
+		resolve(packageRoot, 'skills/stories/SKILL.md'),
+		resolve(repoRoot, 'packages/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
+	])('stays under the silent-drop listing budget: %s', (skillPath) => {
+		const description = readSkillDescription(skillPath);
+		expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(
+			MAX_SKILL_DESCRIPTION_BYTES,
+		);
+	});
+
+	it('keeps the claude and codex plugin descriptions identical', () => {
+		expect(readSkillDescription(resolve(packageRoot, 'skills/stories/SKILL.md'))).toBe(
+			readSkillDescription(
+				resolve(repoRoot, 'packages/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
+			),
+		);
+	});
+});
+
 describe('Claude story skill launch guidance', () => {
 	it('keeps Claude launch guidance scoped to preview tooling without shell interpolation', () => {
 		const launchSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');

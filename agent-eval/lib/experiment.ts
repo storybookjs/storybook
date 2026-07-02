@@ -1,6 +1,29 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
 
-const ALL_RESHAPED_STORYBOOK_EVALS = [
+// The 8xx line: hand-crafted evals written for the current plugin/MCP
+// workflow (story instructions, display-review, launch config, preview
+// browser), covering the behavior branches from the "Agentic Review Eval
+// instructions" spec. This is the set that always runs on CI.
+const CORE_STORYBOOK_EVALS = [
+	// New component; the fixture empties the template's .claude/launch.json
+	// configurations, so the plugin must set up the Storybook entry itself
+	'801-create-component-no-launch-config',
+	// New component with the template's valid launch config left intact
+	'802-create-component',
+	// Edit a component that already has stories; review covers the change
+	'803-edit-component',
+	// Add stories for the uncovered component in a multi-component project
+	'804-write-story-for-existing-component',
+	// Pure rename, no behavior change: display-review must NOT be called
+	'805-non-visual-refactor',
+	// "Show me all X states": review published without changedFiles
+	'806-browse-request',
+] as const;
+
+// The 9xx line: evals ported from the old eval system (/eval). Too expensive
+// and currently too flaky to run on CI; kept for manual runs until we revive
+// them selectively. See storybookjs/mcp#315.
+const PORTED_RESHAPED_STORYBOOK_EVALS = [
 	'901-create-component-atom-reshaped-concise',
 	'901-create-component-atom-reshaped-detailed',
 	'901-create-component-atom-reshaped-explicit-stories',
@@ -34,22 +57,42 @@ const ALL_RESHAPED_STORYBOOK_EVALS = [
 	'915-preview-story-by-id-docs-first',
 ] as const;
 
-// Deliberately starting with a single eval to keep sandbox/token costs low
-// while we stabilize CI; we will work our way up to the full
-// ALL_RESHAPED_STORYBOOK_EVALS list. See storybookjs/mcp#315.
-export const RESHAPED_STORYBOOK_EVALS = [
-	'901-create-component-atom-reshaped-concise',
-	// '908-run-story-tests',
-	// '912-fix-a11y-violations',
-	// '914-preview-story-by-path',
-	// '915-preview-story-by-id',
-] satisfies (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][];
+type EvalName =
+	| (typeof CORE_STORYBOOK_EVALS)[number]
+	| (typeof PORTED_RESHAPED_STORYBOOK_EVALS)[number];
+
+// By default only the first core eval runs, to keep sandbox/token costs low.
+// Set EVAL_EXTRA_EVALS=1 (the ci:extra-evals PR label or the workflow_dispatch
+// input in CI) to run the full 8xx line. EVAL_ONLY=<name>[,<name>] narrows the
+// set to specific core evals for local debugging, one eval at a time.
+function resolveActiveEvals(): EvalName[] {
+	const only = process.env.EVAL_ONLY;
+	if (only !== undefined && only !== '') {
+		return only.split(',').map((name) => {
+			const match = CORE_STORYBOOK_EVALS.find((evalName) => evalName === name.trim());
+			if (match === undefined) {
+				throw new Error(
+					`Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${CORE_STORYBOOK_EVALS.join(', ')}`,
+				);
+			}
+			return match;
+		});
+	}
+
+	if (process.env.EVAL_EXTRA_EVALS === '1') {
+		return [...CORE_STORYBOOK_EVALS];
+	}
+
+	return ['801-create-component-no-launch-config'];
+}
+
+export const RESHAPED_STORYBOOK_EVALS: EvalName[] = resolveActiveEvals();
 
 // Non-default model tiers (e.g. cc-plugin-sonnet-medium) run zero evals unless
 // explicitly enabled, so labeled CI runs only pay for the default-model
 // experiments. Enable with EVAL_EXTRA_MODELS=1 (locally or via the
 // workflow_dispatch input in CI).
-export const EXTRA_MODEL_EVALS: (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][] =
+export const EXTRA_MODEL_EVALS: EvalName[] =
 	process.env.EVAL_EXTRA_MODELS === '1' ? [...RESHAPED_STORYBOOK_EVALS] : [];
 
 export const DEFAULT_EXPERIMENT_CONFIG = {

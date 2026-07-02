@@ -48,6 +48,9 @@ test.skip('publishes a well-curated review', async () => {
 	await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
 });
 
+// The fixture overrides the template's .claude/launch.json with an empty
+// configurations array (fixtures can only overwrite files, not delete them),
+// so the plugin must set up the Storybook launch entry itself.
 test('writes a valid Storybook launch config for Claude preview tooling', () => {
 	expectValidStorybookLaunchConfig();
 });

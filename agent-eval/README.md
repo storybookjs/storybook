@@ -50,6 +50,18 @@ pnpm exec agent-eval cc-mcp-opus-high
 
 Pull requests with the `ci:eval` label run all experiments in CI.
 
+By default only the first core eval (`801-create-component-no-launch-config`)
+runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted 8xx eval line, or
+`EVAL_ONLY=<name>[,<name>]` to debug specific core evals one at a time:
+
+```bash
+EVAL_EXTRA_EVALS=1 pnpm eval
+EVAL_ONLY=803-edit-component pnpm eval
+```
+
+The 9xx evals (ports from the old `/eval` system) never run automatically; see
+`lib/experiment.ts`.
+
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
 effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium`)
 run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
@@ -59,8 +71,10 @@ for the default-model experiments:
 EVAL_EXTRA_MODELS=1 pnpm exec agent-eval cc-plugin-sonnet-medium
 ```
 
-In CI, manual `workflow_dispatch` runs of the `Agent eval` workflow can enable
-them through the `extra_models` input.
+In CI, the `ci:extra-evals` and `ci:extra-models` PR labels set the matching
+flag on labeled `ci:eval` runs, and manual `workflow_dispatch` runs of the
+`Agent eval` workflow can enable them through the `extra_evals` and
+`extra_models` inputs.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static

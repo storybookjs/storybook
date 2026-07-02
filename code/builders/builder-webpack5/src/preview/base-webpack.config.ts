@@ -39,6 +39,14 @@ export async function createDefaultWebpackConfig(
           loader: fileURLToPath(import.meta.resolve('css-loader')),
           options: {
             importLoaders: 1,
+            // css-loader v7 flipped the CSS Modules default to `namedExport: true` (named exports
+            // only, no default export), which silently broke the long-standing
+            // `import styles from './x.module.css'` pattern used across our sandboxes, Vite, and
+            // Next.js. Restore the default-export behavior (`auto` keeps plain `.css` global).
+            modules: {
+              auto: true,
+              namedExport: false,
+            },
           },
         },
       ],

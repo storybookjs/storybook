@@ -3,6 +3,9 @@ import React from 'react';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore (js import not supported in TS)
 import { imported } from '../imported';
+// Regression test: docgen must survive a CSS-module import. A default import is the portable form —
+// css-loader (see builder-webpack5's `namedExport: false`), Next.js, and Vite all expose the class
+// map as the default export.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore (css import not supported in TS)
 import styles from '../imported.module.css';
@@ -29,11 +32,7 @@ interface PropsWriterProps {
   importedReference?: string;
   globalReference?: any;
   stringGlobalName?: string;
-  // A CSS-module class name is a string at runtime. We deliberately do NOT type
-  // this as `typeof styles`: the CSS module's type shape differs per builder
-  // (Vite exposes named exports, Next's css-loader v6 only a default export), so
-  // coupling the prop type to it makes docgen/webpack disagree. See the default
-  // value below, which reads `styles.foo` purely as a runtime property access.
+  // A CSS-module class name is a string at runtime.
   myClass?: string;
 }
 
@@ -56,9 +55,7 @@ PropsWriter.defaultProps = {
   importedReference: imported,
   globalReference: Date,
   stringGlobalName: 'top',
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore no types for this
-  myClass: styles.foo,
+  myClass: (styles as { foo: string }).foo,
 };
 
 export const component = PropsWriter;

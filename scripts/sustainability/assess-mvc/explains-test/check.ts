@@ -37,6 +37,8 @@ function buildPrompt(pr: Pick<PrContext, 'body' | 'files' | 'linkedIssues'>): st
     '- Steps must be provided in plain text and be reasonably comprehensible for an experienced maintainer.',
     'FAIL otherwise.',
     '',
+    'Favor reproduction steps that point to specific stories, specific sandboxes or specific reproduction repositories (with a canary published package) over steps that require the maintainer to recreate stories or a testing environment. However, some very simple changes (especially to args, globals, parameters) can justify asking the reviewer to use any existing story or make small edits to the Storybook instance config.',
+    '',
     'PR body:',
     pr.body,
     '',

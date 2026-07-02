@@ -1,56 +1,123 @@
-import { getLlmClient } from '../../utils/llm/client.ts';
-import { CANNED, OVERALL } from './canned-responses.ts';
+import { CHECK_TEMPLATES, OVERALL_TEMPLATES } from './canned-responses.ts';
 import { MARKER, REVIEW_FOOTER } from './config.ts';
-import type { CheckResult } from './types.ts';
+import type { CheckId, CheckResult } from './types.ts';
+
+const CHECK_ORDER: CheckId[] = [
+  'human',
+  'real-problem',
+  'duplicate',
+  'cost-benefit',
+  'explains-test',
+  'provides-context',
+];
 
 /**
- * Compose the final PR-review body from all six check results.
+ * Compose the final PR-review body. Composition is deterministic — each
+ * check's LLM call has already produced PR-specific reasoning / guidance /
+ * maintainerGuidance, so the synthesizer's job is layout, not authorship.
  *
- * The LLM tailors per-criterion canned templates with PR-specific evidence;
- * we never invent new wording from scratch (keeps the voice consistent across
- * thousands of reviews). When the LLM phase was early-aborted by a
- * deterministic FAIL, this also lists the not-performed checks so the author
- * knows what other criteria they must satisfy after addressing the failing
- * deterministic ones.
- *
- * Uses `judgeText` (free-form markdown) rather than `judge` (JSON+schema):
- * the only output is a single markdown blob, and forcing the LLM to keep
- * JSON syntax intact while generating a long body hurts quality for no gain.
+ * Body structure:
+ *   1. Intro paragraph (verdict-scoped canned framing).
+ *   2. For every non-PASS check (in canonical order): human-titled section
+ *      filled from the check's runtime output.
+ *   3. A one-line summary of the checks that passed, so the author sees
+ *      what they already did right.
+ *   4. Conclusion paragraph (verdict-scoped canned framing).
+ *   5. Footer (identifies this as automated, points to Discord for
+ *      appeal).
  *
  * The returned string is prefixed with the HTML marker so future tooling
- * (re-runs with `--dismiss-previous`, downstream verifiers) can identify bot
- * reviews.
+ * (re-runs with `--dismiss-previous`, downstream verifiers) can identify
+ * bot reviews.
  */
-export async function synthesizeReview(input: {
-  results: CheckResult[];
-  earlyAbort: boolean;
-}): Promise<string> {
+export function synthesizeReview(input: { results: CheckResult[]; earlyAbort: boolean }): string {
+  const byId = new Map(input.results.map((r) => [r.id, r]));
   const verdict = input.results.some((r) => r.status === 'fail') ? 'fail' : 'pass';
-  const tailoring = input.results
-    .map(
-      (r) =>
-        `- [${r.status.toUpperCase()}] ${r.id}: ${r.reasoning}\n  Canned template: ${CANNED[r.id]}`
-    )
-    .join('\n');
-  const notPerformed = input.results.filter((r) => r.status === 'deferred').map((r) => r.id);
-  const prompt = [
-    'Compose a Storybook PR review body in markdown that the author and other reviewers will read.',
-    'Voice: constructive, friendly, never accusatory ("our automation has identified ways to improve").',
-    '',
-    `Overall verdict template:\n${verdict === 'pass' ? OVERALL.pass : OVERALL.fail}`,
-    '',
-    'Per-check tailoring (start from the canned template; tailor with PR-specific evidence; drop irrelevant sentences):',
-    tailoring,
-    '',
-    input.earlyAbort
-      ? `IMPORTANT: deterministic checks failed. The following LLM-judged checks were NOT performed and must be listed in the body so the author knows they remain to be evaluated: ${notPerformed.join(', ')}.`
-      : '',
-    '',
-    'Return ONLY the review body as markdown. Do NOT include the HTML marker (the script appends it). Do NOT wrap the output in code fences.',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const overall = OVERALL_TEMPLATES[verdict];
 
-  const reviewBody = await getLlmClient().judgeText(prompt);
-  return `${MARKER}\n${reviewBody}\n\n${REVIEW_FOOTER}`;
+  const sections: string[] = [overall.intro];
+
+  const nonPass = CHECK_ORDER.map((id) => byId.get(id)).filter(
+    (r): r is CheckResult => r != null && r.status !== 'pass'
+  );
+
+  for (const result of nonPass) {
+    sections.push(renderCheckSection(result));
+  }
+
+  const passedIds = input.results.filter((r) => r.status === 'pass').map((r) => r.id);
+  if (passedIds.length > 0) {
+    const titles = passedIds.map((id) => CHECK_TEMPLATES[id].title).join(', ');
+    sections.push(`### Checks that passed\n${titles}.`);
+  }
+
+  if (input.earlyAbort) {
+    const deferredTitles = input.results
+      .filter((r) => r.status === 'deferred')
+      .map((r) => CHECK_TEMPLATES[r.id].title);
+    if (deferredTitles.length > 0) {
+      sections.push(
+        [
+          '### Checks not performed yet',
+          `Because the deterministic checks above failed, the following checks were not evaluated and will need to be re-run once the failures above are addressed:`,
+          '',
+          deferredTitles.map((t) => `- ${t}`).join('\n'),
+        ].join('\n')
+      );
+    }
+  }
+
+  sections.push(overall.conclusion);
+
+  return [MARKER, '', sections.join('\n\n'), '', REVIEW_FOOTER].join('\n');
+}
+
+/**
+ * Fill a `CheckTemplate` with the check's runtime output. Slots for
+ * optional fields (`{guidance}`, `{maintainerGuidance}`) are removed
+ * along with their surrounding label lines when the check didn't emit
+ * that field — the section reads naturally regardless of which
+ * combinations of guidance the check produced.
+ */
+function renderCheckSection(result: CheckResult): string {
+  const { title, template } = CHECK_TEMPLATES[result.id];
+
+  let body = template;
+  body = fillSlot(body, 'reasoning', result.reasoning);
+  body = fillSlot(body, 'guidance', result.guidance);
+  body = fillSlot(body, 'maintainerGuidance', result.maintainerGuidance);
+
+  const heading = `### ${title} — ${statusLabel(result.status)}`;
+  return `${heading}\n${body.trim()}`;
+}
+
+/**
+ * Replace `{slot}` with `value` — or, if `value` is empty, remove the
+ * entire line containing the slot. That way an optional slot (like
+ * `{guidance}`) doesn't leave a dangling label ("**For you:**") when
+ * the check didn't produce guidance.
+ */
+function fillSlot(text: string, slot: string, value: string | undefined): string {
+  const token = `{${slot}}`;
+  if (value && value.trim() !== '') {
+    return text.replaceAll(token, value.trim());
+  }
+  return text
+    .split('\n')
+    .filter((line) => !line.includes(token))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+function statusLabel(status: CheckResult['status']): string {
+  switch (status) {
+    case 'pass':
+      return 'passed';
+    case 'fail':
+      return 'needs changes';
+    case 'warn':
+      return 'worth a look';
+    case 'deferred':
+      return 'not evaluated';
+  }
 }

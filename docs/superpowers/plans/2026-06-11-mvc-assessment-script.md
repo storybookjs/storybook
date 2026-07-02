@@ -191,7 +191,8 @@ export interface AssessmentResult {
 // scripts/sustainability/assess-mvc/config.ts
 export const ORG = 'storybookjs';
 export const PRIMARY_REPO = 'storybook';
-export const MARKER = '<!-- mvc-check:v1 -->';
+export const MARKER_START = '<!-- mvc-check:v1 -->';
+export const MARKER_END  = '<!-- mvc-check:v1 END -->';
 
 export const VERDICT_LABELS = {
   pass: 'mvc:success',

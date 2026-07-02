@@ -1,63 +1,144 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { CHECK_TEMPLATES, OVERALL_TEMPLATES } from './canned-responses.ts';
 import { MARKER, REVIEW_FOOTER } from './config.ts';
 import { synthesizeReview } from './synthesize.ts';
 
-const { mockJudge, mockJudgeText } = vi.hoisted(() => ({
-  mockJudge: vi.fn(),
-  mockJudgeText: vi.fn(),
-}));
-
-vi.mock('../../utils/llm/client', () => ({
-  getLlmClient: () => ({ judge: mockJudge, judgeText: mockJudgeText }),
-  configureLlmClient: vi.fn(),
-  resetLlmClient: vi.fn(),
-}));
-
 describe('synthesizeReview', () => {
-  beforeEach(() => {
-    mockJudge.mockReset();
-    mockJudgeText.mockReset();
-  });
-
-  it('prefixes the body with the HTML marker and appends the deterministic footer', async () => {
-    mockJudgeText.mockResolvedValueOnce('composed body');
-    const body = await synthesizeReview({
+  it('wraps output with marker + footer, uses PASS framing when nothing failed', () => {
+    const body = synthesizeReview({
       results: [{ id: 'human', status: 'pass', reasoning: 'ok' }],
       earlyAbort: false,
     });
-    expect(body).toContain(MARKER);
-    expect(body).toContain('composed body');
-    expect(body).toContain(REVIEW_FOOTER);
-    expect(body).toMatch(/discord\.gg\/invite\/storybook/);
-    expect(body).toMatch(/#contributing/);
+    expect(body.startsWith(MARKER)).toBe(true);
     expect(body.endsWith(REVIEW_FOOTER)).toBe(true);
+    expect(body).toContain(OVERALL_TEMPLATES.pass.intro);
+    expect(body).toContain(OVERALL_TEMPLATES.pass.conclusion);
   });
 
-  it('uses judgeText (text mode), not judge (JSON mode)', async () => {
-    mockJudgeText.mockResolvedValueOnce('body');
-    await synthesizeReview({
-      results: [{ id: 'human', status: 'pass', reasoning: 'ok' }],
-      earlyAbort: false,
-    });
-    expect(mockJudgeText).toHaveBeenCalledOnce();
-    expect(mockJudge).not.toHaveBeenCalled();
-  });
-
-  it('tells the LLM which checks were not performed on early-abort', async () => {
-    mockJudgeText.mockResolvedValueOnce('composed');
-    await synthesizeReview({
+  it('uses FAIL framing when any check fails', () => {
+    const body = synthesizeReview({
       results: [
         { id: 'human', status: 'pass', reasoning: 'ok' },
-        { id: 'duplicate', status: 'fail', reasoning: 'dupe of #1' },
+        {
+          id: 'real-problem',
+          status: 'fail',
+          reasoning: 'no linked issue',
+          guidance: 'Link an open issue.',
+          maintainerGuidance: 'Verify the linked issue exists.',
+        },
+      ],
+      earlyAbort: false,
+    });
+    expect(body).toContain(OVERALL_TEMPLATES.fail.intro);
+    expect(body).toContain(OVERALL_TEMPLATES.fail.conclusion);
+  });
+
+  it('renders each non-PASS check with its human title and populated slots', () => {
+    const body = synthesizeReview({
+      results: [
+        {
+          id: 'cost-benefit',
+          status: 'fail',
+          reasoning: 'huge diff for a tiny bug',
+          guidance: 'Narrow the scope.',
+          maintainerGuidance: 'Weigh diff vs. severity.',
+        },
+      ],
+      earlyAbort: false,
+    });
+    expect(body).toContain(`### ${CHECK_TEMPLATES['cost-benefit'].title} — needs changes`);
+    expect(body).toContain('huge diff for a tiny bug');
+    expect(body).toContain('**For you as the PR author:** Narrow the scope.');
+    expect(body).toContain('**For maintainers reviewing this PR:** Weigh diff vs. severity.');
+  });
+
+  it('omits the guidance label line when the check produced no author guidance', () => {
+    const body = synthesizeReview({
+      results: [
+        {
+          id: 'cost-benefit',
+          status: 'warn',
+          reasoning: 'borderline',
+          maintainerGuidance: 'Consider WARN over FAIL.',
+        },
+      ],
+      earlyAbort: false,
+    });
+    expect(body).toContain('borderline');
+    expect(body).toContain('**For maintainers reviewing this PR:**');
+    expect(body).not.toContain('**For you as the PR author:**');
+  });
+
+  it('omits both guidance labels when neither field is populated', () => {
+    const body = synthesizeReview({
+      results: [{ id: 'real-problem', status: 'fail', reasoning: 'no linked issue' }],
+      earlyAbort: false,
+    });
+    expect(body).toContain('no linked issue');
+    expect(body).not.toContain('**For you as the PR author:**');
+    expect(body).not.toContain('**For maintainers reviewing this PR:**');
+  });
+
+  it('lists PASS check titles compactly at the end', () => {
+    const body = synthesizeReview({
+      results: [
+        { id: 'human', status: 'pass', reasoning: '' },
+        { id: 'duplicate', status: 'pass', reasoning: '' },
+        {
+          id: 'cost-benefit',
+          status: 'fail',
+          reasoning: 'too big',
+          guidance: 'Narrow.',
+          maintainerGuidance: 'Weigh.',
+        },
+      ],
+      earlyAbort: false,
+    });
+    expect(body).toContain('### Checks that passed');
+    expect(body).toContain(CHECK_TEMPLATES.human.title);
+    expect(body).toContain(CHECK_TEMPLATES.duplicate.title);
+  });
+
+  it('renders sections in canonical order regardless of results order', () => {
+    const body = synthesizeReview({
+      results: [
+        {
+          id: 'provides-context',
+          status: 'fail',
+          reasoning: 'no why',
+        },
+        {
+          id: 'real-problem',
+          status: 'fail',
+          reasoning: 'no linked issue',
+        },
+      ],
+      earlyAbort: false,
+    });
+    const realProblemIdx = body.indexOf(CHECK_TEMPLATES['real-problem'].title);
+    const providesContextIdx = body.indexOf(CHECK_TEMPLATES['provides-context'].title);
+    expect(realProblemIdx).toBeGreaterThan(-1);
+    expect(providesContextIdx).toBeGreaterThan(realProblemIdx);
+  });
+
+  it('surfaces deferred checks under a "not performed yet" section on early-abort', () => {
+    const body = synthesizeReview({
+      results: [
+        { id: 'human', status: 'pass', reasoning: 'ok' },
+        {
+          id: 'duplicate',
+          status: 'fail',
+          reasoning: 'dupe of #1',
+          guidance: 'Collaborate on the other PR.',
+        },
         { id: 'real-problem', status: 'deferred', reasoning: 'skipped' },
         { id: 'cost-benefit', status: 'deferred', reasoning: 'skipped' },
       ],
       earlyAbort: true,
     });
-    const prompt = mockJudgeText.mock.calls[0][0] as string;
-    expect(prompt).toContain('NOT performed');
-    expect(prompt).toContain('real-problem');
-    expect(prompt).toContain('cost-benefit');
+    expect(body).toContain('### Checks not performed yet');
+    expect(body).toContain(CHECK_TEMPLATES['real-problem'].title);
+    expect(body).toContain(CHECK_TEMPLATES['cost-benefit'].title);
   });
 });

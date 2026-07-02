@@ -17,9 +17,7 @@ import {
 import {
   PREVIEW_SETTLE_TIMEOUT_MS,
   enqueuePreview,
-  finishPreview,
-  forceStartPreview,
-  type PreviewTask,
+  type PreviewHandle,
 } from './previewScheduler.ts';
 
 /** If iframe.resize never arrives, don't block the thumbnail forever. */
@@ -152,7 +150,7 @@ export const usePreviewThumbnail = ({
   );
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [src, setSrc] = useState<string | undefined>(undefined);
-  const taskRef = useRef<PreviewTask | null>(null);
+  const handleRef = useRef<PreviewHandle | null>(null);
   const loadGenerationRef = useRef(0);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const settleRafRef = useRef({ raf1: 0, raf2: 0 });
@@ -279,34 +277,25 @@ export const usePreviewThumbnail = ({
       return undefined;
     }
     const previewHref = getPreviewHref(storyId);
-    const task: PreviewTask = {
-      start: () => {
-        setSrc(previewHref);
-      },
-      started: false,
-      finished: false,
-    };
-    taskRef.current = task;
     // Spinner while queued for a concurrency slot, not only after src is assigned.
     setIsPreviewLoading(true);
-    enqueuePreview(task);
+    const handle = enqueuePreview(() => {
+      setSrc(previewHref);
+    });
+    handleRef.current = handle;
     return () => {
-      finishPreview(task);
-      taskRef.current = null;
+      handle.release();
+      handleRef.current = null;
       resetLoad();
     };
   }, [isInView, storyId, getPreviewHref, resetLoad]);
 
   const finishCurrent = useCallback(() => {
-    if (taskRef.current) {
-      finishPreview(taskRef.current);
-    }
+    handleRef.current?.release();
   }, []);
 
   const forceStartCurrent = useCallback(() => {
-    if (taskRef.current) {
-      forceStartPreview(taskRef.current);
-    }
+    handleRef.current?.forceStart();
   }, []);
 
   useEffect(() => {
@@ -317,14 +306,6 @@ export const usePreviewThumbnail = ({
     beginLoad();
     return clearSettleTimers;
   }, [src, beginLoad, resetLoad, clearSettleTimers]);
-
-  useEffect(() => {
-    if (!src) {
-      return undefined;
-    }
-    const timer = setTimeout(finishCurrent, PREVIEW_SETTLE_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [src, finishCurrent]);
 
   useLayoutEffect(() => {
     if (!src) {

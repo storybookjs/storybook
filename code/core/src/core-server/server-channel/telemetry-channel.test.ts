@@ -58,6 +58,7 @@ describe('telemetry-channel', () => {
       listeners[REVIEW_EVENTS.PAGEVIEW]({ page: 'summary', reviewCreatedAt: 1700000000000 });
       expect(telemetry).toHaveBeenCalledWith('review', {
         action: 'pageview',
+        source: 'mcp-review',
         page: 'summary',
         reviewCreatedAt: 1700000000000,
       });
@@ -76,6 +77,7 @@ describe('telemetry-channel', () => {
       listeners[REVIEW_EVENTS.PAGEVIEW]({ page: 'detail', reviewCreatedAt: 1700000000000 });
       expect(telemetry).toHaveBeenCalledWith('review', {
         action: 'pageview',
+        source: 'mcp-review',
         page: 'detail',
         reviewCreatedAt: 1700000000000,
       });

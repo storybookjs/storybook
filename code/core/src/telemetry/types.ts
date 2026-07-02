@@ -43,7 +43,7 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
-  | 'ai-review'
+  | 'review'
   | 'share'
   | 'ghost-stories'
   | 'sidebar-filter'

@@ -57,6 +57,8 @@ export function initTelemetryChannel(channel: Channel) {
     telemetry('ai-prompt-nudge', { id, origin });
   });
   channel.on(REVIEW_EVENTS.PAGEVIEW, ({ page, reviewCreatedAt }: ReviewPageviewPayload) => {
-    telemetry('ai-review', { action: 'pageview', page, reviewCreatedAt });
+    // Reviews are only produced by the MCP display-review tool today; other
+    // producers should report their own `source` under the same event.
+    telemetry('review', { action: 'pageview', source: 'mcp-review', page, reviewCreatedAt });
   });
 }

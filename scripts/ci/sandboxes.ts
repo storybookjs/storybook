@@ -245,6 +245,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
+        workspace.unpack(),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {

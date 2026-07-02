@@ -65,8 +65,21 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'function':
     case 'symbol':
       return null;
-    default:
-      return { control: { type: options ? 'select' : 'object' } };
+default: {
+      const valueList = (type as any).value;
+      const isUnionList =
+        Array.isArray(valueList) &&
+        valueList.every((v) => typeof v === 'string' || typeof v === 'number');
+
+      if (options || isUnionList) {
+        return {
+          control: { type: 'select' },
+          options: options || valueList.filter((v: any) => v !== 'undefined' && v !== null),
+        };
+      }
+
+      return { control: { type: 'object' } };
+    }
   }
 };
 

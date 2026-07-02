@@ -8,8 +8,8 @@ import { rolldown } from 'rolldown';
 import { dts } from 'rolldown-plugin-dts';
 import ts from 'typescript';
 
-import type { BuildEntries } from './entry-utils';
-import { getExternal } from './entry-utils';
+import type { BuildEntries } from './entry-utils.ts';
+import { getExternal } from './entry-utils.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');

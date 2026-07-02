@@ -1,7 +1,39 @@
 import { describe, it, expect } from 'vitest';
 import { buildServerInstructions } from './build-server-instructions.ts';
 
+// Claude Code hard-truncates MCP server instructions at 2,048 characters:
+// anything past the limit silently never reaches the model. Between
+// addon-mcp 0.6.0 and 0.7.x the instructions grew to ~8.7k chars, which cut
+// off the Validation and Documentation workflows entirely — agents stopped
+// using the docs tools. Details must live in tool descriptions and tool
+// results, which are never truncated; the server instructions only carry the
+// workflow triggers.
+const MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT = 2048;
+
 describe('buildServerInstructions', () => {
+	it('stays under the MCP client truncation limit in every configuration', () => {
+		const bools = [true, false] as const;
+		for (const devEnabled of bools)
+			for (const testEnabled of bools)
+				for (const docsEnabled of bools)
+					for (const changeDetectionEnabled of bools)
+						for (const moduleGraphSupported of bools)
+							for (const reviewEnabled of bools) {
+								const options = {
+									devEnabled,
+									testEnabled,
+									docsEnabled,
+									changeDetectionEnabled,
+									moduleGraphSupported,
+									reviewEnabled,
+								};
+								const length = buildServerInstructions(options).length;
+								expect
+									.soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+									.toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+							}
+	});
+
 	it('builds a coherent instruction set when all toolsets are enabled', () => {
 		const instructions = buildServerInstructions({
 			devEnabled: true,
@@ -16,47 +48,26 @@ describe('buildServerInstructions', () => {
 
 			## UI Building and Story Writing Workflow
 
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
-			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
-			- In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example \`## 👀 Review your changes\`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned \`reviewUrl\` (for example \`👉 [Open the Storybook review page](<reviewUrl>)\`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.
-			- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. Every story you created in this change must appear in the review, including interaction/play-function stories; showing the stories you modified is encouraged too — curate by grouping, never by omission. Also call **display-review** whenever the user wants to see or browse stories/components rather than change them (e.g. "show me all badge components", "what button variants do we have") — resolve the matching story IDs and render them as collections, passing \`changedFiles: []\` since no code changed. The Storybook serving these tools is already running — a successful tool call proves it. Never start another Storybook to view the review: no \`storybook dev\`, no run/launch task, no editing a launch config, no new port. Reuse the running instance at the \`reviewUrl\`'s origin; if its port looks busy, that **is** the Storybook to reuse, not a conflict to route around. If the session has any browser-preview or navigate tool, open the returned \`reviewUrl\` in your preview browser yourself — don't just print the link, actually navigate to it so the review opens in your preview window. Separately, always show the \`reviewUrl\` to the user in your final response as well, even after you've opened it yourself — they need the link too. Call this tool again whenever the user iterates on the changes.
-
-			## Mapping any input to story IDs
-
-			Whenever you need story IDs — to preview them, to feed \`display-review\`, to answer the user, for any reason at all — your job is the same regardless of how the request reached you. The input can take any shape: a feature/domain/topic the user named, a file the user mentioned, a file you just edited, a query like "all consumers of X", an autonomous review after a UI change, or anything else. The chain doesn't change with the prompt shape:
-
-			1. **Identify the relevant component file paths.** Use whatever you have — the user's words, the files you touched, the symbol that changed — and reach a list of absolute paths to component source files using filesystem search (grep / Glob / find) and code reading. The bridge from "whatever the input was" to "a list of component file paths" is yours to build; the tool starts where that bridge ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you greped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — related symbols are often consumed together by different components, and a too-narrow grep silently drops stories. A subtle variant: when you've made _multiple_ edits in the same session, \`get-changed-stories\` returns the _cumulative_ diff — so a non-empty result may reflect an earlier sub-change and not cover your most recent edit. Always check that every file you've touched is represented in the response; for any that isn't, treat it as the "shared infrastructure" case and call \`get-stories-by-component\` with its consumers. The tool will surface this gap explicitly with a "coverage sanity check" hint when it detects unreachable working-tree files.
-			2. **Call \`get-stories-by-component\`** with those absolute paths. It returns grounded \`storyId\` values from the live Storybook index, ranked by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive). Title strings can be overridden by story authors and don't always match filenames — only IDs from this tool (or other discovery tools like \`list-all-documentation\`) are safe to use.
-			3. **Bucket by \`distance\`.** The tool caps results at \`maxDistance: 3\` by default; lower it to tighten precision when you have a reason to, or raise it to widen recall. Shared low-level primitives and theme tokens are usually consumed through wrapper components rather than directly from any story file, so the \`distance 1\` bucket is often empty — capping at \`1\` would hide the entire cascade. Page-level components can also see surprising \`distance 3+\` matches when Storybook decorators pull in wide swaths of the app; the default cap defuses most of that without losing real consumers. For \`display-review\`, the buckets map directly onto the visual cascade: \`0\` = the component itself, \`1\` = direct importers, \`2+\` (capped via \`maxDistance\`) = page-level context — one collection per layer. When several stories of the same component share a distance, prefer the variant whose name signals it renders the changed surface.
-			4. **Pass the resulting \`storyId\`s into \`preview-stories\`** for preview URLs, or into \`display-review\` for a curated review page (per the visibility guidance above — skip review for changes with no expected visual impact).
-
-			Never invent story IDs from file names, feature names, or memory — Storybook IDs come from the live index and are the only ones that resolve. If \`get-stories-by-component\` returns no matches for a component, that component genuinely has no stories yet; tell the user rather than fabricating IDs. \`display-review\` validates every ID against the live index server-side and will hard-fail the whole review if any are unknown — there is no "soft" guess that slips through.
+			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for story patterns and conventions.
+			- After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.
+			- End your final response with one set of links, never both: the review section from **display-review**'s result, or the returned preview URLs when no review was published.
+			- After a visually observable UI change — or when the user asks to see or browse stories/components — call **display-review** (again on each iteration). Its description covers when to skip it and how to curate; follow the steps in its result. Never start a second Storybook to view it.
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. To map any input (edited files, a feature the user named) to stories, call **get-stories-by-component**; its description covers the full mapping workflow. No matches means no stories exist yet — say so rather than fabricating IDs.
 
 			## Validation Workflow
 
-			- After each component or story change, run **run-story-tests**.
-			- Use focused runs while iterating, then run a broad pass before final handoff when scope is unclear or wide.
-			- Fix failing tests before reporting success. Do not report completion while story tests are failing.
+			- After each component or story change, run **run-story-tests**; focused runs while iterating, a broad pass before final handoff.
+			- Never report completion while story tests are failing.
 
 			## Documentation Workflow
 
-			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
-			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
-			3. Call **get-documentation-for-story** when you need additional docs from a specific story variant that was not included in the initial component documentation.
+			Never assume component props, variants, or API shape — retrieve documentation before using a component; never invent what isn't documented.
 
-			Use \`withStoryIds: true\` on **list-all-documentation** when you also need story IDs for inputs to other tools.
+			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
+			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
+			3. Call **get-documentation-for-story** for more examples from a specific story variant.
 
-			## Verification Rules
-
-			- Never assume component props, variants, or API shape. Retrieve documentation before using a component.
-			- If a component or prop is not documented, do not invent it. Report that it was not found.
-			- Only reference IDs returned by **list-all-documentation**. Do not guess IDs.
-
-			## Multi-Source Requests
-
-			- When multiple Storybook sources are configured, **list-all-documentation** returns entries from all sources.
-			- Use \`storybookId\` in **get-documentation** when you need to scope a request to one source."
+			Only reference IDs returned by these tools — never guess IDs."
 		`);
 	});
 
@@ -74,22 +85,11 @@ describe('buildServerInstructions', () => {
 
 			## UI Building and Story Writing Workflow
 
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
-			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
-			- In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example \`## 👀 Review your changes\`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned \`reviewUrl\` (for example \`👉 [Open the Storybook review page](<reviewUrl>)\`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.
-			- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. Every story you created in this change must appear in the review, including interaction/play-function stories; showing the stories you modified is encouraged too — curate by grouping, never by omission. Also call **display-review** whenever the user wants to see or browse stories/components rather than change them (e.g. "show me all badge components", "what button variants do we have") — resolve the matching story IDs and render them as collections, passing \`changedFiles: []\` since no code changed. The Storybook serving these tools is already running — a successful tool call proves it. Never start another Storybook to view the review: no \`storybook dev\`, no run/launch task, no editing a launch config, no new port. Reuse the running instance at the \`reviewUrl\`'s origin; if its port looks busy, that **is** the Storybook to reuse, not a conflict to route around. If the session has any browser-preview or navigate tool, open the returned \`reviewUrl\` in your preview browser yourself — don't just print the link, actually navigate to it so the review opens in your preview window. Separately, always show the \`reviewUrl\` to the user in your final response as well, even after you've opened it yourself — they need the link too. Call this tool again whenever the user iterates on the changes.
-
-			## Mapping any input to story IDs
-
-			Whenever you need story IDs — to preview them, to feed \`display-review\`, to answer the user, for any reason at all — your job is the same regardless of how the request reached you. The input can take any shape: a feature/domain/topic the user named, a file the user mentioned, a file you just edited, a query like "all consumers of X", an autonomous review after a UI change, or anything else. The chain doesn't change with the prompt shape:
-
-			1. **Identify the relevant component file paths.** Use whatever you have — the user's words, the files you touched, the symbol that changed — and reach a list of absolute paths to component source files using filesystem search (grep / Glob / find) and code reading. The bridge from "whatever the input was" to "a list of component file paths" is yours to build; the tool starts where that bridge ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you greped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — related symbols are often consumed together by different components, and a too-narrow grep silently drops stories. A subtle variant: when you've made _multiple_ edits in the same session, \`get-changed-stories\` returns the _cumulative_ diff — so a non-empty result may reflect an earlier sub-change and not cover your most recent edit. Always check that every file you've touched is represented in the response; for any that isn't, treat it as the "shared infrastructure" case and call \`get-stories-by-component\` with its consumers. The tool will surface this gap explicitly with a "coverage sanity check" hint when it detects unreachable working-tree files.
-			2. **Call \`get-stories-by-component\`** with those absolute paths. It returns grounded \`storyId\` values from the live Storybook index, ranked by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive). Title strings can be overridden by story authors and don't always match filenames — only IDs from this tool (or other discovery tools like \`list-all-documentation\`) are safe to use.
-			3. **Bucket by \`distance\`.** The tool caps results at \`maxDistance: 3\` by default; lower it to tighten precision when you have a reason to, or raise it to widen recall. Shared low-level primitives and theme tokens are usually consumed through wrapper components rather than directly from any story file, so the \`distance 1\` bucket is often empty — capping at \`1\` would hide the entire cascade. Page-level components can also see surprising \`distance 3+\` matches when Storybook decorators pull in wide swaths of the app; the default cap defuses most of that without losing real consumers. For \`display-review\`, the buckets map directly onto the visual cascade: \`0\` = the component itself, \`1\` = direct importers, \`2+\` (capped via \`maxDistance\`) = page-level context — one collection per layer. When several stories of the same component share a distance, prefer the variant whose name signals it renders the changed surface.
-			4. **Pass the resulting \`storyId\`s into \`preview-stories\`** for preview URLs, or into \`display-review\` for a curated review page (per the visibility guidance above — skip review for changes with no expected visual impact).
-
-			Never invent story IDs from file names, feature names, or memory — Storybook IDs come from the live index and are the only ones that resolve. If \`get-stories-by-component\` returns no matches for a component, that component genuinely has no stories yet; tell the user rather than fabricating IDs. \`display-review\` validates every ID against the live index server-side and will hard-fail the whole review if any are unknown — there is no "soft" guess that slips through."
+			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for story patterns and conventions.
+			- After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.
+			- End your final response with one set of links, never both: the review section from **display-review**'s result, or the returned preview URLs when no review was published.
+			- After a visually observable UI change — or when the user asks to see or browse stories/components — call **display-review** (again on each iteration). Its description covers when to skip it and how to curate; follow the steps in its result. Never start a second Storybook to view it.
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. To map any input (edited files, a feature the user named) to stories, call **get-stories-by-component**; its description covers the full mapping workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
 		`);
 	});
 
@@ -106,21 +106,10 @@ describe('buildServerInstructions', () => {
 
 			## UI Building and Story Writing Workflow
 
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
-			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
+			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for story patterns and conventions.
 			- After changing any component or story, call **preview-stories** to retrieve preview URLs.
-			- In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).
-
-			## Mapping any input to story IDs
-
-			Whenever you need story IDs — to preview them, to feed \`display-review\`, to answer the user, for any reason at all — your job is the same regardless of how the request reached you. The input can take any shape: a feature/domain/topic the user named, a file the user mentioned, a file you just edited, a query like "all consumers of X", an autonomous review after a UI change, or anything else. The chain doesn't change with the prompt shape:
-
-			1. **Identify the relevant component file paths.** Use whatever you have — the user's words, the files you touched, the symbol that changed — and reach a list of absolute paths to component source files using filesystem search (grep / Glob / find) and code reading. The bridge from "whatever the input was" to "a list of component file paths" is yours to build; the tool starts where that bridge ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you greped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — related symbols are often consumed together by different components, and a too-narrow grep silently drops stories. A subtle variant: when you've made _multiple_ edits in the same session, \`get-changed-stories\` returns the _cumulative_ diff — so a non-empty result may reflect an earlier sub-change and not cover your most recent edit. Always check that every file you've touched is represented in the response; for any that isn't, treat it as the "shared infrastructure" case and call \`get-stories-by-component\` with its consumers. The tool will surface this gap explicitly with a "coverage sanity check" hint when it detects unreachable working-tree files.
-			2. **Call \`get-stories-by-component\`** with those absolute paths. It returns grounded \`storyId\` values from the live Storybook index, ranked by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive). Title strings can be overridden by story authors and don't always match filenames — only IDs from this tool (or other discovery tools like \`list-all-documentation\`) are safe to use.
-			3. **Bucket by \`distance\`.** The tool caps results at \`maxDistance: 3\` by default; lower it to tighten precision when you have a reason to, or raise it to widen recall. Shared low-level primitives and theme tokens are usually consumed through wrapper components rather than directly from any story file, so the \`distance 1\` bucket is often empty — capping at \`1\` would hide the entire cascade. Page-level components can also see surprising \`distance 3+\` matches when Storybook decorators pull in wide swaths of the app; the default cap defuses most of that without losing real consumers. For \`display-review\`, the buckets map directly onto the visual cascade: \`0\` = the component itself, \`1\` = direct importers, \`2+\` (capped via \`maxDistance\`) = page-level context — one collection per layer. When several stories of the same component share a distance, prefer the variant whose name signals it renders the changed surface.
-			4. **Pass the resulting \`storyId\`s into \`preview-stories\`** for preview URLs, or into \`display-review\` for a curated review page (per the visibility guidance above — skip review for changes with no expected visual impact).
-
-			Never invent story IDs from file names, feature names, or memory — Storybook IDs come from the live index and are the only ones that resolve. If \`get-stories-by-component\` returns no matches for a component, that component genuinely has no stories yet; tell the user rather than fabricating IDs. \`display-review\` validates every ID against the live index server-side and will hard-fail the whole review if any are unknown — there is no "soft" guess that slips through."
+			- In your final user-facing response, include every returned preview URL so the user can verify the visual result.
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. To map any input (edited files, a feature the user named) to stories, call **get-stories-by-component**; its description covers the full mapping workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
 		`);
 	});
 
@@ -137,7 +126,7 @@ describe('buildServerInstructions', () => {
 		// dependency graph is — so the workflow should route the agent through
 		// get-stories-by-component rather than the bare preview-stories line.
 		expect(instructions).toContain(
-			'- After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.',
+			'- After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.',
 		);
 		expect(instructions).not.toContain('call **get-changed-stories**');
 	});
@@ -156,21 +145,10 @@ describe('buildServerInstructions', () => {
 
 			## UI Building and Story Writing Workflow
 
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
-			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.
-			- In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).
-
-			## Mapping any input to story IDs
-
-			Whenever you need story IDs — to preview them, to feed \`display-review\`, to answer the user, for any reason at all — your job is the same regardless of how the request reached you. The input can take any shape: a feature/domain/topic the user named, a file the user mentioned, a file you just edited, a query like "all consumers of X", an autonomous review after a UI change, or anything else. The chain doesn't change with the prompt shape:
-
-			1. **Identify the relevant component file paths.** Use whatever you have — the user's words, the files you touched, the symbol that changed — and reach a list of absolute paths to component source files using filesystem search (grep / Glob / find) and code reading. The bridge from "whatever the input was" to "a list of component file paths" is yours to build; the tool starts where that bridge ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you greped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — related symbols are often consumed together by different components, and a too-narrow grep silently drops stories. A subtle variant: when you've made _multiple_ edits in the same session, \`get-changed-stories\` returns the _cumulative_ diff — so a non-empty result may reflect an earlier sub-change and not cover your most recent edit. Always check that every file you've touched is represented in the response; for any that isn't, treat it as the "shared infrastructure" case and call \`get-stories-by-component\` with its consumers. The tool will surface this gap explicitly with a "coverage sanity check" hint when it detects unreachable working-tree files.
-			2. **Call \`get-stories-by-component\`** with those absolute paths. It returns grounded \`storyId\` values from the live Storybook index, ranked by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive). Title strings can be overridden by story authors and don't always match filenames — only IDs from this tool (or other discovery tools like \`list-all-documentation\`) are safe to use.
-			3. **Bucket by \`distance\`.** The tool caps results at \`maxDistance: 3\` by default; lower it to tighten precision when you have a reason to, or raise it to widen recall. Shared low-level primitives and theme tokens are usually consumed through wrapper components rather than directly from any story file, so the \`distance 1\` bucket is often empty — capping at \`1\` would hide the entire cascade. Page-level components can also see surprising \`distance 3+\` matches when Storybook decorators pull in wide swaths of the app; the default cap defuses most of that without losing real consumers. For \`display-review\`, the buckets map directly onto the visual cascade: \`0\` = the component itself, \`1\` = direct importers, \`2+\` (capped via \`maxDistance\`) = page-level context — one collection per layer. When several stories of the same component share a distance, prefer the variant whose name signals it renders the changed surface.
-			4. **Pass the resulting \`storyId\`s into \`preview-stories\`** for preview URLs, or into \`display-review\` for a curated review page (per the visibility guidance above — skip review for changes with no expected visual impact).
-
-			Never invent story IDs from file names, feature names, or memory — Storybook IDs come from the live index and are the only ones that resolve. If \`get-stories-by-component\` returns no matches for a component, that component genuinely has no stories yet; tell the user rather than fabricating IDs. \`display-review\` validates every ID against the live index server-side and will hard-fail the whole review if any are unknown — there is no "soft" guess that slips through."
+			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for story patterns and conventions.
+			- After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.
+			- In your final user-facing response, include every returned preview URL so the user can verify the visual result.
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. To map any input (edited files, a feature the user named) to stories, call **get-stories-by-component**; its description covers the full mapping workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
 		`);
 	});
 
@@ -186,22 +164,13 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
-			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
-			3. Call **get-documentation-for-story** when you need additional docs from a specific story variant that was not included in the initial component documentation.
+			Never assume component props, variants, or API shape — retrieve documentation before using a component; never invent what isn't documented.
 
-			Use \`withStoryIds: true\` on **list-all-documentation** when you also need story IDs for inputs to other tools.
+			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
+			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
+			3. Call **get-documentation-for-story** for more examples from a specific story variant.
 
-			## Verification Rules
-
-			- Never assume component props, variants, or API shape. Retrieve documentation before using a component.
-			- If a component or prop is not documented, do not invent it. Report that it was not found.
-			- Only reference IDs returned by **list-all-documentation**. Do not guess IDs.
-
-			## Multi-Source Requests
-
-			- When multiple Storybook sources are configured, **list-all-documentation** returns entries from all sources.
-			- Use \`storybookId\` in **get-documentation** when you need to scope a request to one source."
+			Only reference IDs returned by these tools — never guess IDs."
 		`);
 	});
 
@@ -217,9 +186,8 @@ describe('buildServerInstructions', () => {
 
 			## Validation Workflow
 
-			- After each component or story change, run **run-story-tests**.
-			- Use focused runs while iterating, then run a broad pass before final handoff when scope is unclear or wide.
-			- Fix failing tests before reporting success. Do not report completion while story tests are failing."
+			- After each component or story change, run **run-story-tests**; focused runs while iterating, a broad pass before final handoff.
+			- Never report completion while story tests are failing."
 		`);
 	});
 

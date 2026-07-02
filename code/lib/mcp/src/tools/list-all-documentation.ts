@@ -31,7 +31,8 @@ export function getListAllDocumentationToolMetadata() {
 	return {
 		name: LIST_TOOL_NAME,
 		title: 'List All Documentation',
-		description: 'List all available UI components and documentation entries from the Storybook',
+		description:
+			'List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call it once at the start of a task, and only reference IDs it returned — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their `storybookId` input.',
 		schema: ListAllDocumentationInput,
 	};
 }

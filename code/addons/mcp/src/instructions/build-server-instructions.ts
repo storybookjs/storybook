@@ -18,10 +18,12 @@ export type BuildServerInstructionsOptions = {
 };
 
 /**
- * The rule for how the agent should present links in its final user-facing
- * response. Shared between the server instructions and the
- * `get-storybook-story-instructions` output so the two can never drift apart
- * and contradict each other.
+ * The full rule for how the agent should present links in its final
+ * user-facing response, delivered through the
+ * `get-storybook-story-instructions` output. The server instructions only
+ * carry a terse pointer to the same rule: MCP clients truncate server
+ * instructions (Claude Code cuts them at 2,048 chars), so anything beyond
+ * the workflow trigger must live in tool descriptions and tool results.
  *
  * Keyed on whether `display-review` is available in this Storybook setup.
  * When available, the guidance covers both paths: ending with a review section
@@ -42,14 +44,16 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 		const graphSupported = options.moduleGraphSupported ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
 		const previewStoriesStep = changeDetection
-			? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
+			? 'After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.'
 			: graphSupported
-				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
+				? 'After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.'
 				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
-		// Final response shows one set of links, never both when display-review
-		// is available. Shared with the story-instructions output via
-		// getFinalLinksGuidance so the two can't drift apart.
-		const finalLinksStep = getFinalLinksGuidance(reviewEnabled);
+		// Terse pointer only: the full link-presentation rule reaches the agent
+		// through the get-storybook-story-instructions output (getFinalLinksGuidance)
+		// and the display-review tool result, which are never truncated.
+		const finalLinksStep = reviewEnabled
+			? "End your final response with one set of links, never both: the review section from **display-review**'s result, or the returned preview URLs when no review was published."
+			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result.';
 		sections.push(
 			devInstructions
 				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
@@ -57,7 +61,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
-						? "\n- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. Every story you created in this change must appear in the review, including interaction/play-function stories; showing the stories you modified is encouraged too — curate by grouping, never by omission. Also call **display-review** whenever the user wants to see or browse stories/components rather than change them (e.g. \"show me all badge components\", \"what button variants do we have\") — resolve the matching story IDs and render them as collections, passing `changedFiles: []` since no code changed. The Storybook serving these tools is already running — a successful tool call proves it. Never start another Storybook to view the review: no `storybook dev`, no run/launch task, no editing a launch config, no new port. Reuse the running instance at the `reviewUrl`'s origin; if its port looks busy, that **is** the Storybook to reuse, not a conflict to route around. If the session has any browser-preview or navigate tool, open the returned `reviewUrl` in your preview browser yourself — don't just print the link, actually navigate to it so the review opens in your preview window. Separately, always show the `reviewUrl` to the user in your final response as well, even after you've opened it yourself — they need the link too. Call this tool again whenever the user iterates on the changes."
+						? '\n- After a visually observable UI change — or when the user asks to see or browse stories/components — call **display-review** (again on each iteration). Its description covers when to skip it and how to curate; follow the steps in its result. Never start a second Storybook to view it.'
 						: '',
 				)
 				.trim(),

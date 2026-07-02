@@ -386,8 +386,7 @@ describe('mcpServerHandler', () => {
 			'Follow these workflows when working with UI and/or Storybook.',
 		);
 		expect(parsedResponse.result.instructions).toContain('## Documentation Workflow');
-		expect(parsedResponse.result.instructions).toContain('## Verification Rules');
-		expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
+		expect(parsedResponse.result.instructions).toContain('Call **list-all-documentation**');
 		expect(parsedResponse.result.instructions).not.toContain(
 			'## UI Building and Story Writing Workflow',
 		);

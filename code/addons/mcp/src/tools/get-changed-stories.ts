@@ -12,7 +12,9 @@ import {
 } from '../utils/detect-unreachable-changes.ts';
 import { GET_CHANGED_STORIES_TOOL_NAME } from './tool-names.ts';
 
-export const GET_CHANGED_STORIES_TOOL_DESCRIPTION = `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).`;
+export const GET_CHANGED_STORIES_TOOL_DESCRIPTION = `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to get-stories-by-component instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 
 const CHANGE_DETECTION_TYPE = 'storybook/change-detection';
 const INCLUDED_STATUS_VALUES = new Set<StatusValue>([

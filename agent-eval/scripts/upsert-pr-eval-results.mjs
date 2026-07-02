@@ -13,7 +13,9 @@ if (!summary) {
 	process.exit(1);
 }
 
-const body = (await text(process.stdin)).trim();
+// trimEnd only: a full trim would rewrite the user-authored body prefix (e.g.
+// leading blank lines or indentation the author put there deliberately).
+const body = (await text(process.stdin)).trimEnd();
 const section = `${START_MARKER}\n\n${summary.trim()}\n\n${END_MARKER}`;
 
 const startIndex = body.indexOf(START_MARKER);

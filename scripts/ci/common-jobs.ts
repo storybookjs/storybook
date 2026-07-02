@@ -274,8 +274,15 @@ export const check = defineJob(
   [commonJobsNoOpJob]
 );
 
+/**
+ * ESLint, format check and Knip in one job: each is cheap next to the ~50s of
+ * spin-up + checkout + workspace restore a dedicated job pays, and none of
+ * them is anywhere near the workflow critical path. The standalone `fmt` job
+ * remains for the docs workflow, which has no build job to restore a
+ * workspace from.
+ */
 export const lint = defineJob(
-  'ESLint',
+  'Static checks',
   () => ({
     executor: {
       name: 'sb_node_22_classic',
@@ -283,6 +290,12 @@ export const lint = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Format check',
+          command: 'yarn fmt:check',
+        },
+      },
       {
         run: {
           name: 'Lint code JS',
@@ -297,20 +310,6 @@ export const lint = defineJob(
           command: 'yarn lint',
         },
       },
-    ],
-  }),
-  [commonJobsNoOpJob]
-);
-
-export const knip = defineJob(
-  'Knip validation',
-  () => ({
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium',
-    },
-    steps: [
-      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Run Knip',

@@ -21,7 +21,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
-  DocgenProvider,
+  DocgenProviderDescriptor,
   Indexer,
   Options,
   PresetProperty,
@@ -31,6 +31,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
@@ -234,6 +235,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   legacyDecoratorFileOrder: false,
   measure: true,
   outline: true,
+  menuOnboardingChecklist: true,
   sidebarOnboardingChecklist: true,
   viewport: true,
 });
@@ -358,19 +360,30 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const [docgenProvider, storyDocsProvider] = await Promise.all([
-      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+    const [docgenDescriptors, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
       options.presets.apply<StoryDocsProvider>(
         'experimental_storyDocsProvider',
         async () => undefined
       ),
     ]);
 
-    registerDocgenService({
-      getIndex: () => storyIndexGenerator.getIndex(),
-      docgenProvider,
-      workingDir: process.cwd(),
-    });
+    // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
+    // the dev-server event loop. The worker composes the descriptor chain; here we forward one
+    // component to it. When the compiled worker script is unavailable (e.g. running from source
+    // without a build) the client is undefined and we skip docgen registration rather than
+    // extracting on the main thread.
+    const docgenWorker =
+      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
+
+    if (docgenWorker) {
+      registerDocgenService({
+        getIndex: () => storyIndexGenerator.getIndex(),
+        docgenProvider: (input) => docgenWorker.extract(input.entry),
+        workingDir: process.cwd(),
+      });
+    }
+
     registerStoryDocsService({
       getIndex: () => storyIndexGenerator.getIndex(),
       storyDocsProvider,

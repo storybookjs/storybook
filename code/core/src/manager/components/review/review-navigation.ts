@@ -1,5 +1,11 @@
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  isReviewSummaryPath,
+} from '../../../shared/review/routes.ts';
 import { REVIEW_CHANGES_URL } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
+
+export { REVIEW_COLLECTION_QUERY_PARAM, isReviewSummaryPath };
 
 /** Fallback display name when the Storybook index has not resolved a title. */
 export const prettifyComponentId = (componentId: string) =>
@@ -14,8 +20,6 @@ export interface ReviewNavEntry {
   storyId: string;
   collectionIndex: number;
 }
-
-export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
 
 export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
 
@@ -67,14 +71,15 @@ export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] =
   return entries;
 };
 
-export const isReviewSummaryPath = (path: string): boolean =>
-  path === REVIEW_CHANGES_URL || path === '/review';
-
 /** True when a manager search string points back at a review route (not a canvas). */
 export const isReviewReturnSearch = (search: string): boolean => {
-  const path =
-    new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('path') ?? '';
-  return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
+  const normalized = search.startsWith('?') ? search.slice(1) : search;
+  const params = new URLSearchParams(normalized);
+  const path = params.get('path') ?? '';
+  if (isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL)) {
+    return true;
+  }
+  return path.startsWith('/story/') && params.has(REVIEW_COLLECTION_QUERY_PARAM);
 };
 
 export const parseStoryIdFromPath = (path: string): string | null => {

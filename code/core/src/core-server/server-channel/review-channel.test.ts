@@ -59,7 +59,7 @@ const sampleReview: ReviewState = {
 };
 
 describe('initReviewChannel', () => {
-  const NOW = 1_700_000_000_000;
+  const NOW = new Date().getTime();
 
   beforeEach(() => {
     vi.spyOn(Date, 'now').mockReturnValue(NOW);

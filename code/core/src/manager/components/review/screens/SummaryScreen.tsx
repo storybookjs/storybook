@@ -20,10 +20,10 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
-import { CollectionGrid, type StoryInfo } from '../components/CollectionGrid.tsx';
-import { Markdown } from '../components/Markdown.tsx';
-import { CopyButton } from '../components/CopyButton.tsx';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';
+import { CollectionGrid } from '../components/CollectionGrid.tsx';
+import { CopyButton } from '../components/CopyButton.tsx';
+import { Markdown } from '../components/Markdown.tsx';
 import { ReviewHeader } from '../components/ReviewHeader.tsx';
 import {
   REVIEW_SUMMARY_BACK_ATTR,
@@ -31,6 +31,7 @@ import {
   buildSummaryBackHref,
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
+import type { StoryInfo } from '../review-types.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
   color: theme.color.defaultText,
@@ -239,7 +240,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
     }
     setExpandedCollections(new Set(state.collections.map((_, index) => index)));
     setShowAllCollections(new Set());
-  }, [state]);
+  }, [state?.createdAt]);
 
   // Must be computed before the early return — hooks cannot be called conditionally.
   const newStoryCount = useMemo(

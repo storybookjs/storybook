@@ -1,5 +1,6 @@
 declare var DOCS_OPTIONS: any;
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
+declare var DOCGEN_STORY_PREPARED: boolean;
 declare var PREVIEW_URL: any;
 
 declare var __STORYBOOK_ADDONS_MANAGER: any;

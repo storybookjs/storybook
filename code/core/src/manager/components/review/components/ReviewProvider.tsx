@@ -73,6 +73,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
   const displayedReviewRef = useRef<ReviewState | null>(null);
   displayedReviewRef.current = state;
+  // Last review page reported to telemetry; dedupes pageviews across re-renders.
+  const lastPageviewKeyRef = useRef<string | null>(null);
 
   const api = useStorybookApi();
   const navigate = useNavigate();
@@ -193,6 +195,30 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const activeIndex = activeEntry ? resolveNavIndex(flattenedEntries, activeEntry) : -1;
 
   const isSummaryVisible = isReviewSummaryPath(path);
+
+  // Report a "pageview" whenever the active review surface changes: the summary
+  // overlay, or a specific reviewed story's detail view. Keyed so re-renders that
+  // don't change the surface (or story) don't re-fire.
+  useEffect(() => {
+    if (!state) {
+      lastPageviewKeyRef.current = null;
+      return;
+    }
+    let page: 'summary' | 'detail' | null = null;
+    let key: string | null = null;
+    if (isSummaryVisible) {
+      page = 'summary';
+      key = 'summary';
+    } else if (isInReviewMode && activeEntry) {
+      page = 'detail';
+      key = `detail:${activeEntry.storyId}`;
+    }
+    if (!page || key === lastPageviewKeyRef.current) {
+      return;
+    }
+    lastPageviewKeyRef.current = key;
+    emit(EVENTS.PAGEVIEW, { page, reviewCreatedAt: state.createdAt });
+  }, [state, isSummaryVisible, isInReviewMode, activeEntry, emit]);
 
   // Re-sync the persisted review-mode flag on every navigation. Enter/exit
   // performed by the nav interceptor and shortcuts toggle it out of band before

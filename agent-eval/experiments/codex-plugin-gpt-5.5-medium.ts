@@ -16,9 +16,7 @@ export default {
 	// gpt-5.2-codex, which is deprecated (retiring July 2026). Medium is the
 	// reasoning effort the adapter already defaults to when a model is pinned.
 	model: 'gpt-5.5?reasoningEffort=medium',
-	// No Codex credits left for now; switch back to RESHAPED_STORYBOOK_EVALS
-	// once the budget allows. See storybookjs/mcp#315.
-	evals: [] satisfies (typeof RESHAPED_STORYBOOK_EVALS)[number][],
+	evals: RESHAPED_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin' });
 		await writeCodexPluginSkills(sandbox);

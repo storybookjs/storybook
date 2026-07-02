@@ -27,12 +27,10 @@ test('uses Storybook story instructions and publishes a display review', () => {
 	expectDisplayReviewForVisualChange();
 });
 
-// TODO: Re-enable once the display-review guidance states that every new story
-// must appear in the review. Agents currently omit interaction/play-function
-// stories (e.g. published 4 of 6 storyIds in the 2026-07-01T22-18 cc-mcp run)
-// because the tool instructions describe curation but never a completeness
-// rule — pending Yann's take on aligning the guidance with eval spec §6a.2.
-test.skip('every new story appears in the display review', () => {
+// Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent
+// created must always appear in the review; curation groups, it never omits.
+// The display-review hard rules and server instructions now state this.
+test('every new story appears in the display review', () => {
 	expectAllStoryExportsInDisplayReview();
 });
 

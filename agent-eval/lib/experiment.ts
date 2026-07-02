@@ -65,15 +65,17 @@ type EvalName =
 // By default only the first core eval runs, to keep sandbox/token costs low.
 // Set EVAL_EXTRA_EVALS=1 (the ci:extra-evals PR label or the workflow_dispatch
 // input in CI) to run the full 8xx line. EVAL_ONLY=<name>[,<name>] narrows the
-// set to specific core evals for local debugging, one eval at a time.
+// set to specific evals (core 8xx or ported 9xx) for local debugging, one eval
+// at a time.
 function resolveActiveEvals(): EvalName[] {
 	const only = process.env.EVAL_ONLY;
 	if (only !== undefined && only !== '') {
+		const knownEvals = [...CORE_STORYBOOK_EVALS, ...PORTED_RESHAPED_STORYBOOK_EVALS];
 		return only.split(',').map((name) => {
-			const match = CORE_STORYBOOK_EVALS.find((evalName) => evalName === name.trim());
+			const match = knownEvals.find((evalName) => evalName === name.trim());
 			if (match === undefined) {
 				throw new Error(
-					`Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${CORE_STORYBOOK_EVALS.join(', ')}`,
+					`Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`,
 				);
 			}
 			return match;

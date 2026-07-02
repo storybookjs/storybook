@@ -63,7 +63,7 @@ The 9xx evals (ports from the old `/eval` system) never run automatically; see
 `lib/experiment.ts`.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
-effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium`)
+effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium` and `cc-mcp-sonnet-medium`)
 run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
 for the default-model experiments:
 
@@ -71,10 +71,24 @@ for the default-model experiments:
 EVAL_EXTRA_MODELS=1 pnpm exec agent-eval cc-plugin-sonnet-medium
 ```
 
-In CI, the `ci:extra-evals` and `ci:extra-models` PR labels set the matching
-flag on labeled `ci:eval` runs, and manual `workflow_dispatch` runs of the
-`Agent eval` workflow can enable them through the `extra_evals` and
-`extra_models` inputs, or target specific evals through the `eval_only` input.
+Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
+exact version it finds into the sandbox `package.json`, so each result snapshot
+records which version the run used. By default it pins the `next` tag and keeps
+the local `@storybook/addon-mcp`/`@storybook/mcp` builds from this checkout.
+Set `EVAL_STORYBOOK_LATEST=1` to pin the `latest` tag instead — including the
+published `@storybook/addon-mcp` and `@storybook/mcp` in place of the local
+builds — to check whether a behavior change (e.g. in the documentation tooling)
+regressed since the last stable release:
+
+```bash
+EVAL_STORYBOOK_LATEST=1 pnpm eval
+```
+
+In CI, the `ci:extra-evals`, `ci:extra-models`, and `ci:storybook-latest` PR
+labels set the matching flag on labeled `ci:eval` runs, and manual
+`workflow_dispatch` runs of the `Agent eval` workflow can enable them through
+the `extra_evals`, `extra_models`, and `storybook_latest` inputs, or target
+specific evals through the `eval_only` input.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
@@ -88,6 +102,7 @@ Configured experiments:
 - `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
 - `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
 - `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) plugin variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
+- `cc-mcp-sonnet-medium`: Claude Code (Sonnet at medium effort) MCP variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 - `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Shared Templates

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
@@ -10,6 +11,7 @@ const timeoutMs =
 	Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 60_000;
 
 if (await isReady()) {
+	await dumpMcpDebug();
 	process.exit(0);
 }
 
@@ -39,6 +41,7 @@ while (Date.now() < deadline) {
 	}
 
 	if (await isReady()) {
+		await dumpMcpDebug();
 		process.exit(0);
 	}
 
@@ -70,6 +73,47 @@ async function isReady() {
 		return await initializeMcp();
 	} catch {
 		return false;
+	}
+}
+
+// Temporary diagnostics for the docs-toolset regression hunt: snapshot the
+// addon's landing page (which explains per-toolset why a tool is disabled),
+// the MCP server instructions, and the Storybook startup log into the
+// workspace so eval result snapshots capture them.
+async function dumpMcpDebug() {
+	const debugDir = '.storybook/mcp-debug';
+	try {
+		await mkdir(debugDir, { recursive: true });
+
+		const landing = await fetch(mcpUrl, {
+			headers: { Accept: 'text/html' },
+			signal: AbortSignal.timeout(5_000),
+		});
+		await writeFile(debugDir + '/landing.html', await landing.text());
+
+		const init = await fetch(mcpUrl, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json, text/event-stream',
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				jsonrpc: '2.0',
+				id: 1,
+				method: 'initialize',
+				params: {
+					protocolVersion: '2025-06-18',
+					capabilities: {},
+					clientInfo: { name: 'agent-eval-mcp-debug', version: '1.0.0' },
+				},
+			}),
+			signal: AbortSignal.timeout(5_000),
+		});
+		await writeFile(debugDir + '/initialize.txt', await init.text());
+
+		await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
+	} catch (error) {
+		await writeFile(debugDir + '/error.txt', String(error)).catch(() => {});
 	}
 }
 

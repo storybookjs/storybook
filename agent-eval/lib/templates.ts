@@ -125,6 +125,8 @@ export async function setupSandbox(
 
 	files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
+	await pinStorybookPackages(files, process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next');
+
 	if (usesLocalStorybookMcpPackages(files)) {
 		Object.assign(files, await readLocalStorybookMcpPackages());
 	}
@@ -316,6 +318,74 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 			`Failed to install template system dependencies: ${result.stderr || result.stdout}`,
 		);
 	}
+}
+
+// Pin every Storybook dependency in the sandbox package.json to the version
+// currently behind the given npm dist-tag, so result snapshots record the
+// exact version each run used. The default `next` tag keeps the local
+// @storybook/addon-mcp and @storybook/mcp file: builds; EVAL_STORYBOOK_LATEST=1
+// switches to the `latest` tag and pins those two to their published stable
+// versions as well, to compare the current checkout against the last release.
+export async function pinStorybookPackages(
+	files: Record<string, string>,
+	distTag: 'next' | 'latest',
+): Promise<void> {
+	const rawPackageJson = files['package.json'];
+	if (rawPackageJson === undefined) {
+		return;
+	}
+
+	const packageJson = parseJsonFile('package.json', rawPackageJson, 'fixture');
+	if (!isRecord(packageJson)) {
+		return;
+	}
+
+	for (const field of ['dependencies', 'devDependencies'] as const) {
+		const dependencies = packageJson[field];
+		if (!isRecord(dependencies)) {
+			continue;
+		}
+
+		for (const [name, spec] of Object.entries(dependencies)) {
+			if (name !== 'storybook' && !name.startsWith('@storybook/')) {
+				continue;
+			}
+			if (typeof spec === 'string' && spec.startsWith('file:') && distTag === 'next') {
+				continue;
+			}
+			dependencies[name] = await resolveDistTagVersion(name, distTag);
+		}
+	}
+
+	files['package.json'] = JSON.stringify(packageJson, null, 2).concat('\n');
+}
+
+const distTagVersionCache = new Map<string, string>();
+
+async function resolveDistTagVersion(packageName: string, distTag: string): Promise<string> {
+	const cacheKey = `${packageName}@${distTag}`;
+	const cached = distTagVersionCache.get(cacheKey);
+	if (cached !== undefined) {
+		return cached;
+	}
+
+	const response = await fetch(
+		`https://registry.npmjs.org/-/package/${encodeURIComponent(packageName)}/dist-tags`,
+	);
+	if (!response.ok) {
+		throw new Error(
+			`Failed to resolve dist-tags for ${packageName}: ${response.status} ${response.statusText}`,
+		);
+	}
+
+	const distTags = (await response.json()) as unknown;
+	const version = isRecord(distTags) ? distTags[distTag] : undefined;
+	if (typeof version !== 'string') {
+		throw new Error(`Package ${packageName} has no "${distTag}" dist-tag`);
+	}
+
+	distTagVersionCache.set(cacheKey, version);
+	return version;
 }
 
 function usesLocalStorybookMcpPackages(files: Record<string, string>): boolean {

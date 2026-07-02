@@ -585,11 +585,14 @@ export function expectSkillInvoked(skillName: string): void {
 	}
 
 	if (agent === 'claude-code') {
+		// Match the skill argument exactly — a substring match would credit any
+		// Skill invocation whose free-text args merely mention the word.
 		const invoked = getTranscript().events.some(
 			(event) =>
 				event.type === 'tool_call' &&
 				event.tool?.originalName === 'Skill' &&
-				JSON.stringify(event.tool.args ?? {}).includes(skillName),
+				isRecord(event.tool.args) &&
+				event.tool.args.skill === skillName,
 		);
 		expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
 		return;

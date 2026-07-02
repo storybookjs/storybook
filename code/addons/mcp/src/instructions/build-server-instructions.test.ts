@@ -144,6 +144,43 @@ describe('buildServerInstructions', () => {
 		expect(instructions).not.toContain('call **get-changed-stories**');
 	});
 
+	it('feeds get-stories-by-component into the review when only the dependency graph is available', () => {
+		const instructions = buildServerInstructions({
+			devEnabled: true,
+			testEnabled: false,
+			docsEnabled: false,
+			changeDetectionEnabled: false,
+			moduleGraphSupported: true,
+			reviewEnabled: true,
+		});
+
+		// With review enabled the after-change step must not end in
+		// preview-stories — discovery feeds display-review instead.
+		expect(instructions).toContain(
+			'- After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them.',
+		);
+		expect(instructions).not.toContain('then call **preview-stories** to retrieve preview URLs');
+		expect(instructions).toContain(
+			'- Use **preview-stories** only while iterating on a specific story',
+		);
+	});
+
+	it('routes the after-change step through the story-ID mapping when review is on without discovery tools', () => {
+		const instructions = buildServerInstructions({
+			devEnabled: true,
+			testEnabled: false,
+			docsEnabled: false,
+			changeDetectionEnabled: false,
+			moduleGraphSupported: false,
+			reviewEnabled: true,
+		});
+
+		expect(instructions).toContain(
+			'- After changing any component or story, resolve the affected story IDs (see "Mapping any input to story IDs" below).',
+		);
+		expect(instructions).not.toContain('then call **preview-stories** to retrieve preview URLs');
+	});
+
 	it('omits display-review step when reviewEnabled is false even with change detection on', () => {
 		const instructions = buildServerInstructions({
 			devEnabled: true,

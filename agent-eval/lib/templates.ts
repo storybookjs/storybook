@@ -395,6 +395,7 @@ export async function pinStorybookPackages(
 			continue;
 		}
 
+		let pinned = false;
 		for (const field of ['dependencies', 'devDependencies'] as const) {
 			const dependencies = packageJson[field];
 			if (!isRecord(dependencies)) {
@@ -409,10 +410,15 @@ export async function pinStorybookPackages(
 					continue;
 				}
 				dependencies[name] = await resolveDistTagVersion(name, distTag);
+				pinned = true;
 			}
 		}
 
-		files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
+		// Leave files without Storybook deps byte-identical to their source, so
+		// sandbox snapshots don't pick up reformatting noise.
+		if (pinned) {
+			files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
+		}
 	}
 }
 

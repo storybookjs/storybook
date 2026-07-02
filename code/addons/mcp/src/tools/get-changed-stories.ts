@@ -203,7 +203,9 @@ export async function addGetChangedStoriesTool(
 				// Tool results are never truncated, so this is the reliable place
 				// to keep the workflow on rails: without it, agents sometimes end
 				// visual work at preview URLs instead of publishing the review.
-				if (reviewEnabled) {
+				// Only when there are story IDs to curate — a zero-result is the
+				// moment to fall back to get-stories-by-component instead.
+				if (reviewEnabled && stories.length > 0) {
 					text += `\n\nNext: if the change is visually observable, publish the review now — call **display-review** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
 				}
 

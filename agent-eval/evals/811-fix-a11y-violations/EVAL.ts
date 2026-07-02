@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { expectFinalResponseMatches, getWorkflowCalls, getWorkflowToolResults } from '#test-utils';
+import {
+	expectFinalResponseMatches,
+	expectStoryTestsRanAndPassed,
+	getWorkflowCalls,
+	getWorkflowToolResults,
+} from '#test-utils';
 
 // The fixture ships a Button with two seeded a11y violations: the icon-only
 // story renders a button without an accessible name (button-name, fixable
@@ -17,28 +22,20 @@ test('runs the story tests more than once while fixing the violations', () => {
 });
 
 test('fixes the semantic button-name violation', () => {
-	const results = getWorkflowToolResults('run-story-tests');
-	const lastResult = results.at(-1);
-	if (lastResult === undefined) {
-		expect.fail('Expected at least one run-story-tests result in the transcript');
-	}
+	// The full Validation Workflow floor: run-story-tests called, final run
+	// succeeded (not errored), reports passing stories, no failing/unhandled
+	// sections, and covers the Button stories.
+	expectStoryTestsRanAndPassed({ covering: ['button'] });
 
 	// The violation must have been observed before it can count as fixed — a
 	// run that never evaluates accessibility cannot claim the fix.
+	const results = getWorkflowToolResults('run-story-tests');
 	expect(
 		results.some((result) => /button-name/.test(result.output)),
 		'Expected some run-story-tests result to surface the seeded button-name violation',
 	).toBe(true);
-
-	expect(lastResult.output, 'Final run-story-tests result must cover the Button stories').toMatch(
-		/button/i,
-	);
 	expect(
-		lastResult.output,
-		'Final run-story-tests result must not report failing stories',
-	).not.toMatch(/## Failing Stories/);
-	expect(
-		lastResult.output,
+		results.at(-1)?.output,
 		'Final run-story-tests result must no longer report the button-name violation',
 	).not.toMatch(/button-name/);
 

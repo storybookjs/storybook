@@ -22,7 +22,7 @@
 		"@types/node": "catalog:trials",
 		"@types/react": "^19.2.17",
 		"@types/react-dom": "^19.2.3",
-		"@vercel/agent-eval": "^1.2.0",
+		"@vercel/agent-eval": "1.2.0",
 		"@vercel/agent-eval-playground": "0.1.3",
 		"@vitejs/plugin-react-swc": "catalog:trials",
 		"next": "16.1.6",

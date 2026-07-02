@@ -73,13 +73,23 @@ function collectExperiments() {
 		}));
 }
 
+// Classifier output is free-form: strip newlines, pipes, and backticks so a
+// reason can never break out of its markdown table cell.
+function sanitizeCell(value) {
+	return String(value ?? '')
+		.replaceAll(/\s+/g, ' ')
+		.replaceAll('|', '\\|')
+		.replaceAll('`', "'")
+		.trim();
+}
+
 function renderEvalRow({ name, summary, classification }) {
 	const passed = summary.passedRuns === summary.totalRuns;
 	const status = passed ? '✅' : '❌';
 	const duration =
 		typeof summary.meanDuration === 'number' ? `${summary.meanDuration.toFixed(1)}s` : '—';
 	const failure = classification
-		? `\`${classification.failureType}\` — ${classification.failureReason.replaceAll('|', '\\|')}`
+		? `\`${sanitizeCell(classification.failureType)}\` — ${sanitizeCell(classification.failureReason)}`
 		: '';
 
 	return `| ${status} | \`${name}\` | ${summary.passedRuns}/${summary.totalRuns} (${summary.passRate}) | ${duration} | ${failure} |`;

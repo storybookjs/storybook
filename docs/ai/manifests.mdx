@@ -24,6 +24,8 @@ The components manifest is generated from static analysis of the CSF files in yo
 
 For prop type extraction, the manifest generation will use whatever is specified in the [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen) option, or `react-docgen` by default. We recommend using `react-docgen-typescript` for most projects, because it provides more accurate and comprehensive information about your components' props. If manifest generation seems too slow, you can switch to `react-docgen`, which is faster but less detailed.
 
+When [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) is enabled, prop type extraction runs server-side via React Component Meta instead, and manifests use a ref-based format with per-component JSON snapshots when combined with [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest).
+
 While the types themselves provide a basic level of information, JSDoc comments in your component source code can provide additional metadata for the manifest, which can be helpful for AI agents. We highly recommend adding JSDoc comments to your components and their props to provide as much context as possible for the agents. For example:
 
 ```ts title="Button.tsx"

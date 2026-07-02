@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.5.0-alpha.7",
+  "version": "10.5.0-alpha.9",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -119,6 +119,7 @@
       "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
     },
+    "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "code": "./src/docs-tools/index.ts",

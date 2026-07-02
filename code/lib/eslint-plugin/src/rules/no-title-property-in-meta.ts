@@ -2,7 +2,7 @@
  * @file No title property in meta
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import { getMetaObjectExpression } from '../utils/index.ts';
 import { isSpreadElement } from '../utils/ast.ts';

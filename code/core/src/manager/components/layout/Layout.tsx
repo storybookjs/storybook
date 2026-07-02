@@ -3,8 +3,10 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
-import { type API, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
+
+import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
 import { Notifications } from '../../container/Notifications.tsx';
@@ -18,6 +20,7 @@ import { useLandmarkIndicator } from './useLandmarkIndicator.ts';
 
 interface InternalLayoutState {
   isDragging: boolean;
+  dragCursor: string;
 }
 
 interface ManagerLayoutState extends Pick<
@@ -69,6 +72,7 @@ const useLayoutSyncingState = ({
   const [internalDraggingSizeState, setInternalDraggingSizeState] = useState<LayoutState>({
     ...managerLayoutState,
     isDragging: false,
+    dragCursor: 'col-resize',
   });
 
   /** Sync FROM managerLayoutState to internalDraggingState if user is not dragging */
@@ -107,7 +111,8 @@ const useLayoutSyncingState = ({
   const isPagesShown =
     managerLayoutState.viewMode !== undefined &&
     managerLayoutState.viewMode !== 'story' &&
-    managerLayoutState.viewMode !== 'docs';
+    managerLayoutState.viewMode !== 'docs' &&
+    managerLayoutState.viewMode !== 'review';
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
@@ -138,6 +143,7 @@ const useLayoutSyncingState = ({
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
+    dragCursor: internalDraggingSizeState.dragCursor,
   };
 };
 
@@ -148,6 +154,9 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
+  const { path, customQueryParams } = useStorybookState();
+  const showSidebar =
+    (api.getIsNavShown?.() ?? true) && !isReviewManagerRoute(path, customQueryParams);
 
   const {
     navSize,
@@ -160,6 +169,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelMaxSize,
     showPages,
     showPanel,
+    isDragging,
+    dragCursor,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.
@@ -169,6 +180,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     <LayoutContainer
       panelPosition={managerLayoutState.panelPosition}
       showPanel={showPanel}
+      showSidebar={showSidebar}
       style={
         {
           '--nav-width': `${navSize}px`,
@@ -178,7 +190,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       }
     >
       <>
-        {isDesktop && (
+        {isDesktop && showSidebar && (
           <SidebarContainer
             navSize={navSize}
             sidebarMaxWidth={sidebarMaxWidth}
@@ -187,10 +199,11 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
           </SidebarContainer>
         )}
-        {isMobile && (
+        {isMobile && !showPages && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
+            showMenu={showSidebar}
             showPanel={showPanel}
           />
         )}
@@ -212,16 +225,23 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotPanel}
           </PanelContainer>
         )}
-        {isMobile && <Notifications />}
+        {isMobile && !showPages && <Notifications />}
       </>
+      {isDragging && <DragShield style={{ cursor: dragCursor }} />}
     </LayoutContainer>
   );
 };
+const DragShield = styled.div({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 10,
+});
 
 const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
-}>(({ panelPosition, showPanel }) => ({
+  showSidebar: boolean;
+}>(({ panelPosition, showPanel, showSidebar }) => ({
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',
@@ -232,21 +252,33 @@ const LayoutContainer = styled.div<{
   [MEDIA_DESKTOP_BREAKPOINT]: {
     display: 'grid',
     gap: 0,
-    // This uses CSS variables to prevent Emotion from generating a new CSS className for every possible value
-    gridTemplateColumns: `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
+    gridTemplateColumns: showSidebar
+      ? `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`
+      : `minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
     gridTemplateRows: `1fr minmax(0, var(--bottom-panel-height))`,
     gridTemplateAreas: (() => {
+      if (!showSidebar && !showPanel) {
+        return `"content content"
+                "content content"`;
+      }
+      if (!showSidebar && showPanel) {
+        if (panelPosition === 'right') {
+          return `"content panel"
+                  "content panel"`;
+        }
+        return `"content content"
+                "panel   panel"`;
+      }
       if (!showPanel) {
-        // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
         return `"sidebar content content"
-                  "sidebar content content"`;
+                "sidebar content content"`;
       }
       if (panelPosition === 'right') {
         return `"sidebar content panel"
-                  "sidebar content panel"`;
+                "sidebar content panel"`;
       }
       return `"sidebar content content"
-                "sidebar panel   panel"`;
+              "sidebar panel   panel"`;
     })(),
   },
 }));

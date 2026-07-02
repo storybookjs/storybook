@@ -27,10 +27,17 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
       ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash || ''}`
       : resolvedHref;
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.defaultPrevented) {
+      return;
+    }
     e.preventDefault();
-    onClick?.(e);
     linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(e);
+    navigate(e);
   };
 
   if (legacyBehavior) {
@@ -38,11 +45,10 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
     const childProps: Record<string, any> = {
       ref,
       onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
         if (child.props && typeof child.props.onClick === 'function') {
           child.props.onClick(e);
         }
-        linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+        navigate(e);
       },
       ...rest,
     };

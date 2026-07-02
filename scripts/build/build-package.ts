@@ -18,7 +18,6 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
 import { measure } from './utils/entry-utils.ts';
 import { generateBundle } from './utils/generate-bundle.ts';
@@ -61,7 +60,7 @@ const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
 
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
-  const DIR_CWD = cwd ? join(ROOT_DIRECTORY, cwd) : process.cwd();
+  const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
 

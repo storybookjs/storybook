@@ -1,5 +1,5 @@
 import { statSync } from 'node:fs';
-import nodeModule, { createRequire, register } from 'node:module';
+import nodeModule, { createRequire } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -76,14 +76,21 @@ export async function importModule(
     // version throws a SyntaxError at module-load time, before this feature check ever runs.
     // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
     // the `register` fallback below, and switch back to a plain named `registerHooks` import.
-    if (typeof nodeModule.registerHooks === 'function') {
-      const { load } = await import('storybook/internal/bin/loader');
-      nodeModule.registerHooks({ load });
-    } else {
-      const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-      register(typescriptLoaderUrl, import.meta.url);
-    }
+    // Set this before the `await` below (rather than after) so that concurrent calls to
+    // `importModule` don't race and register the loader hooks more than once.
     isTypescriptLoaderRegistered = true;
+    try {
+      if (typeof nodeModule.registerHooks === 'function') {
+        const { load } = await import('storybook/internal/bin/loader');
+        nodeModule.registerHooks({ load });
+      } else {
+        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+      }
+    } catch (e) {
+      isTypescriptLoaderRegistered = false;
+      throw e;
+    }
   }
 
   let mod;

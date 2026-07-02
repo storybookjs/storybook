@@ -30,14 +30,21 @@ export interface TranscriptUsage {
 	estimatedCostUsd?: number;
 }
 
-function parseJsonLines(raw: string): Record<string, any>[] {
+import { isRecord } from './shell-parse.ts';
+
+function parseJsonLines(raw: string): Record<string, unknown>[] {
 	return raw.split('\n').flatMap((line) => {
 		try {
-			return [JSON.parse(line)];
+			const parsed = JSON.parse(line) as unknown;
+			return isRecord(parsed) ? [parsed] : [];
 		} catch {
 			return [];
 		}
 	});
+}
+
+function toTokenCount(value: unknown): number {
+	return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 /**
@@ -54,21 +61,29 @@ export function collectTranscriptUsage(
 	const seenMessages = new Set<string>();
 
 	for (const event of parseJsonLines(rawTranscript)) {
-		if (event.type === 'assistant' && event.message?.usage) {
-			if (event.message.id && seenMessages.has(event.message.id)) {
+		// Claude Code session transcript: streamed assistant events with usage.
+		if (event.type === 'assistant' && isRecord(event.message) && isRecord(event.message.usage)) {
+			const message = event.message;
+			const messageUsage = event.message.usage;
+			if (typeof message.id === 'string' && seenMessages.has(message.id)) {
 				continue;
 			}
 
-			seenMessages.add(event.message.id);
-			usage.inputTokens += event.message.usage.input_tokens ?? 0;
-			usage.cacheWriteTokens += event.message.usage.cache_creation_input_tokens ?? 0;
-			usage.cacheReadTokens += event.message.usage.cache_read_input_tokens ?? 0;
-			usage.outputTokens += event.message.usage.output_tokens ?? 0;
-		} else if (event.type === 'turn.completed' && event.usage) {
-			const cached = event.usage.cached_input_tokens ?? 0;
+			if (typeof message.id === 'string') {
+				seenMessages.add(message.id);
+			}
+			usage.inputTokens += toTokenCount(messageUsage.input_tokens);
+			usage.cacheWriteTokens += toTokenCount(messageUsage.cache_creation_input_tokens);
+			usage.cacheReadTokens += toTokenCount(messageUsage.cache_read_input_tokens);
+			usage.outputTokens += toTokenCount(messageUsage.output_tokens);
+		}
+		// Codex transcript: per-turn usage on turn.completed events.
+		else if (event.type === 'turn.completed' && isRecord(event.usage)) {
+			const turnUsage = event.usage;
+			const cached = toTokenCount(turnUsage.cached_input_tokens);
 			usage.cacheReadTokens += cached;
-			usage.inputTokens += (event.usage.input_tokens ?? 0) - cached;
-			usage.outputTokens += event.usage.output_tokens ?? 0;
+			usage.inputTokens += toTokenCount(turnUsage.input_tokens) - cached;
+			usage.outputTokens += toTokenCount(turnUsage.output_tokens);
 		}
 	}
 

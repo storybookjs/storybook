@@ -12,7 +12,6 @@ import {
   commonJobsNoOpJob,
   defineCircleciCompletion,
   docgenMemoryGate,
-  knip,
   lint,
   fmt,
   internalStorybookBuildE2e,
@@ -65,9 +64,7 @@ function generateConfig(workflow: Workflow) {
 
       commonJobsNoOpJob,
       lint,
-      fmt,
       check,
-      knip,
 
       storybookChromatic,
       internalStorybookE2e,

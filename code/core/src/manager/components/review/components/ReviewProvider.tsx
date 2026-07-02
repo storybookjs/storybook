@@ -72,6 +72,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { index, path, viewMode, customQueryParams, location } = useStorybookState();
   const { state, pendingReview, isStale, isInReviewMode } = useReview();
+  // Last review page reported to telemetry; dedupes pageviews across re-renders.
+  const lastPageviewKeyRef = useRef<string | null>(null);
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
 
@@ -164,6 +166,30 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
           : null,
     [pendingReview, isStale, onAcceptPendingUpdate]
   );
+
+  // Report a "pageview" whenever the active review surface changes: the summary
+  // overlay, or a specific reviewed story's detail view. Keyed so re-renders that
+  // don't change the surface (or story) don't re-fire.
+  useEffect(() => {
+    if (!state) {
+      lastPageviewKeyRef.current = null;
+      return;
+    }
+    let page: 'summary' | 'detail' | null = null;
+    let key: string | null = null;
+    if (isSummaryVisible) {
+      page = 'summary';
+      key = 'summary';
+    } else if (isInReviewMode && activeEntry) {
+      page = 'detail';
+      key = `detail:${activeEntry.storyId}`;
+    }
+    if (!page || key === lastPageviewKeyRef.current) {
+      return;
+    }
+    lastPageviewKeyRef.current = key;
+    emit(EVENTS.PAGEVIEW, { page, reviewCreatedAt: state.createdAt });
+  }, [state, isSummaryVisible, isInReviewMode, activeEntry, emit]);
 
   // First landing on the summary with a clean, newly available review enters
   // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.

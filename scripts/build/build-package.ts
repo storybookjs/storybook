@@ -43,7 +43,12 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
-    'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
+    // 'rolldown' bundles tsc-emitted declarations: ~14x faster than the old
+    // rollup path and byte-deterministic. 'rolldown-tsgo' is ~2x faster still,
+    // but tsgo declaration emit is not yet deterministic (type aliases flap,
+    // chunk references can go stale) and hangs on some packages; keep it
+    // opt-in until it stabilizes.
+    'dts-bundler': { type: 'string', default: 'rolldown' },
     'dts-resolver': { type: 'string', default: 'hybrid' },
   },
   allowNegative: true,

@@ -1,5 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, PLUGIN_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
 	setupSandbox,
 	writeCodexInAppBrowserMock,
@@ -16,7 +16,8 @@ export default {
 	// gpt-5.2-codex, which is deprecated (retiring July 2026). Medium is the
 	// reasoning effort the adapter already defaults to when a model is pinned.
 	model: 'gpt-5.5?reasoningEffort=medium',
-	evals: RESHAPED_STORYBOOK_EVALS,
+	// Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.
+	evals: PLUGIN_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin' });
 		await writeCodexPluginSkills(sandbox);

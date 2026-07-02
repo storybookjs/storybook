@@ -322,10 +322,10 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 
 // Pin every Storybook dependency in the sandbox package.json to the version
 // currently behind the given npm dist-tag, so result snapshots record the
-// exact version each run used. The default `next` tag keeps the local
-// @storybook/addon-mcp and @storybook/mcp file: builds; EVAL_STORYBOOK_LATEST=1
-// switches to the `latest` tag and pins those two to their published stable
-// versions as well, to compare the current checkout against the last release.
+// exact version each run used. The local @storybook/addon-mcp and
+// @storybook/mcp file: builds are always kept as-is; EVAL_STORYBOOK_LATEST=1
+// only switches the Storybook release itself to the `latest` tag, to test the
+// current checkout against the last stable release.
 export async function pinStorybookPackages(
 	files: Record<string, string>,
 	distTag: 'next' | 'latest',
@@ -350,7 +350,7 @@ export async function pinStorybookPackages(
 			if (name !== 'storybook' && !name.startsWith('@storybook/')) {
 				continue;
 			}
-			if (typeof spec === 'string' && spec.startsWith('file:') && distTag === 'next') {
+			if (typeof spec === 'string' && spec.startsWith('file:')) {
 				continue;
 			}
 			dependencies[name] = await resolveDistTagVersion(name, distTag);

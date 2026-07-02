@@ -23,9 +23,10 @@ const CORE_STORYBOOK_EVALS = [
 	'807-docs-request',
 ] as const;
 
-// The 9xx line: evals ported from the old eval system (/eval). Too expensive
-// and currently too flaky to run on CI; kept for manual runs until we revive
-// them selectively. See storybookjs/mcp#315.
+// The 9xx line: evals ported from the old eval system (/eval), written for
+// the MCP-only workflow. On default (`next`) CI runs they are too expensive
+// and currently too flaky, so they only run under EVAL_STORYBOOK_LATEST=1
+// (or manually via EVAL_ONLY). See storybookjs/mcp#315.
 const PORTED_RESHAPED_STORYBOOK_EVALS = [
 	'901-create-component-atom-reshaped-concise',
 	'901-create-component-atom-reshaped-detailed',
@@ -64,11 +65,19 @@ type EvalName =
 	| (typeof CORE_STORYBOOK_EVALS)[number]
 	| (typeof PORTED_RESHAPED_STORYBOOK_EVALS)[number];
 
-// By default only the first core eval runs, to keep sandbox/token costs low.
-// Set EVAL_EXTRA_EVALS=1 (the ci:extra-evals PR label or the workflow_dispatch
-// input in CI) to run the full 8xx line. EVAL_ONLY=<name>[,<name>] narrows the
-// set to specific evals (core 8xx or ported 9xx) for local debugging, one eval
-// at a time.
+// EVAL_STORYBOOK_LATEST=1 (the ci:storybook-latest PR label or the
+// workflow_dispatch input in CI) runs the local MCP server against the stable
+// Storybook release instead of `next`. The 8xx line and the plugin skills
+// target the current plugin/MCP workflow and are not compatible with the
+// stable release, so latest runs switch to the ported 9xx line and skip the
+// plugin experiments (see PLUGIN_STORYBOOK_EVALS below).
+const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === '1';
+
+// By default only the first eval of the active line runs, to keep
+// sandbox/token costs low. Set EVAL_EXTRA_EVALS=1 (the ci:extra-evals PR label
+// or the workflow_dispatch input in CI) to run the full line.
+// EVAL_ONLY=<name>[,<name>] narrows the set to specific evals (core 8xx or
+// ported 9xx) for local debugging, one eval at a time.
 function resolveActiveEvals(): EvalName[] {
 	const only = process.env.EVAL_ONLY;
 	if (only !== undefined && only !== '') {
@@ -85,13 +94,20 @@ function resolveActiveEvals(): EvalName[] {
 	}
 
 	if (process.env.EVAL_EXTRA_EVALS === '1') {
-		return [...CORE_STORYBOOK_EVALS];
+		return STORYBOOK_LATEST ? [...PORTED_RESHAPED_STORYBOOK_EVALS] : [...CORE_STORYBOOK_EVALS];
 	}
 
-	return ['801-create-component-no-launch-config'];
+	return STORYBOOK_LATEST
+		? ['901-create-component-atom-reshaped-concise']
+		: ['801-create-component-no-launch-config'];
 }
 
 export const RESHAPED_STORYBOOK_EVALS: EvalName[] = resolveActiveEvals();
+
+// Plugin-integration experiments run zero evals under EVAL_STORYBOOK_LATEST=1:
+// the plugin skills are not compatible with the stable Storybook release, so
+// only the MCP experiments exercise the 9xx line there.
+export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST ? [] : RESHAPED_STORYBOOK_EVALS;
 
 // Non-default model tiers (e.g. cc-plugin-sonnet-medium) run zero evals unless
 // explicitly enabled, so labeled CI runs only pay for the default-model
@@ -99,6 +115,9 @@ export const RESHAPED_STORYBOOK_EVALS: EvalName[] = resolveActiveEvals();
 // workflow_dispatch input in CI).
 export const EXTRA_MODEL_EVALS: EvalName[] =
 	process.env.EVAL_EXTRA_MODELS === '1' ? [...RESHAPED_STORYBOOK_EVALS] : [];
+
+export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
+	process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
 
 function attachUsageMetadata({ runData }: RunCompleteContext) {
 	if (!runData.transcript) {

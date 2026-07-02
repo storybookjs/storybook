@@ -1,5 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, PLUGIN_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
 	setupSandbox,
 	writeClaudePluginSkills,
@@ -13,7 +13,8 @@ export default {
 	// experiment name stays accurate when the CLI defaults change.
 	model: 'opus',
 	agentOptions: { effort: 'high' },
-	evals: RESHAPED_STORYBOOK_EVALS,
+	// Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.
+	evals: PLUGIN_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });
 		await writeClaudePluginSkills(sandbox);

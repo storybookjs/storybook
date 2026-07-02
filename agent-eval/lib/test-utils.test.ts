@@ -90,29 +90,12 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		]);
 	});
 
-	test('parses mcp-call script workflow input', () => {
+	test('does not credit ad hoc MCP invocations from the shell', () => {
 		const calls = parseStorybookWorkflowShellCommands([
 			'node scripts/mcp-call.mjs run-story-tests \'{"stories":[{"storyId":"example-button--primary"}]}\'',
-		]);
-
-		expect(calls).toHaveLength(1);
-		expect(calls[0]?.name).toBe('run-story-tests');
-		expect(
-			calls.some((call) => workflowCallIncludesStory(call, { storyId: 'example-button--primary' })),
-		).toBe(true);
-	});
-
-	test('parses curl workflow input', () => {
-		const calls = parseStorybookWorkflowShellCommands([
 			'curl http://127.0.0.1:6006/mcp/preview-stories --data \'{"params":{"arguments":{"stories":[{"storyId":"example-button--secondary"}]}}}\'',
 		]);
 
-		expect(calls).toHaveLength(1);
-		expect(calls[0]?.name).toBe('preview-stories');
-		expect(
-			calls.some((call) =>
-				workflowCallIncludesStory(call, { storyId: 'example-button--secondary' }),
-			),
-		).toBe(true);
+		expect(calls).toHaveLength(0);
 	});
 });

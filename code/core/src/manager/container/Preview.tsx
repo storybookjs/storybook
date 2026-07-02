@@ -61,7 +61,6 @@ const memoizedExtra = memoizerific(1)(
   (_, extraElements: Addon_Collection<Addon_BaseType>, filterProps: FilterProps) =>
     filterToolsSide([...defaultToolsExtra, ...Object.values(extraElements)], ...filterProps)
 );
-
 const memoizedWrapper = memoizerific(1)((_, previewElements: Addon_Collection) => [
   ...defaultWrappers,
   ...Object.values(previewElements),

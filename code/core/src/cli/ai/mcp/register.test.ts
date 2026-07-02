@@ -242,7 +242,7 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'success' },
     });
     await parse(program, ['ai', '-o', '/out/result.md', 'tool-x']);
-    expect(writeFile).toHaveBeenCalledWith('/out/result.md', 'markdown result\n', 'utf-8');
+    expect(writeFile).toHaveBeenCalledWith(resolve('/out/result.md'), 'markdown result\n', 'utf-8');
     expect(process.stdout.write).not.toHaveBeenCalledWith('markdown result\n');
   });
 

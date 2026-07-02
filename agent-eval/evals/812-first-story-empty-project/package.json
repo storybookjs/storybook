@@ -1,9 +1,6 @@
 {
 	"name": "812-first-story-empty-project",
 	"type": "module",
-	"evals": {
-		"template": "vite-app"
-	},
 	"scripts": {
 		"test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
 		"postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
@@ -21,5 +18,8 @@
 		"@vitest/browser-playwright": "4.0.6",
 		"playwright": "1.56.1",
 		"storybook": "next"
+	},
+	"evals": {
+		"template": "vite-app"
 	}
 }

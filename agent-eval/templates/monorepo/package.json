@@ -2,8 +2,10 @@
 	"name": "@storybook/mcp-eval-template-monorepo",
 	"version": "0.0.0",
 	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
 	"type": "module",
-	"workspaces": ["packages/*"],
 	"imports": {
 		"#test-utils": "./__agent_eval__/test-utils.ts"
 	},

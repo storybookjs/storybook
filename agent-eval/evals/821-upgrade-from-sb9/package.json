@@ -1,10 +1,6 @@
 {
 	"name": "821-upgrade-from-sb9",
 	"type": "module",
-	"evals": {
-		"template": "vite-app",
-		"pinStorybook": false
-	},
 	"scripts": {
 		"storybook": "storybook dev",
 		"build-storybook": "storybook build"
@@ -13,5 +9,9 @@
 		"@storybook/react": "9.1.20",
 		"@storybook/react-vite": "9.1.20",
 		"storybook": "9.1.20"
+	},
+	"evals": {
+		"template": "vite-app",
+		"pinStorybook": false
 	}
 }

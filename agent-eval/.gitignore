@@ -9,6 +9,6 @@ results/
 .DS_Store
 .vercel
 .env.*
-!.env.example
 .env*.local
 .env*
+!.env.example

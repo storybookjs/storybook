@@ -4,7 +4,7 @@ import { setupSandbox, writeClaudeMcpConfig } from '../lib/templates.ts';
 
 export default {
 	...DEFAULT_EXPERIMENT_CONFIG,
-	agent: 'vercel-ai-gateway/claude-code', // requires AI_GATEWAY_API_KEY
+	agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
 	model: 'sonnet',
 	agentOptions: { effort: 'medium' },
 	// Runs zero evals unless EVAL_EXTRA_MODELS=1 is set; see EXTRA_MODEL_EVALS.

@@ -222,11 +222,5 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     reviewStore.setDerived(derived);
   }, [derived]);
 
-  useLayoutEffect(() => {
-    if (isSummaryVisible) {
-      reviewStore.releaseSummaryOverlaySuppression();
-    }
-  }, [isSummaryVisible]);
-
   return children;
 };

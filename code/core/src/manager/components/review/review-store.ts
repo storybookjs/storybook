@@ -52,8 +52,6 @@ interface ReviewCoreState {
   isStale: boolean;
   isInReviewMode: boolean;
   isExiting: boolean;
-  /** Synchronously hide the summary overlay before SPA navigation to a story. */
-  summaryOverlaySuppressed: boolean;
 }
 
 const emptyCore: ReviewCoreState = {
@@ -62,7 +60,6 @@ const emptyCore: ReviewCoreState = {
   isStale: false,
   isInReviewMode: false,
   isExiting: false,
-  summaryOverlaySuppressed: false,
 };
 
 const emptyDerived: ReviewDerivedState = {
@@ -146,17 +143,6 @@ export const reviewStore = {
     derived = next;
     notify();
   },
-  suppressSummaryOverlay: () => {
-    if (!core.summaryOverlaySuppressed) {
-      commit({ summaryOverlaySuppressed: true });
-    }
-  },
-  releaseSummaryOverlaySuppression: () => {
-    if (core.summaryOverlaySuppressed) {
-      commit({ summaryOverlaySuppressed: false });
-    }
-  },
-  isSummaryOverlayShown: () => snapshot.isSummaryVisible && !core.summaryOverlaySuppressed,
   reset: () => {
     core = { ...emptyCore };
     derived = emptyDerived;

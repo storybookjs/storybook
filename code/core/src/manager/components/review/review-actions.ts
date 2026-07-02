@@ -27,7 +27,8 @@ export interface NavigateOutOfReviewOptions {
 /**
  * Navigate to a curated story, entering review mode. Entering is idempotent, so
  * this is safe whether or not the user is already reviewing. The summary overlay
- * is suppressed synchronously to avoid a flash before the route changes.
+ * stays visible until the route leaves the summary; the main preview is unmounted
+ * while it does, so no stale story shows through.
  */
 export const navigateToReviewEntry = (
   api: API,
@@ -36,7 +37,6 @@ export const navigateToReviewEntry = (
   filters: ReviewModeFilters
 ): void => {
   void enterReviewMode(api, filters);
-  reviewStore.suppressSummaryOverlay();
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex) });
   navigate(buildReviewStoryTarget(entry));
 };
@@ -66,7 +66,6 @@ export const navigateOutOfReview = async (
   const visitCreatedAt = recordVisit ? reviewStore.getState().state?.createdAt : undefined;
 
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-  reviewStore.releaseSummaryOverlaySuppression();
 
   reviewStore.setExiting(true);
   try {

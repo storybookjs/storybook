@@ -90,31 +90,6 @@ describe('setReviewMode', () => {
   });
 });
 
-describe('summary overlay suppression', () => {
-  it('hides the overlay while suppressed on the summary route', () => {
-    reviewStore.setDerived({ ...derived, isSummaryVisible: true });
-    expect(reviewStore.isSummaryOverlayShown()).toBe(true);
-
-    reviewStore.suppressSummaryOverlay();
-    expect(reviewStore.isSummaryOverlayShown()).toBe(false);
-
-    reviewStore.releaseSummaryOverlaySuppression();
-    expect(reviewStore.isSummaryOverlayShown()).toBe(true);
-  });
-
-  it('only notifies subscribers when suppression actually changes', () => {
-    const listener = vi.fn();
-    reviewStore.subscribe(listener);
-
-    reviewStore.releaseSummaryOverlaySuppression();
-    expect(listener).not.toHaveBeenCalled();
-
-    reviewStore.suppressSummaryOverlay();
-    reviewStore.suppressSummaryOverlay();
-    expect(listener).toHaveBeenCalledTimes(1);
-  });
-});
-
 describe('subscribe', () => {
   it('notifies on writes and returns a fresh snapshot', () => {
     const listener = vi.fn();

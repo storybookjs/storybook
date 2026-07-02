@@ -416,7 +416,9 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
 	);
 	expect(
-		lines.some((line) => /^##\s+.*Review your changes\s*$/.test(line.trim())),
+		// Case-insensitive: the guidance shows the heading as an example, and
+		// Codex consistently writes it in Title Case.
+		lines.some((line) => /^##\s+.*review your changes\s*$/i.test(line.trim())),
 		'Final response must include a dedicated review heading',
 	).toBe(true);
 	expect(

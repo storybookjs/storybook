@@ -3,8 +3,8 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import { ROOT_DIRECTORY } from '../../utils/constants';
-import type { BuildEntries } from './entry-utils';
+import { ROOT_DIRECTORY } from '../../utils/constants.ts';
+import type { BuildEntries } from './entry-utils.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 

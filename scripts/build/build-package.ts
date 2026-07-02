@@ -18,13 +18,13 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
-import { measure } from './utils/entry-utils';
-import { generateBundle } from './utils/generate-bundle';
-import { generatePackageJsonFile } from './utils/generate-package-json';
-import { generateTypesFiles } from './utils/generate-types';
-import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
+import { measure } from './utils/entry-utils.ts';
+import { generateBundle } from './utils/generate-bundle.ts';
+import { generatePackageJsonFile } from './utils/generate-package-json.ts';
+import { generateTypesFiles } from './utils/generate-types.ts';
+import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown.ts';
 
 const {
   values: {

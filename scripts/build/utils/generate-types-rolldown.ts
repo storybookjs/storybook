@@ -95,6 +95,87 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
   };
 }
 
+/**
+ * Emit declarations for the whole package (plus any cross-package sources it
+ * imports) with a single `program.emit()` call into `outDir`, mirroring the
+ * repo structure (`rootDir` is the repo root).
+ *
+ * Doing the emit ourselves, up front, is what makes the output deterministic:
+ * TypeScript's declaration emit is check-order-dependent (type aliases flap
+ * between the alias and its expansion depending on which files were checked
+ * first), so letting the dts plugin emit per module in rolldown's concurrent
+ * load order produces byte-different output across runs.
+ */
+function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void {
+  const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+    },
+  });
+  if (!parsed) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(`Unable to parse ${wrapperTsconfig}`);
+  }
+
+  const program = ts.createProgram({
+    rootNames: parsed.fileNames,
+    options: {
+      ...parsed.options,
+      noEmit: false,
+      noCheck: true,
+      declaration: true,
+      emitDeclarationOnly: true,
+      declarationMap: false,
+      sourceMap: false,
+      composite: false,
+      incremental: false,
+      skipLibCheck: true,
+      noEmitOnError: false,
+      stripInternal: true,
+      // Source files import with explicit .ts extensions; emitted d.ts must
+      // reference .js so that consumers (and the bundling pass) resolve them.
+      allowImportingTsExtensions: true,
+      rewriteRelativeImportExtensions: true,
+      outDir,
+      rootDir: DIR_ROOT,
+    },
+  });
+
+  let written = 0;
+  const result = program.emit(undefined, (fileName, text, writeByteOrderMark) => {
+    written++;
+    ts.sys.writeFile(fileName, text, writeByteOrderMark);
+  });
+  const errors = result.diagnostics.filter((d) => d.category === ts.DiagnosticCategory.Error);
+  if (errors.length > 0) {
+    console.error(
+      ts.formatDiagnosticsWithColorAndContext(errors, {
+        getCurrentDirectory: () => DIR_ROOT,
+        getCanonicalFileName: (fileName) => fileName,
+        getNewLine: () => ts.sys.newLine,
+      })
+    );
+  }
+  // `emitSkipped` is unreliable with `noCheck` (it reports true even though
+  // every file was written), so gate on actual output instead.
+  if (written === 0) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(`Declaration emit produced no output for ${wrapperTsconfig}`);
+  }
+
+  // Handwritten declaration files (e.g. `typings.d.ts`) are program inputs,
+  // not outputs, so tsc does not place them in outDir; copy them so that
+  // side-effect imports like `import './typings.d.ts'` resolve in the tree.
+  for (const fileName of parsed.fileNames) {
+    if (/\.d\.[cm]?ts$/.test(fileName)) {
+      const target = join(outDir, relative(DIR_ROOT, fileName));
+      ts.sys.writeFile(target, ts.sys.readFile(fileName) ?? '');
+    }
+  }
+}
+
 export async function generateTypesFiles(
   cwd: string,
   data: BuildEntries,
@@ -129,45 +210,50 @@ export async function generateTypesFiles(
     entryMap[name] = join(cwd, entry);
   }
 
-  // rolldown-plugin-dts derives rootDir from path.dirname(tsconfig).
-  // When rootDir is the package dir, tsgo emits stray .d.ts files next to
-  // source files for cross-package imports that fall outside rootDir.
-  // Fix: create a temporary tsconfig at the repo root so rootDir covers
-  // the entire monorepo. Use a per-package filename to avoid races when
-  // NX compiles multiple packages in parallel.
+  // The dts plugin and tsgo derive rootDir from path.dirname(tsconfig).
+  // When rootDir is the package dir, declarations for cross-package imports
+  // would be emitted next to their source files. Fix: create a temporary
+  // tsconfig at the repo root so rootDir covers the entire monorepo. Use a
+  // per-package filename to avoid races when NX compiles packages in parallel.
   const wrapperTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}.json`);
   const packageTsconfig = join(cwd, 'tsconfig.json');
 
-  const useTsgo = options?.tsgo ?? true;
-
-  if (useTsgo) {
-    // tsgo removed support for `baseUrl`. Resolve the tsconfig chain,
-    // strip `baseUrl`, and write a flat config so tsgo doesn't error.
-    const compilerOptions = await resolveTsconfigCompilerOptions(packageTsconfig);
-    delete compilerOptions.baseUrl;
-    await writeFile(
-      wrapperTsconfig,
-      JSON.stringify({
-        compilerOptions,
-        include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
-        exclude: DTS_EXCLUDES,
-      })
-    );
-  } else {
-    await writeFile(
-      wrapperTsconfig,
-      JSON.stringify({
-        extends: `./${relative(DIR_ROOT, packageTsconfig)}`,
-        exclude: DTS_EXCLUDES,
-      })
-    );
-  }
-
+  const useTsgo = options?.tsgo ?? false;
   const resolver = options?.resolver ?? 'hybrid';
 
+  // tsgo removed support for `baseUrl`, and ts.getParsedCommandLineOfConfigFile
+  // needs concrete options anyway: resolve the tsconfig chain and write a flat
+  // config.
+  const compilerOptions = await resolveTsconfigCompilerOptions(packageTsconfig);
+  delete compilerOptions.baseUrl;
+  await writeFile(
+    wrapperTsconfig,
+    JSON.stringify({
+      compilerOptions,
+      include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
+      exclude: DTS_EXCLUDES,
+    })
+  );
+
+  // Pre-emitted declarations land here and are bundled from there; the
+  // directory never ships (removed in `finally`).
+  const emitDir = join(cwd, '.dts-emit');
+
   try {
+    let input: Record<string, string> = entryMap;
+
+    if (!useTsgo) {
+      emitPackageDeclarations(wrapperTsconfig, emitDir);
+      input = Object.fromEntries(
+        Object.entries(entryMap).map(([name, sourcePath]) => [
+          name,
+          join(emitDir, relative(DIR_ROOT, sourcePath)).replace(/\.tsx?$/, '.d.ts'),
+        ])
+      );
+    }
+
     const out = await rolldown({
-      input: entryMap,
+      input,
       external: externalFn,
       plugins: [
         ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(externalFn)] : []),
@@ -175,6 +261,7 @@ export async function generateTypesFiles(
           cwd,
           tsconfig: wrapperTsconfig,
           tsgo: useTsgo,
+          dtsInput: !useTsgo,
           emitDtsOnly: true,
           resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
         }),
@@ -182,9 +269,29 @@ export async function generateTypesFiles(
       logLevel: 'warn',
     });
 
-    await out.write({ dir: join(cwd, 'dist'), format: 'es' });
+    const { output } = await out.write({
+      dir: join(cwd, 'dist'),
+      format: 'es',
+      // Name shared chunks purely by content hash: the default `[name]-[hash]`
+      // inherits a base name from whichever module rolldown happens to pick,
+      // which varies across runs and would make the output non-deterministic.
+      chunkFileNames: 'chunk-[hash].js',
+    });
+
+    // Everything meaningful in this build is a .d.ts file; rolldown still
+    // emits its runtime helper chunk as plain JS, which nothing references.
+    // Only touch our own chunk namespace: the JS bundle writes real entry
+    // files into the same dist directory in parallel.
+    await Promise.all(
+      output
+        .filter((chunk) => /^chunk-[^/]+\.js$/.test(chunk.fileName))
+        .map((chunk) => rm(join(cwd, 'dist', chunk.fileName), { force: true }))
+    );
   } finally {
-    await rm(wrapperTsconfig, { force: true });
+    await Promise.all([
+      rm(wrapperTsconfig, { force: true }),
+      rm(emitDir, { recursive: true, force: true }),
+    ]);
   }
 
   if (!process.env.CI) {

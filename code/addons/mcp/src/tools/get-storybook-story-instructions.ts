@@ -36,7 +36,7 @@ const docsWorkflowGuidance = `
 
 ## Using library components
 
-This Storybook exposes component documentation tools. Before using any component from the project's UI library or design system, call **list-all-documentation** once to discover component IDs, then **get-documentation** with the component's \`id\` to get its real props and usage examples. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't. Never assume or invent props.`;
+This Storybook exposes component documentation tools. Before using any component from the project's UI library or design system, call **list-all-documentation** once to discover component IDs, then **get-documentation** with the component's \`id\` to get its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **list-all-documentation** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't. Never assume or invent props.`;
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,

@@ -29,9 +29,12 @@ interface PropsWriterProps {
   importedReference?: string;
   globalReference?: any;
   stringGlobalName?: string;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore no types for this
-  myClass: typeof styles;
+  // A CSS-module class name is a string at runtime. We deliberately do NOT type
+  // this as `typeof styles`: the CSS module's type shape differs per builder
+  // (Vite exposes named exports, Next's css-loader v6 only a default export), so
+  // coupling the prop type to it makes docgen/webpack disagree. See the default
+  // value below, which reads `styles.foo` purely as a runtime property access.
+  myClass?: string;
 }
 
 /** A component that renders its props */

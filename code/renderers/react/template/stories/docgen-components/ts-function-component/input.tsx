@@ -4,8 +4,8 @@ import React from 'react';
 // @ts-ignore (js import not supported in TS)
 import { imported } from '../imported';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore no types for this
-import * as styles from '../imported.module.css';
+// @ts-ignore (css import not supported in TS)
+import styles from '../imported.module.css';
 
 const local = 'local-value';
 

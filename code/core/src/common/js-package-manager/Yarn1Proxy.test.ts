@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
@@ -41,7 +41,14 @@ describe('Yarn 1 Proxy', () => {
   beforeEach(() => {
     yarn1Proxy = new Yarn1Proxy();
     JsPackageManager.clearLatestVersionCache();
+    // The repo-level .env marks test runs as sandbox context; these tests
+    // assert user-facing registry-probe behavior, so run them without it.
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', 'false');
     vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be yarn1', () => {

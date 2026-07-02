@@ -118,6 +118,15 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
 	}
 }
 
+export function expectFinalResponseContains(substrings: string[]): void {
+	const finalMessage = getFinalAssistantMessage() ?? '';
+	for (const substring of substrings) {
+		expect(finalMessage, `Expected the final response to mention "${substring}"`).toContain(
+			substring,
+		);
+	}
+}
+
 export function expectDisplayReviewForVisualChange(): void {
 	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {

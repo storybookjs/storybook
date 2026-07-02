@@ -1,6 +1,6 @@
 ---
 name: stories
-description: Invoke FIRST, before touching any frontend component — every create, edit, or delete, no exceptions. Also for adding or updating stories (*.stories.* files), covering components with stories, starting or previewing Storybook to verify UI, and read-only asks to see, show, browse, or list components, stories, or UI states.
+description: Invoke FIRST, before any frontend component change — create, edit, or delete, no exceptions. Also for adding or updating stories (*.stories.* files), covering components with stories, starting or previewing Storybook to verify UI, and read-only asks to show, browse, or list components, stories, or UI states, or look up docs, props, or usage.
 ---
 
 Prerequisites:

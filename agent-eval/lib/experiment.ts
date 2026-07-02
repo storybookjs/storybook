@@ -19,6 +19,8 @@ const CORE_STORYBOOK_EVALS = [
 	'805-non-visual-refactor',
 	// "Show me all X states": review published without changedFiles
 	'806-browse-request',
+	// "What props does X accept": answered via the documentation tools
+	'807-docs-request',
 ] as const;
 
 // The 9xx line: evals ported from the old eval system (/eval). Too expensive

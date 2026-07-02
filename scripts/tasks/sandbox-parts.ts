@@ -20,7 +20,12 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools/index.ts';
-import { SupportedLanguage } from '../../code/core/src/types/index.ts';
+// Import via the package specifier (not the core source path) so this is the
+// same enum declaration that ProjectTypeService's return type resolves to; the
+// bundled d.ts renames chunk-level enum declarations, which breaks
+// TypeScript's name-based cross-declaration enum compatibility.
+import { SupportedLanguage } from 'storybook/internal/types';
+
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';

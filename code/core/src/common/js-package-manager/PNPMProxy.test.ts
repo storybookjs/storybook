@@ -38,7 +38,14 @@ describe('PNPM Proxy', () => {
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
     JsPackageManager.clearLatestVersionCache();
+    // The repo-level .env marks test runs as sandbox context; these tests
+    // assert user-facing registry-probe behavior, so run them without it.
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', 'false');
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be pnpm', () => {

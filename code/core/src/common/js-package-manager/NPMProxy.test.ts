@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
+import storybookPackagesVersions from '../versions.ts';
 import { NPMProxy } from './NPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -30,7 +31,14 @@ describe('NPM Proxy', () => {
     vi.useRealTimers();
     npmProxy = new NPMProxy();
     JsPackageManager.clearLatestVersionCache();
+    // The repo-level .env marks test runs as sandbox context; these tests
+    // assert user-facing registry-probe behavior, so run them without it.
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', 'false');
     vi.spyOn(npmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be npm', () => {
@@ -310,6 +318,16 @@ describe('NPM Proxy', () => {
   });
 
   describe('latestVersion', () => {
+    it('returns the monorepo version without spawning inside a sandbox task', async () => {
+      vi.stubEnv('IN_STORYBOOK_SANDBOX', 'true');
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
+
+      const version = await npmProxy.latestVersion('storybook');
+
+      expect(executeCommandSpy).not.toHaveBeenCalled();
+      expect(version).toEqual(storybookPackagesVersions.storybook);
+    });
+
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
 

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+next-env.d.ts
+.env
+.env.local
+results/
+*.log
+.DS_Store
+.vercel
+.env.*
+!.env.example
+.env*.local

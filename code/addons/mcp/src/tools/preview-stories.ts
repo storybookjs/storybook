@@ -14,7 +14,8 @@ import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 export const PREVIEW_STORIES_TOOL_DESCRIPTION = `Use this tool to get one or more Storybook preview URLs.
-Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.`;
+Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.
+When the user asked to see or browse existing stories or components (e.g. "show me all the Button variants") and the display-review tool is available, publish a curated review with display-review (passing changedFiles: []) instead of answering with raw preview links; use this tool for verifying your own changes or sharing a specific story on request.`;
 
 export const PreviewStoriesInput = v.object({
 	stories: v.pipe(

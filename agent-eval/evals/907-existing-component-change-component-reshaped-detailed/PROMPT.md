@@ -1,0 +1,1 @@
+Modify `ReviewCard` to support a required `date: string` displayed near the author and optional `onReport?: () => void` that shows a "Report" button. Update `src/components/ReviewCard.tsx` (default export) accordingly.

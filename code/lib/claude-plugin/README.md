@@ -139,5 +139,4 @@ The plugin's `.mcp.json` contains no MCP servers. The plugin uses CLI-based skil
 
 - `storybook-init`: Add Storybook to a project that does not have it yet.
 - `storybook-setup`: Run `storybook ai setup` and follow its output.
-- `storybook-setup-claude-launch`: Create or repair `.claude/launch.json` for starting Storybook from Claude.
 - `storybook-upgrade`: Upgrade older Storybook projects when repair or version checks require it.

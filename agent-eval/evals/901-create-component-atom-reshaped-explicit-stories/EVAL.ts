@@ -1,7 +1,6 @@
 import { test } from 'vitest';
-import { expectDisplayReviewForVisualChange, expectWorkflowCalls } from '#test-utils';
+import { expectWorkflowCalls } from '#test-utils';
 
-test('uses Storybook story instructions and publishes a display review', () => {
-	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
-	expectDisplayReviewForVisualChange();
+test('uses Storybook story instructions and previews the stories', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions', 'preview-stories']);
 });

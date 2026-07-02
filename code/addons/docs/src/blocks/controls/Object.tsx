@@ -8,7 +8,12 @@ import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 import { cloneDeep } from 'es-toolkit/object';
 import { styled } from 'storybook/theming';
 
-import { getControlId, getControlSetterButtonId } from './helpers';
+import {
+  getControlId,
+  getControlSetterButtonId,
+  isJsonSerializable,
+  safeStringify,
+} from './helpers';
 import { JsonTree } from './react-editable-json-tree';
 import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
@@ -172,6 +177,10 @@ export const ObjectControl: FC<ObjectProps> = ({
   argType,
   required,
 }) => {
+  // A non-serializable value (e.g. a Vue VNode with a circular `el`/`__vnode`) cannot be edited as
+  // JSON, so it is shown read-only. Checked on the raw value before cloneDeep.
+  const serializable = useMemo(() => isJsonSerializable(value), [value]);
+
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
@@ -213,15 +222,16 @@ export const ObjectControl: FC<ObjectProps> = ({
     }
   }, [forceVisible]);
 
-  // Use string value as key to force re-render on Arg value reset.
+  // Use string value as key to force re-render on Arg value reset. `safeStringify` keeps a
+  // non-serializable arg (e.g. a circular Vue VNode) from crashing the whole controls panel.
   const jsonString = useMemo(() => {
-    return JSON.stringify(data ?? '', null, 2);
+    return safeStringify(data ?? '', 2);
   }, [data]);
 
   if (!hasData) {
     return (
       <Button
-        ariaLabel={false}
+        ariaLabel={readonly ? `This arg is configured to be read-only.` : false}
         disabled={readonly}
         id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
@@ -244,11 +254,15 @@ export const ObjectControl: FC<ObjectProps> = ({
         name={name}
         key={jsonString}
         defaultValue={jsonString}
-        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
+        onBlur={
+          readonly || !serializable
+            ? undefined
+            : (event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)
+        }
         placeholder="Edit JSON string..."
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
-        readOnly={readonly}
+        readOnly={readonly || !serializable}
         aria-required={required || undefined}
       />
     </>
@@ -261,9 +275,15 @@ export const ObjectControl: FC<ObjectProps> = ({
     <Wrapper>
       {isObjectOrArray && (
         <RawButton
-          disabled={readonly}
+          disabled={readonly || !serializable}
           pressed={showRaw}
-          ariaLabel={`Edit ${name} as JSON`}
+          ariaLabel={
+            !serializable
+              ? 'Args with circular references cannot be edited.'
+              : readonly
+                ? `This arg is configured to be read-only.`
+                : `Edit ${name} as JSON`
+          }
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
@@ -275,9 +295,9 @@ export const ObjectControl: FC<ObjectProps> = ({
           <EditIcon />
         </RawButton>
       )}
-      {!showRaw ? (
+      {!showRaw && serializable ? (
         <JsonTree
-          readOnly={readonly || !isObjectOrArray}
+          readOnly={readonly || !serializable || !isObjectOrArray}
           isCollapsed={isObjectOrArray ? /* default value */ undefined : () => true}
           data={data}
           rootName={name}

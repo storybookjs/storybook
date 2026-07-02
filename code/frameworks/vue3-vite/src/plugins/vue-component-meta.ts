@@ -2,9 +2,11 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import { parseLocalBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
+import picocolors from 'picocolors';
 import type { ModuleNode, Plugin } from 'vite';
 import {
   type ComponentMeta,
@@ -147,6 +149,10 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
             map: s.generateMap({ hires: true, source: id }),
           };
         } catch (e) {
+          // Docgen extraction is best-effort: a failure for one file must not break the build.
+          // We still log it at debug level so silent extraction failures (e.g. checker setup
+          // issues) can be diagnosed instead of disappearing.
+          logger.debug(`vue-component-meta: failed to extract docgen for ${id}: ${String(e)}`);
           return undefined;
         }
       },
@@ -183,7 +189,21 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
 
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
-  const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
+  // If the project root resolves too high, it can make vue-component-meta scan a huge tree and
+  // exhaust memory, freezing the Storybook UI and crashing the dev server. Surface computed
+  // directory to help users understand what to do in case of crashes.
+  logger.info(
+    `vue-component-meta: extracting docgen using project root: ${picocolors.cyan(projectRoot)}`
+  );
+
+  const defaultChecker = createCheckerByJson(
+    projectRoot,
+    // tsconfig "include" globbing does not support brace expansion, extensions must be listed separately.
+    {
+      include: ['**/*.vue', '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.cjs', '**/*.mjs'],
+    },
+    checkerOptions
+  );
 
   // prefer the tsconfig.json file of the project to support alias resolution etc.
   if (await fileExists(projectTsConfigPath)) {

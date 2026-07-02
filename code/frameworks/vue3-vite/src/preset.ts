@@ -22,11 +22,12 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
   // add docgen plugin depending on framework option
+  // from 10.5 on, vue-component-meta is default.
   if (docgen !== false) {
-    if (docgen.plugin === 'vue-component-meta') {
-      plugins.push(await vueComponentMeta(docgen.tsconfig));
-    } else {
+    if (docgen.plugin === 'vue-docgen-api') {
       plugins.push(await vueDocgen());
+    } else {
+      plugins.push(await vueComponentMeta(docgen.tsconfig));
     }
   }
 
@@ -45,7 +46,7 @@ const resolveDocgenOptions = (
   }
 
   if (docgen === undefined || docgen === true) {
-    return { plugin: 'vue-docgen-api' };
+    return { plugin: 'vue-component-meta' };
   }
 
   if (typeof docgen === 'string') {

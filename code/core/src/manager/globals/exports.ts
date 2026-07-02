@@ -670,7 +670,6 @@ export default {
   ],
   'storybook/internal/router': [
     'BaseLocationProvider',
-    'DEEPLY_EQUAL',
     'Link',
     'Location',
     'LocationProvider',
@@ -678,7 +677,6 @@ export default {
     'MemoryRouter',
     'Route',
     'buildArgsParam',
-    'deepDiff',
     'getMatch',
     'parsePath',
     'queryFromLocation',

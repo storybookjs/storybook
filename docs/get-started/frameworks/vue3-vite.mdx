@@ -71,28 +71,15 @@ setup((app) => {
 
 <Callout variant="info">
 
-`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
+`vue-component-meta` is enabled by default as of Storybook 10.5. In older versions, `vue-docgen-api` was the default.
 
 </Callout>
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
 
-If you want to use `vue-component-meta`, you can configure it in your `.storybook/main.js|ts` file:
+If you want to use `vue-component-meta` in Storybook 10.4 or older, you can configure it in your `.storybook/main.js|ts` file:
 
-```ts title=".storybook/main.ts"
-import type { StorybookConfig } from '@storybook/vue3-vite';
-
-const config: StorybookConfig = {
-  framework: {
-    name: '@storybook/vue3-vite',
-    options: {
-      docgen: 'vue-component-meta',
-    },
-  },
-};
-
-export default config;
-```
+<CodeSnippets path="vue3-vite-vue-component-meta.md" />
 
 `vue-component-meta` comes with many benefits and enables more documentation features, such as:
 
@@ -106,24 +93,7 @@ It also supports both default and named component exports.
 
 To describe a prop, including tags, you can use JSDoc comments in your component's props definition:
 
-```html title="YourComponent.vue"
-<script setup lang="ts">
-  interface MyComponentProps {
-    /** The name of the user */
-    name: string;
-    /**
-     * The category of the component
-     *
-     * @since 8.0.0
-     */
-    category?: string;
-  }
-
-  withDefaults(defineProps<MyComponentProps>(), {
-    category: 'Uncategorized',
-  });
-</script>
-```
+<CodeSnippets path="vue3-vite-docgen-example.md" />
 
 The props definition above will generate the following controls:
 
@@ -245,6 +215,28 @@ This is not a limitation of Storybook, but how `vue-component-meta` works. For m
 
 Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
 
+#### Troubleshooting
+
+##### The Storybook UI freezes and the dev server crashes
+
+If your Storybook UI freezes and the dev server crashes (often with a `JavaScript heap out of memory` error) when using `vue-component-meta`, the cause is likely a miscomputed project root. To extract component metadata, `vue-component-meta` builds a TypeScript program rooted at the directory Storybook detects as your project root. When that directory is correct, only your project's files are scanned and everything works as expected. When it resolves to a location higher up your file system, such as a parent folder or your home directory, the program scans far more files than intended and runs out of memory.
+
+Storybook detects the project root by first looking for a `.git` (or `.svn`/`.hg`) folder, then a lockfile (e.g. `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`), and finally falling back to the current working directory. When none of these markers sit at your project root, detection can land on the wrong directory.
+
+To confirm this is happening, start your Storybook and look at the dev server console output. When `vue-component-meta` is in use, Storybook logs the resolved project root and `tsconfig` path. If the reported project root doesn't point at your actual project, the detection is at fault, and you can fix it in one of the following ways:
+
+- Initialize a Git repository (run `git init`) or make sure a lockfile exists at your project root, so detection succeeds.
+- Set the `STORYBOOK_PROJECT_ROOT` environment variable to your project's absolute path to override auto-detection.
+- Point docgen at the correct configuration with the [`docgen.tsconfig` option](#override-the-default-configuration), so the TypeScript program is scoped to your project's `include`/`exclude`.
+
+If the reported project root is already correct but the program is still too large, [disable docgen](#when-to-disable-docgen) or increase Node's memory limit with `NODE_OPTIONS=--max-old-space-size=8192`.
+
+### Using `vue-docgen-api`
+
+If you want to keep using `vue-docgen-api`, you can set it as your docgen tool in your `.storybook/main.js|ts` file:
+
+<CodeSnippets path="vue-vite-framework-options.md" />
+
 ## FAQ
 
 ### How do I manually install the Vue framework?
@@ -281,7 +273,7 @@ Configure options for the [framework's builder](../../api/main-config/main-confi
 
 Type: `'vue-docgen-api' | 'vue-component-meta' | boolean`
 
-Default: `'vue-docgen-api'`
+Default: `'vue-component-meta'`
 
 Since: `8.0`
 

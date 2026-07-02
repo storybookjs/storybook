@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
-import type { GlobalTypes, Globals } from 'storybook/internal/types';
+import type { Globals, GlobalTypes } from 'storybook/internal/types';
 
-import { DEEPLY_EQUAL, deepDiff } from './args.ts';
+import { deepDiff, DEEPLY_EQUAL } from '../../../shared/utils/deep-diff.ts';
 import { getValuesFromGlobalTypes } from './csf/getValuesFromGlobalTypes.ts';
 
 export class GlobalsStore {

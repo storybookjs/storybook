@@ -61,7 +61,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
-						? "\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Any newly created story MUST be included in the review."
+						? '\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Any newly created story MUST be included in the review.'
 						: '',
 				)
 				.trim(),

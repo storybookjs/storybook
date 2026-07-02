@@ -2,15 +2,14 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useReducer,
   useRef,
   useState,
-  type Ref,
   type RefObject,
 } from 'react';
 
 import {
   IFRAME_RESIZE_REQUEST_CONTEXT,
-  iframeResizeDimensionsEqual,
   parseIframeResizeMessage,
   type IframeResizeDimensions,
 } from '../../../../shared/constants/iframe-resize.ts';
@@ -19,59 +18,26 @@ import {
   enqueuePreview,
   type PreviewHandle,
 } from './previewScheduler.ts';
+import {
+  initialThumbnailState,
+  isThumbnailLoading,
+  thumbnailReducer,
+} from './previewThumbnailState.ts';
 
-/** If iframe.resize never arrives, don't block the thumbnail forever. */
+/**
+ * If iframe.resize never arrives, clear the spinner anyway. 3× the scheduler slot deadline so even
+ * a boot that spent a full queue round waiting still gets time to report.
+ */
 const PREVIEW_SCALE_SETTLE_FALLBACK_MS = PREVIEW_SETTLE_TIMEOUT_MS * 3;
 
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
+// iframe well before it scrolls into view, evict it only much further out.
 // The gap is hysteresis so scrolling near a boundary doesn't thrash.
 const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
 
-const resizeHandlers = new Map<Window, (dimensions: IframeResizeDimensions) => void>();
-let resizeMessageListening = false;
-
-const ensureResizeMessageListener = (): void => {
-  if (resizeMessageListening) {
-    return;
-  }
-  resizeMessageListening = true;
-  window.addEventListener('message', (event: MessageEvent) => {
-    // Cross-origin iframe sources are WindowProxy objects; avoid `instanceof Window`.
-    const source = event.source;
-    if (source == null) {
-      return;
-    }
-    const handler = resizeHandlers.get(source as Window);
-    if (!handler) {
-      return;
-    }
-    const dimensions = parseIframeResizeMessage(event.data);
-    if (dimensions) {
-      handler(dimensions);
-    }
-  });
-};
-
-const registerResizeHandler = (
-  contentWindow: Window,
-  handler: (dimensions: IframeResizeDimensions) => void
-): (() => void) => {
-  ensureResizeMessageListener();
-  resizeHandlers.set(contentWindow, handler);
-  return () => {
-    resizeHandlers.delete(contentWindow);
-  };
-};
-
-const requestEmbedRemeasure = (contentWindow: Window): void => {
-  try {
-    contentWindow.postMessage(JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }), '*');
-  } catch {
-    // Cross-origin or detached iframe; ignore.
-  }
-};
-
+// Percentage rootMargins are relative to the observer root, so anchor the
+// observers to the nearest scroll container rather than the window.
 const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
   const radixViewport = element.closest<HTMLElement>('[data-radix-scroll-area-viewport]');
   if (radixViewport) {
@@ -88,31 +54,6 @@ const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
   return null;
 };
 
-const isWithinPreloadRange = (
-  element: HTMLElement,
-  root: HTMLElement | null,
-  margin: number
-): boolean => {
-  const rect = element.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) {
-    return false;
-  }
-  if (root) {
-    const rootRect = root.getBoundingClientRect();
-    return rect.bottom >= rootRect.top - margin && rect.top <= rootRect.bottom + margin;
-  }
-  const viewportHeight =
-    typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerHeight || 0;
-  return rect.bottom >= -margin && rect.top <= viewportHeight + margin;
-};
-
-const getPreloadMargin = (scrollRoot: HTMLElement | null): number => {
-  if (!scrollRoot) {
-    return typeof window === 'undefined' ? 0 : window.innerHeight;
-  }
-  return scrollRoot.clientHeight || window.innerHeight;
-};
-
 export type UsePreviewThumbnailOptions = {
   storyId: string;
   getPreviewHref: (storyId: string) => string;
@@ -121,7 +62,6 @@ export type UsePreviewThumbnailOptions = {
 
 export type UsePreviewThumbnailResult = {
   cellRef: RefObject<HTMLDivElement>;
-  frameRef: Ref<HTMLDivElement>;
   iframeRef: RefObject<HTMLIFrameElement>;
   src: string | undefined;
   /** True until iframe.resize arrives and the measured scale has painted. */
@@ -137,175 +77,100 @@ export const usePreviewThumbnail = ({
   previewsPaused = false,
 }: UsePreviewThumbnailOptions): UsePreviewThumbnailResult => {
   const cellRef = useRef<HTMLDivElement>(null);
-  const frameElementRef = useRef<HTMLDivElement | null>(null);
-  const frameRef = useCallback((node: HTMLDivElement | null) => {
-    frameElementRef.current = node;
-  }, []);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const previewsPausedRef = useRef(previewsPaused);
-  previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
-  const [rememberedDimensions, setRememberedDimensions] = useState<IframeResizeDimensions | null>(
-    null
-  );
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [src, setSrc] = useState<string | undefined>(undefined);
+  const [state, dispatch] = useReducer(thumbnailReducer, initialThumbnailState);
   const handleRef = useRef<PreviewHandle | null>(null);
-  const loadGenerationRef = useRef(0);
-  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const settleRafRef = useRef({ raf1: 0, raf2: 0 });
 
-  const clearSettleTimers = useCallback(() => {
-    if (fallbackTimerRef.current !== undefined) {
-      clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = undefined;
-    }
-    cancelAnimationFrame(settleRafRef.current.raf1);
-    cancelAnimationFrame(settleRafRef.current.raf2);
-    settleRafRef.current.raf1 = 0;
-    settleRafRef.current.raf2 = 0;
-  }, []);
+  const { src, bootId } = state;
 
-  const finishLoadingForGeneration = useCallback((generation: number) => {
-    if (loadGenerationRef.current !== generation) {
-      return;
-    }
-    setIsPreviewLoading(false);
-  }, []);
-
-  const scheduleLoadingClearAfterPaint = useCallback(
-    (generation: number) => {
-      cancelAnimationFrame(settleRafRef.current.raf1);
-      cancelAnimationFrame(settleRafRef.current.raf2);
-      settleRafRef.current.raf1 = requestAnimationFrame(() => {
-        settleRafRef.current.raf2 = requestAnimationFrame(() => {
-          finishLoadingForGeneration(generation);
-        });
-      });
-    },
-    [finishLoadingForGeneration]
-  );
-
-  const resetLoad = useCallback(() => {
-    clearSettleTimers();
-    setRememberedDimensions(null);
-    setIsPreviewLoading(false);
-  }, [clearSettleTimers]);
-
-  const beginLoad = useCallback(() => {
-    clearSettleTimers();
-    loadGenerationRef.current += 1;
-    const generation = loadGenerationRef.current;
-    setRememberedDimensions(null);
-    setIsPreviewLoading(true);
-    fallbackTimerRef.current = setTimeout(
-      () => finishLoadingForGeneration(generation),
-      PREVIEW_SCALE_SETTLE_FALLBACK_MS
-    );
-  }, [clearSettleTimers, finishLoadingForGeneration]);
-
-  const handleResize = useCallback(
-    (dimensions: IframeResizeDimensions) => {
-      const generation = loadGenerationRef.current;
-      setRememberedDimensions((current) =>
-        iframeResizeDimensionsEqual(current, dimensions) ? current : dimensions
-      );
-      scheduleLoadingClearAfterPaint(generation);
-    },
-    [scheduleLoadingClearAfterPaint]
-  );
-
+  // Visibility: mount near the viewport, evict far outside it. While the
+  // summary overlay parks this grid off-screen (`previewsPaused`), the whole
+  // subsystem freezes so loaded previews are neither evicted nor re-observed.
   useEffect(() => {
     const host = cellRef.current;
-    if (!host) {
-      return undefined;
-    }
-    if (typeof IntersectionObserver === 'undefined') {
-      setIsInView(true);
+    if (!host || previewsPaused) {
       return undefined;
     }
     const scrollRoot = getScrollRoot(host);
-    const effectiveRoot = scrollRoot && scrollRoot.clientHeight > 0 ? scrollRoot : null;
-    const markInViewIfClose = () => {
-      if (isWithinPreloadRange(host, effectiveRoot, getPreloadMargin(scrollRoot))) {
-        setIsInView(true);
-      }
-    };
-    markInViewIfClose();
-    const resizeObserver =
-      typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => markInViewIfClose())
-        : undefined;
-    resizeObserver?.observe(host);
+    const root = scrollRoot && scrollRoot.clientHeight > 0 ? scrollRoot : null;
     const mountObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
         }
       },
-      { root: effectiveRoot, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
+      { root, rootMargin: PREVIEW_MOUNT_ROOT_MARGIN }
     );
     const evictObserver = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting && !previewsPausedRef.current) {
+        if (!entry.isIntersecting) {
           setIsInView(false);
         }
       },
-      { root: effectiveRoot, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
+      { root, rootMargin: PREVIEW_EVICT_ROOT_MARGIN }
     );
     mountObserver.observe(host);
     evictObserver.observe(host);
     return () => {
-      resizeObserver?.disconnect();
       mountObserver.disconnect();
       evictObserver.disconnect();
     };
-  }, []);
+  }, [previewsPaused]);
 
   useEffect(() => {
-    if (!isInView && !previewsPaused) {
-      setSrc(undefined);
+    if (!isInView) {
+      dispatch({ type: 'evicted' });
     }
-  }, [isInView, previewsPaused]);
+  }, [isInView]);
 
-  useEffect(() => {
-    resetLoad();
-  }, [storyId, resetLoad]);
-
+  // Queue a boot per (visible cell × preview href); the scheduler caps how
+  // many iframes load at once and releases slots on load/error or deadline.
   useEffect(() => {
     if (!isInView) {
       return undefined;
     }
     const previewHref = getPreviewHref(storyId);
-    // Spinner while queued for a concurrency slot, not only after src is assigned.
-    setIsPreviewLoading(true);
+    dispatch({ type: 'enqueued' });
     const handle = enqueuePreview(() => {
-      setSrc(previewHref);
+      dispatch({ type: 'started', src: previewHref });
     });
     handleRef.current = handle;
     return () => {
       handle.release();
       handleRef.current = null;
-      resetLoad();
     };
-  }, [isInView, storyId, getPreviewHref, resetLoad]);
-
-  const finishCurrent = useCallback(() => {
-    handleRef.current?.release();
-  }, []);
-
-  const forceStartCurrent = useCallback(() => {
-    handleRef.current?.forceStart();
-  }, []);
+  }, [isInView, storyId, getPreviewHref]);
 
   useEffect(() => {
     if (!src) {
-      resetLoad();
       return undefined;
     }
-    beginLoad();
-    return clearSettleTimers;
-  }, [src, beginLoad, resetLoad, clearSettleTimers]);
+    const timer = setTimeout(() => dispatch({ type: 'settled' }), PREVIEW_SCALE_SETTLE_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [bootId, src]);
+
+  const handleResize = useCallback((dimensions: IframeResizeDimensions) => {
+    dispatch({ type: 'resized', dimensions });
+    // Double rAF: let the new scale paint before the spinner clears. Stale
+    // callbacks are harmless — the reducer ignores `settled` outside a boot.
+    cancelAnimationFrame(settleRafRef.current.raf1);
+    cancelAnimationFrame(settleRafRef.current.raf2);
+    settleRafRef.current.raf1 = requestAnimationFrame(() => {
+      settleRafRef.current.raf2 = requestAnimationFrame(() => {
+        dispatch({ type: 'settled' });
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    const rafs = settleRafRef.current;
+    return () => {
+      cancelAnimationFrame(rafs.raf1);
+      cancelAnimationFrame(rafs.raf2);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!src) {
@@ -316,35 +181,51 @@ export const usePreviewThumbnail = ({
       return undefined;
     }
 
-    const attach = () => {
-      const contentWindow = iframe.contentWindow;
-      if (!contentWindow) {
-        return undefined;
+    const onMessage = (event: MessageEvent) => {
+      // Guard against null === null when the iframe is detached; cross-origin
+      // sources are WindowProxy objects, but identity comparison still works.
+      if (event.source === null || event.source !== iframe.contentWindow) {
+        return;
       }
-      const detachHandler = registerResizeHandler(contentWindow, handleResize);
-      requestEmbedRemeasure(contentWindow);
-      return detachHandler;
+      const dimensions = parseIframeResizeMessage(event.data);
+      if (dimensions) {
+        handleResize(dimensions);
+      }
     };
+    window.addEventListener('message', onMessage);
 
-    let detach = attach();
-    const onLoad = () => {
-      detach?.();
-      detach = attach();
+    const requestRemeasure = () => {
+      try {
+        iframe.contentWindow?.postMessage(
+          JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }),
+          '*'
+        );
+      } catch {
+        // Cross-origin or detached iframe; ignore.
+      }
     };
-    iframe.addEventListener('load', onLoad);
+    requestRemeasure();
+    iframe.addEventListener('load', requestRemeasure);
     return () => {
-      iframe.removeEventListener('load', onLoad);
-      detach?.();
+      window.removeEventListener('message', onMessage);
+      iframe.removeEventListener('load', requestRemeasure);
     };
   }, [src, handleResize]);
 
+  const finishCurrent = useCallback(() => {
+    handleRef.current?.release();
+  }, []);
+
+  const forceStartCurrent = useCallback(() => {
+    handleRef.current?.forceStart();
+  }, []);
+
   return {
     cellRef,
-    frameRef,
     iframeRef,
     src,
-    isPreviewLoading,
-    rememberedDimensions,
+    isPreviewLoading: isThumbnailLoading(state),
+    rememberedDimensions: state.dimensions,
     forceStartCurrent,
     finishCurrent,
   };

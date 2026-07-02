@@ -235,7 +235,6 @@ const StoryPreviewCell: FC<{
 }> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
   const {
     cellRef,
-    frameRef,
     iframeRef,
     src,
     isPreviewLoading,
@@ -269,7 +268,6 @@ const StoryPreviewCell: FC<{
         <Frame
           as={href ? 'a' : 'div'}
           {...(href ? { href } : {})}
-          ref={frameRef as React.Ref<HTMLAnchorElement>}
           data-testid="review-collection-grid-frame"
           data-viewport-fill={viewportFill || undefined}
           style={frameStyle}

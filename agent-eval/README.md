@@ -45,10 +45,22 @@ pnpm eval
 Run a single experiment:
 
 ```bash
-pnpm exec agent-eval cc-mcp
+pnpm exec agent-eval cc-mcp-opus-high
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI.
+
+Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
+effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium`)
+run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
+for the default-model experiments:
+
+```bash
+EVAL_EXTRA_MODELS=1 pnpm exec agent-eval cc-plugin-sonnet-medium
+```
+
+In CI, manual `workflow_dispatch` runs of the `Agent eval` workflow can enable
+them through the `extra_models` input.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
@@ -58,10 +70,11 @@ runtime/build contexts.
 
 Configured experiments:
 
-- `cc-mcp`: Claude Code through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
-- `codex-mcp`: Codex with project-local Storybook MCP config in `.codex/config.toml`.
-- `cc-plugin`: Claude Code through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-plugin`: Codex with Storybook plugin skills copied to `.agents/skills`.
+- `cc-mcp-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
+- `codex-mcp`: Codex (CLI-default model) with project-local Storybook MCP config in `.codex/config.toml`.
+- `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) plugin variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
+- `codex-plugin`: Codex (CLI-default model) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Shared Templates
 

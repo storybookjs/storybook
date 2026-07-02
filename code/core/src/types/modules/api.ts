@@ -17,7 +17,7 @@ import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 
-export type API_ViewMode = OrString<'story' | 'docs' | 'settings'> | undefined;
+export type API_ViewMode = OrString<'story' | 'docs' | 'settings' | 'review'> | undefined;
 
 export type API_RenderOptions = Addon_RenderOptions;
 

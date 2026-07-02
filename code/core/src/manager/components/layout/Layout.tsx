@@ -6,7 +6,7 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
+import { isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
 import { Notifications } from '../../container/Notifications.tsx';
@@ -108,11 +108,7 @@ const useLayoutSyncingState = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
-  const isPagesShown =
-    managerLayoutState.viewMode !== undefined &&
-    managerLayoutState.viewMode !== 'story' &&
-    managerLayoutState.viewMode !== 'docs' &&
-    managerLayoutState.viewMode !== 'review';
+  const isPagesShown = isPagesViewMode(managerLayoutState.viewMode);
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
@@ -154,9 +150,9 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
-  const { path, customQueryParams } = useStorybookState();
-  const showSidebar =
-    (api.getIsNavShown?.() ?? true) && !isReviewManagerRoute(path, customQueryParams);
+  // Subscribe to manager state so nav availability re-evaluates on route and layout changes.
+  useStorybookState();
+  const showSidebar = api.getNavAvailability() === 'shown';
 
   const {
     navSize,

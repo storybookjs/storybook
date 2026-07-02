@@ -4,8 +4,6 @@ import { createPortal } from 'react-dom';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { isReviewManagerRoute } from '../../../../shared/review/routes.ts';
-
 import { PRE_REVIEW_RETURN_KEY } from '../constants.ts';
 import { reviewStore, useReview } from '../review-store.ts';
 import { sessionStore } from '../session-store.ts';
@@ -18,7 +16,7 @@ type ChromeInsets = { left: number; right: number; bottom: number };
 
 const useDesktopChromeInsets = (): ChromeInsets => {
   const api = useStorybookApi();
-  const { layout, path, customQueryParams } = useStorybookState();
+  const { layout } = useStorybookState();
   const [isDesktop, setIsDesktop] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -39,10 +37,9 @@ const useDesktopChromeInsets = (): ChromeInsets => {
   const navSize = api.getNavSizeWithCustomisations?.(layout.navSize) ?? layout.navSize;
   const { panelPosition, rightPanelWidth, bottomPanelHeight } = layout;
   const isPanelShown = api.getIsPanelShown?.() ?? false;
-  const showSidebar = !isReviewManagerRoute(path, customQueryParams);
 
   return {
-    left: showSidebar && api.getIsNavShown?.() ? navSize : 0,
+    left: api.getNavAvailability() === 'shown' ? navSize : 0,
     right: isPanelShown && panelPosition === 'right' ? rightPanelWidth : 0,
     bottom: isPanelShown && panelPosition === 'bottom' ? bottomPanelHeight : 0,
   };

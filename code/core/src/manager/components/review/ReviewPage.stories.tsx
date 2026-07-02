@@ -89,6 +89,7 @@ const managerApi: API = {
   off: offMock,
   emit: emitMock,
   getIsNavShown: () => true,
+  getNavAvailability: () => 'unavailable',
   getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
   togglePanel: fn().mockName('api::togglePanel'),

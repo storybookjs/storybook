@@ -33,18 +33,38 @@ export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOp
   if (ViteAsyncLocalStorage.getStore()) {
     return Promise.resolve([]);
   }
-  return ViteAsyncLocalStorage.run(true, () => main(options));
+  return Promise.resolve(main(options));
 }
 
-async function main(options?: UserOptions): Promise<PluginOption> {
+function main(options?: UserOptions): PluginOption {
   const finalOptions = {
     base: '/__storybook',
     configDir: resolve(options?.configDir ?? '.storybook'),
     ...options,
   };
 
-  let sb: Awaited<ReturnType<typeof experimental_loadStorybook>>;
-  let finalConfig: InlineConfig;
+  let storybookPromise:
+    | Promise<{
+        sb: Awaited<ReturnType<typeof experimental_loadStorybook>>;
+        finalConfig: InlineConfig;
+      }>
+    | undefined;
+
+  // load and cache config
+  const loadStorybook = () =>
+    (storybookPromise ??= ViteAsyncLocalStorage.run(true, async () => {
+      const sb = await experimental_loadStorybook({
+        configDir: finalOptions.configDir,
+        packageJson: {},
+      });
+
+      const sbPlugins = await pluginConfig(sb);
+      const finalConfig = (await sb.presets.apply('viteFinal', {
+        plugins: sbPlugins,
+      })) as InlineConfig;
+
+      return { sb, finalConfig };
+    }));
 
   const baseNoSlash = finalOptions.base.replace(/\/+$/, '') || '';
   const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -59,15 +79,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
       apply: applyToStorybookOnly,
 
       async config(_, { command, mode }) {
-        sb = await experimental_loadStorybook({
-          configDir: finalOptions.configDir,
-          packageJson: {},
-        });
-
-        const sbPlugins = await pluginConfig(sb);
-        finalConfig = (await sb.presets.apply('viteFinal', {
-          plugins: sbPlugins,
-        })) as InlineConfig;
+        const { sb } = await loadStorybook();
 
         sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
         if (mode === 'storybook') {
@@ -87,6 +99,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         return {
           build: {
             async createEnvironment() {
+              const { finalConfig } = await loadStorybook();
               const sbConfig = await resolveConfig(
                 {
                   ...finalConfig,
@@ -107,6 +120,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
           },
           dev: {
             async createEnvironment(name, config, context) {
+              const { finalConfig } = await loadStorybook();
               const sbConfig = await resolveConfig(
                 {
                   ...finalConfig,
@@ -131,6 +145,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
       },
 
       async configureServer(server) {
+        const { sb } = await loadStorybook();
         const storyIndexGenerator =
           await sb.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
@@ -145,9 +160,12 @@ async function main(options?: UserOptions): Promise<PluginOption> {
           server.middlewares.use(middleware);
         }
 
-        const port = await getPort();
+        // A random port is important: getPort() defaults to preferring port 3000, which can appear
+        // free on IPv4 when the surrounding dev server (e.g. Nuxt) only bound IPv6 — polka would
+        // then shadow the app for all IPv4 localhost traffic. Loopback-only, as it's internal.
+        const port = await getPort({ random: true, host: '127.0.0.1' });
         const polkaServer = polka();
-        polkaServer.listen(port);
+        polkaServer.listen(port, '127.0.0.1');
         sb.port = server.config.server.port;
         await sb.presets.apply('experimental_devServer', polkaServer, sb);
         registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
@@ -188,7 +206,7 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         server.middlewares.use(
           baseNoSlash || '/',
           createProxyMiddleware({
-            target: `http://localhost:${port}`,
+            target: `http://127.0.0.1:${port}`,
             changeOrigin: true,
             ws: true,
             pathRewrite: (path) =>

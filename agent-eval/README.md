@@ -71,10 +71,10 @@ runtime/build contexts.
 Configured experiments:
 
 - `cc-mcp-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
-- `codex-mcp`: Codex (CLI-default model) with project-local Storybook MCP config in `.codex/config.toml`.
+- `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
 - `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
 - `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) plugin variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
-- `codex-plugin`: Codex (CLI-default model) with Storybook plugin skills copied to `.agents/skills`.
+- `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Shared Templates
 

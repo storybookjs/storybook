@@ -49,10 +49,8 @@ export const RESHAPED_STORYBOOK_EVALS = [
 // explicitly enabled, so labeled CI runs only pay for the default-model
 // experiments. Enable with EVAL_EXTRA_MODELS=1 (locally or via the
 // workflow_dispatch input in CI).
-export const EXTRA_MODEL_EVALS: (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][] = process.env
-	.EVAL_EXTRA_MODELS
-	? [...RESHAPED_STORYBOOK_EVALS]
-	: [];
+export const EXTRA_MODEL_EVALS: (typeof ALL_RESHAPED_STORYBOOK_EVALS)[number][] =
+	process.env.EVAL_EXTRA_MODELS === '1' ? [...RESHAPED_STORYBOOK_EVALS] : [];
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
 	// Keep runs at 1: the runner starts all attempts in parallel (earlyExit only

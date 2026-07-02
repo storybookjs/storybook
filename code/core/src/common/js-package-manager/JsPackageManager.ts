@@ -15,6 +15,7 @@ import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { optionalEnvToBoolean } from '../utils/envs.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
@@ -338,10 +339,17 @@ export abstract class JsPackageManager {
       const { operationDir, packageJson } = packageJsonInfo;
       const dependenciesMap: Record<string, string> = {};
 
-      for (const dep of dependencies) {
-        const [packageName, packageVersion] = getPackageDetails(dep);
-        const latestVersion = await this.getVersion(packageName);
-        dependenciesMap[packageName] = packageVersion ?? latestVersion;
+      // Versions resolve concurrently (each lookup may spawn the package
+      // manager), and only for dependencies that don't carry one already.
+      // The entries array keeps package.json key order deterministic.
+      const entries = await Promise.all(
+        dependencies.map(async (dep) => {
+          const [packageName, packageVersion] = getPackageDetails(dep);
+          return [packageName, packageVersion ?? (await this.getVersion(packageName))] as const;
+        })
+      );
+      for (const [packageName, version] of entries) {
+        dependenciesMap[packageName] = version;
       }
 
       const targetDeps = packageJson[options.type] as Record<string, string>;
@@ -519,6 +527,21 @@ export abstract class JsPackageManager {
       return cachedVersion;
     }
 
+    // In monorepo sandbox creation every storybook package is published to
+    // the local registry at exactly the version this CLI was built with, so
+    // the registry probe (a package-manager subprocess per package) is a
+    // foregone conclusion. Real user installs never have this variable set.
+    if (
+      optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) &&
+      packageName in storybookPackagesVersions
+    ) {
+      const version = storybookPackagesVersions[packageName as StorybookPackage];
+      if (!constraint || satisfies(version, constraint)) {
+        JsPackageManager.latestVersionCache.set(cacheKey, version);
+        return version;
+      }
+    }
+
     let result: string;
 
     logger.debug(`Getting CLI versions from NPM for ${packageName}...`);
@@ -691,7 +714,17 @@ export abstract class JsPackageManager {
         version = vitePlusVersions[packageName]!;
       }
 
+      // Resolving the module's own package.json is a plain fs read (PnP
+      // included) and covers the common cases - installed-and-resolvable, or
+      // not installed at all. findInstallations spawns the package manager
+      // for a full dependency-graph walk, so it stays as the fallback for
+      // declared dependencies that don't resolve directly (e.g. pnpm's
+      // virtual store layouts).
       if (!version) {
+        version = (await this.getModulePackageJSON(packageName))?.version ?? null;
+      }
+
+      if (!version && this.isDependencyInstalled(packageName)) {
         const installations = await this.findInstallations([packageName]);
         if (installations) {
           version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;

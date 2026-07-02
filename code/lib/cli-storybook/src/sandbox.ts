@@ -42,14 +42,23 @@ export const sandbox = async ({
   let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
   let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
+  const currentVersion = versions.storybook;
+  // In monorepo sandbox creation the CLI is freshly built from the local
+  // branch, so the latest/next registry probes can only ever produce the
+  // "you are behind" warning copy - at the cost of two npm roundtrips before
+  // the template download starts. Treat the local version as current there.
+  const insideSandboxTask = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
   // Always use npm to fetch versions, as other package manager commands may fail when running in
   // non-project directories (e.g. parent sandbox directory). We just need to use npm info for this use case.
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: PackageManagerName.NPM,
   });
-  const latestVersion = (await packageManager.latestVersion('storybook'))!;
-  const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
-  const currentVersion = versions.storybook;
+  const latestVersion = insideSandboxTask
+    ? currentVersion
+    : (await packageManager.latestVersion('storybook'))!;
+  const nextVersion = insideSandboxTask
+    ? currentVersion
+    : ((await packageManager.latestVersion('storybook@next')) ?? '0.0.0');
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
 

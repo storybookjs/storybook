@@ -16,7 +16,7 @@ export const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Stor
 - **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
 
 ## Hard rules
-1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
+1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`get-stories-by-component\` or \`list-all-documentation\`, then retry.
 2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
 3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.

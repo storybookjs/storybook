@@ -1,4 +1,11 @@
-import React, { useLayoutEffect, useRef, useState, useSyncExternalStore, type FC } from 'react';
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FC,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
@@ -7,6 +14,7 @@ import { styled } from 'storybook/theming';
 import { isReviewManagerRoute } from '../../../../shared/review/routes.ts';
 
 import { PRE_REVIEW_RETURN_KEY } from '../constants.ts';
+import { dismissReview } from '../review-actions.ts';
 import { reviewStore, useReview } from '../review-store.ts';
 import { sessionStore } from '../session-store.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
@@ -91,6 +99,7 @@ const SummaryHost = styled.div<{ $visible: boolean; $insets: ChromeInsets }>(
 );
 
 export const ReviewSummaryPortal: FC = () => {
+  const api = useStorybookApi();
   const chromeInsets = useDesktopChromeInsets();
   const {
     state,
@@ -98,11 +107,14 @@ export const ReviewSummaryPortal: FC = () => {
     isStale,
     hasPendingUpdate,
     onAcceptPendingUpdate,
-    getStoryPreviewHref,
-    dismissReview,
     isInReviewMode,
     isSummaryVisible,
   } = useReview();
+  const getStoryPreviewHref = useCallback(
+    (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
+    [api]
+  );
+  const onDismiss = useCallback(() => dismissReview(api), [api]);
   const overlayShown = useSummaryOverlayShown();
   const [portalHost, setPortalHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -146,7 +158,7 @@ export const ReviewSummaryPortal: FC = () => {
             hasPendingUpdate={hasPendingUpdate}
             onAcceptPendingUpdate={onAcceptPendingUpdate}
             previewsPaused={!overlayShown}
-            onDismiss={dismissReview}
+            onDismiss={onDismiss}
             returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}
           />,
           portalHost

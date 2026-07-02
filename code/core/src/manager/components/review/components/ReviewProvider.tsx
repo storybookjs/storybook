@@ -4,7 +4,6 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type FC,
   type ReactNode,
 } from 'react';
@@ -20,18 +19,12 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import {
-  AUTO_ENTERED_SESSION_KEY,
-  EVENTS,
-  PRE_REVIEW_RETURN_KEY,
-  REVIEW_EXITING_SESSION_KEY,
-} from '../constants.ts';
-import { navigateOutOfReview } from '../review-actions.ts';
+import { AUTO_ENTERED_SESSION_KEY, EVENTS, PRE_REVIEW_RETURN_KEY } from '../constants.ts';
+import { acceptPendingReview, navigateOutOfReview } from '../review-actions.ts';
 import { enterReviewMode, isReviewModeActive } from '../review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
-  buildReviewChangesSummaryHref,
   isReviewReturnSearch,
   isReviewSummaryPath,
   parseCollectionIndex,
@@ -39,17 +32,14 @@ import {
   resolveActiveNavEntry,
   resolveNavIndex,
 } from '../review-navigation.ts';
-import {
-  acceptReviewNotification,
-  clearReviewNotificationsOnDismiss,
-} from '../review-notification.ts';
+import { clearReviewNotificationsOnDismiss } from '../review-notification.ts';
 import type { ReviewState } from '../review-state.ts';
 import {
   clearReviewStatuses,
   collectReviewStoryIds,
   syncReviewStatuses,
 } from '../review-status.ts';
-import { reviewNotificationKey, reviewStore, type ReviewStoreState } from '../review-store.ts';
+import { reviewStore, useReview, type ReviewDerivedState } from '../review-store.ts';
 import { buildNewlyAddedStoryIds, buildStoryInfo } from '../review-story-info.ts';
 import { sessionStore } from '../session-store.ts';
 import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
@@ -65,93 +55,54 @@ const isDeferredReviewUpdate = (current: ReviewState | null, next: ReviewState):
 const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): boolean =>
   current?.createdAt !== undefined && current.createdAt === next.createdAt;
 
+/**
+ * Wires channel events to reviewStore actions and keeps the store's derived
+ * values (index-, status- and route-dependent) up to date. The store owns the
+ * state; this component is its only React-side writer.
+ */
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<ReviewState | null>(null);
-  const [pendingReview, setPendingReview] = useState<ReviewState | null>(null);
-  const [isStale, setIsStale] = useState(false);
-  const [isInReviewMode, setIsInReviewMode] = useState(() => isReviewModeActive());
   const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
-  const displayedReviewRef = useRef<ReviewState | null>(null);
-  displayedReviewRef.current = state;
 
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { index, path, viewMode, customQueryParams, location } = useStorybookState();
+  const { state, isInReviewMode } = useReview();
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
 
   // Current sidebar filters, snapshotted by enterReviewMode and restored on exit.
   const filtersRef = useReviewFiltersRef();
 
-  const enterReview = useCallback(() => {
-    void enterReviewMode(api, filtersRef.current);
-    setIsInReviewMode(true);
-  }, [api, filtersRef]);
-
-  const getStoryPreviewHref = useCallback(
-    (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
-    [api]
-  );
-
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      const current = displayedReviewRef.current;
+      const current = reviewStore.getState().state;
       if (isDeferredReviewUpdate(current, next)) {
-        setPendingReview(next);
-        reviewStore.setState(reviewStore.getState(), next);
+        reviewStore.deferReview(next);
         return;
       }
       // REQUEST_REVIEW replays the cached payload to every tab when another tab
       // mounts; ignore identical reviews so summary UI state is not reset.
       if (isSameReviewPayload(current, next)) {
-        setIsStale(!!next.stale);
+        reviewStore.setStale(!!next.stale);
         return;
       }
-      setPendingReview(null);
       // A fresh payload re-arms the one-time auto-enter.
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-      setState(next);
-      setIsStale(!!next.stale);
+      reviewStore.displayReview(next);
     },
     [EVENTS.REVIEW_STALE]: () => {
-      setIsStale(true);
+      reviewStore.setStale(true);
     },
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
       previousReviewStoryIdsRef.current = new Set();
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-      clearReviewNotificationsOnDismiss(
-        api,
-        reviewStore.getState().state,
-        reviewStore.getPendingReview()
-      );
-      setState(null);
-      setPendingReview(null);
-      setIsStale(false);
-      setIsInReviewMode(false);
+      const { state: displayed, pendingReview: deferred } = reviewStore.getState();
+      clearReviewNotificationsOnDismiss(api, displayed, deferred);
+      reviewStore.clearReview();
       void navigateOutOfReview(api, navigate, returnSearch, { recordVisit: false });
     },
   });
-
-  const dismissReview = useCallback(() => {
-    const returnSearch = sessionStore.read(PRE_REVIEW_RETURN_KEY);
-    emit(EVENTS.DISMISS_REVIEW, returnSearch);
-  }, [emit]);
-
-  const acceptPendingReview = useCallback(() => {
-    const accepted = reviewStore.getPendingReview();
-    if (!accepted) {
-      return;
-    }
-    acceptReviewNotification(api, accepted.createdAt);
-    reviewStore.setState(reviewStore.getState(), null);
-    setState(accepted);
-    setIsStale(!!accepted.stale);
-    setPendingReview(null);
-    sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-    enterReview();
-    navigate(buildReviewChangesSummaryHref(), { plain: true });
-  }, [api, enterReview, navigate]);
 
   useEffect(() => {
     emit(EVENTS.REQUEST_REVIEW);
@@ -194,12 +145,9 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const isSummaryVisible = isReviewSummaryPath(path);
 
-  // Re-sync the persisted review-mode flag on every navigation. Enter/exit
-  // performed by the nav interceptor and shortcuts toggle it out of band before
-  // navigating, so a route change is the signal to re-read it.
-  useEffect(() => {
-    setIsInReviewMode(isReviewModeActive());
-  }, [path, collectionParam]);
+  const onAcceptPendingUpdate = useCallback(() => {
+    acceptPendingReview(api, navigate, filtersRef.current);
+  }, [api, navigate, filtersRef]);
 
   // First landing on the summary with a clean, newly available review enters
   // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
@@ -207,15 +155,15 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (!state || !isSummaryVisible || isReviewModeActive()) {
       return;
     }
-    if (sessionStore.read(REVIEW_EXITING_SESSION_KEY) === '1') {
+    if (reviewStore.getState().isExiting) {
       return;
     }
     if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === '1') {
       return;
     }
     sessionStore.write(AUTO_ENTERED_SESSION_KEY, '1');
-    enterReview();
-  }, [state, isSummaryVisible, enterReview]);
+    void enterReviewMode(api, filtersRef.current);
+  }, [state, isSummaryVisible, api, filtersRef]);
 
   // Remember the last canvas search outside review mode so leaving review can
   // return to the pre-review canvas (both summary back and dismiss).
@@ -232,44 +180,31 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [isInReviewMode, viewMode, location?.search]);
 
-  const value = useMemo<ReviewStoreState>(
+  const derived = useMemo<ReviewDerivedState>(
     () => ({
-      state,
-      notificationKey: reviewNotificationKey(state, pendingReview),
-      isStale,
-      hasPendingUpdate: pendingReview !== null,
-      onAcceptPendingUpdate: acceptPendingReview,
       storyInfo,
       flattenedEntries,
       newlyAddedStoryIds,
       activeEntry,
       activeIndex,
-      isInReviewMode,
       isSummaryVisible,
-      getStoryPreviewHref,
-      dismissReview,
+      onAcceptPendingUpdate,
     }),
     [
-      state,
-      pendingReview,
-      isStale,
-      acceptPendingReview,
       storyInfo,
       flattenedEntries,
       newlyAddedStoryIds,
       activeEntry,
       activeIndex,
-      isInReviewMode,
       isSummaryVisible,
-      getStoryPreviewHref,
-      dismissReview,
+      onAcceptPendingUpdate,
     ]
   );
 
   // Sync before paint so toolbar surfaces read current route on first frame.
   useLayoutEffect(() => {
-    reviewStore.setState(value, pendingReview);
-  }, [value, pendingReview]);
+    reviewStore.setDerived(derived);
+  }, [derived]);
 
   useLayoutEffect(() => {
     if (isSummaryVisible) {

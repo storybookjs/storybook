@@ -99,7 +99,7 @@ export async function runLlmPhase(pr: PrContext, earlyAbort: boolean): Promise<C
     return LLM_CHECK_IDS.map((id) => ({
       id,
       status: 'deferred' as const,
-      evidence: 'Skipped due to early-abort.',
+      reasoning: 'Skipped due to early-abort.',
     }));
   }
   return Promise.all([
@@ -155,7 +155,7 @@ function summariseStatuses(results: CheckResult[]): string {
 
 function logCheckResult(result: CheckResult): void {
   const label = CHECK_LABELS[result.id];
-  const line = `${pc.bold(label)} · ${result.evidence}`;
+  const line = `${pc.bold(label)} · ${result.reasoning}`;
   switch (result.status) {
     case 'pass':
       p.log.success(line);
@@ -354,7 +354,7 @@ async function main(): Promise<void> {
 
   const humanResult = det.results.find((r) => r.id === 'human');
   if (humanResult?.status === 'deferred') {
-    p.outro(pc.dim(`Deferred: ${humanResult.evidence}`));
+    p.outro(pc.dim(`Deferred: ${humanResult.reasoning}`));
     process.exit(0);
   }
 
@@ -394,7 +394,8 @@ async function main(): Promise<void> {
     if (labelsToAdd.length > 0) {
       p.log.info(`Labels to add: ${pc.green(labelsToAdd.join(', '))}`);
     }
-    p.note(reviewBody, 'Review body (dry-run)');
+    p.log.info('Review body (dry-run) written to stdout.');
+    process.stdout.write(`${reviewBody}\n`);
   } else {
     await applyWrites(pr, runResult, { dismissPrevious: cliOpts.dismissPrevious });
     p.note(reviewBody, 'Review body (submitted)');

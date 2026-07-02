@@ -1,12 +1,5 @@
-import { z } from 'zod';
-
 import { getLlmClient } from '../../../utils/llm/client.ts';
-import type { CheckResult, PrContext } from '../types.ts';
-
-const Schema = z.object({
-  verdict: z.enum(['pass', 'fail']),
-  reasoning: z.string(),
-});
+import { CheckResultSchema, type CheckResult, type PrContext } from '../types.ts';
 
 /**
  * PURPOSE: A PR is only reviewable if a maintainer can verify it works.
@@ -22,13 +15,13 @@ const Schema = z.object({
  */
 export async function checkExplainsHowToTest(pr: PrContext): Promise<CheckResult> {
   const prompt = buildPrompt(pr);
-  const j = await getLlmClient().judge(prompt, Schema);
+  const j = await getLlmClient().judge(prompt, CheckResultSchema);
   return {
     id: 'explains-test',
-    status: j.verdict,
-    evidence: `${j.verdict.toUpperCase()}: ${j.reasoning}`,
+    status: j.status ?? 'fail',
+    reasoning: j.reasoning,
     guidance:
-      j.verdict === 'fail'
+      j.status === 'fail'
         ? 'Add a "Manual testing" section with reproducible user-facing steps (CLI/UI), in a real-world project scenario. Do not report how *you* tested and do not merely tell users to run a test suite.'
         : undefined,
   };
@@ -54,6 +47,6 @@ function buildPrompt(pr: Pick<PrContext, 'body' | 'files' | 'linkedIssues'>): st
     'Diff overview:',
     pr.files.map((f) => `- ${f.path} (+${f.additions}/-${f.deletions})`).join('\n'),
     '',
-    'Return JSON: { verdict: "pass"|"fail", reasoning: "one short sentence" }',
+    'Return JSON: { status: "pass"|"fail", reasoning: "one short sentence" }',
   ].join('\n');
 }

@@ -13,7 +13,7 @@ describe('checkHumanMonitored', () => {
   it('WARN when agent-scan:ignore is present', () => {
     const r = checkHumanMonitored({ labels: ['agent-scan:ignore'] });
     expect(r.status).toBe('warn');
-    expect(r.evidence).toBe('Labeled agent-scan:ignore.');
+    expect(r.reasoning).toBe('Labeled agent-scan:ignore.');
   });
 
   it('WARN beats FAIL when both labels are present', () => {
@@ -33,7 +33,7 @@ describe('checkHumanMonitored', () => {
   it.each(['agent-scan:mixed', 'agent-scan:automated'])('FAILs on %s', (label) => {
     const r = checkHumanMonitored({ labels: [label] });
     expect(r.status).toBe('fail');
-    expect(r.evidence).toBe(`Labeled ${label}.`);
+    expect(r.reasoning).toBe(`Labeled ${label}.`);
     expect(r.guidance).toContain('https://github.com/MatteoGabriele/agentscan');
     expect(r.guidance).toContain('https://discord.gg/invite/storybook');
   });

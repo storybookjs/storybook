@@ -1,13 +1,6 @@
-import { z } from 'zod';
-
 import { getLlmClient } from '../../../utils/llm/client.ts';
-import type { CheckResult, PrContext } from '../types.ts';
+import { CheckResultSchema, type CheckResult, type PrContext } from '../types.ts';
 import { computeDiffMetrics } from '../cost-benefit/utils/diff-metrics.ts';
-
-const Schema = z.object({
-  verdict: z.enum(['pass', 'fail']),
-  reasoning: z.string(),
-});
 
 /**
  * PURPOSE: A reviewer shouldn't have to guess at why the author chose their
@@ -25,14 +18,14 @@ const Schema = z.object({
 export async function checkProvidesContext(pr: PrContext): Promise<CheckResult> {
   const diffMetrics = computeDiffMetrics(pr.files);
   const prompt = buildPrompt(pr, diffMetrics);
-  const j = await getLlmClient().judge(prompt, Schema);
+  const j = await getLlmClient().judge(prompt, CheckResultSchema);
   return {
     id: 'provides-context',
-    status: j.verdict,
-    evidence: `${j.verdict.toUpperCase()}: ${j.reasoning}`,
+    status: j.status ?? 'fail',
+    reasoning: j.reasoning,
     guidance:
-      j.verdict === 'fail'
-        ? 'Add a short "Why" section explaining the approach you chose and any alternatives considered.'
+      j.status === 'fail'
+        ? 'Add a short "Why" section explaining the approach you chose and addressing concerns raised by this assessment.'
         : undefined,
   };
 }
@@ -63,6 +56,6 @@ function buildPrompt(
     '',
     `Diff: +${diffMetrics.added}/-${diffMetrics.removed} across ${diffMetrics.filesChanged} files (${diffMetrics.files.join(', ')}).`,
     '',
-    'Return JSON: { verdict: "pass"|"warn"|"fail", reasoning: "one short sentence" }',
+    'Return JSON: { status: "pass"|"warn"|"fail", reasoning: "one short sentence" }',
   ].join('\n');
 }

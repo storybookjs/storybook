@@ -48,7 +48,7 @@ describe('checkRealProblem', () => {
   it('FAIL when no linked issues (no LLM call)', async () => {
     const r = await checkRealProblem(mvcPr());
     expect(r.status).toBe('fail');
-    expect(r.evidence).toMatch(/no linked issue/i);
+    expect(r.reasoning).toMatch(/no linked issue/i);
     expect(mockJudge).not.toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe('checkRealProblem', () => {
     });
     const r = await checkRealProblem(mvcPr({ linkedIssues: [mvcIssue()] }));
     expect(r.status).toBe('pass');
-    expect(r.evidence).toContain('bug');
+    expect(r.reasoning).toContain('bug');
   });
 
   it('FAIL when LLM judges no match', async () => {
@@ -88,7 +88,7 @@ describe('checkRealProblem', () => {
     });
     const r = await checkRealProblem(mvcPr({ linkedIssues: [mvcIssue()] }));
     expect(r.status).toBe('fail');
-    expect(r.evidence).toMatch(/maintainer approval/i);
+    expect(r.reasoning).toMatch(/maintainer approval/i);
   });
 
   it('PASS when feature fits one of accepted categories', async () => {
@@ -112,7 +112,7 @@ describe('checkRealProblem', () => {
       mvcPr({ linkedIssues: [mvcIssue()], unresolved: ['storybookjs/storybook#999'] })
     );
     expect(r.status).toBe('warn');
-    expect(r.evidence).toContain('#999');
+    expect(r.reasoning).toContain('#999');
   });
 
   it('surfaces PR comments and reviews with [maintainer] markers in the prompt', async () => {

@@ -26,16 +26,16 @@ describe('checkDuplicate', () => {
       linkedIssues: [mvcIssue({ number: 100, state: 'closed' })],
     });
     expect(r.status).toBe('fail');
-    expect(r.evidence).toContain('#100');
-    expect(r.evidence).toMatch(/closed|resolved/i);
+    expect(r.reasoning).toContain('#100');
+    expect(r.reasoning).toMatch(/closed|resolved/i);
   });
 
   it('FAIL when an OLDER open PR (lower number) references the same issue', async () => {
     server.use(crossRefsHandler([{ prNumber: 100, prState: 'open', merged: false }]));
     const r = await checkDuplicate({ number: 200, linkedIssues: [ISSUE] });
     expect(r.status).toBe('fail');
-    expect(r.evidence).toContain('#100');
-    expect(r.evidence).toContain('predates');
+    expect(r.reasoning).toContain('#100');
+    expect(r.reasoning).toContain('predates');
   });
 
   it('PASS when a NEWER open PR references the same issue (first-PR-wins)', async () => {

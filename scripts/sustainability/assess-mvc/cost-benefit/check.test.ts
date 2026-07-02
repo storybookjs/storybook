@@ -38,7 +38,7 @@ describe('checkCostBenefit', () => {
   });
 
   it('relays LLM PASS for larger changes without a linked issue', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'proportionate' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'proportionate' });
     const r = await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
@@ -46,7 +46,7 @@ describe('checkCostBenefit', () => {
   });
 
   it('relays LLM WARN', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'warn', reasoning: 'concerns' });
+    mockJudge.mockResolvedValueOnce({ status: 'warn', reasoning: 'concerns' });
     const r = await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
@@ -54,7 +54,11 @@ describe('checkCostBenefit', () => {
   });
 
   it('relays LLM FAIL with guidance', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'edge-case + huge diff' });
+    mockJudge.mockResolvedValueOnce({
+      status: 'fail',
+      reasoning: 'edge-case + huge diff',
+      guidance: 'split the PR',
+    });
     const r = await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 800, deletions: 100, status: 'modified' }] })
     );
@@ -80,7 +84,7 @@ describe('checkCostBenefit', () => {
       },
     });
     server.use(commentsHandler(issue, []));
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({
         files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }],
@@ -110,7 +114,7 @@ describe('checkCostBenefit', () => {
       teamMembersHandler({ org: 'storybookjs', slug: 'core' }, ['shilman']),
       teamMembersHandler({ org: 'storybookjs', slug: 'developer-experience' }, ['kasperpeulen'])
     );
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({
         files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }],
@@ -141,7 +145,7 @@ describe('checkCostBenefit', () => {
         { login: 'bob' }, // counted: #1's author on #2
       ])
     );
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({
         files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }],
@@ -155,7 +159,7 @@ describe('checkCostBenefit', () => {
 
   it('counts PR-only participants when no issue is linked', async () => {
     server.use(commentsHandler(PR_COORDS, [{ login: 'alice' }, { login: 'bob' }]));
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'ok' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 0, status: 'modified' }] })
     );
@@ -164,7 +168,7 @@ describe('checkCostBenefit', () => {
   });
 
   it('uses pr labels for severity when no linked issue is present', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'warn', reasoning: 'ok' });
+    mockJudge.mockResolvedValueOnce({ status: 'warn', reasoning: 'ok' });
     await checkCostBenefit(
       mvcPr({
         labels: ['sev:S1'],

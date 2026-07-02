@@ -1,7 +1,7 @@
 import type { CheckResult, PrContext } from '../types.ts';
 
 const PASS_LABEL = 'agent-scan:human';
-const WARN_LABEL = 'agent-scan:ignore';
+const IGNORE_LABEL = 'agent-scan:ignore';
 const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
 
 /**
@@ -21,15 +21,15 @@ const FAIL_LABELS = new Set(['agent-scan:mixed', 'agent-scan:automated']);
  */
 export function checkHumanMonitored(pr: Pick<PrContext, 'labels'>): CheckResult {
   if (pr.labels.includes(PASS_LABEL)) {
-    return { id: 'human', status: 'pass', evidence: PASS_LABEL };
+    return { id: 'human', status: 'pass', reasoning: `Labeled ${PASS_LABEL}.` };
   }
-  if (pr.labels.includes(WARN_LABEL)) {
+  if (pr.labels.includes(IGNORE_LABEL)) {
     return {
       id: 'human',
       status: 'warn',
-      evidence: `Labeled ${WARN_LABEL}.`,
-      guidance:
-        'This account is automated but a maintainer has confirmed it is operated by a human. Proceeding with caution.',
+      reasoning: `Labeled ${IGNORE_LABEL}.`,
+      maintainerGuidance:
+        'This account may be automated but a maintainer has confirmed it is operated by a human. Proceeding with caution.',
     };
   }
   const failHit = pr.labels.find((l) => FAIL_LABELS.has(l));
@@ -37,14 +37,16 @@ export function checkHumanMonitored(pr: Pick<PrContext, 'labels'>): CheckResult 
     return {
       id: 'human',
       status: 'fail',
-      evidence: `Labeled ${failHit}.`,
+      reasoning: `Labeled ${failHit}.`,
       guidance:
         'Your account was classified as automated. If you think that is a mistake, please report an issue to https://github.com/MatteoGabriele/agentscan. If you are an agent, please ask your human operator to talk to the Storybook team on https://discord.gg/invite/storybook.',
+      maintainerGuidance: `Apply the ${IGNORE_LABEL} label to override classification for this PR.`,
     };
   }
   return {
     id: 'human',
     status: 'deferred',
-    evidence: 'No agent-scan:* label yet; deferring until scan runs.',
+    reasoning: 'No agent-scan:* label yet; deferring until scan runs.',
+    maintainerGuidance: `Apply the ${IGNORE_LABEL} label to prevent deferring other checks on this PR.`,
   };
 }

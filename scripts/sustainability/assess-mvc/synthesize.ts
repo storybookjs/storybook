@@ -29,7 +29,7 @@ export async function synthesizeReview(input: {
   const tailoring = input.results
     .map(
       (r) =>
-        `- [${r.status.toUpperCase()}] ${r.id}: ${r.evidence}\n  Canned template: ${CANNED[r.id]}`
+        `- [${r.status.toUpperCase()}] ${r.id}: ${r.reasoning}\n  Canned template: ${CANNED[r.id]}`
     )
     .join('\n');
   const notPerformed = input.results.filter((r) => r.status === 'deferred').map((r) => r.id);

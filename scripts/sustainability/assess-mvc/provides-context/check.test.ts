@@ -15,7 +15,7 @@ describe('checkProvidesContext', () => {
   beforeEach(() => mockJudge.mockReset());
 
   it('calls the LLM even for trivial diffs (small diffs can be high-impact)', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'flag flip without rationale' });
+    mockJudge.mockResolvedValueOnce({ status: 'fail', reasoning: 'flag flip without rationale' });
     const r = await checkProvidesContext(
       mvcPr({
         body: 'change flag',
@@ -27,7 +27,7 @@ describe('checkProvidesContext', () => {
   });
 
   it('relays LLM PASS for diffs with rationale', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'pass', reasoning: 'has rationale' });
+    mockJudge.mockResolvedValueOnce({ status: 'pass', reasoning: 'has rationale' });
     const r = await checkProvidesContext(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 50, status: 'modified' }] })
     );
@@ -35,7 +35,7 @@ describe('checkProvidesContext', () => {
   });
 
   it('relays LLM FAIL with guidance', async () => {
-    mockJudge.mockResolvedValueOnce({ verdict: 'fail', reasoning: 'no rationale' });
+    mockJudge.mockResolvedValueOnce({ status: 'fail', reasoning: 'no rationale' });
     const r = await checkProvidesContext(
       mvcPr({ files: [{ path: 'a.ts', additions: 200, deletions: 50, status: 'modified' }] })
     );

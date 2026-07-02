@@ -32,7 +32,7 @@ export function complexityForSource(filename: string, source: string): FunctionC
     source,
     ts.ScriptTarget.Latest,
     /*setParentNodes*/ true,
-    ts.ScriptKind.Latest
+    ts.ScriptKind.TSX
   );
   const results: FunctionComplexity[] = [];
 

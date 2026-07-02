@@ -6,7 +6,7 @@ import { computeVerdict, isEarlyAbort } from './verdict.ts';
 const r = (id: CheckResult['id'], status: CheckResult['status']): CheckResult => ({
   id,
   status,
-  evidence: '',
+  reasoning: '',
 });
 
 describe('computeVerdict', () => {

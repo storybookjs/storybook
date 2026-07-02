@@ -22,7 +22,7 @@ export async function checkDuplicate(
     return {
       id: 'duplicate',
       status: 'pass',
-      evidence: 'No linked issues; duplicate check is moot.',
+      reasoning: 'No linked issues; duplicate check is moot.',
     };
   }
 
@@ -32,7 +32,7 @@ export async function checkDuplicate(
     return {
       id: 'duplicate',
       status: 'fail',
-      evidence: `Linked issue(s) ${list} are already closed — the problem is resolved.`,
+      reasoning: `Linked issue(s) ${list} are already closed — the problem is resolved.`,
       guidance: 'If this issue regressed, please re-open it (or open a fresh one and link that).',
     };
   }
@@ -54,7 +54,7 @@ export async function checkDuplicate(
     return {
       id: 'duplicate',
       status: 'fail',
-      evidence: conflicts.join('; '),
+      reasoning: conflicts.join('; '),
       guidance:
         'An older open PR is already addressing this issue. Consider commenting on / contributing to that PR instead.',
     };
@@ -63,6 +63,6 @@ export async function checkDuplicate(
   return {
     id: 'duplicate',
     status: 'pass',
-    evidence: 'No conflicting open PR found on the linked issue(s).',
+    reasoning: 'No conflicting open PR found on the linked issue(s).',
   };
 }

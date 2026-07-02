@@ -31,7 +31,9 @@ const allPassJudge = {
   category: 'bug',
   reasoning: 'ok',
   featureFit: 'augments-api',
-  verdict: 'pass',
+  status: 'pass',
+  guidance: '',
+  maintainerGuidance: '',
 };
 
 describe('runAssessment (Phase 2: deterministic + LLM)', () => {
@@ -54,29 +56,29 @@ describe('runAssessment (Phase 2: deterministic + LLM)', () => {
     );
   });
 
-  it('FAILs and early-aborts when human check fails; only synthesis runs', async () => {
-    mockJudgeText.mockResolvedValueOnce('composed');
+  it('FAILs and early-aborts when human check fails; no LLM calls made', async () => {
     const result = await runAssessment(mvcPr({ labels: ['agent-scan:automated'] }));
     expect(result.verdict).toBe('fail');
     expect(result.earlyAbort).toBe(true);
-    // No LLM judgments on early-abort; only synthesis (judgeText) runs.
+    // Neither the per-check judges nor synthesis call an LLM on early-abort;
+    // synthesis is now mechanical template composition.
     expect(mockJudge).not.toHaveBeenCalled();
-    expect(mockJudgeText).toHaveBeenCalledOnce();
+    expect(mockJudgeText).not.toHaveBeenCalled();
     expect(result.labelsToAdd).toContain('mvc:failed');
   });
 
-  it('PASSes when deterministic checks pass; runs 4 LLM checks + synthesis', async () => {
+  it('PASSes when deterministic checks pass; runs the LLM checks then composes review deterministically', async () => {
     mockJudge.mockResolvedValue(allPassJudge);
-    mockJudgeText.mockResolvedValueOnce('composed review body');
     const result = await runAssessment(basePr);
     expect(result.verdict).toBe('pass');
     expect(result.earlyAbort).toBe(false);
-    // Four LLM checks (real-problem, duplicate, cost-benefit,
-    // explains-test / provides-context) all call judge; synthesis calls
-    // judgeText separately.
+    // LLM-judged checks (real-problem, cost-benefit, explains-test,
+    // provides-context) call `judge`. Synthesis is mechanical — no
+    // `judgeText` call.
     expect(mockJudge.mock.calls.length).toBeGreaterThanOrEqual(2);
-    expect(mockJudgeText).toHaveBeenCalledOnce();
+    expect(mockJudgeText).not.toHaveBeenCalled();
     expect(result.labelsToAdd).toContain('mvc:success');
-    expect(result.reviewBody).toContain('composed review body');
+    // The mechanical synthesizer emits the canned PASS intro verbatim.
+    expect(result.reviewBody).toContain('Thanks for the contribution');
   });
 });

@@ -1,17 +1,10 @@
-import { z } from 'zod';
-
 import { getIssueOrPrComments, getUniqueParticipants } from '../../../utils/github/comments.ts';
 import { getMostSevereLabel } from '../../../utils/github/labels.ts';
 import { listMaintainerLogins } from '../../../utils/github/teams.ts';
 import { getLlmClient } from '../../../utils/llm/client.ts';
-import type { CheckResult, PrContext } from '../types.ts';
+import { CheckResultSchema, type CheckResult, type PrContext } from '../types.ts';
 import { computeDependencyDiff, type DependencyDiff } from './utils/dependencies.ts';
 import { computeDiffMetrics } from './utils/diff-metrics.ts';
-
-const Schema = z.object({
-  verdict: z.enum(['pass', 'warn', 'fail']),
-  reasoning: z.string(),
-});
 
 /**
  * PURPOSE: Every PR adds maintenance surface (review, runtime cost, future
@@ -53,16 +46,14 @@ export async function checkCostBenefit(pr: PrContext): Promise<CheckResult> {
     externalParticipantCount,
     hasLinkedIssue: Boolean(firstIssue),
   });
-  const j = await getLlmClient().judge(prompt, Schema);
+  const j = await getLlmClient().judge(prompt, CheckResultSchema);
 
   return {
     id: 'cost-benefit',
-    status: j.verdict,
-    evidence: `${j.verdict.toUpperCase()}: ${j.reasoning}`,
-    guidance:
-      j.verdict === 'fail'
-        ? 'Consider splitting the PR, narrowing to the core issue, or shipping your proposed change in an addon outside the monorepo.'
-        : undefined,
+    status: j.status ?? 'fail',
+    reasoning: j.reasoning,
+    guidance: j.guidance,
+    maintainerGuidance: j.maintainerGuidance,
   };
 }
 
@@ -133,12 +124,14 @@ function buildPrompt(input: {
 }): string {
   return [
     'You are reviewing a Storybook pull request to judge if it is a viable external contribution. You will decide how much benefit the PR provides relative to its maintenance cost.',
-    'FAIL requires CLEAR evidence of mismatch. Default to WARN under uncertainty. Default to PASS for small changes.',
+    'FAIL requires CLEAR evidence of mismatch. Default to WARN under uncertainty. Default to PASS when somewhat confident about the maintenance cost being reasonable.',
     'Fixes for high severity issues can incur more maintenance cost. Fixes to edge-case problems that affect few users warrant a stricter maintenance ceiling.',
     '',
     'Small code changes are not automatically self-evident: a feature flag flip or one-line tweak in a central file can have major impact and still be a poor trade-off for maintainers.',
     '',
     "Removal of public APIs that weren't already deprecated has a high maintenance cost as it will cause breaking changes.",
+    '',
+    "Untested code should be marked as highly unmaintainable. In some PRs, existing tests cover the changes so account for that and don't penalise PRs where existing tests are sufficient. Bugfixes usually require new regression tests. Our test standard is stories first, then E2E tests using story fixtures, then unit tests when stories are not applicable. Unit tests aren't always needed and are sufficient only for some APIs.",
     '',
     'IMPORTANT framing for dependency changes:',
     '  - A net-positive dep delta is a maintenance COST (more surface to audit, update, secure).',
@@ -158,6 +151,10 @@ function buildPrompt(input: {
     'PR body (look for change rationale, security mentions, refactor explanations):',
     input.body || '(empty)',
     '',
-    'Return JSON: { verdict: "pass"|"warn"|"fail", reasoning: "one short sentence" }',
+    'On top of the verdict and reasoning, return guidance in case of fail/warn:',
+    '- for maintainers about what they might need to verify re: maintenance cost; be exhaustive but concise',
+    '- for the author about how to improve the PR, or alternative actions they can take if the PR is too far off (splitting the PR, narrowing to the core issue, shipping the change as a community addon)',
+    '',
+    'Return JSON: { status: "pass"|"warn"|"fail", reasoning: "one short sentence", guidance: "multiple sentences if needed", maintainerGuidance: "multiple sentences if needed" } as { status: "pass"|"warn"|"fail", reasoning: string, guidance?: string, maintainerGuidance?: string }',
   ].join('\n');
 }

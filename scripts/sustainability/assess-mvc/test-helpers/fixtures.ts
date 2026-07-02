@@ -52,6 +52,7 @@ export function mvcPr(overrides: Partial<PrContext> = {}): PrContext {
     url: 'https://github.com/storybookjs/storybook/pull/1',
     title: 'PR title',
     body: '',
+    state: 'open',
     author: 'someone',
     isDraft: false,
     headSha: 'sha',

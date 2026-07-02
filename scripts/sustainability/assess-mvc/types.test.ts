@@ -13,11 +13,11 @@ describe('types', () => {
     expectTypeOf<CheckStatus>().toEqualTypeOf<'pass' | 'fail' | 'warn' | 'deferred'>();
   });
 
-  it('requires id/status/evidence on CheckResult, allows optional guidance', () => {
+  it('requires id/status/reasoning on CheckResult, allows optional guidance', () => {
     expectTypeOf<CheckResult>().toMatchTypeOf<{
       id: CheckId;
       status: CheckStatus;
-      evidence: string;
+      reasoning: string;
     }>();
     expectTypeOf<CheckResult['guidance']>().toEqualTypeOf<string | undefined>();
   });

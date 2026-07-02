@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { setupMsw } from '../test-helpers/msw.ts';
 import { parseBodyReferences, resolveLinkedIssues } from './linked-issues.ts';
 
+const ID = { owner: 'storybookjs', repo: 'storybook', number: 1 };
+
 describe('parseBodyReferences', () => {
   it('extracts same-repo #N references with an ambiguous hint', () => {
-    const refs = parseBodyReferences('storybookjs', 'storybook', 'Closes #42 and resolves #99.');
+    const refs = parseBodyReferences({ ...ID, body: 'Closes #42 and resolves #99.' });
     expect(refs).toEqual([
       { owner: 'storybookjs', repo: 'storybook', number: 42, hint: 'ambiguous' },
       { owner: 'storybookjs', repo: 'storybook', number: 99, hint: 'ambiguous' },
@@ -13,45 +15,41 @@ describe('parseBodyReferences', () => {
   });
 
   it('extracts cross-repo storybookjs/x#N references as ambiguous', () => {
-    const refs = parseBodyReferences('storybookjs', 'storybook', 'Tracks storybookjs/csf#7.');
+    const refs = parseBodyReferences({ ...ID, body: 'Tracks storybookjs/csf#7.' });
     expect(refs).toEqual([{ owner: 'storybookjs', repo: 'csf', number: 7, hint: 'ambiguous' }]);
   });
 
   it('extracts issue URLs with hint="issue"', () => {
-    const refs = parseBodyReferences(
-      'storybookjs',
-      'storybook',
-      'See https://github.com/storybookjs/csf/issues/12.'
-    );
+    const refs = parseBodyReferences({
+      ...ID,
+      body: 'See https://github.com/storybookjs/csf/issues/12.',
+    });
     expect(refs).toEqual([{ owner: 'storybookjs', repo: 'csf', number: 12, hint: 'issue' }]);
   });
 
   it('extracts PR URLs with hint="pull"', () => {
-    const refs = parseBodyReferences(
-      'storybookjs',
-      'storybook',
-      'Related https://github.com/storybookjs/storybook/pull/35138.'
-    );
+    const refs = parseBodyReferences({
+      ...ID,
+      body: 'Related https://github.com/storybookjs/storybook/pull/35138.',
+    });
     expect(refs).toEqual([
       { owner: 'storybookjs', repo: 'storybook', number: 35138, hint: 'pull' },
     ]);
   });
 
   it('prefers a URL hint over an ambiguous duplicate', () => {
-    const refs = parseBodyReferences(
-      'storybookjs',
-      'storybook',
-      '#5 mentioned, see https://github.com/storybookjs/storybook/pull/5 for context.'
-    );
+    const refs = parseBodyReferences({
+      ...ID,
+      body: '#5 mentioned, see https://github.com/storybookjs/storybook/pull/5 for context.',
+    });
     expect(refs).toEqual([{ owner: 'storybookjs', repo: 'storybook', number: 5, hint: 'pull' }]);
   });
 
   it('ignores references outside storybookjs', () => {
-    const refs = parseBodyReferences(
-      'storybookjs',
-      'storybook',
-      'other/repo#1 https://github.com/example/x/issues/2'
-    );
+    const refs = parseBodyReferences({
+      ...ID,
+      body: 'other/repo#1 https://github.com/example/x/issues/2',
+    });
     expect(refs).toEqual([]);
   });
 });
@@ -59,7 +57,7 @@ describe('parseBodyReferences', () => {
 describe('resolveLinkedIssues', () => {
   const { server, http, HttpResponse } = setupMsw();
 
-  it('splits results into linkedIssues / otherIssues / otherPrs / unresolved', async () => {
+  it('splits results into linkedIssues / otherIssues / unresolved', async () => {
     server.use(
       http.post('https://api.github.com/graphql', () =>
         HttpResponse.json({
@@ -100,7 +98,9 @@ describe('resolveLinkedIssues', () => {
           html_url: 'u',
         })
       ),
-      // Body ref #35138: a PR (has pull_request field).
+      // Body ref #35138: a PR (has pull_request field). fetchIssue returns
+      // null for PRs, so it lands in `unresolved` (debug info) — the check
+      // consumer doesn't need PRs vs. typos disambiguated.
       http.get('https://api.github.com/repos/storybookjs/storybook/issues/35138', () =>
         HttpResponse.json({
           number: 35138,
@@ -126,74 +126,16 @@ describe('resolveLinkedIssues', () => {
     });
 
     expect(result.linkedIssues).toHaveLength(1);
-    expect(result.linkedIssues[0]).toMatchObject({
-      number: 42,
-      sources: ['api'],
-    });
+    expect(result.linkedIssues[0]).toMatchObject({ number: 42 });
     expect(result.otherIssues).toHaveLength(1);
-    expect(result.otherIssues[0]).toMatchObject({
-      number: 50,
-      title: 'Mentioned issue',
-      sources: ['body'],
-    });
-    expect(result.otherPrs).toHaveLength(1);
-    expect(result.otherPrs[0]).toMatchObject({
-      number: 35138,
-      title: 'Related PR',
-      sources: ['body'],
-    });
-    expect(result.unresolved).toEqual(['storybookjs/storybook#999']);
+    expect(result.otherIssues[0]).toMatchObject({ number: 50, title: 'Mentioned issue' });
+    expect(result.unresolved.sort()).toEqual([
+      'storybookjs/storybook#35138',
+      'storybookjs/storybook#999',
+    ]);
   });
 
-  it('promotes a body ref to linkedIssues when both api and body found it', async () => {
-    server.use(
-      http.post('https://api.github.com/graphql', () =>
-        HttpResponse.json({
-          data: {
-            repository: {
-              pullRequest: {
-                closingIssuesReferences: {
-                  nodes: [
-                    {
-                      number: 50,
-                      repository: { owner: { login: 'storybookjs' }, name: 'storybook' },
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        })
-      ),
-      http.get('https://api.github.com/repos/storybookjs/storybook/issues/50', () =>
-        HttpResponse.json({
-          number: 50,
-          title: 'I',
-          body: 'b',
-          state: 'open',
-          labels: [],
-          html_url: 'u',
-        })
-      )
-    );
-    const result = await resolveLinkedIssues({
-      owner: 'storybookjs',
-      repo: 'storybook',
-      number: 1,
-      body: 'fixes #50',
-    });
-    expect(result.linkedIssues[0].sources).toEqual(expect.arrayContaining(['api', 'body']));
-    expect(result.otherIssues).toEqual([]);
-  });
-
-  it('does NOT query the issues endpoint for PR-URL references (treats them as PRs)', async () => {
-    // No mock for /issues/N — if we tried to fetch we'd get an unhandled-request
-    // error. The test passes if resolveLinkedIssues recognizes #35138 as a PR
-    // via the URL hint without trying to resolve it as an issue.
-    //
-    // Note: under the current impl we DO still fetch via /issues/N (since the
-    // REST endpoint returns PRs too via pull_request). This test pins the
-    // observable result rather than the network shape.
+  it('classifies PR-URL body references as unresolved (not otherIssues)', async () => {
     server.use(
       http.post('https://api.github.com/graphql', () =>
         HttpResponse.json({
@@ -220,7 +162,6 @@ describe('resolveLinkedIssues', () => {
     });
     expect(result.linkedIssues).toEqual([]);
     expect(result.otherIssues).toEqual([]);
-    expect(result.otherPrs).toHaveLength(1);
-    expect(result.otherPrs[0].number).toBe(35138);
+    expect(result.unresolved).toEqual(['storybookjs/storybook#35138']);
   });
 });

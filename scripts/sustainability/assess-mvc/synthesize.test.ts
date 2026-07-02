@@ -23,7 +23,7 @@ describe('synthesizeReview', () => {
   it('prefixes the body with the HTML marker and appends the deterministic footer', async () => {
     mockJudgeText.mockResolvedValueOnce('composed body');
     const body = await synthesizeReview({
-      results: [{ id: 'human', status: 'pass', evidence: 'ok' }],
+      results: [{ id: 'human', status: 'pass', reasoning: 'ok' }],
       earlyAbort: false,
     });
     expect(body).toContain(MARKER);
@@ -37,7 +37,7 @@ describe('synthesizeReview', () => {
   it('uses judgeText (text mode), not judge (JSON mode)', async () => {
     mockJudgeText.mockResolvedValueOnce('body');
     await synthesizeReview({
-      results: [{ id: 'human', status: 'pass', evidence: 'ok' }],
+      results: [{ id: 'human', status: 'pass', reasoning: 'ok' }],
       earlyAbort: false,
     });
     expect(mockJudgeText).toHaveBeenCalledOnce();
@@ -48,10 +48,10 @@ describe('synthesizeReview', () => {
     mockJudgeText.mockResolvedValueOnce('composed');
     await synthesizeReview({
       results: [
-        { id: 'human', status: 'pass', evidence: 'ok' },
-        { id: 'duplicate', status: 'fail', evidence: 'dupe of #1' },
-        { id: 'real-problem', status: 'deferred', evidence: 'skipped' },
-        { id: 'cost-benefit', status: 'deferred', evidence: 'skipped' },
+        { id: 'human', status: 'pass', reasoning: 'ok' },
+        { id: 'duplicate', status: 'fail', reasoning: 'dupe of #1' },
+        { id: 'real-problem', status: 'deferred', reasoning: 'skipped' },
+        { id: 'cost-benefit', status: 'deferred', reasoning: 'skipped' },
       ],
       earlyAbort: true,
     });

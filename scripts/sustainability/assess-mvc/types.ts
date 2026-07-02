@@ -1,3 +1,4 @@
+import z from 'zod';
 import type { Issue } from '../../utils/github/issue.ts';
 import type { PrWithFiles } from '../../utils/github/pr.ts';
 
@@ -13,14 +14,22 @@ export type CheckId =
 
 export type CheckStatus = 'pass' | 'fail' | 'warn' | 'deferred';
 
+export type Verdict = 'pass' | 'fail';
+
 export interface CheckResult {
   id: CheckId;
   status: CheckStatus;
-  evidence: string;
+  reasoning: string;
   guidance?: string;
+  maintainerGuidance?: string;
 }
 
-export type Verdict = 'pass' | 'fail';
+export const CheckResultSchema = z.object({
+  status: z.enum(['pass', 'fail', 'warn', 'deferred']),
+  reasoning: z.string(),
+  guidance: z.string().optional(),
+  maintainerGuidance: z.string().optional(),
+});
 
 /**
  * PR + linked-references context that every check consumes. Composed from

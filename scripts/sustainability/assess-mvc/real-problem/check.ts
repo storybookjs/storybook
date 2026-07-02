@@ -49,7 +49,7 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
     return {
       id: 'real-problem',
       status: 'fail',
-      evidence: 'No linked issue.',
+      reasoning: 'No linked issue.',
       guidance:
         'Link an existing open issue this PR addresses. Without a linked issue, we cannot verify the change solves an actual problem our users experience.',
     };
@@ -59,7 +59,7 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
     return {
       id: 'real-problem',
       status: 'fail',
-      evidence: 'All linked issues are closed.',
+      reasoning: 'All linked issues are closed.',
       guidance:
         'The linked issue is closed. If the problem regressed, please reopen it (or open a fresh one) and link that.',
     };
@@ -88,7 +88,7 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
     return {
       id: 'real-problem',
       status: 'fail',
-      evidence: `LLM judged the PR does not substantively address the linked issue: ${judgment.reasoning}`,
+      reasoning: `LLM judged the PR does not substantively address the linked issue: ${judgment.reasoning}`,
       guidance:
         'Re-read the linked issue and either revise the PR to address its core ask or link the correct issue.',
     };
@@ -98,7 +98,7 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
     return {
       id: 'real-problem',
       status: 'fail',
-      evidence:
+      reasoning:
         'LLM judged the PR is a feature for which maintainer approval/support is necessary, but evidence of a maintainer decision was not found.',
       guidance:
         'Your PR adds a feature for Storybook. Feature requests must must accepted by maintainers prior to implementation, in most cases. Consider shipping this in the addon ecosystem, or talk to maintainers on Discord or on the linked issue to get approval before continuing.',
@@ -109,7 +109,7 @@ export async function checkRealProblem(pr: PrContext): Promise<CheckResult> {
   return {
     id: 'real-problem',
     status: hasUnresolved ? 'warn' : 'pass',
-    evidence: hasUnresolved
+    reasoning: hasUnresolved
       ? `Matches linked issue (${judgment.category}): ${judgment.reasoning} (warn: unresolved refs ${pr.unresolved.join(', ')})`
       : `Matches linked issue (${judgment.category}): ${judgment.reasoning}`,
   };

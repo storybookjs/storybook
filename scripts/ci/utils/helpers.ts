@@ -1,4 +1,4 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
 /**
@@ -12,6 +12,13 @@ import { type JobOrNoOpJob, type Workflow } from './types.ts';
  * (cimg/node, playwright, machine), verified via step diagnostics.
  */
 export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.gz';
+
+/**
+ * The generated sandboxes get the same treatment: they are mostly
+ * node_modules, so persisting them raw pays the same single-threaded workspace
+ * compression cost on the create job and again on every downstream attach.
+ */
+export const sandboxArchive = (id: string) => `workspace-sandbox-${id}.tar.gz`;
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -53,6 +60,24 @@ export const workspace = {
         name: 'Unpack node_modules from workspace',
         working_directory: root,
         command: `tar --extract --gzip --file ${PACKED_NODE_MODULES_ARCHIVE}`,
+      },
+    };
+  },
+  packSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Pack sandbox for workspace',
+        working_directory: root,
+        command: `tar --create ${SANDBOX_DIR}/${id} | gzip -1 > ${sandboxArchive(id)}`,
+      },
+    };
+  },
+  unpackSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Unpack sandbox from workspace',
+        working_directory: root,
+        command: `tar --extract --gzip --file ${sandboxArchive(id)}`,
       },
     };
   },
@@ -216,12 +241,16 @@ export const verdaccio = {
 };
 
 export const workflow = {
-  restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
+  restoreLinux: ({
+    sandboxId,
+    ...checkoutOpts
+  }: { forceHttps?: boolean; shallow?: boolean; sandboxId?: string } = {}) => [
     git.checkout(checkoutOpts),
     // Downstream jobs should consume precomputed outputs exclusively from the
     // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
     workspace.unpack(),
+    ...(sandboxId ? [workspace.unpackSandbox(sandboxId)] : []),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),

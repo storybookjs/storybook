@@ -40,7 +40,14 @@ describe('Yarn 2 Proxy', () => {
   beforeEach(() => {
     yarn2Proxy = new Yarn2Proxy();
     JsPackageManager.clearLatestVersionCache();
+    // The repo-level .env marks test runs as sandbox context; these tests
+    // assert user-facing registry-probe behavior, so run them without it.
+    vi.stubEnv('IN_STORYBOOK_SANDBOX', 'false');
     vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('type should be yarn2', () => {

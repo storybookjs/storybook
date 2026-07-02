@@ -827,9 +827,11 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
 	);
 	expect(
-		// Case-insensitive: the guidance shows the heading as an example, and
-		// Codex consistently writes it in Title Case.
-		lines.some((line) => /^##\s+.*review your changes\s*$/i.test(line.trim())),
+		// The spec's heading is an example ("e.g. ## 👀 Review your changes"),
+		// not a literal: agents legitimately adapt it — a browse request has no
+		// changes, so codex titled the section "## ReviewCard States"
+		// (CI run 28623099303). Require a review-ish heading, not exact words.
+		lines.some((line) => /^##\s+.*review/i.test(line.trim())),
 		'Final response must include a dedicated review heading',
 	).toBe(true);
 	expect(

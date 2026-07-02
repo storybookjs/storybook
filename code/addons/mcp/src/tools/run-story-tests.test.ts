@@ -963,6 +963,49 @@ describe('runStoryTestsTool', () => {
 		`);
 	});
 
+	it('should ignore responses for other trigger requests', async () => {
+		const testContext = createTestContext();
+
+		mockChannel.emit.mockImplementation((event, payload: any) => {
+			if (event === 'storybook/test/trigger-test-run-request') {
+				const onCallback = mockChannel.on.mock.calls.find(
+					(call) => call[0] === 'storybook/test/trigger-test-run-response',
+				)?.[1];
+				if (onCallback) {
+					setTimeout(() => {
+						/* A response for a different request must not settle this one. */
+						onCallback({
+							requestId: 'some-other-request',
+							status: 'error',
+							error: { message: 'Failure from another test run' },
+						});
+						onCallback({
+							requestId: payload.requestId,
+							status: 'cancelled',
+						});
+					}, 0);
+				}
+			}
+		});
+
+		const response = await callTool(
+			[{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+			testContext,
+		);
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "Error: Test run was cancelled",
+			      "type": "text",
+			    },
+			  ],
+			  "isError": true,
+			}
+		`);
+	});
+
 	it('should clean up listener after matching completed response', async () => {
 		const testContext = createTestContext();
 

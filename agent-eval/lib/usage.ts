@@ -14,6 +14,10 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
 	 * @see https://developers.openai.com/api/docs/pricing
 	 */
 	'gpt-5.5': { input: 5, output: 30 },
+	/**
+	 * @see https://developers.openai.com/api/docs/pricing
+	 */
+	'gpt-5.4': { input: 2.5, output: 15 },
 };
 
 export interface TranscriptUsage {

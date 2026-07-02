@@ -101,7 +101,7 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        switch (dtsBundler) {
+        switch (entry.dtsBundler ?? dtsBundler) {
           case 'rolldown':
             await generateTypesFilesRolldown(DIR_CWD, entry, {
               tsgo: false,

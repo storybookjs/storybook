@@ -191,6 +191,64 @@ describe('enrichCsf', () => {
         };
       `);
     });
+    it('csf factories with .extend()', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          args: {
+            label: "Hello world!"
+          }
+        });
+        export const Story = meta.story({});
+        export const Extended = Story.extend({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+        Extended.input.parameters = {
+          ...Extended.input.parameters,
+          docs: {
+            ...Extended.input.parameters?.docs,
+            source: {
+              originalSource: "Story.extend({})",
+              ...Extended.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
     it('multiple stories', async () => {
       expect(
         await enrich(
@@ -449,6 +507,59 @@ describe('enrichCsf', () => {
             description: {
               story: "- A bullet list\\n  - A sub-bullet\\n- A second bullet",
               ...Basic.parameters?.docs?.description
+            }
+          }
+        };
+      `);
+    });
+  });
+
+    it('JSDoc description on .extend() story uses input.parameters', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({});
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({});
+          export const Story = meta.story({});
+          /** An extended story */
+          export const Extended = Story.extend({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({});
+        export const Story = meta.story({});
+        export const Extended = Story.extend({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+        Extended.input.parameters = {
+          ...Extended.input.parameters,
+          docs: {
+            ...Extended.input.parameters?.docs,
+            source: {
+              originalSource: "Story.extend({})",
+              ...Extended.input.parameters?.docs?.source
+            },
+            description: {
+              story: "An extended story",
+              ...Extended.input.parameters?.docs?.description
             }
           }
         };

@@ -9,16 +9,14 @@ import {
 	expectWorkflowCalls,
 } from '#test-utils';
 
-// TODO: Re-enable once the guidance reliably steers agents to the documentation
-// tools. The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components, and the Documentation Workflow
-// instructions (MCP server instructions / `storybook ai --help`) already say to
-// call list-all-documentation at task start and never assume component props —
-// but agents ignore that and read node_modules/reshaped/dist/*.d.ts instead
-// (0/2 in the 2026-07-01T22-53 cc-mcp and cc-plugin runs). Likely fix: add a
-// documentation-first step to get-storybook-story-instructions, which agents
-// demonstrably treat as the source of truth.
-test.skip('uses the documentation tooling', () => {
+// Enabled by storybookjs/mcp#320 (2026-07-02): the server instructions now
+// survive Claude Code's 2,048-char MCP-instructions truncation (the
+// Documentation Workflow never reached the model before), and
+// get-storybook-story-instructions — which agents demonstrably treat as the
+// source of truth — carries a documentation-first "Using library components"
+// step steering agents to get-documentation instead of reading
+// node_modules/reshaped/dist/*.d.ts.
+test('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 

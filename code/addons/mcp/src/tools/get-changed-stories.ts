@@ -69,6 +69,7 @@ export async function addGetChangedStoriesTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ reviewEnabled = false }: { reviewEnabled?: boolean } = {},
 ) {
 	server.tool(
 		{
@@ -198,6 +199,13 @@ export async function addGetChangedStoriesTool(
 				}
 
 				text += formatPartialCoverageHint(unreachable);
+
+				// Tool results are never truncated, so this is the reliable place
+				// to keep the workflow on rails: without it, agents sometimes end
+				// visual work at preview URLs instead of publishing the review.
+				if (reviewEnabled) {
+					text += `\n\nNext: if the change is visually observable, publish the review now — call **display-review** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
+				}
 
 				return { content: [{ type: 'text' as const, text }] };
 			} catch (error) {

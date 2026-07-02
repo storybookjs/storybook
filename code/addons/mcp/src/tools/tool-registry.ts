@@ -128,7 +128,8 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 		toolset: 'dev',
 		available: ({ availability }) => availability.changeDetectionEnabled,
 		getMetadata: () => getChangedStoriesToolMetadata(),
-		register: (server, _context, enabled) => addGetChangedStoriesTool(server, enabled),
+		register: (server, { availability }, enabled) =>
+			addGetChangedStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
 	},
 	{
 		name: GET_STORIES_BY_COMPONENT_TOOL_NAME,

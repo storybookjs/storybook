@@ -98,4 +98,15 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
 		expect(calls).toHaveLength(0);
 	});
+
+	test('ignores shell redirections in storybook ai commands', () => {
+		const calls = parseStorybookWorkflowShellCommands([
+			'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai get-changed-stories 2>&1',
+			'npx storybook ai --port 6006 run-story-tests >out.txt 2> err.log',
+		]);
+
+		expect(calls).toHaveLength(2);
+		expect(calls[0]?.input).toEqual({});
+		expect(calls[1]?.input).not.toHaveProperty('json');
+	});
 });

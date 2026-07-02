@@ -128,6 +128,41 @@ export function expectDisplayReviewForVisualChange(): void {
 	expectFinalResponseEndsWithReviewSection();
 }
 
+// Trigger correctness (Agentic Review Eval instructions §6a.1): a pure
+// non-visual refactor must NOT publish a review, and the final response must
+// not pretend there is one.
+export function expectNoDisplayReview(): void {
+	const displayReviewCalls = getWorkflowCalls('display-review');
+	expect(
+		displayReviewCalls.length,
+		`Expected display-review NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+			displayReviewCalls.map((call) => call.input),
+		)}`,
+	).toBe(0);
+
+	expect(
+		getFinalAssistantMessage() ?? '',
+		'Final response must not link to the Storybook review page for a non-visual change',
+	).not.toMatch(/[?&]path=\/review\//);
+}
+
+// Browse request (Agentic Review Eval instructions §7 branch 4): the review is
+// resolved from the live story index, so the payload must omit changedFiles —
+// no code changed.
+export function expectDisplayReviewForBrowseRequest(): void {
+	const displayReview = getWorkflowCalls('display-review').at(-1);
+	if (displayReview === undefined) {
+		expect.fail('Expected display-review to be called');
+	}
+
+	expectValidDisplayReviewCollections(displayReview.input);
+	expect(
+		displayReview.input.changedFiles,
+		'Browse-request display-review must omit changedFiles',
+	).toBeUndefined();
+	expectFinalResponseEndsWithReviewSection();
+}
+
 // Hard-floor completeness (Agentic Review Eval instructions §6a.2): every story
 // exported from the story files written during the run must appear in the
 // published review. Assumes the template starts without story files, so every
@@ -306,6 +341,15 @@ function readAgentContext(): AgentContext {
 }
 
 function expectValidDisplayReviewPayload(input: Record<string, unknown>): void {
+	expectValidDisplayReviewCollections(input);
+
+	expectNonEmptyArray(input.changedFiles, 'visual change display-review changedFiles');
+	input.changedFiles.forEach((filePath, fileIndex) =>
+		expectNonEmptyString(filePath, `visual change display-review changedFiles[${fileIndex}]`),
+	);
+}
+
+function expectValidDisplayReviewCollections(input: Record<string, unknown>): void {
 	expectNonEmptyString(input.title, 'display-review title');
 	expectNonEmptyString(input.description, 'display-review description');
 	expectNonEmptyArray(input.collections, 'display-review collections');
@@ -320,11 +364,6 @@ function expectValidDisplayReviewPayload(input: Record<string, unknown>): void {
 			expectNonEmptyString(storyId, `${label} storyIds[${storyIndex}]`),
 		);
 	}
-
-	expectNonEmptyArray(input.changedFiles, 'visual change display-review changedFiles');
-	input.changedFiles.forEach((filePath, fileIndex) =>
-		expectNonEmptyString(filePath, `visual change display-review changedFiles[${fileIndex}]`),
-	);
 }
 
 function expectNonEmptyString(value: unknown, label: string): asserts value is string {
@@ -532,6 +571,16 @@ function getNestedShellCommand(command: string): string | undefined {
 	return undefined;
 }
 
+// `2>&1`, `>`, `>>out.txt`, `2>err.log`, `&>log`, `<in.txt`, …
+const SHELL_REDIRECTION_PATTERN = /^(\d*|&)>{1,2}|^</;
+// Redirections that already name their target (`2>&1`, `>out.txt`) consume one
+// token; a bare operator (`>`, `2>`, `<`) also consumes the following token.
+const BARE_SHELL_REDIRECTION_PATTERN = /^((\d*|&)>{1,2}|<)$/;
+
+function isShellRedirection(token: string): boolean {
+	return SHELL_REDIRECTION_PATTERN.test(token);
+}
+
 function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 	const input: Record<string, unknown> = {};
 
@@ -541,9 +590,16 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 			continue;
 		}
 
+		if (isShellRedirection(token)) {
+			if (BARE_SHELL_REDIRECTION_PATTERN.test(token)) {
+				index += 1;
+			}
+			continue;
+		}
+
 		if (token === '--json') {
 			const value = tokens[index + 1];
-			if (value !== undefined && !value.startsWith('-')) {
+			if (value !== undefined && !value.startsWith('-') && !isShellRedirection(value)) {
 				mergeJsonInput(input, parseCliValue(value), 'json');
 				index += 1;
 			} else {
@@ -569,7 +625,7 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 			}
 
 			const value = tokens[index + 1];
-			if (value !== undefined && !value.startsWith('-')) {
+			if (value !== undefined && !value.startsWith('-') && !isShellRedirection(value)) {
 				input[key] = parseCliValue(value);
 				index += 1;
 			} else {

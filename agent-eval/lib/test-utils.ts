@@ -112,11 +112,6 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
 	}
 }
 
-export function expectAnyWorkflowCall(names: string[]): void {
-	const count = names.reduce((total, name) => total + getWorkflowCalls(name).length, 0);
-	expect(count, `Expected at least one of ${names.join(', ')} to be called`).toBeGreaterThan(0);
-}
-
 export function expectFinalResponseContains(substrings: string[]): void {
 	const finalMessage = getFinalAssistantMessage() ?? '';
 	for (const substring of substrings) {

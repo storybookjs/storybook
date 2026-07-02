@@ -1,10 +1,14 @@
 import React, { type FC } from 'react';
 
-import { Badge, Button } from 'storybook/internal/components';
+import { Badge, Button, Loader } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
-import { DEFAULT_CONTENT_WIDTH } from './iframeResizeMessage.ts';
+import {
+  DEFAULT_CONTENT_WIDTH,
+  getPreviewFrameStyle,
+  hasFixedViewportAspect,
+} from './iframeResizeMessage.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -19,7 +23,7 @@ const band = (cols: number) => {
         display: 'none',
       },
     [`&:not([data-show-all]):has(> [data-cell]:nth-child(${cap + 1})) > [data-review-all]`]: {
-      display: 'grid',
+      display: 'flex',
     },
   };
 };
@@ -28,8 +32,6 @@ const GridContainer = styled.div({
   containerType: 'inline-size',
   containerName: 'review-grid',
 });
-
-const GRID_CHILD_ROW_SPAN = 2;
 
 const Grid = styled.div({
   display: 'grid',
@@ -44,27 +46,32 @@ const Grid = styled.div({
 });
 
 const Cell = styled.div({
-  display: 'grid',
-  gridTemplateRows: 'subgrid',
-  gridRow: `span ${GRID_CHILD_ROW_SPAN}`,
-  gap: 0,
+  display: 'flex',
+  flexDirection: 'column',
   minWidth: 0,
+  overflow: 'hidden',
 });
 
-// Scale to fit content width in a fixed 3/2 frame; tall content is cropped.
-const Frame = styled.a(({ theme }) => ({
-  position: 'relative',
-  display: 'block',
+const FrameShell = styled.div({
   width: '100%',
-  height: '100%',
-  alignSelf: 'stretch',
+  minWidth: 0,
+  maxWidth: '100%',
+  aspectRatio: '3 / 2',
+  position: 'relative',
+});
+
+const Frame = styled.a(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'block',
+  boxSizing: 'border-box',
   containerType: 'inline-size',
   containerName: 'preview-frame',
   '--content-w': DEFAULT_CONTENT_WIDTH,
   '--fit-w': 'calc(100cqw / (var(--content-w) * 1px))',
   '--fit': 'min(1, var(--fit-w))',
   '--scale': 'max(0.5, min(1, round(down, var(--fit), 0.25)))',
-  aspectRatio: '3 / 2',
+  '--vp-scale': 'calc(100cqw / (var(--vp-w) * 1px))',
   borderRadius: 6,
   overflow: 'hidden',
   background: theme.background.app,
@@ -72,6 +79,22 @@ const Frame = styled.a(({ theme }) => ({
   transition: 'border-color 120ms ease',
   textDecoration: 'none',
   outline: 'none',
+  '& [data-preview-scale]': {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    transformOrigin: 'top left',
+  },
+  '&[data-viewport-fill] [data-preview-scale]': {
+    width: 'calc(var(--vp-w) * 1px)',
+    height: 'calc(var(--vp-h) * 1px)',
+    transform: 'scale(var(--vp-scale))',
+  },
+  '&:not([data-viewport-fill]) [data-preview-scale]': {
+    width: 'calc(100% / var(--scale))',
+    height: 'calc(100% / var(--scale))',
+    transform: 'scale(var(--scale))',
+  },
   '&[href]:hover': {
     borderColor: theme.color.secondary,
   },
@@ -82,15 +105,22 @@ const Frame = styled.a(({ theme }) => ({
 }));
 
 const Preview = styled.iframe(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  width: 'calc(100% / var(--scale))',
-  height: 'calc(100% / var(--scale))',
+  display: 'block',
+  width: '100%',
+  height: '100%',
   background: theme.background.preview,
   border: 0,
-  display: 'block',
-  transform: 'scale(var(--scale))',
-  transformOrigin: 'top left',
+  pointerEvents: 'none',
+}));
+
+// Outside PreviewScale so bootstrap scaling does not shrink the loading indicator.
+const PreviewLoading = styled.div(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  zIndex: 1,
+  display: 'grid',
+  placeItems: 'center',
+  background: theme.background.app,
   pointerEvents: 'none',
 }));
 
@@ -100,6 +130,7 @@ const ActionBar = styled.div({
   justifyContent: 'space-between',
   gap: 8,
   minHeight: 36,
+  marginTop: 'auto',
 });
 
 const Label = styled.div({
@@ -141,13 +172,20 @@ const ReviewAllCell = styled(Cell)({
   display: 'none',
 });
 
+const ReviewAllShell = styled.div({
+  width: '100%',
+  minWidth: 0,
+  maxWidth: '100%',
+  aspectRatio: '3 / 2',
+  minHeight: 50,
+});
+
 const ReviewAllFrame = styled.div(({ theme }) => ({
   display: 'grid',
   placeItems: 'center',
   width: '100%',
   height: '100%',
-  minHeight: 50,
-  alignSelf: 'stretch',
+  boxSizing: 'border-box',
   borderRadius: 6,
   background: theme.background.app,
   border: `1px dashed ${theme.appBorderColor}`,
@@ -170,47 +208,55 @@ const StoryPreviewCell: FC<{
     frameRef,
     iframeRef,
     src,
+    isPreviewLoading,
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,
   } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
 
   const { component, name } = deriveStoryInfo(info);
-
-  const frameStyle = rememberedDimensions
-    ? ({
-        '--content-w': rememberedDimensions.width,
-        '--content-h': rememberedDimensions.height,
-      } as React.CSSProperties)
-    : undefined;
+  const viewport = rememberedDimensions?.viewport;
+  const viewportFill = hasFixedViewportAspect(viewport);
+  const frameStyle = getPreviewFrameStyle(rememberedDimensions);
 
   const preview = src ? (
-    <Preview
-      ref={iframeRef}
-      title={storyId}
-      src={src}
-      data-content-width={rememberedDimensions?.width}
-      data-content-height={rememberedDimensions?.height}
-      tabIndex={-1}
-      scrolling="no"
-      onLoad={finishCurrent}
-      onError={finishCurrent}
-    />
+    <div data-preview-scale>
+      <Preview
+        ref={iframeRef}
+        title={storyId}
+        src={src}
+        data-content-width={rememberedDimensions?.width}
+        data-content-height={rememberedDimensions?.height}
+        tabIndex={-1}
+        scrolling="no"
+        onLoad={finishCurrent}
+        onError={finishCurrent}
+      />
+    </div>
   ) : null;
 
   return (
     <Cell ref={cellRef} data-cell data-testid="review-collection-grid-cell">
-      <Frame
-        as={href ? 'a' : 'div'}
-        {...(href ? { href } : {})}
-        ref={frameRef as React.Ref<HTMLAnchorElement>}
-        style={frameStyle}
-        aria-label={href ? `Review story ${storyId}` : undefined}
-        onMouseEnter={forceStartCurrent}
-        onFocus={forceStartCurrent}
-      >
-        {preview}
-      </Frame>
+      <FrameShell>
+        <Frame
+          as={href ? 'a' : 'div'}
+          {...(href ? { href } : {})}
+          ref={frameRef as React.Ref<HTMLAnchorElement>}
+          data-testid="review-collection-grid-frame"
+          data-viewport-fill={viewportFill || undefined}
+          style={frameStyle}
+          aria-label={href ? `Review story ${storyId}` : undefined}
+          onMouseEnter={forceStartCurrent}
+          onFocus={forceStartCurrent}
+        >
+          {isPreviewLoading ? (
+            <PreviewLoading data-testid="review-preview-loading">
+              <Loader />
+            </PreviewLoading>
+          ) : null}
+          {preview}
+        </Frame>
+      </FrameShell>
       <ActionBar>
         <Label>
           <LabelComponent>{component}</LabelComponent>
@@ -267,11 +313,13 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
         );
       })}
       <ReviewAllCell data-review-all>
-        <ReviewAllFrame>
-          <Button size="medium" onClick={() => onShowAll?.()}>
-            Review all {storyIds.length}
-          </Button>
-        </ReviewAllFrame>
+        <ReviewAllShell>
+          <ReviewAllFrame>
+            <Button size="medium" onClick={() => onShowAll?.()}>
+              Review all {storyIds.length}
+            </Button>
+          </ReviewAllFrame>
+        </ReviewAllShell>
         <ActionBar aria-hidden="true" />
       </ReviewAllCell>
     </Grid>

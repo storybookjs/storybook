@@ -31405,7 +31405,7 @@ __metadata:
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3
-    vite-plus: ^0.1.15
+    vite-plus: ^0.1.15 || ^0.2.0
   peerDependenciesMeta:
     "@types/react":
       optional: true

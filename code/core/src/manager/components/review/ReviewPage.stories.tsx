@@ -583,3 +583,25 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
     expect(addNotificationMock).not.toHaveBeenCalled();
   },
 });
+
+export const SummaryStateSurvivesReviewReplay = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    applyReviewState();
+
+    const collapseButton = await canvas.findByRole('button', {
+      name: 'Collapse collection Settings',
+    });
+    await userEvent.click(collapseButton);
+    await expect(
+      await canvas.findByRole('button', { name: 'Expand collection Settings' })
+    ).toHaveAttribute('aria-expanded', 'false');
+
+    // Another tab's REQUEST_REVIEW replays the cached review to every open tab.
+    emitMock(EVENTS.DISPLAY_REVIEW, { ...reviewState });
+
+    await expect(
+      canvas.getByRole('button', { name: 'Expand collection Settings' })
+    ).toHaveAttribute('aria-expanded', 'false');
+  },
+});

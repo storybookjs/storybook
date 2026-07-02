@@ -1,10 +1,17 @@
 import { global } from '@storybook/global';
 
-import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
+import {
+  IFRAME_RESIZE_CONTEXT,
+  IFRAME_RESIZE_REQUEST_CONTEXT,
+  iframeResizeViewportsEqual,
+} from '../../../shared/constants/iframe-resize.ts';
+import type { ResolvedViewportDimensions } from '../../../viewport/resolveViewport.ts';
 
+import { shouldEmbed } from './embedMode.ts';
 import { shouldFreeze } from './setupStoryFreezer.ts';
 
 const EMBED_STYLE_ID = 'storybook-embed-sizing';
+const EMBED_UI_STYLE_ID = 'storybook-embed-ui';
 
 const IGNORE_TAGS = new Set([
   'area',
@@ -75,13 +82,6 @@ const BLOCK_LEVEL_TAGS = [
 const descendantSelector = `* ${Array.from(IGNORE_TAGS)
   .map((tag) => `:not(${tag})`)
   .join('')}`;
-
-export const shouldEmbed = ({ search }: { search: string }) => {
-  return new URLSearchParams(search).get('embed') === 'true';
-};
-
-/** Embedded review thumbnails are too narrow for manager interaction plays. */
-export const shouldAutoplay = ({ search }: { search: string }) => !shouldEmbed({ search });
 
 const isTransparentColor = (color: string): boolean => {
   if (!color || color === 'transparent') {
@@ -314,12 +314,34 @@ const removeEmbedSizingStyles = (documentRef: Document): void => {
   documentRef.getElementById(EMBED_STYLE_ID)?.remove();
 };
 
-let lastDimensions: { width: number; height: number } | null = null;
+/** Review thumbnails draw their own loader outside the scale wrapper. */
+const injectEmbedUiStyles = (documentRef: Document): void => {
+  if (documentRef.getElementById(EMBED_UI_STYLE_ID)) {
+    return;
+  }
+
+  const style = documentRef.createElement('style');
+  style.id = EMBED_UI_STYLE_ID;
+  style.textContent = `
+    .sb-preparing-story,
+    .sb-preparing-docs {
+      display: none !important;
+    }
+  `;
+  documentRef.head.appendChild(style);
+};
+
+let lastDimensions: {
+  width: number;
+  height: number;
+  viewport?: ResolvedViewportDimensions;
+} | null = null;
 
 const sendResizeMessage = (
   elements: Set<Element>,
   windowRef: Window,
-  documentRef: Document
+  documentRef: Document,
+  getViewport?: () => ResolvedViewportDimensions | undefined
 ): void => {
   if (!elements.size) {
     return;
@@ -328,8 +350,13 @@ const sendResizeMessage = (
   injectEmbedSizingStyles(documentRef);
   const dimensions = getDimensions(elements, documentRef);
   removeEmbedSizingStyles(documentRef);
+  const viewport = getViewport?.();
 
-  if (dimensions.width === lastDimensions?.width && dimensions.height === lastDimensions?.height) {
+  if (
+    dimensions.width === lastDimensions?.width &&
+    dimensions.height === lastDimensions?.height &&
+    iframeResizeViewportsEqual(viewport, lastDimensions?.viewport)
+  ) {
     return;
   }
 
@@ -338,8 +365,9 @@ const sendResizeMessage = (
     context: IFRAME_RESIZE_CONTEXT,
     width: dimensions.width,
     height: dimensions.height,
+    ...(viewport ? { viewport } : {}),
   });
-  lastDimensions = dimensions;
+  lastDimensions = { ...dimensions, viewport };
 
   try {
     if (windowRef.parent !== windowRef) {
@@ -350,10 +378,10 @@ const sendResizeMessage = (
   }
 };
 
-const debounce = (callback: () => void): (() => void) => {
+const debounce = (callback: () => void): (() => void) & { cancel: () => void } => {
   let rafId: number | null = null;
 
-  return () => {
+  const debounced = () => {
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
     }
@@ -362,18 +390,37 @@ const debounce = (callback: () => void): (() => void) => {
       rafId = null;
     });
   };
+
+  debounced.cancel = () => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  };
+
+  return debounced;
+};
+
+export type ContentResizeBroadcastOptions = {
+  /** Resolve the active viewport for the current story when posting iframe.resize. */
+  getViewport?: () => ResolvedViewportDimensions | undefined;
 };
 
 export type ContentResizeBroadcast = {
   /** Final measure after freeze; only set when freeze is also active. */
   onContentFrozen?: () => void;
+  /** Tear down listeners/observers; for tests and hot reload. */
+  cleanup?: () => void;
 };
 
 /**
  * When `embed=true`, measure story content and notify the parent frame via
  * postMessage so embedded thumbnails can size themselves to the content.
  */
-export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
+export const setupContentResizeBroadcast = (
+  options: ContentResizeBroadcastOptions = {}
+): ContentResizeBroadcast => {
+  const { getViewport } = options;
   const windowRef = global.window;
   const documentRef = global.document;
   if (!windowRef || !documentRef) {
@@ -388,22 +435,54 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
 
   const freezing = shouldFreeze({ search: documentRef.location.search });
 
+  if (freezing) {
+    // Review thumbnails draw their own loader in the manager grid.
+    injectEmbedUiStyles(documentRef);
+  }
+  let contentFrozen = false;
+
   const measureAndSend = () => {
     const elements = getTrackedElements();
-    sendResizeMessage(elements, windowRef, documentRef);
+    sendResizeMessage(elements, windowRef, documentRef, getViewport);
   };
+
+  const onParentMessage = (event: MessageEvent) => {
+    if (event.source !== windowRef.parent) {
+      return;
+    }
+    try {
+      const parsed = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (parsed?.context === IFRAME_RESIZE_REQUEST_CONTEXT) {
+        if (freezing && !contentFrozen) {
+          return;
+        }
+        lastDimensions = null;
+        measureAndSend();
+      }
+    } catch {
+      // Ignore malformed parent messages.
+    }
+  };
+  windowRef.addEventListener('message', onParentMessage);
+  const cleanups: Array<() => void> = [
+    () => windowRef.removeEventListener('message', onParentMessage),
+  ];
 
   if (freezing) {
     // Thumbnail embeds use freeze=finished so the preview can settle before measuring.
     // Measuring earlier (e.g. while a portaled dismiss underlay is mounted) would
     // report the iframe viewport instead of the story chrome.
     return {
-      onContentFrozen: measureAndSend,
+      onContentFrozen: () => {
+        contentFrozen = true;
+        measureAndSend();
+      },
+      cleanup: () => cleanups.forEach((fn) => fn()),
     };
   }
 
   const trackedElements = getTrackedElements();
-  const update = () => sendResizeMessage(trackedElements, windowRef, documentRef);
+  const update = () => sendResizeMessage(trackedElements, windowRef, documentRef, getViewport);
   const debouncedUpdate = debounce(update);
 
   const resizeObserver = new ResizeObserver(debouncedUpdate);
@@ -434,6 +513,14 @@ export const setupContentResizeBroadcast = (): ContentResizeBroadcast => {
   });
 
   windowRef.addEventListener('resize', debouncedUpdate);
+  cleanups.push(
+    () => debouncedUpdate.cancel(),
+    () => resizeObserver.disconnect(),
+    () => mutationObserver.disconnect(),
+    () => windowRef.removeEventListener('resize', debouncedUpdate)
+  );
 
-  return {};
+  measureAndSend();
+
+  return { cleanup: () => cleanups.forEach((fn) => fn()) };
 };

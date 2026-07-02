@@ -1,34 +1,16 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { IFRAME_RESIZE_CONTEXT } from '../../../shared/constants/iframe-resize.ts';
+import {
+  IFRAME_RESIZE_CONTEXT,
+  IFRAME_RESIZE_REQUEST_CONTEXT,
+} from '../../../shared/constants/iframe-resize.ts';
 
 import {
   isPassThroughContainer,
   isViewportOverlayUnderlay,
   setupContentResizeBroadcast,
-  shouldAutoplay,
-  shouldEmbed,
 } from './setupContentResizeBroadcast.ts';
-
-describe('shouldEmbed', () => {
-  it('requires embed=true', () => {
-    expect(shouldEmbed({ search: '?id=example--story&viewMode=story' })).toBe(false);
-    expect(shouldEmbed({ search: '?id=example--story&viewMode=story&embed=true' })).toBe(true);
-    expect(shouldEmbed({ search: '?id=example--story&viewMode=story&embed=false' })).toBe(false);
-  });
-});
-
-describe('shouldAutoplay', () => {
-  it('disables play functions in embedded review thumbnails', () => {
-    expect(shouldAutoplay({ search: '?id=example--story&viewMode=story' })).toBe(true);
-    expect(
-      shouldAutoplay({
-        search: '?id=example--story&viewMode=story&embed=true&freeze=finished',
-      })
-    ).toBe(false);
-  });
-});
 
 describe('isPassThroughContainer', () => {
   beforeEach(() => {
@@ -171,25 +153,34 @@ describe('isViewportOverlayUnderlay', () => {
 describe('setupContentResizeBroadcast', () => {
   let previousHref: string;
   let postMessageSpy: ReturnType<typeof vi.spyOn>;
+  let activeCleanup: (() => void) | undefined;
 
-  const mockResizeObserver = () => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        private callback: ResizeObserverCallback;
+  const installBroadcast = () => {
+    activeCleanup?.();
+    const result = setupContentResizeBroadcast();
+    activeCleanup = result.cleanup;
+    return result;
+  };
 
-        constructor(callback: ResizeObserverCallback) {
-          this.callback = callback;
-        }
-
-        observe() {
-          this.callback([], this as unknown as ResizeObserver);
-        }
-
-        unobserve() {}
-        disconnect() {}
-      } as typeof ResizeObserver
+  const measureAfterFreeze = async (setupBody?: () => void) => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
     );
+    setupBody?.();
+    const { onContentFrozen } = installBroadcast();
+    onContentFrozen?.();
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    return JSON.parse(message as string) as {
+      context: string;
+      width: number;
+      height: number;
+      src: string;
+    };
   };
 
   const mockRect = (
@@ -218,10 +209,183 @@ describe('setupContentResizeBroadcast', () => {
   });
 
   afterEach(() => {
+    activeCleanup?.();
+    activeCleanup = undefined;
     window.history.replaceState({}, '', previousHref);
     document.body.innerHTML = '';
     document.head.querySelector('#storybook-embed-sizing')?.remove();
+    document.head.querySelector('#storybook-embed-ui')?.remove();
     vi.unstubAllGlobals();
+  });
+
+  describe('when freeze=finished', () => {
+    beforeEach(() => {
+      window.history.replaceState(
+        {},
+        '',
+        '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
+      );
+    });
+
+    it('provides onContentFrozen', () => {
+      const { onContentFrozen } = installBroadcast();
+      expect(onContentFrozen).toEqual(expect.any(Function));
+    });
+
+    it('defers measurement until onContentFrozen', async () => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
+
+      vi.stubGlobal('innerWidth', 800);
+      vi.stubGlobal('innerHeight', 600);
+
+      const button = document.getElementById('button') as HTMLButtonElement;
+      const underlay = document.getElementById('underlay') as HTMLDivElement;
+      underlay.style.position = 'fixed';
+      underlay.style.inset = '0';
+
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 160,
+        width: 160,
+        height: 40,
+      });
+      mockRect(underlay, {
+        top: 0,
+        left: 0,
+        bottom: 600,
+        right: 800,
+        width: 800,
+        height: 600,
+      });
+
+      const { onContentFrozen } = installBroadcast();
+      expect(postMessageSpy).not.toHaveBeenCalled();
+
+      onContentFrozen?.();
+
+      await vi.waitFor(() => {
+        expect(postMessageSpy).toHaveBeenCalled();
+      });
+
+      const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+      const payload = JSON.parse(message as string);
+      expect(payload.width).toBe(160);
+      expect(payload.height).toBe(40);
+    });
+
+    it('ignores parent remeasure requests until onContentFrozen', async () => {
+      document.body.innerHTML = '<div id="storybook-root"><div id="content">Hello</div></div>';
+      const content = document.getElementById('content') as HTMLDivElement;
+      mockRect(content, {
+        top: 0,
+        left: 0,
+        bottom: 48,
+        right: 120,
+        width: 120,
+        height: 48,
+      });
+
+      const { onContentFrozen } = installBroadcast();
+      const parent = window.parent as Window;
+
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }),
+          source: parent,
+        })
+      );
+      expect(postMessageSpy).not.toHaveBeenCalled();
+
+      onContentFrozen?.();
+
+      await vi.waitFor(() => {
+        expect(postMessageSpy).toHaveBeenCalled();
+      });
+
+      postMessageSpy.mockClear();
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }),
+          source: parent,
+        })
+      );
+
+      await vi.waitFor(() => {
+        expect(postMessageSpy).toHaveBeenCalled();
+      });
+    });
+  });
+
+  it('hides the in-iframe preparing loader for frozen embed thumbnails', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
+    );
+    installBroadcast();
+    const style = document.getElementById('storybook-embed-ui');
+    expect(style?.textContent).toContain('.sb-preparing-story');
+    expect(style?.textContent).toContain('display: none');
+  });
+
+  it('does not hide the in-iframe preparing loader for embed without freeze', () => {
+    installBroadcast();
+    expect(document.getElementById('storybook-embed-ui')).toBeNull();
+  });
+
+  it('auto-measures embed previews without freeze', async () => {
+    const content = document.getElementById('content') as HTMLDivElement;
+    mockRect(content, {
+      top: 0,
+      left: 0,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
+    });
+
+    installBroadcast();
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
+  });
+
+  it('re-measures when the parent requests dimensions', async () => {
+    const content = document.getElementById('content') as HTMLDivElement;
+    mockRect(content, {
+      top: 0,
+      left: 0,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
+    });
+
+    installBroadcast();
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    postMessageSpy.mockClear();
+
+    const parent = window.parent as Window;
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: JSON.stringify({ context: IFRAME_RESIZE_REQUEST_CONTEXT }),
+        source: parent,
+      })
+    );
+
+    await vi.waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalled();
+    });
+    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
+    expect(JSON.parse(message as string).context).toBe(IFRAME_RESIZE_CONTEXT);
   });
 
   it('does not install when embed=true is absent', () => {
@@ -241,12 +405,7 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
+    await measureAfterFreeze();
     expect(document.getElementById('storybook-embed-sizing')).toBeNull();
   });
 
@@ -261,235 +420,170 @@ describe('setupContentResizeBroadcast', () => {
       height: 48,
     });
 
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
+    const payload = await measureAfterFreeze();
     expect(payload.context).toBe(IFRAME_RESIZE_CONTEXT);
     expect(payload.width).toBeGreaterThan(0);
     expect(payload.height).toBeGreaterThan(0);
     expect(payload.src).toContain('embed=true');
   });
 
-  it('ignores pass-through wrappers when measuring nested content', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><div id="wrapper"><button id="button">Click</button></div></div>';
-
-    const root = document.getElementById('storybook-root') as HTMLDivElement;
-    const wrapper = document.getElementById('wrapper') as HTMLDivElement;
-    const button = document.getElementById('button') as HTMLButtonElement;
-    mockRect(root, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 800,
-      width: 800,
-      height: 40,
-    });
-    mockRect(wrapper, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 800,
-      width: 800,
-      height: 40,
-    });
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 80,
-      width: 80,
-      height: 40,
-    });
-
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
-    expect(payload.width).toBe(80);
-    expect(payload.height).toBe(40);
-  });
-
-  it('does not apply fit-content sizing to inline icon sprites while measuring', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><svg data-chromatic="ignore" style="position:absolute;width:0;height:0"><symbol id="icon"><path d="M0 0h300v20H0z"></path></symbol></svg><button id="button">Filter</button></div>';
-
-    const button = document.getElementById('button') as HTMLButtonElement;
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 80,
-      width: 80,
-      height: 40,
-    });
-
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
-    expect(payload.width).toBe(80);
-    expect(payload.height).toBe(40);
-  });
-
-  it('ignores full-viewport fixed underlays portaled to the body', async () => {
-    document.body.innerHTML =
-      '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
-
-    vi.stubGlobal('innerWidth', 800);
-    vi.stubGlobal('innerHeight', 600);
-
-    const button = document.getElementById('button') as HTMLButtonElement;
-    const underlay = document.getElementById('underlay') as HTMLDivElement;
-    underlay.style.position = 'fixed';
-    underlay.style.inset = '0';
-
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 160,
-      width: 160,
-      height: 40,
-    });
-    mockRect(underlay, {
-      top: 0,
-      left: 0,
-      bottom: 600,
-      right: 800,
-      width: 800,
-      height: 600,
-    });
-
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
-    expect(payload.width).toBe(160);
-    expect(payload.height).toBe(40);
-  });
-
-  it('provides onContentFrozen when freeze=finished is also set', () => {
+  it('includes viewport metadata when getViewport is provided', async () => {
     window.history.replaceState(
       {},
       '',
       '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
     );
-    const { onContentFrozen } = setupContentResizeBroadcast();
-    expect(onContentFrozen).toEqual(expect.any(Function));
-  });
-
-  it('adds measured body padding symmetrically around content bounds', async () => {
-    document.body.style.padding = '16px';
-    const content = document.getElementById('content') as HTMLDivElement;
-    mockRect(content, {
-      top: 16,
-      left: 16,
-      bottom: 316,
-      right: 316,
-      width: 300,
-      height: 300,
-    });
-
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
-    });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
-    expect(payload.width).toBe(332);
-    expect(payload.height).toBe(332);
-  });
-
-  it('does not add padding when the iframe body has none', async () => {
-    document.body.style.padding = '0';
     const content = document.getElementById('content') as HTMLDivElement;
     mockRect(content, {
       top: 0,
       left: 0,
-      bottom: 300,
-      right: 300,
-      width: 300,
-      height: 300,
+      bottom: 48,
+      right: 120,
+      width: 120,
+      height: 48,
     });
 
-    mockResizeObserver();
-    setupContentResizeBroadcast();
-
-    await vi.waitFor(() => {
-      expect(postMessageSpy).toHaveBeenCalled();
+    const { onContentFrozen } = setupContentResizeBroadcast({
+      getViewport: () => ({
+        name: 'Small mobile',
+        value: 'mobile1',
+        width: 320,
+        height: 568,
+      }),
     });
-    const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
-    expect(payload.width).toBe(300);
-    expect(payload.height).toBe(300);
-  });
-
-  it('defers measurement until onContentFrozen when freeze=finished is set', async () => {
-    window.history.replaceState(
-      {},
-      '',
-      '/iframe.html?id=example--story&viewMode=story&embed=true&freeze=finished'
-    );
-    document.body.innerHTML =
-      '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
-
-    vi.stubGlobal('innerWidth', 800);
-    vi.stubGlobal('innerHeight', 600);
-
-    const button = document.getElementById('button') as HTMLButtonElement;
-    const underlay = document.getElementById('underlay') as HTMLDivElement;
-    underlay.style.position = 'fixed';
-    underlay.style.inset = '0';
-
-    mockRect(button, {
-      top: 0,
-      left: 0,
-      bottom: 40,
-      right: 160,
-      width: 160,
-      height: 40,
-    });
-    mockRect(underlay, {
-      top: 0,
-      left: 0,
-      bottom: 600,
-      right: 800,
-      width: 800,
-      height: 600,
-    });
-
-    const { onContentFrozen } = setupContentResizeBroadcast();
-    expect(postMessageSpy).not.toHaveBeenCalled();
-
     onContentFrozen?.();
 
     await vi.waitFor(() => {
       expect(postMessageSpy).toHaveBeenCalled();
     });
-
     const [message] = postMessageSpy.mock.calls.at(-1) ?? [];
-    const payload = JSON.parse(message as string);
+    expect(JSON.parse(message as string)).toMatchObject({
+      context: IFRAME_RESIZE_CONTEXT,
+      viewport: { name: 'Small mobile', value: 'mobile1', width: 320, height: 568 },
+    });
+  });
+
+  it('ignores pass-through wrappers when measuring nested content', async () => {
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><div id="wrapper"><button id="button">Click</button></div></div>';
+
+      const root = document.getElementById('storybook-root') as HTMLDivElement;
+      const wrapper = document.getElementById('wrapper') as HTMLDivElement;
+      const button = document.getElementById('button') as HTMLButtonElement;
+      mockRect(root, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 800,
+        width: 800,
+        height: 40,
+      });
+      mockRect(wrapper, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 800,
+        width: 800,
+        height: 40,
+      });
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 80,
+        width: 80,
+        height: 40,
+      });
+    });
+    expect(payload.width).toBe(80);
+    expect(payload.height).toBe(40);
+  });
+
+  it('does not apply fit-content sizing to inline icon sprites while measuring', async () => {
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><svg data-chromatic="ignore" style="position:absolute;width:0;height:0"><symbol id="icon"><path d="M0 0h300v20H0z"></path></symbol></svg><button id="button">Filter</button></div>';
+
+      const button = document.getElementById('button') as HTMLButtonElement;
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 80,
+        width: 80,
+        height: 40,
+      });
+    });
+    expect(payload.width).toBe(80);
+    expect(payload.height).toBe(40);
+  });
+
+  it('ignores full-viewport fixed underlays portaled to the body', async () => {
+    const payload = await measureAfterFreeze(() => {
+      document.body.innerHTML =
+        '<div id="storybook-root"><button id="button">Animal</button></div><div id="underlay"></div>';
+
+      vi.stubGlobal('innerWidth', 800);
+      vi.stubGlobal('innerHeight', 600);
+
+      const button = document.getElementById('button') as HTMLButtonElement;
+      const underlay = document.getElementById('underlay') as HTMLDivElement;
+      underlay.style.position = 'fixed';
+      underlay.style.inset = '0';
+
+      mockRect(button, {
+        top: 0,
+        left: 0,
+        bottom: 40,
+        right: 160,
+        width: 160,
+        height: 40,
+      });
+      mockRect(underlay, {
+        top: 0,
+        left: 0,
+        bottom: 600,
+        right: 800,
+        width: 800,
+        height: 600,
+      });
+    });
     expect(payload.width).toBe(160);
     expect(payload.height).toBe(40);
+  });
+
+  it('adds measured body padding symmetrically around content bounds', async () => {
+    const payload = await measureAfterFreeze(() => {
+      document.body.style.padding = '16px';
+      const content = document.getElementById('content') as HTMLDivElement;
+      mockRect(content, {
+        top: 16,
+        left: 16,
+        bottom: 316,
+        right: 316,
+        width: 300,
+        height: 300,
+      });
+    });
+    expect(payload.width).toBe(332);
+    expect(payload.height).toBe(332);
+  });
+
+  it('does not add padding when the iframe body has none', async () => {
+    const payload = await measureAfterFreeze(() => {
+      document.body.style.padding = '0';
+      const content = document.getElementById('content') as HTMLDivElement;
+      mockRect(content, {
+        top: 0,
+        left: 0,
+        bottom: 300,
+        right: 300,
+        width: 300,
+        height: 300,
+      });
+    });
+    expect(payload.width).toBe(300);
+    expect(payload.height).toBe(300);
   });
 });

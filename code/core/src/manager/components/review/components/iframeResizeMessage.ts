@@ -1,12 +1,59 @@
-import { IFRAME_RESIZE_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
+import type { CSSProperties } from 'react';
 
-/** Default `--content-w` / `--content-h` before the embed iframe reports its size. */
+import {
+  IFRAME_RESIZE_CONTEXT,
+  hasFixedViewportDimensions,
+  iframeResizeDimensionsEqual,
+  iframeResizeViewportsEqual,
+  type IframeResizeDimensions,
+  type IframeResizeViewport,
+} from '../../../../shared/constants/iframe-resize.ts';
+
+/** Default `--content-w` before the embed iframe reports its size. */
 export const DEFAULT_CONTENT_WIDTH = 300;
-export const DEFAULT_CONTENT_HEIGHT = 200;
 
-export type ContentDimensions = {
-  width: number;
-  height: number;
+export type ContentDimensions = IframeResizeDimensions;
+
+export {
+  iframeResizeDimensionsEqual as contentDimensionsEqual,
+  hasFixedViewportDimensions as hasFixedViewportAspect,
+  iframeResizeViewportsEqual,
+  type IframeResizeViewport,
+};
+
+const isPositiveFinite = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+const parseViewport = (value: unknown): IframeResizeViewport | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const viewport = value as Partial<IframeResizeViewport>;
+  if (typeof viewport.name !== 'string' || typeof viewport.value !== 'string') {
+    return undefined;
+  }
+
+  const parsed: IframeResizeViewport = {
+    name: viewport.name,
+    value: viewport.value,
+  };
+
+  if (viewport.width !== undefined) {
+    if (!isPositiveFinite(viewport.width)) {
+      return undefined;
+    }
+    parsed.width = viewport.width;
+  }
+
+  if (viewport.height !== undefined) {
+    if (!isPositiveFinite(viewport.height)) {
+      return undefined;
+    }
+    parsed.height = viewport.height;
+  }
+
+  return parsed;
 };
 
 export const parseIframeResizeMessage = (data: unknown): ContentDimensions | null => {
@@ -15,31 +62,39 @@ export const parseIframeResizeMessage = (data: unknown): ContentDimensions | nul
     if (parsed?.context !== IFRAME_RESIZE_CONTEXT) {
       return null;
     }
-    if (
-      typeof parsed.width !== 'number' ||
-      !Number.isFinite(parsed.width) ||
-      parsed.width <= 0 ||
-      typeof parsed.height !== 'number' ||
-      !Number.isFinite(parsed.height) ||
-      parsed.height <= 0
-    ) {
+    if (!isPositiveFinite(parsed.width) || !isPositiveFinite(parsed.height)) {
       return null;
     }
-    return { width: parsed.width, height: parsed.height };
+
+    const viewport = parseViewport(parsed.viewport);
+    if (parsed.viewport !== undefined && viewport === undefined) {
+      return null;
+    }
+
+    return {
+      width: parsed.width,
+      height: parsed.height,
+      ...(viewport ? { viewport } : {}),
+    };
   } catch {
     return null;
   }
 };
 
-const THUMBNAIL_SCALE_MIN = 0.5;
-const THUMBNAIL_SCALE_STEP = 0.25;
+/** Pre-measurement scale so the embed iframe viewport is 2× the frame width (100% / 0.5). */
+export const THUMBNAIL_BOOTSTRAP_SCALE = 0.5;
 
-/** Mirrors Frame `--scale`: fit content width in the frame; tall content is cropped. */
-export const computeThumbnailScale = (contentWidth: number, frameWidth: number): number => {
-  if (frameWidth <= 0 || contentWidth <= 0) {
-    return 1;
+export const getPreviewFrameStyle = (dimensions: ContentDimensions | null): CSSProperties => {
+  if (!dimensions) {
+    return { '--scale': THUMBNAIL_BOOTSTRAP_SCALE } as CSSProperties;
   }
-  const fit = Math.min(1, frameWidth / contentWidth);
-  const stepped = Math.floor(fit / THUMBNAIL_SCALE_STEP) * THUMBNAIL_SCALE_STEP;
-  return Math.max(THUMBNAIL_SCALE_MIN, Math.min(1, stepped));
+
+  if (hasFixedViewportDimensions(dimensions.viewport)) {
+    return {
+      '--vp-w': dimensions.viewport.width,
+      '--vp-h': dimensions.viewport.height,
+    } as CSSProperties;
+  }
+
+  return { '--content-w': dimensions.width } as CSSProperties;
 };

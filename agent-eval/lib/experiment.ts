@@ -1,4 +1,5 @@
-import type { ExperimentConfig } from '@vercel/agent-eval';
+import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
+import { collectTranscriptUsage } from './usage.ts';
 
 // The 8xx line: hand-crafted evals written for the current plugin/MCP
 // workflow (story instructions, display-review, launch config, preview
@@ -95,7 +96,28 @@ export const RESHAPED_STORYBOOK_EVALS: EvalName[] = resolveActiveEvals();
 export const EXTRA_MODEL_EVALS: EvalName[] =
 	process.env.EVAL_EXTRA_MODELS === '1' ? [...RESHAPED_STORYBOOK_EVALS] : [];
 
+function attachUsageMetadata({ runData }: RunCompleteContext) {
+	if (!runData.transcript) {
+		return;
+	}
+
+	const usage = collectTranscriptUsage(runData.transcript, runData.result.observedModel);
+
+	if (!usage) {
+		return;
+	}
+
+	return {
+		...runData,
+		result: {
+			...runData.result,
+			metadata: { ...runData.result.metadata, usage },
+		},
+	};
+}
+
 export const DEFAULT_EXPERIMENT_CONFIG = {
+	onRunComplete: attachUsageMetadata,
 	// Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
 	// aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
 	runs: 1,

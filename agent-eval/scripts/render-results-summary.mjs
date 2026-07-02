@@ -31,6 +31,51 @@ function findTimestampDirectories(dir = resultsRoot) {
 	});
 }
 
+// Usage is computed by the experiments' onRunComplete hook (lib/usage.ts)
+// and persisted in each run's result.json as metadata.usage.
+function collectEvalUsage(evalRoot) {
+	const runs = listDirectories(evalRoot).filter((name) => /^run-\d+$/.test(name));
+	const combined = { total: 0, cost: 0, costKnown: true };
+	const found = runs.flatMap((run) => {
+		const resultPath = join(evalRoot, run, 'result.json');
+		const usage = existsSync(resultPath) ? readJson(resultPath).metadata?.usage : undefined;
+
+		return usage ? [usage] : [];
+	});
+
+	if (found.length === 0) {
+		return null;
+	}
+
+	for (const usage of found) {
+		combined.total += usage.totalTokens;
+
+		if (usage.estimatedCostUsd === undefined) {
+			combined.costKnown = false;
+		} else {
+			combined.cost += usage.estimatedCostUsd;
+		}
+	}
+
+	return combined;
+}
+
+function formatTokens(count) {
+	if (count >= 1_000_000) {
+		return `${(count / 1_000_000).toFixed(1)}M`;
+	}
+
+	return count >= 1_000 ? `${Math.round(count / 1_000)}k` : `${count}`;
+}
+
+function formatCost(usage) {
+	if (!usage.costKnown && usage.cost === 0) {
+		return '—';
+	}
+
+	return `${usage.costKnown ? '' : '≥'}$${usage.cost.toFixed(2)}`;
+}
+
 function collectEvals(runRoot) {
 	return listDirectories(runRoot).flatMap((name) => {
 		const summaryPath = join(runRoot, name, 'summary.json');
@@ -46,6 +91,7 @@ function collectEvals(runRoot) {
 				name,
 				summary: readJson(summaryPath),
 				classification: existsSync(classificationPath) ? readJson(classificationPath) : null,
+				usage: collectEvalUsage(join(runRoot, name)),
 			},
 		];
 	});
@@ -83,16 +129,18 @@ function sanitizeCell(value) {
 		.trim();
 }
 
-function renderEvalRow({ name, summary, classification }) {
+function renderEvalRow({ name, summary, classification, usage }) {
 	const passed = summary.passedRuns === summary.totalRuns;
 	const status = passed ? '✅' : '❌';
 	const duration =
 		typeof summary.meanDuration === 'number' ? `${summary.meanDuration.toFixed(1)}s` : '—';
+	const tokens = usage ? formatTokens(usage.total) : '—';
+	const cost = usage ? formatCost(usage) : '—';
 	const failure = classification
 		? `\`${sanitizeCell(classification.failureType)}\` — ${sanitizeCell(classification.failureReason)}`
 		: '';
 
-	return `| ${status} | \`${name}\` | ${summary.passedRuns}/${summary.totalRuns} (${summary.passRate}) | ${duration} | ${failure} |`;
+	return `| ${status} | \`${name}\` | ${summary.passedRuns}/${summary.totalRuns} (${summary.passRate}) | ${duration} | ${tokens} | ${cost} | ${failure} |`;
 }
 
 function renderExperiment({ experiment, timestamp, evals }) {
@@ -103,8 +151,8 @@ function renderExperiment({ experiment, timestamp, evals }) {
 	return [
 		`#### \`${experiment}\` (${timestamp})`,
 		'',
-		'| | Eval | Pass rate | Mean duration | Failure |',
-		'|---|---|---|---|---|',
+		'| | Eval | Pass rate | Mean duration | Tokens | Cost | Failure |',
+		'|---|---|---|---|---|---|---|',
 		...evals.map(renderEvalRow),
 	].join('\n');
 }
@@ -112,6 +160,17 @@ function renderExperiment({ experiment, timestamp, evals }) {
 const experiments = collectExperiments();
 const evals = experiments.flatMap(({ evals: experimentEvals }) => experimentEvals);
 const passedEvals = evals.filter(({ summary }) => summary.passedRuns === summary.totalRuns);
+const totals = evals
+	.map(({ usage }) => usage)
+	.filter(Boolean)
+	.reduce(
+		(acc, usage) => ({
+			total: acc.total + usage.total,
+			cost: acc.cost + usage.cost,
+			costKnown: acc.costKnown && usage.costKnown,
+		}),
+		{ total: 0, cost: 0, costKnown: true },
+	);
 const playgroundUrl = process.env.PLAYGROUND_URL;
 const runUrl = process.env.RUN_URL;
 
@@ -119,7 +178,9 @@ const sections = [
 	[
 		'### Agent eval results',
 		'',
-		`**${passedEvals.length}/${evals.length} evals passed**${runUrl ? ` ([workflow run](${runUrl}))` : ''}`,
+		`**${passedEvals.length}/${evals.length} evals passed**${
+			totals.total > 0 ? ` · ${formatTokens(totals.total)} tokens · ${formatCost(totals)}` : ''
+		}${runUrl ? ` ([workflow run](${runUrl}))` : ''}`,
 	].join('\n'),
 ];
 
@@ -137,6 +198,9 @@ if (experiments.length > 0) {
 			'',
 			'</details>',
 		].join('\n'),
+	);
+	sections.push(
+		'_Cost is estimated from model token usage at provider list prices ([Vercel AI Gateway](https://vercel.com/docs/ai-gateway/pricing) adds no markup) and excludes Vercel Sandbox compute._',
 	);
 }
 

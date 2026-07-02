@@ -32,6 +32,9 @@
 		"vitest": "catalog:"
 	},
 	"pnpm": {
+		"overrides": {
+			"@ai-sdk/anthropic": "^2.0.0"
+		},
 		"patchedDependencies": {
 			"@vercel/agent-eval@1.2.0": "patches/@vercel__agent-eval@1.2.0.patch"
 		}

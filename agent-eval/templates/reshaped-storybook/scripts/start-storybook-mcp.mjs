@@ -93,5 +93,7 @@ async function initializeMcp() {
 		signal: AbortSignal.timeout(5_000),
 	});
 
+	// Drain the body so the polling loop does not accumulate open sockets.
+	await response.body?.cancel();
 	return response.ok;
 }

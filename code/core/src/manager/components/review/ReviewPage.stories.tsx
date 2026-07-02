@@ -30,7 +30,7 @@ import {
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
-import { ReviewSummaryPortal } from './screens/ReviewSummaryPortal.tsx';
+import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -141,7 +141,7 @@ const applyReviewState = () => {
 const ReviewHarness = () => (
   <ReviewProvider>
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -149,7 +149,7 @@ const ReviewOutsideHarness = () => (
   <ReviewProvider>
     <ReviewNotification />
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -182,7 +182,7 @@ const ReviewOutsideWithNotificationsHarness = () => {
         <ReviewProvider>
           <ReviewNotification />
           <ReviewToolbarHeader />
-          <ReviewSummaryPortal />
+          <ReviewSummaryHost />
         </ReviewProvider>
         <div
           style={{
@@ -264,7 +264,13 @@ const meta = preview.meta({
         <ManagerStateSync parameters={parameters}>
           <div
             id="main-content-wrapper"
-            style={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: 0 }}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100vh',
+              minHeight: 0,
+            }}
           >
             <Story />
           </div>
@@ -296,10 +302,8 @@ const meta = preview.meta({
         description: '',
       },
     ]);
-    document.getElementById('storybook-review-summary-portal')?.remove();
     return () => {
       internal_fullStatusStore.unset();
-      document.getElementById('storybook-review-summary-portal')?.remove();
     };
   },
 });

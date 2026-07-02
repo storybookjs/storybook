@@ -65,11 +65,11 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
-        <ReviewPersistentLayer />
         <Layout
           hasTab={hasTab}
           managerLayoutState={managerLayoutState}
           setManagerLayoutState={setManagerLayoutState}
+          slotOverlay={<ReviewPersistentLayer />}
           slotMain={<Preview id="main" withLoader />}
           slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
           slotPanel={<Panel />}

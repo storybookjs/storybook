@@ -39,6 +39,11 @@ interface Props {
   slotSidebar?: React.ReactNode;
   slotPanel?: React.ReactNode;
   slotPages?: React.ReactNode;
+  /**
+   * Persistent overlay rendered on top of the main content cell. Always mounted, so overlays can
+   * keep state (e.g. loaded iframes) alive across route changes.
+   */
+  slotOverlay?: React.ReactNode;
   hasTab: boolean;
 }
 
@@ -210,6 +215,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotPages={slots.slotPages}
         />
 
+        {slots.slotOverlay && <ContentOverlayCell>{slots.slotOverlay}</ContentOverlayCell>}
+
         {isDesktop && showPanel && (
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
@@ -227,6 +234,24 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     </LayoutContainer>
   );
 };
+/**
+ * Occupies the main content cell (the full container on mobile) without intercepting interaction;
+ * overlay content re-enables pointer events itself when visible. Kept below the toolbar (z-index 4)
+ * and the mobile navigation (z-index 10).
+ */
+const ContentOverlayCell = styled.div({
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
+  zIndex: 2,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    position: 'relative',
+    inset: 'auto',
+    gridArea: 'content',
+  },
+});
+
 const DragShield = styled.div({
   position: 'fixed',
   inset: 0,
@@ -238,6 +263,7 @@ const LayoutContainer = styled.div<{
   showPanel: boolean;
   showSidebar: boolean;
 }>(({ panelPosition, showPanel, showSidebar }) => ({
+  position: 'relative',
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',

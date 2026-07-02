@@ -17,21 +17,26 @@ import {
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
-function getSandboxSetupSteps(template: string) {
-  const extraSteps = [];
+/**
+ * The cimg/node executors ship Node 22.22.3 (matching .nvmrc), which
+ * satisfies every template's minimum. The Playwright image pins its own,
+ * older Node, so jobs running on the sb_playwright executor must still
+ * install the minimum version for templates that declare one (Angular's CLI
+ * refuses to boot below it).
+ */
+function getPlaywrightNodeSetupSteps(template: string) {
   const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
-
-  if (templateData.extraCiSteps?.ensureMinNodeVersion) {
-    extraSteps.push({
+  if (!templateData.extraCiSteps?.ensureMinNodeVersion) {
+    return [] as unknown[];
+  }
+  return [
+    {
       'node/install': {
         'install-yarn': true,
-        // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
         'node-version': '22.22.3',
       },
-    });
-  }
-
-  return extraSteps;
+    },
+  ];
 }
 
 function defineSandboxJob_dev({
@@ -68,7 +73,7 @@ function defineSandboxJob_dev({
       // spec files, split by `circleci tests run`.
       ...(options.e2e ? { parallelism: 2 } : {}),
       steps: [
-        ...getSandboxSetupSteps(template),
+        ...(options.e2e ? getPlaywrightNodeSetupSteps(template) : []),
         ...workflow.restoreLinux({ sandboxId: directory }),
         ...(options.e2e
           ? [
@@ -131,7 +136,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'large',
       },
       steps: [
-        ...getSandboxSetupSteps(key),
         ...workflow.restoreLinux(),
         verdaccio.start(),
         {
@@ -147,10 +151,13 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           run: {
             name: 'Setup Corepack',
             command: [
-              //
               'sudo corepack enable',
               'which yarn',
               'yarn --version',
+              // Pre-warm the npx cache for the exact gitpick version the CLI
+              // spawns during 'sb repro' (code/lib/cli-storybook/src/sandbox.ts),
+              // so the template download does not pay a cold npx install.
+              'npx -y gitpick@4.12.4 --version',
             ].join('\n'),
           },
         },
@@ -227,7 +234,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium',
       },
       steps: [
-        ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
         workspace.unpack(),
@@ -260,7 +266,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium+',
       },
       steps: [
-        ...getSandboxSetupSteps(key),
+        ...getPlaywrightNodeSetupSteps(key),
         ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
@@ -287,7 +293,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium+',
       },
       steps: [
-        ...getSandboxSetupSteps(key),
+        ...getPlaywrightNodeSetupSteps(key),
         ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
@@ -327,7 +333,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         class: 'medium',
       },
       steps: [
-        ...getSandboxSetupSteps(key),
+        ...getPlaywrightNodeSetupSteps(key),
         ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
@@ -378,7 +384,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         class: 'medium',
       },
       steps: [
-        ...getSandboxSetupSteps(sandbox.name),
+        ...getPlaywrightNodeSetupSteps(sandbox.name),
         ...workflow.restoreLinux({ sandboxId: toId(sandbox.name) }),
         {
           run: {

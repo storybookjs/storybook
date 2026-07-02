@@ -1,4 +1,5 @@
-import { test } from 'vitest';
+import { existsSync } from 'node:fs';
+import { expect, test } from 'vitest';
 import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
@@ -9,18 +10,26 @@ import {
 	expectWorkflowCalls,
 } from '#test-utils';
 
-// The fixture ships ReviewCard with existing stories, so this exercises the
-// edit path: the review must cover the changed component, not just new files.
+// Monorepo-leaf project shape (Agentic Review Eval instructions §7, secondary
+// axis): the runnable Storybook lives in the @acme/ui workspace package, not
+// at the repo root, so the agent must work inside the leaf.
 // Note: expectAllStoryExportsInDisplayReview assumes the project starts
-// without story files, so it cannot be used here.
+// without story files, so it cannot be used here (Card ships with stories).
+
+test('creates the component inside the leaf package', () => {
+	expect(
+		existsSync('packages/ui/src/components/Callout.tsx'),
+		'Expected packages/ui/src/components/Callout.tsx to be created',
+	).toBe(true);
+});
 
 test('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
 });
 
-test('the review covers the edited ReviewCard component', () => {
-	expectStoryIdsInDisplayReview(['reviewcard']);
+test('the review covers the new Callout stories', () => {
+	expectStoryIdsInDisplayReview(['callout']);
 });
 
 // Required workflow step (dev instructions "Mapping any input to story IDs"):

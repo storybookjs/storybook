@@ -9,6 +9,7 @@ import { isRecord } from './shell-parse.ts';
 type FixturePackageJson = {
 	evals?: {
 		template?: unknown;
+		pinStorybook?: unknown;
 	};
 };
 
@@ -79,8 +80,6 @@ const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.t
 const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const LOCAL_STORYBOOK_ADDON_MCP_SPEC = 'file:./local-packages/addon-mcp';
-const LOCAL_STORYBOOK_MCP_SPEC = 'file:./local-packages/mcp';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
@@ -130,7 +129,15 @@ export async function setupSandbox(
 
 	files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
-	await pinStorybookPackages(files, process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next');
+	// Fixtures that intentionally ship an outdated Storybook (the upgrade-skill
+	// evals) opt out of pinning with `evals.pinStorybook: false`; everything
+	// else is pinned to the dist-tag so result snapshots record exact versions.
+	if (packageJson.evals?.pinStorybook !== false) {
+		await pinStorybookPackages(
+			files,
+			process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next',
+		);
+	}
 
 	if (usesLocalStorybookMcpPackages(files)) {
 		Object.assign(files, await readLocalStorybookMcpPackages());
@@ -326,44 +333,53 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 	}
 }
 
-// Pin every Storybook dependency in the sandbox package.json to the version
-// currently behind the given npm dist-tag, so result snapshots record the
-// exact version each run used. The local @storybook/addon-mcp and
-// @storybook/mcp file: builds are always kept as-is; EVAL_STORYBOOK_LATEST=1
-// only switches the Storybook release itself to the `latest` tag, to test the
-// current checkout against the last stable release.
+// Pin every Storybook dependency in the sandbox package.json files (the root
+// and any workspace package) to the version currently behind the given npm
+// dist-tag, so result snapshots record the exact version each run used. The
+// local @storybook/addon-mcp and @storybook/mcp file: builds are always kept
+// as-is; EVAL_STORYBOOK_LATEST=1 only switches the Storybook release itself
+// to the `latest` tag, to test the current checkout against the last stable
+// release.
 export async function pinStorybookPackages(
 	files: Record<string, string>,
 	distTag: 'next' | 'latest',
 ): Promise<void> {
-	const rawPackageJson = files['package.json'];
-	if (rawPackageJson === undefined) {
-		return;
-	}
-
-	const packageJson = parseJsonFile('package.json', rawPackageJson, 'fixture');
-	if (!isRecord(packageJson)) {
-		return;
-	}
-
-	for (const field of ['dependencies', 'devDependencies'] as const) {
-		const dependencies = packageJson[field];
-		if (!isRecord(dependencies)) {
+	for (const filePath of workspacePackageJsonPaths(files)) {
+		const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
+		if (!isRecord(packageJson)) {
 			continue;
 		}
 
-		for (const [name, spec] of Object.entries(dependencies)) {
-			if (name !== 'storybook' && !name.startsWith('@storybook/')) {
+		for (const field of ['dependencies', 'devDependencies'] as const) {
+			const dependencies = packageJson[field];
+			if (!isRecord(dependencies)) {
 				continue;
 			}
-			if (typeof spec === 'string' && spec.startsWith('file:')) {
-				continue;
-			}
-			dependencies[name] = await resolveDistTagVersion(name, distTag);
-		}
-	}
 
-	files['package.json'] = JSON.stringify(packageJson, null, 2).concat('\n');
+			for (const [name, spec] of Object.entries(dependencies)) {
+				if (name !== 'storybook' && !name.startsWith('@storybook/')) {
+					continue;
+				}
+				if (typeof spec === 'string' && spec.startsWith('file:')) {
+					continue;
+				}
+				dependencies[name] = await resolveDistTagVersion(name, distTag);
+			}
+		}
+
+		files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
+	}
+}
+
+// The sandbox root package.json plus workspace packages; the injected
+// local-packages builds are never rewritten.
+function workspacePackageJsonPaths(files: Record<string, string>): string[] {
+	return Object.keys(files).filter(
+		(filePath) =>
+			(filePath === 'package.json' || filePath.endsWith('/package.json')) &&
+			!filePath.startsWith('local-packages/') &&
+			!filePath.includes('node_modules/'),
+	);
 }
 
 const distTagVersionCache = new Map<string, string>();
@@ -394,16 +410,27 @@ async function resolveDistTagVersion(packageName: string, distTag: string): Prom
 	return version;
 }
 
+// A workspace package references the injected builds with a file: spec whose
+// target is the sandbox-root local-packages directory — `file:./local-packages/…`
+// from the root, `file:../../local-packages/…` from a workspace leaf.
 function usesLocalStorybookMcpPackages(files: Record<string, string>): boolean {
-	const packageJson = JSON.parse(files['package.json'] ?? '{}') as unknown;
+	return workspacePackageJsonPaths(files).some((filePath) => {
+		const packageJson = JSON.parse(files[filePath] ?? '{}') as unknown;
 
-	if (!isRecord(packageJson)) {
-		return false;
-	}
+		if (!isRecord(packageJson)) {
+			return false;
+		}
 
+		return (
+			isLocalPackagesSpec(getDependencySpec(packageJson, '@storybook/addon-mcp'), 'addon-mcp') ||
+			isLocalPackagesSpec(getDependencySpec(packageJson, '@storybook/mcp'), 'mcp')
+		);
+	});
+}
+
+function isLocalPackagesSpec(spec: string | undefined, packageDir: string): boolean {
 	return (
-		getDependencySpec(packageJson, '@storybook/addon-mcp') === LOCAL_STORYBOOK_ADDON_MCP_SPEC ||
-		getDependencySpec(packageJson, '@storybook/mcp') === LOCAL_STORYBOOK_MCP_SPEC
+		spec !== undefined && spec.startsWith('file:') && spec.endsWith(`local-packages/${packageDir}`)
 	);
 }
 

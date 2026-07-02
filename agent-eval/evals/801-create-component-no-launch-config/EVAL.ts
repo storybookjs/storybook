@@ -5,6 +5,8 @@ import {
 	expectAllStoryExportsInDisplayReview,
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectStoryDiscoveryBeforeReview,
+	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
 } from '#test-utils';
@@ -25,6 +27,19 @@ test.skip('uses the documentation tooling', () => {
 test('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
+});
+
+// Required workflow step (dev instructions "Mapping any input to story IDs"):
+// story IDs in the review must come from a discovery tool, not from guessing.
+test('discovers stories through the workflow tools before publishing the review', () => {
+	expectStoryDiscoveryBeforeReview();
+});
+
+// Required workflow step (test-instructions.md Validation Workflow): run
+// run-story-tests after the change and do not report completion while story
+// tests are failing.
+test('runs story tests after the change and finishes with them passing', () => {
+	expectStoryTestsRanAndPassed();
 });
 
 // Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent

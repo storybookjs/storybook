@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	parseStorybookWorkflowShellCommands,
+	parseWorkflowToolResults,
 	workflowCallIncludesStory,
 	workflowCallUsesStoryId,
 } from './test-utils.ts';
@@ -108,5 +109,126 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		expect(calls).toHaveLength(2);
 		expect(calls[0]?.input).toEqual({});
 		expect(calls[1]?.input).not.toHaveProperty('json');
+	});
+});
+
+describe('parseWorkflowToolResults', () => {
+	function claudeToolUseLine(id: string, name: string, input: Record<string, unknown>): string {
+		return JSON.stringify({
+			type: 'assistant',
+			message: { content: [{ type: 'tool_use', id, name, input }] },
+		});
+	}
+
+	function claudeToolResultLine(toolUseId: string, content: unknown, isError = false): string {
+		return JSON.stringify({
+			type: 'user',
+			message: {
+				content: [{ type: 'tool_result', tool_use_id: toolUseId, content, is_error: isError }],
+			},
+		});
+	}
+
+	test('pairs Claude MCP tool_use and tool_result blocks by id', () => {
+		const transcript = [
+			claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__run-story-tests', {}),
+			claudeToolUseLine('toolu_2', 'mcp__storybook-dev-mcp__preview-stories', {}),
+			claudeToolResultLine('toolu_2', [{ type: 'text', text: 'http://localhost:6006' }]),
+			claudeToolResultLine('toolu_1', [
+				{ type: 'text', text: '## Passing Stories\n\n- example-button--primary' },
+			]),
+		].join('\n');
+
+		const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.output).toContain('## Passing Stories');
+		expect(results[0]?.isError).toBe(false);
+	});
+
+	test('extracts Claude plugin-path results from storybook ai shell invocations', () => {
+		const transcript = [
+			claudeToolUseLine('toolu_1', 'Bash', {
+				command: 'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 6006 run-story-tests',
+			}),
+			claudeToolResultLine('toolu_1', '## Failing Stories\n\n### example-button--primary'),
+		].join('\n');
+
+		const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.output).toContain('## Failing Stories');
+	});
+
+	test('marks errored Claude tool results', () => {
+		const transcript = [
+			claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__run-story-tests', {}),
+			claudeToolResultLine('toolu_1', 'Test run was cancelled', true),
+		].join('\n');
+
+		const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.isError).toBe(true);
+	});
+
+	test('extracts completed Codex MCP tool call results', () => {
+		const transcript = [
+			JSON.stringify({
+				type: 'item.started',
+				item: {
+					type: 'mcp_tool_call',
+					tool: 'run-story-tests',
+					result: null,
+					status: 'in_progress',
+				},
+			}),
+			JSON.stringify({
+				type: 'item.completed',
+				item: {
+					type: 'mcp_tool_call',
+					tool: 'run-story-tests',
+					status: 'completed',
+					error: null,
+					result: { content: [{ type: 'text', text: '## Passing Stories\n\n- a--b' }] },
+				},
+			}),
+		].join('\n');
+
+		const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.output).toContain('## Passing Stories');
+		expect(results[0]?.isError).toBe(false);
+	});
+
+	test('extracts Codex plugin-path results from command_execution items', () => {
+		const transcript = [
+			JSON.stringify({
+				type: 'item.completed',
+				item: {
+					type: 'command_execution',
+					command: "/bin/bash -lc 'npx storybook ai --port 6006 run-story-tests'",
+					aggregated_output: '## Passing Stories\n\n- a--b\n\n## Failing Stories\n\n### a--c',
+					exit_code: 0,
+					status: 'completed',
+				},
+			}),
+		].join('\n');
+
+		const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.output).toContain('## Failing Stories');
+	});
+
+	test('ignores unrelated tools and unparseable lines', () => {
+		const transcript = [
+			'not json',
+			claudeToolUseLine('toolu_1', 'Bash', { command: 'npm run lint' }),
+			claudeToolResultLine('toolu_1', 'lint ok'),
+		].join('\n');
+
+		expect(parseWorkflowToolResults(transcript, 'run-story-tests')).toHaveLength(0);
 	});
 });

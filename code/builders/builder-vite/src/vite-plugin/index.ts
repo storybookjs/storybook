@@ -1,5 +1,3 @@
-import { fileURLToPath } from 'node:url';
-
 import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
@@ -19,9 +17,7 @@ import {
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
-import { bundlerOptionsKey } from '../utils/vite-features.ts';
 import { pluginConfig } from '../vite-config.ts';
-import { buildStorybookPlugin } from './build/index.ts';
 import { createServerChannel } from './middlewares/channel.ts';
 import { registerIframeMiddleware } from './middlewares/iframe.ts';
 import { buildManager, registerManagerMiddleware } from './middlewares/manager.ts';
@@ -55,10 +51,6 @@ async function main(options?: UserOptions): Promise<PluginOption> {
   const sbPlugins = await pluginConfig(sb);
   const finalConfig = (await sb.presets.apply('viteFinal', { plugins: sbPlugins })) as InlineConfig;
 
-  const iframePath = fileURLToPath(
-    import.meta.resolve('@storybook/builder-vite/input/iframe.html')
-  );
-
   const baseNoSlash = finalOptions.base.replace(/\/+$/, '') || '';
   const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   let basePath = baseNoSlash === '' ? '/' : `${baseNoSlash}/`;
@@ -89,19 +81,20 @@ async function main(options?: UserOptions): Promise<PluginOption> {
         }
         return {
           build: {
-            outDir: 'storybook-static',
-            emptyOutDir: false,
-            [bundlerOptionsKey]: {
-              input: iframePath,
-              external: [/\.\/sb-common-assets\/.*\.woff2/],
-            },
             async createEnvironment() {
               const sbConfig = await resolveConfig(
                 {
                   ...finalConfig,
                   cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                  build: {
+                    ...finalConfig.build,
+                    outDir: 'storybook-static',
+                    emptyOutDir: false,
+                  },
                 },
-                'serve'
+                'build',
+                'production',
+                'production'
               );
 
               return new BuildEnvironment('client', sbConfig);

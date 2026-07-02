@@ -461,11 +461,10 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 		return parsePluginWorkflowCalls(nestedCommand);
 	}
 
-	return [
-		...parseStorybookAiWorkflowCalls(command),
-		...parseMcpCallScriptWorkflowCalls(command),
-		...parseCurlWorkflowCalls(command),
-	];
+	// Only genuine `storybook ai` CLI invocations count as plugin workflow
+	// calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
+	// are deliberately not recognized: agents must use the documented CLI.
+	return parseStorybookAiWorkflowCalls(command);
 }
 
 function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {
@@ -482,60 +481,6 @@ function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[]
 			calls.push(invocation.call);
 			index += invocation.consumed + 1;
 		}
-	}
-
-	return calls;
-}
-
-function parseMcpCallScriptWorkflowCalls(command: string): StorybookWorkflowCall[] {
-	const tokens = tokenizeShellCommand(command);
-	const calls: StorybookWorkflowCall[] = [];
-
-	for (let index = 0; index < tokens.length - 1; index += 1) {
-		const token = tokens[index];
-		if (token === undefined || !token.endsWith('mcp-call.mjs')) {
-			continue;
-		}
-
-		const name = normalizeStorybookWorkflowName(tokens[index + 1] ?? '');
-		if (name === undefined) {
-			continue;
-		}
-
-		const args = tokens.slice(index + 2);
-		const endIndex = args.findIndex((arg) => SHELL_COMMAND_SEPARATORS.has(arg));
-		const segment = endIndex === -1 ? args : args.slice(0, endIndex);
-		calls.push({
-			name,
-			input: parseStorybookAiInput(segment),
-			// MCP-protocol invocation, just captured from a shell command.
-			source: 'mcp',
-		});
-	}
-
-	return calls;
-}
-
-function parseCurlWorkflowCalls(command: string): StorybookWorkflowCall[] {
-	const tokens = tokenizeShellCommand(command);
-	if (!tokens.includes('curl')) {
-		return [];
-	}
-
-	const calls: StorybookWorkflowCall[] = [];
-	const input = getCurlWorkflowInput(tokens);
-
-	for (const toolName of STORYBOOK_WORKFLOW_TOOL_NAMES) {
-		if (!tokens.some((token) => token.includes(toolName))) {
-			continue;
-		}
-
-		calls.push({
-			name: toolName,
-			input,
-			// MCP-protocol invocation over HTTP, captured from a shell command.
-			source: 'mcp',
-		});
 	}
 
 	return calls;
@@ -658,44 +603,6 @@ function parseCliValue(value: string): unknown {
 
 function kebabToCamel(value: string): string {
 	return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-}
-
-function getCurlWorkflowInput(tokens: string[]): Record<string, unknown> {
-	for (let index = 0; index < tokens.length; index += 1) {
-		const token = tokens[index];
-		if (token === undefined) {
-			continue;
-		}
-
-		const inlineData = getInlineCurlData(token);
-		if (inlineData !== undefined) {
-			return parseWorkflowInputValue(inlineData);
-		}
-
-		if (['-d', '--data', '--data-raw', '--data-binary'].includes(token)) {
-			const value = tokens[index + 1];
-			if (value !== undefined) {
-				return parseWorkflowInputValue(value);
-			}
-		}
-	}
-
-	return {};
-}
-
-function getInlineCurlData(token: string): string | undefined {
-	for (const prefix of ['--data=', '--data-raw=', '--data-binary=']) {
-		if (token.startsWith(prefix)) {
-			return token.slice(prefix.length);
-		}
-	}
-
-	return undefined;
-}
-
-function parseWorkflowInputValue(value: string): Record<string, unknown> {
-	const parsed = parseCliValue(value);
-	return isRecord(parsed) ? unwrapWorkflowInput(parsed) : {};
 }
 
 function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unknown> {

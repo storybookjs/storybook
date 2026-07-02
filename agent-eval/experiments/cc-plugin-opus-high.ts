@@ -8,7 +8,7 @@ import {
 
 export default {
 	...DEFAULT_EXPERIMENT_CONFIG,
-	agent: 'vercel-ai-gateway/claude-code', // requires AI_GATEWAY_API_KEY
+	agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
 	// Pin what the CLI would pick by default (Opus 4.8 at high effort) so the
 	// experiment name stays accurate when the CLI defaults change.
 	model: 'opus',

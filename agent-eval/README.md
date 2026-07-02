@@ -17,7 +17,7 @@ Test AI coding agents to measure what actually works.
    ```
 
    Edit `.env.local` and add your API keys (see comments in `.env.example` for options):
-   - **Agent keys**: `AI_GATEWAY_API_KEY` is required for the Claude Code experiments (they route through the Vercel AI Gateway) and for failure classification. `OPENAI_API_KEY` is required for the Codex experiments, which use the direct Codex API.
+   - **Agent keys**: `ANTHROPIC_API_KEY` is required for the Claude Code experiments and for failure classification, both of which use the direct Anthropic API. `OPENAI_API_KEY` is required for the Codex experiments, which use the direct Codex API.
    - **Sandbox access**: this suite is configured with `sandbox: 'auto'`, which uses Vercel Sandbox when access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`) are present and falls back to local Docker otherwise. Set `sandbox: 'docker'` to force Docker-only experiments.
 
 ## Running Evals
@@ -107,9 +107,9 @@ runtime/build contexts.
 
 Configured experiments:
 
-- `cc-mcp-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
+- `cc-mcp-opus-high`: Claude Code (Opus at high effort) through the `claude-code` agent (direct Anthropic API, requires `ANTHROPIC_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
 - `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
-- `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `vercel-ai-gateway/claude-code` agent (requires `AI_GATEWAY_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `claude-code` agent (direct Anthropic API, requires `ANTHROPIC_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
 - `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) plugin variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 - `cc-mcp-sonnet-medium`: Claude Code (Sonnet at medium effort) MCP variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 - `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.

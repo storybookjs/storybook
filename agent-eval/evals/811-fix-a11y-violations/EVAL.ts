@@ -49,6 +49,19 @@ test('fixes the semantic button-name violation', () => {
 	).toMatch(/iconOnly:\s*true/);
 });
 
+// Closing the loophole where the button-name absence would be vacuous: a run
+// that turns accessibility checks off cannot claim the violations were
+// addressed. No passing sample has ever disabled a11y.
+test('never disables accessibility checks while fixing a11y issues', () => {
+	const disabledCall = getWorkflowCalls('run-story-tests').find(
+		(call) => call.input.a11y === false,
+	);
+	expect(
+		disabledCall,
+		'Expected no run-story-tests call to pass a11y: false in an a11y-fixing task',
+	).toBeUndefined();
+});
+
 // The contrast violation is a visual design decision: the agent must not
 // silently repaint the button, it must keep the seeded colors and surface the
 // concern to the user.

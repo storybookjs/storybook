@@ -359,9 +359,13 @@ export type WorkflowToolResult = {
 // `storybook ai run-story-tests` CLI output.
 //
 // `covering` pins the final green run to the change under test: at least one
-// of the given substrings must appear in its story ids. This is what proves
-// the tests ran *after* the change — the covered stories don't exist (or
-// aren't relevant) before it — rather than crediting a pre-change test run.
+// of the given substrings must appear in its story ids. Where the covered
+// stories are created by the change (801/802/804/812/813) or start from a
+// seeded failure (810/811), a green covering run is only possible after the
+// change, so this also proves ordering. Where the covered stories pre-exist
+// and pass (803, 808), it is a component-coverage floor only — a stricter
+// after-the-edit ordering check is deliberately not encoded, because real
+// passing flows legitimately run tests before the discovery step.
 export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
 	expectWorkflowCalls(['run-story-tests']);
 
@@ -576,13 +580,12 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 // Claude Code invokes plugin skills through its Skill tool, so the transcript
 // records which skill fired. Codex has no skill tool — engaging a skill means
 // reading its instruction file, which shows up as a shell command touching
-// the skill's directory. This check is a no-op on the MCP integration, where
-// no skills are installed.
+// the skill's directory. Only meaningful on the plugin integration (no skills
+// are installed on the MCP path) — gate call sites with
+// `test.skipIf(getEvalContext().integration === 'mcp')` so MCP runs report a
+// skip instead of a vacuous pass.
 export function expectSkillInvoked(skillName: string): void {
-	const { agent, integration } = getEvalContext();
-	if (integration !== 'plugin') {
-		return;
-	}
+	const { agent } = getEvalContext();
 
 	if (agent === 'claude-code') {
 		// Match the skill argument exactly — a substring match would credit any
@@ -834,7 +837,10 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		// not a literal: agents legitimately adapt it — a browse request has no
 		// changes, so codex titled the section "## ReviewCard States"
 		// (CI run 28623099303). Require a review-ish heading, not exact words.
-		lines.some((line) => /^##\s+.*review/i.test(line.trim())),
+		// The word boundary matters: without it "## Preview your changes" — the
+		// preview-URL ending this suite exists to reject — would satisfy the
+		// check via the "review" substring inside "Preview".
+		lines.some((line) => /^##\s+.*\breview/i.test(line.trim())),
 		'Final response must include a dedicated review heading',
 	).toBe(true);
 	expect(
@@ -887,6 +893,13 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
 				return [];
 			}
 
+			// Codex emits each MCP call twice (item.started + item.completed);
+			// counting both would double every call and let "called at least
+			// twice" assertions pass vacuously on a single real invocation.
+			if (event.type !== 'item.completed') {
+				return [];
+			}
+
 			const item = event.item;
 			if (item.type !== 'mcp_tool_call' || typeof item.tool !== 'string') {
 				return [];
@@ -911,6 +924,13 @@ function getRawMcpInput(item: Record<string, unknown>): Record<string, unknown> 
 	return getNestedWorkflowInput(item) ?? {};
 }
 
+// Concatenation (parsed first, raw-only after) is order-safe in practice
+// because each agent populates exactly one side: Claude transcripts parse
+// fully (raw codex parsing matches nothing), while codex MCP calls come only
+// from the raw pass (the upstream parser has no mcp_tool_call handling). If
+// an agent ever split its calls across both sources, order-sensitive
+// assertions like expectStoryDiscoveryBeforeReview would need interleaving by
+// transcript position instead.
 function mergeMcpWorkflowCalls(
 	parsedCalls: StorybookWorkflowCall[],
 	rawCalls: StorybookWorkflowCall[],

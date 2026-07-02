@@ -3,6 +3,7 @@ import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
 	expectSkillInvoked,
+	getEvalContext,
 	expectStoryDiscoveryBeforeReview,
 	expectStoryIdsInDisplayReview,
 	expectStoryTestsRanAndPassed,
@@ -38,8 +39,9 @@ test('runs story tests after the change and finishes with them passing', () => {
 });
 
 // The plugin path must engage the stories skill (Claude: via the Skill tool;
-// Codex: by reading its SKILL.md); no-op on the MCP integration.
-test('invokes the stories skill on the plugin path', () => {
+// Codex: by reading its SKILL.md). Skipped on the MCP integration, where no
+// skills are installed.
+test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
 	expectSkillInvoked('stories');
 });
 

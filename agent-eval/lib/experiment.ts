@@ -53,7 +53,7 @@ const LIFECYCLE_STORYBOOK_EVALS = [
 // the MCP-only workflow. On default (`next`) CI runs they are too expensive
 // and currently too flaky, so they only run under EVAL_STORYBOOK_LATEST=1
 // (or manually via EVAL_ONLY). See storybookjs/mcp#315.
-const PORTED_RESHAPED_STORYBOOK_EVALS = [
+const PORTED_WORKFLOW_STORYBOOK_EVALS = [
 	'901-create-component-atom-reshaped-concise',
 	'901-create-component-atom-reshaped-detailed',
 	'901-create-component-atom-reshaped-explicit-stories',
@@ -90,7 +90,7 @@ const PORTED_RESHAPED_STORYBOOK_EVALS = [
 type EvalName =
 	| (typeof CORE_STORYBOOK_EVALS)[number]
 	| (typeof LIFECYCLE_STORYBOOK_EVALS)[number]
-	| (typeof PORTED_RESHAPED_STORYBOOK_EVALS)[number];
+	| (typeof PORTED_WORKFLOW_STORYBOOK_EVALS)[number];
 
 // EVAL_STORYBOOK_LATEST=1 (the ci:storybook-latest PR label or the
 // workflow_dispatch input in CI) runs the local MCP server against the stable
@@ -111,7 +111,7 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 		const knownEvals = [
 			...CORE_STORYBOOK_EVALS,
 			...LIFECYCLE_STORYBOOK_EVALS,
-			...PORTED_RESHAPED_STORYBOOK_EVALS,
+			...PORTED_WORKFLOW_STORYBOOK_EVALS,
 		];
 		const selected = only.split(',').map((name) => {
 			const match = knownEvals.find((evalName) => evalName === name.trim());
@@ -122,7 +122,7 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 			}
 			return match;
 		});
-		return {
+		const partitioned = {
 			core: selected.filter(
 				(name) => !(LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name),
 			),
@@ -130,11 +130,17 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 				(LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name),
 			),
 		};
+		if (partitioned.core.length === 0 && partitioned.lifecycle.length > 0) {
+			console.warn(
+				'EVAL_ONLY selected only lifecycle (82x) evals; the MCP experiments will run zero evals.',
+			);
+		}
+		return partitioned;
 	}
 
 	if (process.env.EVAL_EXTRA_EVALS === '1') {
 		return STORYBOOK_LATEST
-			? { core: [...PORTED_RESHAPED_STORYBOOK_EVALS], lifecycle: [] }
+			? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
 			: { core: [...CORE_STORYBOOK_EVALS], lifecycle: [...LIFECYCLE_STORYBOOK_EVALS] };
 	}
 
@@ -148,7 +154,7 @@ const ACTIVE_EVALS = resolveActiveEvals();
 // The MCP experiments never run the lifecycle 82x evals: they configure the
 // agent against a Storybook that must already be running at :6006/mcp, which
 // the lifecycle fixtures intentionally don't have.
-export const RESHAPED_STORYBOOK_EVALS: EvalName[] = ACTIVE_EVALS.core;
+export const WORKFLOW_STORYBOOK_EVALS: EvalName[] = ACTIVE_EVALS.core;
 
 // Plugin-integration experiments run zero evals under EVAL_STORYBOOK_LATEST=1:
 // the plugin skills are not compatible with the stable Storybook release, so
@@ -164,7 +170,7 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
 // experiments. Enable with EVAL_EXTRA_MODELS=1 (locally or via the
 // workflow_dispatch input in CI).
 export const EXTRA_MODEL_EVALS: EvalName[] =
-	process.env.EVAL_EXTRA_MODELS === '1' ? [...RESHAPED_STORYBOOK_EVALS] : [];
+	process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
 
 export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
 	process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];

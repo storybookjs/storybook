@@ -620,6 +620,14 @@ export function expectSkillInvoked(skillName: string): void {
 export function expectStorybookDependenciesAtLeast(
 	minInclusiveVersion: string,
 	packageNames: string[],
+	options?: {
+		/**
+		 * Packages a correct upgrade may legitimately *remove* (e.g. Storybook 10
+		 * absorbs `@storybook/react`): only floor-checked when still present, so
+		 * a stale old copy fails but a clean removal passes.
+		 */
+		ifPresent?: string[];
+	},
 ): void {
 	const packageJson = parseJson(readFileSync('package.json', 'utf8'));
 	if (!isRecord(packageJson)) {
@@ -636,14 +644,7 @@ export function expectStorybookDependenciesAtLeast(
 		throw new Error(`Invalid minInclusiveVersion "${minInclusiveVersion}"`);
 	}
 
-	for (const packageName of packageNames) {
-		const spec = dependencies[packageName];
-		if (typeof spec !== 'string') {
-			expect.fail(
-				`Expected a ${packageName} dependency in package.json. Received: ${String(spec)}`,
-			);
-		}
-
+	const expectAtLeastMinimum = (packageName: string, spec: string) => {
 		const version = parseSemverTriple(spec);
 		if (version === undefined) {
 			expect.fail(`Could not parse a version from the ${packageName} spec "${spec}"`);
@@ -653,6 +654,23 @@ export function expectStorybookDependenciesAtLeast(
 			compareSemverTriples(version, minimum) >= 0,
 			`Expected ${packageName} to be upgraded to at least ${minInclusiveVersion}. Received: ${spec}`,
 		).toBe(true);
+	};
+
+	for (const packageName of packageNames) {
+		const spec = dependencies[packageName];
+		if (typeof spec !== 'string') {
+			expect.fail(
+				`Expected a ${packageName} dependency in package.json. Received: ${String(spec)}`,
+			);
+		}
+		expectAtLeastMinimum(packageName, spec);
+	}
+
+	for (const packageName of options?.ifPresent ?? []) {
+		const spec = dependencies[packageName];
+		if (typeof spec === 'string') {
+			expectAtLeastMinimum(packageName, spec);
+		}
 	}
 }
 
@@ -711,8 +729,15 @@ export async function expectStorybookBoots(options?: { timeoutMs?: number }): Pr
 			if (spawnError !== undefined) {
 				expect.fail(`Failed to spawn npm run storybook: ${spawnError.message}`);
 			}
-			if (child.exitCode !== null) {
-				expect.fail(`npm run storybook exited with code ${child.exitCode} before serving`);
+			// exitCode stays null when the process dies from a signal, so check
+			// signalCode too — otherwise a killed Storybook waits out the full
+			// timeout instead of failing with its termination reason.
+			if (child.exitCode !== null || child.signalCode !== null) {
+				expect.fail(
+					`npm run storybook exited (${
+						child.signalCode !== null ? `signal ${child.signalCode}` : `code ${child.exitCode}`
+					}) before serving`,
+				);
 			}
 			// /index.json is a real build artifact (the story index), so a dev
 			// server that merely serves an error shell on / does not count as

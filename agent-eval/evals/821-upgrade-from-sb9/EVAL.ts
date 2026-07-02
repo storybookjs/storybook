@@ -24,7 +24,11 @@ test('runs the Storybook upgrade command', () => {
 // 10.4.6 is the stable release at fixture-authoring time; an under-upgrade
 // (e.g. landing on 10.0.0) must not count. Bump alongside future stables.
 test('upgrades the Storybook packages to the current release', () => {
-	expectStorybookDependenciesAtLeast('10.4.6', ['storybook', '@storybook/react-vite']);
+	expectStorybookDependenciesAtLeast('10.4.6', ['storybook', '@storybook/react-vite'], {
+		// Storybook 10 absorbs @storybook/react — a correct upgrade removes it,
+		// but a stale seeded copy left behind must fail the floor.
+		ifPresent: ['@storybook/react'],
+	});
 });
 
 test('the upgraded Storybook boots', async () => {

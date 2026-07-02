@@ -11,5 +11,5 @@
 		"skipLibCheck": true,
 		"strict": true
 	},
-	"include": ["src", "stories", ".storybook"]
+	"include": ["src", "stories", ".storybook", "vitest.config.ts", "vitest.storybook.config.ts"]
 }

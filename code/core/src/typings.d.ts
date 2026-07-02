@@ -45,6 +45,7 @@ declare module 'ansi-to-html';
 declare module 'lazy-universal-dotenv';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
+declare module 'storybook/internal/bin/loader';
 
 declare var STORIES: any;
 

@@ -5,13 +5,18 @@ import type { NavigateFunction } from 'storybook/internal/router';
 import type { API } from 'storybook/manager-api';
 
 import {
+  EVENTS,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
+  PRE_REVIEW_RETURN_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
-import { navigateOutOfReview } from './review-actions.ts';
-import { enterReviewMode } from './review-mode.ts';
-import { REVIEW_COLLECTION_QUERY_PARAM } from './review-navigation.ts';
+import { acceptPendingReview, dismissReview, navigateOutOfReview } from './review-actions.ts';
+import { enterReviewMode, isReviewModeActive } from './review-mode.ts';
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  buildReviewChangesSummaryHref,
+} from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
 
@@ -95,13 +100,7 @@ describe('navigateOutOfReview', () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
 
-    reviewStore.setState(
-      {
-        ...reviewStore.getState(),
-        state: review,
-      },
-      null
-    );
+    reviewStore.displayReview(review);
 
     await navigateOutOfReview(api, navigate, '?path=/story/example--default');
 
@@ -115,13 +114,7 @@ describe('navigateOutOfReview', () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
 
-    reviewStore.setState(
-      {
-        ...reviewStore.getState(),
-        state: review,
-      },
-      null
-    );
+    reviewStore.displayReview(review);
 
     await navigateOutOfReview(api, navigate, '?path=/story/example--default', {
       recordVisit: false,
@@ -139,13 +132,7 @@ describe('navigateOutOfReview', () => {
     vi.clearAllMocks();
     setAllTagFilters.mockRejectedValueOnce(new Error('restore failed'));
 
-    reviewStore.setState(
-      {
-        ...reviewStore.getState(),
-        state: review,
-      },
-      null
-    );
+    reviewStore.displayReview(review);
 
     await expect(
       navigateOutOfReview(api, navigate, '?path=/story/example--default')
@@ -167,5 +154,52 @@ describe('navigateOutOfReview', () => {
 
     expect(navigate).not.toHaveBeenCalled();
     expect(api.selectFirstStory).toHaveBeenCalled();
+  });
+});
+
+describe('dismissReview', () => {
+  it('emits the dismiss event with the pre-review return search', () => {
+    sessionStorage.setItem(PRE_REVIEW_RETURN_KEY, '?path=/story/example--default');
+    const emit = vi.fn();
+
+    dismissReview({ emit } as unknown as API);
+
+    expect(emit).toHaveBeenCalledWith(EVENTS.DISMISS_REVIEW, '?path=/story/example--default');
+  });
+});
+
+describe('acceptPendingReview', () => {
+  const pending: ReviewState = {
+    ...review,
+    title: 'Updated review',
+    createdAt: review.createdAt! + 60_000,
+  };
+
+  it('is a no-op when nothing is pending', () => {
+    const { api } = makeApi();
+    const navigate = vi.fn() as unknown as NavigateFunction;
+
+    acceptPendingReview(api, navigate, emptyFilters);
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(api.clearNotification).not.toHaveBeenCalled();
+  });
+
+  it('displays the pending review, enters review mode and navigates to the summary', () => {
+    const { api } = makeApi();
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    reviewStore.displayReview(review);
+    reviewStore.deferReview(pending);
+
+    acceptPendingReview(api, navigate, emptyFilters);
+
+    expect(reviewStore.getState().state).toBe(pending);
+    expect(reviewStore.getState().pendingReview).toBeNull();
+    expect(isReviewModeActive()).toBe(true);
+    expect(api.clearNotification).toHaveBeenCalledWith(
+      reviewAvailableNotificationId(pending.createdAt!)
+    );
+    expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBe(String(pending.createdAt));
+    expect(navigate).toHaveBeenCalledWith(buildReviewChangesSummaryHref(), { plain: true });
   });
 });

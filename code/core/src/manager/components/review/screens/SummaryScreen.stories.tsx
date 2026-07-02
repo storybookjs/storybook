@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { expect, within } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
@@ -536,12 +536,22 @@ export const RealAtomicChange = meta.story({
 });
 
 export const Stale = meta.story({
-  args: { state: full, isStale: true },
+  args: { state: full, banner: { kind: 'stale' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
     await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});
+
+export const PendingUpdate = meta.story({
+  args: { state: full, banner: { kind: 'pending-update', onAccept: fn() } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('A new review is available.')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
+    await expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
   },
 });
 

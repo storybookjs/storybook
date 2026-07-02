@@ -14,6 +14,7 @@ import preview from '../../../../../../.storybook/preview.tsx';
 import { ADDON_ID, EVENTS } from '../constants.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
+import { reviewStore } from '../review-store.ts';
 import { useReviewShortcuts } from '../useReviewShortcuts.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
@@ -133,6 +134,7 @@ const meta = preview.meta({
     ),
   ],
   beforeEach: () => {
+    reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();

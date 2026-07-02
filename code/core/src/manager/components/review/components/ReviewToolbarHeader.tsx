@@ -77,9 +77,7 @@ const componentName = (componentTitle: string): string =>
 export const ReviewToolbarHeader: FC = () => {
   const {
     state,
-    isStale,
-    hasPendingUpdate,
-    onAcceptPendingUpdate,
+    banner,
     storyInfo,
     flattenedEntries,
     newlyAddedStoryIds,
@@ -147,11 +145,7 @@ export const ReviewToolbarHeader: FC = () => {
 
   return (
     <Root data-testid="review-toolbar-header">
-      {hasPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
+      {banner && <AttentionBanner {...banner} />}
       <HeaderWrap>
         <ProgressBar
           role="progressbar"

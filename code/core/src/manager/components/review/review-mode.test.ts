@@ -10,6 +10,7 @@ import {
   type ReviewModeFilters,
 } from './review-mode.ts';
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
+import { reviewStore } from './review-store.ts';
 
 const emptyFilters: ReviewModeFilters = {
   includedStatusFilters: [],
@@ -26,6 +27,7 @@ const makeApi = () => ({
 
 beforeEach(() => {
   sessionStorage.clear();
+  reviewStore.reset();
 });
 
 describe('enterReviewMode', () => {
@@ -62,6 +64,13 @@ describe('enterReviewMode', () => {
     await enterReviewMode(api, emptyFilters);
     expect(api.setAllTagFilters).not.toHaveBeenCalled();
     expect(api.setAllStatusFilters).not.toHaveBeenCalled();
+  });
+
+  it('rolls back the review-mode flag when the filter setters fail', async () => {
+    const api = makeApi();
+    api.setAllTagFilters.mockRejectedValueOnce(new Error('boom'));
+    await expect(enterReviewMode(api, emptyFilters)).rejects.toThrow('boom');
+    expect(isReviewModeActive()).toBe(false);
   });
 
   it('omits reviewing from the snapshot even when the current filters include it', async () => {

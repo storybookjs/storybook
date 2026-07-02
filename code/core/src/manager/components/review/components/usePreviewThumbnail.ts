@@ -8,12 +8,12 @@ import {
   type RefObject,
 } from 'react';
 
-import { IFRAME_RESIZE_REQUEST_CONTEXT } from '../../../../shared/constants/iframe-resize.ts';
 import {
-  contentDimensionsEqual,
+  IFRAME_RESIZE_REQUEST_CONTEXT,
+  iframeResizeDimensionsEqual,
   parseIframeResizeMessage,
-  type ContentDimensions,
-} from './iframeResizeMessage.ts';
+  type IframeResizeDimensions,
+} from '../../../../shared/constants/iframe-resize.ts';
 import {
   PREVIEW_SETTLE_TIMEOUT_MS,
   enqueuePreview,
@@ -30,7 +30,7 @@ const PREVIEW_SCALE_SETTLE_FALLBACK_MS = PREVIEW_SETTLE_TIMEOUT_MS * 3;
 const PREVIEW_MOUNT_ROOT_MARGIN = '50% 0px';
 const PREVIEW_EVICT_ROOT_MARGIN = '150% 0px';
 
-const resizeHandlers = new Map<Window, (dimensions: ContentDimensions) => void>();
+const resizeHandlers = new Map<Window, (dimensions: IframeResizeDimensions) => void>();
 let resizeMessageListening = false;
 
 const ensureResizeMessageListener = (): void => {
@@ -57,7 +57,7 @@ const ensureResizeMessageListener = (): void => {
 
 const registerResizeHandler = (
   contentWindow: Window,
-  handler: (dimensions: ContentDimensions) => void
+  handler: (dimensions: IframeResizeDimensions) => void
 ): (() => void) => {
   ensureResizeMessageListener();
   resizeHandlers.set(contentWindow, handler);
@@ -128,7 +128,7 @@ export type UsePreviewThumbnailResult = {
   src: string | undefined;
   /** True until iframe.resize arrives and the measured scale has painted. */
   isPreviewLoading: boolean;
-  rememberedDimensions: ContentDimensions | null;
+  rememberedDimensions: IframeResizeDimensions | null;
   forceStartCurrent: () => void;
   finishCurrent: () => void;
 };
@@ -147,7 +147,9 @@ export const usePreviewThumbnail = ({
   const previewsPausedRef = useRef(previewsPaused);
   previewsPausedRef.current = previewsPaused;
   const [isInView, setIsInView] = useState(false);
-  const [rememberedDimensions, setRememberedDimensions] = useState<ContentDimensions | null>(null);
+  const [rememberedDimensions, setRememberedDimensions] = useState<IframeResizeDimensions | null>(
+    null
+  );
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [src, setSrc] = useState<string | undefined>(undefined);
   const taskRef = useRef<PreviewTask | null>(null);
@@ -205,10 +207,10 @@ export const usePreviewThumbnail = ({
   }, [clearSettleTimers, finishLoadingForGeneration]);
 
   const handleResize = useCallback(
-    (dimensions: ContentDimensions) => {
+    (dimensions: IframeResizeDimensions) => {
       const generation = loadGenerationRef.current;
       setRememberedDimensions((current) =>
-        contentDimensionsEqual(current, dimensions) ? current : dimensions
+        iframeResizeDimensionsEqual(current, dimensions) ? current : dimensions
       );
       scheduleLoadingClearAfterPaint(generation);
     },

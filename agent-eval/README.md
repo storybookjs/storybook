@@ -74,7 +74,7 @@ EVAL_EXTRA_MODELS=1 pnpm exec agent-eval cc-plugin-sonnet-medium
 In CI, the `ci:extra-evals` and `ci:extra-models` PR labels set the matching
 flag on labeled `ci:eval` runs, and manual `workflow_dispatch` runs of the
 `Agent eval` workflow can enable them through the `extra_evals` and
-`extra_models` inputs.
+`extra_models` inputs, or target specific evals through the `eval_only` input.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static

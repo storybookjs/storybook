@@ -163,7 +163,8 @@ pnpm results:download        # latest 20 agent-eval-results artifacts
 pnpm results:download 5      # or any count between 1 and 100
 ```
 
-Requires an authenticated GitHub CLI (`gh auth login`). Result snapshots are
+Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
+(preinstalled on macOS and Linux). Result snapshots are
 keyed by experiment name and run timestamp, so artifacts from multiple CI runs
 merge into `agent-eval/results` without colliding, and re-running the command
 is idempotent. Each artifact is roughly 20–40 MB extracted.

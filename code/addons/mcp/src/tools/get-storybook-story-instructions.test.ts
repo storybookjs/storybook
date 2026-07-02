@@ -258,7 +258,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
 		const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
 			docsAvailable: true,
-			toolsets: { docs: false },
+			toolsets: { dev: true, docs: false, test: true },
 		});
 
 		expect(instructions).not.toContain('## Using library components');

@@ -24,6 +24,12 @@ export type BuildEntries = {
    */
   entries: BuildEntriesByPlatform;
   /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with tsc instead of tsgo
+   * for packages where tsgo misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  /**
    * The map of extra outputs to be added to the package.json's exports
    *
    * This can be useful to expose non-compiled/non-js files such as Svelte components,

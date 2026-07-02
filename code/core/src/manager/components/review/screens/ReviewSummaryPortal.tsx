@@ -101,15 +101,7 @@ const SummaryHost = styled.div<{ $visible: boolean; $insets: ChromeInsets }>(
 export const ReviewSummaryPortal: FC = () => {
   const api = useStorybookApi();
   const chromeInsets = useDesktopChromeInsets();
-  const {
-    state,
-    storyInfo,
-    isStale,
-    hasPendingUpdate,
-    onAcceptPendingUpdate,
-    isInReviewMode,
-    isSummaryVisible,
-  } = useReview();
+  const { state, storyInfo, banner, isInReviewMode, isSummaryVisible } = useReview();
   const getStoryPreviewHref = useCallback(
     (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
@@ -154,9 +146,7 @@ export const ReviewSummaryPortal: FC = () => {
             state={state}
             storyInfo={storyInfo}
             getStoryPreviewHref={getStoryPreviewHref}
-            isStale={isStale && !hasPendingUpdate}
-            hasPendingUpdate={hasPendingUpdate}
-            onAcceptPendingUpdate={onAcceptPendingUpdate}
+            banner={banner}
             previewsPaused={!overlayShown}
             onDismiss={onDismiss}
             returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}

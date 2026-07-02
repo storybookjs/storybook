@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 
+import type { AttentionBannerProps } from './components/AttentionBanner.tsx';
 import type { ReviewNavEntry } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import type { StoryInfo } from './review-types.ts';
@@ -11,6 +12,12 @@ import { sessionStore } from './session-store.ts';
 // interaction-driven (never inferred from the URL) and survives reloads via
 // this key. Owned by the store so `isInReviewMode` has a single write path.
 const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
+
+/**
+ * The attention banner to render at the top of review surfaces, if any.
+ * Pending-update outranks stale: accepting the update supersedes the warning.
+ */
+export type ReviewBanner = AttentionBannerProps | null;
 
 /**
  * Values the store cannot compute itself because they depend on React-land
@@ -25,8 +32,7 @@ export interface ReviewDerivedState {
   activeEntry: ReviewNavEntry | null;
   activeIndex: number;
   isSummaryVisible: boolean;
-  /** Accepts the pending review and navigates to the summary screen. */
-  onAcceptPendingUpdate: () => void;
+  banner: ReviewBanner;
 }
 
 export interface ReviewStoreState extends ReviewDerivedState {
@@ -34,7 +40,6 @@ export interface ReviewStoreState extends ReviewDerivedState {
   state: ReviewState | null;
   /** An updated payload held back until the user accepts it. */
   pendingReview: ReviewState | null;
-  hasPendingUpdate: boolean;
   isStale: boolean;
   isInReviewMode: boolean;
   /** True while navigateOutOfReview is in flight; blocks the summary auto-enter. */
@@ -67,7 +72,7 @@ const emptyDerived: ReviewDerivedState = {
   activeEntry: null,
   activeIndex: -1,
   isSummaryVisible: false,
-  onAcceptPendingUpdate: () => {},
+  banner: null,
 };
 
 let core: ReviewCoreState = {
@@ -80,7 +85,6 @@ const buildSnapshot = (): ReviewStoreState => ({
   ...derived,
   state: core.state,
   pendingReview: core.pendingReview,
-  hasPendingUpdate: core.pendingReview !== null,
   isStale: core.isStale,
   isInReviewMode: core.isInReviewMode,
   isExiting: core.isExiting,

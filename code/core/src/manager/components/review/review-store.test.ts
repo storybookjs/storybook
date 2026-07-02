@@ -26,7 +26,7 @@ const derived: ReviewDerivedState = {
   activeEntry: null,
   activeIndex: -1,
   isSummaryVisible: false,
-  onAcceptPendingUpdate: () => {},
+  banner: null,
 };
 
 beforeEach(() => {
@@ -50,7 +50,6 @@ describe('displayReview', () => {
     reviewStore.deferReview(updatedReview);
     reviewStore.displayReview(updatedReview);
     expect(reviewStore.getState().pendingReview).toBeNull();
-    expect(reviewStore.getState().hasPendingUpdate).toBe(false);
   });
 });
 
@@ -60,7 +59,6 @@ describe('deferReview', () => {
     reviewStore.deferReview(updatedReview);
     expect(reviewStore.getState().state).toBe(review);
     expect(reviewStore.getState().pendingReview).toBe(updatedReview);
-    expect(reviewStore.getState().hasPendingUpdate).toBe(true);
   });
 });
 

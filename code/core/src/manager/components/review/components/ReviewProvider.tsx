@@ -39,7 +39,12 @@ import {
   collectReviewStoryIds,
   syncReviewStatuses,
 } from '../review-status.ts';
-import { reviewStore, useReview, type ReviewDerivedState } from '../review-store.ts';
+import {
+  reviewStore,
+  useReview,
+  type ReviewBanner,
+  type ReviewDerivedState,
+} from '../review-store.ts';
 import { buildNewlyAddedStoryIds, buildStoryInfo } from '../review-story-info.ts';
 import { sessionStore } from '../session-store.ts';
 import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
@@ -66,7 +71,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { index, path, viewMode, customQueryParams, location } = useStorybookState();
-  const { state, isInReviewMode } = useReview();
+  const { state, pendingReview, isStale, isInReviewMode } = useReview();
 
   const collectionParam = customQueryParams?.[REVIEW_COLLECTION_QUERY_PARAM] as string | undefined;
 
@@ -149,6 +154,17 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     acceptPendingReview(api, navigate, filtersRef.current);
   }, [api, navigate, filtersRef]);
 
+  // Pending-update outranks stale: accepting the update supersedes the warning.
+  const banner = useMemo<ReviewBanner>(
+    () =>
+      pendingReview !== null
+        ? { kind: 'pending-update', onAccept: onAcceptPendingUpdate }
+        : isStale
+          ? { kind: 'stale' }
+          : null,
+    [pendingReview, isStale, onAcceptPendingUpdate]
+  );
+
   // First landing on the summary with a clean, newly available review enters
   // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
   useEffect(() => {
@@ -188,7 +204,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       activeEntry,
       activeIndex,
       isSummaryVisible,
-      onAcceptPendingUpdate,
+      banner,
     }),
     [
       storyInfo,
@@ -197,7 +213,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       activeEntry,
       activeIndex,
       isSummaryVisible,
-      onAcceptPendingUpdate,
+      banner,
     ]
   );
 

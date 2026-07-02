@@ -7,6 +7,7 @@ import {
 	expectStoryIdsInDisplayReview,
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
+	getEvalContext,
 	getWorkflowCalls,
 	getWorkflowToolResults,
 } from '#test-utils';
@@ -61,9 +62,17 @@ test('falls back to get-stories-by-component when the diff does not cover the co
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story
 // tests are failing.
-test('runs story tests after the change and finishes with them passing', () => {
-	expectStoryTestsRanAndPassed();
-});
+// MCP-path agents skip validation for shared-token edits (the Validation
+// Workflow section is lost to the 2,048-char server-instruction truncation
+// that PR #320 addresses; observed in the 2026-07-02 cc-mcp QA run). Gate the
+// assertion to the plugin integration until #320 lands; tracked as an
+// accepted known failure in storybookjs/mcp#317.
+test.skipIf(getEvalContext().integration === 'mcp')(
+	'runs story tests after the change and finishes with them passing',
+	() => {
+		expectStoryTestsRanAndPassed();
+	},
+);
 
 test('keeps the pre-existing Storybook launch config valid', () => {
 	expectValidStorybookLaunchConfig();

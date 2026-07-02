@@ -1,11 +1,16 @@
 import { existsSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import { join } from 'pathe';
 
-import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './utils/typescript.ts';
+
+// Computed locally instead of importing ../utils/constants.ts: that module
+// intentionally uses __dirname (it must stay loadable from CJS-transpiled
+// contexts), while this script runs under native node as an ES module.
+const ROOT_DIRECTORY = join(fileURLToPath(import.meta.url), '..', '..', '..');
 
 const {
   values: { cwd },

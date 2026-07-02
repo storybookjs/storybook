@@ -244,9 +244,12 @@ export const internalStorybookBuildE2e = defineJob(
 export const check = defineJob(
   'TypeScript validation',
   (workflowName) => ({
+    // xlarge so the check task can typecheck 8 packages concurrently; roughly
+    // cost-neutral vs the previous serial run on medium+ and much faster
+    // feedback for the cancel-on-failure gate.
     executor: {
       name: 'sb_node_22_classic',
-      class: 'medium+',
+      class: 'xlarge',
     },
     steps: [
       ...workflow.restoreLinux(),

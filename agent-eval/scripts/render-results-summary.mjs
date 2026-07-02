@@ -76,7 +76,8 @@ function collectExperiments() {
 function renderEvalRow({ name, summary, classification }) {
 	const passed = summary.passedRuns === summary.totalRuns;
 	const status = passed ? '✅' : '❌';
-	const duration = typeof summary.meanDuration === 'number' ? `${summary.meanDuration.toFixed(1)}s` : '—';
+	const duration =
+		typeof summary.meanDuration === 'number' ? `${summary.meanDuration.toFixed(1)}s` : '—';
 	const failure = classification
 		? `\`${classification.failureType}\` — ${classification.failureReason.replaceAll('|', '\\|')}`
 		: '';

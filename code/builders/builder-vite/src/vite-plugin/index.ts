@@ -195,29 +195,6 @@ async function main(options?: UserOptions): Promise<PluginOption> {
           server.watcher.emit('change', virtualStoriesId);
         });
       },
-
-      transformIndexHtml: {
-        order: 'post',
-        handler(html, ctx) {
-          const expectedIframePath = `${basePath}iframe.html`;
-          if (ctx.path !== expectedIframePath && ctx.path !== '/iframe.html') {
-            return html;
-          }
-
-          return html.replace(
-            /window\.CHANNEL_OPTIONS\s*=\s*(\{[^;]*\});/,
-            (_match, optionsJson) => {
-              try {
-                const parsed = JSON.parse(optionsJson);
-                parsed.channelPath = '/storybook-server-channel';
-                return `window.CHANNEL_OPTIONS = ${JSON.stringify(parsed)};`;
-              } catch {
-                return `window.CHANNEL_OPTIONS = ${JSON.stringify({ channelPath: '/storybook-server-channel' })};`;
-              }
-            }
-          );
-        },
-      },
     },
   ];
 }

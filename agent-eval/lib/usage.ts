@@ -42,7 +42,10 @@ function parseJsonLines(raw: string): Record<string, any>[] {
  * deduplicated by message id; Codex transcripts report per-turn usage on
  * turn.completed events.
  */
-export function collectTranscriptUsage(rawTranscript: string, model?: string): TranscriptUsage | undefined {
+export function collectTranscriptUsage(
+	rawTranscript: string,
+	model?: string,
+): TranscriptUsage | undefined {
 	const usage = { inputTokens: 0, cacheWriteTokens: 0, cacheReadTokens: 0, outputTokens: 0 };
 	const seenMessages = new Set<string>();
 
@@ -65,7 +68,8 @@ export function collectTranscriptUsage(rawTranscript: string, model?: string): T
 		}
 	}
 
-	const totalTokens = usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens + usage.outputTokens;
+	const totalTokens =
+		usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens + usage.outputTokens;
 
 	if (totalTokens === 0) {
 		return undefined;

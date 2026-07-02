@@ -63,9 +63,7 @@ describe('stories skill description', () => {
 		resolve(repoRoot, 'packages/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
 	])('stays under the silent-drop listing budget: %s', (skillPath) => {
 		const description = readSkillDescription(skillPath);
-		expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(
-			MAX_SKILL_DESCRIPTION_BYTES,
-		);
+		expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(MAX_SKILL_DESCRIPTION_BYTES);
 	});
 
 	it('keeps the claude and codex plugin descriptions identical', () => {

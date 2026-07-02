@@ -82,7 +82,9 @@ export function collectTranscriptUsage(
 			const turnUsage = event.usage;
 			const cached = toTokenCount(turnUsage.cached_input_tokens);
 			usage.cacheReadTokens += cached;
-			usage.inputTokens += toTokenCount(turnUsage.input_tokens) - cached;
+			// input_tokens includes the cached portion; clamp in case a transcript
+			// reports cached tokens without (or exceeding) input_tokens.
+			usage.inputTokens += Math.max(0, toTokenCount(turnUsage.input_tokens) - cached);
 			usage.outputTokens += toTokenCount(turnUsage.output_tokens);
 		}
 	}

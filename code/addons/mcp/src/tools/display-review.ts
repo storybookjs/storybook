@@ -13,15 +13,16 @@ export const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Stor
 
 ## When to call
 - **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
-- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Omit \`changedFiles\`.
+- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
 
 ## Hard rules
 1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
-2. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
-3. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-4. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
-5. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
-6. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
+3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
+5. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
+6. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
+7. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
 
 ## Curating (Trigger 1)
 Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
@@ -72,8 +73,10 @@ export const ReviewStateSchema = v.object({
 	),
 	collections: v.array(ReviewCollectionSchema),
 	changedFiles: v.pipe(
-		v.optional(v.array(v.string())),
-		v.description('Paths of the files you changed, most central first.'),
+		v.array(v.string()),
+		v.description(
+			'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests, Trigger 2).',
+		),
 	),
 });
 
@@ -217,7 +220,7 @@ export async function addDisplayReviewTool(
 						toolset: 'dev',
 						collectionCount,
 						storyCount,
-						changedFileCount: input.changedFiles?.length ?? 0,
+						changedFileCount: input.changedFiles.length,
 					});
 				}
 

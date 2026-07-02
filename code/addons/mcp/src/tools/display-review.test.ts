@@ -200,6 +200,7 @@ describe('displayReviewTool', () => {
 						storyIds: ['button--primary'],
 					},
 				],
+				changedFiles: [],
 			},
 			makeContext(),
 		);
@@ -209,6 +210,25 @@ describe('displayReviewTool', () => {
 		expect(result?.content?.[0]?.text).toContain('1 collection, 1 story');
 		expect(result?.content?.[0]?.text).not.toContain('1 collections');
 		expect(result?.content?.[0]?.text).not.toContain('1 stories');
+	});
+
+	it('rejects a payload without changedFiles (pass [] for browse requests)', async () => {
+		const payloadWithoutChangedFiles = {
+			title: 'Missing changed files',
+			description: 'Payload without changedFiles must fail validation',
+			collections: [
+				{
+					title: 'Button',
+					rationale: 'Just the primary button',
+					storyIds: ['button--primary'],
+				},
+			],
+		} as unknown as ReviewState;
+		const response = await callTool(payloadWithoutChangedFiles, makeContext());
+		const result = getResult(response);
+
+		expect(result?.isError).toBe(true);
+		expect(JSON.stringify(result)).toContain('changedFiles');
 	});
 
 	it('hands the payload off to addon-review via the PUSH_REVIEW channel event', async () => {

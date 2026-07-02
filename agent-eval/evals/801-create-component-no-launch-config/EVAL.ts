@@ -5,6 +5,7 @@ import {
 	expectAllStoryExportsInDisplayReview,
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectSkillInvoked,
 	expectStoryDiscoveryBeforeReview,
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
@@ -64,6 +65,12 @@ test.skip('publishes a well-curated review', async () => {
 // The fixture overrides the template's .claude/launch.json with an empty
 // configurations array (fixtures can only overwrite files, not delete them),
 // so the plugin must set up the Storybook launch entry itself.
+// The plugin path must engage the stories skill (Claude: via the Skill tool;
+// Codex: by reading its SKILL.md); no-op on the MCP integration.
+test('invokes the stories skill on the plugin path', () => {
+	expectSkillInvoked('stories');
+});
+
 test('writes a valid Storybook launch config for Claude preview tooling', () => {
 	expectValidStorybookLaunchConfig();
 });

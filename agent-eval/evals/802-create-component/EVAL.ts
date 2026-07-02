@@ -3,6 +3,7 @@ import {
 	expectAllStoryExportsInDisplayReview,
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectSkillInvoked,
 	expectStoryDiscoveryBeforeReview,
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
@@ -34,6 +35,12 @@ test('discovers stories through the workflow tools before publishing the review'
 // tests are failing.
 test('runs story tests after the change and finishes with them passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
+});
+
+// The plugin path must engage the stories skill (Claude: via the Skill tool;
+// Codex: by reading its SKILL.md); no-op on the MCP integration.
+test('invokes the stories skill on the plugin path', () => {
+	expectSkillInvoked('stories');
 });
 
 test('keeps the pre-existing Storybook launch config valid', () => {

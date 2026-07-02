@@ -3,6 +3,7 @@ import { expect, test } from 'vitest';
 import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectSkillInvoked,
 	expectStoryDiscoveryBeforeReview,
 	expectStoryIdsInDisplayReview,
 	expectStoryTestsRanAndPassed,
@@ -79,6 +80,12 @@ test.skipIf(getEvalContext().integration === 'mcp')(
 		expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
 	},
 );
+
+// The plugin path must engage the stories skill (Claude: via the Skill tool;
+// Codex: by reading its SKILL.md); no-op on the MCP integration.
+test('invokes the stories skill on the plugin path', () => {
+	expectSkillInvoked('stories');
+});
 
 test('keeps the pre-existing Storybook launch config valid', () => {
 	expectValidStorybookLaunchConfig();

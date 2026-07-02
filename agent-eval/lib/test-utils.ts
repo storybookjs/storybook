@@ -574,23 +574,36 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 }
 
 // Claude Code invokes plugin skills through its Skill tool, so the transcript
-// records which skill fired. Codex has no skill tool (its skills are
-// instruction files), so there the observable contract is the skill's
-// *behavior*, asserted separately — this check is a no-op outside the Claude
-// plugin integration.
+// records which skill fired. Codex has no skill tool — engaging a skill means
+// reading its instruction file, which shows up as a shell command touching
+// the skill's directory. This check is a no-op on the MCP integration, where
+// no skills are installed.
 export function expectSkillInvoked(skillName: string): void {
 	const { agent, integration } = getEvalContext();
-	if (agent !== 'claude-code' || integration !== 'plugin') {
+	if (integration !== 'plugin') {
 		return;
 	}
 
-	const invoked = getTranscript().events.some(
-		(event) =>
-			event.type === 'tool_call' &&
-			event.tool?.originalName === 'Skill' &&
-			JSON.stringify(event.tool.args ?? {}).includes(skillName),
-	);
-	expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
+	if (agent === 'claude-code') {
+		const invoked = getTranscript().events.some(
+			(event) =>
+				event.type === 'tool_call' &&
+				event.tool?.originalName === 'Skill' &&
+				JSON.stringify(event.tool.args ?? {}).includes(skillName),
+		);
+		expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
+		return;
+	}
+
+	// The codex plugin names its skill directories without the storybook-
+	// prefix (.agents/skills/init, .agents/skills/stories, …).
+	const codexSkillName = skillName.replace(/^storybook-/, '');
+	const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
+	const read = getShellCommands().some((command) => skillPathPattern.test(command));
+	expect(
+		read,
+		`Expected the ${skillName} skill (skills/${codexSkillName}) to be read via a shell command`,
+	).toBe(true);
 }
 
 // Lifecycle-outcome check for the upgrade evals: the given Storybook packages

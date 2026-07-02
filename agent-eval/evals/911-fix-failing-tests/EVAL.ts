@@ -1,12 +1,7 @@
 import { expect, test } from 'vitest';
-import {
-	expectDisplayReviewForVisualChange,
-	expectWorkflowCalls,
-	getWorkflowCalls,
-} from '#test-utils';
+import { expectWorkflowCalls, getWorkflowCalls } from '#test-utils';
 
-test('reruns story tests after fixing failures and publishes a display review', () => {
-	expectWorkflowCalls(['run-story-tests', 'display-review']);
+test('reruns story tests after fixing failures and previews the stories', () => {
+	expectWorkflowCalls(['run-story-tests', 'preview-stories']);
 	expect(getWorkflowCalls('run-story-tests').length).toBeGreaterThanOrEqual(2);
-	expectDisplayReviewForVisualChange();
 });

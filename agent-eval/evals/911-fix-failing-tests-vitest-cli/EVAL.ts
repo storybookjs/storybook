@@ -1,10 +1,5 @@
 import { expect, test } from 'vitest';
-import {
-	expectDisplayReviewForVisualChange,
-	expectWorkflowCalls,
-	getShellCommands,
-	getWorkflowCalls,
-} from '#test-utils';
+import { expectWorkflowCalls, getShellCommands, getWorkflowCalls } from '#test-utils';
 
 function usesVitestCli(command: string): boolean {
 	return /(^|\s)npx\s+vitest\s+run(\s|$)/.test(command);
@@ -13,6 +8,5 @@ function usesVitestCli(command: string): boolean {
 test('reruns the Vitest CLI after fixing failures', () => {
 	expect(getShellCommands().filter(usesVitestCli).length).toBeGreaterThanOrEqual(2);
 	expect(getWorkflowCalls('run-story-tests').length).toBe(0);
-	expectWorkflowCalls(['display-review']);
-	expectDisplayReviewForVisualChange();
+	expectWorkflowCalls(['preview-stories']);
 });

@@ -19,11 +19,9 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
 import { pluginConfig } from '../vite-config.ts';
 import { createServerChannel } from './middlewares/channel.ts';
-import { registerIframeMiddleware } from './middlewares/iframe.ts';
-import { buildManager, registerManagerMiddleware } from './middlewares/manager.ts';
-import { registerEnvironmentModuleMiddleware } from './middlewares/module-router.ts';
+import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
+import { buildManager } from './middlewares/manager.ts';
 import { createStaticMiddlewares } from './middlewares/static.ts';
-import { registerStoryIndexMiddleware } from './middlewares/story-index.ts';
 import type { UserOptions } from './types.ts';
 
 // use to guard against duplicate plugin activation
@@ -121,10 +119,20 @@ function main(options?: UserOptions): PluginOption {
           dev: {
             async createEnvironment(name, config, context) {
               const { finalConfig } = await loadStorybook();
+
               const sbConfig = await resolveConfig(
                 {
                   ...finalConfig,
+                  plugins: [
+                    ...(finalConfig.plugins ?? []),
+                    {
+                      name: 'storybook:enforce-env-base',
+                      enforce: 'post',
+                      config: () => ({ base: basePath }),
+                    },
+                  ],
                   cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                  base: basePath,
                 },
                 'serve'
               );
@@ -155,20 +163,24 @@ function main(options?: UserOptions): PluginOption {
         );
         const wsToken = coreOptions.channelOptions?.wsToken ?? '';
 
-        const staticMiddlewares = await createStaticMiddlewares(sb, basePath);
-        for (const middleware of staticMiddlewares) {
-          server.middlewares.use(middleware);
-        }
+        const staticHandlers = await createStaticMiddlewares(sb, '/');
 
-        // A random port is important: getPort() defaults to preferring port 3000, which can appear
-        // free on IPv4 when the surrounding dev server (e.g. Nuxt) only bound IPv6 — polka would
-        // then shadow the app for all IPv4 localhost traffic. Loopback-only, as it's internal.
         const port = await getPort({ random: true, host: '127.0.0.1' });
         const polkaServer = polka();
         polkaServer.listen(port, '127.0.0.1');
         sb.port = server.config.server.port;
         await sb.presets.apply('experimental_devServer', polkaServer, sb);
-        registerStoryIndexMiddleware(server, storyIndexGenerator, basePath);
+
+        server.httpServer?.prependListener('upgrade', (req) => {
+          const protocol = req.headers['sec-websocket-protocol'];
+          if (
+            basePath !== '/' &&
+            (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
+            req.url?.startsWith(basePath)
+          ) {
+            req.url = req.url.slice(basePath.length - 1) || '/';
+          }
+        });
 
         if (server.httpServer) {
           const channel = createServerChannel(
@@ -198,21 +210,21 @@ function main(options?: UserOptions): PluginOption {
         }
 
         const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
-        registerManagerMiddleware(server, managerHtml, basePath);
-        registerIframeMiddleware(server, sb, basePath);
 
-        registerEnvironmentModuleMiddleware(server);
-
-        server.middlewares.use(
-          baseNoSlash || '/',
-          createProxyMiddleware({
+        registerStorybookMiddleware(server, {
+          options: sb,
+          basePath,
+          managerHtml,
+          storyIndexGenerator,
+          staticHandlers,
+          proxy: createProxyMiddleware({
             target: `http://127.0.0.1:${port}`,
             changeOrigin: true,
             ws: true,
             pathRewrite: (path) =>
               baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
-          })
-        );
+          }),
+        });
         storyIndexGenerator.onInvalidated(() => {
           const virtualStoriesId = '\0virtual:/@storybook/builder-vite/storybook-stories.js';
           server.watcher.emit('change', virtualStoriesId);

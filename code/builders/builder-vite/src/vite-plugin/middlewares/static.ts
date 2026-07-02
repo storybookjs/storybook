@@ -29,10 +29,7 @@ export async function createStaticMiddlewares(
         if (!req.url?.startsWith(mountPath)) {
           return next();
         }
-        // Restore req.url when the static file isn't found, so the stripped
-        // (base-relative) URL doesn't leak to downstream Storybook middlewares
-        // (manager/story-index/iframe) and the proxy, which match on the full
-        // `${basePath}…` path.
+
         const originalUrl = req.url;
         req.url = req.url.slice(mountPath.length) || '/';
         handler(req, res, () => {

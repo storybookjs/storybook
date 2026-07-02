@@ -33,9 +33,12 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     const firstTestFileArgIndex = process.argv.findIndex((arg) => testFileRegex.test(arg));
     const testFiles = firstTestFileArgIndex === -1 ? [] : process.argv.slice(firstTestFileArgIndex);
 
+    // chromium-mutating holds the specs that write to sandbox files; it runs
+    // after the parallel chromium pass (see code/playwright.config.ts).
+    const projects = '--project=chromium --project=chromium-mutating';
     const playwrightCommand = process.env.DEBUG
-      ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
-      : `yarn playwright test --project=chromium ${testFiles.join(' ')}`;
+      ? `yarn playwright test ${projects} --ui ${testFiles.join(' ')}`
+      : `yarn playwright test ${projects} ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

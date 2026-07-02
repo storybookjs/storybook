@@ -82,10 +82,12 @@ function defineSandboxJob_dev({
   return defineJob(
     name,
     () => ({
+      // large so the dev server and the parallel Playwright workers don't
+      // starve each other; the shorter runtime more than pays for the class.
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'medium+',
+            class: 'large',
           }
         : {
             name: 'sb_node_22_classic',
@@ -108,6 +110,9 @@ function defineSandboxJob_dev({
               {
                 run: {
                   name: 'Running E2E Tests',
+                  environment: {
+                    PLAYWRIGHT_WORKERS: '3',
+                  },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
                     `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
@@ -314,6 +319,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running E2E Tests',
+            environment: {
+              PLAYWRIGHT_WORKERS: '3',
+            },
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
               `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,

@@ -85,15 +85,18 @@ export const sandbox: Task = {
       runMigrations,
     } = await import('./sandbox-parts.ts');
 
+    // Versioned specifiers: bare names make addExtraDependencies probe the
+    // registry once per package to resolve 'latest' (a subprocess each), and
+    // let sandbox contents drift whenever a new major is published.
     const extraDeps = [
       ...(details.template.modifications?.extraDependencies ?? []),
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
-      'lodash-es',
-      '@types/lodash-es',
-      '@types/aria-query',
-      'uuid',
+      'lodash-es@^4.18.1',
+      '@types/lodash-es@^4.17.12',
+      '@types/aria-query@^5.0.4',
+      'uuid@^14.0.1',
     ];
 
     const extraDevDeps = [
@@ -105,10 +108,10 @@ export const sandbox: Task = {
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
     if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom');
+      extraDeps.push('happy-dom@^20.10.6');
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('jsdom');
+        extraDeps.push('jsdom@^29.1.1');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {
@@ -182,7 +185,9 @@ export const sandbox: Task = {
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
+    // Incremental on purpose: the init step already installed the bulk of the
+    // tree, so this final install only links the extra deps added above.
+    // Wiping node_modules first forced a full re-extraction (~10-25s on CI).
     await packageManager.installDependencies();
 
     await runMigrations(details, options);

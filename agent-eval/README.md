@@ -152,6 +152,22 @@ pnpm playground
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
 
+### Download CI Results
+
+Pull the eval results produced by recent CI runs into the local
+`agent-eval/results` directory, so they can be browsed in the local playground
+and inspected by analysis tooling:
+
+```bash
+pnpm results:download        # latest 20 agent-eval-results artifacts
+pnpm results:download 5      # or any count between 1 and 100
+```
+
+Requires an authenticated GitHub CLI (`gh auth login`). Result snapshots are
+keyed by experiment name and run timestamp, so artifacts from multiple CI runs
+merge into `agent-eval/results` without colliding, and re-running the command
+is idempotent. Each artifact is roughly 20–40 MB extracted.
+
 ### Deploy Results Playground
 
 The `Agent eval` GitHub Actions workflow deploys the playground to Vercel

@@ -68,10 +68,10 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
       order: 'pre',
       handler(id, importer) {
         if (!importer || !RE_DTS_IMPORTER.test(importer.split('?')[0])) {
-          return;
+          return undefined;
         }
         if (id.startsWith('.') || id.startsWith('/') || id.startsWith('\0') || isExternal(id)) {
-          return;
+          return undefined;
         }
         const importerPath = importer.split('?')[0];
         const key = `${dirname(importerPath)}\n${id}`;

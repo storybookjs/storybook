@@ -3,10 +3,13 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import type { BuildEntries } from './entry-utils.ts';
 
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+// Computed locally instead of importing scripts/utils/constants.ts: that
+// module must stay CJS-compatible for Playwright consumers, while this one
+// runs as native ESM.
+const ROOT_DIRECTORY = join(import.meta.dirname, '..', '..', '..');
+const DIR_CODE = join(ROOT_DIRECTORY, 'code');
 
 const MAX_DTS_ATTEMPTS = 2;
 const RETRY_DELAY_MS = 500;

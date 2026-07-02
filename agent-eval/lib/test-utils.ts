@@ -5,6 +5,19 @@ import { loadTranscript } from '@vercel/agent-eval';
 import type { Transcript } from '@vercel/agent-eval';
 import { expect } from 'vitest';
 
+import {
+	getNestedWorkflowInput,
+	isRecord,
+	isSameWorkflowCall,
+	normalizeStorybookWorkflowName,
+	parseJson,
+	parseStorybookWorkflowShellCommands,
+} from './shell-parse.ts';
+import type { StorybookWorkflowCall } from './shell-parse.ts';
+
+export { parseStorybookWorkflowShellCommands };
+export type { StorybookWorkflowCall };
+
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
 const RESULTS_PATH = '__agent_eval__/results.json';
 const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
@@ -27,25 +40,6 @@ type AgentEvalResults = {
 	} | null;
 };
 
-export type StorybookWorkflowCall = {
-	name: string;
-	input: Record<string, unknown>;
-	source: 'mcp' | 'storybook-ai';
-};
-
-const STORYBOOK_WORKFLOW_TOOL_NAMES = [
-	'display-review',
-	'get-changed-stories',
-	'get-documentation',
-	'get-documentation-for-story',
-	'get-stories-by-component',
-	'get-storybook-story-instructions',
-	'list-all-documentation',
-	'preview-stories',
-	'run-story-tests',
-] as const;
-
-const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
 let cachedStorybookWorkflowCalls: StorybookWorkflowCall[] | undefined;
 
 export type StoryInputExpectation = {
@@ -365,10 +359,6 @@ export const A11Y_VISUAL_CHANGE_APPROVAL_CRITERION = [
 	'It distinguishes semantic accessibility issues that can be fixed directly from visual design changes that need user approval.',
 ].join(' ');
 
-export function parseStorybookWorkflowShellCommands(commands: string[]): StorybookWorkflowCall[] {
-	return commands.flatMap(parsePluginWorkflowCalls);
-}
-
 function readAgentContext(): AgentContext {
 	return JSON.parse(readFileSync(AGENT_CONTEXT_PATH, 'utf8')) as AgentContext;
 }
@@ -431,7 +421,9 @@ function expectFinalResponseEndsWithReviewSection(): void {
 		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
 	);
 	expect(
-		lines.some((line) => /^##\s+.*Review your changes\s*$/.test(line.trim())),
+		// Case-insensitive: the guidance shows the heading as an example, and
+		// Codex consistently writes it in Title Case.
+		lines.some((line) => /^##\s+.*review your changes\s*$/i.test(line.trim())),
 		'Final response must include a dedicated review heading',
 	).toBe(true);
 	expect(
@@ -505,14 +497,7 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
 }
 
 function getRawMcpInput(item: Record<string, unknown>): Record<string, unknown> {
-	for (const key of ['arguments', 'input', 'args']) {
-		const value = item[key];
-		if (isRecord(value)) {
-			return value;
-		}
-	}
-
-	return {};
+	return getNestedWorkflowInput(item) ?? {};
 }
 
 function mergeMcpWorkflowCalls(
@@ -525,194 +510,6 @@ function mergeMcpWorkflowCalls(
 			(rawCall) => !parsedCalls.some((parsedCall) => isSameWorkflowCall(parsedCall, rawCall)),
 		),
 	];
-}
-
-function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
-	const nestedCommand = getNestedShellCommand(command);
-	if (nestedCommand !== undefined) {
-		return parsePluginWorkflowCalls(nestedCommand);
-	}
-
-	// Only genuine `storybook ai` CLI invocations count as plugin workflow
-	// calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
-	// are deliberately not recognized: agents must use the documented CLI.
-	return parseStorybookAiWorkflowCalls(command);
-}
-
-function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {
-	const tokens = tokenizeShellCommand(command);
-	const calls: StorybookWorkflowCall[] = [];
-
-	for (let index = 0; index < tokens.length - 1; index += 1) {
-		if (tokens[index] !== 'storybook' || tokens[index + 1] !== 'ai') {
-			continue;
-		}
-
-		const invocation = parseStorybookAiInvocation(tokens.slice(index + 2));
-		if (invocation !== undefined) {
-			calls.push(invocation.call);
-			index += invocation.consumed + 1;
-		}
-	}
-
-	return calls;
-}
-
-function parseStorybookAiInvocation(
-	aiArgs: string[],
-): { call: StorybookWorkflowCall; consumed: number } | undefined {
-	const endIndex = aiArgs.findIndex(
-		(token, index) =>
-			SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && aiArgs[index + 1] === 'ai'),
-	);
-	const consumed = endIndex === -1 ? aiArgs.length : endIndex;
-	const segment = aiArgs.slice(0, consumed);
-
-	if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
-		return undefined;
-	}
-
-	const commandIndex = segment.findIndex(
-		(token) => normalizeStorybookWorkflowName(token) !== undefined,
-	);
-	const commandToken = commandIndex === -1 ? undefined : segment[commandIndex];
-	const name =
-		commandToken === undefined ? undefined : normalizeStorybookWorkflowName(commandToken);
-
-	if (name === undefined) {
-		return undefined;
-	}
-
-	return {
-		call: {
-			name,
-			input: parseStorybookAiInput(segment.slice(commandIndex + 1)),
-			source: 'storybook-ai',
-		},
-		consumed,
-	};
-}
-
-function getNestedShellCommand(command: string): string | undefined {
-	const tokens = tokenizeShellCommand(command);
-	for (let index = 0; index < tokens.length - 1; index += 1) {
-		if (tokens[index] === '-c' || tokens[index] === '-lc') {
-			return tokens[index + 1];
-		}
-	}
-
-	return undefined;
-}
-
-// `2>&1`, `>`, `>>out.txt`, `2>err.log`, `&>log`, `<in.txt`, …
-const SHELL_REDIRECTION_PATTERN = /^(\d*|&)>{1,2}|^</;
-// Redirections that already name their target (`2>&1`, `>out.txt`) consume one
-// token; a bare operator (`>`, `2>`, `<`) also consumes the following token.
-const BARE_SHELL_REDIRECTION_PATTERN = /^((\d*|&)>{1,2}|<)$/;
-
-function isShellRedirection(token: string): boolean {
-	return SHELL_REDIRECTION_PATTERN.test(token);
-}
-
-function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
-	const input: Record<string, unknown> = {};
-
-	for (let index = 0; index < tokens.length; index += 1) {
-		const token = tokens[index];
-		if (token === undefined) {
-			continue;
-		}
-
-		if (isShellRedirection(token)) {
-			if (BARE_SHELL_REDIRECTION_PATTERN.test(token)) {
-				index += 1;
-			}
-			continue;
-		}
-
-		if (token === '--json') {
-			const value = tokens[index + 1];
-			if (value !== undefined && !value.startsWith('-') && !isShellRedirection(value)) {
-				mergeJsonInput(input, parseCliValue(value), 'json');
-				index += 1;
-			} else {
-				input.json = true;
-			}
-			continue;
-		}
-
-		if (token.startsWith('--')) {
-			const [rawKey, inlineValue] = token.slice(2).split('=', 2);
-			if (rawKey === undefined || rawKey.length === 0) {
-				continue;
-			}
-
-			const key = kebabToCamel(rawKey);
-			if (inlineValue !== undefined) {
-				if (key === 'json') {
-					mergeJsonInput(input, parseCliValue(inlineValue), 'json');
-					continue;
-				}
-				input[key] = parseCliValue(inlineValue);
-				continue;
-			}
-
-			const value = tokens[index + 1];
-			if (value !== undefined && !value.startsWith('-') && !isShellRedirection(value)) {
-				input[key] = parseCliValue(value);
-				index += 1;
-			} else {
-				input[key] = true;
-			}
-			continue;
-		}
-
-		mergeJsonInput(input, parseCliValue(token), 'json');
-	}
-
-	return input;
-}
-
-function mergeJsonInput(input: Record<string, unknown>, value: unknown, fallbackKey: string): void {
-	if (isRecord(value)) {
-		Object.assign(input, unwrapWorkflowInput(value));
-		return;
-	}
-
-	input[fallbackKey] = value;
-}
-
-function parseCliValue(value: string): unknown {
-	try {
-		return JSON.parse(value) as unknown;
-	} catch {
-		return value;
-	}
-}
-
-function kebabToCamel(value: string): string {
-	return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-}
-
-function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unknown> {
-	for (const key of ['arguments', 'input', 'args']) {
-		const nested = value[key];
-		if (isRecord(nested)) {
-			return nested;
-		}
-	}
-
-	const params = value.params;
-	if (isRecord(params)) {
-		for (const key of ['arguments', 'input', 'args']) {
-			const nested = params[key];
-			if (isRecord(nested)) {
-				return nested;
-			}
-		}
-	}
-
-	return value;
 }
 
 function getStoryInputs(input: Record<string, unknown>): Record<string, unknown>[] {
@@ -762,118 +559,4 @@ function pathsMatch(actual: string, expected: string): boolean {
 
 function normalizePath(value: string): string {
 	return value.replace(/\\/g, '/').replace(/^\.\//, '');
-}
-
-function tokenizeShellCommand(command: string): string[] {
-	const tokens: string[] = [];
-	let token = '';
-	let quote: '"' | "'" | undefined;
-	let escaping = false;
-
-	for (let index = 0; index < command.length; index += 1) {
-		const char = command[index];
-		if (char === undefined) {
-			continue;
-		}
-
-		// POSIX: inside single quotes everything is literal, including backslashes.
-		// Agents rely on this when passing JSON payloads (e.g. --json '{"a": "\"x\""}').
-		if (quote === "'") {
-			if (char === "'") {
-				quote = undefined;
-			} else {
-				token += char;
-			}
-			continue;
-		}
-
-		if (escaping) {
-			token += char;
-			escaping = false;
-			continue;
-		}
-
-		if (char === '\\') {
-			escaping = true;
-			continue;
-		}
-
-		if (quote === '"') {
-			if (char === '"') {
-				quote = undefined;
-			} else {
-				token += char;
-			}
-			continue;
-		}
-
-		if (char === '"' || char === "'") {
-			quote = char;
-			continue;
-		}
-
-		if (char === '&' && command[index + 1] === '&') {
-			pushToken();
-			tokens.push('&&');
-			index += 1;
-			continue;
-		}
-
-		if (char === '|' && command[index + 1] === '|') {
-			pushToken();
-			tokens.push('||');
-			index += 1;
-			continue;
-		}
-
-		if (char === ';' || char === '|') {
-			pushToken();
-			tokens.push(char);
-			continue;
-		}
-
-		if (/\s/.test(char)) {
-			pushToken();
-			continue;
-		}
-
-		token += char;
-	}
-
-	pushToken();
-	return tokens;
-
-	function pushToken(): void {
-		if (token.length === 0) {
-			return;
-		}
-		tokens.push(token);
-		token = '';
-	}
-}
-
-function normalizeStorybookWorkflowName(name: string): string | undefined {
-	return STORYBOOK_WORKFLOW_TOOL_NAMES.find(
-		(toolName) =>
-			name === toolName ||
-			name.endsWith(`__${toolName}`) ||
-			name.endsWith(`.${toolName}`) ||
-			name.endsWith(`/${toolName}`),
-	);
-}
-
-function isSameWorkflowCall(first: StorybookWorkflowCall, second: StorybookWorkflowCall): boolean {
-	return first.name === second.name && JSON.stringify(first.input) === JSON.stringify(second.input);
-}
-
-function parseJson(value: string): unknown {
-	try {
-		return JSON.parse(value) as unknown;
-	} catch {
-		return undefined;
-	}
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

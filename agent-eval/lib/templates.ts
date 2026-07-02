@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
 
+import { isRecord } from './shell-parse.ts';
+
 type FixturePackageJson = {
 	evals?: {
 		template?: unknown;
@@ -72,6 +74,9 @@ const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
 );
 const TRANSCRIPT_HELPER_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'test-utils.ts');
 const TRANSCRIPT_HELPER_SANDBOX_PATH = path.posix.join('__agent_eval__', 'test-utils.ts');
+// test-utils.ts imports ./shell-parse.ts, so the sandbox copy needs both files.
+const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.ts');
+const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const LOCAL_STORYBOOK_ADDON_MCP_SPEC = 'file:./local-packages/addon-mcp';
@@ -141,6 +146,7 @@ async function writeEvalSupportFiles(
 ): Promise<void> {
 	await sandbox.writeFiles({
 		[TRANSCRIPT_HELPER_SANDBOX_PATH]: await fs.readFile(TRANSCRIPT_HELPER_SOURCE_PATH, 'utf8'),
+		[SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
 		[AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
 			{
 				agent: options.agent,
@@ -754,10 +760,6 @@ async function readClaudeMcpConfig(sandbox: Sandbox): Promise<Record<string, unk
 		throw new Error(`${CLAUDE_MCP_CONFIG_PATH} must contain a JSON object`);
 	}
 	return config;
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function toPosixPath(filePath: string): string {

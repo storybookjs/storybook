@@ -357,7 +357,12 @@ export type WorkflowToolResult = {
 // formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
 // ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
 // `storybook ai run-story-tests` CLI output.
-export function expectStoryTestsRanAndPassed(): void {
+//
+// `covering` pins the final green run to the change under test: at least one
+// of the given substrings must appear in its story ids. This is what proves
+// the tests ran *after* the change — the covered stories don't exist (or
+// aren't relevant) before it — rather than crediting a pre-change test run.
+export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
 	expectWorkflowCalls(['run-story-tests']);
 
 	const results = getWorkflowToolResults('run-story-tests');
@@ -387,6 +392,16 @@ export function expectStoryTestsRanAndPassed(): void {
 		lastResult.output,
 		`Final run-story-tests result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`,
 	).toMatch(/## Passing Stories/);
+
+	const covering = options?.covering ?? [];
+	if (covering.length > 0) {
+		expect(
+			covering.some((substring) =>
+				lastResult.output.toLowerCase().includes(substring.toLowerCase()),
+			),
+			`Final run-story-tests result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`,
+		).toBe(true);
+	}
 }
 
 // Chronological outputs of a Storybook workflow tool, across every path an
@@ -578,10 +593,15 @@ export function expectSkillInvoked(skillName: string): void {
 	expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
 }
 
-// Lifecycle-outcome check for the upgrade evals: the `storybook` dependency in
-// package.json must end up above the seeded version. Compares the first x.y.z
-// found in the spec numerically, so range prefixes (^, ~) don't matter.
-export function expectStorybookDependencyAbove(minExclusiveVersion: string): void {
+// Lifecycle-outcome check for the upgrade evals: the given Storybook packages
+// in package.json must end up at or above the minimum version — an
+// under-upgrade (e.g. 9.x → 10.0.0 when the current release is 10.4.6) does
+// not count. Compares the first x.y.z found in each spec numerically, so
+// range prefixes (^, ~) don't matter.
+export function expectStorybookDependenciesAtLeast(
+	minInclusiveVersion: string,
+	packageNames: string[],
+): void {
 	const packageJson = parseJson(readFileSync('package.json', 'utf8'));
 	if (!isRecord(packageJson)) {
 		expect.fail('Expected package.json to contain a JSON object');
@@ -591,25 +611,30 @@ export function expectStorybookDependencyAbove(minExclusiveVersion: string): voi
 		...(isRecord(packageJson.dependencies) ? packageJson.dependencies : {}),
 		...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
 	};
-	const spec = dependencies.storybook;
-	if (typeof spec !== 'string') {
-		expect.fail(`Expected a storybook dependency in package.json. Received: ${String(spec)}`);
-	}
 
-	const version = parseSemverTriple(spec);
-	if (version === undefined) {
-		expect.fail(`Could not parse a version from the storybook spec "${spec}"`);
-	}
-
-	const minimum = parseSemverTriple(minExclusiveVersion);
+	const minimum = parseSemverTriple(minInclusiveVersion);
 	if (minimum === undefined) {
-		throw new Error(`Invalid minExclusiveVersion "${minExclusiveVersion}"`);
+		throw new Error(`Invalid minInclusiveVersion "${minInclusiveVersion}"`);
 	}
 
-	expect(
-		compareSemverTriples(version, minimum) > 0,
-		`Expected the storybook dependency to be upgraded above ${minExclusiveVersion}. Received: ${spec}`,
-	).toBe(true);
+	for (const packageName of packageNames) {
+		const spec = dependencies[packageName];
+		if (typeof spec !== 'string') {
+			expect.fail(
+				`Expected a ${packageName} dependency in package.json. Received: ${String(spec)}`,
+			);
+		}
+
+		const version = parseSemverTriple(spec);
+		if (version === undefined) {
+			expect.fail(`Could not parse a version from the ${packageName} spec "${spec}"`);
+		}
+
+		expect(
+			compareSemverTriples(version, minimum) >= 0,
+			`Expected ${packageName} to be upgraded to at least ${minInclusiveVersion}. Received: ${spec}`,
+		).toBe(true);
+	}
 }
 
 function parseSemverTriple(spec: string): [number, number, number] | undefined {
@@ -670,7 +695,10 @@ export async function expectStorybookBoots(options?: { timeoutMs?: number }): Pr
 			if (child.exitCode !== null) {
 				expect.fail(`npm run storybook exited with code ${child.exitCode} before serving`);
 			}
-			if (await isHttpReady(`http://127.0.0.1:${port}/`)) {
+			// /index.json is a real build artifact (the story index), so a dev
+			// server that merely serves an error shell on / does not count as
+			// booted.
+			if (await isHttpReady(`http://127.0.0.1:${port}/index.json`)) {
 				return;
 			}
 			await delay(1_000);

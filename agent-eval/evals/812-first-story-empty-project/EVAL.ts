@@ -39,7 +39,7 @@ test('discovers stories through the workflow tools before publishing the review'
 // run-story-tests after the change and do not report completion while story
 // tests are failing.
 test('runs story tests after the change and finishes with them passing', () => {
-	expectStoryTestsRanAndPassed();
+	expectStoryTestsRanAndPassed({ covering: ['button'] });
 });
 
 test('keeps the pre-existing Storybook launch config valid', () => {

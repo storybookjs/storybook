@@ -3,7 +3,7 @@ import {
 	expectShellCommandMatching,
 	expectSkillInvoked,
 	expectStorybookBoots,
-	expectStorybookDependencyAbove,
+	expectStorybookDependenciesAtLeast,
 } from '#test-utils';
 
 // Lifecycle eval (storybookjs/mcp#324): Storybook 9.x is preinstalled (the
@@ -21,8 +21,10 @@ test('runs the Storybook upgrade command', () => {
 	expectShellCommandMatching(/storybook(@\S+)?\s+upgrade/);
 });
 
-test('moves the storybook dependency past the 9.x line', () => {
-	expectStorybookDependencyAbove('9.999.999');
+// 10.4.6 is the stable release at fixture-authoring time; an under-upgrade
+// (e.g. landing on 10.0.0) must not count. Bump alongside future stables.
+test('upgrades the Storybook packages to the current release', () => {
+	expectStorybookDependenciesAtLeast('10.4.6', ['storybook', '@storybook/react-vite']);
 });
 
 test('the upgraded Storybook boots', async () => {

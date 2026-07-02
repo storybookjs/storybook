@@ -23,6 +23,16 @@ test('fixes the semantic button-name violation', () => {
 		expect.fail('Expected at least one run-story-tests result in the transcript');
 	}
 
+	// The violation must have been observed before it can count as fixed — a
+	// run that never evaluates accessibility cannot claim the fix.
+	expect(
+		results.some((result) => /button-name/.test(result.output)),
+		'Expected some run-story-tests result to surface the seeded button-name violation',
+	).toBe(true);
+
+	expect(lastResult.output, 'Final run-story-tests result must cover the Button stories').toMatch(
+		/button/i,
+	);
 	expect(
 		lastResult.output,
 		'Final run-story-tests result must not report failing stories',
@@ -31,6 +41,15 @@ test('fixes the semantic button-name violation', () => {
 		lastResult.output,
 		'Final run-story-tests result must no longer report the button-name violation',
 	).not.toMatch(/button-name/);
+
+	// Guard against a vacuous pass: the violation must be gone because the
+	// icon-only rendering gained an accessible name, not because the agent
+	// deleted the story that surfaced it.
+	const stories = readFileSync('stories/Button.stories.tsx', 'utf8');
+	expect(
+		stories,
+		'Expected the icon-only story to still exist (fix the component, do not delete coverage)',
+	).toMatch(/iconOnly:\s*true/);
 });
 
 // The contrast violation is a visual design decision: the agent must not

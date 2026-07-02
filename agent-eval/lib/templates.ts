@@ -73,6 +73,13 @@ const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
 	'control-in-app-browser',
 	'SKILL.md',
 );
+const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
+	AGENT_EVAL_ROOT,
+	'lib',
+	'mcp',
+	'start-storybook-mcp.mjs',
+);
+const START_STORYBOOK_SCRIPT_SANDBOX_PATH = path.posix.join('scripts', 'start-storybook-mcp.mjs');
 const TRANSCRIPT_HELPER_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'test-utils.ts');
 const TRANSCRIPT_HELPER_SANDBOX_PATH = path.posix.join('__agent_eval__', 'test-utils.ts');
 // test-utils.ts imports ./shell-parse.ts, so the sandbox copy needs both files.
@@ -141,6 +148,16 @@ export async function setupSandbox(
 
 	if (usesLocalStorybookMcpPackages(files)) {
 		Object.assign(files, await readLocalStorybookMcpPackages());
+	}
+
+	// The Storybook-starting postinstall script is maintained once in lib/mcp
+	// and injected wherever a package.json references it, so the templates and
+	// fixtures cannot drift apart.
+	if (referencesStartStorybookScript(files)) {
+		files[START_STORYBOOK_SCRIPT_SANDBOX_PATH] = await fs.readFile(
+			START_STORYBOOK_SCRIPT_SOURCE_PATH,
+			'utf8',
+		);
 	}
 
 	await setupTemplateSandbox(sandbox, templateMetadata);
@@ -283,11 +300,39 @@ function deepMergeJson(templateValue: unknown, fixtureValue: unknown): unknown {
 	return result;
 }
 
+// The system libraries Playwright's chromium needs on the Amazon Linux
+// sandbox image. Shared by every template that runs story tests, referenced
+// from eval-template.json as `"amazonLinuxPackages": "playwright-chromium"`.
+const PLAYWRIGHT_CHROMIUM_AMAZON_LINUX_PACKAGES = [
+	'alsa-lib',
+	'at-spi2-atk',
+	'at-spi2-core',
+	'atk',
+	'cairo',
+	'cups-libs',
+	'dbus-libs',
+	'libX11',
+	'libXcomposite',
+	'libXdamage',
+	'libXext',
+	'libXfixes',
+	'libXrandr',
+	'libxcb',
+	'libxkbcommon',
+	'mesa-libgbm',
+	'nspr',
+	'nss',
+	'pango',
+];
+
 async function setupTemplateSandbox(
 	sandbox: Sandbox,
 	templateMetadata: TemplateMetadata,
 ): Promise<void> {
-	const amazonLinuxPackages = templateMetadata.amazonLinuxPackages;
+	const amazonLinuxPackages =
+		templateMetadata.amazonLinuxPackages === 'playwright-chromium'
+			? PLAYWRIGHT_CHROMIUM_AMAZON_LINUX_PACKAGES
+			: templateMetadata.amazonLinuxPackages;
 	if (amazonLinuxPackages === undefined) {
 		return;
 	}
@@ -299,7 +344,7 @@ async function setupTemplateSandbox(
 		)
 	) {
 		throw new Error(
-			`${TEMPLATE_METADATA_FILE} amazonLinuxPackages must be an array of package-name strings`,
+			`${TEMPLATE_METADATA_FILE} amazonLinuxPackages must be an array of package-name strings or the "playwright-chromium" preset`,
 		);
 	}
 
@@ -369,6 +414,12 @@ export async function pinStorybookPackages(
 
 		files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
 	}
+}
+
+function referencesStartStorybookScript(files: Record<string, string>): boolean {
+	return workspacePackageJsonPaths(files).some((filePath) =>
+		(files[filePath] ?? '').includes('start-storybook-mcp.mjs'),
+	);
 }
 
 // The sandbox root package.json plus workspace packages; the injected

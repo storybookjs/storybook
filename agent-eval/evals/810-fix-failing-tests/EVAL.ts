@@ -16,7 +16,7 @@ test('runs the story tests more than once while fixing the failure', () => {
 // Validation Workflow floor: the run must not end while story tests are
 // failing.
 test('finishes with the story tests passing', () => {
-	expectStoryTestsRanAndPassed();
+	expectStoryTestsRanAndPassed({ covering: ['button'] });
 });
 
 // Guard against a vacuous pass: the tests only turn green through the real

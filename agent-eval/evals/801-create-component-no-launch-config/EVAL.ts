@@ -39,7 +39,7 @@ test('discovers stories through the workflow tools before publishing the review'
 // run-story-tests after the change and do not report completion while story
 // tests are failing.
 test('runs story tests after the change and finishes with them passing', () => {
-	expectStoryTestsRanAndPassed();
+	expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
 });
 
 // Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent

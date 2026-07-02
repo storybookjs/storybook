@@ -63,6 +63,10 @@ function defineSandboxJob_dev({
             name: 'sb_node_22_classic',
             class: 'medium',
           },
+      // Dev-mode E2E is the workflow's wall-clock tail even with parallel
+      // Playwright workers: each shard runs its own dev server and half the
+      // spec files, split by `circleci tests run`.
+      ...(options.e2e ? { parallelism: 2 } : {}),
       steps: [
         ...getSandboxSetupSteps(template),
         ...workflow.restoreLinux({ sandboxId: directory }),
@@ -85,7 +89,7 @@ function defineSandboxJob_dev({
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=$CIRCLE_NODE_INDEX --total=$CIRCLE_NODE_TOTAL`,
                   ].join('\n'),
                 },
               },

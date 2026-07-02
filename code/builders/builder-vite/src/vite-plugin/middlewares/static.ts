@@ -35,9 +35,9 @@ export async function createStaticMiddlewares(
         // `${basePath}…` path.
         const originalUrl = req.url;
         req.url = req.url.slice(mountPath.length) || '/';
-        handler(req, res, (err) => {
+        handler(req, res, () => {
           req.url = originalUrl;
-          next(err);
+          next();
         });
       };
 

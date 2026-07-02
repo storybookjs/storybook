@@ -43,13 +43,8 @@ async function main(options?: UserOptions): Promise<PluginOption> {
     ...options,
   };
 
-  const sb = await experimental_loadStorybook({
-    configDir: finalOptions.configDir,
-    packageJson: {},
-  });
-
-  const sbPlugins = await pluginConfig(sb);
-  const finalConfig = (await sb.presets.apply('viteFinal', { plugins: sbPlugins })) as InlineConfig;
+  let sb: Awaited<ReturnType<typeof experimental_loadStorybook>>;
+  let finalConfig: InlineConfig;
 
   const baseNoSlash = finalOptions.base.replace(/\/+$/, '') || '';
   const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -63,7 +58,17 @@ async function main(options?: UserOptions): Promise<PluginOption> {
       name: 'storybook-env',
       apply: applyToStorybookOnly,
 
-      config(_, { command, mode }) {
+      async config(_, { command, mode }) {
+        sb = await experimental_loadStorybook({
+          configDir: finalOptions.configDir,
+          packageJson: {},
+        });
+
+        const sbPlugins = await pluginConfig(sb);
+        finalConfig = (await sb.presets.apply('viteFinal', {
+          plugins: sbPlugins,
+        })) as InlineConfig;
+
         sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
         if (mode === 'storybook') {
           basePath = '/';

@@ -2,6 +2,7 @@ import { test } from 'vitest';
 import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectStoryIdsInDisplayReview,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
 } from '#test-utils';
@@ -15,6 +16,10 @@ import {
 test('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
+});
+
+test('the review covers the new AlertBanner stories', () => {
+	expectStoryIdsInDisplayReview(['alertbanner']);
 });
 
 test('keeps the pre-existing Storybook launch config valid', () => {

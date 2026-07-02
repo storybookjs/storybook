@@ -147,8 +147,9 @@ export function expectNoDisplayReview(): void {
 }
 
 // Browse request (Agentic Review Eval instructions §7 branch 4): the review is
-// resolved from the live story index, so the payload must omit changedFiles —
-// no code changed.
+// resolved from the live story index, so the payload must pass an empty
+// changedFiles array — no code changed. (changedFiles is required in the
+// schema; `[]` is the explicit browse-mode value.)
 export function expectDisplayReviewForBrowseRequest(): void {
 	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {
@@ -158,8 +159,8 @@ export function expectDisplayReviewForBrowseRequest(): void {
 	expectValidDisplayReviewCollections(displayReview.input);
 	expect(
 		displayReview.input.changedFiles,
-		'Browse-request display-review must omit changedFiles',
-	).toBeUndefined();
+		'Browse-request display-review must pass changedFiles: []',
+	).toEqual([]);
 	expectFinalResponseEndsWithReviewSection();
 }
 
@@ -187,6 +188,24 @@ export function expectAllStoryExportsInDisplayReview(): void {
 				`Expected story "${exportName}" from ${storyFile} in the display-review payload. Received storyIds: ${JSON.stringify(payloadStoryIds)}`,
 			).toBe(true);
 		}
+	}
+}
+
+// Targeted completeness floor: the stories the task is about must appear in
+// the published review. Deliberately weaker than the §6a.2 "every story" rule
+// (pending guidance on interaction stories), so it is safe to gate on.
+export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
+	const displayReview = getWorkflowCalls('display-review').at(-1);
+	if (displayReview === undefined) {
+		expect.fail('Expected display-review to be called');
+	}
+
+	const storyIds = getDisplayReviewStoryIds(displayReview.input);
+	for (const substring of idSubstrings) {
+		expect(
+			storyIds.some((storyId) => storyId.includes(substring)),
+			`Expected a storyId containing "${substring}" in the display-review payload. Received storyIds: ${JSON.stringify(storyIds)}`,
+		).toBe(true);
 	}
 }
 

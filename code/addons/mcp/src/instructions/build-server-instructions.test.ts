@@ -61,7 +61,7 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			Never assume component props, variants, or API shape — retrieve documentation before using a component; never invent what isn't documented.
+			Never assume component props, variants, or API shape, and don't read a library's sources or types out of node_modules to learn a component — retrieve its documentation instead; never invent what isn't documented.
 
 			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
@@ -164,7 +164,7 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			Never assume component props, variants, or API shape — retrieve documentation before using a component; never invent what isn't documented.
+			Never assume component props, variants, or API shape, and don't read a library's sources or types out of node_modules to learn a component — retrieve its documentation instead; never invent what isn't documented.
 
 			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.

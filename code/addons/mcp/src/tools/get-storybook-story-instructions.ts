@@ -20,12 +20,29 @@ type BuildStorybookStoryInstructionsOptions = {
 	toolsets?: AddonContext['toolsets'];
 	a11yEnabled?: boolean;
 	addonVitestAvailable?: boolean;
+	/** Whether the documentation tools (list-all-documentation etc.) are registered. */
+	docsAvailable?: boolean;
 };
+
+/**
+ * Injected into the story instructions when the documentation toolset is
+ * available. This tool output is the one channel every agent reads before
+ * writing UI (on both the MCP and the CLI/plugin path) and is never
+ * truncated, so it must carry the docs-workflow trigger — the server
+ * instructions only have room for a terse pointer, and agents otherwise
+ * default to reading library sources out of node_modules.
+ */
+const docsWorkflowGuidance = `
+
+## Using library components
+
+This Storybook exposes component documentation tools. Before using any component from the project's UI library or design system, call **list-all-documentation** once to discover component IDs, then **get-documentation** with the component's \`id\` to get its real props and usage examples. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't. Never assume or invent props.`;
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ docsAvailable = false }: { docsAvailable?: boolean } = {},
 ) {
 	const addonVitestAvailable = !!(await getAddonVitestConstants());
 
@@ -64,6 +81,7 @@ export async function addGetUIBuildingInstructionsTool(
 					toolsets: server.ctx.custom?.toolsets,
 					a11yEnabled: server.ctx.custom?.a11yEnabled,
 					addonVitestAvailable,
+					docsAvailable,
 				});
 
 				return {
@@ -135,6 +153,7 @@ export async function buildStorybookStoryInstructions(
 		toolsets,
 		a11yEnabled = false,
 		addonVitestAvailable,
+		docsAvailable = false,
 	}: BuildStorybookStoryInstructionsOptions = {},
 ): Promise<string> {
 	const frameworkPreset = await options.presets.apply('framework');
@@ -151,9 +170,12 @@ export async function buildStorybookStoryInstructions(
 		? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
 		: `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
 
+	const docsToolsAvailable = (toolsets?.docs ?? true) && docsAvailable;
+
 	let uiInstructions = storyInstructionsTemplate
 		.replace('{{FRAMEWORK}}', framework)
 		.replace('{{RENDERER}}', renderer ?? framework)
+		.replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsToolsAvailable ? docsWorkflowGuidance : '')
 		.replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
 		.replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
 		.replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);

@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { getAddonVitestConstants } from './run-story-tests.ts';
-import { addGetUIBuildingInstructionsTool } from './get-storybook-story-instructions.ts';
+import {
+	addGetUIBuildingInstructionsTool,
+	buildStorybookStoryInstructions,
+} from './get-storybook-story-instructions.ts';
 import { getReviewStatus } from '../utils/is-review-available.ts';
 import type { AddonContext } from '../types.ts';
 import {
@@ -215,6 +218,51 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
 		expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
 		expect(instructions).not.toContain('{{FINAL_LINKS_GUIDANCE}}');
+		expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+	});
+
+	// The story-instructions output is the one channel every agent reads before
+	// writing UI and is never truncated by MCP clients, so it must carry the
+	// docs-workflow trigger whenever the documentation tools are registered.
+	it('includes the docs workflow guidance when the docs tools are available', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
+			},
+		};
+
+		const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
+			docsAvailable: true,
+		});
+
+		expect(instructions).toContain('## Using library components');
+		expect(instructions).toContain('**list-all-documentation**');
+		expect(instructions).toContain('**get-documentation**');
+		expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+	});
+
+	it('omits the docs workflow guidance when the docs toolset is disabled', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
+			},
+		};
+
+		const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
+			docsAvailable: true,
+			toolsets: { docs: false },
+		});
+
+		expect(instructions).not.toContain('## Using library components');
+		expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
 	});
 
 	// Regression: the story-instructions output must agree with the server

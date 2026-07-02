@@ -80,10 +80,15 @@ export default defineConfig({
     {
       // Specs that write to the sandbox's source files trigger dev-server
       // invalidations (HMR, index refresh) that can reload other tests' pages
-      // mid-assertion. They run here, serially, after the parallel pass.
+      // mid-assertion. They run serially, after the parallel pass - ordered by
+      // the task runner via two sequential invocations (see
+      // scripts/tasks/e2e-tests-build.ts), NOT via a dependency on 'chromium':
+      // Playwright runs dependency projects unfiltered, which made CI shards
+      // whose file subset contained a mutating spec re-run the entire
+      // chromium suite.
       name: 'chromium-mutating',
       testMatch: MUTATING_SPECS,
-      dependencies: ['chromium'],
+      dependencies: ['setup'],
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],

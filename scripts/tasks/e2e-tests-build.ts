@@ -33,29 +33,48 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     const firstTestFileArgIndex = process.argv.findIndex((arg) => testFileRegex.test(arg));
     const testFiles = firstTestFileArgIndex === -1 ? [] : process.argv.slice(firstTestFileArgIndex);
 
-    // chromium-mutating holds the specs that write to sandbox files; it runs
-    // after the parallel chromium pass (see code/playwright.config.ts).
-    const projects = '--project=chromium --project=chromium-mutating';
-    const playwrightCommand = process.env.DEBUG
-      ? `yarn playwright test ${projects} --ui ${testFiles.join(' ')}`
-      : `yarn playwright test ${projects} ${testFiles.join(' ')}`;
+    const baseEnv = {
+      STORYBOOK_URL: `http://localhost:${port}`,
+      STORYBOOK_TYPE: this.type,
+      STORYBOOK_TEMPLATE_NAME: key,
+      STORYBOOK_SANDBOX_DIR: sandboxDir,
+    };
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
-    await exec(
-      playwrightCommand,
-      {
-        env: {
-          STORYBOOK_URL: `http://localhost:${port}`,
-          STORYBOOK_TYPE: this.type,
-          STORYBOOK_TEMPLATE_NAME: key,
-          STORYBOOK_SANDBOX_DIR: sandboxDir,
-          ...(junitFilename && {
-            PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename,
-          }),
+
+    if (process.env.DEBUG) {
+      await exec(
+        `yarn playwright test --project=chromium --project=chromium-mutating --ui ${testFiles.join(' ')}`,
+        { env: baseEnv, cwd: codeDir },
+        { dryRun, debug }
+      );
+      return;
+    }
+
+    // The sandbox-mutating specs run in a second, serial invocation so their
+    // dev-server invalidations cannot reload the parallel pass's pages. Two
+    // invocations instead of a Playwright project dependency: dependency
+    // projects run unfiltered, which would re-run the whole chromium suite on
+    // any CI shard whose file subset contains a mutating spec.
+    // --pass-with-no-tests covers shards whose subset has no match for one of
+    // the projects.
+    for (const [project, junitSuffix] of [
+      ['chromium', ''],
+      ['chromium-mutating', '-mutating'],
+    ]) {
+      await exec(
+        `yarn playwright test --project=${project} --pass-with-no-tests ${testFiles.join(' ')}`,
+        {
+          env: {
+            ...baseEnv,
+            ...(junitFilename && {
+              PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename.replace(/\.xml$/, `${junitSuffix}.xml`),
+            }),
+          },
+          cwd: codeDir,
         },
-        cwd: codeDir,
-      },
-      { dryRun, debug }
-    );
+        { dryRun, debug }
+      );
+    }
   },
 };

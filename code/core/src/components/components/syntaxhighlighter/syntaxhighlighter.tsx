@@ -27,8 +27,9 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 // @ts-expect-error untyped deep ESM entrypoint
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import type { PrismLight } from 'react-syntax-highlighter';
 // @ts-expect-error untyped deep ESM entrypoint
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import ReactSyntaxHighlighterRuntime from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 
 import { ActionBar } from '../ActionBar/ActionBar.tsx';
@@ -40,6 +41,11 @@ import type {
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types.ts';
+
+// Type the deep runtime import via the package root: the deep path is only
+// typed through ambient `declare module` blocks in @types/react-syntax-highlighter,
+// which declaration emit and type bundlers cannot reference by specifier.
+const ReactSyntaxHighlighter: typeof PrismLight = ReactSyntaxHighlighterRuntime;
 
 export const supportedLanguages = {
   jsextra: jsExtras,

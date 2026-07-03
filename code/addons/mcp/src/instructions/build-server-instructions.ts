@@ -1,4 +1,5 @@
 import devInstructions from './dev-instructions.md';
+import legacyDevInstructions from './legacy-dev-instructions.md';
 import testInstructions from './test-instructions.md';
 import { STORYBOOK_MCP_INSTRUCTIONS } from '@storybook/mcp';
 
@@ -37,7 +38,13 @@ export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
 export function buildServerInstructions(options: BuildServerInstructionsOptions): string {
 	const sections = ['Follow these workflows when working with UI and/or Storybook.'];
 
-	if (options.devEnabled) {
+	if (options.devEnabled && !(options.reviewEnabled ?? false)) {
+		// Review is off (the default): use the pre-review instruction text verbatim,
+		// as shipped in the latest release — the workflow we know works. The
+		// review-flavored text below is only exercised behind the `experimentalReview`
+		// feature flag while it is being iterated on.
+		sections.push(legacyDevInstructions.trim());
+	} else if (options.devEnabled) {
 		const changeDetection = options.changeDetectionEnabled ?? false;
 		const graphSupported = options.moduleGraphSupported ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;

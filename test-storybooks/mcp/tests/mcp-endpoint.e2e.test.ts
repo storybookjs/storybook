@@ -593,7 +593,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Run story tests.
-				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level checks like typecheck or lint do not replace this.
+				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Provide stories for focused runs (faster while iterating),
 				or omit stories to run all tests for full-project verification.
 				Use this continuously to monitor test results as you work on your UI components and stories.

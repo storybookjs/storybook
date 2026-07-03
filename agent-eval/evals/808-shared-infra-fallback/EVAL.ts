@@ -100,8 +100,8 @@ test.runIf(review)(
 // instruction truncation eating the Validation Workflow (0 run-story-tests
 // calls in the 2026-07-02 cc-mcp QA run), but the run-story-tests
 // description now carries the trigger ("after editing anything that changes
-// how the UI looks... typecheck or lint do not replace this") and tool
-// descriptions survive client truncation.
+// how the UI looks... typecheck, lint, or package.json test scripts do not
+// replace this") and tool descriptions survive client truncation.
 test('runs story tests after the change and finishes with them passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
 });

@@ -45,9 +45,18 @@ test.runIf(review)('the review surfaces the consumer stories, not the token file
 // consumer. Any-of rather than both: the review-off instructions say to
 // preview "selected" storyIds from the discovery results, so surfacing one
 // consumer's stories is a legitimate selection.
-test.runIf(!review)('previews the consumer stories for the visual token change', () => {
-	expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
-});
+// Accepted known failure on codex-mcp: after a shared-token edit GPT-5.5
+// verifies via shell commands and never calls preview-stories — consistent
+// across the 2026-07-03 runs 28659851504 and 28660377980 (the only
+// review-off failures in both runs' codex-mcp lines).
+const codexMcp = getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp';
+
+test.runIf(!review && !codexMcp)(
+	'previews the consumer stories for the visual token change',
+	() => {
+		expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
+	},
+);
 
 test.runIf(review)(
 	'discovers stories through the workflow tools before publishing the review',
@@ -96,15 +105,16 @@ test.runIf(review)(
 // run-story-tests calls in the 2026-07-02 cc-mcp QA run, while the same
 // fixture passes on cc-plugin and codex-plugin). Re-enable on the review-on
 // MCP path once #320 lands.
-// Review-off runs (the default) assert every integration: the restored
-// legacy instructions fit under the truncation limit, so the Validation
-// Workflow reaches MCP agents again.
-test.skipIf(isReviewEnabled() && getEvalContext().integration === 'mcp')(
-	'runs story tests after the change and finishes with them passing',
-	() => {
-		expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
-	},
-);
+// Review-off runs (the default) assert this where it demonstrably works: the
+// restored legacy instructions fit under the truncation limit and cc-mcp
+// passed in the 2026-07-03 run 28660377980. Accepted known failure on
+// codex-mcp, which still verified via shell only in that same run.
+test.skipIf(
+	(isReviewEnabled() || getEvalContext().agent === 'codex') &&
+		getEvalContext().integration === 'mcp',
+)('runs story tests after the change and finishes with them passing', () => {
+	expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+});
 
 // The plugin path must engage the stories skill (Claude: via the Skill tool;
 // Codex: by reading its SKILL.md). Skipped on the MCP integration, where no

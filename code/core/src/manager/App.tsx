@@ -11,9 +11,20 @@ import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBo
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
 import { ReviewPersistentLayer } from './components/review/components/ReviewPersistentLayer.tsx';
+import { useReview } from './components/review/review-store.ts';
 import Panel from './container/Panel.tsx';
 import Preview from './container/Preview.tsx';
 import Sidebar from './container/Sidebar.tsx';
+
+/**
+ * The main preview, unmounted while the review summary covers the content cell. Keeping it mounted
+ * there would leave the previously selected story's iframe alive, so it flashes through for a frame
+ * when navigating to a curated story. Unmounting makes each such navigation boot a fresh preview.
+ */
+const MainPreview = () => {
+  const { isSummaryVisible } = useReview();
+  return isSummaryVisible ? null : <Preview id="main" withLoader />;
+};
 
 type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
@@ -65,12 +76,12 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
-        <ReviewPersistentLayer />
         <Layout
           hasTab={hasTab}
           managerLayoutState={managerLayoutState}
           setManagerLayoutState={setManagerLayoutState}
-          slotMain={<Preview id="main" withLoader />}
+          slotOverlay={<ReviewPersistentLayer />}
+          slotMain={<MainPreview />}
           slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
           slotPanel={<Panel />}
           slotPages={pages.map(({ id, render: Content }) => (

@@ -9,7 +9,6 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -269,7 +268,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         return;
       }
 
-      const isSidebarShortcutBlocked = isReviewManagerRoute(state.path, state.customQueryParams);
+      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
       const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
       if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
         return;

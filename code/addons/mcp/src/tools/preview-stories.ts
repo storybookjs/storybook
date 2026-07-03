@@ -26,6 +26,7 @@ export function getPreviewStoriesToolDescription({
 }: { reviewEnabled?: boolean } = {}): string {
 	if (!reviewEnabled) {
 		return `Use this tool to get one or more Storybook preview URLs.
+Call it after every change that affects rendered UI — a component, a story, or shared code they use (theme, design tokens, styles, utils). A shared file has no stories of its own: preview the stories of the components that consume it.
 Include each returned preview URL in your final user-facing response so users can open them directly.`;
 	}
 

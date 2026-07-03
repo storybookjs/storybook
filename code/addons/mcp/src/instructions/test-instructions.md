@@ -1,5 +1,5 @@
 ## Validation Workflow
 
-- After each component or story change, run **run-story-tests**.
-- Use focused runs while iterating, then run a broad pass before final handoff when scope is unclear or wide.
+- After each change to a component, a story, or shared code they use, run **run-story-tests**.
+- Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.
 - Fix failing tests before reporting success. Do not report completion while story tests are failing.

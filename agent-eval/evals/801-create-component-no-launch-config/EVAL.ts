@@ -28,13 +28,12 @@ const review = isReviewEnabled();
 // instructions agents read node_modules/reshaped/dist/*.d.ts instead (0/2 in
 // the 2026-07-01T22-53 cc-mcp and cc-plugin runs); the slimming is iterated
 // in #320.
-// Review-off runs (the default) assert this on the Claude experiments, where
-// the restored legacy instructions — untruncated, with the CRITICAL
-// never-hallucinate rule in the Documentation Workflow — demonstrably work:
-// cc-mcp and cc-plugin both called get-documentation in the 2026-07-03 run
-// 28660377980. Accepted known failure on codex: GPT-5.5 skipped the docs
-// tools on both integrations in that same run (storybookjs/mcp#315).
-test.skipIf(review || getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
+// Review-off runs (the default) assert every experiment. GPT-5.5 skipped the
+// docs tools on both integrations in the 2026-07-03 run 28660377980
+// (storybookjs/mcp#315); the get-documentation and list-all-documentation
+// tool descriptions now tell agents to consult docs before using or
+// answering about design-system components, which this asserts.
+test.skipIf(review)('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 

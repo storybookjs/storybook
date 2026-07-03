@@ -202,7 +202,7 @@ export async function buildStorybookStoryInstructions(
 
 const designSystemDocsInstructions = `## Design-System Documentation
 
-Before writing code that uses design-system components — and for any docs, props, or usage question — call **list-all-documentation** to discover component IDs, then **get-documentation** for each component you use. Only use props documented there; component source and type definitions are not verification.`;
+Before creating or changing any UI, call **list-all-documentation** to see what the design system already provides — build on existing components and tokens instead of hand-rolling duplicates with ad-hoc styles. Then call **get-documentation** for each component you build on or get asked about; only use props documented there. Component source and type definitions are not verification, and this applies to answering props/usage questions too.`;
 
 // TODO: this is a stupid map to maintain and it's not complete, but we can't easily get the current renderer name
 const frameworkToRendererMap: Record<string, string> = {

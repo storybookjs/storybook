@@ -32,7 +32,7 @@ export function getListAllDocumentationToolMetadata() {
 		name: LIST_TOOL_NAME,
 		title: 'List All Documentation',
 		description:
-			'List all available UI components and documentation entries from the Storybook. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation.',
+			'List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their `storybookId` input. Pass `withStoryIds: true` when you need story IDs for other tools.',
 		schema: ListAllDocumentationInput,
 	};
 }

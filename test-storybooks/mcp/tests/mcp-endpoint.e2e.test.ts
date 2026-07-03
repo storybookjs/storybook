@@ -370,7 +370,9 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Storybook Story Development Instructions",
 				  },
 				  {
-				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).",
+				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+				The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to get-stories-by-component instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",
@@ -379,13 +381,15 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get changed stories metadata",
 				  },
 				  {
-				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to preview-stories instead of guessing.
+				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to preview-stories or display-review instead of guessing.
 
-				Reach for this to map specific file paths to stories: when the user names a feature/area, or when \`get-changed-stories\` (try it first for "I just edited X") returned nothing or too much. The full file-paths → story-IDs workflow lives in the server instructions.
+				Reach for this whenever you need story IDs, whatever shape the input has: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`get-changed-stories\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
 
-				Never invent IDs from file names, feature names, or memory; if a component has no matches here, it has no stories yet (say so, don't fabricate).
+				Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: 3\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. For display-review, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.
 
-				Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error. Results are sorted by \`distance\` (lower = stronger); for shared components like Button or Icon, expect many indirect matches and use \`maxDistance\` to cap noise.",
+				Never invent IDs from file names, feature names, or memory; title strings can be overridden by story authors, so only IDs returned by discovery tools resolve. If a component has no matches here, it has no stories yet (say so, don't fabricate).
+
+				Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -496,14 +500,14 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories for component files",
 				  },
 				  {
-				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review.
+				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
 
 				## When to call
-				- **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+				- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
 				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
 
 				## Hard rules
-				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory.
+				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`get-stories-by-component\` or \`list-all-documentation\`, then retry.
 				2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
 				3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 				4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
@@ -700,7 +704,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Storybook Tests",
 				  },
 				  {
-				    "description": "List all available UI components and documentation entries from the Storybook. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation.",
+				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {

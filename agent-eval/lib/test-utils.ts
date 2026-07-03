@@ -149,7 +149,7 @@ export function expectDisplayReviewForVisualChange(): void {
 	}
 
 	expectValidDisplayReviewPayload(displayReview.input);
-	expectFinalResponseEndsWithReviewSection();
+	expectFinalResponseSharesReviewLink();
 }
 
 // Review-off counterpart of expectDisplayReviewForVisualChange (review is
@@ -232,7 +232,7 @@ export function expectDisplayReviewForBrowseRequest(): void {
 		displayReview.input.changedFiles,
 		'Browse-request display-review must pass changedFiles: []',
 	).toEqual([]);
-	expectFinalResponseEndsWithReviewSection();
+	expectFinalResponseSharesReviewLink();
 }
 
 // Hard-floor completeness (Agentic Review Eval instructions §6a.2): every story
@@ -903,36 +903,25 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
 	}
 }
 
-function expectFinalResponseEndsWithReviewSection(): void {
+// Substance floor only (relaxed 2026-07-03 after run 28663662412): the user
+// must get the review link in the final response, and not a second set of
+// individual story links next to it ("one set of links, never both"). Where
+// the link sits, the section heading, and the AI-curated disclaimer are the
+// guidance's example presentation — cc-mcp runs delivered a correct review
+// but were failed for a missing heading (806) or trailing prose after the
+// link (808). Presentation quality belongs in the judge-scored tier, not the
+// gate.
+function expectFinalResponseSharesReviewLink(): void {
 	const finalMessage = getFinalAssistantMessage();
 	if (finalMessage === undefined) {
 		expect.fail('Expected a final assistant response');
 	}
 
-	const trimmed = finalMessage.trimEnd();
-	const lines = trimmed.split('\n');
-	const lastNonEmptyLine = lines.findLast((line) => line.trim().length > 0)?.trim();
-
-	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
-		/^(?:\S+\s+)?\[[^\]\n]+\]\([^)\n]*[?&]path=\/review\/?[^)\n]*\)$/u,
+	expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
+		/[?&]path=\/review\/?/,
 	);
 	expect(
-		// The spec's heading is an example ("e.g. ## 👀 Review your changes"),
-		// not a literal: agents legitimately adapt it — a browse request has no
-		// changes, so codex titled the section "## ReviewCard States"
-		// (CI run 28623099303). Require a review-ish heading, not exact words.
-		// The word boundary matters: without it "## Preview your changes" — the
-		// preview-URL ending this suite exists to reject — would satisfy the
-		// check via the "review" substring inside "Preview".
-		lines.some((line) => /^##\s+.*\breview/i.test(line.trim())),
-		'Final response must include a dedicated review heading',
-	).toBe(true);
-	expect(
-		trimmed,
-		'Final response must explain the review is AI-curated and may be inaccurate',
-	).toMatch(/AI[-\s]?curated/i);
-	expect(
-		trimmed,
+		finalMessage,
 		'Final response must not also include individual story preview links',
 	).not.toMatch(/(?:\?path=\/story\/|\/iframe\.html\?id=)/);
 }

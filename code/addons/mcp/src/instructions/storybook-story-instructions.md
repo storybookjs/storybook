@@ -3,6 +3,7 @@
 When writing UI, prefer breaking larger components up into smaller parts.
 
 ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component.
+{{DOCS_WORKFLOW_GUIDANCE}}
 
 ## How to write good stories
 

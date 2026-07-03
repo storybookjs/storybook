@@ -20,8 +20,23 @@ type BuildStorybookStoryInstructionsOptions = {
 	toolsets?: AddonContext['toolsets'];
 	a11yEnabled?: boolean;
 	addonVitestAvailable?: boolean;
+	/** Whether the documentation tools (list-all-documentation etc.) are registered. */
 	docsAvailable?: boolean;
 };
+
+/**
+ * Injected into the story instructions when the documentation toolset is
+ * available. This tool output is the one channel every agent reads before
+ * writing UI (on both the MCP and the CLI/plugin path) and is never
+ * truncated, so it must carry the docs-workflow trigger — the server
+ * instructions only have room for a terse pointer, and agents otherwise
+ * default to reading library sources out of node_modules.
+ */
+const docsWorkflowGuidance = `
+
+## Using library components
+
+This Storybook exposes component documentation tools. Before creating or changing any UI, call **list-all-documentation** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **get-documentation** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **list-all-documentation** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Never assume or invent props.`;
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,
@@ -165,9 +180,12 @@ export async function buildStorybookStoryInstructions(
 		? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
 		: `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
 
+	const docsToolsAvailable = (toolsets?.docs ?? true) && docsAvailable;
+
 	let uiInstructions = storyInstructionsTemplate
 		.replace('{{FRAMEWORK}}', framework)
 		.replace('{{RENDERER}}', renderer ?? framework)
+		.replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsToolsAvailable ? docsWorkflowGuidance : '')
 		.replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
 		.replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
 		.replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
@@ -188,21 +206,8 @@ export async function buildStorybookStoryInstructions(
 		}
 	}
 
-	// This tool is the source of truth for story work, so it must carry the
-	// docs steering too: agents that engage this workflow but skip the server
-	// instructions' Documentation Workflow (observed on both codex paths in
-	// eval 801) otherwise write design-system code straight from source or
-	// type definitions.
-	if (docsAvailable) {
-		uiInstructions += `\n\n${designSystemDocsInstructions}`;
-	}
-
 	return uiInstructions;
 }
-
-const designSystemDocsInstructions = `## Design-System Documentation
-
-Before creating or changing any UI, call **list-all-documentation** to see what the design system already provides — build on existing components and tokens instead of hand-rolling duplicates with ad-hoc styles. Then call **get-documentation** for each component you build on or get asked about; only use props documented there. Component source and type definitions are not verification, and this applies to answering props/usage questions too.`;
 
 // TODO: this is a stupid map to maintain and it's not complete, but we can't easily get the current renderer name
 const frameworkToRendererMap: Record<string, string> = {

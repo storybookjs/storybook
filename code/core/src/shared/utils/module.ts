@@ -57,15 +57,19 @@ function registerTypescriptLoader() {
   if (!typescriptLoaderRegistration) {
     typescriptLoaderRegistration = (async () => {
       // `registerHooks` avoids the DEP0205 deprecation warning that `register` emits on Node.js 26+,
-      // but it's only available from Node.js 22.15.0 onwards. Fall back to `register` on older Node
-      // versions, which Storybook still supports. `nodeModule.registerHooks` (rather than a named
-      // import) is required here: a named import of an export that doesn't exist on a given Node
-      // version throws a SyntaxError at module-load time, before this feature check ever runs.
-      // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
-      // the `register` fallback below, and switch back to a plain named `registerHooks` import.
-      // DIAGNOSTIC: `false &&` forces the `register()` fallback below, to check whether CI's
-      // react-docgen/tsconfig-paths crash is caused by `registerHooks()`. Revert before merging.
-      if (false && typeof nodeModule.registerHooks === 'function') {
+      // but we saw it crash Storybook's own CI on Node 22.22.1 (react-docgen/tsconfig-paths failing
+      // with `require.extensions` undefined - confirmed by bisecting to this call). Since the
+      // DEP0205 warning only fires on Node 26+ anyway, restrict `registerHooks` to that range so
+      // Node 22.x/24.x (where CI runs today) keep using the known-good `register` path.
+      // This is NOT verified safe on Node 26 either: nodejs/node#62786 documents a similar
+      // `require.extensions` regression from Node 24.15.0 onwards (which includes 26), and
+      // Storybook's CI does not yet test sandboxes/internal builds on Node 26. Revisit if it
+      // resurfaces there.
+      // `nodeModule.registerHooks` (rather than a named import) is required here: a named import of
+      // an export that doesn't exist on a given Node version throws a SyntaxError at module-load
+      // time, before this feature/version check ever runs.
+      const nodeMajorVersion = Number(process.versions.node.split('.')[0]);
+      if (nodeMajorVersion >= 26 && typeof nodeModule.registerHooks === 'function') {
         const { load } = await import('storybook/internal/bin/loader');
         nodeModule.registerHooks({ load });
       } else {

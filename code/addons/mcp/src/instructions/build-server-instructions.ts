@@ -1,4 +1,5 @@
 import devInstructions from './dev-instructions.md';
+import legacyDevInstructions from './legacy-dev-instructions.md';
 import testInstructions from './test-instructions.md';
 import { STORYBOOK_MCP_INSTRUCTIONS } from '@storybook/mcp';
 
@@ -37,40 +38,37 @@ export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
 export function buildServerInstructions(options: BuildServerInstructionsOptions): string {
 	const sections = ['Follow these workflows when working with UI and/or Storybook.'];
 
-	if (options.devEnabled) {
-		const changeDetection = options.changeDetectionEnabled ?? false;
-		const graphSupported = options.moduleGraphSupported ?? false;
-		const reviewEnabled = options.reviewEnabled ?? false;
-		// When display-review is available it is the terminal step for visual
-		// work, so the after-change step feeds the review instead of ending in
-		// preview URLs — a competing "call preview-stories after every change"
+	if (options.devEnabled && !(options.reviewEnabled ?? false)) {
+		// Review is off (the default): use the pre-review instruction text verbatim,
+		// as shipped in the latest release — the workflow we know works. The
+		// review-flavored text below is only exercised behind the `experimentalReview`
+		// feature flag while it is being iterated on.
+		sections.push(legacyDevInstructions.trim());
+	} else if (options.devEnabled) {
+		// Review is on. display-review is the terminal step for visual work, so
+		// the after-change step feeds the review instead of ending in preview
+		// URLs — a competing "call preview-stories after every change"
 		// instruction reads as an alternative ending and agents take it
 		// (observed on the Codex MCP path: change done, preview links shared,
 		// review never published).
-		const previewStoriesStep = reviewEnabled
-			? changeDetection
-				? 'After changing any component or story, call **get-changed-stories** to discover the new, modified, and related stories affected by your change.'
-				: graphSupported
-					? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them.'
-					: 'After changing any component or story, resolve the affected story IDs (see "Mapping any input to story IDs" below).'
-			: changeDetection
-				? 'After changing any component or story, call **get-changed-stories** to discover new/modified/related stories, then call **preview-stories** to retrieve preview URLs.'
-				: graphSupported
-					? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them, then call **preview-stories** to retrieve preview URLs.'
-					: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
+		const changeDetection = options.changeDetectionEnabled ?? false;
+		const graphSupported = options.moduleGraphSupported ?? false;
+		const previewStoriesStep = changeDetection
+			? 'After changing any component or story, call **get-changed-stories** to discover the new, modified, and related stories affected by your change.'
+			: graphSupported
+				? 'After changing any component or story, call **get-stories-by-component** with the absolute paths of the files you touched to find the stories that render them.'
+				: 'After changing any component or story, resolve the affected story IDs (see "Mapping any input to story IDs" below).';
 		// Final response shows one set of links, never both when display-review
 		// is available. Shared with the story-instructions output via
 		// getFinalLinksGuidance so the two can't drift apart.
-		const finalLinksStep = getFinalLinksGuidance(reviewEnabled);
+		const finalLinksStep = getFinalLinksGuidance(true);
 		sections.push(
 			devInstructions
 				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
 				.replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
-					reviewEnabled
-						? "\n- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Publishing that review is how you finish visual work; the change is not done without it. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. Every story you created in this change must appear in the review, including interaction/play-function stories; showing the stories you modified is encouraged too — curate by grouping, never by omission. Also call **display-review** whenever the user wants to see or browse stories/components rather than change them (e.g. \"show me all badge components\", \"what button variants do we have\") — resolve the matching story IDs and render them as collections, passing `changedFiles: []` since no code changed. The Storybook serving these tools is already running — a successful tool call proves it. Never start another Storybook to view the review: no `storybook dev`, no run/launch task, no editing a launch config, no new port. Reuse the running instance at the `reviewUrl`'s origin; if its port looks busy, that **is** the Storybook to reuse, not a conflict to route around. If the session has any browser-preview or navigate tool, open the returned `reviewUrl` in your preview browser yourself — don't just print the link, actually navigate to it so the review opens in your preview window. Separately, always show the `reviewUrl` to the user in your final response as well, even after you've opened it yourself — they need the link too. Call this tool again whenever the user iterates on the changes.\n- Use **preview-stories** only while iterating on a specific story or when the user asks for a direct link to one — never as the ending of visual work; the review is the ending."
-						: '',
+					"\n- After a UI change, call **display-review** to publish a curated review — but only when the change is expected to be visually observable. Publishing that review is how you finish visual work; the change is not done without it. Pure refactors with no rendering impact (type-only edits, internal renames, dead-code removal, comment/import reorg) don't need a review; skip the call, or publish a single small collection and note in the description that no visible change is expected. When you're unsure whether a refactor has visual side-effects, publish the review and say so. Every story you created in this change must appear in the review, including interaction/play-function stories; showing the stories you modified is encouraged too — curate by grouping, never by omission. Also call **display-review** whenever the user wants to see or browse stories/components rather than change them (e.g. \"show me all badge components\", \"what button variants do we have\") — resolve the matching story IDs and render them as collections, passing `changedFiles: []` since no code changed. The Storybook serving these tools is already running — a successful tool call proves it. Never start another Storybook to view the review: no `storybook dev`, no run/launch task, no editing a launch config, no new port. Reuse the running instance at the `reviewUrl`'s origin; if its port looks busy, that **is** the Storybook to reuse, not a conflict to route around. If the session has any browser-preview or navigate tool, open the returned `reviewUrl` in your preview browser yourself — don't just print the link, actually navigate to it so the review opens in your preview window. Separately, always show the `reviewUrl` to the user in your final response as well, even after you've opened it yourself — they need the link too. Call this tool again whenever the user iterates on the changes.\n- Use **preview-stories** only while iterating on a specific story or when the user asks for a direct link to one — never as the ending of visual work; the review is the ending.",
 				)
 				.trim(),
 		);

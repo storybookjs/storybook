@@ -27,11 +27,14 @@ const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
 type AgentContext = {
 	agent?: unknown;
 	integration?: unknown;
+	review?: unknown;
 };
 
 type EvalContext = {
 	agent: string;
 	integration: 'mcp' | 'plugin';
+	/** Whether the sandbox Storybook runs with the `experimentalReview` feature flag on. */
+	review: boolean;
 };
 
 type AgentEvalResults = {
@@ -69,7 +72,16 @@ export function getEvalContext(): EvalContext {
 		);
 	}
 
-	return { agent, integration };
+	return { agent, integration, review: agentContext.review === true };
+}
+
+// Review mode of this run: EVAL_REVIEW=1 (the ci:review PR label) enables the
+// opt-in `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
+// files branch on this — with review on, visual work must end in a published
+// display-review; with review off (the default), display-review is not even
+// registered and the workflow ends in preview-stories links.
+export function isReviewEnabled(): boolean {
+	return getEvalContext().review;
 }
 
 export function getTranscript(agent = getEvalContext().agent): Transcript {
@@ -138,6 +150,53 @@ export function expectDisplayReviewForVisualChange(): void {
 
 	expectValidDisplayReviewPayload(displayReview.input);
 	expectFinalResponseEndsWithReviewSection();
+}
+
+// Review-off counterpart of expectDisplayReviewForVisualChange (review is
+// opt-in via the `experimentalReview` flag, so this is the default path):
+// display-review is not registered, so visual work ends in preview-stories
+// and the final response shares the preview URLs, per the legacy dev
+// instructions ("Always include every returned preview URL...") and the
+// review-off story instructions. `covering` requires each substring to appear
+// in some preview-stories story input (storyId, exportName, or story path);
+// `coveringAnyOf` requires at least one of the substrings instead.
+export function expectPreviewStoriesWithFinalLinks(options?: {
+	covering?: string[];
+	coveringAnyOf?: string[];
+}): void {
+	expectWorkflowCalls(['preview-stories']);
+
+	const storyInputs = getWorkflowCalls('preview-stories').flatMap((call) =>
+		getStoryInputs(call.input),
+	);
+	const inputCovers = (substring: string) =>
+		storyInputs.some((input) =>
+			JSON.stringify(input).toLowerCase().includes(substring.toLowerCase()),
+		);
+
+	for (const substring of options?.covering ?? []) {
+		expect(
+			inputCovers(substring),
+			`Expected a preview-stories story input covering "${substring}". Received: ${JSON.stringify(storyInputs)}`,
+		).toBe(true);
+	}
+
+	const anyOf = options?.coveringAnyOf ?? [];
+	if (anyOf.length > 0) {
+		expect(
+			anyOf.some(inputCovers),
+			`Expected a preview-stories story input covering one of ${JSON.stringify(anyOf)}. Received: ${JSON.stringify(storyInputs)}`,
+		).toBe(true);
+	}
+
+	const finalMessage = getFinalAssistantMessage() ?? '';
+	expect(finalMessage, 'Final response must include a story preview link').toMatch(
+		/(?:\?path=\/story\/|\/iframe\.html\?id=)/,
+	);
+	expect(
+		finalMessage,
+		'Final response must not link to the Storybook review page when review is disabled',
+	).not.toMatch(/[?&]path=\/review\//);
 }
 
 // Trigger correctness (Agentic Review Eval instructions §6a.1): a pure

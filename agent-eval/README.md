@@ -93,11 +93,21 @@ regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 pnpm eval
 ```
 
-In CI, the `ci:extra-evals`, `ci:extra-models`, and `ci:storybook-latest` PR
-labels set the matching flag on labeled `ci:eval` runs, and manual
-`workflow_dispatch` runs of the `Agent eval` workflow can enable them through
-the `extra_evals`, `extra_models`, and `storybook_latest` inputs, or target
-specific evals through the `eval_only` input.
+The review workflow is opt-in: the `experimentalReview` feature flag defaults
+to off, so default runs assert the review-off workflow (preview-stories links,
+no display-review). Set `EVAL_REVIEW=1` to enable the flag in every sandbox
+Storybook and flip the EVAL.ts assertions to the review workflow instead
+(display-review published, review section in the final response):
+
+```bash
+EVAL_REVIEW=1 pnpm eval
+```
+
+In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
+`ci:review` PR labels set the matching flag on labeled `ci:eval` runs, and
+manual `workflow_dispatch` runs of the `Agent eval` workflow can enable them
+through the `extra_evals`, `extra_models`, `storybook_latest`, and `review`
+inputs, or target specific evals through the `eval_only` input.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static

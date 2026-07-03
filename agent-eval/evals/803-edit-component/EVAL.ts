@@ -2,6 +2,7 @@ import { test } from 'vitest';
 import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectPreviewStoriesWithFinalLinks,
 	expectSkillInvoked,
 	getEvalContext,
 	expectStoryDiscoveryBeforeReview,
@@ -9,6 +10,7 @@ import {
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
+	isReviewEnabled,
 } from '#test-utils';
 
 // The fixture ships ReviewCard with existing stories, so this exercises the
@@ -16,20 +18,33 @@ import {
 // Note: expectAllStoryExportsInDisplayReview assumes the project starts
 // without story files, so it cannot be used here.
 
-test('uses Storybook story instructions and publishes a display review', () => {
+// With the `experimentalReview` flag on (the ci:review label), visual work
+// must end in a published display-review; with it off (the default),
+// display-review is not registered and the workflow ends in preview links.
+const review = isReviewEnabled();
+
+test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
 });
 
-test('the review covers the edited ReviewCard component', () => {
+test.runIf(review)('the review covers the edited ReviewCard component', () => {
 	expectStoryIdsInDisplayReview(['reviewcard']);
+});
+
+test.runIf(!review)('uses Storybook story instructions and previews the edited component', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions']);
+	expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
 });
 
 // Required workflow step (dev instructions "Mapping any input to story IDs"):
 // story IDs in the review must come from a discovery tool, not from guessing.
-test('discovers stories through the workflow tools before publishing the review', () => {
-	expectStoryDiscoveryBeforeReview();
-});
+test.runIf(review)(
+	'discovers stories through the workflow tools before publishing the review',
+	() => {
+		expectStoryDiscoveryBeforeReview();
+	},
+);
 
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story

@@ -283,8 +283,9 @@ describe('getUIBuildingInstructionsTool', () => {
 			presets: {
 				apply: vi.fn(async (presetName: string) => {
 					if (presetName === 'framework') return '@storybook/react-vite';
-					// Review is gated solely on changeDetection, so a disabled review
-					// means the flag is off — keep the preset consistent with the mock above.
+					// Review is opt-in via experimentalReview (on top of changeDetection),
+					// so a disabled review means the flag is off — keep the preset
+					// consistent with the mock above.
 					if (presetName === 'features') return { changeDetection: false };
 					return undefined;
 				}),

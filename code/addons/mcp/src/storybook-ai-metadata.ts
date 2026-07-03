@@ -45,7 +45,7 @@ export async function buildStorybookAiMetadata(
 	});
 	const toolsets = addonOptions.toolsets;
 	const features = (await options.presets.apply('features', {})) as
-		| { changeDetection?: boolean }
+		| { changeDetection?: boolean; experimentalReview?: boolean }
 		| undefined;
 	const devEnabled = toolsets?.dev ?? true;
 	const moduleGraphSupported = await isModuleGraphSupportedByBuilder(options);

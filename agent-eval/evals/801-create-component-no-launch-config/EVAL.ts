@@ -5,37 +5,55 @@ import {
 	expectAllStoryExportsInDisplayReview,
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectPreviewStoriesWithFinalLinks,
 	expectSkillInvoked,
 	getEvalContext,
 	expectStoryDiscoveryBeforeReview,
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
+	isReviewEnabled,
 } from '#test-utils';
 
-// TODO: Re-enable once the guidance reliably steers agents to the documentation
-// tools. The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components, and the Documentation Workflow
-// instructions (MCP server instructions / `storybook ai --help`) already say to
-// call list-all-documentation at task start and never assume component props —
-// but agents ignore that and read node_modules/reshaped/dist/*.d.ts instead
-// (0/2 in the 2026-07-01T22-53 cc-mcp and cc-plugin runs). Likely fix: add a
-// documentation-first step to get-storybook-story-instructions, which agents
-// demonstrably treat as the source of truth.
-test.skip('uses the documentation tooling', () => {
+// The review branch of this run: with the `experimentalReview` feature flag on
+// (the ci:review label), visual work must end in a published display-review;
+// with it off (the default), display-review is not even registered and the
+// workflow ends in preview-stories links.
+const review = isReviewEnabled();
+
+// The template composes the Reshaped Storybook (refs in .storybook/main.ts)
+// so get-documentation can serve its components.
+// Review-on runs: TODO re-enable once the review-flavored guidance reliably
+// steers agents to the documentation tools — under those (truncated)
+// instructions agents read node_modules/reshaped/dist/*.d.ts instead (0/2 in
+// the 2026-07-01T22-53 cc-mcp and cc-plugin runs); the slimming is iterated
+// in #320.
+// Review-off runs (the default) assert this: the restored legacy
+// instructions — untruncated, with the CRITICAL never-hallucinate rule in
+// the Documentation Workflow — are the last known working state for
+// docs-tool usage, and restoring them is only proven by checking it.
+test.skipIf(review)('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 
-test('uses Storybook story instructions and publishes a display review', () => {
+test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
 });
 
+test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions']);
+	expectPreviewStoriesWithFinalLinks({ covering: ['toggleswitch'] });
+});
+
 // Required workflow step (dev instructions "Mapping any input to story IDs"):
 // story IDs in the review must come from a discovery tool, not from guessing.
-test('discovers stories through the workflow tools before publishing the review', () => {
-	expectStoryDiscoveryBeforeReview();
-});
+test.runIf(review)(
+	'discovers stories through the workflow tools before publishing the review',
+	() => {
+		expectStoryDiscoveryBeforeReview();
+	},
+);
 
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story
@@ -47,7 +65,7 @@ test('runs story tests after the change and finishes with them passing', () => {
 // Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent
 // created must always appear in the review; curation groups, it never omits.
 // The display-review hard rules and server instructions now state this.
-test('every new story appears in the display review', () => {
+test.runIf(review)('every new story appears in the display review', () => {
 	expectAllStoryExportsInDisplayReview();
 });
 

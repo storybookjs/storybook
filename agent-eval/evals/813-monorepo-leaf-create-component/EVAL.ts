@@ -25,7 +25,10 @@ import {
 // agents derail into `setup` + raw vitest and never discover display-review
 // (observed on both the Claude and Codex plugin paths in the 2026-07-02 runs;
 // recovery via `--help --config-dir packages/ui/.storybook` is a coin flip).
-// Re-enable by swapping test.todo back to test once #35359 lands.
+// Re-enable by swapping test.todo back to test once #35359 lands — and split
+// them on isReviewEnabled() like the other 8xx evals: the display-review
+// assertions only apply to review-on (ci:review) runs; review-off runs need
+// the expectPreviewStoriesWithFinalLinks counterpart instead (see 801/812).
 
 test('creates the component inside the leaf package', () => {
 	expect(

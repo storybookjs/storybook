@@ -14,11 +14,13 @@ import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
-// The description must not hedge about display-review: a hedged "when
-// available" clause let an agent that wrongly believed the review tool was
-// missing treat raw preview links as a sanctioned fallback. When review is
-// enabled we state its availability as fact; when it is disabled the tool is
-// not registered, so the description must not mention it at all.
+// With review enabled this is strictly a mid-loop tool: no "include the URLs
+// in your final response" default (that sanctioned preview links as the
+// ending of visual work) and no hedging about display-review's availability
+// (a hedged "when available" clause let an agent that wrongly believed the
+// review tool was missing treat raw links as a sanctioned fallback). When
+// review is disabled the tool is not registered, so the description must not
+// mention it at all.
 export function getPreviewStoriesToolDescription({
 	reviewEnabled = false,
 }: { reviewEnabled?: boolean } = {}): string {
@@ -27,9 +29,8 @@ export function getPreviewStoriesToolDescription({
 Include each returned preview URL in your final user-facing response so users can open them directly.`;
 	}
 
-	return `Use this tool to get one or more Storybook preview URLs.
-Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.
-The display-review tool is available in this session. When the user asked to see or browse existing stories or components (e.g. "show me all the Button variants"), publish a curated review with display-review (passing changedFiles: []) instead of answering with raw preview links; use this tool for verifying your own changes or sharing a specific story on request.`;
+	return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+Do not end visual work or browse requests with these links — publish a curated review with display-review instead (passing changedFiles: [] when no code changed) and link that.`;
 }
 
 export const PreviewStoriesInput = v.object({

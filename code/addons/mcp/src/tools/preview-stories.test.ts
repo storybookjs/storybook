@@ -876,11 +876,14 @@ describe('previewStoriesTool', () => {
 			expect(getPreviewStoriesToolDescription()).not.toContain('display-review');
 		});
 
-		it('states display-review availability as fact in the review-enabled description', () => {
+		it('frames the tool as mid-loop only in the review-enabled description', () => {
 			const description = getPreviewStoriesToolDescription({ reviewEnabled: true });
-			expect(description).toContain('The display-review tool is available in this session.');
+			expect(description).toContain('while iterating on a specific story');
+			expect(description).toContain('publish a curated review with display-review');
 			expect(description).toContain('changedFiles: []');
-			// No hedging: the availability clause must not be conditional.
+			// No "include the URLs in your final response" default and no hedged
+			// availability clause — both sanctioned preview links as an ending.
+			expect(description).not.toContain('final user-facing response');
 			expect(description).not.toMatch(/and the display-review tool is available/);
 		});
 	});

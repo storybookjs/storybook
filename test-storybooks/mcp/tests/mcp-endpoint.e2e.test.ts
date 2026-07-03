@@ -110,9 +110,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				        "resourceUri": "ui://preview-stories/preview.html",
 				      },
 				    },
-				    "description": "Use this tool to get one or more Storybook preview URLs.
-				Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.
-				The display-review tool is available in this session. When the user asked to see or browse existing stories or components (e.g. "show me all the Button variants"), publish a curated review with display-review (passing changedFiles: []) instead of answering with raw preview links; use this tool for verifying your own changes or sharing a specific story on request.",
+				    "description": "Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+				Do not end visual work or browse requests with these links — publish a curated review with display-review instead (passing changedFiles: [] when no code changed) and link that.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {

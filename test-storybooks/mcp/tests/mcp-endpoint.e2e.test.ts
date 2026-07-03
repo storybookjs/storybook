@@ -503,7 +503,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
 
 				## When to call
-				- **Trigger 1 — visual change** (UI, CSS, theme, i18n): when the user should spot-check rendering. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+				- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
 				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
 
 				## Hard rules

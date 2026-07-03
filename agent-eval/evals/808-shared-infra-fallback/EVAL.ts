@@ -95,24 +95,16 @@ test.runIf(review)(
 
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story
-// tests are failing.
-// Review-on runs, accepted known failure — MCP-path agents skip validation
-// for shared-token edits: the Validation Workflow section is lost to the
-// 2,048-char MCP server-instruction truncation that PR #320 addresses (0
-// run-story-tests calls in the 2026-07-02 cc-mcp QA run, while the same
-// fixture passes on cc-plugin and codex-plugin). Re-enable on the review-on
-// MCP path once #320 lands.
-// Review-off runs (the default) assert every integration: the Validation
-// Workflow and the run-story-tests description now cover shared-code changes
-// explicitly ("shell-level checks like typecheck or lint do not replace
-// this"), addressing the codex-mcp shell-only verification seen in the
-// 2026-07-03 runs 28659851504 and 28660377980.
-test.skipIf(isReviewEnabled() && getEvalContext().integration === 'mcp')(
-	'runs story tests after the change and finishes with them passing',
-	() => {
-		expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
-	},
-);
+// tests are failing. Asserted on every integration in both review modes:
+// the review-on MCP path used to be gated on the 2,048-char server-
+// instruction truncation eating the Validation Workflow (0 run-story-tests
+// calls in the 2026-07-02 cc-mcp QA run), but the run-story-tests
+// description now carries the trigger ("after editing anything that changes
+// how the UI looks... typecheck or lint do not replace this") and tool
+// descriptions survive client truncation.
+test('runs story tests after the change and finishes with them passing', () => {
+	expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+});
 
 // The plugin path must engage the stories skill (Claude: via the Skill tool;
 // Codex: by reading its SKILL.md). Skipped on the MCP integration, where no

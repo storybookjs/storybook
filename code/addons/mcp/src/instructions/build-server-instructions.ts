@@ -40,7 +40,15 @@ export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
 }
 
 export function buildServerInstructions(options: BuildServerInstructionsOptions): string {
-	const sections = ['Follow these workflows when working with UI and/or Storybook.'];
+	// The docs-question rule lives in the very first line: agents (observed on
+	// Claude Code) default to grepping component source for props/usage
+	// questions and never reach a rule that only appears further down in the
+	// Documentation Workflow section.
+	const sections = [
+		options.docsEnabled
+			? 'Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.'
+			: 'Follow these workflows when working with UI and/or Storybook.',
+	];
 	const reviewEnabled = options.reviewEnabled ?? false;
 
 	if (options.devEnabled && !reviewEnabled) {

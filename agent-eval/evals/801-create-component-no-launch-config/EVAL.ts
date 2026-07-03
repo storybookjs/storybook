@@ -22,14 +22,15 @@ import {
 const review = isReviewEnabled();
 
 // The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components. Asserted on every
-// experiment in both review modes: the cc configs are proven (legacy
-// instructions in the 2026-07-03 run 28660377980, slim review-on
-// instructions in the 2026-07-02 runs), and for codex — which skipped the
-// docs tools under both instruction shapes in run 28660377980 — the
-// get-documentation/list-all-documentation descriptions and the
-// design-system docs section in get-storybook-story-instructions (a tool
-// codex demonstrably reads) now carry the steering this verifies.
+// so get-documentation can serve its components.
+// Asserted on every experiment in both review modes. Agents used to skip the
+// docs tools (review-on: reading node_modules/reshaped/dist/*.d.ts under the
+// truncated instructions, 2026-07-01T22-53 runs; review-off: GPT-5.5 on both
+// integrations in the 2026-07-03 run 28660377980, storybookjs/mcp#315). The
+// get-documentation/list-all-documentation descriptions and the story-
+// instructions Design-System Documentation section now make discovery
+// unconditional for new UI work, and tool descriptions survive the client
+// truncation that motivated the review-on gate.
 test('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });

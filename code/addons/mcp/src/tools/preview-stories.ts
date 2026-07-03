@@ -13,9 +13,24 @@ import fs from 'node:fs/promises';
 import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
-export const PREVIEW_STORIES_TOOL_DESCRIPTION = `Use this tool to get one or more Storybook preview URLs.
+
+// The description must not hedge about display-review: a hedged "when
+// available" clause let an agent that wrongly believed the review tool was
+// missing treat raw preview links as a sanctioned fallback. When review is
+// enabled we state its availability as fact; when it is disabled the tool is
+// not registered, so the description must not mention it at all.
+export function getPreviewStoriesToolDescription({
+	reviewEnabled = false,
+}: { reviewEnabled?: boolean } = {}): string {
+	if (!reviewEnabled) {
+		return `Use this tool to get one or more Storybook preview URLs.
+Include each returned preview URL in your final user-facing response so users can open them directly.`;
+	}
+
+	return `Use this tool to get one or more Storybook preview URLs.
 Include each returned preview URL in your final user-facing response so users can open them directly — unless you're also publishing a curated review via display-review, in which case link the review page instead of listing individual URLs.
-When the user asked to see or browse existing stories or components (e.g. "show me all the Button variants") and the display-review tool is available, publish a curated review with display-review (passing changedFiles: []) instead of answering with raw preview links; use this tool for verifying your own changes or sharing a specific story on request.`;
+The display-review tool is available in this session. When the user asked to see or browse existing stories or components (e.g. "show me all the Button variants"), publish a curated review with display-review (passing changedFiles: []) instead of answering with raw preview links; use this tool for verifying your own changes or sharing a specific story on request.`;
+}
 
 export const PreviewStoriesInput = v.object({
 	stories: v.pipe(
@@ -53,11 +68,13 @@ export const PreviewStoriesOutput = v.object({
 export type PreviewStoriesInput = v.InferOutput<typeof PreviewStoriesInput>;
 export type PreviewStoriesOutput = v.InferOutput<typeof PreviewStoriesOutput>;
 
-export function getPreviewStoriesToolMetadata() {
+export function getPreviewStoriesToolMetadata({
+	reviewEnabled = false,
+}: { reviewEnabled?: boolean } = {}) {
 	return {
 		name: PREVIEW_STORIES_TOOL_NAME,
 		title: 'Get story preview URLs',
-		description: PREVIEW_STORIES_TOOL_DESCRIPTION,
+		description: getPreviewStoriesToolDescription({ reviewEnabled }),
 		schema: PreviewStoriesInput,
 		outputSchema: PreviewStoriesOutput,
 		_meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } },
@@ -68,6 +85,7 @@ export async function addPreviewStoriesTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ reviewEnabled = false }: { reviewEnabled?: boolean } = {},
 ) {
 	const previewStoryAppScript = await fs.readFile(
 		url.fileURLToPath(
@@ -113,7 +131,7 @@ export async function addPreviewStoriesTool(
 
 	server.tool(
 		{
-			...getPreviewStoriesToolMetadata(),
+			...getPreviewStoriesToolMetadata({ reviewEnabled }),
 			enabled,
 		},
 		async (input) => {
@@ -185,11 +203,27 @@ export async function addPreviewStoriesTool(
 					});
 				}
 
-				return {
-					content: textResult.map((text) => ({
+				const content: Array<{ type: 'text'; text: string }> = textResult.map((text) => ({
+					type: 'text',
+					text,
+				}));
+
+				// Recovery nudge for the review exit ramp: agents that skip
+				// display-review (observed: an agent wrongly claimed the tool was
+				// not exposed) end visual work on exactly this call, so the result
+				// itself must contradict that belief while there is still a step
+				// left to recover in. Only when at least one URL resolved — an
+				// all-error result has nothing to curate into a review.
+				const resolvedAnyStory = structuredResult.some((story) => 'previewUrl' in story);
+				if (reviewEnabled && resolvedAnyStory) {
+					content.push({
 						type: 'text',
-						text,
-					})),
+						text: `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The display-review tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **display-review** and link that instead.`,
+					});
+				}
+
+				return {
+					content,
 					structuredContent: {
 						stories: structuredResult,
 					},

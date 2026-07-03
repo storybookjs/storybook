@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { addPreviewStoriesTool } from './preview-stories.ts';
+import { addPreviewStoriesTool, getPreviewStoriesToolDescription } from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import monorepoStoryIndexFixture from '../../fixtures/monorepo-story-index.fixture.json' with { type: 'json' };
@@ -784,6 +784,104 @@ describe('previewStoriesTool', () => {
 					],
 				},
 			});
+		});
+	});
+
+	describe('review-enabled sessions', () => {
+		// Registers the tool on a fresh server with the review feature enabled,
+		// so the display-review recovery nudge paths can be exercised.
+		async function createReviewEnabledServer() {
+			const adapter = new ValibotJsonSchemaAdapter();
+			const reviewServer = new McpServer(
+				{
+					name: 'test-server-review',
+					version: '1.0.0',
+					description: 'Test server for preview-stories with review enabled',
+				},
+				{ adapter, capabilities: { tools: { listChanged: true } } },
+			).withContext<AddonContext>();
+
+			await reviewServer.receive(
+				{
+					jsonrpc: '2.0',
+					id: 1,
+					method: 'initialize',
+					params: {
+						protocolVersion: '2025-06-18',
+						capabilities: {},
+						clientInfo: { name: 'test', version: '1.0.0' },
+					},
+				},
+				{ sessionId: 'test-session' },
+			);
+
+			await addPreviewStoriesTool(reviewServer, undefined, { reviewEnabled: true });
+			return reviewServer;
+		}
+
+		async function callToolOn(
+			targetServer: McpServer<any, AddonContext>,
+			stories: Array<Record<string, unknown>>,
+		) {
+			return targetServer.receive(
+				{
+					jsonrpc: '2.0' as const,
+					id: 1,
+					method: 'tools/call',
+					params: { name: PREVIEW_STORIES_TOOL_NAME, arguments: { stories } },
+				},
+				{ sessionId: 'test-session', custom: testContext },
+			);
+		}
+
+		it('appends the display-review recovery nudge when review is enabled and a URL resolved', async () => {
+			const response = await callToolOn(await createReviewEnabledServer(), [
+				{ storyId: 'button--primary' },
+			]);
+
+			const texts = response.result?.content.map((block: { text: string }) => block.text);
+			expect(texts?.[0]).toBe('http://localhost:6006/?path=/story/button--primary');
+			expect(texts?.at(-1)).toContain('publish the review with **display-review**');
+			expect(texts?.at(-1)).toContain('available in this session');
+		});
+
+		it('omits the nudge when review is enabled but no story resolved to a URL', async () => {
+			const response = await callToolOn(await createReviewEnabledServer(), [
+				{ storyId: 'does-not--exist' },
+			]);
+
+			const texts = response.result?.content.map((block: { text: string }) => block.text);
+			expect(texts?.join('\n')).not.toContain('display-review');
+		});
+
+		it('omits the nudge and all display-review mentions when review is disabled', async () => {
+			// The default `server` from beforeEach registers the tool without
+			// reviewEnabled — display-review is not registered in such sessions,
+			// so neither the result nor the description may point at it.
+			const response = await server.receive(
+				{
+					jsonrpc: '2.0' as const,
+					id: 1,
+					method: 'tools/call',
+					params: {
+						name: PREVIEW_STORIES_TOOL_NAME,
+						arguments: { stories: [{ storyId: 'button--primary' }] },
+					},
+				},
+				{ sessionId: 'test-session', custom: testContext },
+			);
+
+			const texts = response.result?.content.map((block: { text: string }) => block.text);
+			expect(texts?.join('\n')).not.toContain('display-review');
+			expect(getPreviewStoriesToolDescription()).not.toContain('display-review');
+		});
+
+		it('states display-review availability as fact in the review-enabled description', () => {
+			const description = getPreviewStoriesToolDescription({ reviewEnabled: true });
+			expect(description).toContain('The display-review tool is available in this session.');
+			expect(description).toContain('changedFiles: []');
+			// No hedging: the availability clause must not be conditional.
+			expect(description).not.toMatch(/and the display-review tool is available/);
 		});
 	});
 

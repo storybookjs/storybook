@@ -126,9 +126,9 @@ function parseStorybookAiInvocation(
 	};
 }
 
-// Matches the shell binary of a `bash -c '…'`-style wrapper, with or without
-// a path prefix (`/bin/sh`, `/usr/bin/env` resolves the binary as a plain
-// token so `env bash -c` also lands here).
+// Matches the shell binary of a `bash -c '…'`-style wrapper, with or without a
+// path prefix (`/bin/sh`). `env bash -c` also works, but only because `bash`
+// itself is the token preceding `-c` — `env` is never matched.
 const SHELL_BINARY_PATTERN = /^(?:.*\/)?(?:sh|bash|zsh|dash|ksh)$/;
 
 function getNestedShellCommand(command: string): string | undefined {
@@ -140,7 +140,10 @@ function getNestedShellCommand(command: string): string | undefined {
 
 		// Only a `-c` that belongs to a shell binary wraps a nested command;
 		// `head -c 800`, `curl -c jar`, or `grep -c foo` must stay literal.
-		// Walk back over other flags so `bash -x -c '…'` still counts.
+		// Walk back over other dash flags so `bash -x -c '…'` still counts.
+		// Known limitation: a flag with a separate value argument (e.g.
+		// `bash -O extglob -c '…'`) stops the walk-back at the value and the
+		// wrapper is missed — accepted, agents have not been observed doing that.
 		let binaryIndex = index - 1;
 		while (binaryIndex >= 0 && tokens[binaryIndex]?.startsWith('-')) {
 			binaryIndex -= 1;

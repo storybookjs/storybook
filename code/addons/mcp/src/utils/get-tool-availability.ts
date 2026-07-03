@@ -10,7 +10,7 @@ export interface ToolAvailability {
 	moduleGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
-	/** The `changeDetection` feature flag is enabled. Gates `display-review`. */
+	/** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `display-review`. */
 	reviewEnabled: boolean;
 	/** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
 	docsEnabled: boolean;
@@ -31,7 +31,9 @@ export interface GetToolAvailabilityOptions {
 	 * Pre-resolved `features` preset. Pass it to avoid re-applying the preset and
 	 * risking a different snapshot than the caller already resolved.
 	 */
-	features?: (ManifestFeatures & { changeDetection?: boolean }) | undefined;
+	features?:
+		| (ManifestFeatures & { changeDetection?: boolean; experimentalReview?: boolean })
+		| undefined;
 	/**
 	 * Pre-resolved module-graph support. The live MCP server should omit this so it
 	 * probes the registered open service. Serverless metadata can pass a builder-level
@@ -79,7 +81,7 @@ export async function getToolAvailability(
 	const resolvedFeatures =
 		features ??
 		((await options.presets.apply('features', {})) as
-			| (ManifestFeatures & { changeDetection?: boolean })
+			| (ManifestFeatures & { changeDetection?: boolean; experimentalReview?: boolean })
 			| undefined);
 
 	const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =

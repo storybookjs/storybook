@@ -550,9 +550,25 @@ describe('mcpServerHandler', () => {
 		expect(toolNames).toContain('get-changed-stories');
 	});
 
-	it('registers display-review when the changeDetection feature flag is on', async () => {
+	it('registers display-review when the experimentalReview and changeDetection feature flags are on', async () => {
 		const mockOptions = createMockOptions({
 			port: 6010,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { changeDetection: true, experimentalReview: true };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6010);
+		expect(toolNames).toContain('display-review');
+	});
+
+	it('does not register display-review when only the changeDetection feature flag is on', async () => {
+		const mockOptions = createMockOptions({
+			port: 6013,
 			presets: {
 				apply: vi.fn(async (key: string, defaultValue?: any) => {
 					if (key === 'core') return { disableTelemetry: false };
@@ -562,8 +578,9 @@ describe('mcpServerHandler', () => {
 			},
 		});
 
-		const toolNames = await getRegisteredToolNames(mockOptions, 6010);
-		expect(toolNames).toContain('display-review');
+		const toolNames = await getRegisteredToolNames(mockOptions, 6013);
+		expect(toolNames).toContain('get-changed-stories');
+		expect(toolNames).not.toContain('display-review');
 	});
 });
 

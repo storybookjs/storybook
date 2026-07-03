@@ -31,7 +31,8 @@ export function getListAllDocumentationToolMetadata() {
 	return {
 		name: LIST_TOOL_NAME,
 		title: 'List All Documentation',
-		description: 'List all available UI components and documentation entries from the Storybook',
+		description:
+			'List all available UI components and documentation entries from the Storybook. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation.',
 		schema: ListAllDocumentationInput,
 	};
 }

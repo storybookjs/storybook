@@ -113,13 +113,17 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 				a11yAvailable: testToolsetAvailable && availability.a11yEnabled,
 			});
 		},
-		register: (server, _context, enabled) => addGetUIBuildingInstructionsTool(server, enabled),
+		register: (server, { availability, toolsets }, enabled) =>
+			addGetUIBuildingInstructionsTool(server, enabled, {
+				docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+			}),
 		getLocalTool: ({ availability, toolsets, options }) => ({
 			call: async () => {
 				const text = await buildStorybookStoryInstructions(options, {
 					toolsets,
 					a11yEnabled: availability.a11yEnabled,
 					addonVitestAvailable: availability.testSupported,
+					docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
 				});
 				return { content: [{ type: 'text', text }] };
 			},

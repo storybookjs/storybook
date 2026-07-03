@@ -20,12 +20,14 @@ type BuildStorybookStoryInstructionsOptions = {
 	toolsets?: AddonContext['toolsets'];
 	a11yEnabled?: boolean;
 	addonVitestAvailable?: boolean;
+	docsAvailable?: boolean;
 };
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ docsAvailable = false }: { docsAvailable?: boolean } = {},
 ) {
 	const addonVitestAvailable = !!(await getAddonVitestConstants());
 
@@ -64,6 +66,7 @@ export async function addGetUIBuildingInstructionsTool(
 					toolsets: server.ctx.custom?.toolsets,
 					a11yEnabled: server.ctx.custom?.a11yEnabled,
 					addonVitestAvailable,
+					docsAvailable,
 				});
 
 				return {
@@ -135,6 +138,7 @@ export async function buildStorybookStoryInstructions(
 		toolsets,
 		a11yEnabled = false,
 		addonVitestAvailable,
+		docsAvailable = false,
 	}: BuildStorybookStoryInstructionsOptions = {},
 ): Promise<string> {
 	const frameworkPreset = await options.presets.apply('framework');
@@ -184,8 +188,21 @@ export async function buildStorybookStoryInstructions(
 		}
 	}
 
+	// This tool is the source of truth for story work, so it must carry the
+	// docs steering too: agents that engage this workflow but skip the server
+	// instructions' Documentation Workflow (observed on both codex paths in
+	// eval 801) otherwise write design-system code straight from source or
+	// type definitions.
+	if (docsAvailable) {
+		uiInstructions += `\n\n${designSystemDocsInstructions}`;
+	}
+
 	return uiInstructions;
 }
+
+const designSystemDocsInstructions = `## Design-System Documentation
+
+Before creating or changing any UI, call **list-all-documentation** to see what the design system already provides — build on existing components and tokens instead of hand-rolling duplicates with ad-hoc styles. Then call **get-documentation** for each component you build on or get asked about; only use props documented there. Component source and type definitions are not verification, and this applies to answering props/usage questions too.`;
 
 // TODO: this is a stupid map to maintain and it's not complete, but we can't easily get the current renderer name
 const frameworkToRendererMap: Record<string, string> = {

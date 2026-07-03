@@ -45,18 +45,15 @@ test.runIf(review)('the review surfaces the consumer stories, not the token file
 // consumer. Any-of rather than both: the review-off instructions say to
 // preview "selected" storyIds from the discovery results, so surfacing one
 // consumer's stories is a legitimate selection.
-// Accepted known failure on codex-mcp: after a shared-token edit GPT-5.5
-// verifies via shell commands and never calls preview-stories — consistent
-// across the 2026-07-03 runs 28659851504 and 28660377980 (the only
-// review-off failures in both runs' codex-mcp lines).
-const codexMcp = getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp';
-
-test.runIf(!review && !codexMcp)(
-	'previews the consumer stories for the visual token change',
-	() => {
-		expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
-	},
-);
+// GPT-5.5 on the MCP path used to verify shared-token edits via shell only
+// (2026-07-03 runs 28659851504 and 28660377980) because the review-off
+// instructions triggered preview-stories only "after changing any component
+// or story" — a token file is literally neither. The instructions and the
+// preview-stories description now cover shared code and say to preview the
+// consumers' stories; this asserts that on every experiment.
+test.runIf(!review)('previews the consumer stories for the visual token change', () => {
+	expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
+});
 
 test.runIf(review)(
 	'discovers stories through the workflow tools before publishing the review',
@@ -98,21 +95,14 @@ test.runIf(review)(
 
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story
-// tests are failing.
-// Review-on runs, accepted known failure — MCP-path agents skip validation
-// for shared-token edits: the Validation Workflow section is lost to the
-// 2,048-char MCP server-instruction truncation that PR #320 addresses (0
-// run-story-tests calls in the 2026-07-02 cc-mcp QA run, while the same
-// fixture passes on cc-plugin and codex-plugin). Re-enable on the review-on
-// MCP path once #320 lands.
-// Review-off runs (the default) assert this where it demonstrably works: the
-// restored legacy instructions fit under the truncation limit and cc-mcp
-// passed in the 2026-07-03 run 28660377980. Accepted known failure on
-// codex-mcp, which still verified via shell only in that same run.
-test.skipIf(
-	(isReviewEnabled() || getEvalContext().agent === 'codex') &&
-		getEvalContext().integration === 'mcp',
-)('runs story tests after the change and finishes with them passing', () => {
+// tests are failing. Asserted on every integration in both review modes:
+// the review-on MCP path used to be gated on the 2,048-char server-
+// instruction truncation eating the Validation Workflow (0 run-story-tests
+// calls in the 2026-07-02 cc-mcp QA run), but the run-story-tests
+// description now carries the trigger ("after editing anything that changes
+// how the UI looks... typecheck or lint do not replace this") and tool
+// descriptions survive client truncation.
+test('runs story tests after the change and finishes with them passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
 });
 

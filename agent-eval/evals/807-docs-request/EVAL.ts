@@ -6,23 +6,24 @@ import { expectFinalResponseContains, expectWorkflowCalls, getEvalContext } from
 // Storybook index (list-all-documentation for IDs, get-documentation for
 // props and usage), not by grepping component source and guessing.
 
-// Accepted known failure — MCP-path agents bypass the docs tools regardless
-// of instruction shape: 0/2 on cc-mcp and codex-mcp under the review-on
-// instructions (2026-07-02 full-grid run), and still
-// 0/2 under the restored untruncated legacy instructions with the CRITICAL
-// never-hallucinate rule (2026-07-03 run 28660377980: both answered from
-// grep/file reads; codex even called list-all-documentation and
-// get-documentation-for-story but never get-documentation). Truncation was
-// therefore not the cause — MCP docs steering needs its own fix. Gated to
-// the plugin integration in both review modes.
-const { integration } = getEvalContext();
+// Accepted known failure on the Claude Code MCP path: Claude answers the
+// props question with `find` + Read on the component source and never calls
+// any MCP tool — 0/4 fresh runs on 2026-07-03 (CI run 28660377980 plus three
+// local rounds), even after the docs-question rule became the literal first
+// sentence of the served server instructions (verified in the failing run's
+// .storybook/mcp-debug snapshot) and the list-all-documentation /
+// get-documentation descriptions carried the same rule. Instruction wording
+// is exhausted; this is a Claude Code behavior gap on question-shaped tasks,
+// not a steering bug — codex-mcp follows the same channels and passes, and
+// the plugin path passes via the stories skill. Re-enable when a product
+// mechanism (skill-equivalent steering or tool forcing for docs questions on
+// the MCP path) exists to route Claude Code question tasks into the tools.
+const { agent, integration } = getEvalContext();
+const claudeCodeMcp = agent === 'claude-code' && integration === 'mcp';
 
-test.skipIf(integration === 'mcp')(
-	'uses the documentation tooling to resolve props and usage',
-	() => {
-		expectWorkflowCalls(['list-all-documentation', 'get-documentation']);
-	},
-);
+test.skipIf(claudeCodeMcp)('uses the documentation tooling to resolve props and usage', () => {
+	expectWorkflowCalls(['list-all-documentation', 'get-documentation']);
+});
 
 // The fixture component has exactly these three props; a grounded answer
 // names all of them.

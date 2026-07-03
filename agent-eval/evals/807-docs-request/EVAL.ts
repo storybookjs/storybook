@@ -18,8 +18,8 @@ import { expectFinalResponseContains, expectWorkflowCalls, getEvalContext } from
 // the plugin path passes via the stories skill. Re-enable when a product
 // mechanism (skill-equivalent steering or tool forcing for docs questions on
 // the MCP path) exists to route Claude Code question tasks into the tools.
-const claudeCodeMcp =
-	getEvalContext().agent === 'claude-code' && getEvalContext().integration === 'mcp';
+const { agent, integration } = getEvalContext();
+const claudeCodeMcp = agent === 'claude-code' && integration === 'mcp';
 
 test.skipIf(claudeCodeMcp)('uses the documentation tooling to resolve props and usage', () => {
 	expectWorkflowCalls(['list-all-documentation', 'get-documentation']);

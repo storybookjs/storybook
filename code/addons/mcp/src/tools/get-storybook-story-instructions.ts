@@ -144,12 +144,13 @@ export async function buildStorybookStoryInstructions(
 	const reviewEnabled = reviewStatus.available;
 	const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 	const renderer = frameworkToRendererMap[framework!];
-	// Mirrors the Mode A rewrite in build-server-instructions.ts: discovery
-	// feeds the review, not the preview list. This tool's output is the only
-	// workflow guidance plugin-path agents receive (they never see the MCP
-	// server instructions), so the story-ID discipline must be stated here —
-	// agents were observed constructing IDs from file names and publishing
-	// reviews without any discovery call.
+	// Mirrors the review-aware rewrite in build-server-instructions.ts:
+	// discovery feeds the review, not the preview list. Plugin-path agents
+	// never see the MCP server instructions — they get their workflow guidance
+	// from the `storybook ai` CLI help text and from this tool — so the
+	// story-ID discipline must be stated here too: agents were observed
+	// constructing IDs from file names and publishing reviews without any
+	// discovery call while this line still routed discovery into previews.
 	const storyLinkingWorkflow = changeDetectionEnabled
 		? reviewEnabled
 			? `After changing any component or story, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as get-stories-by-component for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **display-review** when the change is visually observable; use \`${PREVIEW_STORIES_TOOL_NAME}\` only while iterating on a specific story.`

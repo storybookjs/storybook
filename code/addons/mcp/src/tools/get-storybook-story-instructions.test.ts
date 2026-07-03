@@ -263,10 +263,10 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).not.toContain('present links in this order');
 
 		// The story-linking workflow must route discovery into the review, not
-		// the preview list, and forbid hand-constructed story IDs — plugin
-		// agents get no other statement of this discipline (they never see the
-		// MCP server instructions) and were observed publishing reviews with
-		// IDs derived from file names.
+		// the preview list, and forbid hand-constructed story IDs. Plugin
+		// agents rely on the CLI help text and this tool for workflow guidance
+		// (they never see the MCP server instructions) and were observed
+		// publishing reviews with IDs derived from file names.
 		expect(instructions).toContain('Story IDs must come from that call');
 		expect(instructions).toContain('never construct them from file names');
 		expect(instructions).toContain('Feed the discovered IDs into **display-review**');

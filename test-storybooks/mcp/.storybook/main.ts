@@ -30,6 +30,8 @@ const config = defineMain({
 	},
 	features: {
 		changeDetection: true,
+		// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag
+		experimentalReview: true,
 		experimentalComponentsManifest: true,
 	},
 	// No refs - single source mode

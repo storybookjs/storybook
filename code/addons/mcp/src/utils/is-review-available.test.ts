@@ -5,10 +5,12 @@ import { getReviewStatus } from './is-review-available.ts';
 
 function createMockOptions({
 	changeDetection = false,
+	experimentalReview = false,
 	hasFeaturesObject = true,
 	configDir = '/project/.storybook',
 }: {
 	changeDetection?: boolean;
+	experimentalReview?: boolean;
 	hasFeaturesObject?: boolean;
 	configDir?: string;
 } = {}): Options {
@@ -17,7 +19,7 @@ function createMockOptions({
 		presets: {
 			apply: vi.fn(async (key: string) => {
 				if (key === 'features') {
-					return hasFeaturesObject ? { changeDetection } : {};
+					return hasFeaturesObject ? { changeDetection, experimentalReview } : {};
 				}
 				return undefined;
 			}),
@@ -26,16 +28,24 @@ function createMockOptions({
 }
 
 describe('getReviewStatus', () => {
-	it('returns available when change detection is on', async () => {
-		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
+	it('returns available when both experimentalReview and changeDetection are on', async () => {
+		const result = await getReviewStatus(
+			createMockOptions({ changeDetection: true, experimentalReview: true }),
+		);
 
 		expect(result).toEqual({ available: true, hasFeatureFlag: true });
 	});
 
-	it('returns hasFeatureFlag=false when changeDetection is disabled', async () => {
-		const result = await getReviewStatus(createMockOptions({ changeDetection: false }));
+	it('is unavailable by default when only changeDetection is on', async () => {
+		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
 
 		expect(result).toEqual({ available: false, hasFeatureFlag: false });
+	});
+
+	it('is unavailable when experimentalReview is on but changeDetection is off', async () => {
+		const result = await getReviewStatus(createMockOptions({ experimentalReview: true }));
+
+		expect(result).toEqual({ available: false, hasFeatureFlag: true });
 	});
 
 	it('returns hasFeatureFlag=false when features object is missing the flag', async () => {
@@ -45,13 +55,12 @@ describe('getReviewStatus', () => {
 	});
 
 	it('uses pre-resolved features when provided and skips presets.apply', async () => {
-		const mockOptions = createMockOptions({ changeDetection: false });
-		// Pass features explicitly with changeDetection=true; the mock's
-		// `presets.apply` would return changeDetection=false if asked, so a
-		// `true` result here proves we used the provided value and didn't
-		// re-resolve.
+		const mockOptions = createMockOptions({ changeDetection: false, experimentalReview: false });
+		// Pass features explicitly with both flags on; the mock's `presets.apply`
+		// would return them as off if asked, so an `available: true` result here
+		// proves we used the provided value and didn't re-resolve.
 		const result = await getReviewStatus(mockOptions, {
-			features: { changeDetection: true },
+			features: { changeDetection: true, experimentalReview: true },
 		});
 
 		expect(result).toEqual({ available: true, hasFeatureFlag: true });

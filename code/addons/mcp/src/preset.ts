@@ -182,8 +182,9 @@ export const experimental_devServer: PresetPropertyFn<
 
 		// `get-stories-by-component`, `get-changed-stories`, and `display-review` are gated
 		// independently of the `dev` toolset — `get-stories-by-component` needs the dependency
-		// graph, while `get-changed-stories` and `display-review` both need the `changeDetection`
-		// feature flag — so each shows its own badge.
+		// graph, `get-changed-stories` needs the `changeDetection` feature flag, and
+		// `display-review` additionally needs the opt-in `experimentalReview` feature flag —
+		// so each shows its own badge.
 		// When the whole `dev` toolset is turned off via addon options every dev tool is
 		// disabled regardless of its own gate, so explain that instead of the per-tool reasons.
 		const devNoticeLines = !isDevEnabled
@@ -194,7 +195,7 @@ export const experimental_devServer: PresetPropertyFn<
 					!changeDetectionEnabled &&
 						`<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
 					!reviewEnabled &&
-						`<code>display-review</code> requires the <code>changeDetection</code> feature flag.`,
+						`<code>display-review</code> requires the <code>experimentalReview</code> feature flag (on top of <code>changeDetection</code>).`,
 				].filter(Boolean);
 		const devNotice = devNoticeLines.length
 			? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`

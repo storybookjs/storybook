@@ -52,22 +52,22 @@ describe('buildServerInstructions', () => {
 			- After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.
 			- End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.
 			- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so rather than fabricating IDs.
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so.
 
 			## Validation Workflow
 
-			- After each component or story change, run **run-story-tests**; focused runs while iterating, a broad pass before final handoff.
+			- After each component or story change, run **run-story-tests**.
 			- Never report completion while story tests are failing.
 
 			## Documentation Workflow
 
-			Never assume component props, variants, or API shape, and don't read a library's sources or types out of node_modules to learn a component — retrieve its documentation instead; never invent what isn't documented.
+			**CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries, never read a component's types out of node_modules; retrieve its documentation instead.
 
-			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
+			1. Call **list-all-documentation** once at task start to discover component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
 			3. Call **get-documentation-for-story** for more examples from a specific story variant.
 
-			Only reference IDs returned by these tools — never guess IDs."
+			Only reference IDs returned by these tools — never guess; scope multi-source requests with \`storybookId\`."
 		`);
 	});
 
@@ -89,46 +89,56 @@ describe('buildServerInstructions', () => {
 			- After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.
 			- End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.
 			- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
+			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so."
 		`);
 	});
 
-	it('omits get-changed-stories step when change detection is disabled', () => {
+	it('uses the legacy (pre-review) dev instructions when review is disabled', () => {
 		const instructions = buildServerInstructions({
 			devEnabled: true,
 			testEnabled: false,
 			docsEnabled: false,
-			changeDetectionEnabled: false,
+			changeDetectionEnabled: true,
 		});
 
+		// This must stay byte-identical to the dev section of the latest release —
+		// with `experimentalReview` off (the default) users get the instruction
+		// text we know works, while the review-flavored text is iterated on
+		// behind the flag.
 		expect(instructions).toMatchInlineSnapshot(`
 			"Follow these workflows when working with UI and/or Storybook.
 
 			## UI Building and Story Writing Workflow
 
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
-			- After changing any component or story, call **preview-stories** to retrieve preview URLs.
-			- In your final user-facing response, include every returned preview URL so the user can verify the visual result.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
+			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
+			- Treat that tool's output as the source of truth for framework-specific imports, story patterns, and testing conventions.
+			- After changing any component or story, call **preview-stories**.
+			- Always include every returned preview URL in your user-facing response so the user can verify the visual result."
 		`);
 	});
 
-	it('falls back to get-stories-by-component when change detection is off but the dependency graph is available', () => {
-		const instructions = buildServerInstructions({
+	it('legacy dev instructions ignore the change-detection and module-graph flags', () => {
+		const legacy = buildServerInstructions({
 			devEnabled: true,
 			testEnabled: false,
 			docsEnabled: false,
-			changeDetectionEnabled: false,
-			moduleGraphSupported: true,
 		});
 
-		// The status-store-driven get-changed-stories isn't registered, but the reverse
-		// dependency graph is — so the workflow should route the agent through
-		// get-stories-by-component rather than the bare preview-stories line.
-		expect(instructions).toContain(
-			'- After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.',
-		);
-		expect(instructions).not.toContain('call **get-changed-stories**');
+		for (const flags of [
+			{ changeDetectionEnabled: true },
+			{ changeDetectionEnabled: false, moduleGraphSupported: true },
+			{ changeDetectionEnabled: true, moduleGraphSupported: true },
+		]) {
+			expect(
+				buildServerInstructions({
+					devEnabled: true,
+					testEnabled: false,
+					docsEnabled: false,
+					reviewEnabled: false,
+					...flags,
+				}),
+			).toBe(legacy);
+		}
 	});
 
 	it('feeds get-stories-by-component into the review when only the dependency graph is available', () => {
@@ -166,25 +176,31 @@ describe('buildServerInstructions', () => {
 		expect(instructions).not.toContain('call **preview-stories** to retrieve preview URLs');
 	});
 
-	it('omits display-review step when reviewEnabled is false even with change detection on', () => {
+	it('keeps the default (review off) instructions under the 2,048-char client truncation limit', () => {
 		const instructions = buildServerInstructions({
 			devEnabled: true,
-			testEnabled: false,
+			testEnabled: true,
+			docsEnabled: true,
+			changeDetectionEnabled: true,
+			reviewEnabled: false,
+		});
+
+		// Some MCP clients truncate server instructions at 2,048 characters; the
+		// default instruction set must always fit so nothing gets cut off.
+		expect(instructions.length).toBeLessThanOrEqual(2048);
+	});
+
+	it('does not mention review or discovery tooling anywhere when review is disabled', () => {
+		const instructions = buildServerInstructions({
+			devEnabled: true,
+			testEnabled: true,
 			docsEnabled: false,
 			changeDetectionEnabled: true,
 			reviewEnabled: false,
 		});
 
-		expect(instructions).toMatchInlineSnapshot(`
-			"Follow these workflows when working with UI and/or Storybook.
-
-			## UI Building and Story Writing Workflow
-
-			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.
-			- In your final user-facing response, include every returned preview URL so the user can verify the visual result.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so rather than fabricating IDs."
-		`);
+		expect(instructions).not.toContain('display-review');
+		expect(instructions).not.toContain('Mapping any input to story IDs');
 	});
 
 	it('builds a coherent instruction set for docs only', () => {
@@ -199,13 +215,18 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			Never assume component props, variants, or API shape, and don't read a library's sources or types out of node_modules to learn a component — retrieve its documentation instead; never invent what isn't documented.
+			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it and check back with the user.
 
-			1. Call **list-all-documentation** once at the start of the task to discover component and docs IDs.
-			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
-			3. Call **get-documentation-for-story** for more examples from a specific story variant.
+			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
+			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
+			3. Call **get-documentation-for-story** when you need additional docs from a specific story variant that was not included in the initial component documentation.
 
-			Only reference IDs returned by these tools — never guess IDs."
+			Only use properties explicitly documented or shown in example stories — story names may not reflect property names. Only reference IDs returned by these tools; do not guess IDs.
+
+			## Multi-Source Requests
+
+			- When multiple Storybook sources are configured, **list-all-documentation** returns entries from all sources.
+			- Use \`storybookId\` in **get-documentation** when you need to scope a request to one source."
 		`);
 	});
 
@@ -221,8 +242,9 @@ describe('buildServerInstructions', () => {
 
 			## Validation Workflow
 
-			- After each component or story change, run **run-story-tests**; focused runs while iterating, a broad pass before final handoff.
-			- Never report completion while story tests are failing."
+			- After each component or story change, run **run-story-tests**.
+			- Use focused runs while iterating, then run a broad pass before final handoff when scope is unclear or wide.
+			- Fix failing tests before reporting success. Do not report completion while story tests are failing."
 		`);
 	});
 

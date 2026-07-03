@@ -6,7 +6,7 @@ export type ReviewStatus = {
 };
 
 export interface GetReviewStatusOptions {
-	features?: { changeDetection?: boolean } | undefined;
+	features?: { changeDetection?: boolean; experimentalReview?: boolean } | undefined;
 }
 
 export const getReviewStatus = async (
@@ -15,11 +15,15 @@ export const getReviewStatus = async (
 ): Promise<ReviewStatus> => {
 	const resolvedFeatures =
 		features ??
-		((await options.presets.apply('features', {})) as { changeDetection?: boolean } | undefined);
-	const hasFeatureFlag = !!resolvedFeatures?.changeDetection;
+		((await options.presets.apply('features', {})) as
+			| { changeDetection?: boolean; experimentalReview?: boolean }
+			| undefined);
+	const hasFeatureFlag = !!resolvedFeatures?.experimentalReview;
 
 	return {
-		available: hasFeatureFlag,
+		// Review is opt-in via `experimentalReview` and builds on the
+		// change-detection pipeline, so it needs both flags.
+		available: hasFeatureFlag && !!resolvedFeatures?.changeDetection,
 		hasFeatureFlag,
 	};
 };

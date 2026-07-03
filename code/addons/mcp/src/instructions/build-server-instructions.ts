@@ -1,4 +1,7 @@
 import devInstructions from './dev-instructions.md';
+import legacyDevInstructions from './legacy-dev-instructions.md';
+import legacyTestInstructions from './legacy-test-instructions.md';
+import reviewDocsInstructions from './review-docs-instructions.md';
 import testInstructions from './test-instructions.md';
 import { STORYBOOK_MCP_INSTRUCTIONS } from '@storybook/mcp';
 
@@ -38,55 +41,59 @@ export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
 
 export function buildServerInstructions(options: BuildServerInstructionsOptions): string {
 	const sections = ['Follow these workflows when working with UI and/or Storybook.'];
+	const reviewEnabled = options.reviewEnabled ?? false;
 
-	if (options.devEnabled) {
-		const changeDetection = options.changeDetectionEnabled ?? false;
-		const graphSupported = options.moduleGraphSupported ?? false;
-		const reviewEnabled = options.reviewEnabled ?? false;
-		// When display-review is available it is the terminal step for visual
-		// work, so the after-change step feeds the review instead of ending in
-		// preview URLs — a competing "call preview-stories after every change"
+	if (options.devEnabled && !reviewEnabled) {
+		// Review is off (the default): use the pre-review instruction text verbatim,
+		// as shipped in the latest release — the workflow we know works. The
+		// review-flavored text below is only exercised behind the `experimentalReview`
+		// feature flag while it is being iterated on.
+		sections.push(legacyDevInstructions.trim());
+	} else if (options.devEnabled) {
+		// Review is on. display-review is the terminal step for visual work, so
+		// the after-change step feeds the review instead of ending in preview
+		// URLs — a competing "call preview-stories after every change"
 		// instruction reads as an alternative ending and agents take it
 		// (observed on the Codex MCP path: change done, preview links shared,
 		// review never published).
-		const previewStoriesStep = reviewEnabled
-			? changeDetection
-				? 'After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.'
-				: graphSupported
-					? 'After changing any component or story, call **get-stories-by-component** with the files you touched.'
-					: 'After changing any component or story, identify the stories affected by your change.'
-			: changeDetection
-				? 'After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.'
-				: graphSupported
-					? 'After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.'
-					: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
+		const changeDetection = options.changeDetectionEnabled ?? false;
+		const graphSupported = options.moduleGraphSupported ?? false;
+		const previewStoriesStep = changeDetection
+			? 'After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.'
+			: graphSupported
+				? 'After changing any component or story, call **get-stories-by-component** with the files you touched.'
+				: 'After changing any component or story, identify the stories affected by your change.';
 		// Terse pointer only: the full link-presentation rule reaches the agent
 		// through the get-storybook-story-instructions output (getFinalLinksGuidance)
 		// and the display-review and preview-stories tool results, which are
 		// never truncated.
-		const finalLinksStep = reviewEnabled
-			? "End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly."
-			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result.';
+		const finalLinksStep =
+			"End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.";
 		sections.push(
 			devInstructions
 				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
 				.replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
-					reviewEnabled
-						? '\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.'
-						: '',
+					'\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.',
 				)
 				.trim(),
 		);
 	}
 
+	// The test and docs sections follow the same split as the dev section:
+	// with review off (the default) they are the shipping texts — the legacy
+	// Validation Workflow verbatim from the latest release, and the shared
+	// @storybook/mcp Documentation Workflow. With review on, the whole
+	// instruction set must fit under the 2,048-char client truncation limit
+	// alongside the review workflow, so slimmed variants (same rules, terser
+	// wording) are used instead.
 	if (options.testEnabled) {
-		sections.push(testInstructions.trim());
+		sections.push((reviewEnabled ? testInstructions : legacyTestInstructions).trim());
 	}
 
 	if (options.docsEnabled) {
-		sections.push(STORYBOOK_MCP_INSTRUCTIONS.trim());
+		sections.push((reviewEnabled ? reviewDocsInstructions : STORYBOOK_MCP_INSTRUCTIONS).trim());
 	}
 
 	if (sections.length === 1) {

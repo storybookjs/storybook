@@ -87,6 +87,15 @@ const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.t
 const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+// EVAL_REVIEW=1 (the ci:review PR label or the `review` workflow_dispatch
+// input in CI) enables the opt-in `experimentalReview` feature flag in every
+// sandbox Storybook, so the runs exercise the review workflow
+// (display-review + review-flavored instructions). Default runs leave the
+// flag off, matching what released users get. EVAL.ts assertions branch on
+// the same signal via the agent context (see isReviewEnabled in test-utils).
+const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
+const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
+const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
@@ -136,6 +145,10 @@ export async function setupSandbox(
 
 	files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
+	if (REVIEW_ENABLED) {
+		enableExperimentalReview(files);
+	}
+
 	// Fixtures that intentionally ship an outdated Storybook (the upgrade-skill
 	// evals) opt out of pinning with `evals.pinStorybook: false`; everything
 	// else is pinned to the dist-tag so result snapshots record exact versions.
@@ -175,6 +188,7 @@ async function writeEvalSupportFiles(
 			{
 				agent: options.agent,
 				integration: options.integration,
+				review: REVIEW_ENABLED,
 			},
 			null,
 			2,
@@ -273,6 +287,31 @@ function mergeTemplateAndFixtureFiles(
 	}
 
 	return files;
+}
+
+// Enables `features.experimentalReview` in every sandbox Storybook config.
+// Review builds on change detection (on by default), so this one flag is the
+// only opt-in needed. The insertion is anchored on the uniform config-object
+// opener every template and fixture main.ts uses; a main.ts that drifts from
+// it fails loudly instead of silently running with review off. Exported for
+// the drift-guard test only.
+export function enableExperimentalReview(files: Record<string, string>): void {
+	for (const [filePath, content] of Object.entries(files)) {
+		if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
+			continue;
+		}
+
+		if (!content.includes(STORYBOOK_CONFIG_OBJECT_OPENER)) {
+			throw new Error(
+				`Cannot enable experimentalReview: ${filePath} does not contain "${STORYBOOK_CONFIG_OBJECT_OPENER}"`,
+			);
+		}
+
+		files[filePath] = content.replace(
+			STORYBOOK_CONFIG_OBJECT_OPENER,
+			`${STORYBOOK_CONFIG_OBJECT_OPENER}\n\tfeatures: {\n\t\t// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag\n\t\texperimentalReview: true,\n\t},`,
+		);
+	}
 }
 
 function parseJsonFile(filePath: string, content: string, source: 'fixture' | 'template'): unknown {

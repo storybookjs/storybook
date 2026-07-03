@@ -1,4 +1,3 @@
-/* eslint-disable react/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, forwardRef, memo, useMemo } from 'react';
 

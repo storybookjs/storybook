@@ -1,4 +1,3 @@
-/* eslint-disable react/destructuring-assignment */
 import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 

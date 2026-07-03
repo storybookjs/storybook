@@ -300,7 +300,6 @@ describe('renderJsx', () => {
   });
 
   // arrow functions with an empty .name, so without help they rendered as <No Display Name>.
-  /* eslint-disable react/display-name */
   it('resolves subcomponents attached as properties of a parent component', () => {
     const Modal: any = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
     Modal.Title = ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>;
@@ -325,7 +324,6 @@ describe('renderJsx', () => {
       </Modal>
     `);
   });
-  /* eslint-enable react/display-name */
 
   // Regression for #27127: react-element-to-jsx-string used to omit boolean
   // props explicitly set to `false`. Patched via algolia/react-element-to-jsx-string#733

@@ -3,10 +3,6 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { expectNoDisplayReview } from '#test-utils';
 
-// Trigger correctness, negative branch (Agentic Review Eval instructions
-// §6a.1 / §7 branch 3): a pure rename with no behavior change must not
-// publish a review.
-
 // Guard against a vacuous pass: skipping the review only counts if the
 // refactor was actually performed. Only identifier usages count — the prompt
 // renames the helper, not the file, so a module path like

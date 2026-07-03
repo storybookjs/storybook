@@ -8,18 +8,16 @@ import {
 	parseJson,
 } from '#test-utils';
 
-// Lifecycle eval (storybookjs/mcp#324): the project has no Storybook at all,
-// so the storybook-init skill must drive setup. Pass criteria are the
-// lifecycle outcome only — the story/review workflow is owned by the 80x
-// evals on a next-stack project, because the skill installs the published
-// stable release (no `storybook ai` CLI / review tools there yet).
+// Only the lifecycle outcome is asserted: the storybook-init skill installs
+// the published stable release, which has no story/review workflow tooling
+// to assert on — that workflow is owned by the 80x evals.
 
 test('invokes the storybook-init skill', () => {
 	expectSkillInvoked('storybook-init');
 });
 
-// The skill's documented step 1: `npm create storybook@latest` (or the
-// package-manager equivalent / the `storybook init` alias it delegates to).
+// Loose match: `npm create storybook@latest`, the package-manager
+// equivalents, and the `storybook init` alias all count.
 test('runs the Storybook initializer', () => {
 	expectShellCommandMatching(/create(-|\s+)storybook|storybook(@\S+)?\s+init/);
 });

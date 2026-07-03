@@ -8,13 +8,6 @@ import {
 	isReviewEnabled,
 } from '#test-utils';
 
-// Browse request (Agentic Review Eval instructions §7 branch 4): no code
-// changes; the agent resolves the existing ReviewCard stories from the live
-// index and publishes a review without changed files.
-
-// With the `experimentalReview` flag on (the ci:review label), browsing means
-// publishing a review with changedFiles: []; with it off (the default),
-// display-review is not registered and browsing means sharing preview links.
 const review = isReviewEnabled();
 
 test.runIf(review)('publishes a display review for a browse request without changed files', () => {

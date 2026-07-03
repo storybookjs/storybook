@@ -87,12 +87,10 @@ const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.t
 const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-// EVAL_REVIEW=1 (the ci:review PR label or the `review` workflow_dispatch
-// input in CI) enables the opt-in `experimentalReview` feature flag in every
-// sandbox Storybook, so the runs exercise the review workflow
-// (display-review + review-flavored instructions). Default runs leave the
-// flag off, matching what released users get. EVAL.ts assertions branch on
-// the same signal via the agent context (see isReviewEnabled in test-utils).
+// EVAL_REVIEW=1 enables the opt-in `experimentalReview` feature flag in
+// every sandbox Storybook; default runs leave it off, matching released
+// users. EVAL.ts assertions read the same signal from the agent context
+// (see isReviewEnabled in test-utils).
 const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';

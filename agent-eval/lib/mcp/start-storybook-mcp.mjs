@@ -76,10 +76,10 @@ async function isReady() {
 	}
 }
 
-// Temporary diagnostics for the docs-toolset regression hunt: snapshot the
-// addon's landing page (which explains per-toolset why a tool is disabled),
-// the MCP server instructions, and the Storybook startup log into the
-// workspace so eval result snapshots capture them.
+// Snapshot MCP diagnostics into the workspace so eval result snapshots
+// capture them: the addon's landing page (which explains per-toolset why a
+// tool is disabled), the MCP server instructions actually served, and the
+// Storybook startup log.
 async function dumpMcpDebug() {
 	const debugDir = '.storybook/mcp-debug';
 	try {

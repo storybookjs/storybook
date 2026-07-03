@@ -1,58 +1,35 @@
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
 import { collectTranscriptUsage } from './usage.ts';
 
-// The 8xx line: hand-crafted evals written for the current plugin/MCP
-// workflow (story instructions, display-review, launch config, preview
-// browser), covering the behavior branches from the "Agentic Review Eval
-// instructions" spec. This is the set that always runs on CI.
+// The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
+// one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
-	// New component; the fixture empties the template's .claude/launch.json
-	// configurations, so the plugin must set up the Storybook entry itself
 	'801-create-component-no-launch-config',
-	// New component with the template's valid launch config left intact
 	'802-create-component',
-	// Edit a component that already has stories; review covers the change
 	'803-edit-component',
-	// Add stories for the uncovered component in a multi-component project
 	'804-write-story-for-existing-component',
-	// Pure rename, no behavior change: display-review must NOT be called
 	'805-non-visual-refactor',
-	// "Show me all X states": review published without changedFiles
 	'806-browse-request',
-	// "What props does X accept": answered via the documentation tools
 	'807-docs-request',
-	// Shared token change: review via the get-stories-by-component fallback,
-	// surfacing the consumer stories (spec §7 archetype 2)
 	'808-shared-infra-fallback',
-	// Seeded failing story test: fix it and finish with tests green (old 911)
 	'810-fix-failing-tests',
-	// Seeded a11y violations: fix the semantic one, surface the visual one (old 912)
 	'811-fix-a11y-violations',
-	// Storybook@next installed but zero stories: first story + review on the
-	// minimal vite-app template
 	'812-first-story-empty-project',
-	// The runnable Storybook lives in a workspace leaf package (spec secondary axis)
 	'813-monorepo-leaf-create-component',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
 // They only run on the plugin experiments — the MCP experiments require a
-// Storybook already running at :6006/mcp, which is exactly what these
-// fixtures don't have. Pass criteria are the lifecycle outcome only; see the
-// fixtures and storybookjs/mcp#324.
+// Storybook already running at :6006/mcp, which these fixtures don't have.
 const LIFECYCLE_STORYBOOK_EVALS = [
-	// No Storybook at all: the storybook-init skill drives setup
 	'820-init-no-storybook',
-	// Storybook 9.x preinstalled: major upgrade via the storybook-upgrade skill
 	'821-upgrade-from-sb9',
-	// Older stable (10.4.0) preinstalled: minor/patch upgrade path
 	'822-upgrade-from-stable',
 ] as const;
 
-// The 9xx line: evals ported from the old eval system (/eval), written for
-// the MCP-only workflow. On default (`next`) CI runs they are too expensive
-// and currently too flaky, so they only run under EVAL_STORYBOOK_LATEST=1
-// (or manually via EVAL_ONLY). See storybookjs/mcp#315.
+// The 9xx line: ports from the old /eval system, written for the MCP-only
+// workflow of the published stable release. They only run under
+// EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
 const PORTED_WORKFLOW_STORYBOOK_EVALS = [
 	'901-create-component-atom-reshaped-concise',
 	'901-create-component-atom-reshaped-detailed',
@@ -92,19 +69,15 @@ type EvalName =
 	| (typeof LIFECYCLE_STORYBOOK_EVALS)[number]
 	| (typeof PORTED_WORKFLOW_STORYBOOK_EVALS)[number];
 
-// EVAL_STORYBOOK_LATEST=1 (the ci:storybook-latest PR label or the
-// workflow_dispatch input in CI) runs the local MCP server against the stable
-// Storybook release instead of `next`. The 8xx line and the plugin skills
-// target the current plugin/MCP workflow and are not compatible with the
-// stable release, so latest runs switch to the ported 9xx line and skip the
-// plugin experiments (see PLUGIN_STORYBOOK_EVALS below).
+// EVAL_STORYBOOK_LATEST=1 pins the sandbox Storybook to the stable release
+// instead of `next`. The 8xx line and the plugin skills target the current
+// workflow and are not compatible with the stable release, so latest runs
+// switch to the ported 9xx line and skip the plugin experiments.
 const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === '1';
 
-// By default only the first eval of the active line runs, to keep
-// sandbox/token costs low. Set EVAL_EXTRA_EVALS=1 (the ci:extra-evals PR label
-// or the workflow_dispatch input in CI) to run the full line.
-// EVAL_ONLY=<name>[,<name>] narrows the set to specific evals (core 8xx,
-// lifecycle 82x, or ported 9xx) for local debugging, one eval at a time.
+// By default only the first eval of the active line runs, to keep costs low.
+// EVAL_EXTRA_EVALS=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
+// the set to specific evals for local debugging.
 function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 	const only = process.env.EVAL_ONLY;
 	if (only !== undefined && only !== '') {
@@ -151,24 +124,19 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 
 const ACTIVE_EVALS = resolveActiveEvals();
 
-// The MCP experiments never run the lifecycle 82x evals: they configure the
-// agent against a Storybook that must already be running at :6006/mcp, which
-// the lifecycle fixtures intentionally don't have.
+// Evals for the MCP experiments: the active line without the lifecycle 82x
+// evals (those need a Storybook the agent has not set up yet).
 export const WORKFLOW_STORYBOOK_EVALS: EvalName[] = ACTIVE_EVALS.core;
 
-// Plugin-integration experiments run zero evals under EVAL_STORYBOOK_LATEST=1:
-// the plugin skills are not compatible with the stable Storybook release, so
-// only the MCP experiments exercise the 9xx line there. On default runs they
-// additionally cover the lifecycle 82x evals, whose skills only exist on the
-// plugin path.
+// Plugin experiments additionally run the lifecycle 82x evals. Under
+// EVAL_STORYBOOK_LATEST=1 they run nothing: the plugin skills target the
+// current workflow, not the stable release.
 export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
 	? []
 	: [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
-// Non-default model tiers (e.g. cc-plugin-sonnet-medium) run zero evals unless
-// explicitly enabled, so labeled CI runs only pay for the default-model
-// experiments. Enable with EVAL_EXTRA_MODELS=1 (locally or via the
-// workflow_dispatch input in CI).
+// Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
+// labeled CI runs only pay for the default-model experiments.
 export const EXTRA_MODEL_EVALS: EvalName[] =
 	process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
 
@@ -202,13 +170,12 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
 	runs: 1,
 	earlyExit: true,
 	// The runner default of 600s is too tight for opus-high on the plugin
-	// path: passing runs have taken up to 458s and 801 timed out at 600s three
-	// times across the 2026-07-03 CI runs while the same commit's other
-	// experiments passed. 900s absorbs slow-API runs; a genuinely hung eval
-	// costs 5 extra minutes, which one avoided false-red re-run repays.
+	// path: passing runs have taken up to 458s (2026-07-03 CI runs).
 	timeout: 900,
 	sandbox: 'auto',
 	copyFiles: 'all',
-	// Disabling the scripts for now, as this is flaky, and not often OUR fault
+	// Post-run script checks stay disabled: they fail on sandbox environment
+	// flakiness (installs, ports) more often than on agent mistakes, and the
+	// EVAL.ts assertions already cover the outcomes that matter.
 	// scripts: ['typecheck', 'build', 'test:stories', 'lint'],
 } satisfies Partial<ExperimentConfig>;

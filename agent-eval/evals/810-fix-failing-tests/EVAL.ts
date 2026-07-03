@@ -4,13 +4,11 @@ import { expectStoryTestsRanAndPassed } from '#test-utils';
 
 // The fixture ships a Button that never wires the onClick prop to the DOM
 // button, so the Default story's play function fails until the agent fixes
-// the component. Port of the old 911 eval, hardened with the green-run floor.
+// the component.
 
-// Validation Workflow floor: the run must not end while story tests are
-// failing. A single run-story-tests call is enough — agents may spot the
-// initial failure through any channel (GPT-5.5 on the plugin path uses the
-// project's own test script for that, run 28667804080) as long as the fix
-// is verified through the tool.
+// A single run-story-tests call is enough: agents may spot the initial
+// failure through any channel, as long as the fix is verified through the
+// tool.
 test('finishes with the story tests passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['button'] });
 });

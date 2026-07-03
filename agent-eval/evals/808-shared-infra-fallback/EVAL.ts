@@ -15,30 +15,18 @@ import {
 	isReviewEnabled,
 } from '#test-utils';
 
-// Shared-infrastructure change (Agentic Review Eval instructions §7 branch 2):
-// the edited token file has no stories of its own, so the review must surface
+// The edited token file has no stories of its own, so the run must surface
 // the stories of its *consumers* (Badge and StatusPill).
-
-// With the `experimentalReview` flag on (the ci:review label), the consumer
-// stories must surface in a published display-review; with it off (the
-// default), display-review is not registered and the workflow ends in
-// preview links for the consumer stories.
 const review = isReviewEnabled();
 
-// Known failure on the Codex MCP experiment with review on: GPT-5.5 edits the
+// Known failure on the codex+mcp cell with review on: GPT-5.5 edits the
 // token file and ends the turn with zero MCP calls roughly every other run
-// (local runs 2026-07-03T18-14 and 2026-07-03T18-23, plus the
-// 2026-07-03T13-28 review-on run) — no story instructions, no discovery, no
-// tests, no review. Codex surfaces MCP server instructions only as the tool namespace
-// description (codex-rs rmcp_client maps InitializeResult.instructions to
-// namespace_description), so for an edit it judges trivial it never reads the
-// storybook namespace and no instruction wording can reach it; the same runs
-// pass whenever Codex enters the workflow at all. Codex review-off runs and
-// the codex-plugin path (where the stories skill forces the workflow help
-// into context) pass 808 consistently and stay asserted. Re-enable when the
-// review-on workflow reliably reaches Codex at turn start — e.g. Codex
-// injecting server instructions turn-level, or the Storybook docs shipping a
-// Codex agent-instructions snippet the MCP fixtures adopt.
+// (three local runs, 2026-07-03). Codex surfaces MCP server instructions
+// only as the tool namespace description, so for an edit it judges trivial
+// it never reads the storybook namespace and no instruction wording can
+// reach it. Review-off and codex-plugin runs pass consistently and stay
+// asserted. Re-enable when the review-on workflow reliably reaches Codex at
+// turn start.
 const codexMcpReviewGap =
 	review && getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp';
 
@@ -64,16 +52,9 @@ test.runIf(review && !codexMcpReviewGap)(
 	},
 );
 
-// The token file has no stories of its own, so the previews must cover a
-// consumer. Any-of rather than both: the review-off instructions say to
-// preview "selected" storyIds from the discovery results, so surfacing one
+// Any-of rather than both: the review-off instructions say to preview
+// "selected" storyIds from the discovery results, so surfacing one
 // consumer's stories is a legitimate selection.
-// GPT-5.5 on the MCP path used to verify shared-token edits via shell only
-// (2026-07-03 runs 28659851504 and 28660377980) because the review-off
-// instructions triggered preview-stories only "after changing any component
-// or story" — a token file is literally neither. The instructions and the
-// preview-stories description now cover shared code and say to preview the
-// consumers' stories; this asserts that on every experiment.
 test.runIf(!review)('previews the consumer stories for the visual token change', () => {
 	expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
 });
@@ -85,15 +66,9 @@ test.runIf(review && !codexMcpReviewGap)(
 	},
 );
 
-// The get-stories-by-component fallback is required exactly when the diff
-// alone is insufficient (spec §4 "when to switch"): the token file is not a
-// component, so unless get-changed-stories already surfaced both consumers,
-// the agent must resolve them via get-stories-by-component.
-// Deliberately conditional, not unconditional: on the MCP path the module
-// graph's related-stories detection can legitimately surface both consumers
-// from the diff alone (observed in the 2026-07-02 cc-mcp QA run — one
-// get-changed-stories call covering badge + statuspill, zero fallback calls),
-// and punishing that correct behavior would fight the spec.
+// Deliberately conditional: the module graph's related-stories detection can
+// legitimately surface both consumers from the diff alone, and that is
+// correct behavior — the fallback is only required when it doesn't.
 test.runIf(review && !codexMcpReviewGap)(
 	'falls back to get-stories-by-component when the diff does not cover the consumers',
 	() => {
@@ -116,16 +91,6 @@ test.runIf(review && !codexMcpReviewGap)(
 	},
 );
 
-// Required workflow step (test-instructions.md Validation Workflow): run
-// run-story-tests after the change and do not report completion while story
-// tests are failing. Asserted on every integration in both review modes:
-// the review-on MCP path used to be gated on the 2,048-char server-
-// instruction truncation eating the Validation Workflow (0 run-story-tests
-// calls in the 2026-07-02 cc-mcp QA run), but the run-story-tests
-// description now carries the trigger ("after editing anything that changes
-// how the UI looks... typecheck, lint, or package.json test scripts do not
-// replace this") and tool descriptions survive client truncation.
-// The codex+mcp review-on cell is the one exception — see codexMcpReviewGap.
 test.skipIf(codexMcpReviewGap)(
 	'runs story tests after the change and finishes with them passing',
 	() => {
@@ -133,9 +98,6 @@ test.skipIf(codexMcpReviewGap)(
 	},
 );
 
-// The plugin path must engage the stories skill (Claude: via the Skill tool;
-// Codex: by reading its SKILL.md). Skipped on the MCP integration, where no
-// skills are installed.
 test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
 	expectSkillInvoked('stories');
 });

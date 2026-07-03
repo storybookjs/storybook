@@ -15,25 +15,16 @@ import {
 	isReviewEnabled,
 } from '#test-utils';
 
-// The review branch of this run: with the `experimentalReview` feature flag on
-// (the ci:review label), visual work must end in a published display-review;
-// with it off (the default), display-review is not even registered and the
-// workflow ends in preview-stories links.
 const review = isReviewEnabled();
 
-// The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components.
-// Asserted on both review modes, but skipped on the Codex MCP experiment:
-// GPT-5.5 on the MCP path intermittently builds the Reshaped component from
-// prior knowledge without ever calling get-documentation (review-off runs
-// 28673251562 on 2026-07-03 and the local 2026-07-03T14-12 run; roughly one
-// run in four across the 07-02/07-03 history), even though the docs tool
-// descriptions and server instructions both demand a docs lookup — the same
-// accepted Codex docs gap already gated in 802. Codex-plugin runs pass this
-// consistently (the stories skill forces reading the full workflow help), so
-// only the codex+mcp cell is gated. Re-enable when Codex MCP runs reliably
-// consult the docs tools, e.g. after a Codex-side change to how MCP tool
-// descriptions are surfaced.
+// Building with the external Reshaped components requires the docs tools —
+// props must not be guessed or read out of node_modules.
+// Known failure on the codex+mcp cell: GPT-5.5 intermittently builds the
+// component from prior knowledge without calling get-documentation (CI run
+// 28673251562 plus local runs, 2026-07-03; roughly one run in four), despite
+// the tool descriptions and server instructions demanding the lookup.
+// Codex-plugin runs pass consistently. Re-enable when Codex MCP runs
+// reliably consult the docs tools.
 test.skipIf(getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp')(
 	'uses the documentation tooling',
 	() => {
@@ -51,8 +42,6 @@ test.runIf(!review)('uses Storybook story instructions and previews the new stor
 	expectPreviewStoriesWithFinalLinks({ covering: ['toggleswitch'] });
 });
 
-// Required workflow step (dev instructions "Mapping any input to story IDs"):
-// story IDs in the review must come from a discovery tool, not from guessing.
 test.runIf(review)(
 	'discovers stories through the workflow tools before publishing the review',
 	() => {
@@ -60,16 +49,10 @@ test.runIf(review)(
 	},
 );
 
-// Required workflow step (test-instructions.md Validation Workflow): run
-// run-story-tests after the change and do not report completion while story
-// tests are failing.
 test('runs story tests after the change and finishes with them passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
 });
 
-// Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent
-// created must always appear in the review; curation groups, it never omits.
-// The display-review hard rules and server instructions now state this.
 test.runIf(review)('every new story appears in the display review', () => {
 	expectAllStoryExportsInDisplayReview();
 });
@@ -80,22 +63,19 @@ test.runIf(review)('every new story appears in the display review', () => {
 // publishes one collection containing every story (score 0.15 < 0.5 in the
 // 2026-07-01T22-16-52 cc-plugin run).
 test.skip('publishes a well-curated review', async () => {
-	// 0.5 keeps this soft (per the eval spec, curation quality is scored, not
-	// gating): minor flaws like one single-story collection pass, arbitrary
-	// story dumps still fail.
+	// 0.5 keeps this soft (curation quality is scored, not gating): minor
+	// flaws like one single-story collection pass, arbitrary story dumps
+	// still fail.
 	await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
+});
+
+test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
+	expectSkillInvoked('stories');
 });
 
 // The fixture overrides the template's .claude/launch.json with an empty
 // configurations array (fixtures can only overwrite files, not delete them),
 // so the plugin must set up the Storybook launch entry itself.
-// The plugin path must engage the stories skill (Claude: via the Skill tool;
-// Codex: by reading its SKILL.md). Skipped on the MCP integration, where no
-// skills are installed.
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-	expectSkillInvoked('stories');
-});
-
 test('writes a valid Storybook launch config for Claude preview tooling', () => {
 	expectValidStorybookLaunchConfig();
 });

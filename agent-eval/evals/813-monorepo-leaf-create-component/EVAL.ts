@@ -12,23 +12,13 @@ import {
 	expectWorkflowCalls,
 } from '#test-utils';
 
-// Monorepo-leaf project shape (Agentic Review Eval instructions §7, secondary
-// axis): the runnable Storybook lives in the @acme/ui workspace package, not
-// at the repo root, so the agent must work inside the leaf.
-// Note: expectAllStoryExportsInDisplayReview assumes the project starts
-// without story files, so it cannot be used here (Card ships with stories).
-
 // TODO(storybookjs/storybook#35359): the workflow assertions below are
 // test.todo until the CLI help bug is fixed. `storybook ai --help` run from
 // the monorepo root cannot load the leaf's Storybook config and then hides
-// every runtime workflow command — the only command it lists is `setup`, so
-// agents derail into `setup` + raw vitest and never discover display-review
-// (observed on both the Claude and Codex plugin paths in the 2026-07-02 runs;
-// recovery via `--help --config-dir packages/ui/.storybook` is a coin flip).
+// every runtime workflow command, so agents derail into `setup` + raw vitest
+// and never discover display-review (both plugin paths, 2026-07-02 runs).
 // Re-enable by swapping test.todo back to test once #35359 lands — and split
-// them on isReviewEnabled() like the other 8xx evals: the display-review
-// assertions only apply to review-on (ci:review) runs; review-off runs need
-// the expectPreviewStoriesWithFinalLinks counterpart instead (see 801/812).
+// them on isReviewEnabled() like the other 8xx evals (see 801/812).
 
 test('creates the component inside the leaf package', () => {
 	expect(
@@ -58,9 +48,6 @@ test.todo('runs story tests after the change and finishes with them passing', ()
 	expectStoryTestsRanAndPassed({ covering: ['callout'] });
 });
 
-// The plugin path must engage the stories skill (Claude: via the Skill tool;
-// Codex: by reading its SKILL.md). Skipped on the MCP integration, where no
-// skills are installed.
 test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
 	expectSkillInvoked('stories');
 });

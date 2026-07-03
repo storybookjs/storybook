@@ -8,7 +8,7 @@ import { expectFinalResponseContains, expectWorkflowCalls, getEvalContext } from
 
 // Accepted known failure — MCP-path agents bypass the docs tools regardless
 // of instruction shape: 0/2 on cc-mcp and codex-mcp under the review-on
-// instructions (2026-07-02 full-grid run, storybookjs/mcp#315), and still
+// instructions (2026-07-02 full-grid run), and still
 // 0/2 under the restored untruncated legacy instructions with the CRITICAL
 // never-hallucinate rule (2026-07-03 run 28660377980: both answered from
 // grep/file reads; codex even called list-all-documentation and

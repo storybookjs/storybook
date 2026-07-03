@@ -33,7 +33,7 @@ const review = isReviewEnabled();
 // never-hallucinate rule in the Documentation Workflow — demonstrably work:
 // cc-mcp and cc-plugin both called get-documentation in the 2026-07-03 run
 // 28660377980. Accepted known failure on codex: GPT-5.5 skipped the docs
-// tools on both integrations in that same run (storybookjs/mcp#315).
+// tools on both integrations in that same run.
 test.skipIf(review || getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });

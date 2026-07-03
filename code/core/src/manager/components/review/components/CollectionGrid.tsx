@@ -231,8 +231,8 @@ const StoryPreviewCell: FC<{
   href?: string;
   info: StoryInfo;
   getPreviewHref: (storyId: string) => string;
-  previewsPaused?: boolean;
-}> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
+  summaryHidden?: boolean;
+}> = ({ storyId, href, info, getPreviewHref, summaryHidden = false }) => {
   const {
     cellRef,
     iframeRef,
@@ -241,7 +241,7 @@ const StoryPreviewCell: FC<{
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,
-  } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
+  } = usePreviewThumbnail({ storyId, getPreviewHref, summaryHidden });
 
   const { component, name } = deriveStoryInfo(info);
   const { style: frameStyle, viewportFill } = getPreviewFrameLayout(rememberedDimensions);
@@ -311,7 +311,7 @@ export interface CollectionGridProps {
   /** Story id → component title + story name, for the cell label. */
   storyInfo: Record<string, StoryInfo>;
   /** Keep loaded previews mounted while the summary overlay is hidden. */
-  previewsPaused?: boolean;
+  summaryHidden?: boolean;
 }
 
 export const CollectionGrid: FC<CollectionGridProps> = ({
@@ -321,7 +321,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   showAll = false,
   onShowAll,
   storyInfo,
-  previewsPaused = false,
+  summaryHidden = false,
 }) => (
   <GridContainer>
     <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
@@ -334,7 +334,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
             href={getStoryHref?.(storyId, storyIndex)}
             info={info}
             getPreviewHref={getStoryPreviewHref}
-            previewsPaused={previewsPaused}
+            summaryHidden={summaryHidden}
           />
         );
       })}

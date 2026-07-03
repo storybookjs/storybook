@@ -23,11 +23,7 @@ import {
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
-import {
-  REVIEW_COLLECTION_QUERY_PARAM,
-  buildReviewStoryHref,
-  isReviewSummaryPath,
-} from './review-navigation.ts';
+import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
 import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
@@ -204,11 +200,9 @@ const ReviewOutsideWithNotificationsHarness = () => {
 };
 
 const deriveViewMode = (path: string): State['viewMode'] => {
-  if (path.startsWith('/story/') || path.startsWith('/docs/')) {
-    return parsePath(path).viewMode as State['viewMode'];
-  }
-  if (isReviewSummaryPath(path)) {
-    return 'review';
+  const { viewMode } = parsePath(path);
+  if (viewMode) {
+    return viewMode as State['viewMode'];
   }
   return managerState.viewMode;
 };

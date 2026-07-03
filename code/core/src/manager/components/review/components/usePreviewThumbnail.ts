@@ -57,7 +57,7 @@ const getScrollRoot = (element: HTMLElement): HTMLElement | null => {
 export type UsePreviewThumbnailOptions = {
   storyId: string;
   getPreviewHref: (storyId: string) => string;
-  previewsPaused?: boolean;
+  summaryHidden?: boolean;
 };
 
 export type UsePreviewThumbnailResult = {
@@ -74,7 +74,7 @@ export type UsePreviewThumbnailResult = {
 export const usePreviewThumbnail = ({
   storyId,
   getPreviewHref,
-  previewsPaused = false,
+  summaryHidden = false,
 }: UsePreviewThumbnailOptions): UsePreviewThumbnailResult => {
   const cellRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -85,12 +85,12 @@ export const usePreviewThumbnail = ({
 
   const { src, bootId } = state;
 
-  // Visibility: mount near the viewport, evict far outside it. While the
-  // summary overlay parks this grid off-screen (`previewsPaused`), the whole
-  // subsystem freezes so loaded previews are neither evicted nor re-observed.
+  // Visibility: mount near the viewport, evict far outside it. While the summary
+  // overlay is hidden (`summaryHidden`), the whole subsystem freezes so loaded
+  // previews are neither evicted nor re-observed.
   useEffect(() => {
     const host = cellRef.current;
-    if (!host || previewsPaused) {
+    if (!host || summaryHidden) {
       return undefined;
     }
     const scrollRoot = getScrollRoot(host);
@@ -117,7 +117,7 @@ export const usePreviewThumbnail = ({
       mountObserver.disconnect();
       evictObserver.disconnect();
     };
-  }, [previewsPaused]);
+  }, [summaryHidden]);
 
   useEffect(() => {
     if (!isInView) {

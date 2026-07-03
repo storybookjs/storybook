@@ -199,7 +199,7 @@ export interface SummaryScreenProps {
   /** Attention banner to render at the top (pending-update or stale). */
   banner?: ReviewBanner;
   /** Keep summary preview iframes mounted while the overlay is hidden. */
-  previewsPaused?: boolean;
+  summaryHidden?: boolean;
   /** Clears the active review (if any) and returns to the pre-review canvas. */
   onDismiss: () => void;
   /** Pre-review canvas search, or root when none is recorded yet. */
@@ -211,7 +211,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   storyInfo = {},
   getStoryPreviewHref,
   banner = null,
-  previewsPaused = false,
+  summaryHidden = false,
   onDismiss,
   returnSearch = null,
 }) => {
@@ -413,7 +413,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                           buildReviewStoryHref({ collectionIndex: index, storyId })
                         }
                         getStoryPreviewHref={getStoryPreviewHref}
-                        previewsPaused={previewsPaused}
+                        summaryHidden={summaryHidden}
                       />
                     </Collapsible>
                   </Card>

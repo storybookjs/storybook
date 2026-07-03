@@ -52,7 +52,7 @@ export const ReviewSummaryHost: FC = () => {
         storyInfo={storyInfo}
         getStoryPreviewHref={getStoryPreviewHref}
         banner={banner}
-        previewsPaused={!isSummaryVisible}
+        summaryHidden={!isSummaryVisible}
         onDismiss={onDismiss}
         returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}
       />

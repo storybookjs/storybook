@@ -1,5 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import { DEFAULT_EXPERIMENT_CONFIG, RESHAPED_STORYBOOK_EVALS } from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import { setupSandbox, writeCodexMcpConfig } from '../lib/templates.ts';
 
 export default {
@@ -12,7 +12,7 @@ export default {
 	// gpt-5.2-codex, which is deprecated (retiring July 2026). Medium is the
 	// reasoning effort the adapter already defaults to when a model is pinned.
 	model: 'gpt-5.5?reasoningEffort=medium',
-	evals: RESHAPED_STORYBOOK_EVALS,
+	evals: WORKFLOW_STORYBOOK_EVALS,
 	setup: async (sandbox) => {
 		await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp' });
 		await writeCodexMcpConfig(sandbox);

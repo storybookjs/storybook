@@ -2,21 +2,21 @@ import type { ReactNode } from 'react';
 
 import { expect, fn, within } from 'storybook/test';
 
+import { MemoryRouter } from 'storybook/internal/router';
 import {
   ManagerContext,
+  internal_fullStatusStore,
   type API,
   type State,
-  internal_fullStatusStore,
 } from 'storybook/manager-api';
-import { MemoryRouter } from 'storybook/internal/router';
 
-import preview from '../../../../../.storybook/preview.tsx';
-import { ADDON_ID, EVENTS } from './constants.ts';
+import preview from '../../../../../../.storybook/preview.tsx';
+import { ADDON_ID, EVENTS } from '../constants.ts';
+import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
+import type { ReviewState } from '../review-state.ts';
+import { useReviewShortcuts } from '../useReviewShortcuts.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
-import { buildReviewChangesSummaryHref, buildReviewStoryHref } from './review-navigation.ts';
-import type { ReviewState } from './review-state.ts';
-import { useReviewShortcuts } from './useReviewShortcuts.ts';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -102,9 +102,9 @@ const managerApi: API = {
   resetStatusFilters: fn().mockName('api::resetStatusFilters'),
   addStatusFilters: fn().mockName('api::addStatusFilters'),
   removeStatusFilters: fn().mockName('api::removeStatusFilters'),
-  getStoryHrefs: (storyId: string, options?: { freeze?: boolean }) => ({
+  getStoryHrefs: (storyId: string, options?: { embed?: boolean; freeze?: boolean }) => ({
     managerHref: `?path=/story/${storyId}`,
-    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.freeze ? '&freeze=finished' : ''}`,
+    previewHref: `iframe.html?id=${storyId}&viewMode=story${options?.embed ? '&embed=true' : ''}${options?.freeze ? '&freeze=finished' : ''}`,
   }),
 } as unknown as API;
 

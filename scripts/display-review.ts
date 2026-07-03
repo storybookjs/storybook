@@ -90,7 +90,9 @@ const BADGE_A11Y_REPORT: Array<{ importPaths: string[]; storyNames: string[] }> 
 /** Review surfaces that render Badge for story status. */
 const BADGE_REVIEW_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
   {
-    importPaths: ['./core/src/manager/components/review/ReviewToolbarHeader.stories.tsx'],
+    importPaths: [
+      './core/src/manager/components/review/components/ReviewToolbarHeader.stories.tsx',
+    ],
     storyNames: ['New Story'],
   },
 ];

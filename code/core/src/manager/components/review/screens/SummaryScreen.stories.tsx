@@ -2,14 +2,14 @@ import React from 'react';
 
 import { expect, within } from 'storybook/test';
 
-import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
-import type { StoryInfo } from '../components/CollectionGrid.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { ReviewState } from '../review-state.ts';
+import type { StoryInfo } from '../review-types.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const getStoryPreviewHref = (storyId: string) =>
-  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
 
 const minimal: ReviewState = {
   title: 'Button prop rename',
@@ -58,8 +58,6 @@ const largeCascade: ReviewState = {
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
       storyIds: [
         'manager-main--default',
-        'manager-main--about-page',
-        'manager-main--guide-page',
         'manager-sidebar-sidebar--simple',
         'manager-sidebar-sidebar--with-refs',
         'manager-sidebar-sidebar--statuses-open',
@@ -123,7 +121,7 @@ const pagesAndBench: ReviewState = {
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
-        'manager-main--about-page',
+        'manager-main--default',
         'bench--es-build-analyzer',
       ],
     },

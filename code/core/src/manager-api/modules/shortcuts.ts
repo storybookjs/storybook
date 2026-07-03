@@ -9,6 +9,7 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -257,13 +258,20 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // warning: event might not have a full prototype chain because it may originate from the channel
     handleShortcutFeature(feature, event) {
+      const state = store.getState();
       const {
         ui: { enableShortcuts },
         storyId,
         refId,
         viewMode,
-      } = store.getState();
+      } = state;
       if (!enableShortcuts) {
+        return;
+      }
+
+      const isSidebarShortcutBlocked = isReviewManagerRoute(state.path, state.customQueryParams);
+      const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
+      if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
         return;
       }
 

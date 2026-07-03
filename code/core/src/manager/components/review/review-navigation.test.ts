@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ReviewState } from './review-state.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
@@ -10,6 +9,7 @@ import {
   buildSummaryBackHref,
   getAdjacentCollectionFirstStory,
   getAdjacentReviewEntries,
+  isReviewReturnSearch,
   isReviewSummaryPath,
   parseCollectionIndex,
   parseReviewStoryHref,
@@ -17,6 +17,7 @@ import {
   resolveActiveNavEntry,
   resolveNavIndex,
 } from './review-navigation.ts';
+import type { ReviewState } from './review-state.ts';
 
 const reviewState: ReviewState = {
   title: 'Test review',
@@ -203,6 +204,23 @@ describe('getAdjacentCollectionFirstStory', () => {
   it('returns null when no collection has stories', () => {
     expect(getAdjacentCollectionFirstStory([{ storyIds: [] }], 0, 1)).toBeNull();
     expect(getAdjacentCollectionFirstStory([], 0, 1)).toBeNull();
+  });
+});
+
+describe('isReviewReturnSearch', () => {
+  it('treats the review summary as a review route', () => {
+    expect(isReviewReturnSearch('?path=/review/')).toBe(true);
+    expect(isReviewReturnSearch(buildReviewChangesSummaryHref())).toBe(true);
+  });
+
+  it('treats curated review stories as review routes', () => {
+    expect(
+      isReviewReturnSearch(buildReviewStoryHref({ storyId: 'story-a', collectionIndex: 0 }))
+    ).toBe(true);
+  });
+
+  it('allows normal canvas stories as exit targets', () => {
+    expect(isReviewReturnSearch('?path=/story/foo')).toBe(false);
   });
 });
 

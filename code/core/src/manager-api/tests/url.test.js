@@ -623,4 +623,37 @@ describe('getStoryHrefs', () => {
     // Freezing is a preview-only contract; the manager href must be unaffected.
     expect(managerHref).toEqual('/?path=/story/test--story');
   });
+
+  it('opts the preview into embed mode when embed is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&embed=true');
+  });
+
+  it('includes both embed and freeze when both are set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true, freeze: true });
+    const url = new URL(previewHref, 'http://localhost');
+    expect(url.pathname).toBe('/iframe.html');
+    expect(url.searchParams.get('id')).toBe('test--story');
+    expect(url.searchParams.get('viewMode')).toBe('story');
+    expect(url.searchParams.get('embed')).toBe('true');
+    expect(url.searchParams.get('freeze')).toBe('finished');
+  });
 });

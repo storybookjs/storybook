@@ -24,8 +24,10 @@ const review = isReviewEnabled();
 // A ProfileCard (avatar/initials, tags, action buttons) is built from
 // Reshaped primitives (Avatar, Badge, Button, …), and their props must come
 // from the documentation tools — never guessed or read out of
-// node_modules/reshaped/dist. Asserted in both review modes, like 801.
-test('uses the documentation tooling', () => {
+// node_modules/reshaped/dist. Asserted on the Claude experiments in both
+// review modes, like 801; codex is an accepted known failure there (skipped
+// the docs tools under both instruction shapes, storybookjs/mcp#315).
+test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 

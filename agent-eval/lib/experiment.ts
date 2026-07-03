@@ -201,6 +201,12 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
 	// aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
 	runs: 1,
 	earlyExit: true,
+	// The runner default of 600s is too tight for opus-high on the plugin
+	// path: passing runs have taken up to 458s and 801 timed out at 600s three
+	// times across the 2026-07-03 CI runs while the same commit's other
+	// experiments passed. 900s absorbs slow-API runs; a genuinely hung eval
+	// costs 5 extra minutes, which one avoided false-red re-run repays.
+	timeout: 900,
 	sandbox: 'auto',
 	copyFiles: 'all',
 	// Disabling the scripts for now, as this is flaky, and not often OUR fault

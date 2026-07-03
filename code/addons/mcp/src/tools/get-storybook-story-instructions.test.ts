@@ -261,6 +261,16 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).toContain('Never also list the individual story or preview URLs');
 		// The old contradictory instruction must be gone.
 		expect(instructions).not.toContain('present links in this order');
+
+		// The story-linking workflow must route discovery into the review, not
+		// the preview list, and forbid hand-constructed story IDs — plugin
+		// agents get no other statement of this discipline (they never see the
+		// MCP server instructions) and were observed publishing reviews with
+		// IDs derived from file names.
+		expect(instructions).toContain('Story IDs must come from that call');
+		expect(instructions).toContain('never construct them from file names');
+		expect(instructions).toContain('Feed the discovered IDs into **display-review**');
+		expect(instructions).not.toContain('first, then use `preview-stories`');
 	});
 
 	it('tells the agent to include preview URLs when review is disabled', async () => {

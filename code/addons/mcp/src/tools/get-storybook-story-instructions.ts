@@ -144,8 +144,16 @@ export async function buildStorybookStoryInstructions(
 	const reviewEnabled = reviewStatus.available;
 	const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 	const renderer = frameworkToRendererMap[framework!];
+	// Mirrors the Mode A rewrite in build-server-instructions.ts: discovery
+	// feeds the review, not the preview list. This tool's output is the only
+	// workflow guidance plugin-path agents receive (they never see the MCP
+	// server instructions), so the story-ID discipline must be stated here —
+	// agents were observed constructing IDs from file names and publishing
+	// reviews without any discovery call.
 	const storyLinkingWorkflow = changeDetectionEnabled
-		? `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
+		? reviewEnabled
+			? `After changing any component or story, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as get-stories-by-component for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **display-review** when the change is visually observable; use \`${PREVIEW_STORIES_TOOL_NAME}\` only while iterating on a specific story.`
+			: `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
 		: `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
 	const changedStoryFallbackLinkGuidance = changeDetectionEnabled
 		? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`

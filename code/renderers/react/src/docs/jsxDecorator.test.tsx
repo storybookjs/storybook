@@ -169,6 +169,7 @@ describe('renderJsx', () => {
     });
 
     it('with displayName coming from forwarded render function', () => {
+      // oxlint-disable-next-line react/display-name -- displayName is assigned via Object.assign below
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         Object.assign(
           function MyExoticComponent(props: any, _ref: any) {

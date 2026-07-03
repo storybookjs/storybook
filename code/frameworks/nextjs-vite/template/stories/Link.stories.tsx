@@ -87,6 +87,7 @@ export const InAppDir: Story = {
 export const LegacyLink: Story = {
   render: () => (
     <Link href="/legacy-behaviour" legacyBehavior>
+      {/* oxlint-disable-next-line jsx-a11y/anchor-is-valid -- Next.js `legacyBehavior` injects the href into the child anchor */}
       <a>Legacy behavior</a>
     </Link>
   ),

@@ -9,6 +9,8 @@
  *
  * @module
  */
+
+/* oxlint-disable prefer-const -- mirrors upstream SvelteKit state.svelte.js, where these are mutable `let` bindings */
 import { fn } from 'storybook/test';
 
 /**

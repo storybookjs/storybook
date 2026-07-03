@@ -228,6 +228,7 @@ export const Tabs: FC<TabsProps> = memo(
               const indexId = `index-${index}`;
 
               return (
+                // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- TabButton renders a native, focusable button
                 <TabButton
                   id={`tabbutton-${sanitize(id) ?? indexId}`}
                   ref={(ref: HTMLButtonElement) => {

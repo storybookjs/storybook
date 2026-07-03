@@ -7,7 +7,8 @@ export type UserOptions = {
    */
   configDir?: string;
   /**
-   * The base URL path where Storybook is mounted inside the Vite dev server.
+   * The base URL path where Storybook is mounted inside the Vite dev server. Normalized to a
+   * leading-slash, no-trailing-slash form (e.g. `'storybook/'` becomes `'/storybook'`).
    *
    * @default '/__storybook'
    */

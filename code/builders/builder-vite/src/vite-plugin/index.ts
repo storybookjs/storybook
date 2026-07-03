@@ -34,11 +34,16 @@ export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOp
   return Promise.resolve(main(options));
 }
 
+function normalizeBase(base: string): string {
+  const trimmed = base.trim();
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.replace(/\/+$/, '') || '/';
+}
+
 function main(options?: UserOptions): PluginOption {
   const finalOptions = {
-    base: '/__storybook',
+    base: normalizeBase(options?.base ?? '/__storybook'),
     configDir: resolve(options?.configDir ?? '.storybook'),
-    ...options,
   };
 
   let storybookPromise:

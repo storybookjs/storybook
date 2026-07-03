@@ -83,10 +83,22 @@ function createStorybookMiddleware(
 
   return async (req, res, next) => {
     const originalUrl = req.url;
-    if (!originalUrl || !(originalUrl === prefix || originalUrl.startsWith(prefix + '/'))) {
+    if (!originalUrl || !originalUrl.startsWith(prefix)) {
       return next();
     }
-    const url = originalUrl.slice(prefix.length) || '/';
+    const rest = originalUrl.slice(prefix.length);
+    if (rest !== '' && !rest.startsWith('/') && !rest.startsWith('?')) {
+      return next();
+    }
+
+    if (prefix !== '' && (rest === '' || rest.startsWith('?'))) {
+      res.statusCode = 302;
+      res.setHeader('Location', `${prefix}/${rest}`);
+      res.end();
+      return;
+    }
+
+    const url = rest || '/';
     const pathname = url.split('?')[0];
 
     try {

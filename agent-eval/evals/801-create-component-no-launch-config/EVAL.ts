@@ -28,8 +28,7 @@ const review = isReviewEnabled();
 // get-documentation in the 2026-07-03 run 28660377980); review-on ships this
 // PR's slim instructions, green on the cc configs in the 2026-07-02 runs.
 // Accepted known failure on codex: GPT-5.5 skipped the docs tools on both
-// integrations under both instruction shapes (storybookjs/mcp#315, run
-// 28660377980).
+// integrations under both instruction shapes (run 28660377980).
 test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });

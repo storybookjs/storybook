@@ -15,8 +15,8 @@ import {
 // instructions MCP-path agents bypass the docs tools (2026-07-03 run
 // 28660377980: 0/2, both answered from grep/file reads; codex even called
 // list-all-documentation and get-documentation-for-story but never
-// get-documentation) — the same failure as the original truncated
-// instructions (storybookjs/mcp#315). Review-on ships this PR's slim
+// get-documentation) — legacy being untruncated with the CRITICAL rule shows
+// truncation alone was not the cause there. Review-on ships this PR's slim
 // instructions, where the MCP path is proven: 4/4 configs called the docs
 // tools in the 2026-07-02 dispatch and full-grid runs. The plugin
 // integration asserts in both modes.

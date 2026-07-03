@@ -26,7 +26,7 @@ const review = isReviewEnabled();
 // from the documentation tools — never guessed or read out of
 // node_modules/reshaped/dist. Asserted on the Claude experiments in both
 // review modes, like 801; codex is an accepted known failure there (skipped
-// the docs tools under both instruction shapes, storybookjs/mcp#315).
+// the docs tools under both instruction shapes, run 28660377980).
 test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });

@@ -124,6 +124,27 @@ Configured experiments:
 - `cc-mcp-sonnet-medium`: Claude Code (Sonnet at medium effort) MCP variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 - `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
+## Known Failures
+
+Accepted eval failures are documented **only as a code comment directly above
+the relaxed assertion** in the affected `EVAL.ts` — never as a tracking issue.
+Do not create a GitHub issue for an eval failure, and do not reference one
+from a gate comment; there is no issue-based known-failure list (the old #317
+tracker is retired).
+
+When relaxing or gating an assertion (`test.skip`, `test.skipIf(...)`,
+narrowing a condition), the comment above it must be self-contained:
+
+- the observed behavior (what the agent did instead),
+- the evidence (CI run id and date),
+- the condition for re-enabling.
+
+Referencing a _causal_ change is fine (e.g. the PR that will fix the behavior,
+or an upstream Storybook bug the assertion waits on) — that is a pointer to
+the fix, not a tracker for the failure. See the gates in
+`evals/807-docs-request/EVAL.ts` and `evals/808-shared-infra-fallback/EVAL.ts`
+for the expected shape.
+
 ## Shared Templates
 
 Fixtures can opt into a shared starter project with package metadata:

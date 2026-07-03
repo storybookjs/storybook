@@ -45,7 +45,38 @@ export const resolvePackageDir = (
   }
 };
 
-let isTypescriptLoaderRegistered = false;
+let typescriptLoaderRegistration: Promise<void> | null = null;
+
+/**
+ * Registers the TypeScript loader hook, memoizing the in-flight registration promise (rather than
+ * a boolean) so that concurrent callers await the same registration instead of racing past it:
+ * with a boolean flag set before the `await`, a second concurrent call would see the flag already
+ * set and proceed to `import()` its own file before the hook was actually active.
+ */
+function registerTypescriptLoader() {
+  if (!typescriptLoaderRegistration) {
+    typescriptLoaderRegistration = (async () => {
+      // `registerHooks` avoids the DEP0205 deprecation warning that `register` emits on Node.js 26+,
+      // but it's only available from Node.js 22.15.0 onwards. Fall back to `register` on older Node
+      // versions, which Storybook still supports. `nodeModule.registerHooks` (rather than a named
+      // import) is required here: a named import of an export that doesn't exist on a given Node
+      // version throws a SyntaxError at module-load time, before this feature check ever runs.
+      // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
+      // the `register` fallback below, and switch back to a plain named `registerHooks` import.
+      if (typeof nodeModule.registerHooks === 'function') {
+        const { load } = await import('storybook/internal/bin/loader');
+        nodeModule.registerHooks({ load });
+      } else {
+        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+      }
+    })().catch((e) => {
+      typescriptLoaderRegistration = null;
+      throw e;
+    });
+  }
+  return typescriptLoaderRegistration;
+}
 
 /**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
@@ -68,30 +99,7 @@ export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
-  if (!isTypescriptLoaderRegistered) {
-    // `registerHooks` avoids the DEP0205 deprecation warning that `register` emits on Node.js 26+,
-    // but it's only available from Node.js 22.15.0 onwards. Fall back to `register` on older Node
-    // versions, which Storybook still supports. `nodeModule.registerHooks` (rather than a named
-    // import) is required here: a named import of an export that doesn't exist on a given Node
-    // version throws a SyntaxError at module-load time, before this feature check ever runs.
-    // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
-    // the `register` fallback below, and switch back to a plain named `registerHooks` import.
-    // Set this before the `await` below (rather than after) so that concurrent calls to
-    // `importModule` don't race and register the loader hooks more than once.
-    isTypescriptLoaderRegistered = true;
-    try {
-      if (typeof nodeModule.registerHooks === 'function') {
-        const { load } = await import('storybook/internal/bin/loader');
-        nodeModule.registerHooks({ load });
-      } else {
-        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-        nodeModule.register(typescriptLoaderUrl, import.meta.url);
-      }
-    } catch (e) {
-      isTypescriptLoaderRegistered = false;
-      throw e;
-    }
-  }
+  await registerTypescriptLoader();
 
   let mod;
   try {

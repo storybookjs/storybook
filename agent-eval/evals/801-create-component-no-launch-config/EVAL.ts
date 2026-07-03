@@ -22,14 +22,15 @@ import {
 const review = isReviewEnabled();
 
 // The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components. Asserted on the Claude
-// experiments in both review modes: review-off ships the restored legacy
-// instructions, which demonstrably work (cc-mcp and cc-plugin both called
-// get-documentation in the 2026-07-03 run 28660377980); review-on ships this
-// PR's slim instructions, green on the cc configs in the 2026-07-02 runs.
-// Accepted known failure on codex: GPT-5.5 skipped the docs tools on both
-// integrations under both instruction shapes (run 28660377980).
-test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
+// so get-documentation can serve its components. Asserted on every
+// experiment in both review modes: the cc configs are proven (legacy
+// instructions in the 2026-07-03 run 28660377980, slim review-on
+// instructions in the 2026-07-02 runs), and for codex — which skipped the
+// docs tools under both instruction shapes in run 28660377980 — the
+// get-documentation/list-all-documentation descriptions and the
+// design-system docs section in get-storybook-story-instructions (a tool
+// codex demonstrably reads) now carry the steering this verifies.
+test('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 

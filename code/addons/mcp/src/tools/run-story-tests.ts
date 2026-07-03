@@ -60,6 +60,7 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
 export function getRunStoryTestsToolDescription(a11yEnabled: boolean) {
 	return (
 		`Run story tests.
+Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level checks like typecheck or lint do not replace this.
 Provide stories for focused runs (faster while iterating),
 or omit stories to run all tests for full-project verification.
 Use this continuously to monitor test results as you work on your UI components and stories.

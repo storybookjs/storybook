@@ -549,4 +549,26 @@ describe('getUIBuildingInstructionsTool', () => {
 			isError: true,
 		});
 	});
+
+	it('carries the docs steering exactly when the docs tools are available', async () => {
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) =>
+					presetName === 'framework' ? '@storybook/react-vite' : undefined,
+				),
+			},
+		} as any;
+
+		const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsAvailable: true });
+		expect(withDocs).toContain('## Using library components');
+		expect(withDocs).toContain('list-all-documentation');
+
+		// Without the docs manifest the tools are not registered, so the
+		// instructions must not tell agents to call them.
+		const withoutDocs = await buildStorybookStoryInstructions(mockOptions, {
+			docsAvailable: false,
+		});
+		expect(withoutDocs).not.toContain('## Using library components');
+		expect(withoutDocs).not.toContain('list-all-documentation');
+	});
 });

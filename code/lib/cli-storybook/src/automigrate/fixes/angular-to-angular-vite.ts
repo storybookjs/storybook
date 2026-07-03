@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import { type ConfigFile, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -385,6 +385,39 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     if (mainConfigPath) {
       logger.debug('Updating main config...');
       await transformMainConfig(mainConfigPath, dryRun);
+
+      // 2b. Guarantee the framework field actually points at @storybook/angular-vite.
+      // The text rewrite above only touches frameworks spelled out literally in the
+      // main config. When the framework is configured indirectly (e.g. spread from a
+      // shared base config in an Nx workspace) the literal `@storybook/angular` string
+      // is absent, so nothing is rewritten and the config still resolves to
+      // @storybook/angular. That later makes the deferred @storybook/addon-vitest
+      // postinstall fail with a confusing "cannot yet be used with angular" error.
+      // Read the framework back via AST and, when it doesn't resolve to a literal name,
+      // set it explicitly so the migrated project is unambiguously on angular-vite.
+      if (!dryRun) {
+        try {
+          const main = await readConfig(mainConfigPath);
+          if (!main.getNameFromPath(['framework'])) {
+            await updateMainConfig({ mainConfigPath, dryRun: false }, async (config) => {
+              config.setFieldValue(['framework'], ANGULAR_VITE_PACKAGE);
+            });
+            logger.warn(
+              dedent`
+                Your Storybook framework looks like it is configured indirectly (not as a literal
+                value in ${mainConfigPath}), so it could not be switched automatically.
+                We set \`framework: '${ANGULAR_VITE_PACKAGE}'\` for you - please re-apply any framework
+                options (e.g. \`compodoc\`) that were previously defined in your shared config.
+              `
+            );
+          }
+        } catch (error) {
+          logger.warn(
+            `Could not verify the framework in ${mainConfigPath} automatically: ${error}. ` +
+              `Make sure \`framework\` is set to '${ANGULAR_VITE_PACKAGE}'.`
+          );
+        }
+      }
     }
 
     // Track whether any migrated builder config disabled Compodoc, so the

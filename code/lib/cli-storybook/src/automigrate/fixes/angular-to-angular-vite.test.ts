@@ -6,7 +6,7 @@ import { transformImportFiles } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
@@ -66,6 +66,7 @@ const mockTransformImportFiles = vi.mocked(transformImportFiles);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
 const mockUpdateMainConfig = vi.mocked(updateMainConfig);
+const mockLoggerWarn = vi.mocked(logger.warn);
 
 describe('angular-to-angular-vite', () => {
   const mockPackageManager = {
@@ -399,6 +400,88 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(mockWriteFile).not.toHaveBeenCalledWith(
         '/project/.storybook/main.ts',
         expect.anything()
+      );
+    });
+
+    it('forces the framework to @storybook/angular-vite (and warns) when it is configured indirectly', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // A main config whose framework comes from a spread of an imported base config
+      // (common in Nx workspaces). The literal '@storybook/angular' never appears, so
+      // the text rewrite no-ops and, without this fix, the config keeps resolving to
+      // @storybook/angular — later breaking the deferred addon-vitest install.
+      const indirectMain = `import { base } from './base';\nexport default { ...base, stories: [] };`;
+      mockReadFile.mockResolvedValue(indirectMain);
+
+      // Drive the AST callback with a real ConfigFile so the assertion reflects the
+      // actual transform rather than a mocked field-setter.
+      let printed: string | undefined;
+      mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
+        const main = loadConfig(indirectMain).parse();
+        await cb(main);
+        printed = printConfig(main).code;
+      }) as any);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).toHaveBeenCalled();
+      expect(printed).toMatch(/framework:\s*['"]@storybook\/angular-vite['"]/);
+      expect(mockLoggerWarn).toHaveBeenCalledWith(expect.stringContaining('configured indirectly'));
+    });
+
+    it('does not force the framework when it is a resolvable literal', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      // Literal object-form framework: the text rewrite handles it, so the AST
+      // safety net must not touch the config or warn about indirect configuration.
+      mockReadFile.mockResolvedValue(
+        `export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, packageJsonFiles: [] },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).not.toHaveBeenCalled();
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('configured indirectly')
+      );
+    });
+
+    it('does not false-positive on a defineMain()-wrapped framework', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      // CSF-factory form: csf-tools unwraps the call wrapper, so the framework name
+      // resolves and the AST safety net must stay out of the way.
+      mockReadFile.mockResolvedValue(
+        `import { defineMain } from '${ANGULAR_VITE_PACKAGE}/node';\nexport default defineMain({ framework: '${ANGULAR_VITE_PACKAGE}' });`
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, packageJsonFiles: [] },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).not.toHaveBeenCalled();
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('configured indirectly')
       );
     });
 

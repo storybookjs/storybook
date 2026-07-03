@@ -59,16 +59,16 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 		const changeDetection = options.changeDetectionEnabled ?? false;
 		const graphSupported = options.moduleGraphSupported ?? false;
 		const previewStoriesStep = changeDetection
-			? 'After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.'
+			? 'After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **get-changed-stories** to discover the affected stories.'
 			: graphSupported
-				? 'After changing any component or story, call **get-stories-by-component** with the files you touched.'
-				: 'After changing any component or story, identify the stories affected by your change.';
+				? 'After editing anything that changes how the UI looks, call **get-stories-by-component** with the files you touched.'
+				: 'After editing anything that changes how the UI looks, identify the affected stories.';
 		// Terse pointer only: the full link-presentation rule reaches the agent
 		// through the get-storybook-story-instructions output (getFinalLinksGuidance)
 		// and the display-review and preview-stories tool results, which are
 		// never truncated.
 		const finalLinksStep =
-			"End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.";
+			"End your final response with the review section from **display-review**'s result — never substitute preview URLs. **preview-stories** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.";
 		sections.push(
 			devInstructions
 				.replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)

@@ -49,10 +49,10 @@ describe('buildServerInstructions', () => {
 			## UI Building and Story Writing Workflow
 
 			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.
-			- End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.
+			- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **get-changed-stories** to discover the affected stories.
+			- End your final response with the review section from **display-review**'s result — never substitute preview URLs. **preview-stories** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
 			- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so.
+			- Only use story IDs returned by tools — never derive them from file names or memory. **get-stories-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
 
 			## Validation Workflow
 
@@ -61,9 +61,9 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			**CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries, never read a component's types out of node_modules; retrieve its documentation instead.
+			**CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries, never read a component's source or types out of node_modules; retrieve its documentation instead. Answer props/usage questions from these tools too.
 
-			1. Call **list-all-documentation** once at task start to discover component and docs IDs.
+			1. Call **list-all-documentation** once at task start for component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list for props and usage examples.
 			3. Call **get-documentation-for-story** for more examples from a specific story variant.
 
@@ -86,10 +86,10 @@ describe('buildServerInstructions', () => {
 			## UI Building and Story Writing Workflow
 
 			- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
-			- After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.
-			- End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly.
+			- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **get-changed-stories** to discover the affected stories.
+			- End your final response with the review section from **display-review**'s result — never substitute preview URLs. **preview-stories** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
 			- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-			- Only use story IDs returned by tools — never derive them from file names, titles, or memory. **get-stories-by-component** maps any input (edited files, a feature name) to stories; its description covers the workflow. No matches means no stories exist yet — say so."
+			- Only use story IDs returned by tools — never derive them from file names or memory. **get-stories-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so."
 		`);
 	});
 
@@ -155,10 +155,10 @@ describe('buildServerInstructions', () => {
 		// With review enabled the after-change step must not end in
 		// preview-stories — discovery feeds display-review instead.
 		expect(instructions).toContain(
-			'- After changing any component or story, call **get-stories-by-component** with the files you touched.',
+			'- After editing anything that changes how the UI looks, call **get-stories-by-component** with the files you touched.',
 		);
 		expect(instructions).not.toContain('then **preview-stories** for their preview URLs');
-		expect(instructions).toContain('**preview-stories** is only for iterating on a specific story');
+		expect(instructions).toContain('**preview-stories** is only for mid-loop iteration');
 	});
 
 	it('keeps the after-change step discovery-first when review is on without discovery tools', () => {
@@ -172,7 +172,7 @@ describe('buildServerInstructions', () => {
 		});
 
 		expect(instructions).toContain(
-			'- After changing any component or story, identify the stories affected by your change.',
+			'- After editing anything that changes how the UI looks, identify the affected stories.',
 		);
 		expect(instructions).not.toContain('call **preview-stories** to retrieve preview URLs');
 	});

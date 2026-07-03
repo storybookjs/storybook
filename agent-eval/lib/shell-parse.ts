@@ -126,10 +126,26 @@ function parseStorybookAiInvocation(
 	};
 }
 
+// Matches the shell binary of a `bash -c '…'`-style wrapper, with or without
+// a path prefix (`/bin/sh`, `/usr/bin/env` resolves the binary as a plain
+// token so `env bash -c` also lands here).
+const SHELL_BINARY_PATTERN = /^(?:.*\/)?(?:sh|bash|zsh|dash|ksh)$/;
+
 function getNestedShellCommand(command: string): string | undefined {
 	const tokens = tokenizeShellCommand(command);
 	for (let index = 0; index < tokens.length - 1; index += 1) {
-		if (tokens[index] === '-c' || tokens[index] === '-lc') {
+		if (tokens[index] !== '-c' && tokens[index] !== '-lc') {
+			continue;
+		}
+
+		// Only a `-c` that belongs to a shell binary wraps a nested command;
+		// `head -c 800`, `curl -c jar`, or `grep -c foo` must stay literal.
+		// Walk back over other flags so `bash -x -c '…'` still counts.
+		let binaryIndex = index - 1;
+		while (binaryIndex >= 0 && tokens[binaryIndex]?.startsWith('-')) {
+			binaryIndex -= 1;
+		}
+		if (binaryIndex >= 0 && SHELL_BINARY_PATTERN.test(tokens[binaryIndex] ?? '')) {
 			return tokens[index + 1];
 		}
 	}

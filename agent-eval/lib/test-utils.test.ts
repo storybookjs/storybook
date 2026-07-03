@@ -110,6 +110,38 @@ describe('parseStorybookWorkflowShellCommands', () => {
 		expect(calls[0]?.input).toEqual({});
 		expect(calls[1]?.input).not.toHaveProperty('json');
 	});
+
+	test('does not mistake a non-shell -c flag for a bash -c wrapper', () => {
+		// Regression: cc-plugin 802 (2026-07-03 CI run 28647682172) chained
+		// `head -c 800` before a real get-changed-stories call in one compound
+		// command; the parser recursed into the literal `800` as if it were a
+		// `bash -c` payload and dropped the workflow call.
+		const calls = parseStorybookWorkflowShellCommands([
+			'sleep 3; curl -s http://localhost:40097/index.json 2>/dev/null | head -c 800; echo; echo "---changed---"; STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 40097 get-changed-stories 2>&1 | grep -v "No story files" | head -40',
+			'curl -c cookies.txt http://localhost:6006/ && npx storybook ai get-changed-stories',
+			'grep -c foo bar.txt; npx storybook ai get-stories-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
+		]);
+
+		expect(calls.map((call) => call.name)).toEqual([
+			'get-changed-stories',
+			'get-changed-stories',
+			'get-stories-by-component',
+		]);
+	});
+
+	test('still unwraps genuine shell wrappers around storybook ai calls', () => {
+		const calls = parseStorybookWorkflowShellCommands([
+			"bash -c 'npx storybook ai get-changed-stories'",
+			"/bin/sh -lc 'npx storybook ai --port 6006 run-story-tests'",
+			"env bash -x -c 'npx storybook ai get-stories-by-component'",
+		]);
+
+		expect(calls.map((call) => call.name)).toEqual([
+			'get-changed-stories',
+			'run-story-tests',
+			'get-stories-by-component',
+		]);
+	});
 });
 
 describe('parseWorkflowToolResults', () => {

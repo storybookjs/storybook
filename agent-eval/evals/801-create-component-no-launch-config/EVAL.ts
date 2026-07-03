@@ -21,16 +21,18 @@ import {
 // workflow ends in preview-stories links.
 const review = isReviewEnabled();
 
-// TODO: Re-enable once the guidance reliably steers agents to the documentation
-// tools. The template composes the Reshaped Storybook (refs in .storybook/main.ts)
-// so get-documentation can serve its components, and the Documentation Workflow
-// instructions (MCP server instructions / `storybook ai --help`) already say to
-// call list-all-documentation at task start and never assume component props —
-// but agents ignore that and read node_modules/reshaped/dist/*.d.ts instead
-// (0/2 in the 2026-07-01T22-53 cc-mcp and cc-plugin runs). Likely fix: add a
-// documentation-first step to get-storybook-story-instructions, which agents
-// demonstrably treat as the source of truth.
-test.skip('uses the documentation tooling', () => {
+// The template composes the Reshaped Storybook (refs in .storybook/main.ts)
+// so get-documentation can serve its components.
+// Review-on runs: TODO re-enable once the review-flavored guidance reliably
+// steers agents to the documentation tools — under those (truncated)
+// instructions agents read node_modules/reshaped/dist/*.d.ts instead (0/2 in
+// the 2026-07-01T22-53 cc-mcp and cc-plugin runs); the slimming is iterated
+// in #320.
+// Review-off runs (the default) assert this: the restored legacy
+// instructions — untruncated, with the CRITICAL never-hallucinate rule in
+// the Documentation Workflow — are the last known working state for
+// docs-tool usage, and restoring them is only proven by checking it.
+test.skipIf(review)('uses the documentation tooling', () => {
 	expectWorkflowCalls(['get-documentation']);
 });
 

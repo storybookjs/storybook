@@ -90,13 +90,16 @@ test.runIf(review)(
 // Required workflow step (test-instructions.md Validation Workflow): run
 // run-story-tests after the change and do not report completion while story
 // tests are failing.
-// Accepted known failure — MCP-path agents skip validation for shared-token
-// edits: the Validation Workflow section is lost to the 2,048-char MCP
-// server-instruction truncation that PR #320 addresses (0 run-story-tests
-// calls in the 2026-07-02 cc-mcp QA run, while the same fixture passes on
-// cc-plugin and codex-plugin). Gated to the plugin integration; re-enable on
-// the MCP path once #320 lands.
-test.skipIf(getEvalContext().integration === 'mcp')(
+// Review-on runs, accepted known failure — MCP-path agents skip validation
+// for shared-token edits: the Validation Workflow section is lost to the
+// 2,048-char MCP server-instruction truncation that PR #320 addresses (0
+// run-story-tests calls in the 2026-07-02 cc-mcp QA run, while the same
+// fixture passes on cc-plugin and codex-plugin). Re-enable on the review-on
+// MCP path once #320 lands.
+// Review-off runs (the default) assert every integration: the restored
+// legacy instructions fit under the truncation limit, so the Validation
+// Workflow reaches MCP agents again.
+test.skipIf(isReviewEnabled() && getEvalContext().integration === 'mcp')(
 	'runs story tests after the change and finishes with them passing',
 	() => {
 		expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });

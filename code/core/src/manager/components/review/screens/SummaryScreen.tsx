@@ -31,6 +31,7 @@ import {
   buildSummaryBackHref,
 } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
+import type { ReviewBanner } from '../review-store.ts';
 import type { StoryInfo } from '../review-types.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
@@ -195,14 +196,10 @@ export interface SummaryScreenProps {
   storyInfo?: Record<string, StoryInfo>;
   /** Builds the (frozen) preview iframe src for a story thumbnail. */
   getStoryPreviewHref: (storyId: string) => string;
-  /** When true, render the "this review may be stale" banner at the top. */
-  isStale?: boolean;
-  /** When true, render the "updated review available" banner at the top. */
-  hasPendingUpdate?: boolean;
-  /** Accepts the pending review and navigates to the summary screen. */
-  onAcceptPendingUpdate?: () => void;
+  /** Attention banner to render at the top (pending-update or stale). */
+  banner?: ReviewBanner;
   /** Keep summary preview iframes mounted while the overlay is hidden. */
-  previewsPaused?: boolean;
+  summaryHidden?: boolean;
   /** Clears the active review (if any) and returns to the pre-review canvas. */
   onDismiss: () => void;
   /** Pre-review canvas search, or root when none is recorded yet. */
@@ -213,10 +210,8 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
   state,
   storyInfo = {},
   getStoryPreviewHref,
-  isStale = false,
-  hasPendingUpdate = false,
-  onAcceptPendingUpdate,
-  previewsPaused = false,
+  banner = null,
+  summaryHidden = false,
   onDismiss,
   returnSearch = null,
 }) => {
@@ -317,11 +312,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
   return (
     <Page>
-      {hasPendingUpdate && onAcceptPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
+      {banner && <AttentionBanner {...banner} />}
       <ReviewHeader
         leading={
           <Button variant="ghost" size="small" padding="small" ariaLabel="Exit review" asChild>
@@ -422,7 +413,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                           buildReviewStoryHref({ collectionIndex: index, storyId })
                         }
                         getStoryPreviewHref={getStoryPreviewHref}
-                        previewsPaused={previewsPaused}
+                        summaryHidden={summaryHidden}
                       />
                     </Collapsible>
                   </Card>

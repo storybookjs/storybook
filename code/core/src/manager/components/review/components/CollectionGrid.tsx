@@ -1,14 +1,13 @@
-import React, { type FC } from 'react';
+import React, { type CSSProperties, type FC } from 'react';
 
 import { Badge, Button, Loader } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
-import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
 import {
-  DEFAULT_CONTENT_WIDTH,
-  getPreviewFrameStyle,
-  hasFixedViewportAspect,
-} from './iframeResizeMessage.ts';
+  hasFixedViewportDimensions,
+  type IframeResizeDimensions,
+} from '../../../../shared/constants/iframe-resize.ts';
+import { fallbackStoryInfo, type StoryInfo } from '../review-types.ts';
 import { usePreviewThumbnail } from './usePreviewThumbnail.ts';
 
 // Per-breakpoint grid: `cols` columns (each cell clamped to 400px) capped at
@@ -59,6 +58,37 @@ const FrameShell = styled.div({
   aspectRatio: '3 / 2',
   position: 'relative',
 });
+
+/** Default `--content-w` before the embed iframe reports its size. */
+const DEFAULT_CONTENT_WIDTH = 300;
+
+/** Pre-measurement scale so the embed iframe viewport is 2× the frame width (100% / 0.5). */
+const THUMBNAIL_BOOTSTRAP_SCALE = 0.5;
+
+// Feeds the CSS variables consumed by `Frame` below (`--scale`, `--content-w`,
+// `--vp-w`/`--vp-h`); `viewportFill` toggles the `data-viewport-fill` branch.
+const getPreviewFrameLayout = (
+  dimensions: IframeResizeDimensions | null
+): { style: CSSProperties; viewportFill: boolean } => {
+  if (!dimensions) {
+    return {
+      style: { '--scale': THUMBNAIL_BOOTSTRAP_SCALE } as CSSProperties,
+      viewportFill: false,
+    };
+  }
+
+  if (hasFixedViewportDimensions(dimensions.viewport)) {
+    return {
+      style: {
+        '--vp-w': dimensions.viewport.width,
+        '--vp-h': dimensions.viewport.height,
+      } as CSSProperties,
+      viewportFill: true,
+    };
+  }
+
+  return { style: { '--content-w': dimensions.width } as CSSProperties, viewportFill: false };
+};
 
 const Frame = styled.a(({ theme }) => ({
   position: 'absolute',
@@ -201,23 +231,20 @@ const StoryPreviewCell: FC<{
   href?: string;
   info: StoryInfo;
   getPreviewHref: (storyId: string) => string;
-  previewsPaused?: boolean;
-}> = ({ storyId, href, info, getPreviewHref, previewsPaused = false }) => {
+  summaryHidden?: boolean;
+}> = ({ storyId, href, info, getPreviewHref, summaryHidden = false }) => {
   const {
     cellRef,
-    frameRef,
     iframeRef,
     src,
     isPreviewLoading,
     rememberedDimensions,
     forceStartCurrent,
     finishCurrent,
-  } = usePreviewThumbnail({ storyId, getPreviewHref, previewsPaused });
+  } = usePreviewThumbnail({ storyId, getPreviewHref, summaryHidden });
 
   const { component, name } = deriveStoryInfo(info);
-  const viewport = rememberedDimensions?.viewport;
-  const viewportFill = hasFixedViewportAspect(viewport);
-  const frameStyle = getPreviewFrameStyle(rememberedDimensions);
+  const { style: frameStyle, viewportFill } = getPreviewFrameLayout(rememberedDimensions);
 
   const preview = src ? (
     <div data-preview-scale>
@@ -241,7 +268,6 @@ const StoryPreviewCell: FC<{
         <Frame
           as={href ? 'a' : 'div'}
           {...(href ? { href } : {})}
-          ref={frameRef as React.Ref<HTMLAnchorElement>}
           data-testid="review-collection-grid-frame"
           data-viewport-fill={viewportFill || undefined}
           style={frameStyle}
@@ -285,7 +311,7 @@ export interface CollectionGridProps {
   /** Story id → component title + story name, for the cell label. */
   storyInfo: Record<string, StoryInfo>;
   /** Keep loaded previews mounted while the summary overlay is hidden. */
-  previewsPaused?: boolean;
+  summaryHidden?: boolean;
 }
 
 export const CollectionGrid: FC<CollectionGridProps> = ({
@@ -295,7 +321,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   showAll = false,
   onShowAll,
   storyInfo,
-  previewsPaused = false,
+  summaryHidden = false,
 }) => (
   <GridContainer>
     <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
@@ -308,7 +334,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
             href={getStoryHref?.(storyId, storyIndex)}
             info={info}
             getPreviewHref={getStoryPreviewHref}
-            previewsPaused={previewsPaused}
+            summaryHidden={summaryHidden}
           />
         );
       })}

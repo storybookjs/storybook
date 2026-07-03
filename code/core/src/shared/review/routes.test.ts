@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import { isReviewManagerRoute, isReviewSummaryPath } from './routes.ts';
+import {
+  isReviewCollectionStoryRoute,
+  isReviewManagerRoute,
+  isReviewSummaryPath,
+} from './routes.ts';
 
 describe('isReviewSummaryPath', () => {
   it('matches the review summary routes', () => {
     expect(isReviewSummaryPath('/review/')).toBe(true);
     expect(isReviewSummaryPath('/review')).toBe(true);
     expect(isReviewSummaryPath('/story/foo--bar')).toBe(false);
+  });
+});
+
+describe('isReviewCollectionStoryRoute', () => {
+  it('matches only story routes with a collection query param', () => {
+    expect(isReviewCollectionStoryRoute('/story/foo--bar', { collection: '0' })).toBe(true);
+    expect(isReviewCollectionStoryRoute('/story/foo--bar', {})).toBe(false);
+    expect(isReviewCollectionStoryRoute('/review/', { collection: '0' })).toBe(false);
+    expect(isReviewCollectionStoryRoute(undefined, { collection: '0' })).toBe(false);
   });
 });
 

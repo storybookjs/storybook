@@ -23,14 +23,10 @@ import {
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
-import {
-  REVIEW_COLLECTION_QUERY_PARAM,
-  buildReviewStoryHref,
-  isReviewSummaryPath,
-} from './review-navigation.ts';
+import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
-import { ReviewSummaryPortal } from './screens/ReviewSummaryPortal.tsx';
+import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -89,6 +85,7 @@ const managerApi: API = {
   off: offMock,
   emit: emitMock,
   getIsNavShown: () => true,
+  getNavAvailability: () => 'unavailable',
   getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
   togglePanel: fn().mockName('api::togglePanel'),
@@ -140,7 +137,7 @@ const applyReviewState = () => {
 const ReviewHarness = () => (
   <ReviewProvider>
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -148,7 +145,7 @@ const ReviewOutsideHarness = () => (
   <ReviewProvider>
     <ReviewNotification />
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -181,7 +178,7 @@ const ReviewOutsideWithNotificationsHarness = () => {
         <ReviewProvider>
           <ReviewNotification />
           <ReviewToolbarHeader />
-          <ReviewSummaryPortal />
+          <ReviewSummaryHost />
         </ReviewProvider>
         <div
           style={{
@@ -203,11 +200,9 @@ const ReviewOutsideWithNotificationsHarness = () => {
 };
 
 const deriveViewMode = (path: string): State['viewMode'] => {
-  if (path.startsWith('/story/') || path.startsWith('/docs/')) {
-    return parsePath(path).viewMode as State['viewMode'];
-  }
-  if (isReviewSummaryPath(path)) {
-    return 'review';
+  const { viewMode } = parsePath(path);
+  if (viewMode) {
+    return viewMode as State['viewMode'];
   }
   return managerState.viewMode;
 };
@@ -263,7 +258,13 @@ const meta = preview.meta({
         <ManagerStateSync parameters={parameters}>
           <div
             id="main-content-wrapper"
-            style={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: 0 }}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100vh',
+              minHeight: 0,
+            }}
           >
             <Story />
           </div>
@@ -295,10 +296,8 @@ const meta = preview.meta({
         description: '',
       },
     ]);
-    document.getElementById('storybook-review-summary-portal')?.remove();
     return () => {
       internal_fullStatusStore.unset();
-      document.getElementById('storybook-review-summary-portal')?.remove();
     };
   },
 });

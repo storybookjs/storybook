@@ -124,6 +124,7 @@ const mapper = ({
     refs,
     storyId,
     baseUrl: PREVIEW_URL || 'iframe.html',
+    path,
     queryParams: customQueryParams,
     tools: tools,
     toolsExtra: toolsExtra,

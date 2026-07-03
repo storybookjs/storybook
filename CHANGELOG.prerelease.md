@@ -1,3 +1,11 @@
+## 10.5.0-alpha.11
+
+- Addon-vitest: Add an initialGlobals option to pin a project's globals - [#35226](https://github.com/storybookjs/storybook/pull/35226), thanks @lifeiscontent!
+- Core: Add ai-review observability - [#35300](https://github.com/storybookjs/storybook/pull/35300), thanks @yannbf!
+- Core: Allow vite-plus 0.2.x in the optional peer range - [#35221](https://github.com/storybookjs/storybook/pull/35221), thanks @lifeiscontent!
+- Manager: Restructure review feature state, layout integration, and thumbnail pipeline - [#35351](https://github.com/storybookjs/storybook/pull/35351), thanks @ghengeveld!
+- Preview: Restore iframe scrolling after resizing the layout - [#35310](https://github.com/storybookjs/storybook/pull/35310), thanks @yatishgoel!
+
 ## 10.5.0-alpha.10
 
 - A11y: Handle lang attribute throughout preview - [#35321](https://github.com/storybookjs/storybook/pull/35321), thanks @Sidnioulz!

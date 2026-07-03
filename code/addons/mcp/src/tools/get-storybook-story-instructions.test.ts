@@ -242,6 +242,7 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).toContain('## Using library components');
 		expect(instructions).toContain('**list-all-documentation**');
 		expect(instructions).toContain('**get-documentation**');
+		expect(instructions).toContain('`storybookId`');
 		expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
 	});
 

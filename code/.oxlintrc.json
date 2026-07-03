@@ -1,0 +1,171 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../.oxlintrc.json"],
+  "jsPlugins": [
+    { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
+    "eslint-plugin-storybook",
+    "eslint-plugin-playwright",
+    "eslint-plugin-compat"
+  ],
+  "ignorePatterns": [
+    "**/*.vue",
+    "**/*.svelte",
+    "storybook-static",
+    "built-storybooks",
+    "ember-output",
+    "lib/codemod/src/transforms/__testfixtures__",
+    "core/assets",
+    "core/report",
+    "core/src/core-server/utils/__search-files-tests__",
+    "core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
+    "lib/cli-storybook/test/default/cli.test.cjs",
+    "sandbox"
+  ],
+  "rules": {
+    "compat/compat": "error",
+    "import/no-named-as-default": "warn",
+    "import/no-named-as-default-member": "warn",
+    "jsx-a11y/no-autofocus": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react-aria",
+            "message": "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead",
+            "allowTypeImports": false
+          },
+          {
+            "name": "react-stately",
+            "message": "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead",
+            "allowTypeImports": false
+          },
+          {
+            "name": "react-aria-components",
+            "message": "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking. Might require addition patching of the package if using new, unpatched components. See https://github.com/storybookjs/storybook/pull/32594",
+            "allowTypeImports": true
+          },
+          {
+            "name": "es-toolkit",
+            "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+            "allowTypeImports": true
+          }
+        ]
+      }
+    ],
+    "react/no-unknown-property": [
+      "error",
+      { "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"] }
+    ],
+    "react/rules-of-hooks": "off",
+    "typescript/triple-slash-reference": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "warn",
+        "local-rules/storybook-monorepo-imports": "error"
+      }
+    },
+    {
+      "files": ["**/core/src/preview-errors.ts"],
+      "rules": {
+        "local-rules/no-duplicated-error-codes": "error"
+      }
+    },
+    {
+      "files": ["**/*.test.*", "**/*.spec.*", "**/*.test-d.*", "**/*.mockdata.*"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "off",
+        "local-rules/storybook-monorepo-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/*.test-d.*",
+        "**/*.stories.*",
+        "**/*.mockdata.*",
+        "**/addons/docs/**",
+        "**/__tests__/**",
+        "**/__testfixtures__/**",
+        "**/template/**"
+      ],
+      "rules": {
+        "compat/compat": "off",
+        "jsx-a11y/alt-text": "off",
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/iframe-has-title": "off",
+        "jsx-a11y/no-static-element-interactions": "off"
+      }
+    },
+    {
+      "files": ["**/*.stories.*"],
+      "rules": {
+        "storybook/await-interactions": "error",
+        "storybook/context-in-play-function": "error",
+        "storybook/default-exports": "error",
+        "storybook/hierarchy-separator": "warn",
+        "storybook/no-redundant-story-name": "warn",
+        "storybook/no-renderer-packages": "error",
+        "storybook/prefer-pascal-case": "warn",
+        "storybook/story-exports": "error",
+        "storybook/use-storybook-expect": "error",
+        "storybook/use-storybook-testing-library": "error"
+      }
+    },
+    {
+      "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
+      "rules": {
+        "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["**/.storybook/main.*"],
+      "rules": {
+        "storybook/no-uninstalled-addons": "error"
+      }
+    },
+    {
+      "files": ["**/e2e-sandbox/**", "**/e2e-internal/**"],
+      "rules": {
+        "playwright/expect-expect": "warn",
+        "playwright/max-nested-describe": "warn",
+        "playwright/missing-playwright-await": "error",
+        "playwright/no-conditional-expect": "warn",
+        "playwright/no-conditional-in-test": "warn",
+        "playwright/no-element-handle": "warn",
+        "playwright/no-eval": "warn",
+        "playwright/no-focused-test": "error",
+        "playwright/no-force-option": "warn",
+        "playwright/no-nested-step": "warn",
+        "playwright/no-networkidle": "error",
+        "playwright/no-page-pause": "warn",
+        "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
+        "playwright/no-standalone-expect": "error",
+        "playwright/no-unsafe-references": "error",
+        "playwright/no-useless-await": "warn",
+        "playwright/no-useless-not": "warn",
+        "playwright/no-wait-for-selector": "warn",
+        "playwright/no-wait-for-timeout": "warn",
+        "playwright/prefer-comparison-matcher": "error",
+        "playwright/prefer-equality-matcher": "error",
+        "playwright/prefer-hooks-on-top": "error",
+        "playwright/prefer-strict-equal": "error",
+        "playwright/prefer-to-be": "error",
+        "playwright/prefer-to-contain": "error",
+        "playwright/prefer-to-have-count": "error",
+        "playwright/prefer-to-have-length": "error",
+        "playwright/prefer-web-first-assertions": "error",
+        "playwright/require-to-throw-message": "error",
+        "playwright/require-top-level-describe": "error",
+        "playwright/valid-describe-callback": "error",
+        "playwright/valid-expect": "error",
+        "playwright/valid-expect-in-promise": "error",
+        "playwright/valid-title": "error"
+      }
+    }
+  ]
+}

@@ -207,10 +207,49 @@ const detectDisabledCompodoc = (content: string): boolean => {
   );
 };
 
+/**
+ * Detect whether an Angular build target in an `angular.json` or Nx `project.json`
+ * ships `zone.js` as a polyfill, i.e. the project uses zone-based change detection.
+ * @storybook/angular-vite defaults to zoneless outside `ng run`, so this signal is
+ * used to re-add the `zone.js` import to the Storybook preview (see step 4c).
+ */
+const detectUsesZoneJs = (content: string): boolean => {
+  let json: any;
+  try {
+    json = JSON.parse(content);
+  } catch {
+    return false;
+  }
+
+  const isZoneJsPolyfill = (entry: unknown): boolean =>
+    typeof entry === 'string' && (entry === 'zone.js' || entry.startsWith('zone.js/'));
+
+  const targetUsesZoneJs = (target: any): boolean => {
+    const polyfills = target?.options?.polyfills;
+    return Array.isArray(polyfills)
+      ? polyfills.some(isZoneJsPolyfill)
+      : isZoneJsPolyfill(polyfills);
+  };
+
+  // angular.json: projects.<name>.architect.<target>; project.json: targets.<target>
+  const targetGroups: any[] = [];
+  if (json?.projects && typeof json.projects === 'object') {
+    for (const project of Object.values<any>(json.projects)) {
+      targetGroups.push(project?.architect, project?.targets);
+    }
+  }
+  targetGroups.push(json?.targets);
+
+  return targetGroups.some(
+    (group) =>
+      group && typeof group === 'object' && Object.values<any>(group).some(targetUsesZoneJs)
+  );
+};
+
 const transformJsonFile = async (
   filePath: string,
   dryRun: boolean
-): Promise<{ changed: boolean; disablesCompodoc: boolean }> => {
+): Promise<{ changed: boolean; disablesCompodoc: boolean; usesZoneJs: boolean }> => {
   try {
     const content = await readFile(filePath, 'utf-8');
     const transformed = rewriteBuilderRefs(content);
@@ -220,9 +259,48 @@ const transformJsonFile = async (
       await writeFile(filePath, transformed);
     }
 
-    return { changed, disablesCompodoc: detectDisabledCompodoc(content) };
+    return {
+      changed,
+      disablesCompodoc: detectDisabledCompodoc(content),
+      usesZoneJs: detectUsesZoneJs(content),
+    };
   } catch {
-    return { changed: false, disablesCompodoc: false };
+    return { changed: false, disablesCompodoc: false, usesZoneJs: false };
+  }
+};
+
+/**
+ * Prepend `import 'zone.js';` to the Storybook preview when the migrated project uses
+ * zone-based change detection. The Webpack `@storybook/angular` builder loaded zone.js
+ * from the Angular build `polyfills`; @storybook/angular-vite defaults to zoneless
+ * outside `ng run`, so without this the polyfill is dropped for `storybook dev`,
+ * `storybook build`, and standalone Vitest, breaking `NgZone`-dependent stories.
+ * Idempotent, and a no-op in dry runs.
+ */
+const addZoneJsPreviewImport = async (
+  previewConfigPath: string,
+  dryRun: boolean
+): Promise<void> => {
+  try {
+    const content = await readFile(previewConfigPath, 'utf-8');
+
+    // Leave an existing zone.js import (any quote style, incl. subpaths) alone.
+    if (/import\s+['"]zone\.js(\/[^'"]*)?['"]/.test(content)) {
+      return;
+    }
+
+    if (dryRun) {
+      return;
+    }
+
+    // zone.js must be imported before Angular loads, so it goes at the very top.
+    await writeFile(previewConfigPath, `import 'zone.js';\n${content}`);
+    logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
+  } catch (error) {
+    logger.warn(
+      `Could not add a \`zone.js\` import to ${previewConfigPath} automatically: ${error}. ` +
+        "If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview."
+    );
   }
 };
 
@@ -459,14 +537,21 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // Track whether any migrated builder config disabled Compodoc, so the
     // intent can be carried into framework.options (step 4b).
     let disableCompodoc = false;
+    // Track whether the project ships zone.js as a build polyfill, so the zone.js
+    // import can be re-added to the preview (step 4c).
+    let zoneJsNeeded = false;
 
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, disablesCompodoc } = await transformJsonFile(angularJsonPath, dryRun);
+      const { changed, disablesCompodoc, usesZoneJs } = await transformJsonFile(
+        angularJsonPath,
+        dryRun
+      );
       disableCompodoc ||= disablesCompodoc;
+      zoneJsNeeded ||= usesZoneJs;
       if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
       }
@@ -485,8 +570,12 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       absolute: true,
     });
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, disablesCompodoc } = await transformJsonFile(projectJsonPath, dryRun);
+      const { changed, disablesCompodoc, usesZoneJs } = await transformJsonFile(
+        projectJsonPath,
+        dryRun
+      );
       disableCompodoc ||= disablesCompodoc;
+      zoneJsNeeded ||= usesZoneJs;
       if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
       }
@@ -526,6 +615,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             "Set `compodoc: false` in your main config's framework.options manually."
         );
       }
+    }
+
+    // 4c. Re-add the zone.js import to the preview for zone-based projects. The
+    // Webpack builder loaded zone.js from the Angular build `polyfills`, but
+    // @storybook/angular-vite defaults to zoneless outside `ng run`, so the polyfill
+    // would otherwise be dropped for `storybook dev`, `storybook build`, and Vitest.
+    if (zoneJsNeeded && previewConfigPath) {
+      await addZoneJsPreviewImport(previewConfigPath, dryRun);
     }
 
     // 5. Update import statements across config and story files.

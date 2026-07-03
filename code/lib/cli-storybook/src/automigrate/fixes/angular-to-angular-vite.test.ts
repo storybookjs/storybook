@@ -928,6 +928,141 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         expect.anything()
       );
     });
+
+    const angularJsonWithPolyfills = (polyfills: unknown) =>
+      JSON.stringify({
+        projects: {
+          myApp: {
+            architect: {
+              build: {
+                builder: '@angular-devkit/build-angular:application',
+                options: { polyfills },
+              },
+              storybook: { builder: '@storybook/angular:start-storybook' },
+            },
+          },
+        },
+      });
+
+    const readFileForZoneJsTest =
+      (angularJson: string, previewContent: string) => (filePath: any) => {
+        const p = String(filePath);
+        if (p.endsWith('angular.json')) {
+          return Promise.resolve(angularJson) as any;
+        }
+        if (p.endsWith('preview.ts')) {
+          return Promise.resolve(previewContent) as any;
+        }
+        if (p.endsWith('package.json')) {
+          return Promise.resolve('{}') as any;
+        }
+        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+      };
+
+    it("adds an `import 'zone.js';` to the preview when the build ships zone.js as a polyfill", async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockImplementation(
+        readFileForZoneJsTest(
+          angularJsonWithPolyfills(['zone.js']),
+          `import { applicationConfig } from '${ANGULAR_PACKAGE}';\nexport const decorators = [];\n`
+        )
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        previewConfigPath: '/project/.storybook/preview.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      const previewWrite = mockWriteFile.mock.calls.find(
+        ([p]) => p === '/project/.storybook/preview.ts'
+      );
+      expect(previewWrite).toBeDefined();
+      expect(String(previewWrite![1])).toMatch(/^import 'zone\.js';/);
+    });
+
+    it('does not touch the preview for a zoneless project (no zone.js polyfill)', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockImplementation(
+        readFileForZoneJsTest(angularJsonWithPolyfills([]), `export const decorators = [];\n`)
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        previewConfigPath: '/project/.storybook/preview.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/.storybook/preview.ts',
+        expect.anything()
+      );
+    });
+
+    it('is idempotent when the preview already imports zone.js', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockImplementation(
+        readFileForZoneJsTest(
+          angularJsonWithPolyfills(['zone.js']),
+          `import 'zone.js';\nexport const decorators = [];\n`
+        )
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        previewConfigPath: '/project/.storybook/preview.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/.storybook/preview.ts',
+        expect.anything()
+      );
+    });
+
+    it('does not modify the preview in dry-run mode even when zone.js is needed', async () => {
+      mockReadFile.mockImplementation(
+        readFileForZoneJsTest(
+          angularJsonWithPolyfills(['zone.js']),
+          `export const decorators = [];\n`
+        )
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: true,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        previewConfigPath: '/project/.storybook/preview.ts',
+        storiesPaths: [],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/.storybook/preview.ts',
+        expect.anything()
+      );
+    });
   });
 });
 

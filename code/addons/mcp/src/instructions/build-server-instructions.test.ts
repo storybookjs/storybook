@@ -12,7 +12,7 @@ describe('buildServerInstructions', () => {
 		});
 
 		expect(instructions).toMatchInlineSnapshot(`
-			"Follow these workflows when working with UI and/or Storybook.
+			"Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
 
 			## UI Building and Story Writing Workflow
 
@@ -42,7 +42,7 @@ describe('buildServerInstructions', () => {
 
 			## Documentation Workflow
 
-			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead. Answer props/usage questions from these tools too — component source and type definitions are not verification.
+			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
 
 			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
@@ -210,11 +210,11 @@ describe('buildServerInstructions', () => {
 		});
 
 		expect(instructions).toMatchInlineSnapshot(`
-			"Follow these workflows when working with UI and/or Storybook.
+			"Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
 
 			## Documentation Workflow
 
-			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead. Answer props/usage questions from these tools too — component source and type definitions are not verification.
+			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
 
 			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
 			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.

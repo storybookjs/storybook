@@ -141,8 +141,12 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 		name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
 		toolset: 'dev',
 		available: ({ availability }) => availability.moduleGraphSupported,
-		getMetadata: () => getStoriesByComponentToolMetadata(),
-		register: (server, _context, enabled) => addGetStoriesByComponentTool(server, enabled),
+		getMetadata: ({ availability }) =>
+			getStoriesByComponentToolMetadata({ reviewEnabled: availability.reviewEnabled }),
+		register: (server, { availability }, enabled) =>
+			addGetStoriesByComponentTool(server, enabled, {
+				reviewEnabled: availability.reviewEnabled,
+			}),
 	},
 	{
 		name: DISPLAY_REVIEW_TOOL_NAME,

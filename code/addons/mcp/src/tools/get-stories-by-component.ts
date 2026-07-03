@@ -17,15 +17,34 @@ import {
 /** When omitted by the caller, applied internally to keep result sets actionable on real codebases. */
 const DEFAULT_MAX_DISTANCE = 3;
 
-export const GET_STORIES_BY_COMPONENT_TOOL_DESCRIPTION = `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${PREVIEW_STORIES_TOOL_NAME} or display-review instead of guessing.
+/**
+ * Review-conditional like the preview-stories description: with the
+ * `experimentalReview` flag off, display-review is not registered, so the
+ * review-off variant must not point agents at a tool that doesn't exist.
+ */
+export function getStoriesByComponentToolDescription({
+	reviewEnabled = false,
+}: { reviewEnabled?: boolean } = {}): string {
+	const handOffTargets = reviewEnabled
+		? `${PREVIEW_STORIES_TOOL_NAME} or display-review`
+		: PREVIEW_STORIES_TOOL_NAME;
+	const inputShapes = reviewEnabled
+		? `files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change`
+		: `files you just edited, a feature/domain/topic the user named, or a query like "all consumers of X"`;
+	const cascadeGuidance = reviewEnabled
+		? `For display-review, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`
+		: `The distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — use them to decide which stories to preview; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`;
 
-Reach for this whenever you need story IDs, whatever shape the input has: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`${GET_CHANGED_STORIES_TOOL_NAME}\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
+	return `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${handOffTargets} instead of guessing.
 
-Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: 3\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. For display-review, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.
+Reach for this whenever you need story IDs, whatever shape the input has: ${inputShapes}. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`${GET_CHANGED_STORIES_TOOL_NAME}\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
+
+Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: 3\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. ${cascadeGuidance}
 
 Never invent IDs from file names, feature names, or memory; title strings can be overridden by story authors, so only IDs returned by discovery tools resolve. If a component has no matches here, it has no stories yet (say so, don't fabricate).
 
 Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
+}
 
 export const GetStoriesByComponentInput = v.object({
 	componentPaths: v.pipe(
@@ -206,11 +225,13 @@ function applyMaxDistance(
 	return { kept, clipped };
 }
 
-export function getStoriesByComponentToolMetadata() {
+export function getStoriesByComponentToolMetadata({
+	reviewEnabled = false,
+}: { reviewEnabled?: boolean } = {}) {
 	return {
 		name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
 		title: 'Get stories for component files',
-		description: GET_STORIES_BY_COMPONENT_TOOL_DESCRIPTION,
+		description: getStoriesByComponentToolDescription({ reviewEnabled }),
 		schema: GetStoriesByComponentInput,
 		outputSchema: GetStoriesByComponentOutput,
 	};
@@ -220,10 +241,11 @@ export async function addGetStoriesByComponentTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ reviewEnabled = false }: { reviewEnabled?: boolean } = {},
 ) {
 	server.tool(
 		{
-			...getStoriesByComponentToolMetadata(),
+			...getStoriesByComponentToolMetadata({ reviewEnabled }),
 			enabled,
 		},
 		async (input) => {

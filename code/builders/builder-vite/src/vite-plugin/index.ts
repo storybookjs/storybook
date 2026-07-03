@@ -68,10 +68,7 @@ function main(options?: UserOptions): PluginOption {
 
       return { sb, finalConfig };
     }));
-
-  const baseNoSlash = finalOptions.base.replace(/\/+$/, '') || '';
-  const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  let basePath = baseNoSlash === '' ? '/' : `${baseNoSlash}/`;
+  let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
 
   const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) =>
     env.command === 'serve' || env.mode === 'storybook';
@@ -215,6 +212,10 @@ function main(options?: UserOptions): PluginOption {
         }
 
         const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
+
+        // derived here (not at plugin creation) so the storybook-mode basePath override applies
+        const baseNoSlash = basePath.replace(/\/+$/, '');
+        const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
         registerStorybookMiddleware(server, {
           options: sb,

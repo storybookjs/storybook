@@ -98,8 +98,10 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 	{
 		name: PREVIEW_STORIES_TOOL_NAME,
 		toolset: 'dev',
-		getMetadata: () => getPreviewStoriesToolMetadata(),
-		register: (server, _context, enabled) => addPreviewStoriesTool(server, enabled),
+		getMetadata: ({ availability }) =>
+			getPreviewStoriesToolMetadata({ reviewEnabled: availability.reviewEnabled }),
+		register: (server, { availability }, enabled) =>
+			addPreviewStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
 	},
 	{
 		name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
@@ -132,7 +134,8 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 		toolset: 'dev',
 		available: ({ availability }) => availability.changeDetectionEnabled,
 		getMetadata: () => getChangedStoriesToolMetadata(),
-		register: (server, _context, enabled) => addGetChangedStoriesTool(server, enabled),
+		register: (server, { availability }, enabled) =>
+			addGetChangedStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
 	},
 	{
 		name: GET_STORIES_BY_COMPONENT_TOOL_NAME,

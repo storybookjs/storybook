@@ -51,13 +51,22 @@ pnpm exec agent-eval cc-mcp-opus-high
 Pull requests with the `ci:eval` label run all experiments in CI.
 
 By default only the first core eval (`801-create-component-no-launch-config`)
-runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted 8xx eval line, or
-`EVAL_ONLY=<name>[,<name>]` to debug specific core evals one at a time:
+runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
+workflow evals on every experiment plus the lifecycle 82x evals
+(`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
+or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
 EVAL_EXTRA_EVALS=1 pnpm eval
 EVAL_ONLY=803-edit-component pnpm eval
 ```
+
+A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 3
+lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
+tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
+lifecycle eval). The budget guardrail is **$75 per full run** — check the
+usage metadata in the results playground before growing the eval set past it
+(see storybookjs/mcp#324).
 
 The 9xx evals (ports from the old `/eval` system) never run automatically; see
 `lib/experiment.ts`.
@@ -121,6 +130,21 @@ Templates live in `agent-eval/templates/<template-name>` and are copied into the
 sandbox during setup before the agent runs. They intentionally stay visible in
 saved result project snapshots so eval runs are easy to inspect.
 
+Three templates exist today:
+
+- `reshaped-storybook`: the design-system shape — Reshaped components, full
+  Storybook (`next`) with the local addon builds, MSW, and the vitest story
+  test setup.
+- `vite-app`: a minimal React + Vite app with **no Storybook at all**. The
+  lifecycle fixtures use it directly (820 init) or layer an old Storybook on
+  top (821/822 upgrades, which also set `evals.pinStorybook: false` so the
+  harness keeps their intentionally outdated versions); 812 layers a full
+  Storybook `next` setup with zero stories on top.
+- `monorepo`: an npm-workspaces repo where the runnable Storybook lives in the
+  `packages/ui` leaf (the spec's monorepo-leaf project shape). Storybook
+  pinning and the local `file:` build detection cover workspace package.json
+  files too.
+
 This keeps prompt variants small: each variant keeps its own `PROMPT.md`,
 `EVAL.ts`, and metadata `package.json`, while shared app files stay in the
 template.
@@ -151,6 +175,23 @@ pnpm playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
+
+### Download CI Results
+
+Pull the eval results produced by recent CI runs into the local
+`agent-eval/results` directory, so they can be browsed in the local playground
+and inspected by analysis tooling:
+
+```bash
+pnpm results:download        # latest 20 agent-eval-results artifacts
+pnpm results:download 5      # or any count between 1 and 100
+```
+
+Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
+(preinstalled on macOS and Linux). Result snapshots are
+keyed by experiment name and run timestamp, so artifacts from multiple CI runs
+merge into `agent-eval/results` without colliding, and re-running the command
+is idempotent. Each artifact is roughly 20–40 MB extracted.
 
 ### Deploy Results Playground
 

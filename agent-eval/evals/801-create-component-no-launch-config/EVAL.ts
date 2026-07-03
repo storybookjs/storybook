@@ -5,6 +5,10 @@ import {
 	expectAllStoryExportsInDisplayReview,
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectSkillInvoked,
+	getEvalContext,
+	expectStoryDiscoveryBeforeReview,
+	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
 } from '#test-utils';
@@ -23,6 +27,19 @@ test('uses the documentation tooling', () => {
 test('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
+});
+
+// Required workflow step (dev instructions "Mapping any input to story IDs"):
+// story IDs in the review must come from a discovery tool, not from guessing.
+test('discovers stories through the workflow tools before publishing the review', () => {
+	expectStoryDiscoveryBeforeReview();
+});
+
+// Required workflow step (test-instructions.md Validation Workflow): run
+// run-story-tests after the change and do not report completion while story
+// tests are failing.
+test('runs story tests after the change and finishes with them passing', () => {
+	expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
 });
 
 // Yann confirmed §6a.2 (2026-07-02, #sb-ade-plugins): stories the agent
@@ -47,6 +64,13 @@ test.skip('publishes a well-curated review', async () => {
 // The fixture overrides the template's .claude/launch.json with an empty
 // configurations array (fixtures can only overwrite files, not delete them),
 // so the plugin must set up the Storybook launch entry itself.
+// The plugin path must engage the stories skill (Claude: via the Skill tool;
+// Codex: by reading its SKILL.md). Skipped on the MCP integration, where no
+// skills are installed.
+test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
+	expectSkillInvoked('stories');
+});
+
 test('writes a valid Storybook launch config for Claude preview tooling', () => {
 	expectValidStorybookLaunchConfig();
 });

@@ -1,5 +1,7 @@
+import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 import { loadTranscript } from '@vercel/agent-eval';
 import type { Transcript } from '@vercel/agent-eval';
@@ -15,7 +17,7 @@ import {
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
 
-export { parseStorybookWorkflowShellCommands };
+export { isRecord, parseJson, parseStorybookWorkflowShellCommands };
 export type { StorybookWorkflowCall };
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
@@ -118,6 +120,13 @@ export function expectFinalResponseContains(substrings: string[]): void {
 		expect(finalMessage, `Expected the final response to mention "${substring}"`).toContain(
 			substring,
 		);
+	}
+}
+
+export function expectFinalResponseMatches(patterns: RegExp[]): void {
+	const finalMessage = getFinalAssistantMessage() ?? '';
+	for (const pattern of patterns) {
+		expect(finalMessage, `Expected the final response to match ${pattern}`).toMatch(pattern);
 	}
 }
 
@@ -313,6 +322,240 @@ export function expectPreviewBrowserStarted(): void {
 	).toBe(true);
 }
 
+// The story-ID mapping chain in the dev instructions: story IDs must come from
+// a discovery tool (get-changed-stories, or the get-stories-by-component
+// fallback), never from file names or memory. A published review without a
+// prior discovery call means the agent guessed its way to valid-looking IDs.
+const STORY_DISCOVERY_WORKFLOW_NAMES = ['get-changed-stories', 'get-stories-by-component'];
+
+export function expectStoryDiscoveryBeforeReview(): void {
+	const calls = getStorybookWorkflowCalls();
+	const firstDiscoveryIndex = calls.findIndex((call) =>
+		STORY_DISCOVERY_WORKFLOW_NAMES.includes(call.name),
+	);
+	expect(
+		firstDiscoveryIndex,
+		`Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before publishing the review`,
+	).toBeGreaterThanOrEqual(0);
+
+	const lastReviewIndex = calls.findLastIndex((call) => call.name === 'display-review');
+	expect(lastReviewIndex, 'Expected display-review to be called').toBeGreaterThanOrEqual(0);
+	expect(
+		firstDiscoveryIndex,
+		'Story discovery must happen before the review is published',
+	).toBeLessThan(lastReviewIndex);
+}
+
+export type WorkflowToolResult = {
+	output: string;
+	isError: boolean;
+};
+
+// Validation Workflow (test-instructions.md): "After each component or story
+// change, run run-story-tests" and "Fix failing tests before reporting
+// success." The section headers come from the run-story-tests result
+// formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
+// ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
+// `storybook ai run-story-tests` CLI output.
+//
+// `covering` pins the final green run to the change under test: at least one
+// of the given substrings must appear in its story ids. Where the covered
+// stories are created by the change (801/802/804/812/813) or start from a
+// seeded failure (810/811), a green covering run is only possible after the
+// change, so this also proves ordering. Where the covered stories pre-exist
+// and pass (803, 808), it is a component-coverage floor only — a stricter
+// after-the-edit ordering check is deliberately not encoded, because real
+// passing flows legitimately run tests before the discovery step.
+export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
+	expectWorkflowCalls(['run-story-tests']);
+
+	const results = getWorkflowToolResults('run-story-tests');
+	expect(
+		results.length,
+		'Expected at least one run-story-tests result in the transcript',
+	).toBeGreaterThan(0);
+
+	const lastResult = results[results.length - 1];
+	if (lastResult === undefined) {
+		expect.fail('Expected a final run-story-tests result');
+	}
+
+	expect(
+		lastResult.isError,
+		`Final run-story-tests call must succeed. Output: ${truncateForMessage(lastResult.output)}`,
+	).toBe(false);
+	expect(
+		lastResult.output,
+		'Final run-story-tests result must not report failing stories',
+	).not.toMatch(/## Failing Stories/);
+	expect(
+		lastResult.output,
+		'Final run-story-tests result must not report unhandled errors',
+	).not.toMatch(/## Unhandled Errors/);
+	expect(
+		lastResult.output,
+		`Final run-story-tests result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`,
+	).toMatch(/## Passing Stories/);
+
+	const covering = options?.covering ?? [];
+	if (covering.length > 0) {
+		expect(
+			covering.some((substring) =>
+				lastResult.output.toLowerCase().includes(substring.toLowerCase()),
+			),
+			`Final run-story-tests result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`,
+		).toBe(true);
+	}
+}
+
+// Chronological outputs of a Storybook workflow tool, across every path an
+// agent can reach it: Claude MCP tool calls, Codex MCP tool calls, and
+// `storybook ai <tool>` CLI invocations inside shell commands (plugin path).
+export function getWorkflowToolResults(workflowName: string): WorkflowToolResult[] {
+	return parseWorkflowToolResults(readFileSync(TRANSCRIPT_PATH, 'utf8'), workflowName);
+}
+
+export function parseWorkflowToolResults(
+	rawTranscript: string,
+	workflowName: string,
+): WorkflowToolResult[] {
+	const results: WorkflowToolResult[] = [];
+	const pendingClaudeToolUseIds = new Set<string>();
+
+	for (const line of rawTranscript.split('\n')) {
+		const event = parseJson(line);
+		if (!isRecord(event)) {
+			continue;
+		}
+
+		collectClaudeWorkflowToolResults(event, workflowName, pendingClaudeToolUseIds, results);
+		collectCodexWorkflowToolResult(event, workflowName, results);
+	}
+
+	return results;
+}
+
+// Claude Code raw transcripts pair tool_use blocks (assistant messages) with
+// tool_result blocks (user messages) via tool_use_id.
+function collectClaudeWorkflowToolResults(
+	event: Record<string, unknown>,
+	workflowName: string,
+	pendingToolUseIds: Set<string>,
+	results: WorkflowToolResult[],
+): void {
+	const message = event.message;
+	if (!isRecord(message) || !Array.isArray(message.content)) {
+		return;
+	}
+
+	for (const block of message.content) {
+		if (!isRecord(block)) {
+			continue;
+		}
+
+		if (
+			block.type === 'tool_use' &&
+			typeof block.id === 'string' &&
+			isWorkflowToolUse(block, workflowName)
+		) {
+			pendingToolUseIds.add(block.id);
+			continue;
+		}
+
+		if (
+			block.type === 'tool_result' &&
+			typeof block.tool_use_id === 'string' &&
+			pendingToolUseIds.has(block.tool_use_id)
+		) {
+			pendingToolUseIds.delete(block.tool_use_id);
+			results.push({
+				output: extractToolResultText(block.content),
+				isError: block.is_error === true,
+			});
+		}
+	}
+}
+
+function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string): boolean {
+	if (typeof block.name !== 'string') {
+		return false;
+	}
+
+	if (normalizeStorybookWorkflowName(block.name) === workflowName) {
+		return true;
+	}
+
+	// Plugin path: the workflow call runs as a `storybook ai` CLI invocation
+	// inside a shell tool call.
+	const command = isRecord(block.input) ? block.input.command : undefined;
+	if (typeof command !== 'string') {
+		return false;
+	}
+
+	return parseStorybookWorkflowShellCommands([command]).some((call) => call.name === workflowName);
+}
+
+// Codex raw transcripts report completed MCP tool calls and shell commands as
+// item.completed events carrying the result inline.
+function collectCodexWorkflowToolResult(
+	event: Record<string, unknown>,
+	workflowName: string,
+	results: WorkflowToolResult[],
+): void {
+	if (event.type !== 'item.completed' || !isRecord(event.item)) {
+		return;
+	}
+
+	const item = event.item;
+
+	if (
+		item.type === 'mcp_tool_call' &&
+		typeof item.tool === 'string' &&
+		normalizeStorybookWorkflowName(item.tool) === workflowName
+	) {
+		results.push({
+			output: extractToolResultText(item.result),
+			isError: item.status !== 'completed' || (item.error !== null && item.error !== undefined),
+		});
+		return;
+	}
+
+	if (
+		item.type === 'command_execution' &&
+		typeof item.command === 'string' &&
+		parseStorybookWorkflowShellCommands([item.command]).some((call) => call.name === workflowName)
+	) {
+		results.push({
+			output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',
+			isError: typeof item.exit_code === 'number' && item.exit_code !== 0,
+		});
+	}
+}
+
+// Tool result payloads appear as plain strings, MCP content-block arrays
+// ([{ type: 'text', text }]), or objects wrapping such an array.
+function extractToolResultText(content: unknown): string {
+	if (typeof content === 'string') {
+		return content;
+	}
+
+	if (Array.isArray(content)) {
+		return content
+			.flatMap((block) => (isRecord(block) && typeof block.text === 'string' ? [block.text] : []))
+			.join('\n');
+	}
+
+	if (isRecord(content)) {
+		return extractToolResultText(content.content);
+	}
+
+	return '';
+}
+
+function truncateForMessage(value: string): string {
+	return value.length > 600 ? `${value.slice(0, 600)}…` : value;
+}
+
 export function expectDocumentationToolingCalled(): void {
 	const documentationCalls = getStorybookWorkflowCalls().filter((call) =>
 		(DOCUMENTATION_WORKFLOW_NAMES as readonly string[]).includes(call.name),
@@ -332,6 +575,205 @@ export function workflowCallIncludesStory(
 
 export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 	return getStoryInputs(call.input).some((input) => typeof input.storyId === 'string');
+}
+
+// Claude Code invokes plugin skills through its Skill tool, so the transcript
+// records which skill fired. Codex has no skill tool — engaging a skill means
+// reading its instruction file, which shows up as a shell command touching
+// the skill's directory. Only meaningful on the plugin integration (no skills
+// are installed on the MCP path) — gate call sites with
+// `test.skipIf(getEvalContext().integration === 'mcp')` so MCP runs report a
+// skip instead of a vacuous pass.
+export function expectSkillInvoked(skillName: string): void {
+	const { agent } = getEvalContext();
+
+	if (agent === 'claude-code') {
+		// Match the skill argument exactly — a substring match would credit any
+		// Skill invocation whose free-text args merely mention the word.
+		const invoked = getTranscript().events.some(
+			(event) =>
+				event.type === 'tool_call' &&
+				event.tool?.originalName === 'Skill' &&
+				isRecord(event.tool.args) &&
+				event.tool.args.skill === skillName,
+		);
+		expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
+		return;
+	}
+
+	// The codex plugin names its skill directories without the storybook-
+	// prefix (.agents/skills/init, .agents/skills/stories, …).
+	const codexSkillName = skillName.replace(/^storybook-/, '');
+	const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
+	const read = getShellCommands().some((command) => skillPathPattern.test(command));
+	expect(
+		read,
+		`Expected the ${skillName} skill (skills/${codexSkillName}) to be read via a shell command`,
+	).toBe(true);
+}
+
+// Lifecycle-outcome check for the upgrade evals: the given Storybook packages
+// in package.json must end up at or above the minimum version — an
+// under-upgrade (e.g. 9.x → 10.0.0 when the current release is 10.4.6) does
+// not count. Compares the first x.y.z found in each spec numerically, so
+// range prefixes (^, ~) don't matter.
+export function expectStorybookDependenciesAtLeast(
+	minInclusiveVersion: string,
+	packageNames: string[],
+	options?: {
+		/**
+		 * Packages a correct upgrade may legitimately *remove* (e.g. Storybook 10
+		 * absorbs `@storybook/react`): only floor-checked when still present, so
+		 * a stale old copy fails but a clean removal passes.
+		 */
+		ifPresent?: string[];
+	},
+): void {
+	const packageJson = parseJson(readFileSync('package.json', 'utf8'));
+	if (!isRecord(packageJson)) {
+		expect.fail('Expected package.json to contain a JSON object');
+	}
+
+	const dependencies = {
+		...(isRecord(packageJson.dependencies) ? packageJson.dependencies : {}),
+		...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
+	};
+
+	const minimum = parseSemverTriple(minInclusiveVersion);
+	if (minimum === undefined) {
+		throw new Error(`Invalid minInclusiveVersion "${minInclusiveVersion}"`);
+	}
+
+	const expectAtLeastMinimum = (packageName: string, spec: string) => {
+		const version = parseSemverTriple(spec);
+		if (version === undefined) {
+			expect.fail(`Could not parse a version from the ${packageName} spec "${spec}"`);
+		}
+
+		expect(
+			compareSemverTriples(version, minimum) >= 0,
+			`Expected ${packageName} to be upgraded to at least ${minInclusiveVersion}. Received: ${spec}`,
+		).toBe(true);
+	};
+
+	for (const packageName of packageNames) {
+		const spec = dependencies[packageName];
+		if (typeof spec !== 'string') {
+			expect.fail(
+				`Expected a ${packageName} dependency in package.json. Received: ${String(spec)}`,
+			);
+		}
+		expectAtLeastMinimum(packageName, spec);
+	}
+
+	for (const packageName of options?.ifPresent ?? []) {
+		const spec = dependencies[packageName];
+		if (typeof spec === 'string') {
+			expectAtLeastMinimum(packageName, spec);
+		}
+	}
+}
+
+function parseSemverTriple(spec: string): [number, number, number] | undefined {
+	const match = /(\d+)\.(\d+)\.(\d+)/.exec(spec);
+	if (match === null) {
+		return undefined;
+	}
+	return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function compareSemverTriples(left: [number, number, number], right: [number, number, number]) {
+	for (let index = 0; index < 3; index += 1) {
+		const difference = (left[index] ?? 0) - (right[index] ?? 0);
+		if (difference !== 0) {
+			return difference;
+		}
+	}
+	return 0;
+}
+
+export function expectShellCommandMatching(pattern: RegExp): void {
+	const commands = getShellCommands();
+	expect(
+		commands.some((command) => pattern.test(command)),
+		`Expected a shell command matching ${pattern}. Received: ${truncateForMessage(
+			JSON.stringify(commands),
+		)}`,
+	).toBe(true);
+}
+
+// Lifecycle-outcome check (storybookjs/mcp#324): after storybook-init or
+// storybook-upgrade, the project's own `storybook` script must produce a
+// bootable Storybook. Boots on a non-default port so an instance the agent
+// left running on 6006 cannot mask a broken script.
+export async function expectStorybookBoots(options?: { timeoutMs?: number }): Promise<void> {
+	const port = 6017;
+	const timeoutMs = options?.timeoutMs ?? 180_000;
+
+	// --ci skips interactive prompts and does not open a browser; supported by
+	// every Storybook major this helper is used against (9.x onwards).
+	const child = spawn('npm', ['run', 'storybook', '--', '--port', String(port), '--ci'], {
+		detached: true,
+		env: { ...process.env, BROWSER: 'none', CI: '1' },
+		stdio: 'ignore',
+	});
+
+	let spawnError: Error | undefined;
+	child.on('error', (error) => {
+		spawnError = error;
+	});
+
+	try {
+		const deadline = Date.now() + timeoutMs;
+		while (Date.now() < deadline) {
+			if (spawnError !== undefined) {
+				expect.fail(`Failed to spawn npm run storybook: ${spawnError.message}`);
+			}
+			// exitCode stays null when the process dies from a signal, so check
+			// signalCode too — otherwise a killed Storybook waits out the full
+			// timeout instead of failing with its termination reason.
+			if (child.exitCode !== null || child.signalCode !== null) {
+				expect.fail(
+					`npm run storybook exited (${
+						child.signalCode !== null ? `signal ${child.signalCode}` : `code ${child.exitCode}`
+					}) before serving`,
+				);
+			}
+			// /index.json is a real build artifact (the story index), so a dev
+			// server that merely serves an error shell on / does not count as
+			// booted.
+			if (await isHttpReady(`http://127.0.0.1:${port}/index.json`)) {
+				return;
+			}
+			await delay(1_000);
+		}
+		expect.fail(`Storybook did not respond on port ${port} within ${timeoutMs}ms`);
+	} finally {
+		killProcessTree(child);
+	}
+}
+
+async function isHttpReady(url: string): Promise<boolean> {
+	try {
+		const response = await fetch(url, { signal: AbortSignal.timeout(2_000) });
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
+function killProcessTree(child: ReturnType<typeof spawn>): void {
+	if (child.pid === undefined) {
+		return;
+	}
+
+	try {
+		// Detached child leads its own process group; negative pid signals the
+		// whole group so the Vite/Storybook workers die with it.
+		process.kill(-child.pid, 'SIGTERM');
+	} catch {
+		child.kill('SIGTERM');
+	}
 }
 
 // Soft-quality curation model from the Agentic Review Eval instructions (§5/§6b):
@@ -402,15 +844,13 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
 	}
 }
 
-// Hard floor only (loosened 2026-07-02): the review URL must be the last
-// thing in the response, and story preview links must not appear next to it.
-// The exact presentation the guidance describes — the `## 👀 Review your
-// changes` heading, the 👉 markdown link, the AI-curated disclaimer — is
-// shown there as an example, so agents that end with e.g. a bare
-// `Review page: <url>` line or a `## Review` heading follow the workflow
-// without matching the example verbatim. Asserting the example's surface
-// form failed 3/4 configs on 806 while every response delivered the link;
-// presentation quality belongs in the judge-scored tier, not the gate.
+// Relaxed floor (2026-07-02): assert the substance of the review ending, not
+// the guidance's example surface form. The review URL must be the last thing
+// in the response (bare URL or markdown link both count — asserting the
+// example's exact `👉 [link]` form failed configs that delivered the link),
+// a review-ish heading and the AI-curated disclaimer must appear, and story
+// preview links must not appear next to the review. Finer presentation
+// quality belongs in the judge-scored tier, not the gate.
 function expectFinalResponseEndsWithReviewSection(): void {
 	const finalMessage = getFinalAssistantMessage();
 	if (finalMessage === undefined) {
@@ -424,6 +864,21 @@ function expectFinalResponseEndsWithReviewSection(): void {
 	expect(lastNonEmptyLine, 'Final response must end with the Storybook review page link').toMatch(
 		/[?&]path=\/review\/?/,
 	);
+	expect(
+		// The spec's heading is an example ("e.g. ## 👀 Review your changes"),
+		// not a literal: agents legitimately adapt it — a browse request has no
+		// changes, so codex titled the section "## ReviewCard States"
+		// (CI run 28623099303). Require a review-ish heading, not exact words.
+		// The word boundary matters: without it "## Preview your changes" — the
+		// preview-URL ending this suite exists to reject — would satisfy the
+		// check via the "review" substring inside "Preview".
+		lines.some((line) => /^##\s+.*\breview/i.test(line.trim())),
+		'Final response must include a dedicated review heading',
+	).toBe(true);
+	expect(
+		trimmed,
+		'Final response must explain the review is AI-curated and may be inaccurate',
+	).toMatch(/AI[-\s]?curated/i);
 	expect(
 		trimmed,
 		'Final response must not also include individual story preview links',
@@ -470,6 +925,13 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
 				return [];
 			}
 
+			// Codex emits each MCP call twice (item.started + item.completed);
+			// counting both would double every call and let "called at least
+			// twice" assertions pass vacuously on a single real invocation.
+			if (event.type !== 'item.completed') {
+				return [];
+			}
+
 			const item = event.item;
 			if (item.type !== 'mcp_tool_call' || typeof item.tool !== 'string') {
 				return [];
@@ -494,6 +956,13 @@ function getRawMcpInput(item: Record<string, unknown>): Record<string, unknown> 
 	return getNestedWorkflowInput(item) ?? {};
 }
 
+// Concatenation (parsed first, raw-only after) is order-safe in practice
+// because each agent populates exactly one side: Claude transcripts parse
+// fully (raw codex parsing matches nothing), while codex MCP calls come only
+// from the raw pass (the upstream parser has no mcp_tool_call handling). If
+// an agent ever split its calls across both sources, order-sensitive
+// assertions like expectStoryDiscoveryBeforeReview would need interleaving by
+// transcript position instead.
 function mergeMcpWorkflowCalls(
 	parsedCalls: StorybookWorkflowCall[],
 	rawCalls: StorybookWorkflowCall[],

@@ -32,7 +32,7 @@ export type BuildServerInstructionsOptions = {
  */
 export function getFinalLinksGuidance(reviewToolAvailable: boolean): string {
 	return reviewToolAvailable
-		? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example `## 👀 Review your changes`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned `reviewUrl` (for example `👉 [Open the Storybook review page](<reviewUrl>)`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. If you did not publish a review (e.g. a non-visual refactor, or you skipped it), include the returned preview URLs instead so the user can verify the visual result.'
+		? 'In your final user-facing response, show one set of links — never both. If you published a review with **display-review**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example `## 👀 Review your changes`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned `reviewUrl` (for example `👉 [Open the Storybook review page](<reviewUrl>)`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. A visually observable change is not finished until its review is published — never substitute preview URLs for the review. Only when there is no review because the change has no visually observable impact, say so plainly; include preview URLs only if the user asked to see specific stories.'
 		: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 }
 
@@ -43,16 +43,29 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 		const changeDetection = options.changeDetectionEnabled ?? false;
 		const graphSupported = options.moduleGraphSupported ?? false;
 		const reviewEnabled = options.reviewEnabled ?? false;
-		const previewStoriesStep = changeDetection
-			? 'After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.'
-			: graphSupported
-				? 'After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.'
-				: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
+		// When display-review is available it is the terminal step for visual
+		// work, so the after-change step feeds the review instead of ending in
+		// preview URLs — a competing "call preview-stories after every change"
+		// instruction reads as an alternative ending and agents take it
+		// (observed on the Codex MCP path: change done, preview links shared,
+		// review never published).
+		const previewStoriesStep = reviewEnabled
+			? changeDetection
+				? 'After changing any component or story, call **get-changed-stories** to discover the stories affected by your change.'
+				: graphSupported
+					? 'After changing any component or story, call **get-stories-by-component** with the files you touched.'
+					: 'After changing any component or story, identify the stories affected by your change.'
+			: changeDetection
+				? 'After changing any component or story, call **get-changed-stories**, then **preview-stories** for their preview URLs.'
+				: graphSupported
+					? 'After changing any component or story, call **get-stories-by-component** with the files you touched, then **preview-stories** for their preview URLs.'
+					: 'After changing any component or story, call **preview-stories** to retrieve preview URLs.';
 		// Terse pointer only: the full link-presentation rule reaches the agent
 		// through the get-storybook-story-instructions output (getFinalLinksGuidance)
-		// and the display-review tool result, which are never truncated.
+		// and the display-review and preview-stories tool results, which are
+		// never truncated.
 		const finalLinksStep = reviewEnabled
-			? "End your final response with one set of links, never both: the review section from **display-review**'s result, or the returned preview URLs when no review was published."
+			? "End your final response with the review section from **display-review**'s result — never substitute preview URLs for it. **preview-stories** is only for iterating on a specific story or a requested direct link. If nothing visually changed, say so plainly."
 			: 'In your final user-facing response, include every returned preview URL so the user can verify the visual result.';
 		sections.push(
 			devInstructions
@@ -61,7 +74,7 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 				.replace(
 					'{{DISPLAY_REVIEW_STEP}}',
 					reviewEnabled
-						? '\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Any newly created story MUST be included in the review.'
+						? '\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **display-review** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.'
 						: '',
 				)
 				.trim(),

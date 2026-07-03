@@ -122,8 +122,9 @@ export const reviewStore = {
   setStale: (isStale: boolean) => {
     commit({ isStale });
   },
-  /** Drop all review state (dismissal). Persistence teardown is exitReviewMode's job. */
+  /** Drop all review state (dismissal), including the persisted review-mode flag. */
   clearReview: () => {
+    sessionStore.remove(REVIEW_MODE_SESSION_KEY);
     commit({ state: null, pendingReview: null, isStale: false, isInReviewMode: false });
   },
   /** Toggle review mode, persisted so it survives reloads. */

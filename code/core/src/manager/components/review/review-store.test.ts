@@ -75,6 +75,7 @@ describe('clearReview', () => {
     expect(state.pendingReview).toBeNull();
     expect(state.isStale).toBe(false);
     expect(state.isInReviewMode).toBe(false);
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
   });
 });
 

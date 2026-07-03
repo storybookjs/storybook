@@ -147,9 +147,7 @@ describe('buildServerInstructions', () => {
 			'- After changing any component or story, call **get-stories-by-component** with the files you touched.',
 		);
 		expect(instructions).not.toContain('then **preview-stories** for their preview URLs');
-		expect(instructions).toContain(
-			'**preview-stories** is only for iterating on a specific story',
-		);
+		expect(instructions).toContain('**preview-stories** is only for iterating on a specific story');
 	});
 
 	it('keeps the after-change step discovery-first when review is on without discovery tools', () => {

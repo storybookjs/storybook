@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, transformImportFiles } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -64,6 +64,7 @@ const mockWriteFile = vi.mocked(writeFile);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
 const mockUpdateMainConfig = vi.mocked(updateMainConfig);
+const mockTransformImportFiles = vi.mocked(transformImportFiles);
 
 describe('angular-to-angular-vite', () => {
   const mockPackageManager = {
@@ -768,6 +769,65 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         '/project/vitest.config.ts',
         expect.anything()
       );
+    });
+
+    it('rewrites @storybook/angular imports in non-story project source files', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      const helper = '/project/src/shared/with-angular-decorator.ts';
+      // globby is called for (1) Nx project.json, (2) the configDir files, and
+      // (3) the project source files. Only the third returns our non-story helper.
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby)
+        .mockResolvedValueOnce([]) // project.json
+        .mockResolvedValueOnce([]) // configDir/**/*
+        .mockResolvedValueOnce([helper]); // project source files
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: ['/project/src/Button.stories.ts'],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      expect(mockTransformImportFiles).toHaveBeenCalledWith(
+        expect.arrayContaining(['/project/src/Button.stories.ts', helper]),
+        { [ANGULAR_PACKAGE]: ANGULAR_VITE_PACKAGE },
+        false
+      );
+    });
+
+    it('dedupes files that appear in both storiesPaths and the project source scan', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      const story = '/project/src/Button.stories.ts';
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby)
+        .mockResolvedValueOnce([]) // project.json
+        .mockResolvedValueOnce([]) // configDir/**/*
+        .mockResolvedValueOnce([story]); // project source glob also returns the story
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [story],
+        configDir: '/project/.storybook',
+        storybookVersion: '9.0.0',
+        addonsToPostinstall: [],
+      } as any);
+
+      const passedFiles = mockTransformImportFiles.mock.calls[0][0] as string[];
+      expect(passedFiles.filter((f) => f === story)).toHaveLength(1);
     });
   });
 });

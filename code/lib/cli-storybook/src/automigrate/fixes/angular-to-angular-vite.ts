@@ -458,10 +458,35 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // 5. Update import statements across config and story files.
+    // 5. Update import statements across config, story, and project source files.
+    // `storiesPaths` only ever contains *.stories.* files and `configFiles` only the
+    // Storybook config dir, so non-story modules that import from @storybook/angular
+    // (shared decorators, moduleMetadata/applicationConfig helpers, mocks, test setup,
+    // …) would keep importing the now-removed package. Also scan the project directory
+    // (the folder that holds the Storybook config) so those files are rewritten too.
+    // Scoped to the project rather than the repo root, so sibling projects in a
+    // monorepo that were not migrated are left untouched. transformImportFiles only
+    // rewrites quoted @storybook/angular specifiers (and leaves @storybook/angular-vite
+    // alone), so over-including files is safe - at worst a wasted read.
     logger.debug('Scanning and updating import statements...');
     const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
-    const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
+    const projectSourceFiles = configDir
+      ? await globby(['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'], {
+          cwd: dirname(configDir),
+          absolute: true,
+          gitignore: true,
+          ignore: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/.storybook-static/**',
+            '**/.angular/**',
+            '**/coverage/**',
+          ],
+        })
+      : [];
+    const allFiles = [
+      ...new Set([...storiesPaths, ...configFiles, ...projectSourceFiles].filter(Boolean)),
+    ] as string[];
 
     const transformErrors = await transformImportFiles(
       allFiles,

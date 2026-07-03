@@ -122,7 +122,8 @@ CRITICAL: You MUST call this tool before:
 - Updating or modifying existing Storybook stories
 - Adding new story variants or exports to story files
 - Editing any file matching *.stories.* patterns
-- Writing components that will need stories${criticalTestBullets}${criticalA11yBullets}
+- Writing components that will need stories
+- Editing anything that changes how the UI looks — components, styles, CSS, themes, colors, or design tokens; a shared file with no stories of its own still changes its consumers' stories${criticalTestBullets}${criticalA11yBullets}
 
 This tool provides essential Storybook-specific guidance including:
 - How to structure stories correctly for Storybook 9

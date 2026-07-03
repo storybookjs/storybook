@@ -1,20 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { expectStoryTestsRanAndPassed, getWorkflowCalls } from '#test-utils';
+import { expectStoryTestsRanAndPassed } from '#test-utils';
 
 // The fixture ships a Button that never wires the onClick prop to the DOM
 // button, so the Default story's play function fails until the agent fixes
 // the component. Port of the old 911 eval, hardened with the green-run floor.
 
-test('runs the story tests more than once while fixing the failure', () => {
-	expect(
-		getWorkflowCalls('run-story-tests').length,
-		'Expected run-story-tests to be called at least twice: once to see the failure, once to verify the fix',
-	).toBeGreaterThanOrEqual(2);
-});
-
 // Validation Workflow floor: the run must not end while story tests are
-// failing.
+// failing. A single run-story-tests call is enough — agents may spot the
+// initial failure through any channel (GPT-5.5 on the plugin path uses the
+// project's own test script for that, run 28667804080) as long as the fix
+// is verified through the tool.
 test('finishes with the story tests passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['button'] });
 });

@@ -63,7 +63,9 @@ function registerTypescriptLoader() {
       // version throws a SyntaxError at module-load time, before this feature check ever runs.
       // TODO: once Storybook's minimum supported Node version reaches 22.15.0, drop this branch and
       // the `register` fallback below, and switch back to a plain named `registerHooks` import.
-      if (typeof nodeModule.registerHooks === 'function') {
+      // DIAGNOSTIC: `false &&` forces the `register()` fallback below, to check whether CI's
+      // react-docgen/tsconfig-paths crash is caused by `registerHooks()`. Revert before merging.
+      if (false && typeof nodeModule.registerHooks === 'function') {
         const { load } = await import('storybook/internal/bin/loader');
         nodeModule.registerHooks({ load });
       } else {

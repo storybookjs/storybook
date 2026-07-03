@@ -154,12 +154,11 @@ export function expectDisplayReviewForVisualChange(): void {
 
 // Review-off counterpart of expectDisplayReviewForVisualChange (review is
 // opt-in via the `experimentalReview` flag, so this is the default path):
-// display-review is not registered, so visual work ends in preview-stories
-// and the final response shares the preview URLs, per the legacy dev
-// instructions ("Always include every returned preview URL...") and the
-// review-off story instructions. `covering` requires each substring to appear
-// in some preview-stories story input (storyId, exportName, or story path);
-// `coveringAnyOf` requires at least one of the substrings instead.
+// display-review is not registered, so visual work must end in
+// preview-stories calls and the final response must share the preview URLs.
+// `covering` requires each substring to appear in some preview-stories story
+// input (storyId, exportName, or story path); `coveringAnyOf` requires at
+// least one of the substrings instead.
 export function expectPreviewStoriesWithFinalLinks(options?: {
 	covering?: string[];
 	coveringAnyOf?: string[];
@@ -199,9 +198,8 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
 	).not.toMatch(/[?&]path=\/review\//);
 }
 
-// Trigger correctness (Agentic Review Eval instructions §6a.1): a pure
-// non-visual refactor must NOT publish a review, and the final response must
-// not pretend there is one.
+// Trigger correctness: a pure non-visual refactor must NOT publish a review,
+// and the final response must not pretend there is one.
 export function expectNoDisplayReview(): void {
 	const displayReviewCalls = getWorkflowCalls('display-review');
 	expect(
@@ -217,10 +215,10 @@ export function expectNoDisplayReview(): void {
 	).not.toMatch(/[?&]path=\/review\//);
 }
 
-// Browse request (Agentic Review Eval instructions §7 branch 4): the review is
-// resolved from the live story index, so the payload must pass an empty
-// changedFiles array — no code changed. (changedFiles is required in the
-// schema; `[]` is the explicit browse-mode value.)
+// Browse request: the review is resolved from the live story index, so the
+// payload must pass an empty changedFiles array — no code changed.
+// (changedFiles is required in the schema; `[]` is the explicit browse-mode
+// value.)
 export function expectDisplayReviewForBrowseRequest(): void {
 	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {
@@ -235,10 +233,10 @@ export function expectDisplayReviewForBrowseRequest(): void {
 	expectFinalResponseSharesReviewLink();
 }
 
-// Hard-floor completeness (Agentic Review Eval instructions §6a.2): every story
-// exported from the story files written during the run must appear in the
-// published review. Assumes the template starts without story files, so every
-// story file on disk was created by the agent.
+// Hard completeness floor: every story exported from the story files written
+// during the run must appear in the published review — curation may group
+// stories, never omit them. Assumes the template starts without story files,
+// so every story file on disk was created by the agent.
 export function expectAllStoryExportsInDisplayReview(): void {
 	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {
@@ -263,8 +261,9 @@ export function expectAllStoryExportsInDisplayReview(): void {
 }
 
 // Targeted completeness floor: the stories the task is about must appear in
-// the published review. Deliberately weaker than the §6a.2 "every story" rule
-// (pending guidance on interaction stories), so it is safe to gate on.
+// the published review. Deliberately weaker than the every-new-story rule of
+// expectAllStoryExportsInDisplayReview, for fixtures with pre-existing
+// stories the agent may legitimately leave out of the review.
 export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
 	const displayReview = getWorkflowCalls('display-review').at(-1);
 	if (displayReview === undefined) {
@@ -381,10 +380,10 @@ export function expectPreviewBrowserStarted(): void {
 	).toBe(true);
 }
 
-// The story-ID mapping chain in the dev instructions: story IDs must come from
-// a discovery tool (get-changed-stories, or the get-stories-by-component
-// fallback), never from file names or memory. A published review without a
-// prior discovery call means the agent guessed its way to valid-looking IDs.
+// Story IDs must come from a discovery tool (get-changed-stories, or the
+// get-stories-by-component fallback), never from file names or memory. A
+// published review without a prior discovery call means the agent guessed
+// its way to valid-looking IDs.
 const STORY_DISCOVERY_WORKFLOW_NAMES = ['get-changed-stories', 'get-stories-by-component'];
 
 export function expectStoryDiscoveryBeforeReview(): void {
@@ -410,19 +409,15 @@ export type WorkflowToolResult = {
 	isError: boolean;
 };
 
-// Validation Workflow (test-instructions.md): "After each component or story
-// change, run run-story-tests" and "Fix failing tests before reporting
-// success." The section headers come from the run-story-tests result
+// The validation workflow the instructions demand: run run-story-tests after
+// each component or story change, and fix failing tests before reporting
+// success. The section headers come from the run-story-tests result
 // formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
 // ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
 // `storybook ai run-story-tests` CLI output.
 //
 // `covering` pins the final green run to the change under test: at least one
-// of the given substrings must appear in its story ids. Where the covered
-// stories are created by the change (801/802/804/812/813) or start from a
-// seeded failure (810/811), a green covering run is only possible after the
-// change, so this also proves ordering. Where the covered stories pre-exist
-// and pass (803, 808), it is a component-coverage floor only — a stricter
+// of the given substrings must appear in its story ids. A stricter
 // after-the-edit ordering check is deliberately not encoded, because real
 // passing flows legitimately run tests before the discovery step.
 export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
@@ -481,11 +476,10 @@ const RUN_STORY_TESTS_REPORT_MARKERS = [
 	'No stories found matching',
 ];
 
-// On the plugin path agents pipe the `storybook ai run-story-tests` CLI output
-// through grep/sed/tail, so the chronologically last captured output can be a
-// filtered fragment (cc-plugin 802 in run 28672627415, 2026-07-03: eight
-// correct CLI runs, but the final one grepped for a11y lines and printed only
-// "exit-check-done"). Judge the last output that still looks like a
+// On the plugin path agents pipe the `storybook ai run-story-tests` CLI
+// output through grep/sed/tail, so the chronologically last captured output
+// can be a filtered fragment of an otherwise correct run (observed in CI run
+// 28672627415, 2026-07-03). Judge the last output that still looks like a
 // run-story-tests report; only when no output is recognizable does the raw
 // last result stand, so fully-filtered transcripts still fail loud.
 export function selectFinalRunStoryTestsReport(
@@ -667,13 +661,12 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 	return getStoryInputs(call.input).some((input) => typeof input.storyId === 'string');
 }
 
-// Claude Code invokes plugin skills through its Skill tool, so the transcript
-// records which skill fired. Codex has no skill tool — engaging a skill means
-// reading its instruction file, which shows up as a shell command touching
-// the skill's directory. Only meaningful on the plugin integration (no skills
-// are installed on the MCP path) — gate call sites with
-// `test.skipIf(getEvalContext().integration === 'mcp')` so MCP runs report a
-// skip instead of a vacuous pass.
+// Claude Code invokes plugin skills through its Skill tool; Codex has no
+// skill tool, so engaging a skill means reading its instruction file via a
+// shell command. Gate call sites with
+// `test.skipIf(getEvalContext().integration === 'mcp')` — no skills are
+// installed on the MCP path, so MCP runs should report a skip instead of a
+// vacuous pass.
 export function expectSkillInvoked(skillName: string): void {
 	const { agent } = getEvalContext();
 
@@ -866,9 +859,9 @@ function killProcessTree(child: ReturnType<typeof spawn>): void {
 	}
 }
 
-// Soft-quality curation model from the Agentic Review Eval instructions (§5/§6b):
-// scored by the LLM judge rather than gated mechanically, because "meaningful
-// grouping" and "useful rationale" are judgment calls.
+// Soft-quality curation criterion: scored by the LLM judge rather than gated
+// mechanically, because "meaningful grouping" and "useful rationale" are
+// judgment calls.
 export const DISPLAY_REVIEW_CURATION_CRITERION = [
 	'The final display-review tool call publishes a well-curated review.',
 	'It groups stories into 2 to 5 collections.',
@@ -934,14 +927,12 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
 	}
 }
 
-// Substance floor only (relaxed 2026-07-03 after run 28663662412): the user
-// must get the review link in the final response, and not a second set of
-// individual story links next to it ("one set of links, never both"). Where
-// the link sits, the section heading, and the AI-curated disclaimer are the
-// guidance's example presentation — cc-mcp runs delivered a correct review
-// but were failed for a missing heading (806) or trailing prose after the
-// link (808). Presentation quality belongs in the judge-scored tier, not the
-// gate.
+// Substance floor only (relaxed 2026-07-03 after run 28663662412, where
+// correct reviews failed on presentation details): the user must get the
+// review link in the final response, and not a second set of individual
+// story links next to it — one set of links, never both. Presentation
+// quality (headings, disclaimers, link placement) belongs in the
+// judge-scored tier, not this gate.
 function expectFinalResponseSharesReviewLink(): void {
 	const finalMessage = getFinalAssistantMessage();
 	if (finalMessage === undefined) {

@@ -1,6 +1,9 @@
 # Agent Evaluation Suite
 
-Test AI coding agents to measure what actually works.
+Runs coding agents (Claude Code and Codex) against fixture projects in
+sandboxes and asserts that they follow the Storybook workflows this repo
+ships — writing stories, previewing or reviewing them, and running story
+tests through the MCP server or the plugin skills.
 
 ## Setup
 
@@ -115,35 +118,23 @@ CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
 runtime/build contexts.
 
-Configured experiments:
+Configured experiments (Claude Code experiments use the direct Anthropic API
+via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
+`OPENAI_API_KEY`):
 
-- `cc-mcp-opus-high`: Claude Code (Opus at high effort) through the `claude-code` agent (direct Anthropic API, requires `ANTHROPIC_API_KEY`) with project-local Storybook MCP config in `.mcp.json`.
+- `cc-mcp-opus-high`: Claude Code (Opus at high effort) with project-local Storybook MCP config in `.mcp.json`.
+- `cc-plugin-opus-high`: Claude Code (Opus at high effort) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
-- `cc-plugin-opus-high`: Claude Code (Opus at high effort) through the `claude-code` agent (direct Anthropic API, requires `ANTHROPIC_API_KEY`) with Storybook plugin skills copied to `.claude/skills`.
-- `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) plugin variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
-- `cc-mcp-sonnet-medium`: Claude Code (Sonnet at medium effort) MCP variant; runs zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 - `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+- `cc-mcp-sonnet-medium` / `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) variants; they run zero evals unless `EVAL_EXTRA_MODELS=1` is set.
 
 ## Known Failures
 
-Accepted eval failures are documented **only as a code comment directly above
-the relaxed assertion** in the affected `EVAL.ts` — never as a tracking issue.
-Do not create a GitHub issue for an eval failure, and do not reference one
-from a gate comment; there is no issue-based known-failure list (the old #317
-tracker is retired).
-
-When relaxing or gating an assertion (`test.skip`, `test.skipIf(...)`,
-narrowing a condition), the comment above it must be self-contained:
-
-- the observed behavior (what the agent did instead),
-- the evidence (CI run id and date),
-- the condition for re-enabling.
-
-Referencing a _causal_ change is fine (e.g. the PR that will fix the behavior,
-or an upstream Storybook bug the assertion waits on) — that is a pointer to
-the fix, not a tracker for the failure. See the gates in
-`evals/807-docs-request/EVAL.ts` and `evals/808-shared-infra-fallback/EVAL.ts`
-for the expected shape.
+Accepted eval failures are documented as a code comment directly above the
+relaxed assertion in the affected `EVAL.ts`. The comment is self-contained:
+the observed behavior, the evidence (CI run id and date), and the condition
+for re-enabling. See the gates in `evals/807-docs-request/EVAL.ts` and
+`evals/808-shared-infra-fallback/EVAL.ts` for the expected shape.
 
 ## Shared Templates
 
@@ -172,9 +163,9 @@ Three templates exist today:
   harness keeps their intentionally outdated versions); 812 layers a full
   Storybook `next` setup with zero stories on top.
 - `monorepo`: an npm-workspaces repo where the runnable Storybook lives in the
-  `packages/ui` leaf (the spec's monorepo-leaf project shape). Storybook
-  pinning and the local `file:` build detection cover workspace package.json
-  files too.
+  `packages/ui` leaf, so evals can cover agents working inside a workspace
+  package. Storybook pinning and the local `file:` build detection cover
+  workspace package.json files too.
 
 This keeps prompt variants small: each variant keeps its own `PROMPT.md`,
 `EVAL.ts`, and metadata `package.json`, while shared app files stay in the

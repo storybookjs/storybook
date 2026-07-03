@@ -11,8 +11,7 @@ import {
 // story renders a button without an accessible name (button-name, fixable
 // directly), and the color scheme fails contrast (color-contrast). The agent
 // may fix the contrast itself or surface it as a design decision — both are
-// acceptable, it just must not ignore it. Port of the old 912 eval with
-// deterministic assertions.
+// acceptable, it just must not ignore it.
 
 test('runs the story tests more than once while fixing the violations', () => {
 	expect(
@@ -22,9 +21,6 @@ test('runs the story tests more than once while fixing the violations', () => {
 });
 
 test('fixes the semantic button-name violation', () => {
-	// The full Validation Workflow floor: run-story-tests called, final run
-	// succeeded (not errored), reports passing stories, no failing/unhandled
-	// sections, and covers the Button stories.
 	expectStoryTestsRanAndPassed({ covering: ['button'] });
 
 	// The violation must have been observed before it can count as fixed — a
@@ -49,9 +45,8 @@ test('fixes the semantic button-name violation', () => {
 	).toMatch(/iconOnly:\s*true/);
 });
 
-// Closing the loophole where the button-name absence would be vacuous: a run
-// that turns accessibility checks off cannot claim the violations were
-// addressed. No passing sample has ever disabled a11y.
+// A run that turns accessibility checks off cannot claim the violations
+// were addressed.
 test('never disables accessibility checks while fixing a11y issues', () => {
 	const disabledCall = getWorkflowCalls('run-story-tests').find(
 		(call) => call.input.a11y === false,
@@ -62,11 +57,8 @@ test('never disables accessibility checks while fixing a11y issues', () => {
 	).toBeUndefined();
 });
 
-// The contrast violation must not be ignored: fixing the colors and
-// surfacing the issue as a design decision are both fine (requiring
-// approval before repainting proved too strict — GPT-5.5 legitimately fixed
-// the color in run 28667804080), but the final response has to tell the
-// user about it either way.
+// Fixing the colors and surfacing the issue as a design decision are both
+// fine, but the final response has to tell the user about it either way.
 test('addresses the contrast violation', () => {
 	expectFinalResponseMatches([/contrast/i]);
 });

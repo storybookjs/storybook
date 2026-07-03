@@ -1,9 +1,8 @@
 import { test } from 'vitest';
 import { expectWorkflowCalls } from '#test-utils';
 
-// Mirrors the original 901 quality signal from the old eval system
-// (eval/tasks/901-create-component-atom-reshaped/config.json): the agent must
-// fetch the story instructions and preview the stories it wrote. Nothing else.
+// 9xx ports assert the old MCP-only workflow and nothing more: fetch the
+// story instructions and preview the stories written.
 test('uses Storybook story instructions', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions']);
 });

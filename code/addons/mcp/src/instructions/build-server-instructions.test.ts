@@ -36,7 +36,7 @@ describe('buildServerInstructions', () => {
 
 			## Validation Workflow
 
-			- After each change to a component, a story, or shared code they use, run **run-story-tests**.
+			- After editing anything that changes how the UI looks, run **run-story-tests**.
 			- Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.
 			- Fix failing tests before reporting success. Do not report completion while story tests are failing.
 
@@ -109,8 +109,8 @@ describe('buildServerInstructions', () => {
 
 			- Before creating or editing components or stories, call **get-storybook-story-instructions**.
 			- Treat its output as the source of truth for imports, story patterns, and testing conventions.
-			- After changing a component, a story, or shared code they use (theme, tokens, styles, utils), call **preview-stories** — a shared file has no stories of its own; preview its consumers' stories.
-			- Include every returned preview URL in your final response so the user can verify the visual result."
+			- After editing anything that changes how the UI looks — components, stories, styles, themes, colors, design tokens — call **preview-stories**, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.
+			- Include every returned preview URL in your final response."
 		`);
 	});
 
@@ -240,7 +240,7 @@ describe('buildServerInstructions', () => {
 
 			## Validation Workflow
 
-			- After each change to a component, a story, or shared code they use, run **run-story-tests**.
+			- After editing anything that changes how the UI looks, run **run-story-tests**.
 			- Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.
 			- Fix failing tests before reporting success. Do not report completion while story tests are failing."
 		`);

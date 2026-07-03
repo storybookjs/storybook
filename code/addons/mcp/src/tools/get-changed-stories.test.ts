@@ -232,6 +232,106 @@ describe('getChangedStoriesTool', () => {
 		`);
 	});
 
+	// Registers the tool on a fresh server with the review feature enabled, so
+	// the "publish the review now" next-step hint paths can be exercised.
+	async function createReviewEnabledServer() {
+		const adapter = new ValibotJsonSchemaAdapter();
+		const reviewServer = new McpServer(
+			{
+				name: 'test-server-review',
+				version: '1.0.0',
+				description: 'Test server for get-changed-stories with review enabled',
+			},
+			{ adapter, capabilities: { tools: { listChanged: true } } },
+		).withContext<AddonContext>();
+
+		await reviewServer.receive(
+			{
+				jsonrpc: '2.0',
+				id: 1,
+				method: 'initialize',
+				params: {
+					protocolVersion: '2025-06-18',
+					capabilities: {},
+					clientInfo: { name: 'test', version: '1.0.0' },
+				},
+			},
+			{ sessionId: 'test-session' },
+		);
+
+		await addGetChangedStoriesTool(reviewServer, undefined, { reviewEnabled: true });
+		return reviewServer;
+	}
+
+	async function callToolOn(targetServer: McpServer<any, AddonContext>) {
+		return targetServer.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_CHANGED_STORIES_TOOL_NAME, arguments: {} },
+			},
+			{ sessionId: 'test-session', custom: testContext },
+		);
+	}
+
+	it('appends the display-review next-step hint when review is enabled and stories were detected', async () => {
+		mockGetStatusStore.mockReturnValue({
+			getAll: () => ({
+				'button--primary': {
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'button--primary',
+					},
+				},
+			}),
+		});
+
+		const text = getResultText(await callToolOn(await createReviewEnabledServer()));
+
+		expect(text).toContain('Detected 1 changed story');
+		expect(text).toContain('publish the review now — call **display-review**');
+	});
+
+	it('omits the display-review hint when review is enabled but no stories resolve', async () => {
+		// Status store entries that don't exist in the index resolve to zero
+		// stories — exactly the case where the agent should fall back to
+		// get-stories-by-component instead of being pointed at an empty list.
+		mockGetStatusStore.mockReturnValue({
+			getAll: () => ({
+				'not-in-index--at-all': {
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'not-in-index--at-all',
+					},
+				},
+			}),
+		});
+
+		const text = getResultText(await callToolOn(await createReviewEnabledServer()));
+
+		expect(text).toContain('Detected 0 changed stories');
+		expect(text).not.toContain('publish the review now');
+	});
+
+	it('omits the display-review hint when review is disabled', async () => {
+		mockGetStatusStore.mockReturnValue({
+			getAll: () => ({
+				'button--primary': {
+					'storybook/change-detection': {
+						value: 'status-value:new',
+						storyId: 'button--primary',
+					},
+				},
+			}),
+		});
+
+		const text = getResultText(await callTool());
+
+		expect(text).toContain('Detected 1 changed story');
+		expect(text).not.toContain('publish the review now');
+	});
+
 	it('supports getAll() status-store API', async () => {
 		mockGetStatusStore.mockReturnValue({
 			getAll: () => ({

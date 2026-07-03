@@ -69,6 +69,7 @@ export async function addGetChangedStoriesTool(
 	server: McpServer<any, AddonContext>,
 	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
 		server.ctx.custom?.toolsets?.dev ?? true,
+	{ reviewEnabled = false }: { reviewEnabled?: boolean } = {},
 ) {
 	server.tool(
 		{
@@ -180,6 +181,16 @@ export async function addGetChangedStoriesTool(
 				const banner = formatPartialCoverageBanner(unreachable);
 
 				let text = `${banner}Detected ${stories.length} changed stor${stories.length === 1 ? 'y' : 'ies'} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
+
+				// Front-loaded like the banner above: host-side tool-output caps
+				// can cut the tail of a long story list, and this next-step nudge
+				// is the product fix that keeps agents from ending visual work at
+				// preview URLs instead of the review. Only when there are story
+				// IDs to curate — a zero-result is the moment to fall back to
+				// get-stories-by-component instead.
+				if (reviewEnabled && stories.length > 0) {
+					text += `\n\nNext: if the change is visually observable, publish the review now — call **display-review** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
+				}
 
 				const serializeStory = ({ storyId, title, name, importPath }: ChangedStory) =>
 					`- \`${storyId}\`: ${title} / ${name} (\`${importPath}\`)`;

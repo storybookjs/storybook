@@ -23,17 +23,23 @@ const review = isReviewEnabled();
 
 // The template composes the Reshaped Storybook (refs in .storybook/main.ts)
 // so get-documentation can serve its components.
-// Asserted on every experiment in both review modes. Agents used to skip the
-// docs tools (review-on: reading node_modules/reshaped/dist/*.d.ts under the
-// truncated instructions, 2026-07-01T22-53 runs; review-off: GPT-5.5 on both
-// integrations in the 2026-07-03 run 28660377980, storybookjs/mcp#315). The
-// get-documentation/list-all-documentation descriptions and the story-
-// instructions Design-System Documentation section now make discovery
-// unconditional for new UI work, and tool descriptions survive the client
-// truncation that motivated the review-on gate.
-test('uses the documentation tooling', () => {
-	expectWorkflowCalls(['get-documentation']);
-});
+// Asserted on both review modes, but skipped on the Codex MCP experiment:
+// GPT-5.5 on the MCP path intermittently builds the Reshaped component from
+// prior knowledge without ever calling get-documentation (review-off runs
+// 28673251562 on 2026-07-03 and the local 2026-07-03T14-12 run; roughly one
+// run in four across the 07-02/07-03 history), even though the docs tool
+// descriptions and server instructions both demand a docs lookup — the same
+// accepted Codex docs gap already gated in 802. Codex-plugin runs pass this
+// consistently (the stories skill forces reading the full workflow help), so
+// only the codex+mcp cell is gated. Re-enable when Codex MCP runs reliably
+// consult the docs tools, e.g. after a Codex-side change to how MCP tool
+// descriptions are surfaced.
+test.skipIf(getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp')(
+	'uses the documentation tooling',
+	() => {
+		expectWorkflowCalls(['get-documentation']);
+	},
+);
 
 test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
 	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);

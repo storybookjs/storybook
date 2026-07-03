@@ -91,8 +91,10 @@ export function buildServerInstructions(options: BuildServerInstructionsOptions)
 
 	// The test and docs sections follow the same split as the dev section:
 	// with review off (the default) they are the shipping texts — the legacy
-	// Validation Workflow verbatim from the latest release, and the shared
-	// @storybook/mcp Documentation Workflow. With review on, the whole
+	// Validation Workflow from the latest release (plus the run-story-tests-only
+	// rule added after agents substituted `npm run test:stories`, run
+	// 28673251562), and the shared @storybook/mcp Documentation Workflow. With
+	// review on, the whole
 	// instruction set must fit under the 2,048-char client truncation limit
 	// alongside the review workflow, so slimmed variants (same rules, terser
 	// wording) are used instead.

@@ -434,7 +434,7 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 		'Expected at least one run-story-tests result in the transcript',
 	).toBeGreaterThan(0);
 
-	const lastResult = results[results.length - 1];
+	const lastResult = selectFinalRunStoryTestsReport(results);
 	if (lastResult === undefined) {
 		expect.fail('Expected a final run-story-tests result');
 	}
@@ -465,6 +465,37 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 			`Final run-story-tests result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`,
 		).toBe(true);
 	}
+}
+
+// The run-story-tests result formatter (packages/addon-mcp) always emits at
+// least one of these markers. A captured output with none of them is a
+// shell-filtered fragment of the real report, not the report itself. isError
+// deliberately does not count as recognizable: a piped `… | grep` exits
+// non-zero when the filter simply matches nothing, so an errored markerless
+// result is exactly the filtered-fragment case this selection skips.
+const RUN_STORY_TESTS_REPORT_MARKERS = [
+	'## Passing Stories',
+	'## Failing Stories',
+	'## Accessibility Violations',
+	'## Unhandled Errors',
+	'No stories found matching',
+];
+
+// On the plugin path agents pipe the `storybook ai run-story-tests` CLI output
+// through grep/sed/tail, so the chronologically last captured output can be a
+// filtered fragment (cc-plugin 802 in run 28672627415, 2026-07-03: eight
+// correct CLI runs, but the final one grepped for a11y lines and printed only
+// "exit-check-done"). Judge the last output that still looks like a
+// run-story-tests report; only when no output is recognizable does the raw
+// last result stand, so fully-filtered transcripts still fail loud.
+export function selectFinalRunStoryTestsReport(
+	results: WorkflowToolResult[],
+): WorkflowToolResult | undefined {
+	return (
+		results.findLast((result) =>
+			RUN_STORY_TESTS_REPORT_MARKERS.some((marker) => result.output.includes(marker)),
+		) ?? results.at(-1)
+	);
 }
 
 // Chronological outputs of a Storybook workflow tool, across every path an

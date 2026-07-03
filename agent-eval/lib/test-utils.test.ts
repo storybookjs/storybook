@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
 	parseStorybookWorkflowShellCommands,
 	parseWorkflowToolResults,
+	selectFinalRunStoryTestsReport,
 	workflowCallIncludesStory,
 	workflowCallUsesStoryId,
 } from './test-utils.ts';
@@ -262,5 +263,34 @@ describe('parseWorkflowToolResults', () => {
 		].join('\n');
 
 		expect(parseWorkflowToolResults(transcript, 'run-story-tests')).toHaveLength(0);
+	});
+});
+
+describe('selectFinalRunStoryTestsReport', () => {
+	const passingReport = {
+		output: '## Passing Stories\n\n- example-button--primary',
+		isError: false,
+	};
+
+	test('skips trailing shell-filtered fragments and picks the last real report', () => {
+		const filteredFragment = { output: 'exit-check-done', isError: false };
+		const failedGrep = { output: '', isError: true };
+
+		expect(selectFinalRunStoryTestsReport([passingReport, filteredFragment, failedGrep])).toBe(
+			passingReport,
+		);
+	});
+
+	test('prefers a later real report over an earlier one', () => {
+		const failingReport = { output: '## Failing Stories\n\n### a--c', isError: false };
+
+		expect(selectFinalRunStoryTestsReport([passingReport, failingReport])).toBe(failingReport);
+	});
+
+	test('falls back to the raw last result when no output is recognizable', () => {
+		const errorResult = { output: 'Error: dev server unreachable', isError: true };
+
+		expect(selectFinalRunStoryTestsReport([errorResult])).toBe(errorResult);
+		expect(selectFinalRunStoryTestsReport([])).toBeUndefined();
 	});
 });

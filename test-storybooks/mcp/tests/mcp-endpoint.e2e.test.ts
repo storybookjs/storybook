@@ -348,6 +348,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				- Adding new story variants or exports to story files
 				- Editing any file matching *.stories.* patterns
 				- Writing components that will need stories
+				- Editing anything that changes how the UI looks — components, styles, CSS, themes, colors, or design tokens; a shared file with no stories of its own still changes its consumers' stories
 				- Running story tests or fixing test failures
 				- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)
 
@@ -593,7 +594,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Run story tests.
-				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level checks like typecheck or lint do not replace this.
+				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Provide stories for focused runs (faster while iterating),
 				or omit stories to run all tests for full-project verification.
 				Use this continuously to monitor test results as you work on your UI components and stories.

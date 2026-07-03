@@ -1,6 +1,6 @@
 ## Story Testing Requirements
 
-**Run `{{RUN_STORY_TESTS_TOOL_NAME}}` after EVERY component or story change.** This includes creating, modifying, or refactoring components, stories, or their dependencies.
+**Run `{{RUN_STORY_TESTS_TOOL_NAME}}` after EVERY component or story change.** This includes creating, modifying, or refactoring components, stories, or their dependencies. It is the only way to run story tests — never run package.json test scripts (like `npm run test:stories`) instead.
 
 ### Workflow
 

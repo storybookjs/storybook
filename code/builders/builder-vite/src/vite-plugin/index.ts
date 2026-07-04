@@ -145,9 +145,18 @@ function main(options?: UserOptions): PluginOption {
                 writable: !0,
               });
 
+              sbConfig.server.hmr = true;
+
               return new DevEnvironment('client', sbConfig, {
                 ...context,
                 hot: true,
+                transport: {
+                  send: (p) => context.ws.send(p),
+                  // @ts-expect-error wtf ?
+                  on: (e, listener) => context.ws.on(e, listener),
+                  // @ts-expect-error wtf ?
+                  off: (e, listener) => context.ws.off(e, listener),
+                },
               });
             },
           },

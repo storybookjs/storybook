@@ -64,12 +64,8 @@ export const convert = (type: PTType): SBType | any => {
         // (like if a user has turned off shouldExtractValuesFromUnion) so here we
         // try to recover and construct one.  parseLiteral handles both single-
         // and double-quoted strings, unlike JSON.parse which rejects single quotes.
-        try {
-          const literalValues = name.split('|').map((v: string) => parseLiteral(v.trim()));
-          return { ...base, name: 'enum', value: literalValues };
-        } catch (err) {
-          // fall through
-        }
+        const literalValues = name.split('|').map((v: string) => parseLiteral(v.trim()));
+        return { ...base, name: 'enum', value: literalValues };
       }
       const otherVal = value ? `${name}(${value})` : name;
       const otherName = SIGNATURE_REGEXP.test(name) ? 'function' : 'other';

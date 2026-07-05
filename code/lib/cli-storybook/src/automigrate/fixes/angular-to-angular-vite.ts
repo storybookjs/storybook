@@ -122,6 +122,29 @@ export default defineConfig({
 });
 `;
 
+/**
+ * True when the main config's export object has a literal `framework` property followed by an
+ * object spread. ConfigFile's `_exports` bookkeeping skips SpreadElement nodes, so
+ * `getNameFromPath(['framework'])` resolves the literal even though, per object-literal runtime
+ * semantics, a later spread that also sets `framework` silently overrides it.
+ */
+const hasSpreadAfterFrameworkProperty = (main: ConfigFile): boolean => {
+  const properties = main._exportsObject?.properties;
+  if (!properties) {
+    return false;
+  }
+  const frameworkIndex = properties.findIndex(
+    (property) =>
+      t.isObjectProperty(property) &&
+      ((t.isIdentifier(property.key) && property.key.name === 'framework') ||
+        (t.isStringLiteral(property.key) && property.key.value === 'framework'))
+  );
+  if (frameworkIndex === -1) {
+    return false;
+  }
+  return properties.slice(frameworkIndex + 1).some((property) => t.isSpreadElement(property));
+};
+
 const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
   try {
     const content = await readFile(mainConfigPath, 'utf-8');
@@ -408,6 +431,19 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
                 value in ${mainConfigPath}), so it could not be switched automatically.
                 We set \`framework: '${ANGULAR_VITE_PACKAGE}'\` for you - please re-apply any framework
                 options (e.g. \`compodoc\`) that were previously defined in your shared config.
+              `
+            );
+          } else if (hasSpreadAfterFrameworkProperty(main)) {
+            // The literal was rewritten above, but at runtime a later `...spread` wins over an
+            // earlier key - so a spread source that also sets `framework` silently undoes the
+            // migration. The spread's contents are unknown here, and appending a duplicate
+            // literal key is a TypeScript error, so warn instead of force-setting.
+            logger.warn(
+              dedent`
+                The main config at ${mainConfigPath} spreads another object after its \`framework\`
+                property. If that spread source also sets \`framework\`, it overrides the migrated
+                value at runtime. Verify the shared config does not set \`framework\`, or move the
+                \`framework\` property after the spread.
               `
             );
           }

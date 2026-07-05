@@ -485,6 +485,54 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
+    it('warns when a spread after the framework property could override it at runtime', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      // The literal resolves (so the force-set is skipped), but at runtime the trailing
+      // spread wins over the earlier key - if `base` also sets `framework`, it silently
+      // undoes the migration. The spread contents are unknown here, so the fix must warn.
+      mockReadFile.mockResolvedValue(
+        `import { base } from './base';\nexport default { framework: '${ANGULAR_VITE_PACKAGE}', ...base };`
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, packageJsonFiles: [] },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).not.toHaveBeenCalled();
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining('spreads another object after its')
+      );
+    });
+
+    it('does not warn about spread override when the spread comes before the framework property', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      // A leading spread cannot override the later literal - no warning needed.
+      mockReadFile.mockResolvedValue(
+        `import { base } from './base';\nexport default { ...base, framework: '${ANGULAR_VITE_PACKAGE}' };`
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, packageJsonFiles: [] },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockUpdateMainConfig).not.toHaveBeenCalled();
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('spreads another object after its')
+      );
+    });
+
     it('rewrites angular.json builder entries', async () => {
       mockPromptConfirm.mockResolvedValue(false);
 

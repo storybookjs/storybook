@@ -65,8 +65,21 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'function':
     case 'symbol':
       return null;
-    default:
+    default: {
+      const enumValues = (type as SBEnumType).value;
+      if (enumValues && Array.isArray(enumValues) && enumValues.length > 0) {
+        const allPrimitives = enumValues.every(
+          (v: any) => typeof v === 'string' || typeof v === 'number'
+        );
+        if (allPrimitives) {
+          return {
+            control: { type: enumValues.length <= 5 ? 'radio' : 'select' },
+            options: enumValues,
+          };
+        }
+      }
       return { control: { type: options ? 'select' : 'object' } };
+    }
   }
 };
 

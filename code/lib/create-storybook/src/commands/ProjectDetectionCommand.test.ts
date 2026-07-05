@@ -123,6 +123,21 @@ describe('ProjectDetectionCommand', () => {
         expect(result.projectType).toBe(ProjectType.VUE3);
       });
 
+      it('should chain into the React Native variant prompt when RN is selected', async () => {
+        vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+          ProjectType.UNDETECTED
+        );
+        vi.mocked(prompt.select)
+          .mockResolvedValueOnce('select')
+          .mockResolvedValueOnce(ProjectType.REACT_NATIVE)
+          .mockResolvedValueOnce(ProjectType.REACT_NATIVE_WEB);
+
+        const command = new ProjectDetectionCommand({} as CommandOptions, mockPackageManager);
+        const result = await command.execute();
+
+        expect(result.projectType).toBe(ProjectType.REACT_NATIVE_WEB);
+      });
+
       it('should fail when the user cancels the installation', async () => {
         vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
           ProjectType.UNDETECTED

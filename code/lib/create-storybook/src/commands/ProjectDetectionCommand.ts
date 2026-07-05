@@ -46,7 +46,7 @@ export class ProjectDetectionCommand {
       if (detected === ProjectType.UNDETECTED) {
         projectType = await this.promptUndetectedProjectType();
       }
-      if (detected === ProjectType.REACT_NATIVE && !this.options.yes) {
+      if (projectType === ProjectType.REACT_NATIVE && !this.options.yes) {
         projectType = await this.promptReactNativeVariant();
       }
       logger.debug(`Project type detected: ${projectType}`);

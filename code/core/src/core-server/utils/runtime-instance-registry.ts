@@ -3,9 +3,14 @@ import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/p
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
+
+import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
+import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
+import { detectAgent } from '../../telemetry/detect-agent.ts';
 
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
@@ -19,6 +24,7 @@ export type RuntimeInstanceRecord = {
   cwd: string;
   url: string;
   port: number;
+  agent?: string;
   storybookVersion: string;
   startedAt: string;
   updatedAt: string;
@@ -53,10 +59,9 @@ export function getOrigin(address: string) {
 export function getMcpMetadataFromMainConfig(
   mainConfig: Pick<StorybookConfig, 'addons'>
 ): RuntimeInstanceRecord['mcp'] {
+  // Normalize entries so addons registered via `getAbsolutePath()` are recognized, not just bare names.
   const addon = mainConfig.addons?.find(
-    (entry) =>
-      entry === STORYBOOK_MCP_ADDON ||
-      (typeof entry === 'object' && entry.name === STORYBOOK_MCP_ADDON)
+    (entry) => normalizeAddonName(entry) === STORYBOOK_MCP_ADDON
   );
 
   if (!addon) {
@@ -71,8 +76,17 @@ export function getMcpMetadataFromMainConfig(
   return { status: 'ready', endpoint };
 }
 
+function detectRuntimeInstanceAgent() {
+  if (isClaudePreviewLaunch()) {
+    return CLAUDE_PREVIEW_AGENT_NAME;
+  }
+
+  return detectAgent()?.name;
+}
+
 export function createRuntimeInstanceRecord({
   address,
+  agent,
   cwd = process.cwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
@@ -82,6 +96,7 @@ export function createRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
@@ -100,6 +115,7 @@ export function createRuntimeInstanceRecord({
     cwd: resolve(cwd),
     url: origin,
     port,
+    ...(agent ? { agent } : {}),
     storybookVersion,
     startedAt: timestamp,
     updatedAt: timestamp,
@@ -302,6 +318,7 @@ function registerProcessCleanup(recordPath: string) {
 
 export async function writeStorybookRuntimeInstanceRecord({
   address,
+  agent = detectRuntimeInstanceAgent(),
   cwd,
   mcp,
   pid,
@@ -311,6 +328,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
@@ -321,6 +339,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }): Promise<RuntimeInstanceRegistration> {
   const record = createRuntimeInstanceRecord({
     address,
+    agent,
     cwd,
     mcp,
     pid,

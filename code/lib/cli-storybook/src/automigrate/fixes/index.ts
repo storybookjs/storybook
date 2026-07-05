@@ -1,9 +1,11 @@
 import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { addonA11yAddonTest } from './addon-a11y-addon-test.ts';
+import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { addonA11yParameters } from './addon-a11y-parameters.ts';
 import { addonExperimentalTest } from './addon-experimental-test.ts';
 import { addonGlobalsApi } from './addon-globals-api.ts';
+import { addonMcp } from './addon-mcp.ts';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
@@ -39,8 +41,10 @@ export const allFixes: Fix[] = [
   rnOndeviceAddonsToDeviceAddons,
   migrateAddonConsole,
   nextjsToNextjsVite,
+  angularToAngularVite,
   reactViteToTanstackReact,
   removeAddonInteractions,
+  addonMcp,
   rendererToFramework,
   removeEssentials,
   addonA11yParameters,

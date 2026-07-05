@@ -35,8 +35,11 @@ export * from './utils/template.ts';
 export * from './utils/validate-config.ts';
 export * from './utils/validate-configuration-files.ts';
 export * from './utils/satisfies.ts';
+export * from './utils/babel.ts';
 export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';
+export * from './utils/component-id.ts';
+export * from './utils/select-component-entry.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';
 export * from './utils/setup-addon-in-config.ts';
@@ -53,3 +56,4 @@ export * from './node-version.ts';
 export { versions };
 
 export { createFileSystemCache, FileSystemCache } from './utils/file-cache.ts';
+export { registerService } from '../shared/open-service/server.ts';

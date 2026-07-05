@@ -10,10 +10,33 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { DocgenProviderDescriptor } from '../../shared/open-service/services/docgen/types.ts';
+import type { StoryDocsProvider } from '../../shared/open-service/services/story-docs/types.ts';
 import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+
+export type {
+  DocgenError,
+  DocgenJsDocTags,
+  DocgenMiddleware,
+  DocgenPayload,
+  DocgenProvider,
+  DocgenProviderDescriptor,
+  DocgenProviderInput,
+  DocgenSubcomponent,
+  DocgenWorkerModule,
+} from '../../shared/open-service/services/docgen/types.ts';
+export type {
+  StoryDoc,
+  StoryDocsById,
+  StoryDocsError,
+  StoryDocsPayload,
+  StoryDocsProvider,
+  StoryDocsProviderInput,
+  StoryDocsProviderPreset,
+} from '../../shared/open-service/services/story-docs/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -114,6 +137,16 @@ export interface Presets {
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
   apply(extension: 'services', config?: StorybookConfigRaw['services'], args?: any): Promise<void>;
+  apply(
+    extension: 'experimental_docgenProvider',
+    config: DocgenProviderDescriptor[],
+    args?: any
+  ): Promise<DocgenProviderDescriptor[]>;
+  apply(
+    extension: 'experimental_storyDocsProvider',
+    config: StoryDocsProvider,
+    args?: any
+  ): Promise<StoryDocsProvider>;
 
   /** The second and third parameter are not needed. And make type inference easier. */
   apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
@@ -304,7 +337,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
    * Returns a change-detection adapter the core change-detection service uses to (a) read
    * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
    */
-  changeDetectionAdapter?(): import('../../core-server/change-detection/adapters/types.ts').ChangeDetectionAdapter;
+  changeDetectionAdapter?(): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -396,6 +429,7 @@ export interface ComponentManifest {
   import?: string | undefined;
   summary?: string | undefined;
   stories: {
+    id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;
@@ -437,6 +471,8 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
+  experimental_docgenProvider?: DocgenProviderDescriptor[];
+  experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -502,6 +538,13 @@ export interface StorybookConfigRaw {
      * @default true
      */
     sidebarOnboardingChecklist?: boolean;
+
+    /**
+     * Enable the onboarding guide page in the menu
+     *
+     * @default true
+     */
+    menuOnboardingChecklist?: boolean;
 
     /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
@@ -572,9 +615,20 @@ export interface StorybookConfigRaw {
     experimentalCodeExamples?: boolean;
 
     /**
-     * Enable change detection
-     * TODO: Turn to true before 10.4 release
+     * Enable the experimental docgen open service.
+     *
+     * When true, Storybook registers the `core/docgen` service in the open-service registry and
+     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+     * providers contribute through the `experimental_docgenProvider` preset.
+     *
      * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalDocgenServer?: boolean;
+
+    /**
+     * Enable change detection
+     * @default true
      */
     changeDetection?: boolean;
   };
@@ -615,13 +669,13 @@ export interface StorybookConfigRaw {
    * @experimental Subject to change before stable release.
    */
   experimental_importParsers?:
-    | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+    | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
     | ((
-        existing: import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        existing: import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
       ) =>
-        | import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+        | import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
         | Promise<
-            import('../../core-server/change-detection/parser-registry/types.ts').ImportParser[]
+            import('../../shared/open-service/services/module-graph/engine/parser-registry/types.ts').ImportParser[]
           >);
 
   storyIndexGenerator?: StoryIndexGenerator;
@@ -749,6 +803,22 @@ export interface StorybookConfig {
 
   /** Run open-service registration side effects for the server environment. */
   services?: PresetValue<StorybookConfigRaw['services']>;
+
+  /**
+   * Provider descriptors for the experimental docgen service. Each registrant appends a
+   * structured-clone-safe {@link DocgenProviderDescriptor} (a module specifier) to the accumulated
+   * array; core's docgen worker imports and composes them middleware-style off the main thread.
+   */
+  experimental_docgenProvider?: PresetValue<StorybookConfigRaw['experimental_docgenProvider']>;
+
+  /**
+   * Middleware-style provider for the experimental story-docs service. Each registrant receives the
+   * previously accumulated provider as its config argument and returns a wrapping provider that
+   * may delegate to it via the input forwarding pattern.
+   */
+  experimental_storyDocsProvider?: PresetValue<
+    StorybookConfigRaw['experimental_storyDocsProvider']
+  >;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

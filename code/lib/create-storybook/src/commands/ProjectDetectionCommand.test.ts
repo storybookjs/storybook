@@ -96,6 +96,59 @@ describe('ProjectDetectionCommand', () => {
       expect(mockProjectTypeService.autoDetectProjectType).not.toHaveBeenCalled();
     });
 
+    describe('undetected project type (#35045)', () => {
+      it('should install HTML framework when user selects it', async () => {
+        vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+          ProjectType.UNDETECTED
+        );
+        vi.mocked(prompt.select).mockResolvedValueOnce('html');
+
+        const command = new ProjectDetectionCommand({} as CommandOptions, mockPackageManager);
+        const result = await command.execute();
+
+        expect(result.projectType).toBe(ProjectType.HTML);
+      });
+
+      it('should let the user choose another framework', async () => {
+        vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+          ProjectType.UNDETECTED
+        );
+        vi.mocked(prompt.select)
+          .mockResolvedValueOnce('select')
+          .mockResolvedValueOnce(ProjectType.VUE3);
+
+        const command = new ProjectDetectionCommand({} as CommandOptions, mockPackageManager);
+        const result = await command.execute();
+
+        expect(result.projectType).toBe(ProjectType.VUE3);
+      });
+
+      it('should fail when the user cancels the installation', async () => {
+        vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+          ProjectType.UNDETECTED
+        );
+        vi.mocked(prompt.select).mockResolvedValueOnce('cancel');
+
+        const command = new ProjectDetectionCommand({} as CommandOptions, mockPackageManager);
+
+        await expect(command.execute()).rejects.toThrow();
+      });
+
+      it('should fail without prompting in non-interactive mode', async () => {
+        vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
+          ProjectType.UNDETECTED
+        );
+
+        const command = new ProjectDetectionCommand(
+          { yes: true } as CommandOptions,
+          mockPackageManager
+        );
+
+        await expect(command.execute()).rejects.toThrow();
+        expect(prompt.select).not.toHaveBeenCalled();
+      });
+    });
+
     it('should auto-detect project type when not provided', async () => {
       options.type = undefined;
       vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(ProjectType.VUE3);

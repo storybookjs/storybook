@@ -30,14 +30,14 @@ export const Object: Story = {
   },
 };
 
-export const RawByDefault: Story = {
+export const JsonByDefault: Story = {
   args: {
     value: {
       name: 'Michael',
       someDate: new Date('2022-10-30T12:31:11'),
       nested: { someBool: true, someNumber: 22 },
     },
-    useRaw: true,
+    defaultEditor: 'json',
   },
 };
 

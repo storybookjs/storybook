@@ -51,8 +51,8 @@ export type RangeConfig = NumberConfig;
 
 export type ObjectValue = any;
 export interface ObjectConfig {
-  /** Show the raw JSON editor by default for object controls. */
-  useRaw?: boolean;
+  /** Show the JSON editor by default for object controls. */
+  defaultEditor?: 'object' | 'json';
 }
 
 export type OptionsSingleSelection = any;

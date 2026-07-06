@@ -83,48 +83,44 @@ export class ProjectDetectionCommand {
    */
   private async promptUndetectedProjectType(): Promise<ProjectType> {
     logger.error(dedent`
-      Unable to detect a supported framework in this directory.
+      Storybook couldn't detect a supported framework in this directory. Make sure you're inside your project's root folder and that its dependencies are installed. Vanilla Web Components projects cannot be automatically detected.
 
-      Storybook couldn't detect a supported framework or configuration for your project. Make sure you're inside a framework project (e.g., React, Vue, Svelte, Angular, Next.js) and that its dependencies are installed.
-
-      You can tell Storybook which framework to use with the ${picocolors.bold('--type')} flag, e.g. ${picocolors.bold('--type html')} for projects without a framework.
+      To tell Storybook which framework to use, pass the ${picocolors.bold('--type')} flag, e.g. ${picocolors.bold('--type html')} for Web Components and vanilla HTML projects.
     `);
 
-    if (this.options.yes) {
-      throw new HandledError('Storybook failed to detect your project type');
-    }
-
-    const choice = await prompt.select(
-      {
-        message: 'How would you like to proceed?',
-        options: [
-          {
-            label: `Install the ${picocolors.bold('HTML')} framework (for projects without a framework)`,
-            value: 'html',
-          },
-          { label: 'Choose a framework to install', value: 'select' },
-          { label: 'Cancel the installation', value: 'cancel' },
-        ],
-      },
-      createPromptCancelOptions(this.telemetryService, 'undetected-project-type')
-    );
-
-    if (choice === 'html') {
-      return ProjectType.HTML;
-    }
-
-    if (choice === 'select') {
-      const installable = Object.values(ProjectType).filter(
-        (t) => !['undetected', 'unsupported', 'nx'].includes(String(t))
-      );
-      const manualType = await prompt.select(
+    if (!this.options.yes) {
+      const choice = await prompt.select(
         {
-          message: 'Which framework would you like to install?',
-          options: installable.map((t) => ({ label: String(t), value: t })),
+          message: 'How would you like to proceed?',
+          options: [
+            {
+              label: `Install the ${picocolors.bold('HTML')} framework (for Web Components and HTML projects)`,
+              value: 'html',
+            },
+            { label: 'Choose a framework to install', value: 'select' },
+            { label: 'Abort', value: 'cancel' },
+          ],
         },
-        createPromptCancelOptions(this.telemetryService, 'undetected-project-type-framework')
+        createPromptCancelOptions(this.telemetryService, 'undetected-project-type')
       );
-      return manualType as ProjectType;
+
+      if (choice === 'html') {
+        return ProjectType.HTML;
+      }
+
+      if (choice === 'select') {
+        const installable = Object.values(ProjectType).filter(
+          (t) => !['undetected', 'unsupported', 'nx'].includes(String(t))
+        );
+        const manualType = await prompt.select(
+          {
+            message: 'Which framework would you like to install?',
+            options: installable.map((t) => ({ label: String(t), value: t })),
+          },
+          createPromptCancelOptions(this.telemetryService, 'undetected-project-type-framework')
+        );
+        return manualType as ProjectType;
+      }
     }
 
     throw new HandledError('Storybook failed to detect your project type');

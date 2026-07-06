@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { transformImportFiles } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import type { CheckOptions } from './index.ts';
@@ -27,12 +28,9 @@ vi.mock('storybook/internal/common', () => ({
   transformImportFiles: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('globby', () => ({
-  globby: vi.fn().mockResolvedValue([]),
-}));
-
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
+const mockTransformImportFiles = vi.mocked(transformImportFiles);
 
 describe('nextjs-to-nextjs-vite', () => {
   const mockPackageManager = {
@@ -147,6 +145,7 @@ describe('nextjs-to-nextjs-vite', () => {
         dryRun: false,
         packageManager: mockPackageManager,
         mainConfigPath: '/project/.storybook/main.js',
+        previewConfigPath: '/project/.storybook/preview.js',
         storiesPaths: ['**/*.stories.*'],
         configDir: '.storybook',
         storybookVersion: '9.0.0',
@@ -156,6 +155,11 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         [`@storybook/nextjs-vite@9.0.0`, `vite@${VITE_DEFAULT_VERSION}`]
+      );
+      expect(mockTransformImportFiles).toHaveBeenCalledWith(
+        ['**/*.stories.*', '/project/.storybook/main.js', '/project/.storybook/preview.js'],
+        { '@storybook/nextjs': '@storybook/nextjs-vite' },
+        false
       );
     });
 

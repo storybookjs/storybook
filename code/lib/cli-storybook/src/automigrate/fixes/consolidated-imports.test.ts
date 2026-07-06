@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManager, versions } from 'storybook/internal/common';
+import { JsPackageManager, transformImportFiles, versions } from 'storybook/internal/common';
 
 import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports.ts';
 
@@ -20,6 +20,12 @@ vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
   globby: vi.fn(),
 }));
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
+    transformImportFiles: vi.fn().mockResolvedValue([]),
+  };
+});
 
 const mockPackageJson = {
   dependencies: {
@@ -35,6 +41,7 @@ const mockPackageJson = {
 };
 
 const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+const mockTransformImportFiles = vi.mocked(transformImportFiles);
 
 const mockRunOptions = {
   packageManager: mockPackageManager,
@@ -232,5 +239,65 @@ describe('transformPackageJsonFiles', () => {
       file: filePath,
       error: expect.any(Error),
     });
+  });
+});
+
+describe('run', () => {
+  it('rewrites imports only across the files that belong to the current project', async () => {
+    Object.defineProperty(mockPackageManager, 'packageJsonPaths', {
+      value: [],
+      writable: true,
+      configurable: true,
+    });
+
+    const storiesPaths = ['./src/Button.stories.tsx', './src/Card.stories.tsx'];
+    const mainConfigPath = '.storybook/main.ts';
+    const previewConfigPath = '.storybook/preview.ts';
+
+    await consolidatedImports.run!({
+      result: { consolidatedDeps: new Set() },
+      dryRun: false,
+      packageManager: mockPackageManager,
+      storiesPaths,
+      mainConfigPath,
+      previewConfigPath,
+      configDir: '.storybook',
+      mainConfig: {} as any,
+      storybookVersion: '8.0.0',
+    });
+
+    expect(mockTransformImportFiles).toHaveBeenCalledWith(
+      [...storiesPaths, mainConfigPath, previewConfigPath],
+      expect.any(Object),
+      false
+    );
+  });
+
+  it('omits previewConfigPath from the rewrite set when it is not present', async () => {
+    Object.defineProperty(mockPackageManager, 'packageJsonPaths', {
+      value: [],
+      writable: true,
+      configurable: true,
+    });
+
+    const storiesPaths = ['./src/Button.stories.tsx'];
+    const mainConfigPath = '.storybook/main.ts';
+
+    await consolidatedImports.run!({
+      result: { consolidatedDeps: new Set() },
+      dryRun: false,
+      packageManager: mockPackageManager,
+      storiesPaths,
+      mainConfigPath,
+      configDir: '.storybook',
+      mainConfig: {} as any,
+      storybookVersion: '8.0.0',
+    });
+
+    expect(mockTransformImportFiles).toHaveBeenCalledWith(
+      [...storiesPaths, mainConfigPath],
+      expect.any(Object),
+      false
+    );
   });
 });

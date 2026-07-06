@@ -318,6 +318,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     result,
     dryRun = false,
     mainConfigPath,
+    previewConfigPath,
     storiesPaths,
     configDir,
     packageManager,
@@ -460,8 +461,9 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // 5. Update import statements across config and story files.
     logger.debug('Scanning and updating import statements...');
-    const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
-    const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
+    const allFiles = [...storiesPaths, mainConfigPath, previewConfigPath].filter(
+      Boolean
+    ) as string[];
 
     const transformErrors = await transformImportFiles(
       allFiles,

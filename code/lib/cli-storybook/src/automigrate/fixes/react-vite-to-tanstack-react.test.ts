@@ -180,7 +180,7 @@ describe('react-vite-to-tanstack-react', () => {
         packageManager: mockPackageManager,
         mainConfigPath: '/project/.storybook/main.ts',
         previewConfigPath: '/project/.storybook/preview.tsx',
-        storiesPaths: [],
+        storiesPaths: ['/project/src/Button.stories.tsx'],
         configDir: '.storybook',
         storybookVersion: '10.1.0',
       } as any);
@@ -198,6 +198,19 @@ describe('react-vite-to-tanstack-react', () => {
       const writtenContent = mockWriteFile.mock.calls[0]?.[1] as string;
       expect(writtenContent).not.toContain(REACT_VITE_PACKAGE);
       expect(writtenContent).toContain(`${TANSTACK_REACT_PACKAGE}/node`);
+      // The import rewrite must target only files provably belonging to the current
+      // Storybook project — stories, main config, and preview config — never a glob of
+      // the config directory, which can reach into sibling packages in a monorepo.
+      expect(transformImportFiles).toHaveBeenCalledWith(
+        [
+          '/project/src/Button.stories.tsx',
+          '/project/.storybook/main.ts',
+          '/project/.storybook/preview.tsx',
+        ],
+        { [REACT_VITE_PACKAGE]: TANSTACK_REACT_PACKAGE },
+        false
+      );
+      expect(globby).not.toHaveBeenCalled();
     });
 
     it('skips writes in dry run mode', async () => {

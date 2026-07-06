@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { transformImportFiles } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
@@ -61,6 +62,7 @@ vi.mock('../helpers/mainConfigFile.ts', () => ({
 
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
+const mockTransformImportFiles = vi.mocked(transformImportFiles);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
 const mockUpdateMainConfig = vi.mocked(updateMainConfig);
@@ -326,6 +328,32 @@ describe('angular-to-angular-vite', () => {
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         [`${ANGULAR_VITE_PACKAGE}@9.0.0`]
+      );
+    });
+
+    it('rewrites imports only in story files, main config, and preview config', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        previewConfigPath: '/project/.storybook/preview.ts',
+        storiesPaths: ['/project/src/Button.stories.tsx'],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockTransformImportFiles).toHaveBeenCalledWith(
+        [
+          '/project/src/Button.stories.tsx',
+          '/project/.storybook/main.ts',
+          '/project/.storybook/preview.ts',
+        ],
+        { [ANGULAR_PACKAGE]: ANGULAR_VITE_PACKAGE },
+        false
       );
     });
 

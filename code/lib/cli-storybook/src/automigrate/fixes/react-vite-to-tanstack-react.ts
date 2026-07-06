@@ -309,7 +309,6 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
     mainConfigPath,
     previewConfigPath,
     storiesPaths,
-    configDir,
     packageManager,
     storybookVersion,
     yes,
@@ -337,14 +336,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
 
     logger.debug('Scanning and updating import statements...');
 
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const configFiles = configDir
-      ? await globby([`${configDir}/**/*.{ts,tsx,js,jsx,mjs,cjs}`], {
-          ignore: ['**/node_modules/**', '**/dist/**'],
-        })
-      : [];
-    const allFiles = [...storiesPaths, ...configFiles, previewConfigPath].filter(
+    const allFiles = [...storiesPaths, mainConfigPath, previewConfigPath].filter(
       Boolean
     ) as string[];
 

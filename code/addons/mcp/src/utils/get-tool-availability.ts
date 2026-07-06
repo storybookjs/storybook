@@ -10,8 +10,15 @@ export interface ToolAvailability {
 	moduleGraphSupported: boolean;
 	/** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
 	changeDetectionEnabled: boolean;
-	/** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `display-review`. */
+	/** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `display-review` for direct MCP clients. */
 	reviewEnabled: boolean;
+	/**
+	 * Same gate for the `storybook ai` CLI channel (the Claude/Codex plugins),
+	 * where review is on by default: `changeDetection` on and `experimentalReview`
+	 * not explicitly `false`. Gates `display-review` for CLI-marked requests and
+	 * everything derived from the storybook-ai metadata preset.
+	 */
+	reviewEnabledForCli: boolean;
 	/** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
 	docsEnabled: boolean;
 	/** Any component manifests were found (drives the docs "why disabled" copy). */
@@ -97,6 +104,7 @@ export async function getToolAvailability(
 		moduleGraphSupported,
 		changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
 		reviewEnabled: reviewStatus.available,
+		reviewEnabledForCli: reviewStatus.availableForCli,
 		docsEnabled: manifestStatus.available,
 		docsHasManifests: manifestStatus.hasManifests,
 		docsFeatureEnabled: manifestStatus.hasFeatureFlag,

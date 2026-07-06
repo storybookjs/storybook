@@ -96,11 +96,14 @@ regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 pnpm eval
 ```
 
-The review workflow is opt-in: the `experimentalReview` feature flag defaults
-to off, so default runs assert the review-off workflow (preview-stories links,
-no display-review). Set `EVAL_REVIEW=1` to enable the flag in every sandbox
-Storybook and flip the EVAL.ts assertions to the review workflow instead
-(display-review published, review section in the final response):
+Review mode follows the integration. The plugin experiments always run — and
+assert — the review workflow (display-review published, review section in the
+final response), because review is on by default for the `storybook ai` CLI
+channel the plugins use. The MCP experiments run review-off by default
+(preview-stories links, no display-review), matching direct MCP clients where
+the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable
+the flag in every sandbox Storybook and flip the MCP assertions to the review
+workflow too:
 
 ```bash
 EVAL_REVIEW=1 pnpm eval

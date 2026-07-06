@@ -12,6 +12,14 @@ export const PUSH_REVIEW_EVENT = 'storybook/review/push-review';
 export const REVIEW_PAGE_PATH = '/review/';
 
 /**
+ * Request header the `storybook ai` CLI (and the Claude/Codex plugins built on
+ * it) sends on every MCP request to mark itself as a trusted local Storybook
+ * client. Mirrors `STORYBOOK_MCP_PROXY_HEADER` in Storybook core's
+ * `cli/ai/mcp/client.ts` — the two must stay in sync.
+ */
+export const STORYBOOK_MCP_PROXY_HEADER = 'X-Storybook-MCP-Proxy';
+
+/**
  * Default path the MCP server is mounted at on the Storybook dev server.
  * The user can override this via the addon's `endpoint` option; everywhere
  * else in the codebase that needs to compare against or fall back to the

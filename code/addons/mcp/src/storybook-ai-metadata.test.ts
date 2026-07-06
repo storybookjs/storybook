@@ -11,6 +11,7 @@ import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import { getReviewStatus } from './utils/is-review-available.ts';
 import { isModuleGraphSupported, isModuleGraphSupportedByBuilder } from './utils/module-graph.ts';
 import {
+	DISPLAY_REVIEW_TOOL_NAME,
 	GET_STORIES_BY_COMPONENT_TOOL_NAME,
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 	PREVIEW_STORIES_TOOL_NAME,
@@ -52,6 +53,7 @@ describe('buildStorybookAiMetadata', () => {
 		vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(true);
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: true,
+			availableForCli: true,
 			hasFeatureFlag: true,
 		});
 		vi.mocked(getManifestStatus).mockResolvedValue({
@@ -392,6 +394,33 @@ describe('buildStorybookAiMetadata', () => {
 		expect(simplifyTools(metadata.tools)).toEqual(simplifyTools(liveTools));
 	});
 
+	it('defaults review on for the CLI channel when experimentalReview is unset', async () => {
+		// What getReviewStatus returns when changeDetection is on and
+		// experimentalReview is neither true nor false.
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: false,
+			availableForCli: true,
+			hasFeatureFlag: false,
+		});
+
+		const metadata = await buildStorybookAiMetadata(createOptions());
+
+		expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
+		expect(metadata.instructions).toContain('display-review');
+	});
+
+	it('keeps review off everywhere when experimentalReview is explicitly false', async () => {
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: false,
+			availableForCli: false,
+			hasFeatureFlag: false,
+		});
+
+		const metadata = await buildStorybookAiMetadata(createOptions());
+
+		expect(metadata.tools.map((tool) => tool.name)).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
+	});
+
 	it('uses builder support instead of the live module-graph service for metadata', async () => {
 		vi.mocked(isModuleGraphSupported).mockResolvedValue(false);
 		vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(true);
@@ -466,6 +495,7 @@ function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvai
 		moduleGraphSupported: true,
 		changeDetectionEnabled: true,
 		reviewEnabled: true,
+		reviewEnabledForCli: true,
 		docsEnabled: true,
 		docsHasManifests: true,
 		docsFeatureEnabled: true,

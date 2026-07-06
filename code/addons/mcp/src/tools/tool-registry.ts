@@ -124,6 +124,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 					a11yEnabled: availability.a11yEnabled,
 					addonVitestAvailable: availability.testSupported,
 					docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+					reviewEnabled: availability.reviewEnabled,
 				});
 				return { content: [{ type: 'text', text }] };
 			},
@@ -151,9 +152,18 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 	{
 		name: DISPLAY_REVIEW_TOOL_NAME,
 		toolset: 'dev',
-		available: ({ availability }) => availability.reviewEnabled,
+		// Registered whenever the CLI default could turn review on; the per-request
+		// `reviewEnabled` context (explicit flag, or the trusted local-client header)
+		// decides whether a given MCP client actually sees the tool.
+		available: ({ availability }) => availability.reviewEnabledForCli,
 		getMetadata: () => getDisplayReviewToolMetadata(),
-		register: (server, _context, enabled) => addDisplayReviewTool(server, enabled),
+		register: (server, { availability }, enabled) =>
+			addDisplayReviewTool(
+				server,
+				async () =>
+					((await enabled?.()) ?? true) &&
+					(server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled),
+			),
 	},
 	{
 		name: RUN_STORY_TESTS_TOOL_NAME,

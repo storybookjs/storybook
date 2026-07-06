@@ -124,6 +124,7 @@ export const experimental_devServer: PresetPropertyFn<
 		moduleGraphSupported,
 		changeDetectionEnabled,
 		reviewEnabled,
+		reviewEnabledForCli,
 		docsEnabled,
 		docsHasManifests,
 		docsFeatureEnabled,
@@ -195,7 +196,9 @@ export const experimental_devServer: PresetPropertyFn<
 					!changeDetectionEnabled &&
 						`<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
 					!reviewEnabled &&
-						`<code>display-review</code> requires the <code>experimentalReview</code> feature flag (on top of <code>changeDetection</code>).`,
+						(reviewEnabledForCli
+							? `<code>display-review</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
+							: `<code>display-review</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
 				].filter(Boolean);
 		const devNotice = devNoticeLines.length
 			? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
@@ -210,7 +213,7 @@ export const experimental_devServer: PresetPropertyFn<
 				statusWord(isDevEnabled && moduleGraphSupported),
 			)
 			.replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))
+			.replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabledForCli))
 			.replace('{{DEV_NOTICE}}', devNotice)
 			.replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
 			.replace('{{DOCS_NOTICE}}', docsNotice)

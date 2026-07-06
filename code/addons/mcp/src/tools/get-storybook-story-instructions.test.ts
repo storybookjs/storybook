@@ -33,6 +33,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
+			availableForCli: false,
 			hasFeatureFlag: false,
 		});
 
@@ -273,6 +274,7 @@ describe('getUIBuildingInstructionsTool', () => {
 	it('tells the agent to show only the review section when review is enabled', async () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: true,
+			availableForCli: true,
 			hasFeatureFlag: true,
 		});
 
@@ -322,9 +324,55 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(instructions).not.toContain('first, then use `preview-stories`');
 	});
 
+	// The per-request context override must win over the feature-flag gate:
+	// this is the CLI path, where review is on by default even though the
+	// explicit experimentalReview flag (and thus getReviewStatus().available)
+	// is off.
+	it('uses the review instructions when the request context enables review despite the flag being unset', async () => {
+		vi.mocked(getReviewStatus).mockResolvedValue({
+			available: false,
+			availableForCli: true,
+			hasFeatureFlag: false,
+		});
+
+		const mockOptions = {
+			presets: {
+				apply: vi.fn(async (presetName: string) => {
+					if (presetName === 'framework') return '@storybook/react-vite';
+					if (presetName === 'features') return { changeDetection: true };
+					return undefined;
+				}),
+			},
+		};
+
+		const response = await server.receive(
+			{
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
+			},
+			{
+				sessionId: 'test-session',
+				custom: {
+					origin: 'http://localhost:6006',
+					options: mockOptions as any,
+					disableTelemetry: true,
+					reviewEnabled: true,
+				},
+			},
+		);
+
+		const instructions = response.result?.content[0].text as string;
+
+		expect(instructions).toContain('## 👀 Review your changes');
+		expect(instructions).toContain('Feed the discovered IDs into **display-review**');
+	});
+
 	it('tells the agent to include preview URLs when review is disabled', async () => {
 		vi.mocked(getReviewStatus).mockResolvedValue({
 			available: false,
+			availableForCli: false,
 			hasFeatureFlag: false,
 		});
 

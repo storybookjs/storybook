@@ -32,6 +32,7 @@ const availability = (reviewEnabled: boolean): ToolAvailability => ({
 	moduleGraphSupported: true,
 	changeDetectionEnabled: true,
 	reviewEnabled,
+	reviewEnabledForCli: reviewEnabled,
 	docsEnabled: true,
 	docsHasManifests: true,
 	docsFeatureEnabled: true,

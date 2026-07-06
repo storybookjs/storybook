@@ -22,6 +22,11 @@ type BuildStorybookStoryInstructionsOptions = {
 	addonVitestAvailable?: boolean;
 	/** Whether the documentation tools (list-all-documentation etc.) are registered. */
 	docsAvailable?: boolean;
+	/**
+	 * Per-channel review gate override (per-request context on the MCP path, the
+	 * CLI default on the metadata path). Defaults to the explicit feature-flag gate.
+	 */
+	reviewEnabled?: boolean;
 };
 
 /**
@@ -82,6 +87,7 @@ export async function addGetUIBuildingInstructionsTool(
 					a11yEnabled: server.ctx.custom?.a11yEnabled,
 					addonVitestAvailable,
 					docsAvailable,
+					reviewEnabled: server.ctx.custom?.reviewEnabled,
 				});
 
 				return {
@@ -155,13 +161,14 @@ export async function buildStorybookStoryInstructions(
 		a11yEnabled = false,
 		addonVitestAvailable,
 		docsAvailable = false,
+		reviewEnabled: reviewEnabledOverride,
 	}: BuildStorybookStoryInstructionsOptions = {},
 ): Promise<string> {
 	const frameworkPreset = await options.presets.apply('framework');
 	const featuresPreset = await options.presets.apply('features', {});
 	const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
 	const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
-	const reviewEnabled = reviewStatus.available;
+	const reviewEnabled = reviewEnabledOverride ?? reviewStatus.available;
 	const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
 	const renderer = frameworkToRendererMap[framework!];
 	// Mirrors the review-aware rewrite in build-server-instructions.ts:

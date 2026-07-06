@@ -57,15 +57,42 @@
       "error",
       { "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"] }
     ],
+    "react/react-in-jsx-scope": "off",
     "react/rules-of-hooks": "off",
     "typescript/triple-slash-reference": "off"
   },
   "overrides": [
     {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "react-classic/destructuring-assignment": "warn",
+        "react-classic/prop-types": "off"
+      }
+    },
+    {
+      "files": ["**/renderers/preact/**"],
+      "rules": {
+        "react-classic/prop-types": "off"
+      }
+    },
+    {
+      "files": ["**/template/**", "**/templates/**", "**/rendererAssets/**"],
+      "rules": {
+        "jsx-a11y/anchor-is-valid": "off",
+        "react-classic/prop-types": "off"
+      }
+    },
+    {
       "files": ["**/*.ts"],
       "rules": {
         "local-rules/no-uncategorized-errors": "warn",
         "local-rules/storybook-monorepo-imports": "error"
+      }
+    },
+    {
+      "files": ["**/*.compat.ts", "**/*.compat.tsx"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "off"
       }
     },
     {
@@ -120,6 +147,12 @@
       "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["core/**/*.stories.*"],
+      "rules": {
+        "storybook/use-storybook-expect": "off"
       }
     },
     {

@@ -33,6 +33,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
   initializeThemeState(themeNames, initialTheme);
 
   return (storyFn, context) => {
+    // oxlint-disable-next-line react-classic/destructuring-assignment
     const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 

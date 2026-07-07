@@ -422,6 +422,9 @@ describe('jsxDecorator', () => {
   });
 
   it('should skip JSX rendering for portable stories', () => {
+    const storyOutput = <div>Portable Story</div>;
+    mockStoryFn.mockReturnValue(storyOutput);
+
     const context = {
       ...mockContext,
       parameters: {
@@ -433,6 +436,6 @@ describe('jsxDecorator', () => {
 
     const result = jsxDecorator(mockStoryFn, context);
     expect(mockedEmitTransformCode).not.toHaveBeenCalled();
-    expect(result).toEqual(<div>Test Story</div>);
+    expect(result).toEqual(storyOutput);
   });
 });

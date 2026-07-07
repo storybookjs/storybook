@@ -16,12 +16,6 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
     return;
   }
-  // Portable stories (vitest, playwright/jest portable) have no manager Code panel and no OSA
-  // server peer, so the `extractStoryDocs` remote command has no handler and would reject after
-  // the remote-command ack timeout. There is nothing to emit to, so skip entirely.
-  if (context.parameters?.__isPortableStory) {
-    return;
-  }
   if (shouldSkipStoryDocsEmit(context.parameters)) {
     return;
   }

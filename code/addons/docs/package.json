@@ -106,7 +106,7 @@
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "react": "^18.2.0",
-    "react-aria": "^3.48.0",
+    "react-aria": "patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch",
     "react-colorful": "^5.1.2",
     "react-dom": "^18.2.0",
     "rehype-external-links": "^3.0.0",

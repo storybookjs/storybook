@@ -8217,7 +8217,7 @@ __metadata:
     memoizerific: "npm:^1.11.3"
     polished: "npm:^4.2.2"
     react: "npm:^18.2.0"
-    react-aria: "npm:^3.48.0"
+    react-aria: "patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch"
     react-colorful: "npm:^5.1.2"
     react-dom: "npm:^18.2.0"
     rehype-external-links: "npm:^3.0.0"
@@ -27529,7 +27529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-aria@npm:3.48.0, react-aria@npm:^3.48.0":
+"react-aria@npm:3.48.0":
   version: 3.48.0
   resolution: "react-aria@npm:3.48.0"
   dependencies:
@@ -27546,6 +27546,26 @@ __metadata:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
     react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
   checksum: 10c0/908d30941f24510dd73eb744d9b83c102949e559ae17d972b880c564c464bcf708610d8defc708b8ff85db3996bd4f42818cb6d2b9be390a42265595522547f6
+  languageName: node
+  linkType: hard
+
+"react-aria@patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch":
+  version: 3.48.0
+  resolution: "react-aria@patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch::version=3.48.0&hash=e3e37a"
+  dependencies:
+    "@internationalized/date": "npm:^3.12.1"
+    "@internationalized/number": "npm:^3.6.6"
+    "@internationalized/string": "npm:^3.2.8"
+    "@react-types/shared": "npm:^3.34.0"
+    "@swc/helpers": "npm:^0.5.0"
+    aria-hidden: "npm:^1.2.3"
+    clsx: "npm:^2.0.0"
+    react-stately: "npm:3.46.0"
+    use-sync-external-store: "npm:^1.6.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+  checksum: 10c0/ae8b03bd1b1a18aa989ec5e116b58d558b1546519480740dd87df8b8c4d0c5c5f2a262be413376daf1cb42a7575c10523dabeba61d22040b23231c213ce9d5e2
   languageName: node
   linkType: hard
 
@@ -30545,7 +30565,7 @@ __metadata:
     pretty-hrtime: "npm:^1.0.3"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
-    react-aria: "npm:^3.48.0"
+    react-aria: "patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch"
     react-aria-components: "npm:^1.17.0"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"

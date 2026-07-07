@@ -61,7 +61,9 @@
     "react-joyride/type-fest": "~2.19",
     "rxjs": "^7.8.2",
     "typescript": "^5.9.3",
-    "valibot": "^1.4.0"
+    "valibot": "^1.4.0",
+    "react-aria@npm:3.48.0": "patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch",
+    "react-aria@npm:^3.48.0": "patch:react-aria@npm%3A3.48.0#~/.yarn/patches/react-aria-npm-3.48.0-0945840d84.patch"
   },
   "devDependencies": {
     "@nx/workspace": "^22.6.1",

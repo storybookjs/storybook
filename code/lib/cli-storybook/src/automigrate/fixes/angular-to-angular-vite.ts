@@ -122,6 +122,25 @@ export default defineConfig({
 });
 `;
 
+// `StorybookConfig` is a type-only export, so a plain (non-`type`) import of it is technically
+// incorrect regardless of framework. Node's native type-stripping doesn't reliably elide such
+// imports (see loader.ts), so a hard-failing runtime import can surface once this migration
+// rewrites the specifier — mark it `type` so the rewritten import is actually correct.
+const markStorybookConfigImportAsType = (content: string): string =>
+  content.replace(
+    new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*(['"])${ANGULAR_VITE_PACKAGE}\\2`),
+    (match, specifiers: string, quote: string) => {
+      if (/\btype\b/.test(specifiers)) {
+        return match;
+      }
+      const fixedSpecifiers = specifiers.replace(
+        /(^|,)(\s*)StorybookConfig\s*(?=,|$)/,
+        (_specMatch: string, sep: string, space: string) => `${sep}${space}type StorybookConfig`
+      );
+      return `import {${fixedSpecifiers}} from ${quote}${ANGULAR_VITE_PACKAGE}${quote}`;
+    }
+  );
+
 const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
   try {
     const content = await readFile(mainConfigPath, 'utf-8');
@@ -132,7 +151,9 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
 
     // Replace @storybook/angular with @storybook/angular-vite using a negative
     // lookahead so references that are already @storybook/angular-vite are left alone.
-    const transformed = content.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE);
+    const transformed = markStorybookConfigImportAsType(
+      content.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE)
+    );
 
     if (transformed !== content && !dryRun) {
       await writeFile(mainConfigPath, transformed);
@@ -353,7 +374,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       );
 
       const shouldContinue = yes
-        ? false
+        ? true
         : await prompt.confirm({
             message: 'I detected a webpackFinal hook. It will not carry over. Continue anyway?',
             initialValue: false,

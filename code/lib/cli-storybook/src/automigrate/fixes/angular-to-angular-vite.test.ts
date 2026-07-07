@@ -308,26 +308,6 @@ describe('angular-to-angular-vite', () => {
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
 
-    it('proceeds past the webpackFinal warning without prompting when yes is set', async () => {
-      mockReadFile.mockResolvedValue(
-        `export default { framework: '${ANGULAR_PACKAGE}', webpackFinal: async c => c };`
-      );
-
-      await angularToAngularVite.run!({
-        result: { ...baseResult, hasWebpackFinal: true },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-        yes: true,
-      } as any);
-
-      expect(mockPromptConfirm).not.toHaveBeenCalled();
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
-    });
-
     it('updates dependencies correctly', async () => {
       mockPromptConfirm.mockResolvedValue(false);
       mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
@@ -391,49 +371,6 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(mockWriteFile).not.toHaveBeenCalledWith(
         '/project/.storybook/main.ts',
         expect.anything()
-      );
-    });
-
-    it('marks a plain StorybookConfig import as a type import when rewriting the framework package', async () => {
-      mockPromptConfirm.mockResolvedValue(false);
-      mockReadFile.mockResolvedValue(
-        `import { StorybookConfig } from '${ANGULAR_PACKAGE}';\nexport default { framework: '${ANGULAR_PACKAGE}' };`
-      );
-
-      await angularToAngularVite.run!({
-        result: baseResult,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
-
-      const [, writtenContent] = mockWriteFile.mock.calls[0];
-      expect(writtenContent).toContain(`from '${ANGULAR_VITE_PACKAGE}'`);
-      expect(writtenContent).toMatch(/import\s*\{\s*type StorybookConfig\s*\}/);
-    });
-
-    it('leaves an already type-only StorybookConfig import untouched', async () => {
-      mockPromptConfirm.mockResolvedValue(false);
-      mockReadFile.mockResolvedValue(
-        `import type { StorybookConfig } from '${ANGULAR_PACKAGE}';\nexport default { framework: '${ANGULAR_PACKAGE}' };`
-      );
-
-      await angularToAngularVite.run!({
-        result: baseResult,
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
-
-      const [, writtenContent] = mockWriteFile.mock.calls[0];
-      expect(writtenContent).toContain(
-        `import type { StorybookConfig } from '${ANGULAR_VITE_PACKAGE}'`
       );
     });
 

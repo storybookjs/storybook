@@ -77,7 +77,7 @@ export function resolveInstance(
 ): ResolveResult {
   const { port: targetPort, agent: currentAgent } = target;
   const normalisedCwd = resolve(target.cwd);
-  const normalisedConfigDir = target.configDir == null ? undefined : resolve(target.configDir);
+  const normalisedConfigDir = target.configDir && resolve(target.configDir);
   const matchesConfigDir = (r: StorybookInstanceRecord) =>
     normalisedConfigDir != null &&
     r.configDir != null &&

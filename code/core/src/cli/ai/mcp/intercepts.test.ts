@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { getInterceptMarkdown } from './intercepts.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
-const record = (cwd: string, url: string): StorybookInstanceRecord => ({
+const record = (
+  cwd: string,
+  url: string,
+  overrides: Partial<StorybookInstanceRecord> = {}
+): StorybookInstanceRecord => ({
   schemaVersion: 1,
   instanceId: 'i-1',
   pid: 1,
@@ -11,6 +15,7 @@ const record = (cwd: string, url: string): StorybookInstanceRecord => ({
   url,
   port: 6006,
   mcp: { status: 'ready', endpoint: '/mcp' },
+  ...overrides,
 });
 
 describe('getInterceptMarkdown', () => {
@@ -20,16 +25,46 @@ describe('getInterceptMarkdown', () => {
     expect(markdown).toContain('storybook dev');
   });
 
-  it('no-instance with candidates lists the running cwds', () => {
+  it('no-instance with candidates lists the running instances and a copyable --cwd retry', () => {
     const markdown = getInterceptMarkdown('no-instance', {
       records: [record('/projects/foo', 'http://localhost:6006')],
     });
     expect(markdown).toContain('Running Storybooks:');
-    expect(markdown).toContain('- `/projects/foo` (http://localhost:6006)');
-    expect(markdown).toContain('--cwd');
+    expect(markdown).toContain('- cwd `/projects/foo` (http://localhost:6006)');
+    expect(markdown).toContain('- `storybook ai --cwd /projects/foo <command> [args...]`');
+    expect(markdown).toContain('BEFORE the command name');
+    expect(markdown).not.toContain('storybook ai --config-dir');
   });
 
-  it('port-mismatch lists the ports running at the cwd', () => {
+  it('no-instance with candidates includes the recorded config dir and a --config-dir retry', () => {
+    const markdown = getInterceptMarkdown('no-instance', {
+      records: [
+        record('/repo', 'http://localhost:6006', {
+          configDir: '/repo/packages/ui/.storybook',
+        }),
+      ],
+    });
+    expect(markdown).toContain(
+      '- cwd `/repo`, config dir `/repo/packages/ui/.storybook` (http://localhost:6006)'
+    );
+    expect(markdown).toContain('- `storybook ai --cwd /repo <command> [args...]`');
+    expect(markdown).toContain(
+      '- `storybook ai --config-dir /repo/packages/ui/.storybook <command> [args...]`'
+    );
+  });
+
+  it('no-instance deduplicates retry examples across records sharing a cwd', () => {
+    const markdown = getInterceptMarkdown('no-instance', {
+      records: [
+        record('/projects/foo', 'http://localhost:6006'),
+        record('/projects/foo', 'http://localhost:6007', { instanceId: 'i-2', pid: 2 }),
+      ],
+    });
+    const occurrences = markdown.split('`storybook ai --cwd /projects/foo').length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it('port-mismatch lists the ports running for the project', () => {
     const markdown = getInterceptMarkdown('port-mismatch', {
       port: 9999,
       records: [record('/projects/foo', 'http://localhost:6006')],

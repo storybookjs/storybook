@@ -6,16 +6,37 @@ import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
 
-const buildNoInstanceWithCandidates = (records: StorybookInstanceRecord[]) =>
-  `No Storybook is running at this cwd. Either start Storybook from the project's cwd, or retry with \`--cwd\` set to one of the running cwds below.
+const buildNoInstanceWithCandidates = (records: StorybookInstanceRecord[]) => {
+  const instances = records.map((r) => {
+    const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';
+    return `- cwd \`${r.cwd}\`${configDir} (${r.url})`;
+  });
+  // Concrete invocations built from each instance's recorded values, so the agent can copy one
+  // verbatim. Either flag alone selects the instance; both are shown so agents learn both.
+  const examples = [
+    ...new Set(
+      records.flatMap((r) => [
+        `- \`storybook ai --cwd ${r.cwd} <command> [args...]\``,
+        ...(r.configDir
+          ? [`- \`storybook ai --config-dir ${r.configDir} <command> [args...]\``]
+          : []),
+      ])
+    ),
+  ];
+
+  return `No running Storybook matches this project (neither its cwd nor its Storybook config dir). Either start \`storybook dev\` from this project, or retry with \`--cwd\` or \`--config-dir\` pointing at one of the running Storybooks below. Both flags must be placed BEFORE the command name.
 
 Running Storybooks:
-${records.map((r) => `- \`${r.cwd}\` (${r.url})`).join('\n')}`;
+${instances.join('\n')}
+
+Retry examples (replace \`<command>\` with the command you ran):
+${examples.join('\n')}`;
+};
 
 const buildPortMismatch = (port: number | undefined, records: StorybookInstanceRecord[]) =>
-  `Storybook is running at this cwd, but not on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by cwd alone.
+  `Storybook is running for this project, but not on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by project alone.
 
-Running Storybooks at this cwd:
+Running Storybooks for this project:
 ${records.map((r) => `- port \`${r.port}\` (${r.url}, status: \`${r.mcp.status}\`)`).join('\n')}`;
 
 const ADDON_MISSING = `Storybook is running but does not provide these commands. The \`@storybook/addon-mcp\` addon is missing.

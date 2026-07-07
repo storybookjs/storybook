@@ -31,14 +31,14 @@ function record(
 
 describe('resolveInstance', () => {
   it('returns no-instance with empty candidates when registry is empty', () => {
-    const result = resolveInstance([], '/Users/x/projects/foo');
+    const result = resolveInstance([], { cwd: '/Users/x/projects/foo' });
     expect(result).toEqual({ kind: 'intercept', reason: 'no-instance', records: [], matches: [] });
   });
 
   it('returns no-instance with candidates when no record cwd matches', () => {
     const a = record('/Users/x/projects/foo');
     const b = record('/Users/x/projects/bar');
-    const result = resolveInstance([a, b], '/Users/x/projects/baz');
+    const result = resolveInstance([a, b], { cwd: '/Users/x/projects/baz' });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');
@@ -48,19 +48,19 @@ describe('resolveInstance', () => {
 
   it('matches a record by exact normalized cwd', () => {
     const r = record('/Users/x/projects/foo');
-    const result = resolveInstance([r], '/Users/x/projects/foo');
+    const result = resolveInstance([r], { cwd: '/Users/x/projects/foo' });
     expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
   });
 
   it('normalizes trailing slashes and dot segments before matching', () => {
     const r = record('/Users/x/projects/foo');
-    const result = resolveInstance([r], '/Users/x/projects/foo/./');
+    const result = resolveInstance([r], { cwd: '/Users/x/projects/foo/./' });
     expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
   });
 
   it('does NOT match a child path of a record cwd (exact only)', () => {
     const r = record('/Users/x/projects/foo');
-    const result = resolveInstance([r], '/Users/x/projects/foo/src/Button.tsx');
+    const result = resolveInstance([r], { cwd: '/Users/x/projects/foo/src/Button.tsx' });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');
@@ -69,17 +69,100 @@ describe('resolveInstance', () => {
 
   it('does NOT match a sibling string prefix', () => {
     const r = record('/Users/x/projects/foo');
-    const result = resolveInstance([r], '/Users/x/projects/foobar');
+    const result = resolveInstance([r], { cwd: '/Users/x/projects/foobar' });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');
     }
   });
 
+  it('matches a record by configDir when the cwds differ (monorepo root dev, leaf CLI)', () => {
+    const r = record('/repo', 'ready', { configDir: '/repo/packages/ui/.storybook' });
+    const result = resolveInstance([r], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/packages/ui/.storybook',
+    });
+    expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
+  });
+
+  it('matches a record by cwd even when the configDirs differ', () => {
+    const r = record('/repo/packages/ui', 'ready', {
+      configDir: '/repo/packages/ui/.storybook',
+    });
+    const result = resolveInstance([r], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/.storybook',
+    });
+    expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
+  });
+
+  it('normalizes trailing slashes and dot segments in configDirs before matching', () => {
+    const r = record('/repo', 'ready', { configDir: '/repo/packages/ui/.storybook' });
+    const result = resolveInstance([r], {
+      cwd: '/elsewhere',
+      configDir: '/repo/packages/ui/./.storybook/',
+    });
+    expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
+  });
+
+  it('does NOT match by configDir prefix (exact only)', () => {
+    const r = record('/repo', 'ready', { configDir: '/repo/packages/ui/.storybook' });
+    const result = resolveInstance([r], {
+      cwd: '/elsewhere',
+      configDir: '/repo/packages/ui/.storybook/subdir',
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+    }
+  });
+
+  it('does NOT match records without a recorded configDir by configDir (older Storybooks)', () => {
+    const r = record('/repo');
+    const result = resolveInstance([r], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/packages/ui/.storybook',
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+    }
+  });
+
+  it('does NOT match a recorded configDir when the target has no configDir', () => {
+    const r = record('/repo', 'ready', { configDir: '/repo/packages/ui/.storybook' });
+    const result = resolveInstance([r], { cwd: '/repo/packages/ui' });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+    }
+  });
+
+  it('buckets cwd-matched and configDir-matched records together', () => {
+    const byCwd = record('/repo/packages/ui', 'ready', {
+      pid: 100,
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const byConfigDir = record('/repo', 'ready', {
+      configDir: '/repo/packages/ui/.storybook',
+      pid: 200,
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance([byCwd, byConfigDir], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/packages/ui/.storybook',
+    });
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(byConfigDir);
+      expect(result.matches).toEqual([byConfigDir, byCwd]);
+    }
+  });
+
   it('tie-breaks on lowest pid when 2+ records share the cwd and none carry a startedAt', () => {
     const a = record('/Users/x/projects/foo', 'ready', { pid: 200 });
     const b = record('/Users/x/projects/foo', 'ready', { pid: 100 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo');
+    const result = resolveInstance([a, b], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(b);
@@ -96,7 +179,7 @@ describe('resolveInstance', () => {
       pid: 200,
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([older, newer], '/Users/x/projects/foo');
+    const result = resolveInstance([older, newer], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(newer);
@@ -110,7 +193,7 @@ describe('resolveInstance', () => {
       pid: 200,
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([noStamp, stamped], '/Users/x/projects/foo');
+    const result = resolveInstance([noStamp, stamped], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(stamped);
@@ -126,7 +209,7 @@ describe('resolveInstance', () => {
       pid: 200,
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([ready, newerStarting], '/Users/x/projects/foo');
+    const result = resolveInstance([ready, newerStarting], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(ready);
@@ -142,7 +225,7 @@ describe('resolveInstance', () => {
       pid: 200,
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([olderError, newerStarting], '/Users/x/projects/foo');
+    const result = resolveInstance([olderError, newerStarting], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('mcp-starting');
@@ -152,7 +235,7 @@ describe('resolveInstance', () => {
   it('prefers a ready record over non-ready ones when multiple records share the cwd', () => {
     const starting = record('/Users/x/projects/foo', 'starting', { pid: 100 });
     const ready = record('/Users/x/projects/foo', 'ready', { pid: 200 });
-    const result = resolveInstance([starting, ready], '/Users/x/projects/foo');
+    const result = resolveInstance([starting, ready], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(ready);
@@ -163,25 +246,25 @@ describe('resolveInstance', () => {
   it('falls back to dispatching the lowest-pid status when no record at the cwd is ready', () => {
     const a = record('/Users/x/projects/foo', 'starting', { pid: 200 });
     const b = record('/Users/x/projects/foo', 'error', { pid: 100 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo');
+    const result = resolveInstance([a, b], { cwd: '/Users/x/projects/foo' });
     expect(result).toEqual({ kind: 'intercept', reason: 'mcp-error', matches: [b, a] });
   });
 
   it('dispatches mcp.status=starting as mcp-starting intercept', () => {
     const r = record('/p', 'starting');
-    const result = resolveInstance([r], '/p');
+    const result = resolveInstance([r], { cwd: '/p' });
     expect(result).toEqual({ kind: 'intercept', reason: 'mcp-starting', matches: [r] });
   });
 
   it('dispatches mcp.status=not-installed as addon-missing intercept', () => {
     const r = record('/p', 'not-installed');
-    const result = resolveInstance([r], '/p');
+    const result = resolveInstance([r], { cwd: '/p' });
     expect(result).toEqual({ kind: 'intercept', reason: 'addon-missing', matches: [r] });
   });
 
   it('dispatches mcp.status=error as mcp-error intercept', () => {
     const r = record('/p', 'error');
-    const result = resolveInstance([r], '/p');
+    const result = resolveInstance([r], { cwd: '/p' });
     expect(result).toEqual({ kind: 'intercept', reason: 'mcp-error', matches: [r] });
   });
 
@@ -192,7 +275,11 @@ describe('resolveInstance', () => {
       port: 6006,
     });
     const b = record('/Users/x/projects/foo', 'ready', { agent: 'codex', pid: 200, port: 6007 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo', 6007, 'claude');
+    const result = resolveInstance([a, b], {
+      cwd: '/Users/x/projects/foo',
+      port: 6007,
+      agent: 'claude',
+    });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(b);
@@ -213,12 +300,10 @@ describe('resolveInstance', () => {
       agent: 'codex',
       startedAt: '2026-06-09T12:00:00.000Z',
     });
-    const result = resolveInstance(
-      [genericClaude, claudePreview, newerCodex],
-      '/Users/x/projects/foo',
-      undefined,
-      'claude'
-    );
+    const result = resolveInstance([genericClaude, claudePreview, newerCodex], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -236,12 +321,10 @@ describe('resolveInstance', () => {
       agent: 'codex',
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance(
-      [genericClaude, newerCodex],
-      '/Users/x/projects/foo',
-      undefined,
-      'claude'
-    );
+    const result = resolveInstance([genericClaude, newerCodex], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -259,12 +342,10 @@ describe('resolveInstance', () => {
       agent: 'codex',
       startedAt: '2026-06-09T10:00:00.000Z',
     });
-    const result = resolveInstance(
-      [startingPreview, readyCodex],
-      '/Users/x/projects/foo',
-      undefined,
-      'claude'
-    );
+    const result = resolveInstance([startingPreview, readyCodex], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
 
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
@@ -282,12 +363,10 @@ describe('resolveInstance', () => {
       agent: 'claude',
       startedAt: '2026-06-09T10:00:00.000Z',
     });
-    const result = resolveInstance(
-      [erroredPreview, readyClaude],
-      '/Users/x/projects/foo',
-      undefined,
-      'claude'
-    );
+    const result = resolveInstance([erroredPreview, readyClaude], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
 
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
@@ -305,12 +384,10 @@ describe('resolveInstance', () => {
       agent: 'cursor',
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance(
-      [codex, newerCursor],
-      '/Users/x/projects/foo',
-      undefined,
-      'codex'
-    );
+    const result = resolveInstance([codex, newerCursor], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'codex',
+    });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -332,12 +409,10 @@ describe('resolveInstance', () => {
       agent: 'codex',
       startedAt: '2026-06-09T12:00:00.000Z',
     });
-    const result = resolveInstance(
-      [olderPreview, newerPreview, newestCodex],
-      '/Users/x/projects/foo',
-      undefined,
-      'claude'
-    );
+    const result = resolveInstance([olderPreview, newerPreview, newestCodex], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -354,7 +429,10 @@ describe('resolveInstance', () => {
       agent: 'cursor',
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([older, newer], '/Users/x/projects/foo', undefined, 'codex');
+    const result = resolveInstance([older, newer], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'codex',
+    });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -372,7 +450,7 @@ describe('resolveInstance', () => {
       agent: 'codex',
       startedAt: '2026-06-09T11:00:00.000Z',
     });
-    const result = resolveInstance([olderPreview, newerCodex], '/Users/x/projects/foo');
+    const result = resolveInstance([olderPreview, newerCodex], { cwd: '/Users/x/projects/foo' });
 
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
@@ -384,7 +462,7 @@ describe('resolveInstance', () => {
   it('ignores port when it is not supplied (routes by cwd alone)', () => {
     const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
     const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo');
+    const result = resolveInstance([a, b], { cwd: '/Users/x/projects/foo' });
     expect(result.kind).toBe('instance');
     if (result.kind === 'instance') {
       expect(result.record).toBe(a);
@@ -395,7 +473,7 @@ describe('resolveInstance', () => {
   it('returns port-mismatch with the cwd instances as candidates when cwd matches but no instance is on the port', () => {
     const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
     const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
-    const result = resolveInstance([a, b], '/Users/x/projects/foo', 9999);
+    const result = resolveInstance([a, b], { cwd: '/Users/x/projects/foo', port: 9999 });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('port-mismatch');
@@ -404,9 +482,26 @@ describe('resolveInstance', () => {
     }
   });
 
+  it('returns port-mismatch when the configDir matches but no instance is on the port', () => {
+    const r = record('/repo', 'ready', {
+      configDir: '/repo/packages/ui/.storybook',
+      port: 6006,
+    });
+    const result = resolveInstance([r], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/packages/ui/.storybook',
+      port: 9999,
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('port-mismatch');
+      expect(result.records).toEqual([r]);
+    }
+  });
+
   it('returns no-instance (not port-mismatch) when the cwd itself does not match', () => {
     const a = record('/Users/x/projects/foo', 'ready', { port: 6006 });
-    const result = resolveInstance([a], '/Users/x/projects/bar', 6006);
+    const result = resolveInstance([a], { cwd: '/Users/x/projects/bar', port: 6006 });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');

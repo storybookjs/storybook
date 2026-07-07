@@ -19,16 +19,34 @@ export type ResolveResult =
       matches: StorybookInstanceRecord[];
     };
 
+export type ResolveTarget = {
+  /** Normalised before matching; usually the CLI's `--cwd` or `process.cwd()`. */
+  cwd: string;
+  /**
+   * Resolved config directory the CLI is targeting (from `--config-dir`, or the `.storybook`
+   * default under `cwd`). Matched against the `configDir` recorded by `storybook dev`.
+   */
+  configDir?: string;
+  /** Port of the target Storybook, to address one specific instance among the matches. */
+  port?: number;
+  /** The invoking agent (std-env name), used to pick among competing matches. */
+  agent?: string;
+};
+
 /**
- * Pick the Storybook instance whose cwd exactly matches `targetCwd` after normalisation. Per
- * milestone 2 of storybookjs/storybook#34826: matching is exact-normalized, with no longest-prefix
- * or fallback behaviour.
+ * Pick the Storybook instance that matches the target project: its recorded `cwd` equals
+ * `target.cwd`, OR its recorded `configDir` equals `target.configDir`. Both comparisons are
+ * exact-normalized with no longest-prefix or fallback behaviour (milestone 2 of
+ * storybookjs/storybook#34826). The configDir key exists for monorepos
+ * (storybookjs/storybook#35359): a dev server started at the repo root with
+ * `-c packages/ui/.storybook` must be found by a CLI run from `packages/ui`, and vice versa.
+ * Records from older Storybooks carry no `configDir` and can only match by cwd.
  *
- * When `targetPort` is supplied (e.g. an agent that launched Storybook on a known port and wants
- * to address that exact instance), it further constrains the cwd matches: an instance must match
- * BOTH cwd and port. If the cwd matches but no instance there is on `targetPort`, a
- * `port-mismatch` intercept is returned with the cwd's instances as candidates so callers can
- * surface the running ports.
+ * When `target.port` is supplied (e.g. an agent that launched Storybook on a known port and wants
+ * to address that exact instance), it further constrains the project matches: an instance must
+ * match BOTH the project and the port. If the project matches but no instance there is on the
+ * port, a `port-mismatch` intercept is returned with the project's instances as candidates so
+ * callers can surface the running ports.
  *
  * If at least one record matches, dispatch based on the selected instance's `mcp.status`:
  *
@@ -37,30 +55,37 @@ export type ResolveResult =
  * - `not-installed` → addon-missing intercept
  * - `error` → mcp-error intercept
  *
- * Zero matches → no-instance intercept (callers may surface running cwds). 2+ matches at the same
- * cwd → use the current agent to select the competing bucket, then pick the most recently started
+ * Zero matches → no-instance intercept (callers may surface the running instances). 2+ matches →
+ * use the current agent to select the competing bucket, then pick the most recently started
  * instance in that bucket (latest `startedAt` among `ready` records, else latest overall). Records
  * without a `startedAt` tie-break on lowest pid for determinism. The selected bucket is returned
  * (most-recent first) as `matches` so callers can warn only about instances that competed.
  */
 export function resolveInstance(
   records: StorybookInstanceRecord[],
-  targetCwd: string,
-  targetPort?: number,
-  currentAgent?: string
+  target: ResolveTarget
 ): ResolveResult {
-  const normalisedTarget = resolve(targetCwd);
-  const cwdMatches = records.filter((r) => resolve(r.cwd) === normalisedTarget);
-  const matches = targetPort == null ? cwdMatches : cwdMatches.filter((r) => r.port === targetPort);
+  const { port: targetPort, agent: currentAgent } = target;
+  const normalisedCwd = resolve(target.cwd);
+  const normalisedConfigDir = target.configDir == null ? undefined : resolve(target.configDir);
+  const projectMatches = records.filter(
+    (r) =>
+      resolve(r.cwd) === normalisedCwd ||
+      (normalisedConfigDir != null &&
+        r.configDir != null &&
+        resolve(r.configDir) === normalisedConfigDir)
+  );
+  const matches =
+    targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
 
   if (matches.length === 0) {
-    // cwd matched, but no instance there is on the requested port: a distinct,
+    // The project matched, but no instance there is on the requested port: a distinct,
     // more actionable failure than "nothing is running here".
-    if (targetPort != null && cwdMatches.length > 0) {
+    if (targetPort != null && projectMatches.length > 0) {
       return {
         kind: 'intercept',
         reason: 'port-mismatch',
-        records: cwdMatches,
+        records: projectMatches,
         matches: [],
       };
     }

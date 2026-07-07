@@ -128,7 +128,12 @@ export async function runAiTool(
     };
   }
 
-  const resolution = await resolveReadyInstance(options.cwd, parsedPort.port, deps);
+  const resolution = await resolveReadyInstance(
+    options.cwd,
+    options.configDir,
+    parsedPort.port,
+    deps
+  );
   if (resolution.kind === 'error') {
     return {
       exitCode: 1,
@@ -447,19 +452,24 @@ type InstanceResolution =
     };
 
 /**
- * Resolve the running Storybook instance for `cwdInput` via the registry. No version or
- * installed checks: the CLI is invoked as `npx storybook`, so the fact that it is executing
- * already proves the project has a compatible Storybook.
+ * Resolve the running Storybook instance for the targeted project via the registry. An instance
+ * matches on its recorded cwd OR its recorded config dir, so monorepo instances are found from a
+ * different cwd (storybookjs/storybook#35359); the config dir target is resolved from
+ * `--config-dir` or the `.storybook` default under the cwd. No version or installed checks: the
+ * CLI is invoked as `npx storybook`, so the fact that it is executing already proves the project
+ * has a compatible Storybook.
  */
 async function resolveReadyInstance(
   cwdInput: string | undefined,
+  configDirInput: string | undefined,
   port: number | undefined,
   deps: AiToolRunDeps
 ): Promise<InstanceResolution> {
   const cwd = resolve(cwdInput ?? process.cwd());
+  const configDir = resolveStorybookConfigDir({ cwd, configDir: configDirInput });
 
   const records = await readRegistry(deps.registryDir);
-  const resolution = resolveInstance(records, cwd, port, detectAgent()?.name);
+  const resolution = resolveInstance(records, { cwd, configDir, port, agent: detectAgent()?.name });
 
   if (resolution.kind === 'intercept') {
     return {

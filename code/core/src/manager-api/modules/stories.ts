@@ -1261,15 +1261,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     } = store.getState();
 
     // Config sidebar filters first, then our managed filters override any conflicts
-    store.setState({
+    store.setState(({ filters }) => ({
       filters: {
-        ...store.getState().filters,
+        ...filters,
         ...configFilters,
         [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
         [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
         [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
       },
-    });
+    }));
   });
 
   fullStatusStore.onAllStatusChange(async () => {

@@ -1,3 +1,10 @@
+## 10.5.0-beta.1
+
+- Core: Add experimentalReview feature flag and make the features type augmentable - [#35379](https://github.com/storybookjs/storybook/pull/35379), thanks @yannbf!
+
+## 10.5.0-beta.0
+
+
 ## 10.5.0-alpha.11
 
 - Addon-vitest: Add an initialGlobals option to pin a project's globals - [#35226](https://github.com/storybookjs/storybook/pull/35226), thanks @lifeiscontent!

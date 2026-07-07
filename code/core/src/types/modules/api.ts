@@ -17,7 +17,7 @@ import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 
-export type API_ViewMode = OrString<'story' | 'docs' | 'settings'> | undefined;
+export type API_ViewMode = OrString<'story' | 'docs' | 'settings' | 'review'> | undefined;
 
 export type API_RenderOptions = Addon_RenderOptions;
 
@@ -48,9 +48,10 @@ export interface API_Provider<API> {
   getConfig(): {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
+    selectedPanel?: string;
     StoryMapper?: API_StoryMapper;
     [k: string]: any;
-  } & Partial<API_UIOptions>;
+  };
   [key: string]: any;
 }
 
@@ -62,17 +63,6 @@ export type API_IframeRenderer = (
   scale: number,
   queryParams: Record<string, any>
 ) => ReactElement<any, any> | null;
-
-export interface API_UIOptions {
-  name?: string;
-  url?: string;
-  goFullScreen: boolean;
-  showStoriesPanel: boolean;
-  showAddonPanel: boolean;
-  addonPanelInRight: boolean;
-  theme?: ThemeVars;
-  selectedPanel?: string;
-}
 
 export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 
@@ -91,6 +81,8 @@ export interface API_Layout {
     rightPanelWidth: number;
   };
   panelPosition: API_PanelPositions;
+  showNav: boolean;
+  showPanel: boolean;
   showTabs: boolean;
   showToolbar: boolean;
 }

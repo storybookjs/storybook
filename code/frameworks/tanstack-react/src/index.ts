@@ -11,7 +11,7 @@ import type {
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
-import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
 
 import type { ReactMeta, ReactPreview } from '@storybook/react';
@@ -44,7 +44,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 type InferCombinedTypes<T, TArgs, Decorators> = ReactTypes &
   T & {
     args: Simplify<
-      TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
+      TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
     >;
   };
 
@@ -99,7 +99,7 @@ export type StoryObj<TMetaOrCmpOrArgs = unknown> = [TMetaOrCmpOrArgs] extends [
         Partial<TanStackTypes<TMetaOrCmpOrArgs>>
     : _StoryObj<TMetaOrCmpOrArgs> & Partial<TanStackTypes>;
 
-interface TanStackPreview<
+export interface TanStackPreview<
   T extends AddonTypes,
   TRoute extends AnyRoute | undefined = undefined,
 > extends ReactPreview<TanStackTypes<TRoute> & T> {

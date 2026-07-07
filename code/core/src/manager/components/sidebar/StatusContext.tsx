@@ -26,7 +26,7 @@ function hasStatusWorthReporting(
     ['status-value:new', 'status-value:modified', 'status-value:affected'].includes(
       groupDualStatus[itemId]?.change.value
     ) ||
-    ['status-value:pending', 'status-value:warning', 'status-value:error'].includes(
+    ['status-value:pending', 'status-value:reviewing', 'status-value:warning', 'status-value:error'].includes(
       groupDualStatus[itemId]?.test.value
     )
   );
@@ -44,6 +44,7 @@ export const useStatusSummary = (item: Item) => {
       'status-value:new': 0,
       'status-value:modified': 0,
       'status-value:affected': 0,
+      'status-value:reviewing': 0,
       'status-value:error': 0,
       'status-value:warning': 0,
       'status-value:unknown': 0,
@@ -54,6 +55,7 @@ export const useStatusSummary = (item: Item) => {
       'status-value:new': {},
       'status-value:modified': {},
       'status-value:affected': {},
+      'status-value:reviewing': {},
       'status-value:error': {},
       'status-value:warning': {},
       'status-value:unknown': {},

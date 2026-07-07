@@ -195,10 +195,17 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
     this.state = state;
     this.api = api;
+
+    // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
+    // listeners (e.g. open-service) exist before preview JS can emit sync-start.
+    props.provider.handleAPI(this.api);
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {
-    if (state.path !== props.path) {
+    const locationSearchChanged = state.location?.search !== props.location?.search;
+    const pathChanged = state.path !== props.path;
+
+    if (pathChanged || locationSearchChanged) {
       return {
         ...state,
         location: props.location,
@@ -206,6 +213,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
         refId: props.refId,
         viewMode: props.viewMode,
         storyId: props.storyId!,
+        customQueryParams: url.getCustomQueryParams(props.location),
       };
     }
     return null!;

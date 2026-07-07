@@ -56,8 +56,12 @@ function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
   return {
     getState: vi.fn(() => state),
-    setState: vi.fn((s: typeof state) => {
-      state = { ...state, ...s };
+    setState: vi.fn((s: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+      if (typeof s === 'function') {
+        state = { ...state, ...s(state) };
+      } else {
+        state = { ...state, ...s };
+      }
       return Promise.resolve(state);
     }),
   } as any as Store;
@@ -1484,7 +1488,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      api.experimental_setFilter('myCustomFilter', () => true);
+      await api.experimental_setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1590,39 +1594,40 @@ describe('stories API', () => {
       ]);
 
       await vi.waitFor(() => {
-        expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
-          {
-            "a": {
-              "children": [
-                "a--1",
-              ],
-              "depth": 0,
-              "id": "a",
-              "importPath": "./a.ts",
-              "name": "a",
-              "parent": undefined,
-              "renderAriaLabel": undefined,
-              "renderLabel": undefined,
-              "tags": [],
-              "type": "component",
-            },
-            "a--1": {
-              "depth": 1,
-              "id": "a--1",
-              "importPath": "./a.ts",
-              "name": "1",
-              "parent": "a",
-              "prepared": false,
-              "renderAriaLabel": undefined,
-              "renderLabel": undefined,
-              "subtype": "story",
-              "tags": [],
-              "title": "a",
-              "type": "story",
-            },
-          }
-        `);
+        expect(Object.keys(store.getState().filteredIndex ?? {})).toHaveLength(2);
       });
+      expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
+        {
+          "a": {
+            "children": [
+              "a--1",
+            ],
+            "depth": 0,
+            "id": "a",
+            "importPath": "./a.ts",
+            "name": "a",
+            "parent": undefined,
+            "renderAriaLabel": undefined,
+            "renderLabel": undefined,
+            "tags": [],
+            "type": "component",
+          },
+          "a--1": {
+            "depth": 1,
+            "id": "a--1",
+            "importPath": "./a.ts",
+            "name": "1",
+            "parent": "a",
+            "prepared": false,
+            "renderAriaLabel": undefined,
+            "renderLabel": undefined,
+            "subtype": "story",
+            "tags": [],
+            "title": "a",
+            "type": "story",
+          },
+        }
+      `);
     });
 
     it('persists filter when index is updated', async () => {
@@ -2039,6 +2044,38 @@ describe('stories API', () => {
             'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
           },
           includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.selectFirstStory();
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+
+    /**
+     * Whilst the two of the built-in filters (status and tag) have easy ways to determine
+     * whether or not they are active, no other filters do - in particular, user-provided filters
+     * from experimental_setFilter.
+     *
+     * As such, the filtered index is now used if it is present, regardless of the heuristics that
+     * could be used to determine if the status/tag filters are active.
+     */
+    it('uses filteredIndex when status filters are not active', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1', depth: 0 } as any,
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          filteredIndex: {
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          includedStatusFilters: [],
           excludedStatusFilters: [],
           includedTagFilters: [],
           excludedTagFilters: [],

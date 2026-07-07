@@ -1,15 +1,16 @@
-import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
+import { executeCommand } from 'storybook/internal/common';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
 import { dedent } from 'ts-dedent';
 
-import {
-  type ReactNativeEntrypointTemplateVariant,
-  generateReactNativeEntrypoint,
-} from './generateEntrypoint.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import {
+  generateReactNativeEntrypoint,
+  type ReactNativeEntrypointTemplateVariant,
+} from './generateEntrypoint.ts';
 import {
   deriveStorybookPlatformScripts,
   type StorybookPlatformScriptDerivationResult,
@@ -31,6 +32,58 @@ export const detectReactNativeEntrypointTemplateVariant = (
   }
 
   return 'default';
+};
+
+/**
+ * Expo Go bundles specific native module versions for a given Expo SDK. When dependencies are
+ * installed with the user's package manager (npm/yarn/pnpm/bun) instead of `expo install`, the
+ * latest versions of packages like `@react-native-async-storage/async-storage`,
+ * `react-native-svg`, `@react-native-community/slider`, etc. get pinned in `package.json` — and
+ * those typically don't match what Expo Go has linked natively.
+ *
+ * The symptoms are runtime warnings such as:
+ *
+ *     WARN  storybook-log: error reading from async storage
+ *     [AsyncStorageError: Native module is null, cannot access legacy storage]
+ *
+ * Running `npx expo install --fix` after installation re-aligns those packages to the versions
+ * supported by the installed Expo SDK. It's the recommended fix from the Expo team and what we
+ * would have done implicitly if we shipped via `npx expo install` instead of the user's package
+ * manager.
+ */
+const fixExpoDependencyVersions = async () => {
+  const task = prompt.taskLog({
+    id: 'expo-install-fix',
+    title: 'Aligning Expo SDK dependency versions with `npx expo install --fix`',
+  });
+
+  try {
+    const result = await executeCommand({
+      command: 'npx',
+      args: ['expo', 'install', '--fix'],
+      stdio: 'pipe',
+    });
+
+    if (result.stdout) {
+      task.message(String(result.stdout));
+    }
+    task.success('Expo SDK dependency versions aligned', { showLog: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    task.error('Could not run `npx expo install --fix` automatically');
+    logger.warn(
+      dedent`
+        Could not automatically align Expo SDK package versions.
+
+        To avoid runtime warnings such as "Native module is null, cannot access legacy storage",
+        run the following command in your project root:
+
+          ${CLI_COLORS.cta('npx expo install --fix')}
+
+        Reason: ${message}
+      `
+    );
+  }
 };
 
 export default defineGeneratorModule({
@@ -78,10 +131,8 @@ export default defineGeneratorModule({
     ];
 
     const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
-    const babelDependencies = await getBabelDependencies(packageManager as any);
 
     const packages: string[] = [
-      ...babelDependencies,
       ...versionedPackages,
       ...(missingReactDom && reactVersion ? [`react-dom@${reactVersion}`] : []),
     ];
@@ -124,6 +175,16 @@ export default defineGeneratorModule({
       storybookCommand: null,
       shouldRunDev: false, // React Native is started via platform scripts (see postConfigure), not `storybook dev`
     };
+  },
+  postInstall: async ({ packageManager }) => {
+    // Only re-align versions for projects that actually use Expo. Plain React Native CLI projects
+    // are unaffected by the Expo Go SDK <-> native module mismatch this guards against.
+    const variant = detectReactNativeEntrypointTemplateVariant(packageManager.getAllDependencies());
+    if (variant !== 'expo') {
+      return;
+    }
+
+    await fixExpoDependencyVersions();
   },
   postConfigure: ({ packageManager }) => {
     const platformRunGuidance = (() => {

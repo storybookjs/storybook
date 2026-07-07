@@ -13,6 +13,7 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
@@ -33,7 +34,7 @@ const managerContext: any = {
     off: fn().mockName('api::off'),
     once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
-    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>

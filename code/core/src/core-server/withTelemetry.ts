@@ -212,6 +212,12 @@ function isInterruptionError(error: unknown): boolean {
   );
 }
 
+/**
+ * Commands that report a `canceled` event when the user interrupts them with Ctrl+C. Other
+ * commands simply die on SIGINT without telemetry.
+ */
+const CANCELLATION_TRACKED_EVENTS: EventType[] = ['init', 'ai-command'];
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
@@ -230,7 +236,8 @@ export async function withTelemetry<T>(
     process.exit(0);
   }
 
-  if (eventType === 'init') {
+  const trackCancellation = CANCELLATION_TRACKED_EVENTS.includes(eventType);
+  if (trackCancellation) {
     // We catch Ctrl+C user interactions to be able to detect a cancel event
     process.on('SIGINT', cancelTelemetry);
   }
@@ -251,7 +258,7 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    if (eventType === 'init' && isInterruptionError(error)) {
+    if (trackCancellation && isInterruptionError(error)) {
       await cancelTelemetry();
       return undefined;
     }

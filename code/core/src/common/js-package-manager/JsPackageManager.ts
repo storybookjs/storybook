@@ -271,12 +271,10 @@ export abstract class JsPackageManager {
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
-    const cachedPackageJson: PackageJsonWithIndent = {
-      ...packageJsonToWrite,
-      dependencies: { ...(packageJsonToWrite.dependencies || {}) },
-      devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
-      peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
-    };
+    const cachedPackageJson = packageJsonToWrite as PackageJsonWithIndent;
+    cachedPackageJson.dependencies = { ...(packageJsonToWrite.dependencies || {}) };
+    cachedPackageJson.devDependencies = { ...(packageJsonToWrite.devDependencies || {}) };
+    cachedPackageJson.peerDependencies = { ...(packageJsonToWrite.peerDependencies || {}) };
     cachedPackageJson[indentSymbol] = indent;
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
@@ -545,6 +543,7 @@ export abstract class JsPackageManager {
       JsPackageManager.latestVersionCache.set(cacheKey, result);
       return result;
     } catch (e) {
+      logger.debug(`Failed to fetch the latest version for ${packageName}: ${String(e)}`);
       JsPackageManager.latestVersionCache.set(cacheKey, null);
       return null;
     }
@@ -612,16 +611,11 @@ export abstract class JsPackageManager {
   public addScripts(scripts: Record<string, string>) {
     const { operationDir, packageJson } = this.#getPrimaryPackageJson();
 
-    this.writePackageJson(
-      {
-        ...packageJson,
-        scripts: {
-          ...packageJson.scripts,
-          ...scripts,
-        },
-      },
-      operationDir
-    );
+    packageJson.scripts = {
+      ...packageJson.scripts,
+      ...scripts,
+    };
+    this.writePackageJson(packageJson, operationDir);
   }
 
   public addPackageResolutions(versions: Record<string, string>) {

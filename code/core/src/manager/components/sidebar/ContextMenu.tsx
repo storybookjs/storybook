@@ -96,7 +96,7 @@ export const ContextMenu: FC<{
         id: 'open-in-editor',
         title: 'Open in editor',
         icon: <EditorIcon />,
-        right: shortcutKeys ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+        right: shortcutKeys?.openInEditor ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e: SyntheticEvent) => {
           if (context.importPath) {
             e.preventDefault();

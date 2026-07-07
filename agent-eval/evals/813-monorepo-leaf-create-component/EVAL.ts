@@ -3,6 +3,7 @@ import { expect, test } from 'vitest';
 import {
 	expectDisplayReviewForVisualChange,
 	expectPreviewBrowserStarted,
+	expectPreviewStoriesWithFinalLinks,
 	expectSkillInvoked,
 	getEvalContext,
 	expectStoryDiscoveryBeforeReview,
@@ -10,15 +11,16 @@ import {
 	expectStoryTestsRanAndPassed,
 	expectValidStorybookLaunchConfig,
 	expectWorkflowCalls,
+	isReviewEnabled,
 } from '#test-utils';
 
-// TODO(storybookjs/storybook#35359): the workflow assertions below are
-// test.todo until the CLI help bug is fixed. `storybook ai --help` run from
-// the monorepo root cannot load the leaf's Storybook config and then hides
-// every runtime workflow command, so agents derail into `setup` + raw vitest
-// and never discover display-review (both plugin paths, 2026-07-02 runs).
-// Re-enable by swapping test.todo back to test once #35359 lands — and split
-// them on isReviewEnabled() like the other 8xx evals (see 801/812).
+// The workflow assertions below were test.todo while agents ran `storybook ai`
+// from the monorepo root and hit the degraded help of
+// storybookjs/storybook#35359 (still open). Re-enabled now that the stories
+// skills direct the dev server and every `storybook ai` command to the
+// package where Storybook is installed, which avoids the degraded-help path.
+
+const review = isReviewEnabled();
 
 test('creates the component inside the leaf package', () => {
 	expect(
@@ -27,24 +29,28 @@ test('creates the component inside the leaf package', () => {
 	).toBe(true);
 });
 
-test.todo('publishes a display review for the new component', () => {
-	expectWorkflowCalls(['display-review']);
+test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
 	expectDisplayReviewForVisualChange();
 });
 
-test.todo('uses the Storybook story instructions', () => {
-	expectWorkflowCalls(['get-storybook-story-instructions']);
-});
-
-test.todo('the review covers the new Callout stories', () => {
+test.runIf(review)('the review covers the new Callout stories', () => {
 	expectStoryIdsInDisplayReview(['callout']);
 });
 
-test.todo('discovers stories through the workflow tools before publishing the review', () => {
-	expectStoryDiscoveryBeforeReview();
+test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
+	expectWorkflowCalls(['get-storybook-story-instructions']);
+	expectPreviewStoriesWithFinalLinks({ covering: ['callout'] });
 });
 
-test.todo('runs story tests after the change and finishes with them passing', () => {
+test.runIf(review)(
+	'discovers stories through the workflow tools before publishing the review',
+	() => {
+		expectStoryDiscoveryBeforeReview();
+	},
+);
+
+test('runs story tests after the change and finishes with them passing', () => {
 	expectStoryTestsRanAndPassed({ covering: ['callout'] });
 });
 

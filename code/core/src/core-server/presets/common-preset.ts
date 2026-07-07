@@ -231,7 +231,10 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
-  experimentalReview: false,
+  // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
+  // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
+  // explicitly sets `false`, so an explicit default would be indistinguishable from a user
+  // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
   legacyDecoratorFileOrder: false,

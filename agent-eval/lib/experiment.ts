@@ -25,6 +25,7 @@ const LIFECYCLE_STORYBOOK_EVALS = [
 	'820-init-no-storybook',
 	'821-upgrade-from-sb9',
 	'822-upgrade-from-stable',
+	'823-setup-outdated-storybook',
 ] as const;
 
 // The 9xx line: ports from the old /eval system, written for the MCP-only

@@ -10,10 +10,15 @@ import type {
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
-import { throttle } from 'es-toolkit/function';
+import { type ThrottledFunction, throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
+import {
+  DEFAULT_TEST_STATUS_FLUSH_INTERVAL,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  storeOptions,
+} from '../constants.ts';
 import type {
   CurrentRun,
   RunConfig,
@@ -35,6 +40,12 @@ export type TestManagerOptions = {
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
+  /**
+   * How often (in ms) batched test-case results are flushed onto the channel during a run. Defaults
+   * to {@link DEFAULT_TEST_STATUS_FLUSH_INTERVAL}. Larger values reduce WebSocket pressure on very
+   * large storybooks at the cost of less frequent sidebar/status updates.
+   */
+  flushTestCaseResultsInterval?: number;
 };
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
@@ -76,6 +87,11 @@ export class TestManager {
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
     this.configLoader = options.configLoader;
+
+    this.throttledFlushTestCaseResults = throttle(
+      this.flushTestCaseResults,
+      options.flushTestCaseResultsInterval ?? DEFAULT_TEST_STATUS_FLUSH_INTERVAL
+    );
 
     this.vitestManager = new VitestManager(this);
 
@@ -203,7 +219,19 @@ export class TestManager {
   }
 
   /**
-   * Throttled function to process batched test case results.
+   * Throttled wrapper around {@link flushTestCaseResults}, created in the constructor so the interval
+   * can be configured.
+   *
+   * Throttling is necessary because each flush serializes status events onto the dev-server
+   * WebSocket, and without it the channel gets overwhelmed with events. On large storybooks this
+   * backlog can delay heartbeat processing in the manager and cause it to drop the connection with a
+   * "Server timed out" error, so the interval is configurable via
+   * {@link TestManagerOptions.flushTestCaseResultsInterval}.
+   */
+  public throttledFlushTestCaseResults: ThrottledFunction<() => void>;
+
+  /**
+   * Processes batched test case results.
    *
    * This function:
    *
@@ -212,11 +240,8 @@ export class TestManager {
    * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
    * 4. Creates status objects for component tests and updates the component test status store
    * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
-   *
-   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
-   * eventually causing the manager and dev server to lose connection.
    */
-  throttledFlushTestCaseResults = throttle(() => {
+  private flushTestCaseResults = () => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];
 
@@ -318,7 +343,7 @@ export class TestManager {
         },
       };
     });
-  }, 500);
+  };
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
     this.throttledFlushTestCaseResults.flush();

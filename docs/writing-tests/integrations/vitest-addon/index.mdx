@@ -392,6 +392,16 @@ vitest run --shard=3/3
 
 See [Vitest's sharding guide](https://vitest.dev/guide/improving-performance.html#sharding) for more details on how to integrate this into your CI pipeline.
 
+### Why does the Storybook UI show "Server timed out" during a large test run?
+
+On very large projects (thousands of stories), a running test suite streams a high volume of status updates from the dev server to the Storybook manager over a WebSocket. If that channel stays saturated, the manager's heartbeat can be delayed enough to disconnect and show a "Server timed out" notification, even though the dev server is healthy and the tests keep running in the background. Reloading the page reconnects the manager.
+
+To reduce the pressure on the channel, you can increase how often test-case results are batched before being flushed to the UI by setting the `STORYBOOK_TEST_STATUS_FLUSH_INTERVAL` environment variable (in milliseconds) before starting Storybook. The default is `500`; larger values (for example `2000`) reduce WebSocket traffic at the cost of less frequent sidebar and status updates during a run:
+
+```bash
+STORYBOOK_TEST_STATUS_FLUSH_INTERVAL=2000 storybook dev
+```
+
 ## API
 
 ### Exports

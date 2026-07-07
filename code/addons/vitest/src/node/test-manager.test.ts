@@ -522,6 +522,29 @@ describe('TestManager', () => {
     expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
   });
 
+  it('should batch test case result flushes according to the configured interval', () => {
+    vi.useFakeTimers();
+    try {
+      const testManager = new TestManager({ ...options, flushTestCaseResultsInterval: 2000 });
+      const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+
+      // Leading edge: the first result flushes immediately
+      testManager.onTestCaseResult({ storyId: 'story--one', testResult: passedResult });
+      expect(mockComponentTestStatusStore.set).toHaveBeenCalledTimes(1);
+
+      // Subsequent results within the interval are batched, not flushed yet
+      testManager.onTestCaseResult({ storyId: 'story--two', testResult: passedResult });
+      vi.advanceTimersByTime(1999);
+      expect(mockComponentTestStatusStore.set).toHaveBeenCalledTimes(1);
+
+      // Trailing edge: the batch is flushed once the interval elapses
+      vi.advanceTimersByTime(1);
+      expect(mockComponentTestStatusStore.set).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should restart Vitest before a test run if coverage is enabled', async () => {
     const testManager = await TestManager.start(options);
     expect(createVitest).toHaveBeenCalledTimes(1);

@@ -13,6 +13,7 @@ import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
+  TEST_STATUS_FLUSH_INTERVAL_ENV_VAR,
   storeOptions,
 } from '../constants.ts';
 import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types.ts';
@@ -39,6 +40,10 @@ const channel: Channel = new Channel({
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
 
+const parsedFlushInterval = Number(process.env[TEST_STATUS_FLUSH_INTERVAL_ENV_VAR]);
+const flushTestCaseResultsInterval =
+  Number.isFinite(parsedFlushInterval) && parsedFlushInterval > 0 ? parsedFlushInterval : undefined;
+
 new TestManager({
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
@@ -51,6 +56,7 @@ new TestManager({
     configDir: process.env.STORYBOOK_CONFIG_DIR || '',
   } as any,
   configLoader: process.env.STORYBOOK_CONFIG_LOADER as BuilderOptions['configLoader'],
+  flushTestCaseResultsInterval,
 });
 
 const exit = (code = 0) => {

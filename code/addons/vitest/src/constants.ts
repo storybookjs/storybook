@@ -18,6 +18,21 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 
 export const COVERAGE_DIRECTORY = 'coverage';
 
+/**
+ * How often (in ms) batched test-case results are flushed to the status stores and universal store
+ * during a run. Flushing serializes status events onto the dev-server WebSocket, so a low value on
+ * large storybooks keeps the channel saturated. It can be raised via
+ * {@link TEST_STATUS_FLUSH_INTERVAL_ENV_VAR} for very large projects.
+ */
+export const DEFAULT_TEST_STATUS_FLUSH_INTERVAL = 500;
+
+/**
+ * Environment variable to override {@link DEFAULT_TEST_STATUS_FLUSH_INTERVAL}. It is read inside the
+ * Vitest child process, which inherits the dev server's environment, so setting it before starting
+ * Storybook is enough.
+ */
+export const TEST_STATUS_FLUSH_INTERVAL_ENV_VAR = 'STORYBOOK_TEST_STATUS_FLUSH_INTERVAL';
+
 export const storeOptions = {
   id: ADDON_ID,
   initialState: {

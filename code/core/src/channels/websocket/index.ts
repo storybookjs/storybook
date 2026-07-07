@@ -50,11 +50,19 @@ export class WebsocketTransport implements ChannelTransport {
     this.socket.onmessage = ({ data }) => {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
-      this.handler(event);
+
+      // Reset the heartbeat before running the channel handler. The handler can be slow when the
+      // channel is busy (e.g. addon-vitest flushing status updates during a large test run), and a
+      // backlog of queued messages could otherwise delay ping processing past the heartbeat
+      // timeout, closing a healthy connection with code 3008. Pings are internal to the transport
+      // and have no channel listeners, so there is no reason to forward them to the handler.
       if (event.type === 'ping') {
         this.heartbeat();
         this.send({ type: 'pong' });
+        return;
       }
+
+      this.handler(event);
     };
     this.socket.onerror = (e) => {
       if (onError) {

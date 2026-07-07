@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 
-import { REVIEW_STATUS_TYPE_ID, type StatusValue } from 'storybook/internal/types';
+import { Addon_TypesEnum, REVIEW_STATUS_TYPE_ID, type StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
@@ -14,7 +14,7 @@ import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getStatus, shouldShowChangeStatus, statusPriority } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { ContextMenu, hasContextMenu } from './ContextMenu.tsx';
+import { ContextMenu, generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
@@ -128,8 +128,8 @@ const StyledTreeItem = styled(TreeItem)<{
    * has fully scrolled past its pinned slot. */
   ...($stickyIndex !== undefined && {
     position: 'sticky',
-    // Initial estimate; Tree.tsx overrides with the measured stack height via inline style.
-    top: $stickyIndex * TREE_ROW_HEIGHT,
+    // Initial estimate; Tree.tsx overrides with the measured stack height via --sticky-top.
+    top: `var(--sticky-top, ${$stickyIndex * TREE_ROW_HEIGHT}px)`,
     zIndex: 3,
     // Match the sidebar background so pinned rows fully cover the rows scrolling beneath.
     '--sticky-bg': theme.background.content,
@@ -144,9 +144,11 @@ const StyledTreeItem = styled(TreeItem)<{
       backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
     },
     // Suspended by Tree.tsx once the row's subtree scrolls past its slot, and while
-    // Tree.tsx measures natural row positions for scroll-into-view.
+    // Tree.tsx measures natural row positions for scroll-into-view. `top` must reset too,
+    // or position:relative would displace the row by its former pinned offset.
     '&[data-sticky-suspended], [data-sticky-measuring] &': {
       position: 'relative',
+      top: 'auto',
       zIndex: 'auto',
       backgroundColor: 'transparent',
     },
@@ -363,9 +365,22 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
 
   const isBranch = guardHasChildren(item);
+
+  // Whether a registered test provider actually contributes menu content for THIS item —
+  // gates the menu on group/component rows so the button never opens an empty popover.
+  const providerMenuAvailable = useMemo(() => {
+    if (!hasTestProviders || item.type === 'root') {
+      return false;
+    }
+    return (
+      generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), item)
+        .length > 0
+    );
+  }, [hasTestProviders, api, item]);
+
   const renderContextMenu = useMemo(
-    () => hasContextMenu(item, hasTestProviders),
-    [item, hasTestProviders]
+    () => hasContextMenu(item, providerMenuAvailable),
+    [item, providerMenuAvailable]
   );
   const shortcutKeys = api.getShortcutKeys();
 
@@ -459,7 +474,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                   api={api}
                   entryMethod={contextMenuEntryMethod}
                   statusLinks={statusLinks}
-                  hasTestProviders={hasTestProviders}
+                  hasTestProviders={providerMenuAvailable}
                 />
               }
             </MenuTriggerContainer>

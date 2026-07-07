@@ -28,7 +28,7 @@ import { styled } from 'storybook/theming';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
-import { hasContextMenu } from './ContextMenu.tsx';
+import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
 // -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
@@ -143,7 +143,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    if (!hasContextMenu(item, hasTestProviders)) {
+    const providerMenuAvailable =
+      hasTestProviders &&
+      generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), item)
+        .length > 0;
+    if (!hasContextMenu(item, providerMenuAvailable)) {
       return null;
     }
 
@@ -154,7 +158,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus, hasTestProviders]);
+  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus, hasTestProviders, api]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -380,45 +384,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [updateFocusedItemId]);
 
-  // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
-  // report their stuck rect, which would fool scrollIntoView into thinking a row far above
-  // the viewport is already visible; data-sticky-measuring temporarily disables pinning while
-  // the browser measures, and the rows' scroll-margin-top (the pinned stack height) keeps the
-  // target row below the stack.
-  const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
-    const container = containerRef.current;
-    if (!container) {
-      return false;
-    }
-    const element = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(itemId)}"]`);
-    if (!element) {
-      return false;
-    }
-    container.toggleAttribute('data-sticky-measuring', true);
-    try {
-      element.scrollIntoView({ block });
-    } finally {
-      container.removeAttribute('data-sticky-measuring');
-    }
-    return true;
-  }, []);
-
-  // Scroll the selected story into view when it changes.
-  useEffect(() => {
-    if (selectedStoryId) {
-      scrollRowIntoView(selectedStoryId, 'nearest');
-    }
-  }, [selectedStoryId, scrollRowIntoView]);
-
-  // Scroll to selected item on the first mount, exactly one time.
-  const [mountCounter, setMountCounter] = useState(0);
-  useEffect(() => setMountCounter(1), []);
-  useEffect(() => {
-    if (mountCounter === 1 && selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
-      setMountCounter(2);
-    }
-  }, [mountCounter, selectedStoryId, scrollRowIntoView]);
-
   // Keep the sticky stack in sync with the scroll position: suspend stickiness for chain rows
   // whose subtree has fully scrolled past their pinned slot (so the stack retracts instead of
   // lingering over unrelated sections, mirroring VSCode's sticky scroll), pin each row below
@@ -427,7 +392,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // and whenever the chain, expansion state, or data changes.
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || stickyChainIds.length === 0) {
+    if (!container) {
+      return;
+    }
+    if (stickyChainIds.length === 0) {
+      container.style.removeProperty('--sticky-stack-height');
       return;
     }
 
@@ -513,14 +482,64 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
-      container.style.removeProperty('--sticky-stack-height');
+      // Leave --sticky-stack-height in place: React runs this cleanup before sibling effects
+      // (like the selection scroll) on the same commit, and those need the current stack
+      // height for scroll margins. update() refreshes it right after; the no-chain path
+      // clears it for good.
       for (const id of stickyChainIds) {
         const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
         row?.removeAttribute('data-sticky-suspended');
-        row?.style.removeProperty('top');
+        row?.style.removeProperty('--sticky-top');
       }
     };
   }, [stickyChainIds, expanded, collapsedData]);
+
+  // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
+  // report their stuck rect, which would fool scrollIntoView into thinking a row far above
+  // the viewport is already visible; data-sticky-measuring temporarily disables pinning while
+  // the browser measures, and the rows' scroll-margin-top (the pinned stack height) keeps the
+  // target row below the stack.
+  const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
+    const container = containerRef.current;
+    if (!container) {
+      return false;
+    }
+    const element = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(itemId)}"]`);
+    if (!element) {
+      return false;
+    }
+    container.toggleAttribute('data-sticky-measuring', true);
+    try {
+      element.scrollIntoView({ block });
+    } finally {
+      container.removeAttribute('data-sticky-measuring');
+    }
+    return true;
+  }, []);
+
+  // Scroll the selected story into view when it changes. Newly selected rows may not be in
+  // the DOM yet (their ancestors expand in the same commit but only render on the next one),
+  // so retry on expansion changes until the row exists — but never re-scroll for the same
+  // selection once it succeeded.
+  const lastScrolledIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedStoryId || lastScrolledIdRef.current === selectedStoryId) {
+      return;
+    }
+    if (scrollRowIntoView(selectedStoryId, 'nearest')) {
+      lastScrolledIdRef.current = selectedStoryId;
+    }
+  }, [selectedStoryId, expanded, scrollRowIntoView]);
+
+  // Scroll to selected item on the first mount, exactly one time.
+  const [mountCounter, setMountCounter] = useState(0);
+  useEffect(() => setMountCounter(1), []);
+  useEffect(() => {
+    if (mountCounter === 1 && selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
+      lastScrolledIdRef.current = selectedStoryId;
+      setMountCounter(2);
+    }
+  }, [mountCounter, selectedStoryId, expanded, scrollRowIntoView]);
 
   // One dependencies array shared by every Collection level, so react-aria's cached nodes are
   // invalidated consistently — a drifted copy at one level renders stale rows.

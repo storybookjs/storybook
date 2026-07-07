@@ -217,3 +217,45 @@ describe('collapseSingleStoryComponents', () => {
     expect(collapsed['intro--docs'].parent).toBeUndefined();
   });
 });
+
+describe('collapseSingleStoryComponents with sibling hoists', () => {
+  it('hoists two single-story components sharing a parent without losing either', () => {
+    const data = {
+      root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['a', 'b'] },
+      a: { type: 'component', id: 'a', name: 'A', depth: 1, parent: 'root', children: ['a--a'] },
+      'a--a': {
+        type: 'story',
+        subtype: 'story',
+        id: 'a--a',
+        name: 'A',
+        title: 'A',
+        depth: 2,
+        parent: 'a',
+        prepared: true,
+        importPath: './x.ts',
+        tags: [],
+        children: [],
+      },
+      b: { type: 'component', id: 'b', name: 'B', depth: 1, parent: 'root', children: ['b--b'] },
+      'b--b': {
+        type: 'story',
+        subtype: 'story',
+        id: 'b--b',
+        name: 'B',
+        title: 'B',
+        depth: 2,
+        parent: 'b',
+        prepared: true,
+        importPath: './x.ts',
+        tags: [],
+        children: [],
+      },
+    };
+    const collapsed = utils.collapseSingleStoryComponents(data);
+    expect(collapsed.root.children).toEqual(['a--a', 'b--b']);
+    expect(collapsed.a).toBeUndefined();
+    expect(collapsed.b).toBeUndefined();
+    expect(collapsed['a--a'].parent).toBe('root');
+    expect(collapsed['b--b'].parent).toBe('root');
+  });
+});

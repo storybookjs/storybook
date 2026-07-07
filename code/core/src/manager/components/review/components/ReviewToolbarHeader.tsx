@@ -1,11 +1,15 @@
-import React, { type FC } from 'react';
+import React, { type FC, type ReactNode } from 'react';
 
 import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
-import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
+import {
+  buildReviewChangesSummaryHref,
+  buildReviewStoryHref,
+  type ReviewNavEntry,
+} from '../review-navigation.ts';
 import { useReview } from '../review-store.ts';
 import { AttentionBanner } from './AttentionBanner.tsx';
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
@@ -62,6 +66,23 @@ const Counter = styled(Button)(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   fontWeight: theme.typography.weight.regular,
 }));
+
+// Links to a review story when the target exists, or renders a disabled control
+// at the ends of the sequence so prev/next stop at the boundaries (no wrap).
+const NavButton: FC<{ entry: ReviewNavEntry | null; ariaLabel: string; icon: ReactNode }> = ({
+  entry,
+  ariaLabel,
+  icon,
+}) =>
+  entry ? (
+    <Button variant="ghost" size="small" padding="small" ariaLabel={ariaLabel} asChild>
+      <a href={buildReviewStoryHref(entry)}>{icon}</a>
+    </Button>
+  ) : (
+    <Button variant="ghost" size="small" padding="small" ariaLabel={ariaLabel} disabled>
+      {icon}
+    </Button>
+  );
 
 const componentName = (componentTitle: string): string =>
   componentTitle
@@ -173,46 +194,16 @@ export const ReviewToolbarHeader: FC = () => {
           actions={
             <>
               {counter}
-              {previousEntry ? (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  padding="small"
-                  ariaLabel="Previous story"
-                  asChild
-                >
-                  <a href={buildReviewStoryHref(previousEntry)}>
-                    <ChevronSmallLeftIcon />
-                  </a>
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  padding="small"
-                  ariaLabel="Previous story"
-                  disabled
-                >
-                  <ChevronSmallLeftIcon />
-                </Button>
-              )}
-              {nextEntry ? (
-                <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-                  <a href={buildReviewStoryHref(nextEntry)}>
-                    <ChevronSmallRightIcon />
-                  </a>
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  padding="small"
-                  ariaLabel="Next story"
-                  disabled
-                >
-                  <ChevronSmallRightIcon />
-                </Button>
-              )}
+              <NavButton
+                entry={previousEntry}
+                ariaLabel="Previous story"
+                icon={<ChevronSmallLeftIcon />}
+              />
+              <NavButton
+                entry={nextEntry}
+                ariaLabel="Next story"
+                icon={<ChevronSmallRightIcon />}
+              />
             </>
           }
         />

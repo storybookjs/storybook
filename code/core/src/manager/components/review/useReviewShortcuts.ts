@@ -36,7 +36,11 @@ export const useReviewShortcuts = () => {
         return;
       }
 
-      const entry = parseReviewStoryHref(hrefs[target]);
+      const href = hrefs[target];
+      if (!href) {
+        return;
+      }
+      const entry = parseReviewStoryHref(href);
       if (!entry) {
         return;
       }

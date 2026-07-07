@@ -199,6 +199,9 @@ const Footer = styled.div(({ theme }) => ({
   textWrap: 'balance',
 }));
 
+const pluralize = (count: number, singular: string, plural = `${singular}s`): string =>
+  `${count} ${count === 1 ? singular : plural}`;
+
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
   if (elapsedMs < 60_000) {
@@ -346,9 +349,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         title={state.title}
         subtitle={
           <>
-            <span>
-              Showing {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
-            </span>
+            <span>Showing {pluralize(storyCount, 'story', 'stories')} for quick review</span>
             {createdAgo ? (
               <>
                 <span>&bull;</span>
@@ -397,9 +398,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                         <CardHead onClick={() => toggleCollection(index)}>
                           <CardTitle id={titleId}>{collection.title}</CardTitle>
                           <CardControls>
-                            <CardCount
-                              aria-label={`${storyIds.length} ${storyIds.length === 1 ? 'story' : 'stories'}`}
-                            >
+                            <CardCount aria-label={pluralize(storyIds.length, 'story', 'stories')}>
                               {storyIds.length}
                             </CardCount>
                             <IconButton
@@ -447,9 +446,9 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
               })
             )}
             <Footer>
-              This review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
-              relevant for you to spot-check right now. Because this is AI-curated, results may be
-              inaccurate or incomplete.
+              This review shows the {pluralize(storyCount, 'story', 'stories')} most relevant for
+              you to spot-check right now. Because this is AI-curated, results may be inaccurate or
+              incomplete.
             </Footer>
           </List>
         </ScrollArea>

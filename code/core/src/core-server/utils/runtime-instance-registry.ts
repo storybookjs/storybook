@@ -1,14 +1,21 @@
 import { existsSync, rmSync } from 'node:fs';
-import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
+import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
+import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
+import { detectAgent } from '../../telemetry/detect-agent.ts';
+
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
 
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
@@ -17,6 +24,7 @@ export type RuntimeInstanceRecord = {
   cwd: string;
   url: string;
   port: number;
+  agent?: string;
   storybookVersion: string;
   startedAt: string;
   updatedAt: string;
@@ -30,6 +38,16 @@ export type RuntimeInstanceRegistration = {
   unregisterProcessCleanup: () => void;
 };
 
+export type RuntimeInstanceRegistryCleanupEntry =
+  | { kind: 'temp-file'; fileModifiedAtMs: number; nowMs: number }
+  | { kind: 'malformed-json'; fileModifiedAtMs: number; nowMs: number }
+  | { kind: 'record'; fileModifiedAtMs: number; nowMs: number; record: unknown };
+
+export type RuntimeInstanceRegistryCleanupDecision =
+  | { action: 'keep' }
+  | { action: 'remove' }
+  | { action: 'check-pid'; pid: number };
+
 export function getDefaultRuntimeInstanceRegistryDir() {
   return join(homedir(), '.storybook', 'instances');
 }
@@ -41,10 +59,9 @@ export function getOrigin(address: string) {
 export function getMcpMetadataFromMainConfig(
   mainConfig: Pick<StorybookConfig, 'addons'>
 ): RuntimeInstanceRecord['mcp'] {
+  // Normalize entries so addons registered via `getAbsolutePath()` are recognized, not just bare names.
   const addon = mainConfig.addons?.find(
-    (entry) =>
-      entry === STORYBOOK_MCP_ADDON ||
-      (typeof entry === 'object' && entry.name === STORYBOOK_MCP_ADDON)
+    (entry) => normalizeAddonName(entry) === STORYBOOK_MCP_ADDON
   );
 
   if (!addon) {
@@ -59,8 +76,17 @@ export function getMcpMetadataFromMainConfig(
   return { status: 'ready', endpoint };
 }
 
+function detectRuntimeInstanceAgent() {
+  if (isClaudePreviewLaunch()) {
+    return CLAUDE_PREVIEW_AGENT_NAME;
+  }
+
+  return detectAgent()?.name;
+}
+
 export function createRuntimeInstanceRecord({
   address,
+  agent,
   cwd = process.cwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
@@ -70,6 +96,7 @@ export function createRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
@@ -88,6 +115,7 @@ export function createRuntimeInstanceRecord({
     cwd: resolve(cwd),
     url: origin,
     port,
+    ...(agent ? { agent } : {}),
     storybookVersion,
     startedAt: timestamp,
     updatedAt: timestamp,
@@ -100,6 +128,7 @@ export async function writeRuntimeInstanceRecord(
   registryDir = getDefaultRuntimeInstanceRegistryDir()
 ) {
   await mkdir(registryDir, { recursive: true });
+  await cleanupRuntimeInstanceRegistry(registryDir);
 
   const recordPath = join(registryDir, `${record.instanceId}.json`);
   const tempPath = join(
@@ -116,6 +145,157 @@ export async function writeRuntimeInstanceRecord(
   }
 
   return recordPath;
+}
+
+function isRecordObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getTimestampMs(record: Record<string, unknown>, key: 'updatedAt' | 'startedAt') {
+  const value = record[key];
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const timestamp = Date.parse(value);
+
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function getRecordAgeMs(record: unknown, fileModifiedAtMs: number, nowMs: number) {
+  const recordTimestampMs = isRecordObject(record)
+    ? (getTimestampMs(record, 'updatedAt') ?? getTimestampMs(record, 'startedAt'))
+    : undefined;
+
+  return nowMs - (recordTimestampMs ?? fileModifiedAtMs);
+}
+
+function getRecordPid(record: unknown) {
+  if (!isRecordObject(record) || typeof record.pid !== 'number') {
+    return undefined;
+  }
+
+  return Number.isInteger(record.pid) && record.pid > 0 ? record.pid : undefined;
+}
+
+function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
+export function getRuntimeInstanceRegistryCleanupDecision(
+  entry: RuntimeInstanceRegistryCleanupEntry
+): RuntimeInstanceRegistryCleanupDecision {
+  if (entry.kind === 'temp-file') {
+    return entry.nowMs - entry.fileModifiedAtMs > ONE_DAY_MS
+      ? { action: 'remove' }
+      : { action: 'keep' };
+  }
+
+  if (entry.kind === 'malformed-json') {
+    return entry.nowMs - entry.fileModifiedAtMs > SEVEN_DAYS_MS
+      ? { action: 'remove' }
+      : { action: 'keep' };
+  }
+
+  const recordAgeMs = getRecordAgeMs(entry.record, entry.fileModifiedAtMs, entry.nowMs);
+
+  if (recordAgeMs > SEVEN_DAYS_MS) {
+    return { action: 'remove' };
+  }
+
+  if (recordAgeMs < ONE_DAY_MS) {
+    return { action: 'keep' };
+  }
+
+  const recordPid = getRecordPid(entry.record);
+
+  return recordPid === undefined ? { action: 'keep' } : { action: 'check-pid', pid: recordPid };
+}
+
+function isPidInactive(pid: number) {
+  try {
+    process.kill(pid, 0);
+    return false;
+  } catch (error) {
+    return isErrnoException(error) && error.code === 'ESRCH';
+  }
+}
+
+async function applyCleanupDecision(
+  recordPath: string,
+  decision: RuntimeInstanceRegistryCleanupDecision
+) {
+  if (
+    decision.action === 'remove' ||
+    (decision.action === 'check-pid' && isPidInactive(decision.pid))
+  ) {
+    await rm(recordPath, { force: true });
+  }
+}
+
+async function cleanupRuntimeInstanceRegistry(registryDir: string) {
+  const nowMs = Date.now();
+  const entries = await readdir(registryDir, { withFileTypes: true }).catch(() => []);
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (!entry.isFile()) {
+        return;
+      }
+
+      const recordPath = join(registryDir, entry.name);
+
+      try {
+        const { mtimeMs } = await stat(recordPath);
+
+        if (entry.name.endsWith('.tmp')) {
+          await applyCleanupDecision(
+            recordPath,
+            getRuntimeInstanceRegistryCleanupDecision({
+              kind: 'temp-file',
+              fileModifiedAtMs: mtimeMs,
+              nowMs,
+            })
+          );
+          return;
+        }
+
+        if (!entry.name.endsWith('.json')) {
+          return;
+        }
+
+        const content = await readFile(recordPath, 'utf-8');
+        let record: unknown;
+
+        try {
+          record = JSON.parse(content) as unknown;
+        } catch {
+          await applyCleanupDecision(
+            recordPath,
+            getRuntimeInstanceRegistryCleanupDecision({
+              kind: 'malformed-json',
+              fileModifiedAtMs: mtimeMs,
+              nowMs,
+            })
+          );
+          return;
+        }
+
+        await applyCleanupDecision(
+          recordPath,
+          getRuntimeInstanceRegistryCleanupDecision({
+            kind: 'record',
+            fileModifiedAtMs: mtimeMs,
+            nowMs,
+            record,
+          })
+        );
+      } catch {
+        // Registry cleanup is opportunistic; one bad file should not block the current record.
+      }
+    })
+  );
 }
 
 function registerProcessCleanup(recordPath: string) {
@@ -138,6 +318,7 @@ function registerProcessCleanup(recordPath: string) {
 
 export async function writeStorybookRuntimeInstanceRecord({
   address,
+  agent = detectRuntimeInstanceAgent(),
   cwd,
   mcp,
   pid,
@@ -147,6 +328,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   storybookVersion,
 }: {
   address: string;
+  agent?: string;
   cwd?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
@@ -157,6 +339,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }): Promise<RuntimeInstanceRegistration> {
   const record = createRuntimeInstanceRecord({
     address,
+    agent,
     cwd,
     mcp,
     pid,

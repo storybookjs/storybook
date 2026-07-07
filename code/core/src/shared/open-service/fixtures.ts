@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 import { defineService } from './service-definition.ts';
-import type { ServiceInstance } from './types.ts';
+import type { ServiceInstanceOf } from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -13,9 +13,9 @@ export const assignEntryFieldInputSchema = v.object({
 });
 /** Shared schema for nullable record payloads returned from lookup queries. */
 export const recordFieldsOutputSchema = v.nullable(v.record(v.string(), v.string()));
-/** Shared schema for nullable string payloads used by preload-oriented fixtures. */
+/** Shared schema for nullable string payloads used by load-oriented fixtures. */
 export const preloadedValueOutputSchema = v.nullable(v.string());
-export const noInputSchema = v.undefined();
+export const noInputSchema = v.void();
 export const voidOutputSchema = v.void();
 export const booleanOutputSchema = v.boolean();
 
@@ -28,11 +28,11 @@ export type MutableRecordState = Record<string, Record<string, string> | undefin
  * domain-specific logic.
  */
 export const mutableRecordLookupServiceDef = defineService({
-  id: 'test/mutable-record-lookup',
+  id: 'internal-fixture/mutable-record-lookup',
   description: 'Provides a mutable record lookup keyed by entry id.',
   initialState: {} as MutableRecordState,
   queries: {
-    getRecordFields: {
+    recordFields: {
       description: 'Returns all stored fields for one entry, or null when absent.',
       input: entryIdInputSchema,
       output: recordFieldsOutputSchema,
@@ -45,65 +45,67 @@ export const mutableRecordLookupServiceDef = defineService({
       input: assignEntryFieldInputSchema,
       output: voidOutputSchema,
       handler: (input, ctx) => {
-        ctx.self.setState((draft) => {
-          draft[input.entryId] ??= {};
-          draft[input.entryId]![input.fieldKey] = input.fieldValue;
+        ctx.self.setState((state) => {
+          state[input.entryId] ??= {};
+          state[input.entryId]![input.fieldKey] = input.fieldValue;
         });
       },
     },
   },
 });
 
+export type MutableRecordLookupService = ServiceInstanceOf<typeof mutableRecordLookupServiceDef>;
+
 export type PreloadedValueState = Record<string, string | undefined>;
 
-/** Service fixture that awaits preload before resolving a query. */
+/** Service fixture that loads state from a command before returning it. */
 export const awaitedPreloadValueServiceDef = defineService({
-  id: 'test/awaited-preload-value',
-  description: 'Preloads a value on demand and awaits preload before returning it.',
+  id: 'internal-fixture/awaited-preload-value',
+  description: 'Loads a value on demand via a command and reads it back from state.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: {
-      description: 'Returns the value for an entry and preloads it first when missing.',
+    preloadedValue: {
+      description: 'Returns the value for an entry; load triggers a command to populate state.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      preload: (input, ctx) => {
+      load: (input, ctx) => {
         if (!(input.entryId in ctx.self.state)) {
           return ctx.self.commands.preloadValue(input).then(() => undefined);
         }
       },
-      static: {
-        inputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
-      },
+      staticPath: () => 'state.json',
+      staticInputs: async () => [{ entryId: 'entry-a' }, { entryId: 'entry-b' }],
     },
   },
   commands: {
     preloadValue: {
-      description: 'Preloads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((draft) => {
-          draft[input.entryId] = 'preloaded';
+        ctx.self.setState((state) => {
+          state[input.entryId] = 'preloaded';
         });
       },
     },
   },
 });
 
-/** Service fixture that starts preload work in the background and returns immediately. */
+/** Service fixture that starts load work in the background and returns immediately. */
 export const fireAndForgetPreloadValueServiceDef = defineService({
-  id: 'test/fire-and-forget-preload-value',
-  description: 'Preloads a value in the background without awaiting preload.',
+  id: 'internal-fixture/fire-and-forget-preload-value',
+  description: 'Loads a value in the background without awaiting it.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: {
-      description: 'Returns the current value and triggers a background preload when missing.',
+    preloadedValue: {
+      description:
+        'Returns the current value; load fires a command in the background when missing.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
       handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-      preload: (input, ctx) => {
+      load: (input, ctx) => {
         if (!(input.entryId in ctx.self.state)) {
           void ctx.self.commands.preloadValue(input);
         }
@@ -112,14 +114,63 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   },
   commands: {
     preloadValue: {
-      description: 'Preloads a deterministic value for one entry id.',
+      description: 'Loads a deterministic value for one entry id.',
       input: entryIdInputSchema,
       output: voidOutputSchema,
       handler: async (input, ctx) => {
         await Promise.resolve();
-        ctx.self.setState((draft) => {
-          draft[input.entryId] = 'preloaded';
+        ctx.self.setState((state) => {
+          state[input.entryId] = 'preloaded';
         });
+      },
+    },
+  },
+});
+
+export type RebuiltValue = { marker: string; count: number };
+export type RebuiltValueState = Record<string, RebuiltValue | undefined>;
+
+/** Shared schema for the object value used by the rebuilt-equal-value fixture. */
+export const rebuiltValueOutputSchema = v.nullable(
+  v.object({ marker: v.string(), count: v.number() })
+);
+
+/**
+ * Service fixture whose `load` rebuilds a deeply-equal but freshly-allocated object value every
+ * time it runs, then writes it back via a command.
+ *
+ * It exercises the case where re-subscribing to an already-populated entry would emit a redundant
+ * second value (the immediate emission plus a load-driven emission carrying an equal-but-not-
+ * identical object) unless the runtime dedups by value.
+ */
+export const rebuiltEqualValueOnLoadServiceDef = defineService({
+  id: 'internal-fixture/rebuilt-equal-value-on-load',
+  description: 'Rewrites a deeply-equal but freshly-allocated object value on every load.',
+  initialState: {} as RebuiltValueState,
+  queries: {
+    rebuiltValue: {
+      description: 'Returns the value for an entry; load always rewrites a fresh-but-equal value.',
+      input: entryIdInputSchema,
+      output: rebuiltValueOutputSchema,
+      handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
+      load: async (input, ctx) => {
+        await ctx.self.commands.rebuildValue(input);
+      },
+    },
+  },
+  commands: {
+    rebuildValue: {
+      description: 'Allocates a brand-new object with a stable value and stores it.',
+      input: entryIdInputSchema,
+      output: rebuiltValueOutputSchema,
+      handler: async (input, ctx) => {
+        await Promise.resolve();
+        // A new object literal every call: deeply equal to any prior value, never `===` to it.
+        const value: RebuiltValue = { marker: 'stable', count: 1 };
+        ctx.self.setState((state) => {
+          state[input.entryId] = value;
+        });
+        return value;
       },
     },
   },
@@ -130,35 +181,31 @@ export type SharedStaticFileState = { left?: string; right?: string };
 /** Creates a fixture where multiple queries contribute state to one shared static file. */
 export function createSharedStaticFileServiceDef() {
   return defineService({
-    id: 'test/shared-static-file',
+    id: 'internal-fixture/shared-static-file',
     description: 'Builds two independent query outputs into one shared static file.',
     initialState: {} as SharedStaticFileState,
     queries: {
-      getLeftValue: {
-        description: 'Preloads the left value into the shared file state.',
+      leftValue: {
+        description: 'Loads the left value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
         handler: (_input, ctx) => ctx.self.state.left ?? null,
-        preload: async (_input, ctx) => {
+        load: async (_input, ctx) => {
           await ctx.self.commands.writeLeftValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        staticPath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
-      getRightValue: {
-        description: 'Preloads the right value into the shared file state.',
+      rightValue: {
+        description: 'Loads the right value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
         handler: (_input, ctx) => ctx.self.state.right ?? null,
-        preload: async (_input, ctx) => {
+        load: async (_input, ctx) => {
           await ctx.self.commands.writeRightValue(undefined);
         },
-        static: {
-          path: () => 'shared.json',
-          inputs: async () => [undefined],
-        },
+        staticPath: () => 'shared.json',
+        staticInputs: async () => [undefined],
       },
     },
     commands: {
@@ -167,8 +214,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((draft) => {
-            draft.left = 'preloaded';
+          ctx.self.setState((state) => {
+            state.left = 'preloaded';
           });
         },
       },
@@ -177,8 +224,8 @@ export function createSharedStaticFileServiceDef() {
         input: noInputSchema,
         output: voidOutputSchema,
         handler: (_input, ctx) => {
-          ctx.self.setState((draft) => {
-            draft.right = 'preloaded';
+          ctx.self.setState((state) => {
+            state.right = 'preloaded';
           });
         },
       },
@@ -186,18 +233,18 @@ export function createSharedStaticFileServiceDef() {
   });
 }
 
-/** Creates a service that composes one service's query inside another service's query. */
-export function createDerivedBooleanFromChildQueryServiceDef(
-  sourceService: ServiceInstance<
-    MutableRecordState,
-    typeof mutableRecordLookupServiceDef.queries,
-    typeof mutableRecordLookupServiceDef.commands
-  >
-) {
+/**
+ * Creates a service that composes one service's query inside another service's query.
+ *
+ * The derived service resolves the source service through `ctx.getService(...)` at call time —
+ * the same lookup any consumer code would use — rather than capturing the registered instance in
+ * a closure. The source service must already be registered when the derived query runs.
+ */
+export function createDerivedBooleanFromChildQueryServiceDef() {
   type DerivedState = Record<string, never>;
 
   return defineService({
-    id: 'test/derived-boolean-from-child-query',
+    id: 'internal-fixture/derived-boolean-from-child-query',
     description: 'Derives a boolean from the child lookup query.',
     initialState: {} as DerivedState,
     queries: {
@@ -205,8 +252,11 @@ export function createDerivedBooleanFromChildQueryServiceDef(
         description: 'Returns whether the child query reports marker=match for an entry.',
         input: entryIdInputSchema,
         output: booleanOutputSchema,
-        handler: async (input) => {
-          const record = await sourceService.queries.getRecordFields({
+        handler: (input, ctx) => {
+          const source = ctx.getService<MutableRecordLookupService>(
+            mutableRecordLookupServiceDef.id
+          );
+          const record = source.queries.recordFields.get({
             entryId: input.entryId,
           });
 
@@ -218,14 +268,35 @@ export function createDerivedBooleanFromChildQueryServiceDef(
   });
 }
 
+/**
+ * Fixture exposing a query whose output type is legitimately `undefined` (a `void` output schema).
+ *
+ * Used to verify that consumers treat `undefined` as a real value rather than an "uninitialised"
+ * sentinel — e.g. the `useServiceQuery` lazy-init must not recompute on every render here.
+ */
+export const undefinedOutputQueryServiceDef = defineService({
+  id: 'internal-fixture/undefined-output-query',
+  description: 'Exposes a query that always returns undefined.',
+  initialState: {} as Record<string, never>,
+  queries: {
+    nothing: {
+      description: 'Always returns undefined.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: () => undefined,
+    },
+  },
+  commands: {},
+});
+
 /** Creates a fixture that intentionally returns an invalid query output. */
 export function createInvalidQueryOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-query-output',
+    id: 'internal-fixture/invalid-query-output',
     description: 'Returns an invalid query output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {
-      getBrokenValue: {
+      brokenValue: {
         description: 'Returns a string-shaped output that is actually a number.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -239,7 +310,7 @@ export function createInvalidQueryOutputServiceDef() {
 /** Creates a fixture that intentionally returns an invalid command output. */
 export function createInvalidCommandOutputServiceDef() {
   return defineService({
-    id: 'test/invalid-command-output',
+    id: 'internal-fixture/invalid-command-output',
     description: 'Returns an invalid command output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {},
@@ -254,24 +325,196 @@ export function createInvalidCommandOutputServiceDef() {
   });
 }
 
-/** Creates a fixture that intentionally yields invalid static preload inputs. */
+/** Creates a fixture that intentionally yields invalid static load inputs. */
 export function createInvalidStaticInputServiceDef() {
   return defineService({
-    id: 'test/invalid-static-input',
-    description: 'Provides an invalid static preload input on purpose.',
+    id: 'internal-fixture/invalid-static-input',
+    description: 'Provides an invalid static load input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {
-      getPreloadedValue: {
-        description: 'Validates static inputs before preload runs.',
+      preloadedValue: {
+        description: 'Validates static inputs before load runs.',
         input: entryIdInputSchema,
         output: preloadedValueOutputSchema,
         handler: (input, ctx) => ctx.self.state[input.entryId] ?? null,
-        preload: async () => {},
-        static: {
-          inputs: async () => [{} as unknown as { entryId: string }],
-        },
+        load: async () => {},
+        staticPath: () => 'state.json',
+        staticInputs: async () => [{} as unknown as { entryId: string }],
       },
     },
     commands: {},
   });
 }
+
+/** Leaves handlers undefined so registration tests can supply them later. */
+export const unimplementedOperationsServiceDef = defineService({
+  id: 'internal-fixture/unimplemented-operations',
+  description: 'Leaves handlers undefined so registration can supply them later.',
+  initialState: {} as Record<string, never>,
+  queries: {
+    value: {
+      description: 'Reads a value that is not implemented in this environment.',
+      input: v.undefined(),
+      output: v.string(),
+    },
+  },
+  commands: {
+    run: {
+      description: 'Runs a command that is not implemented in this environment.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type RegisteredCommandOverrideState = { count: number };
+
+/** Provides commands whose handlers are supplied at registration time. */
+export const registeredCommandOverrideServiceDef = defineService({
+  id: 'internal-fixture/registered-command-override',
+  description: 'Provides a command handler at registration time.',
+  initialState: { count: 0 } satisfies RegisteredCommandOverrideState,
+  queries: {
+    count: {
+      description: 'Reads the current count.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.count,
+    },
+  },
+  commands: {
+    increment: {
+      description: 'Increments the current count.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+    assignFromLookup: {
+      description: 'Reads another service and mirrors whether a marker exists.',
+      input: assignEntryFieldInputSchema,
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type RegistrationOnlyStaticBuildState = { value: string | null };
+
+/** Declares staticPath in the definition; load and handlers may be supplied at registration. */
+export const registrationOnlyStaticBuildServiceDef = defineService({
+  id: 'internal-fixture/registration-only-static-build',
+  description: 'Declares staticPath in the definition and load at registration.',
+  initialState: { value: null } as RegistrationOnlyStaticBuildState,
+  queries: {
+    value: {
+      description: 'Returns one statically built value.',
+      input: v.object({ build: v.literal('once') }),
+      output: v.nullable(v.string()),
+      handler: (_input, ctx) => ctx.self.state.value,
+      staticPath: () => 'state.json',
+      staticInputs: async () => [{ build: 'once' as const }],
+    },
+  },
+  commands: {
+    setValue: {
+      description: 'Stores one value during static load.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});
+
+export type MixedVisibilityState = { value: number };
+
+/** Exposes one public and one internal operation per family for discovery tests. */
+export const mixedVisibilityServiceDef = defineService({
+  id: 'internal-fixture/mixed-visibility',
+  description: 'Exposes one public and one internal operation per family.',
+  initialState: { value: 0 } satisfies MixedVisibilityState,
+  queries: {
+    value: {
+      description: 'Public query.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.value,
+    },
+    _internalValue: {
+      internal: true,
+      description: 'Internal query.',
+      input: v.undefined(),
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.value,
+    },
+  },
+  commands: {
+    setValue: {
+      description: 'Public command.',
+      input: v.number(),
+      output: voidOutputSchema,
+      handler: (input, ctx) => {
+        ctx.self.setState((draft) => {
+          draft.value = input;
+        });
+      },
+    },
+    _reset: {
+      internal: true,
+      description: 'Internal command.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((draft) => {
+          draft.value = 0;
+        });
+      },
+    },
+  },
+});
+
+export type HiddenServiceState = { secret: boolean };
+
+/** Hidden from listServices while remaining reachable through getService. */
+export const hiddenServiceDef = defineService({
+  id: 'internal-fixture/hidden-service',
+  internal: true,
+  description: 'Hidden from listServices.',
+  initialState: { secret: true } satisfies HiddenServiceState,
+  queries: {
+    secret: {
+      description: 'Returns the secret flag.',
+      input: v.undefined(),
+      output: v.boolean(),
+      handler: (_input, ctx) => ctx.self.state.secret,
+    },
+  },
+  commands: {},
+});
+
+export type InternalStaticBuildState = { value: string | null };
+
+/** Internal query participates in static builds. */
+export const internalStaticBuildServiceDef = defineService({
+  id: 'internal-fixture/internal-static-build',
+  description: 'Internal query participates in static builds.',
+  initialState: { value: null } as InternalStaticBuildState,
+  queries: {
+    _value: {
+      internal: true,
+      description: 'Internal statically built query.',
+      input: v.object({ build: v.literal('once') }),
+      output: v.nullable(v.string()),
+      handler: (_input, ctx) => ctx.self.state.value,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._setValue(undefined);
+      },
+      staticPath: () => 'state.json',
+      staticInputs: async () => [{ build: 'once' as const }],
+    },
+  },
+  commands: {
+    _setValue: {
+      internal: true,
+      description: 'Internal command used during static load.',
+      input: v.undefined(),
+      output: voidOutputSchema,
+    },
+  },
+});

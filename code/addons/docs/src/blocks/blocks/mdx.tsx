@@ -143,36 +143,46 @@ const SUPPORTED_MDX_HEADERS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   (acc, headerType) => ({
     ...acc,
-    [headerType]: styled(headerType)({
-      position: 'relative',
-      '& svg': {
-        position: 'relative',
-        top: '-0.1em',
-        visibility: 'hidden',
-      },
-      '&:hover svg, &:focus-within svg': {
-        visibility: 'visible',
-      },
-    }),
+    [headerType]: styled(headerType)({}),
   }),
   {}
 );
+
+const OcticonAlignmentWrapper = styled.span({
+  display: 'block',
+  position: 'relative',
+  '& svg': {
+    visibility: 'hidden',
+  },
+  '&:hover svg, &:focus-within svg': {
+    visibility: 'visible',
+  },
+});
 
 const OcticonAnchorWrapper = styled.span({
   // Position the anchor in the heading's left gutter instead of floating it, so the
   // Button's dimensions never shift the heading text. The parent header is relatively
   // positioned to anchor this.
   position: 'absolute',
-  top: 0,
+  top: '50%',
   right: '100%',
   lineHeight: 'inherit',
-  paddingRight: '10px',
+  paddingRight: '8px',
+  // Increase specificity to avoid being overridden by DocsPage based on
+  // CSS block load order.
+  '&&': {
+    marginTop: -14, // Half the Button's height to center it vertically
+  },
   // Allow the theme's text color to override the default link color.
   color: 'inherit',
   '& a': {
     color: 'inherit',
     textDecoration: 'none',
   },
+});
+
+const HeaderTitle = styled.span({
+  // marginInlineStart: -40,
 });
 
 interface HeaderWithOcticonAnchorProps {
@@ -194,24 +204,32 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
 
   return (
     <OcticonHeader id={id} {...rest}>
-      <OcticonAnchorWrapper>
-        <Button asChild variant="ghost" size="small" ariaLabel="Copy heading URL to address bar">
-          <a
-            href={hash}
-            target="_self"
-            onClick={(event: MouseEvent<HTMLAnchorElement>) => {
-              event.preventDefault();
-              const element = document.getElementById(id);
-              if (element) {
-                navigate(context, hash);
-              }
-            }}
+      <OcticonAlignmentWrapper className="sb-unstyled">
+        <OcticonAnchorWrapper>
+          <Button
+            asChild
+            variant="ghost"
+            size="small"
+            padding="small"
+            ariaLabel="Copy heading URL to address bar"
           >
-            <LinkIcon />
-          </a>
-        </Button>
-      </OcticonAnchorWrapper>
-      {children}
+            <a
+              href={hash}
+              target="_self"
+              onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                event.preventDefault();
+                const element = document.getElementById(id);
+                if (element) {
+                  navigate(context, hash);
+                }
+              }}
+            >
+              <LinkIcon />
+            </a>
+          </Button>
+        </OcticonAnchorWrapper>
+        {children}
+      </OcticonAlignmentWrapper>
     </OcticonHeader>
   );
 };

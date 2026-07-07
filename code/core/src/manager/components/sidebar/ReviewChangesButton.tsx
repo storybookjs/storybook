@@ -9,7 +9,7 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { CloseIcon } from '@storybook/icons';
+import { UndoIcon } from '@storybook/icons';
 
 import {
   experimental_useStatusStore,
@@ -26,7 +26,6 @@ const Wrapper = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 4,
-  marginTop: -8,
 });
 
 const StyledCTA = styled(ToggleButton)({
@@ -40,6 +39,7 @@ const StyledIcon = styled.svg(({ theme }) => ({
 
 const NEW = 'status-value:new' as StatusValue;
 const MOD = 'status-value:modified' as StatusValue;
+const REVIEWING = 'status-value:reviewing' as StatusValue;
 
 const ReviewChangesButton = () => {
   const api = useStorybookApi();
@@ -52,9 +52,9 @@ const ReviewChangesButton = () => {
   } = useStorybookState();
   const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
 
-  const { newCount, modifiedCount } = useMemo(() => {
+  const { newCount, modifiedCount, hasReviewingStories } = useMemo(() => {
     if (!index) {
-      return { newCount: 0, modifiedCount: 0 };
+      return { newCount: 0, modifiedCount: 0, hasReviewingStories: false };
     }
     const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
     const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
@@ -70,17 +70,21 @@ const ReviewChangesButton = () => {
 
     let next = 0;
     let modified = 0;
+    let reviewing = false;
     const entries = (index as StoryIndex).entries ?? {};
     for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
       const entry = entries[storyId] as API_PreparedIndexEntry | undefined;
       if (!entry) {
         continue;
       }
+      const statuses = Object.values(statusesByType);
+      if (!reviewing && statuses.some(({ value }) => value === REVIEWING)) {
+        reviewing = true;
+      }
       const entryWithStatuses = { ...entry, statuses: statusesByType };
       if (!tagFilterFn(entryWithStatuses) || !statusFilterFn(entryWithStatuses)) {
         continue;
       }
-      const statuses = Object.values(statusesByType);
       if (statuses.some(({ value }) => value === NEW)) {
         next += 1;
       }
@@ -88,7 +92,7 @@ const ReviewChangesButton = () => {
         modified += 1;
       }
     }
-    return { newCount: next, modifiedCount: modified };
+    return { newCount: next, modifiedCount: modified, hasReviewingStories: reviewing };
   }, [
     index,
     allStatuses,
@@ -103,6 +107,10 @@ const ReviewChangesButton = () => {
   const isReviewActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
 
   if (!globalThis.FEATURES?.changeDetection) {
+    return null;
+  }
+
+  if (hasReviewingStories) {
     return null;
   }
 
@@ -142,10 +150,11 @@ const ReviewChangesButton = () => {
         padding="small"
         pressed={isReviewActive}
         ariaLabel={label}
+        disableAllTooltips
         onClick={onClick}
       >
         <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-          <UseSymbol type="new" />
+          <UseSymbol type="modified" />
         </StyledIcon>
         {label}
       </StyledCTA>
@@ -156,9 +165,9 @@ const ReviewChangesButton = () => {
           size="small"
           onClick={onClearClick}
           ariaLabel="Clear"
-          tooltip="Clear"
+          disableAllTooltips
         >
-          <CloseIcon />
+          <UndoIcon />
         </Button>
       )}
     </Wrapper>

@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -152,14 +151,14 @@ export class NPMProxy extends JsPackageManager {
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = ({ packageDepth }: { packageDepth: number }) => {
-      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`],
         env: {
           FORCE_COLOR: 'false',
         },
         cwd: this.instanceDir,
+        stdio: ['pipe', 'pipe', 'ignore'],
       });
     };
 

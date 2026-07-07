@@ -543,6 +543,7 @@ export abstract class JsPackageManager {
       JsPackageManager.latestVersionCache.set(cacheKey, result);
       return result;
     } catch (e) {
+      logger.debug(`Failed to fetch the latest version for ${packageName}: ${String(e)}`);
       JsPackageManager.latestVersionCache.set(cacheKey, null);
       return null;
     }

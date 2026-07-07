@@ -1015,6 +1015,37 @@ const internalTemplates = {
       type: ProjectType.SERVER,
     },
   },
+  // Regression guard for the docgen open-service (OSA) path: same as react-vite/default-ts but with
+  // `experimentalDocgenServer` on, so the addon-vitest `vitest-integration` job runs portable
+  // stories with the flag enabled — the exact combination that has no dev-server/e2e coverage.
+  'internal/react-vite-docgen-server-ts': {
+    ...baseTemplates['react-vite/default-ts'],
+    name: 'React Docgen Server (Vite | TypeScript)',
+    isInternal: true,
+    modifications: {
+      ...baseTemplates['react-vite/default-ts'].modifications,
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+          changeDetection: true,
+          experimentalDocgenServer: true,
+        },
+      },
+    },
+    // Only `vitest-integration` needs to run here; the rest is already covered by
+    // react-vite/default-ts, so skip it to keep CI cost minimal.
+    skipTasks: [
+      'e2e-tests',
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'chromatic',
+      'smoke-test',
+      'bench',
+    ],
+    typeCheck: false,
+  },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
@@ -1137,6 +1168,7 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
+  'internal/react-vite-docgen-server-ts',
 ];
 
 export const merged: TemplateKey[] = [

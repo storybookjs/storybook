@@ -7,6 +7,7 @@ import {
   DocumentWrapper,
   IconButton,
   ScrollArea,
+  ToggleButton,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
@@ -118,7 +119,25 @@ const SummaryCard = styled(Card)({
 const SummaryContent = styled(MarkdownWrapper)({
   flex: 1,
   minWidth: 0,
+  // Keep the "Summary:" heading and the first description paragraph on the same
+  // line, matching the previous inline "**Summary:** …" rendering.
+  '& > p:first-of-type': {
+    display: 'inline',
+  },
 });
+
+// A real heading for the summary label, styled to look identical to the inline
+// bold "Summary:" text it replaces (the DocumentWrapper ancestor otherwise gives
+// h2 a larger size and a bottom border).
+const SummaryHeading = styled.h2(({ theme }) => ({
+  display: 'inline',
+  margin: 0,
+  fontSize: 'inherit',
+  fontWeight: theme.typography.weight.bold,
+  lineHeight: 'inherit',
+  color: 'inherit',
+  border: 'none',
+}));
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
@@ -134,11 +153,13 @@ const CardHead = styled.div({
   cursor: 'pointer',
 });
 
-const CardTitle = styled.strong(({ theme }) => ({
+const CardTitle = styled.h2(({ theme }) => ({
   minWidth: 0,
+  margin: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  fontSize: 'inherit',
   fontWeight: theme.typography.weight.bold,
   lineHeight: '20px',
   color: theme.color.defaultText,
@@ -338,17 +359,17 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         }
         actions={
           newStoryCount > 0 ? (
-            <Button
+            <ToggleButton
               variant="ghost"
               size="small"
               padding="small"
               ariaLabel={false}
               tooltip="Toggle filtering of new stories"
-              active={showNewOnly}
+              pressed={showNewOnly}
               onClick={() => setShowNewOnly((v) => !v)}
             >
               {newStoryCount} new
-            </Button>
+            </ToggleButton>
           ) : null
         }
       />
@@ -359,7 +380,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             <SummaryCard color="agentic">
               <WandIcon />
               <SummaryContent>
-                <Markdown>{'**Summary:** ' + state.description}</Markdown>
+                <SummaryHeading>Summary:</SummaryHeading> <Markdown>{state.description}</Markdown>
               </SummaryContent>
             </SummaryCard>
             {visibleCollections.length === 0 ? (
@@ -367,15 +388,20 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
+                const titleId = `review-collection-title-${index}`;
                 return (
-                  <Card key={`${collection.title}-${index}`}>
+                  <Card key={`${collection.title}-${index}`} role="group" aria-labelledby={titleId}>
                     <Collapsible
                       collapsed={!isExpanded}
                       summary={
                         <CardHead onClick={() => toggleCollection(index)}>
-                          <CardTitle>{collection.title}</CardTitle>
+                          <CardTitle id={titleId}>{collection.title}</CardTitle>
                           <CardControls>
-                            <CardCount>{storyIds.length}</CardCount>
+                            <CardCount
+                              aria-label={`${storyIds.length} ${storyIds.length === 1 ? 'story' : 'stories'}`}
+                            >
+                              {storyIds.length}
+                            </CardCount>
                             <IconButton
                               variant="ghost"
                               size="small"

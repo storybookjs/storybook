@@ -5,11 +5,7 @@ import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 
-import {
-  buildReviewChangesSummaryHref,
-  buildReviewStoryHref,
-  getAdjacentReviewEntries,
-} from '../review-navigation.ts';
+import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import { useReview } from '../review-store.ts';
 import { AttentionBanner } from './AttentionBanner.tsx';
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
@@ -92,9 +88,11 @@ export const ReviewToolbarHeader: FC = () => {
   const collection = state.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
   const totalStories = flattenedEntries.length;
-  const neighbors = getAdjacentReviewEntries(flattenedEntries, activeIndex);
-  const previousEntry = neighbors?.previous ?? activeEntry;
-  const nextEntry = neighbors?.next ?? activeEntry;
+  // Prev/next are disabled (not wrapping) at the ends of the flattened sequence.
+  const hasPrevious = activeIndex > 0;
+  const hasNext = activeIndex < totalStories - 1;
+  const previousEntry = hasPrevious ? flattenedEntries[activeIndex - 1] : null;
+  const nextEntry = hasNext ? flattenedEntries[activeIndex + 1] : null;
   const progress = totalStories > 1 ? activeIndex / (totalStories - 1) : 0;
   const currentStoryInfo = storyInfo[activeEntry.storyId];
   const isNewlyAdded = newlyAddedStoryIds.has(activeEntry.storyId);
@@ -133,7 +131,7 @@ export const ReviewToolbarHeader: FC = () => {
           </Popover>
         )}
       >
-        <Counter variant="ghost" size="small" ariaLabel="Open story list">
+        <Counter variant="ghost" size="small" ariaLabel="Select story">
           {activeIndex + 1}/{totalStories}
         </Counter>
       </WithTooltip>
@@ -175,22 +173,46 @@ export const ReviewToolbarHeader: FC = () => {
           actions={
             <>
               {counter}
-              <Button
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Previous story"
-                asChild
-              >
-                <a href={buildReviewStoryHref(previousEntry)}>
+              {previousEntry ? (
+                <Button
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel="Previous story"
+                  asChild
+                >
+                  <a href={buildReviewStoryHref(previousEntry)}>
+                    <ChevronSmallLeftIcon />
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel="Previous story"
+                  disabled
+                >
                   <ChevronSmallLeftIcon />
-                </a>
-              </Button>
-              <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-                <a href={buildReviewStoryHref(nextEntry)}>
+                </Button>
+              )}
+              {nextEntry ? (
+                <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
+                  <a href={buildReviewStoryHref(nextEntry)}>
+                    <ChevronSmallRightIcon />
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="small"
+                  padding="small"
+                  ariaLabel="Next story"
+                  disabled
+                >
                   <ChevronSmallRightIcon />
-                </a>
-              </Button>
+                </Button>
+              )}
             </>
           }
         />

@@ -48,7 +48,10 @@ const Cell = styled.div({
   display: 'flex',
   flexDirection: 'column',
   minWidth: 0,
-  overflow: 'hidden',
+  // No `overflow: hidden` here: it would crop the Frame's focus ring (which is
+  // drawn with an outline offset just outside the cell). The preview media is
+  // already clipped by `Frame`'s own `overflow: hidden`, and the label truncates
+  // via its own overflow, so this cell does not need to clip.
 });
 
 const FrameShell = styled.div({
@@ -131,6 +134,8 @@ const Frame = styled.a(({ theme }) => ({
   '&:focus-visible': {
     outline: `${theme.barSelectedColor} solid 2px`,
     outlineOffset: 2,
+    // Draw the focus ring above neighbouring cells so it is never overlapped.
+    zIndex: 1,
   },
 }));
 
@@ -244,13 +249,14 @@ const StoryPreviewCell: FC<{
   } = usePreviewThumbnail({ storyId, getPreviewHref, summaryHidden });
 
   const { component, name } = deriveStoryInfo(info);
+  const readableTitle = `${component} – ${name}`;
   const { style: frameStyle, viewportFill } = getPreviewFrameLayout(rememberedDimensions);
 
   const preview = src ? (
     <div data-preview-scale>
       <Preview
         ref={iframeRef}
-        title={storyId}
+        title={readableTitle}
         src={src}
         data-content-width={rememberedDimensions?.width}
         data-content-height={rememberedDimensions?.height}
@@ -263,7 +269,7 @@ const StoryPreviewCell: FC<{
   ) : null;
 
   return (
-    <Cell ref={cellRef} data-cell data-testid="review-collection-grid-cell">
+    <Cell ref={cellRef} role="listitem" data-cell data-testid="review-collection-grid-cell">
       <FrameShell>
         <Frame
           as={href ? 'a' : 'div'}
@@ -271,7 +277,7 @@ const StoryPreviewCell: FC<{
           data-testid="review-collection-grid-frame"
           data-viewport-fill={viewportFill || undefined}
           style={frameStyle}
-          aria-label={href ? `Review story ${storyId}` : undefined}
+          aria-label={href ? `Review story ${readableTitle}` : undefined}
           onMouseEnter={forceStartCurrent}
           onFocus={forceStartCurrent}
         >
@@ -324,7 +330,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
   summaryHidden = false,
 }) => (
   <GridContainer>
-    <Grid data-show-all={showAll || undefined} data-testid="review-collection-grid">
+    <Grid role="list" data-show-all={showAll || undefined} data-testid="review-collection-grid">
       {storyIds.map((storyId, storyIndex) => {
         const info = storyInfo[storyId] ?? fallbackStoryInfo(storyId);
         return (
@@ -338,7 +344,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
           />
         );
       })}
-      <ReviewAllCell data-review-all>
+      <ReviewAllCell role="presentation" data-review-all>
         <ReviewAllShell>
           <ReviewAllFrame>
             <Button size="medium" onClick={() => onShowAll?.()}>

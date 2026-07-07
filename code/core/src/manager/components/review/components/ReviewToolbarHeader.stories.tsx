@@ -164,7 +164,7 @@ export const OnReviewedStory = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    const counter = await canvas.findByRole('button', { name: 'Select story' });
     await expect(counter).toHaveTextContent('2/3');
     await expect(setAddonShortcutMock).toHaveBeenCalledWith(
       ADDON_ID,
@@ -179,6 +179,10 @@ export const OnReviewedStory = meta.story({
       buildReviewChangesSummaryHref()
     );
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+
+    // In the middle of the sequence both prev and next navigate (rendered as links).
+    await expect(await canvas.findByRole('link', { name: 'Previous story' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Next story' })).toBeInTheDocument();
   },
 });
 
@@ -195,10 +199,17 @@ export const Progress = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    const counter = await canvas.findByRole('button', { name: 'Select story' });
     await expect(counter).toHaveTextContent('3/3');
     const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
     await expect(Math.round(parseFloat(fill.style.width))).toBe(100);
+
+    // On the last story the Next control is disabled and no longer a link.
+    const next = await canvas.findByRole('button', { name: 'Next story' });
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    await expect(canvas.queryByRole('link', { name: 'Next story' })).not.toBeInTheDocument();
+    // Previous still navigates.
+    await expect(await canvas.findByRole('link', { name: 'Previous story' })).toBeInTheDocument();
   },
 });
 
@@ -235,5 +246,10 @@ export const NewStory = meta.story({
         storyId: 'manager-settings-guidepage--default',
       })
     );
+
+    // On the first story the Previous control is disabled and no longer a link.
+    const previous = await canvas.findByRole('button', { name: 'Previous story' });
+    await expect(previous).toHaveAttribute('aria-disabled', 'true');
+    await expect(canvas.queryByRole('link', { name: 'Previous story' })).not.toBeInTheDocument();
   },
 });

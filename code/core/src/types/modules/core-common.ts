@@ -627,15 +627,11 @@ export interface StorybookFeatures {
   changeDetection?: boolean;
 
   /**
-   * Control the agentic review workflow: the review UI in the manager and the server-side review
+   * Enable the agentic review workflow: the review UI in the manager and the server-side review
    * channel that MCP tooling (e.g. `@storybook/addon-mcp`) uses to push curated reviews of code
    * changes. Builds on change detection, so `changeDetection` must also be enabled.
    *
-   * When left unset, review stays off for direct use (no review UI appears and direct MCP clients
-   * are not offered review tools), but the Storybook AI CLI plugins (Claude Code / Codex) can use
-   * it. Set `false` to opt out entirely, including for the plugins; set `true` to also enable
-   * review for direct MCP clients.
-   *
+   * @default false
    * @experimental This feature is in early development and may change significantly in future releases.
    */
   experimentalReview?: boolean;

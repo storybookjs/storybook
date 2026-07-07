@@ -28,7 +28,7 @@ export function isAiCliFeatureEnabled(env: NodeJS.ProcessEnv = process.env): boo
 
 const CWD_DESCRIPTION = 'Project directory of the target Storybook; place before the command name';
 const CONFIG_DIR_DESCRIPTION =
-  'Storybook config directory for help and local commands; place before the command name';
+  'Storybook config directory of the target Storybook; place before the command name';
 const PORT_DESCRIPTION =
   'Port of the target Storybook for runtime commands; place before the command name';
 

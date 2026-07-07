@@ -162,9 +162,10 @@ Three templates exist today:
   test setup.
 - `vite-app`: a minimal React + Vite app with **no Storybook at all**. The
   lifecycle fixtures use it directly (820 init) or layer an old Storybook on
-  top (821/822 upgrades, which also set `evals.pinStorybook: false` so the
-  harness keeps their intentionally outdated versions); 812 layers a full
-  Storybook `next` setup with zero stories on top.
+  top (821/822 upgrades and 823 setup-on-outdated, which also set
+  `evals.pinStorybook: false` so the harness keeps their intentionally
+  outdated versions); 812 layers a full Storybook `next` setup with zero
+  stories on top.
 - `monorepo`: an npm-workspaces repo where the runnable Storybook lives in the
   `packages/ui` leaf, so evals can cover agents working inside a workspace
   package. Storybook pinning and the local `file:` build detection cover

@@ -184,22 +184,247 @@ const detectDisabledCompodoc = (content: string): boolean => {
   );
 };
 
+interface StorybookTargetRef {
+  projectName: string | null;
+  targetName: string;
+}
+
+/**
+ * Locate the object-value span of a top-level `"key": { ... }` entry in a raw JSON string,
+ * starting the search at `fromIndex`. Used to relocate a target/project's span in the raw
+ * string (for a scoped string-level replace) after it has already been identified structurally
+ * via `JSON.parse`. The brace-matching walk is string-literal-aware (tracks an `inString` flag
+ * toggled by unescaped `"`) so brace characters inside string values (glob patterns, paths, …)
+ * don't desync the depth count.
+ */
+const findKeyObjectSpan = (
+  haystack: string,
+  key: string,
+  fromIndex: number
+): { start: number; end: number } | null => {
+  const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:`, 'g');
+  re.lastIndex = fromIndex;
+  const match = re.exec(haystack);
+  if (!match) {
+    return null;
+  }
+
+  let i = match.index + match[0].length;
+  while (i < haystack.length && /\s/.test(haystack[i])) {
+    i++;
+  }
+  if (haystack[i] !== '{') {
+    return null;
+  }
+
+  const start = i;
+  let depth = 0;
+  let inString = false;
+  for (; i < haystack.length; i++) {
+    const ch = haystack[i];
+    if (inString) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        return { start, end: i + 1 };
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Rename `experimentalZoneless` -> `zoneless` (same boolean value) inside each given storybook
+ * target's own span, applied one target at a time against a progressively-updated working
+ * string. A project's span is located first (by its unique project name) so that two different
+ * projects naming their storybook target identically (e.g. both `"storybook"`) never collide —
+ * the target search is scoped to its own project's already-isolated substring.
+ */
+const renameExperimentalZonelessKey = (content: string, targets: StorybookTargetRef[]): string => {
+  let result = content;
+
+  for (const { projectName, targetName } of targets) {
+    let searchBase = result;
+    let baseOffset = 0;
+
+    if (projectName !== null) {
+      const projectSpan = findKeyObjectSpan(result, projectName, 0);
+      if (!projectSpan) {
+        continue;
+      }
+      searchBase = result.slice(projectSpan.start, projectSpan.end);
+      baseOffset = projectSpan.start;
+    }
+
+    const targetSpan = findKeyObjectSpan(searchBase, targetName, 0);
+    if (!targetSpan) {
+      continue;
+    }
+
+    const absStart = baseOffset + targetSpan.start;
+    const absEnd = baseOffset + targetSpan.end;
+    const targetText = result.slice(absStart, absEnd);
+    const renamed = targetText.replace(
+      /"experimentalZoneless"(\s*:\s*)(true|false)/,
+      '"zoneless"$1$2'
+    );
+
+    if (renamed !== targetText) {
+      result = result.slice(0, absStart) + renamed + result.slice(absEnd);
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Read the flag-only zone.js detection signal from a Storybook builder target's
+ * `options.experimentalZoneless`, across every `:start-storybook`/`:build-storybook` target in an
+ * `angular.json` or Nx `project.json`. Also collects the `(project, target)` refs whose options
+ * still carry the old key, so it can be renamed to `zoneless` (map & drop).
+ */
+const detectZoneJsAndTargetsToRename = (
+  content: string
+): {
+  hasStorybookTarget: boolean;
+  allStorybookTargetsZonelessTrue: boolean;
+  targets: StorybookTargetRef[];
+} => {
+  let json: any;
+  try {
+    json = JSON.parse(content);
+  } catch {
+    return { hasStorybookTarget: false, allStorybookTargetsZonelessTrue: true, targets: [] };
+  }
+
+  const isStorybookTarget = (target: any): boolean => {
+    const ref: unknown = target?.builder ?? target?.executor;
+    return (
+      typeof ref === 'string' &&
+      (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
+    );
+  };
+
+  let hasStorybookTarget = false;
+  let allZonelessTrue = true;
+  const targets: StorybookTargetRef[] = [];
+
+  const processTargetGroup = (group: any, projectName: string | null) => {
+    if (!group || typeof group !== 'object') {
+      return;
+    }
+    for (const [targetName, target] of Object.entries<any>(group)) {
+      if (!isStorybookTarget(target)) {
+        continue;
+      }
+      hasStorybookTarget = true;
+      if (target?.options?.experimentalZoneless !== true) {
+        allZonelessTrue = false;
+      }
+      if (target?.options && 'experimentalZoneless' in target.options) {
+        targets.push({ projectName, targetName });
+      }
+    }
+  };
+
+  if (json?.projects && typeof json.projects === 'object') {
+    for (const [projectName, project] of Object.entries<any>(json.projects)) {
+      processTargetGroup(project?.architect, projectName);
+      processTargetGroup(project?.targets, projectName);
+    }
+  }
+  processTargetGroup(json?.targets, null);
+
+  return { hasStorybookTarget, allStorybookTargetsZonelessTrue: allZonelessTrue, targets };
+};
+
 const transformJsonFile = async (
   filePath: string,
   dryRun: boolean
-): Promise<{ changed: boolean; disablesCompodoc: boolean }> => {
+): Promise<{
+  changed: boolean;
+  disablesCompodoc: boolean;
+  hasStorybookTarget: boolean;
+  allStorybookTargetsZonelessTrue: boolean;
+}> => {
   try {
     const content = await readFile(filePath, 'utf-8');
-    const transformed = rewriteBuilderRefs(content);
+    let transformed = rewriteBuilderRefs(content);
+
+    const { hasStorybookTarget, allStorybookTargetsZonelessTrue, targets } =
+      detectZoneJsAndTargetsToRename(content);
+
+    if (targets.length > 0) {
+      transformed = renameExperimentalZonelessKey(transformed, targets);
+    }
+
     const changed = transformed !== content;
 
     if (changed && !dryRun) {
       await writeFile(filePath, transformed);
     }
 
-    return { changed, disablesCompodoc: detectDisabledCompodoc(content) };
+    return {
+      changed,
+      disablesCompodoc: detectDisabledCompodoc(content),
+      hasStorybookTarget,
+      allStorybookTargetsZonelessTrue,
+    };
   } catch {
-    return { changed: false, disablesCompodoc: false };
+    return {
+      changed: false,
+      disablesCompodoc: false,
+      hasStorybookTarget: false,
+      allStorybookTargetsZonelessTrue: true,
+    };
+  }
+};
+
+/**
+ * Prepend `import 'zone.js';` to the Storybook preview when the migrated project needs zone-based
+ * change detection (see `needsZoneJs` in `run()`). @storybook/angular-vite defaults to zoneless
+ * outside `ng run`, so without this the polyfill is dropped for `storybook dev`, `storybook build`,
+ * and standalone Vitest, breaking `NgZone`-dependent stories. Idempotent, and a no-op in dry runs.
+ */
+const addZoneJsPreviewImport = async (
+  previewConfigPath: string,
+  dryRun: boolean
+): Promise<void> => {
+  try {
+    const content = await readFile(previewConfigPath, 'utf-8');
+
+    // Leave an existing zone.js import (any quote style, incl. subpaths) alone.
+    if (/import\s+['"]zone\.js(\/[^'"]*)?['"]/.test(content)) {
+      return;
+    }
+
+    if (dryRun) {
+      return;
+    }
+
+    // zone.js must be imported before Angular loads, so it goes at the very top.
+    await writeFile(previewConfigPath, `import 'zone.js';\n${content}`);
+    logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
+  } catch (error) {
+    logger.warn(
+      `Could not add a \`zone.js\` import to ${previewConfigPath} automatically: ${error}. ` +
+        "If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview."
+    );
   }
 };
 
@@ -318,6 +543,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     result,
     dryRun = false,
     mainConfigPath,
+    previewConfigPath,
     storiesPaths,
     configDir,
     packageManager,
@@ -389,14 +615,24 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // Track whether any migrated builder config disabled Compodoc, so the
     // intent can be carried into framework.options (step 4b).
     let disableCompodoc = false;
+    // Track the flag-only zone.js detection signal across every storybook target seen in
+    // angular.json/project.json (steps 3/3b): injection fires unless EVERY storybook target
+    // explicitly sets `experimentalZoneless: true`.
+    let anyStorybookTarget = false;
+    let allZonelessTrue = true;
 
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, disablesCompodoc } = await transformJsonFile(angularJsonPath, dryRun);
+      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
+        await transformJsonFile(angularJsonPath, dryRun);
       disableCompodoc ||= disablesCompodoc;
+      if (hasStorybookTarget) {
+        anyStorybookTarget = true;
+        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+      }
       if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
       }
@@ -415,8 +651,13 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       absolute: true,
     });
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, disablesCompodoc } = await transformJsonFile(projectJsonPath, dryRun);
+      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
+        await transformJsonFile(projectJsonPath, dryRun);
       disableCompodoc ||= disablesCompodoc;
+      if (hasStorybookTarget) {
+        anyStorybookTarget = true;
+        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+      }
       if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
       }
@@ -456,6 +697,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             "Set `compodoc: false` in your main config's framework.options manually."
         );
       }
+    }
+
+    // 4c. Add a `zone.js` import to the preview when any migrated storybook target needs it
+    // (flag unset, or explicitly `false`) and not every storybook target opted into zoneless.
+    const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
+    if (needsZoneJs && previewConfigPath) {
+      await addZoneJsPreviewImport(previewConfigPath, dryRun);
+    } else if (needsZoneJs && !previewConfigPath) {
+      logger.warn(
+        "Could not find a Storybook preview file to add the zone.js import to. If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview file manually."
+      );
     }
 
     // 5. Update import statements across config and story files.

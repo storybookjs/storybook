@@ -227,15 +227,20 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   });
 };
 
-function angularOptionsPlugin(
+export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
   let resolvedConfig: UserConfig;
+  // Resolved once in `config()` (below) rather than per-`transform` call: `findConfigFile` performs
+  // up to several synchronous `existsSync` disk checks, and `transform` has no `id`-pattern
+  // pre-filter, so it runs for every module Vite processes through this plugin.
+  let resolvedPreviewPath: string | undefined;
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
       resolvedConfig = userConfig;
+      resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
       const loadPaths = options?.angularBuilderOptions?.stylePreprocessorOptions?.loadPaths;
       const sassOptions = options?.angularBuilderOptions?.stylePreprocessorOptions?.sass;
 
@@ -257,7 +262,7 @@ function angularOptionsPlugin(
       return;
     },
     async transform(code, id) {
-      if (normalizePath(id).endsWith(normalizePath(`${options.configDir}/preview.ts`))) {
+      if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
         const imports = [];
         const styles = options?.angularBuilderOptions?.styles;
 

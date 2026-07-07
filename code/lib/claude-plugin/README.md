@@ -133,7 +133,7 @@ The plugin directory must include these files:
 
 ## MCP server
 
-The plugin's `.mcp.json` contains no MCP servers. The plugin uses CLI-based skills instead of the `@storybook/mcp-proxy` package, which has been removed.
+The plugin's `.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook ai` CLI instead.
 
 ## Included Skills
 

@@ -56,10 +56,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
         return;
       }
       return emitTransformCode(source, context);
-    })
-    // Never let a failed/unbacked remote command surface as an unhandled rejection through the
-    // cleanup chain (e.g. environments with no OSA server peer).
-    .catch(() => undefined);
+    });
 
   return () => {
     cancelled = true;

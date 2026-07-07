@@ -578,7 +578,8 @@ export class NoFreePortError extends StorybookError {
     super({
       name: 'NoFreePortError',
       category: Category.CORE_SERVER,
-      code: 17,
+      // Note: 17 is taken by OxcParseError in ../oxc-parser/errors.ts
+      code: 18,
       message: dedent`
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.

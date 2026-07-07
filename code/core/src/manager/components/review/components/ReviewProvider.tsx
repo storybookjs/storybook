@@ -99,7 +99,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       // A fresh payload re-arms the one-time auto-enter.
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       reviewStore.displayReview(next);
-      syncActiveReviewStatuses(next);
     },
     [EVENTS.REVIEW_STALE]: () => {
       reviewStore.setStale(true);

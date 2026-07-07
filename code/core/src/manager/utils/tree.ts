@@ -187,6 +187,9 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
           parent: parent as StoryEntry['parent'],
           depth: data[childId].depth - 1,
         };
+        // Remove the replaced component: indexToTree resolves rows from parent pointers, so a
+        // surviving entry would render as a phantom row next to the hoisted story.
+        delete acc[entry.id];
         return acc;
       },
       { ...data }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 import { TooltipNote } from 'storybook/internal/components';
 
 import { Collection } from 'react-aria-components/Collection';
@@ -14,9 +14,13 @@ import {
 } from '../../utils/tree.ts';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
-import { type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import {
+  Addon_TypesEnum,
+  type StatusValue,
+  type StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -36,6 +40,9 @@ const StyledAriaTree = styled(AriaTree)(() => ({
   padding: 0,
   margin: 0,
   outline: 'none',
+  // Contain the sticky rows' z-index so overlay UI outside the tree (Radix scrollbar,
+  // the focus tooltip) still paints above pinned rows.
+  isolation: 'isolate' as const,
 
   // Show trace lines on hover or keyboard focus.
   '&:hover, &:has(:focus-visible)': {
@@ -62,6 +69,8 @@ interface TreeProps {
   isBrowsing: boolean;
   isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
+  /** Active inclusive status filters; passed as a prop so Tree doesn't subscribe to all state. */
+  includedStatusFilters?: StatusValue[];
   refId: string;
   data: IndexHash;
   selectedStoryId: string | null;
@@ -70,6 +79,7 @@ interface TreeProps {
 
 export const Tree = React.memo<TreeProps>(function Tree({
   allStatuses,
+  includedStatusFilters,
   refId,
   data,
   selectedStoryId,
@@ -77,8 +87,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
-  const includedStatusFilters = useStorybookState().includedStatusFilters ?? [];
-  const isModifiedFilterActive = includedStatusFilters.includes('status-value:modified');
+  const isModifiedFilterActive = (includedStatusFilters ?? []).includes('status-value:modified');
+  // Whether any test provider is registered: gates the context menu on group/component rows.
+  const hasTestProviders =
+    Object.keys(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).length > 0;
 
   // Tracks the currently focused item for the ContextMenu global shortcut.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
@@ -131,7 +143,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    if (!hasContextMenu(item)) {
+    if (!hasContextMenu(item, hasTestProviders)) {
       return null;
     }
 
@@ -142,7 +154,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus]);
+  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus, hasTestProviders]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -172,8 +184,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
     if (!selectedStoryId || !collapsedData[selectedStoryId]) {
       return EMPTY_STICKY_CHAIN;
     }
-    const ancestorIds = getAncestorIds(collapsedData, selectedStoryId);
-    return [...ancestorIds.slice().reverse(), selectedStoryId];
+    // Copy before reversing: getAncestorIds returns a memoized array.
+    return [...getAncestorIds(collapsedData, selectedStoryId)].reverse().concat(selectedStoryId);
   }, [selectedStoryId, collapsedData]);
 
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
@@ -272,6 +284,41 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [api, openContextMenu]);
 
+  // Preload a branch row's first child story on hover (restores the pre-rewrite behavior) so
+  // the preview has usually started loading by the time the user clicks. One delegated listener
+  // instead of a handler per row.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !api) {
+      return;
+    }
+
+    let lastPreloadedId: string | null = null;
+    const onMouseOver = (event: MouseEvent) => {
+      const row = (event.target as Element | null)?.closest?.('[data-item-id]');
+      if (!row || !container.contains(row)) {
+        return;
+      }
+      const itemId = row.getAttribute('data-item-id');
+      if (!itemId || itemId === lastPreloadedId) {
+        return;
+      }
+      lastPreloadedId = itemId;
+      const item = collapsedDataRef.current[itemId];
+      if (
+        item &&
+        (item.type === 'component' || item.type === 'story') &&
+        'children' in item &&
+        item.children?.length
+      ) {
+        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
+      }
+    };
+
+    container.addEventListener('mouseover', onMouseOver, { passive: true });
+    return () => container.removeEventListener('mouseover', onMouseOver);
+  }, [api, refId]);
+
   // Track focused item via one MutationObserver, batched with rAF.
   useEffect(() => {
     const container = containerRef.current;
@@ -333,93 +380,161 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [updateFocusedItemId]);
 
+  // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
+  // report their stuck rect, which would fool scrollIntoView into thinking a row far above
+  // the viewport is already visible; data-sticky-measuring temporarily disables pinning while
+  // the browser measures, and the rows' scroll-margin-top (the pinned stack height) keeps the
+  // target row below the stack.
+  const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
+    const container = containerRef.current;
+    if (!container) {
+      return false;
+    }
+    const element = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(itemId)}"]`);
+    if (!element) {
+      return false;
+    }
+    container.toggleAttribute('data-sticky-measuring', true);
+    try {
+      element.scrollIntoView({ block });
+    } finally {
+      container.removeAttribute('data-sticky-measuring');
+    }
+    return true;
+  }, []);
+
   // Scroll the selected story into view when it changes.
   useEffect(() => {
-    if (selectedStoryId && containerRef.current) {
-      const element = containerRef.current.querySelector(
-        `[data-item-id="${CSS.escape(selectedStoryId)}"]`
-      );
-      if (element) {
-        element.scrollIntoView({ block: 'nearest' });
-      }
+    if (selectedStoryId) {
+      scrollRowIntoView(selectedStoryId, 'nearest');
     }
-  }, [selectedStoryId]);
+  }, [selectedStoryId, scrollRowIntoView]);
 
   // Scroll to selected item on the first mount, exactly one time.
   const [mountCounter, setMountCounter] = useState(0);
   useEffect(() => setMountCounter(1), []);
   useEffect(() => {
-    if (mountCounter === 1 && selectedStoryId && containerRef.current) {
-      const element = containerRef.current.querySelector(
-        `[data-item-id="${CSS.escape(selectedStoryId)}"]`
-      );
-      if (element) {
-        element.scrollIntoView({ block: 'center' });
-        setMountCounter(2);
-      }
+    if (mountCounter === 1 && selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
+      setMountCounter(2);
     }
-  }, [mountCounter, selectedStoryId]);
+  }, [mountCounter, selectedStoryId, scrollRowIntoView]);
 
-  // Suspend stickiness for chain rows whose subtree has fully scrolled past their pinned slot,
-  // so the sticky stack retracts instead of lingering over unrelated sections (mirrors how
-  // VSCode's sticky scroll retracts). Runs on scroll (rAF-throttled) and whenever the chain,
-  // expansion state, or data changes.
+  // Keep the sticky stack in sync with the scroll position: suspend stickiness for chain rows
+  // whose subtree has fully scrolled past their pinned slot (so the stack retracts instead of
+  // lingering over unrelated sections, mirroring VSCode's sticky scroll), pin each row below
+  // the measured height of the rows above it, and expose the stack height so scroll-into-view
+  // can keep targets out from underneath the stack. Runs rAF-throttled on scroll and resize,
+  // and whenever the chain, expansion state, or data changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || stickyChainIds.length === 0) {
       return;
     }
 
-    const scroller = getScrollParent(container);
-    if (!scroller) {
-      // Without a scroll container the rows can never pin, so there is nothing to suspend.
+    const doc = container.ownerDocument;
+    const win = doc.defaultView;
+    // Fall back to the document scroller so pinned rows still retract in unusual embeddings.
+    const scroller = getScrollParent(container) ?? (doc.scrollingElement as HTMLElement | null);
+    if (!scroller || !win) {
       return;
     }
+    const scrollEventTarget: EventTarget = scroller === doc.scrollingElement ? win : scroller;
 
     let rafId: number | null = null;
 
     const update = () => {
       rafId = null;
-      const scrollerTop = scroller.getBoundingClientRect().top;
+      const scrollerTop =
+        scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
       const allRows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
-      let stackHeight = 0;
+      const rowIndexById = new Map(
+        allRows.map((row, index) => [row.getAttribute('data-item-id'), index] as const)
+      );
 
-      for (const id of stickyChainIds) {
-        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
-        if (!row) {
+      // Read phase: measure every chain row and its subtree end before any attribute/style
+      // write, so the frame forces at most one layout pass.
+      const measured = stickyChainIds.map((id) => {
+        const index = rowIndexById.get(id);
+        const row = index === undefined ? undefined : allRows[index];
+        if (!row || index === undefined) {
+          return null;
+        }
+        return {
+          row,
+          height: row.offsetHeight,
+          subtreeEnd: getSubtreeEndPosition(container, allRows, index),
+        };
+      });
+
+      // Write phase.
+      let stackHeight = 0;
+      for (const measurement of measured) {
+        if (!measurement) {
           continue;
         }
-        const subtreeEnd = getSubtreeEndPosition(container, allRows, row);
+        const { row, height, subtreeEnd } = measurement;
         // The row stays pinned as long as part of its subtree is below its pinned slot.
-        const isActive = subtreeEnd - scrollerTop > stackHeight + row.offsetHeight;
+        const isActive = subtreeEnd - scrollerTop > stackHeight + height;
         row.toggleAttribute('data-sticky-suspended', !isActive);
         if (isActive) {
-          stackHeight += row.offsetHeight;
+          // Pin below the measured stack rather than the TREE_ROW_HEIGHT estimate baked into
+          // the CSS, so rows taller than the estimate (custom labels, zoom) never overlap.
+          const top = `${stackHeight}px`;
+          if (row.style.top !== top) {
+            row.style.top = top;
+          }
+          stackHeight += height;
         }
       }
+      container.style.setProperty('--sticky-stack-height', `${stackHeight}px`);
     };
 
-    const onScroll = () => {
+    const scheduleUpdate = () => {
       if (rafId === null) {
         rafId = requestAnimationFrame(update);
       }
     };
 
     update();
-    scroller.addEventListener('scroll', onScroll, { passive: true });
+    scrollEventTarget.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+    // Content can move without a scroll event (a sibling ref tree loading or collapsing,
+    // window resizes); watch the scroller and its content wrapper to catch those shifts.
+    const resizeObserver =
+      typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(scheduleUpdate) : null;
+    resizeObserver?.observe(scroller);
+    if (scroller.firstElementChild) {
+      resizeObserver?.observe(scroller.firstElementChild);
+    }
 
     return () => {
-      scroller.removeEventListener('scroll', onScroll);
+      scrollEventTarget.removeEventListener('scroll', scheduleUpdate);
+      resizeObserver?.disconnect();
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
+      container.style.removeProperty('--sticky-stack-height');
       for (const id of stickyChainIds) {
-        container
-          .querySelector(`[data-item-id="${CSS.escape(id)}"]`)
-          ?.removeAttribute('data-sticky-suspended');
+        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
+        row?.removeAttribute('data-sticky-suspended');
+        row?.style.removeProperty('top');
       }
     };
   }, [stickyChainIds, expanded, collapsedData]);
+
+  // One dependencies array shared by every Collection level, so react-aria's cached nodes are
+  // invalidated consistently — a drifted copy at one level renders stale rows.
+  const collectionDependencies = useMemo(
+    () => [
+      expanded,
+      selectedStoryId,
+      selectedParentId,
+      contextMenuState,
+      groupDualStatus,
+      stickyChainIds,
+    ],
+    [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus, stickyChainIds]
+  );
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
@@ -429,31 +544,40 @@ export const Tree = React.memo<TreeProps>(function Tree({
         api,
         refId,
         onSelectStoryId,
-        selectedStoryId,
         selectedParentId,
         expanded,
         contextMenuState,
         openContextMenu,
         closeContextMenu,
         stickyChainIds,
+        hasTestProviders,
+        collectionDependencies,
       }),
     [
       api,
       refId,
       onSelectStoryId,
-      selectedStoryId,
       selectedParentId,
       expanded,
       contextMenuState,
       openContextMenu,
       closeContextMenu,
       stickyChainIds,
+      hasTestProviders,
+      collectionDependencies,
     ]
+  );
+
+  // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
+  // every TreeNode through the context.
+  const statusContextValue = useMemo(
+    () => ({ data, allStatuses, groupDualStatus, isModifiedFilterActive }),
+    [data, allStatuses, groupDualStatus, isModifiedFilterActive]
   );
 
   // TODO: consider passing more data via the provider to limit prop drilling in renderNode? Any advantage?
   return (
-    <StatusContext.Provider value={{ data, allStatuses, groupDualStatus, isModifiedFilterActive }}>
+    <StatusContext.Provider value={statusContextValue}>
       <StyledAriaTree
         ref={containerRef}
         aria-label="Stories"
@@ -464,17 +588,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         onSelectionChange={handleSelectionChange}
         onAction={handleAction}
       >
-        <Collection
-          items={tree}
-          dependencies={[
-            expanded,
-            selectedStoryId,
-            selectedParentId,
-            contextMenuState,
-            groupDualStatus,
-            stickyChainIds,
-          ]}
-        >
+        <Collection items={tree} dependencies={collectionDependencies}>
           {nodeRenderer}
         </Collection>
       </StyledAriaTree>
@@ -494,7 +608,7 @@ function getScrollParent(element: HTMLElement): HTMLElement | null {
   let parent = element.parentElement;
   while (parent) {
     const { overflowY } = getComputedStyle(parent);
-    if (overflowY === 'auto' || overflowY === 'scroll') {
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
       return parent;
     }
     parent = parent.parentElement;
@@ -510,10 +624,10 @@ function getScrollParent(element: HTMLElement): HTMLElement | null {
 function getSubtreeEndPosition(
   container: HTMLElement,
   allRows: HTMLElement[],
-  row: HTMLElement
+  rowIndex: number
 ): number {
-  const level = Number(row.getAttribute('data-level') ?? '1');
-  for (let i = allRows.indexOf(row) + 1; i < allRows.length; i++) {
+  const level = Number(allRows[rowIndex].getAttribute('data-level') ?? '1');
+  for (let i = rowIndex + 1; i < allRows.length; i++) {
     if (Number(allRows[i].getAttribute('data-level') ?? '1') <= level) {
       return allRows[i].getBoundingClientRect().top;
     }
@@ -522,35 +636,37 @@ function getSubtreeEndPosition(
 }
 
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
-  selectedStoryId: string | null;
   selectedParentId: string | null;
   expanded: Set<string>;
   contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
   stickyChainIds: string[];
+  hasTestProviders: boolean;
+  /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
+  collectionDependencies: unknown[];
 }
 
 function renderNode({
   expanded,
-  selectedStoryId,
   selectedParentId,
   contextMenuState,
   openContextMenu,
   closeContextMenu,
   stickyChainIds,
+  hasTestProviders,
+  collectionDependencies,
   ...props
 }: RenderNodeProps) {
+  const stickyIndexById = new Map(stickyChainIds.map((id, index) => [id, index] as const));
+
   const renderNodeLevel = (item: TreeEntry) => {
-    const stickyIndex = stickyChainIds.indexOf(item.id);
     return (
       <TreeNode
         {...props}
         key={item.id}
         item={item}
-        isOrphan={item.depth === 0 && item.type !== 'root'}
         isExpanded={expanded.has(item.id)}
-        isSelected={selectedStoryId === item.id}
         isAlongsideSelected={item.type !== 'root' && selectedParentId === item.parent}
         isContextMenuOpen={contextMenuState?.itemId === item.id}
         contextMenuEntryMethod={
@@ -558,29 +674,12 @@ function renderNode({
         }
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
-        stickyIndex={stickyIndex === -1 ? undefined : stickyIndex}
+        hasTestProviders={hasTestProviders}
+        stickyIndex={stickyIndexById.get(item.id)}
       >
         {item.resolvedChildren && (
-          <Collection
-            items={item.resolvedChildren}
-            dependencies={[
-              expanded,
-              selectedStoryId,
-              selectedParentId,
-              contextMenuState,
-              stickyChainIds,
-            ]}
-          >
-            {renderNode({
-              ...props,
-              expanded,
-              selectedStoryId,
-              selectedParentId,
-              contextMenuState,
-              openContextMenu,
-              closeContextMenu,
-              stickyChainIds,
-            })}
+          <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>
+            {renderNodeLevel}
           </Collection>
         )}
       </TreeNode>

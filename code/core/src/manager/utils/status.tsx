@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import React from 'react';
 
-import type { API_IndexHash, API_StoryEntry, Status, StatusValue } from 'storybook/internal/types';
+import type { API_IndexHash, Status, StatusValue } from 'storybook/internal/types';
 import {
   CHANGE_DETECTION_STATUS_TYPE_ID,
   NON_AGGREGATED_STATUS_TYPE_IDS,
@@ -9,17 +9,15 @@ import {
   type API_HashEntry,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
-  type StoryId,
 } from 'storybook/internal/types';
 
 import { StatusFailIcon, StatusPassIcon, StatusWarnIcon, SyncIcon } from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
-import { type Theme, styled } from 'storybook/theming';
+import type { Theme } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
-import { getDescendantIds } from './tree.ts';
 
 export interface StatusMapping {
   icon: ReactElement | null;
@@ -122,70 +120,6 @@ export const shouldShowChangeStatus = (
 const isAggregatedTestStatus = (status: { typeId: string }): boolean =>
   !NON_AGGREGATED_STATUS_TYPE_IDS.includes(status.typeId);
 
-/** Matches the status icon shown on a sidebar row before hover. */
-export function getSidebarVisibleStatus({
-  theme,
-  item,
-  statuses,
-  groupDualStatus,
-  isModifiedFilterActive,
-}: {
-  theme: Theme;
-  item: {
-    type: API_HashEntry['type'];
-    id: StoryId;
-    subtype?: string;
-    children?: string[];
-  };
-  statuses?: StatusByTypeId;
-  groupDualStatus?: Record<StoryId, { change: StatusValue; test: StatusValue }>;
-  isModifiedFilterActive: boolean;
-}): { icon: ReactElement | null; status: StatusValue } {
-  const statusByType = statuses ?? {};
-
-  const isBranch =
-    item.type === 'group' ||
-    item.type === 'component' ||
-    (item.type === 'story' && item.children && item.children.length > 0);
-
-  if (isBranch) {
-    const { changeStatus: localChange, testStatus: localTest } =
-      getChangeDetectionStatus(statusByType);
-    const groupDual = groupDualStatus?.[item.id] ?? {
-      change: 'status-value:unknown' as StatusValue,
-      test: 'status-value:unknown' as StatusValue,
-    };
-    const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
-    const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
-
-    if (shouldShowChangeStatus(branchChange, isModifiedFilterActive)) {
-      return { icon: getStatus(theme, branchChange).icon, status: branchChange };
-    }
-    return { icon: getStatus(theme, branchTest).icon, status: branchTest };
-  }
-
-  const isStoryOrDocsLeaf =
-    (item.type === 'story' &&
-      !(item.children && item.children.length > 0) &&
-      item.subtype !== 'test') ||
-    item.type === 'docs';
-
-  if (isStoryOrDocsLeaf) {
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statusByType);
-    if (shouldShowChangeStatus(changeStatus, isModifiedFilterActive)) {
-      return { icon: getStatus(theme, changeStatus).icon, status: changeStatus };
-    }
-    return { icon: getStatus(theme, testStatus).icon, status: testStatus };
-  }
-
-  // Test/other leaf: roll up the test statuses, but keep a "new" change-detection status visible.
-  const leafStatuses = Object.values(statusByType).filter(
-    (status) => isAggregatedTestStatus(status) || status.value === 'status-value:new'
-  );
-  const leafStatus = getMostCriticalStatusValue(leafStatuses.map((s) => s.value));
-  return { icon: getStatus(theme, leafStatus).icon, status: leafStatus };
-}
-
 export function getChangeDetectionStatus(statuses: StatusByTypeId): {
   changeStatus: StatusValue;
   testStatus: StatusValue;
@@ -264,39 +198,65 @@ export function getGroupStatus(
   return result;
 }
 
+/**
+ * Compute the dual (change-detection + test) status for every item in a single bottom-up pass:
+ * each story/docs entry's own statuses apply to its own row and roll up its ancestor chain.
+ * Like getGroupStatus, this avoids the O(n*m) per-item getDescendantIds materialization.
+ *
+ * Review-typed statuses are excluded from both slots (they are neither test results nor change
+ * detection), matching isAggregatedTestStatus.
+ */
 export function getGroupDualStatus(
   collapsedData: API_IndexHash,
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, { change: Status; test: Status }> {
-  return Object.values(collapsedData).reduce<Record<string, { change: Status; test: Status }>>(
-    (acc, item) => {
-      if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
-        const allDescendantStatuses = getDescendantIds(collapsedData, item.id, false)
-          .map((childId) => collapsedData[childId])
-          .filter((child): child is API_StoryEntry => child.type === 'story')
-          .map((child) => allStatuses[child.id])
-          .filter((status) => !!status)
-          .flatMap((status) => Object.values(status));
+  const result: Record<string, { change: Status; test: Status }> = {};
 
-        const changeStatuses = allDescendantStatuses.filter(
-          (s) => s.typeId === CHANGE_DETECTION_STATUS_TYPE_ID
-        );
-        const testStatuses = allDescendantStatuses.filter(isAggregatedTestStatus);
+  const promote = (id: string, status: Status, slot: 'change' | 'test') => {
+    // Root rows never display aggregate statuses.
+    if (collapsedData[id]?.type === 'root') {
+      return;
+    }
+    const entry = (result[id] ??= {
+      change: { value: 'status-value:unknown' } as Status,
+      test: { value: 'status-value:unknown' } as Status,
+    });
+    if (statusPriority.indexOf(status.value) > statusPriority.indexOf(entry[slot].value)) {
+      entry[slot] = status;
+    }
+  };
 
-        const mostCriticalChange = getMostCriticalStatusValue(changeStatuses.map((s) => s.value));
-        const mostCriticalTest = getMostCriticalStatusValue(testStatuses.map((s) => s.value));
+  for (const item of Object.values(collapsedData)) {
+    if (item.type !== 'story' && item.type !== 'docs') {
+      continue;
+    }
+    const ownStatuses = allStatuses[item.id];
+    if (!ownStatuses) {
+      continue;
+    }
 
-        acc[item.id] = {
-          change:
-            changeStatuses.find((s) => s.value === mostCriticalChange) ??
-            ({ value: mostCriticalChange } as Status),
-          test:
-            testStatuses.find((s) => s.value === mostCriticalTest) ??
-            ({ value: mostCriticalTest } as Status),
-        };
+    for (const status of Object.values(ownStatuses)) {
+      const slot =
+        status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID
+          ? ('change' as const)
+          : isAggregatedTestStatus(status)
+            ? ('test' as const)
+            : null;
+      if (!slot) {
+        continue;
       }
-      return acc;
-    },
-    {}
-  );
+
+      // The status colors the story's own row…
+      promote(item.id, status, slot);
+
+      // …and rolls up the ancestor chain.
+      let current: Partial<API_HashEntry> | undefined = item;
+      while (current && 'parent' in current && current.parent) {
+        promote(current.parent, status, slot);
+        current = collapsedData[current.parent];
+      }
+    }
+  }
+
+  return result;
 }

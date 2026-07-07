@@ -186,6 +186,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           {state === 'ready' && index && (
             <Tree
               allStatuses={allStatuses}
+              includedStatusFilters={storybookState.includedStatusFilters}
               isBrowsing={isBrowsing}
               isMain={isMain}
               refId={refId}

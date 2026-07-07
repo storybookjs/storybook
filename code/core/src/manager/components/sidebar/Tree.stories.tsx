@@ -4,6 +4,7 @@ import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  type StatusValue,
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
@@ -16,6 +17,7 @@ import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
+import { TREE_ROW_HEIGHT } from './TreeNode.tsx';
 import { index } from './mockdata.large.ts';
 
 // TODO: add stories showcasing the Ctrl+Shift+U shortcut
@@ -119,6 +121,14 @@ export const SingleStoryComponents: Story = {
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The hoisted single-story component renders exactly one row — the story replaces the
+    // component instead of appearing alongside a phantom component row.
+    await canvas.findAllByText('🔥 Single');
+    await expect(canvasElement.querySelectorAll('[data-item-id="single"]').length).toBe(0);
+    await expect(canvasElement.querySelectorAll('[data-item-id="single--single"]').length).toBe(1);
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
@@ -301,7 +311,7 @@ const dualSlotData: IndexHash = {
 
 function makeDualSlotStory(
   allStatuses: StatusesByStoryIdAndTypeId,
-  contextOverride?: { state?: Record<string, unknown> }
+  includedStatusFilters?: StatusValue[]
 ): Story {
   return {
     args: {
@@ -309,22 +319,8 @@ function makeDualSlotStory(
       isMain: true,
       refId: DEFAULT_REF_ID,
       allStatuses,
+      includedStatusFilters,
     },
-    decorators: contextOverride
-      ? [
-          (storyFn) => (
-            <ManagerContext.Provider
-              value={{
-                ...managerContext,
-                state: { ...managerContext.state, ...contextOverride.state },
-              }}
-            >
-              <IconSymbols />
-              {storyFn()}
-            </ManagerContext.Provider>
-          ),
-        ]
-      : undefined,
     render: (args) => {
       const [selectedId, setSelectedId] = useState(dualSlotStoryId);
       return (
@@ -374,7 +370,7 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
   },
   // Modified branch icon only renders when the modified status filter is
   // active; activate it so the dual-slot design (change + test) is visible.
-  { state: { includedStatusFilters: ['status-value:modified'] } }
+  ['status-value:modified']
 );
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
@@ -459,13 +455,18 @@ export const WithModified: Story = {
         },
       },
     },
-    { state: { includedStatusFilters: ['status-value:modified'] } }
+    ['status-value:modified']
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // modified filter is active — icon should be visible at story leaf and parent branch
+    // modified filter is active — icon must be visible on the story's own leaf row AND the
+    // parent branch roll-up
     const buttons = await canvas.findAllByTestId('tree-change-status-button');
-    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+    await expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`);
+    await expect(
+      leafRow?.querySelector('[data-testid="tree-change-status-button"]')
+    ).not.toBeNull();
   },
 };
 
@@ -490,7 +491,11 @@ export const WithNew: Story = {
     const canvas = within(canvasElement);
     // new status is always shown at both leaf and branch levels
     const buttons = await canvas.findAllByTestId('tree-change-status-button');
-    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+    await expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`);
+    await expect(
+      leafRow?.querySelector('[data-testid="tree-change-status-button"]')
+    ).not.toBeNull();
   },
 };
 
@@ -506,7 +511,6 @@ const stickyChainIds = [
   'webapp-screens-marketing-featuresscreens-documentscreen',
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
 ];
-const STICKY_ROW_HEIGHT = 28;
 
 export const StickySelectedAncestors: Story = {
   args: {
@@ -535,7 +539,7 @@ export const StickySelectedAncestors: Story = {
     // selection) must be pinned at the top of the scroller, stacked in order. Nearby ancestors
     // sit adjacent to the selection so they never need to pin from this scroll position.
     const selectedRow = row(stickyStoryId)!;
-    scroller.scrollTop = selectedRow.offsetTop - scroller.clientHeight + STICKY_ROW_HEIGHT * 2;
+    scroller.scrollTop = selectedRow.offsetTop - scroller.clientHeight + TREE_ROW_HEIGHT * 2;
     await waitFor(() => {
       const scrollerTop = scroller.getBoundingClientRect().top;
       stickyChainIds.slice(0, 2).forEach((id, i) => {
@@ -543,7 +547,7 @@ export const StickySelectedAncestors: Story = {
         expect(ancestorRow).not.toBeNull();
         expect(ancestorRow!).not.toHaveAttribute('data-sticky-suspended');
         const { top } = ancestorRow!.getBoundingClientRect();
-        expect(Math.abs(top - scrollerTop - i * STICKY_ROW_HEIGHT)).toBeLessThanOrEqual(2);
+        expect(Math.abs(top - scrollerTop - i * TREE_ROW_HEIGHT)).toBeLessThanOrEqual(2);
       });
     });
 

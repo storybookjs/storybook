@@ -42,6 +42,10 @@ const FullscreenTool: FC<{
   singleStory?: boolean;
 }> = ({ toggle, isFullscreen, hasPanel, singleStory }) => {
   useEffect(() => {
+    // The tool is hidden in single-story mode without panels; don't hijack Escape there.
+    if (singleStory && !hasPanel) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
         toggle();
@@ -54,7 +58,7 @@ const FullscreenTool: FC<{
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullscreen, toggle]);
+  }, [isFullscreen, toggle, singleStory, hasPanel]);
 
   if (singleStory && !hasPanel) {
     return null;

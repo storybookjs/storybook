@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 
-import type { StatusValue } from 'storybook/internal/types';
+import { REVIEW_STATUS_TYPE_ID, type StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
@@ -8,12 +8,15 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
+import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
+
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
-import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
+import { getStatus, shouldShowChangeStatus, statusPriority } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ContextMenu, hasContextMenu } from './ContextMenu.tsx';
 
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
@@ -44,6 +47,9 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
+
+  // Keep rows below the pinned sticky stack when scrolled into view (set by Tree.tsx).
+  scrollMarginTop: 'var(--sticky-stack-height, 0px)',
 
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
@@ -122,6 +128,7 @@ const StyledTreeItem = styled(TreeItem)<{
    * has fully scrolled past its pinned slot. */
   ...($stickyIndex !== undefined && {
     position: 'sticky',
+    // Initial estimate; Tree.tsx overrides with the measured stack height via inline style.
     top: $stickyIndex * TREE_ROW_HEIGHT,
     zIndex: 3,
     // Match the sidebar background so pinned rows fully cover the rows scrolling beneath.
@@ -133,9 +140,12 @@ const StyledTreeItem = styled(TreeItem)<{
     // The hover background is translucent; layer it over the opaque sidebar background so
     // rows scrolling beneath a pinned row never bleed through on hover.
     '&:hover:not([data-selected="true"]), &[data-focused="true"]:not([data-selected="true"])': {
-      background: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable}), linear-gradient(var(--sticky-bg), var(--sticky-bg))`,
+      background: 'var(--sticky-bg)',
+      backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
     },
-    '&[data-sticky-suspended]': {
+    // Suspended by Tree.tsx once the row's subtree scrolls past its slot, and while
+    // Tree.tsx measures natural row positions for scroll-into-view.
+    '&[data-sticky-suspended], [data-sticky-measuring] &': {
       position: 'relative',
       zIndex: 'auto',
       backgroundColor: 'transparent',
@@ -234,10 +244,6 @@ export interface TreeNodeProps {
   item: TreeEntry;
   /** refId of the composed Storybook, if the item isn't from the host instance. */
   refId: string;
-  /** Whether this node has no parent and isn't a natural root. */
-  isOrphan: boolean;
-  /** Whether this node is currently selected. */
-  isSelected: boolean;
   /** Whether this node is a direct sibling to the selected node. */
   isAlongsideSelected: boolean;
   /** Whether this node is currently expanded. */
@@ -259,6 +265,8 @@ export interface TreeNodeProps {
    * VSCode's sticky scroll. Undefined for rows outside the chain.
    */
   stickyIndex?: number;
+  /** Whether any test provider addon is registered (enables the menu on group rows). */
+  hasTestProviders?: boolean;
   children?: React.ReactNode;
 }
 
@@ -290,11 +298,16 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   openContextMenu,
   closeContextMenu,
   stickyIndex,
+  hasTestProviders = false,
   children,
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-  const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
+  const {
+    allStatuses,
+    groupDualStatus,
+    isModifiedFilterActive = false,
+  } = useContext(StatusContext);
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 
@@ -350,8 +363,34 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
 
   const isBranch = guardHasChildren(item);
-  const renderContextMenu = useMemo(() => hasContextMenu(item), [item]);
+  const renderContextMenu = useMemo(
+    () => hasContextMenu(item, hasTestProviders),
+    [item, hasTestProviders]
+  );
   const shortcutKeys = api.getShortcutKeys();
+
+  // Per-status entries for the context menu: navigate to the story and select the status
+  // (e.g. to open the matching panel). Review statuses stay out of the menu.
+  const statusLinks = useMemo<Link[]>(() => {
+    if (!renderContextMenu || (item.type !== 'story' && item.type !== 'docs')) {
+      return [];
+    }
+    return Object.entries(allStatuses?.[item.id] ?? {})
+      .filter(([, status]) => status.sidebarContextMenu !== false)
+      .filter(([, status]) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+      .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
+      .map(([typeId, status]) => ({
+        id: typeId,
+        title: status.title,
+        description: status.description,
+        'aria-label': `Test status for ${status.title}: ${status.value}`,
+        icon: getStatus(theme, status.value).icon,
+        onClick: () => {
+          onSelectStoryId(item.id);
+          fullStatusStore.selectStatuses([status]);
+        },
+      }));
+  }, [renderContextMenu, allStatuses, item, onSelectStoryId, theme]);
 
   // Compute final aria-label including test status and keyboard shortcut discovery.
   const ariaLabel = useMemo(() => {
@@ -419,6 +458,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                   onSelectStoryId={onSelectStoryId}
                   api={api}
                   entryMethod={contextMenuEntryMethod}
+                  statusLinks={statusLinks}
+                  hasTestProviders={hasTestProviders}
                 />
               }
             </MenuTriggerContainer>

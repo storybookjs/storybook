@@ -192,12 +192,13 @@ export const Search = React.memo<SearchProps>(function Search({
         acc.push(
           ...Object.values(index).map((item) => {
             const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(
-                  Object.values(storyStatuses)
-                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                    .map((status) => status.value)
-                )
+            const ownStatusValues = Object.values(storyStatuses ?? {})
+              .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+              .map((status) => status.value);
+            // A story whose only statuses are review-typed has no own status; fall back to the
+            // group aggregate instead of surfacing the 'unknown' placeholder value.
+            const mostCriticalStatusValue = ownStatusValues.length
+              ? getMostCriticalStatusValue(ownStatusValues)
               : null;
             return {
               ...searchItem(item, dataset.hash[refId]),

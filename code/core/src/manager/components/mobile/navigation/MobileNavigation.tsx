@@ -1,5 +1,5 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
@@ -46,10 +46,13 @@ const useFullStoryName = () => {
   const api = useStorybookApi();
   const currentStory = api.getCurrentStoryData();
 
+  // Merging every ref index allocates an object as large as the whole sidebar; only rebuild
+  // it when the indexes actually change, not on every state-driven re-render.
+  const combinedIndex = useMemo(() => combineIndexes(index, refs || {}), [index, refs]);
+
   if (!currentStory) {
     return { fullStoryAriaLabel: '', fullStoryName: '' };
   }
-  const combinedIndex = combineIndexes(index, refs || {});
   let fullStoryName =
     currentStory.renderLabel?.(currentStory, api, { location: 'bottom-bar' }) || currentStory.name;
   let fullStoryAriaLabel =

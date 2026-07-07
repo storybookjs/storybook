@@ -1,0 +1,17 @@
+{
+	"name": "823-setup-outdated-storybook",
+	"type": "module",
+	"scripts": {
+		"storybook": "storybook dev",
+		"build-storybook": "storybook build"
+	},
+	"devDependencies": {
+		"@storybook/react": "10.4.0",
+		"@storybook/react-vite": "10.4.0",
+		"storybook": "10.4.0"
+	},
+	"evals": {
+		"template": "vite-app",
+		"pinStorybook": false
+	}
+}

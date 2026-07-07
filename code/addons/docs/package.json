@@ -106,6 +106,7 @@
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "react": "^18.2.0",
+    "react-aria": "^3.48.0",
     "react-colorful": "^5.1.2",
     "react-dom": "^18.2.0",
     "rehype-external-links": "^3.0.0",

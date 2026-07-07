@@ -81,17 +81,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:warning",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -118,17 +107,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:error",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -148,17 +126,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:new",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -178,17 +145,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:affected",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });

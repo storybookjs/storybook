@@ -4,18 +4,18 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 import { IconSymbols, UseSymbol } from './IconSymbols.tsx';
-import { TypeIcon } from './TreeNode.tsx';
+import { TypeIcon } from './TypeIcon.tsx';
 
-const TYPE_ICON_TYPES = ['group', 'component', 'document', 'story', 'test'] as const;
+const TYPE_ICON_TYPES = ['group', 'component', 'docs', 'story', 'test'] as const;
 const STATUS_ICON_TYPES = [
   'success',
   'error',
   'warning',
   'dot',
-  'new',
+  'change-new',
   'reviewing',
-  'modified',
-  'affected',
+  'change-modified',
+  'change-affected',
 ] as const;
 
 const Grid = styled.div({

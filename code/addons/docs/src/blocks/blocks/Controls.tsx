@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useContext } from 'react';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 
 import type { Args, Globals, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { DocsContextProps, ModuleExports, PreparedStory } from 'storybook/internal/types';

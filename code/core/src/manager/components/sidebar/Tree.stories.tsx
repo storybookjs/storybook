@@ -9,9 +9,8 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
@@ -99,22 +98,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Full: Story = {
   args: {
-    docsMode: false,
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState(storyId);
     return (
-      <Tree
-        {...args}
-        data={index}
-        selectedStoryId={selectedId}
-        onSelectStoryId={setSelectedId}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
-      />
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
     );
   },
 };
@@ -125,11 +116,9 @@ export const Dark: Story = {
 
 export const SingleStoryComponents: Story = {
   args: {
-    docsMode: false,
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
@@ -187,7 +176,6 @@ export const SingleStoryComponents: Story = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -200,7 +188,6 @@ export const DocsOnlySingleStoryComponents = {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree
-        docsMode={false}
         isBrowsing
         isMain
         refId={DEFAULT_REF_ID}
@@ -249,8 +236,6 @@ export const DocsOnlySingleStoryComponents = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
-        setHighlightedItemId={action('setHighlightedItemId')}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -258,37 +243,6 @@ export const DocsOnlySingleStoryComponents = {
   },
 };
 
-// SkipToCanvas Link only shows on desktop widths
-export const SkipToCanvasLinkFocused: Story = {
-  ...DocsOnlySingleStoryComponents,
-  parameters: {
-    chromatic: { viewports: [1280] },
-    viewport: {
-      options: {
-        desktop: {
-          name: 'Desktop',
-          styles: {
-            width: '100%',
-            height: '100%',
-          },
-        },
-      },
-    },
-  },
-  globals: {
-    viewport: { value: 'desktop' },
-  },
-  play: async ({ canvasElement }) => {
-    const screen = await within(canvasElement);
-    const link = await screen.findByText('Skip to content');
-
-    await link.focus();
-
-    await expect(link).toBeVisible();
-  },
-};
-
-// SkipToCanvas Link only shows on desktop widths
 export const WithContextContent: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
@@ -351,11 +305,9 @@ function makeDualSlotStory(
 ): Story {
   return {
     args: {
-      docsMode: false,
       isBrowsing: true,
       isMain: true,
       refId: DEFAULT_REF_ID,
-      setHighlightedItemId: action('setHighlightedItemId'),
       allStatuses,
     },
     decorators: contextOverride
@@ -381,7 +333,6 @@ function makeDualSlotStory(
           data={dualSlotData}
           selectedStoryId={selectedId}
           onSelectStoryId={setSelectedId}
-          highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
         />
       );
     },
@@ -486,7 +437,6 @@ BranchWithChangeDetectionPriority.render = (args) => {
       data={dualSlotData}
       selectedStoryId={selectedId}
       onSelectStoryId={setSelectedId}
-      highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
     />
   );
 };
@@ -542,4 +492,79 @@ export const WithNew: Story = {
     const buttons = await canvas.findAllByTestId('tree-change-status-button');
     await expect(buttons.length).toBeGreaterThanOrEqual(1);
   },
+};
+
+// ─── Sticky selected-node ancestor chain (VSCode-style sticky scroll) ────────────────────────────
+
+const stickyStoryId =
+  'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--base';
+/** Ancestor chain of `stickyStoryId`, root-most first — the rows expected to pin while scrolling. */
+const stickyChainIds = [
+  'webapp-screens',
+  'webapp-screens-marketing',
+  'webapp-screens-marketing-featuresscreens',
+  'webapp-screens-marketing-featuresscreens-documentscreen',
+  'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
+];
+const STICKY_ROW_HEIGHT = 28;
+
+export const StickySelectedAncestors: Story = {
+  args: {
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(stickyStoryId);
+    return (
+      <div data-testid="sticky-scroller" style={{ height: 320, overflowY: 'auto' }}>
+        <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const scroller = await canvas.findByTestId('sticky-scroller');
+    const row = (id: string) =>
+      canvasElement.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
+
+    await waitFor(() => expect(row(stickyStoryId)).not.toBeNull());
+
+    // Scroll so the selected story sits at the bottom of the viewport. The distant ancestors
+    // (root and top-level group, which have hundreds of rows between themselves and the
+    // selection) must be pinned at the top of the scroller, stacked in order. Nearby ancestors
+    // sit adjacent to the selection so they never need to pin from this scroll position.
+    const selectedRow = row(stickyStoryId)!;
+    scroller.scrollTop = selectedRow.offsetTop - scroller.clientHeight + STICKY_ROW_HEIGHT * 2;
+    await waitFor(() => {
+      const scrollerTop = scroller.getBoundingClientRect().top;
+      stickyChainIds.slice(0, 2).forEach((id, i) => {
+        const ancestorRow = row(id);
+        expect(ancestorRow).not.toBeNull();
+        expect(ancestorRow!).not.toHaveAttribute('data-sticky-suspended');
+        const { top } = ancestorRow!.getBoundingClientRect();
+        expect(Math.abs(top - scrollerTop - i * STICKY_ROW_HEIGHT)).toBeLessThanOrEqual(2);
+      });
+    });
+
+    // Rows outside the chain are never sticky.
+    const unrelatedRow = row('images');
+    if (unrelatedRow) {
+      expect(getComputedStyle(unrelatedRow).position).not.toBe('sticky');
+    }
+
+    // Scroll to the very bottom: the deepest chain rows' subtrees have fully scrolled past, so
+    // their stickiness is suspended (the stack retracts instead of covering unrelated rows).
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() => {
+      const componentRow = row(stickyChainIds[stickyChainIds.length - 1]);
+      expect(componentRow).not.toBeNull();
+      expect(componentRow!).toHaveAttribute('data-sticky-suspended');
+    });
+  },
+};
+
+export const StickySelectedAncestorsDark: Story = {
+  ...StickySelectedAncestors,
+  globals: { sb_theme: 'dark' },
 };

@@ -161,7 +161,7 @@ export const ContextMenu: FC<{
         ariaLabel="Open context menu"
         type="button"
         onClick={handleOpen}
-        shortcut={api.getShortcutKeys().contextMenu}
+        shortcut={api.getShortcutKeys()?.contextMenu}
         tooltipPlacement="bottom-end"
       >
         <EllipsisIcon />

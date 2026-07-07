@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
 
@@ -8,7 +8,8 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getStatus } from '../../utils/status.tsx';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
+import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ContextMenu, hasContextMenu } from './ContextMenu.tsx';
@@ -22,17 +23,21 @@ import { CollapseIcon } from './CollapseIcon.tsx';
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all
 
+/** Height of a tree row in px. Rows are single-line (labels ellipsize), so this is constant. */
+export const TREE_ROW_HEIGHT = 28;
+
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
-}>(({ $level, theme, $textColor }) => ({
+  $stickyIndex?: number;
+}>(({ $level, theme, $textColor, $stickyIndex }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
   background: 'transparent',
-  minHeight: 28,
+  minHeight: TREE_ROW_HEIGHT,
   borderRadius: 4,
   overflow: 'hidden',
   cursor: 'pointer',
@@ -110,6 +115,32 @@ const StyledTreeItem = styled(TreeItem)<{
   '&:hover .static-only, &:focus-visible .static-only': {
     display: 'none',
   },
+
+  /* Sticky ancestors of the selected node (VSCode-style sticky scroll).
+   * Rows in the selected node's parent chain pin below one another while their subtree
+   * scrolls; Tree.tsx suspends stickiness (data-sticky-suspended) once a row's subtree
+   * has fully scrolled past its pinned slot. */
+  ...($stickyIndex !== undefined && {
+    position: 'sticky',
+    top: $stickyIndex * TREE_ROW_HEIGHT,
+    zIndex: 3,
+    // Match the sidebar background so pinned rows fully cover the rows scrolling beneath.
+    '--sticky-bg': theme.background.content,
+    [MEDIA_DESKTOP_BREAKPOINT]: {
+      '--sticky-bg': theme.background.app,
+    },
+    backgroundColor: 'var(--sticky-bg)',
+    // The hover background is translucent; layer it over the opaque sidebar background so
+    // rows scrolling beneath a pinned row never bleed through on hover.
+    '&:hover:not([data-selected="true"]), &[data-focused="true"]:not([data-selected="true"])': {
+      background: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable}), linear-gradient(var(--sticky-bg), var(--sticky-bg))`,
+    },
+    '&[data-sticky-suspended]': {
+      position: 'relative',
+      zIndex: 'auto',
+      backgroundColor: 'transparent',
+    },
+  }),
 }));
 
 const StyledContent = styled.div({
@@ -222,6 +253,12 @@ export interface TreeNodeProps {
   openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
   /** Close the currently-open context menu. */
   closeContextMenu?: () => void;
+  /**
+   * Position of this node in the selected node's sticky parent chain (0 = root-most ancestor).
+   * When set, the row sticks below the previous chain rows while its subtree scrolls, like
+   * VSCode's sticky scroll. Undefined for rows outside the chain.
+   */
+  stickyIndex?: number;
   children?: React.ReactNode;
 }
 
@@ -238,6 +275,7 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:new': 'Has new stories',
   'status-value:modified': 'Has modified stories',
   'status-value:affected': 'Affected by other changes', // TODO/FIXME: talk to MA about using better copy here.
+  'status-value:reviewing': 'Included in the active review',
 };
 
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
@@ -245,18 +283,18 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   refId,
   isAlongsideSelected,
   isExpanded,
-  isSelected,
   api,
   onSelectStoryId,
   isContextMenuOpen,
   contextMenuEntryMethod,
   openContextMenu,
   closeContextMenu,
+  stickyIndex,
   children,
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-  const { groupDualStatus } = useContext(StatusContext);
+  const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 
@@ -294,6 +332,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     const changeStatus = groupDualStatus[item.id].change;
     const testStatus = groupDualStatus[item.id].test;
 
+    // 'affected' is never surfaced as an icon, and 'modified' only while its filter is active.
+    const showChangeStatus = shouldShowChangeStatus(changeStatus.value, isModifiedFilterActive);
     const { icon: changeStatusIcon, textColor: changeTextColor } = getStatus(
       theme,
       changeStatus.value
@@ -301,13 +341,13 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     const { icon: testStatusIcon, textColor: testTextColor } = getStatus(theme, testStatus.value);
 
     return {
-      changeStatus: changeStatus.value,
-      changeStatusIcon,
+      changeStatus: showChangeStatus ? changeStatus.value : 'status-value:unknown',
+      changeStatusIcon: showChangeStatus ? changeStatusIcon : null,
       testStatus: testStatus.value,
       testStatusIcon,
-      statusTextColor: testTextColor ?? changeTextColor,
+      statusTextColor: testTextColor ?? (showChangeStatus ? changeTextColor : null),
     };
-  }, [groupDualStatus, item.id, theme]);
+  }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
 
   const isBranch = guardHasChildren(item);
   const renderContextMenu = useMemo(() => hasContextMenu(item), [item]);
@@ -325,7 +365,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       label += `. ${StatusLabelsInAriaLabel[changeStatus]}`;
     }
 
-    if (renderContextMenu) {
+    // The context-menu shortcut may be absent, e.g. when shortcuts are disabled.
+    if (renderContextMenu && shortcutKeys?.contextMenu) {
       const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
@@ -355,6 +396,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
+      $stickyIndex={stickyIndex}
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}
@@ -383,8 +425,16 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
           )}
           {(changeStatusIcon || testStatusIcon) && (
             <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
-              {changeStatusIcon}
-              {testStatusIcon}
+              {changeStatusIcon && (
+                <span style={{ display: 'contents' }} data-testid="tree-change-status-button">
+                  {changeStatusIcon}
+                </span>
+              )}
+              {testStatusIcon && (
+                <span style={{ display: 'contents' }} data-testid="tree-test-status-button">
+                  {testStatusIcon}
+                </span>
+              )}
             </StatusIconContainer>
           )}
         </StyledContent>

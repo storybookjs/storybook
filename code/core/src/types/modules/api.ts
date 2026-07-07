@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels.ts';
-import type { State } from '../../manager-api.ts';
+import type { Channel } from '../../channels/index.ts';
+import type { State } from '../../manager-api/index.ts';
 import type { RenderData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { Addon_RenderOptions } from './addons.ts';

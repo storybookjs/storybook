@@ -169,7 +169,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           <RefIndicator {...props} state={state} ref={indicatorRef} />
         </RefHead>
       )}
-      {isExpanded && index && (
+      {isExpanded && (
         <Wrapper data-title={title} isMain={isMain}>
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
@@ -183,7 +183,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
               activeFilterCount={activeFilterCount}
             />
           )}
-          {state === 'ready' && (
+          {state === 'ready' && index && (
             <Tree
               allStatuses={allStatuses}
               isBrowsing={isBrowsing}

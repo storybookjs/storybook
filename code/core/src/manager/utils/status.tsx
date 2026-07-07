@@ -12,13 +12,7 @@ import {
   type StoryId,
 } from 'storybook/internal/types';
 
-import {
-  CircleIcon,
-  StatusFailIcon,
-  StatusPassIcon,
-  StatusWarnIcon,
-  SyncIcon,
-} from '@storybook/icons';
+import { StatusFailIcon, StatusPassIcon, StatusWarnIcon, SyncIcon } from '@storybook/icons';
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
@@ -26,19 +20,6 @@ import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
 import { getDescendantIds } from './tree.ts';
-
-const SmallIcons = styled(CircleIcon)({
-  // specificity hack
-  '&&&': {
-    width: 6,
-    height: 6,
-  },
-});
-
-const LoadingIcons = styled(SmallIcons)(({ theme: { animation } }) => ({
-  // specificity hack
-  animation: `${animation.glow} 1.5s ease-in-out infinite`,
-}));
 
 export interface StatusMapping {
   icon: ReactElement | null;

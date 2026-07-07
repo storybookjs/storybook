@@ -6,12 +6,17 @@ import { TooltipNote } from 'storybook/internal/components';
 import { Collection } from 'react-aria-components/Collection';
 import { Tree as AriaTree } from 'react-aria-components/Tree';
 
-import { type TreeEntry, collapseSingleStoryComponents, indexToTree } from '../../utils/tree.ts';
+import {
+  type TreeEntry,
+  collapseSingleStoryComponents,
+  getAncestorIds,
+  indexToTree,
+} from '../../utils/tree.ts';
 import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
 import { type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
-import { useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -23,7 +28,6 @@ import { hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
 // -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
-// FIXME/TODO: implement sticky breadcrumbs
 // FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
 // FIXME/TODO: add a level for trees with a RefHead.
 
@@ -73,6 +77,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+  const includedStatusFilters = useStorybookState().includedStatusFilters ?? [];
+  const isModifiedFilterActive = includedStatusFilters.includes('status-value:modified');
 
   // Tracks the currently focused item for the ContextMenu global shortcut.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
@@ -156,6 +162,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
     return entry.parent ?? null;
+  }, [selectedStoryId, collapsedData]);
+
+  // Sticky chain (VSCode-style sticky scroll): the selected node's ancestor chain, root-most
+  // first, plus the selected node itself. These rows pin below one another while scrolling
+  // through their subtree; leaf rows never effectively pin because their subtree ends with
+  // themselves (see the suspension effect below).
+  const stickyChainIds = useMemo<string[]>(() => {
+    if (!selectedStoryId || !collapsedData[selectedStoryId]) {
+      return EMPTY_STICKY_CHAIN;
+    }
+    const ancestorIds = getAncestorIds(collapsedData, selectedStoryId);
+    return [...ancestorIds.slice().reverse(), selectedStoryId];
   }, [selectedStoryId, collapsedData]);
 
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
@@ -342,6 +360,67 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
   }, [mountCounter, selectedStoryId]);
 
+  // Suspend stickiness for chain rows whose subtree has fully scrolled past their pinned slot,
+  // so the sticky stack retracts instead of lingering over unrelated sections (mirrors how
+  // VSCode's sticky scroll retracts). Runs on scroll (rAF-throttled) and whenever the chain,
+  // expansion state, or data changes.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || stickyChainIds.length === 0) {
+      return;
+    }
+
+    const scroller = getScrollParent(container);
+    if (!scroller) {
+      // Without a scroll container the rows can never pin, so there is nothing to suspend.
+      return;
+    }
+
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
+      const scrollerTop = scroller.getBoundingClientRect().top;
+      const allRows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
+      let stackHeight = 0;
+
+      for (const id of stickyChainIds) {
+        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
+        if (!row) {
+          continue;
+        }
+        const subtreeEnd = getSubtreeEndPosition(container, allRows, row);
+        // The row stays pinned as long as part of its subtree is below its pinned slot.
+        const isActive = subtreeEnd - scrollerTop > stackHeight + row.offsetHeight;
+        row.toggleAttribute('data-sticky-suspended', !isActive);
+        if (isActive) {
+          stackHeight += row.offsetHeight;
+        }
+      }
+    };
+
+    const onScroll = () => {
+      if (rafId === null) {
+        rafId = requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      for (const id of stickyChainIds) {
+        container
+          .querySelector(`[data-item-id="${CSS.escape(id)}"]`)
+          ?.removeAttribute('data-sticky-suspended');
+      }
+    };
+  }, [stickyChainIds, expanded, collapsedData]);
+
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
   const nodeRenderer = useMemo(
@@ -356,6 +435,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         contextMenuState,
         openContextMenu,
         closeContextMenu,
+        stickyChainIds,
       }),
     [
       api,
@@ -367,12 +447,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
       contextMenuState,
       openContextMenu,
       closeContextMenu,
+      stickyChainIds,
     ]
   );
 
   // TODO: consider passing more data via the provider to limit prop drilling in renderNode? Any advantage?
   return (
-    <StatusContext.Provider value={{ data, allStatuses, groupDualStatus }}>
+    <StatusContext.Provider value={{ data, allStatuses, groupDualStatus, isModifiedFilterActive }}>
       <StyledAriaTree
         ref={containerRef}
         aria-label="Stories"
@@ -391,6 +472,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
             selectedParentId,
             contextMenuState,
             groupDualStatus,
+            stickyChainIds,
           ]}
         >
           {nodeRenderer}
@@ -405,6 +487,39 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
 // Stable module-level constants so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
+const EMPTY_STICKY_CHAIN: string[] = [];
+
+/** Find the nearest scrollable ancestor (the element sticky rows pin to). */
+function getScrollParent(element: HTMLElement): HTMLElement | null {
+  let parent = element.parentElement;
+  while (parent) {
+    const { overflowY } = getComputedStyle(parent);
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
+/**
+ * Viewport position of the end of a row's subtree: the top of the next row at the same or a
+ * shallower level (react-aria renders tree rows flat, in document order, with `data-level`), or
+ * the bottom of the tree when the subtree runs to the end.
+ */
+function getSubtreeEndPosition(
+  container: HTMLElement,
+  allRows: HTMLElement[],
+  row: HTMLElement
+): number {
+  const level = Number(row.getAttribute('data-level') ?? '1');
+  for (let i = allRows.indexOf(row) + 1; i < allRows.length; i++) {
+    if (Number(allRows[i].getAttribute('data-level') ?? '1') <= level) {
+      return allRows[i].getBoundingClientRect().top;
+    }
+  }
+  return container.getBoundingClientRect().bottom;
+}
 
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
   selectedStoryId: string | null;
@@ -413,6 +528,7 @@ interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelec
   contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
+  stickyChainIds: string[];
 }
 
 function renderNode({
@@ -422,9 +538,11 @@ function renderNode({
   contextMenuState,
   openContextMenu,
   closeContextMenu,
+  stickyChainIds,
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
+    const stickyIndex = stickyChainIds.indexOf(item.id);
     return (
       <TreeNode
         {...props}
@@ -440,11 +558,18 @@ function renderNode({
         }
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
+        stickyIndex={stickyIndex === -1 ? undefined : stickyIndex}
       >
         {item.resolvedChildren && (
           <Collection
             items={item.resolvedChildren}
-            dependencies={[expanded, selectedStoryId, selectedParentId, contextMenuState]}
+            dependencies={[
+              expanded,
+              selectedStoryId,
+              selectedParentId,
+              contextMenuState,
+              stickyChainIds,
+            ]}
           >
             {renderNode({
               ...props,
@@ -454,6 +579,7 @@ function renderNode({
               contextMenuState,
               openContextMenu,
               closeContextMenu,
+              stickyChainIds,
             })}
           </Collection>
         )}

@@ -16,6 +16,8 @@ export const StatusContext = createContext<{
   data: StoriesHash;
   allStatuses?: StatusesByStoryIdAndTypeId;
   groupDualStatus?: Record<StoryId, { test: Status; change: Status }>;
+  /** Whether the 'modified' status filter is active (gates the modified change-status icon). */
+  isModifiedFilterActive?: boolean;
 }>({ data: {} });
 
 function hasStatusWorthReporting(
@@ -26,9 +28,12 @@ function hasStatusWorthReporting(
     ['status-value:new', 'status-value:modified', 'status-value:affected'].includes(
       groupDualStatus[itemId]?.change.value
     ) ||
-    ['status-value:pending', 'status-value:reviewing', 'status-value:warning', 'status-value:error'].includes(
-      groupDualStatus[itemId]?.test.value
-    )
+    [
+      'status-value:pending',
+      'status-value:reviewing',
+      'status-value:warning',
+      'status-value:error',
+    ].includes(groupDualStatus[itemId]?.test.value)
   );
 }
 

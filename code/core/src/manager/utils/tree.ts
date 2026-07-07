@@ -182,7 +182,9 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
         acc[childId] = {
           ...(data[childId] as StoryEntry),
           name,
-          parent,
+          // A hoisted story replacing a top-level component legitimately has no parent, even
+          // though the API type declares `parent` as required for stories.
+          parent: parent as StoryEntry['parent'],
           depth: data[childId].depth - 1,
         };
         return acc;

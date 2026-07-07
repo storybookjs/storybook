@@ -16,6 +16,12 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
     return;
   }
+  // Portable stories (vitest, playwright/jest portable) have no manager Code panel and no OSA
+  // server peer, so the `extractStoryDocs` remote command has no handler and would reject after
+  // the remote-command ack timeout. There is nothing to emit to, so skip entirely.
+  if (context.parameters?.__isPortableStory) {
+    return;
+  }
   if (shouldSkipStoryDocsEmit(context.parameters)) {
     return;
   }
@@ -50,7 +56,10 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
         return;
       }
       return emitTransformCode(source, context);
-    });
+    })
+    // Never let a failed/unbacked remote command surface as an unhandled rejection through the
+    // cleanup chain (e.g. environments with no OSA server peer).
+    .catch(() => undefined);
 
   return () => {
     cancelled = true;

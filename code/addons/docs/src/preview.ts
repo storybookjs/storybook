@@ -1,14 +1,9 @@
-import type { PreparedStory } from 'storybook/internal/types';
+import type { PreparedStory, TagOptions } from "storybook/internal/types";
 
-const excludeTags = Object.entries(globalThis.TAGS_OPTIONS ?? {}).reduce(
-  (acc, entry) => {
-    const [tag, option] = entry;
-    if ((option as any).excludeFromDocsStories) {
-      acc[tag] = true;
-    }
-    return acc;
-  },
-  {} as Record<string, boolean>
+const excludeTags = Object.fromEntries(
+  Object.entries<Partial<TagOptions>>(globalThis.TAGS_OPTIONS ?? {})
+    .filter(([, { excludeFromDocsStories }]) => excludeFromDocsStories)
+    .map(([tag, { excludeFromDocsStories }]) => [tag, excludeFromDocsStories]),
 );
 
 export const parameters: any = {

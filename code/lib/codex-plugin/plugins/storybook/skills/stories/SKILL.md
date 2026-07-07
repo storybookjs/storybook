@@ -6,7 +6,7 @@ description: Invoke FIRST, before creating, editing, or deleting components, sto
 Prerequisites:
 
 1. Storybook must be installed in the project. Invoke the `$storybook:init` skill to set up Storybook, but only if the user explicitly invoked this skill and approves a Storybook installation.
-2. Storybook must be >= 10.5 (or an alpha/canary version). Invoke the `$storybook:upgrade` skill to upgrade it, but only if the user
+2. Storybook must be at least 10.5 (or `next` while 10.5 is not yet released). Invoke the `$storybook:upgrade` skill to upgrade it, but only if the user
    explicitly approved a Storybook upgrade.
 3. Ensure `@storybook/addon-mcp` is installed. If it is missing, install it with `npx storybook add @storybook/addon-mcp`.
 

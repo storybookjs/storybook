@@ -645,9 +645,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // same rewrite applies. Glob the workspace since they are not co-located
     // with package.json the way angular.json is.
     // eslint-disable-next-line depend/ban-dependencies
-
-// eslint-disable-next-line depend/ban-dependencies
-const { globby } = await import('globby');
+    const { globby } = await import('globby');
     const projectJsonFiles = await globby(['**/project.json'], {
       ignore: ['**/node_modules/**', '**/dist/**'],
       absolute: true,

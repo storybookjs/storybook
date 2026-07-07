@@ -409,7 +409,9 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultFilterSelection?: "include" | "exclude" | undefined;
+  defaultFilterSelection?: 'include' | 'exclude' | undefined;
+  /** Exclude this tag from the sidebar filtering UI */
+  excludeFromFilterPanel?: boolean;
   /** Exclude stories with this tag from appearing in the sidebar */
   excludeFromSidebar?: boolean;
   /** Exclude stories with this tag from appearing in docs */

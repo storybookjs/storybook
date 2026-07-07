@@ -47,9 +47,30 @@ describe('getInterceptMarkdown', () => {
     expect(markdown).toContain(
       '- cwd `/repo`, config dir `/repo/packages/ui/.storybook` (http://localhost:6006)'
     );
-    expect(markdown).toContain('- `storybook ai --cwd /repo <command> [args...]`');
     expect(markdown).toContain(
       '- `storybook ai --config-dir /repo/packages/ui/.storybook <command> [args...]`'
+    );
+    // A bare `--cwd /repo` retry would fail metadata loading when the config is not at
+    // /repo/.storybook, so it must not be offered for records with a configDir.
+    expect(markdown).not.toContain('storybook ai --cwd');
+  });
+
+  it('no-instance quotes paths containing whitespace in retry examples', () => {
+    const markdown = getInterceptMarkdown('no-instance', {
+      records: [
+        record('/Users/John Smith/proj', 'http://localhost:6006'),
+        record('/repo', 'http://localhost:6007', {
+          instanceId: 'i-2',
+          pid: 2,
+          configDir: '/repo/my packages/ui/.storybook',
+        }),
+      ],
+    });
+    expect(markdown).toContain(
+      '- `storybook ai --cwd "/Users/John Smith/proj" <command> [args...]`'
+    );
+    expect(markdown).toContain(
+      '- `storybook ai --config-dir "/repo/my packages/ui/.storybook" <command> [args...]`'
     );
   });
 

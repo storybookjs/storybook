@@ -27,6 +27,13 @@ export type ResolveTarget = {
    * default under `cwd`). Matched against the `configDir` recorded by `storybook dev`.
    */
   configDir?: string;
+  /**
+   * True when `configDir` came from an explicit `--config-dir` flag rather than the `.storybook`
+   * default under `cwd`. An explicit config dir expresses precise intent, so matching is then
+   * restricted to records with that exact configDir: a same-cwd instance serving a different
+   * config must not win over the flag.
+   */
+  configDirExplicit?: boolean;
   /** Port of the target Storybook, to address one specific instance among the matches. */
   port?: number;
   /** The invoking agent (std-env name), used to pick among competing matches. */
@@ -34,13 +41,16 @@ export type ResolveTarget = {
 };
 
 /**
- * Pick the Storybook instance that matches the target project: its recorded `cwd` equals
- * `target.cwd`, OR its recorded `configDir` equals `target.configDir`. Both comparisons are
- * exact-normalized with no longest-prefix or fallback behaviour (milestone 2 of
- * storybookjs/storybook#34826). The configDir key exists for monorepos
- * (storybookjs/storybook#35359): a dev server started at the repo root with
- * `-c packages/ui/.storybook` must be found by a CLI run from `packages/ui`, and vice versa.
- * Records from older Storybooks carry no `configDir` and can only match by cwd.
+ * Pick the Storybook instance that matches the target project. With an explicit `--config-dir`
+ * (`configDirExplicit`), only records whose recorded `configDir` equals `target.configDir` match.
+ * Otherwise a record matches when its recorded `cwd` equals `target.cwd` OR its recorded
+ * `configDir` equals the defaulted `target.configDir`. All comparisons are exact-normalized with
+ * no longest-prefix or fallback behaviour (milestone 2 of storybookjs/storybook#34826). The
+ * configDir key exists for monorepos (storybookjs/storybook#35359): a dev server started at the
+ * repo root with `-c packages/ui/.storybook` must be found by a CLI run from `packages/ui`, and
+ * vice versa. Records from older Storybooks carry no `configDir` and can only match by cwd — so
+ * an explicit `--config-dir` cannot select them, and the no-instance guidance offers their
+ * `--cwd` instead.
  *
  * When `target.port` is supplied (e.g. an agent that launched Storybook on a known port and wants
  * to address that exact instance), it further constrains the project matches: an instance must
@@ -68,13 +78,13 @@ export function resolveInstance(
   const { port: targetPort, agent: currentAgent } = target;
   const normalisedCwd = resolve(target.cwd);
   const normalisedConfigDir = target.configDir == null ? undefined : resolve(target.configDir);
-  const projectMatches = records.filter(
-    (r) =>
-      resolve(r.cwd) === normalisedCwd ||
-      (normalisedConfigDir != null &&
-        r.configDir != null &&
-        resolve(r.configDir) === normalisedConfigDir)
-  );
+  const matchesConfigDir = (r: StorybookInstanceRecord) =>
+    normalisedConfigDir != null &&
+    r.configDir != null &&
+    resolve(r.configDir) === normalisedConfigDir;
+  const projectMatches = target.configDirExplicit
+    ? records.filter(matchesConfigDir)
+    : records.filter((r) => resolve(r.cwd) === normalisedCwd || matchesConfigDir(r));
   const matches =
     targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
 

@@ -319,6 +319,23 @@ describe('runAiTool', () => {
     expect(result.output).toContain(
       '- `storybook ai --config-dir /repo/packages/ui/.storybook <command> [args...]`'
     );
+    expect(result.output).not.toContain('storybook ai --cwd');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+  });
+
+  it('does not route by cwd when an explicit --config-dir targets a different config', async () => {
+    // Only the root Storybook runs; the agent explicitly targets the (not running) ui package.
+    vi.mocked(readRegistry).mockResolvedValue([
+      { ...record, cwd: resolve('/repo'), configDir: resolve('/repo/.storybook') },
+    ]);
+
+    const result = await runAiTool('list-all-documentation', [], {
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
@@ -514,8 +531,8 @@ describe('runAiTool', () => {
     vi.mocked(readRegistry).mockResolvedValue([record, sibling]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple matching Storybook instances');
-    expect(result.output).toContain('Matching instances at `/projects/foo`');
+    expect(result.output).toContain('Multiple Storybook instances match this project');
+    expect(result.output).toContain('cwd `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
@@ -565,8 +582,8 @@ describe('runAiTool', () => {
         undefined
       );
       expect(result.exitCode).toBe(0);
-      expect(result.output).toContain('Multiple matching Storybook instances');
-      expect(result.output).toContain('Matching instances at `/projects/foo`');
+      expect(result.output).toContain('Multiple Storybook instances match this project');
+      expect(result.output).toContain('cwd `/projects/foo`');
       expect(result.output).toContain('pid `2`');
       expect(result.output).toContain('pid `3`');
       expect(result.output).not.toContain('pid `4`');

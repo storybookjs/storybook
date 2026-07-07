@@ -85,7 +85,7 @@ describe('resolveInstance', () => {
     expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
   });
 
-  it('matches a record by cwd even when the configDirs differ', () => {
+  it('matches a record by cwd when the DEFAULTED configDir differs', () => {
     const r = record('/repo/packages/ui', 'ready', {
       configDir: '/repo/packages/ui/.storybook',
     });
@@ -94,6 +94,54 @@ describe('resolveInstance', () => {
       configDir: '/repo/.storybook',
     });
     expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
+  });
+
+  it('does NOT fall back to cwd matching when an EXPLICIT configDir differs', () => {
+    const r = record('/repo', 'ready', { configDir: '/repo/.storybook' });
+    const result = resolveInstance([r], {
+      cwd: '/repo',
+      configDir: '/repo/packages/ui/.storybook',
+      configDirExplicit: true,
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+      expect(result.records).toEqual([r]);
+    }
+  });
+
+  it('selects by an EXPLICIT configDir among same-cwd instances serving different configs', () => {
+    const packageA = record('/repo', 'ready', {
+      configDir: '/repo/packages/a/.storybook',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerPackageB = record('/repo', 'ready', {
+      configDir: '/repo/packages/b/.storybook',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = resolveInstance([packageA, newerPackageB], {
+      cwd: '/repo',
+      configDir: '/repo/packages/a/.storybook',
+      configDirExplicit: true,
+    });
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(packageA);
+      expect(result.matches).toEqual([packageA]);
+    }
+  });
+
+  it('cannot select records without a recorded configDir via an EXPLICIT configDir', () => {
+    const legacy = record('/repo/packages/ui');
+    const result = resolveInstance([legacy], {
+      cwd: '/repo/packages/ui',
+      configDir: '/repo/packages/ui/.storybook',
+      configDirExplicit: true,
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+    }
   });
 
   it('normalizes trailing slashes and dot segments in configDirs before matching', () => {

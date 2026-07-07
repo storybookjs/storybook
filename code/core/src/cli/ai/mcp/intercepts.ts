@@ -6,21 +6,23 @@ import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
 
+const quotePath = (path: string) => (/\s/.test(path) ? `"${path}"` : path);
+
 const buildNoInstanceWithCandidates = (records: StorybookInstanceRecord[]) => {
   const instances = records.map((r) => {
     const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';
     return `- cwd \`${r.cwd}\`${configDir} (${r.url})`;
   });
-  // Concrete invocations built from each instance's recorded values, so the agent can copy one
-  // verbatim. Either flag alone selects the instance; both are shown so agents learn both.
+  // One concrete invocation per instance, built from its recorded values so the agent can copy it
+  // verbatim. Prefer `--config-dir` when recorded: a bare `--cwd` retry fails for instances whose
+  // config is not at `<cwd>/.storybook`, because command metadata loads from there first.
   const examples = [
     ...new Set(
-      records.flatMap((r) => [
-        `- \`storybook ai --cwd ${r.cwd} <command> [args...]\``,
-        ...(r.configDir
-          ? [`- \`storybook ai --config-dir ${r.configDir} <command> [args...]\``]
-          : []),
-      ])
+      records.map((r) =>
+        r.configDir
+          ? `- \`storybook ai --config-dir ${quotePath(r.configDir)} <command> [args...]\``
+          : `- \`storybook ai --cwd ${quotePath(r.cwd)} <command> [args...]\``
+      )
     ),
   ];
 

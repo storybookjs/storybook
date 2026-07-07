@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import detectPort from 'detect-port';
 
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address.ts';
@@ -65,6 +67,42 @@ describe('getServerPort', () => {
     const result = await getServerPort(port);
 
     expect(result).toBe(expectedFreePort);
+  });
+
+  it('should log an actionable error and exit when no port can be bound', async () => {
+    // detect-port resolves `undefined` instead of rejecting when the environment
+    // refuses every bind attempt (e.g. sandboxed shells).
+    vi.mocked(detectPort).mockResolvedValue(undefined as unknown as number);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+
+    try {
+      await getServerPort(port);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("Unable to find a free port for Storybook's dev server"),
+        })
+      );
+      expect(exit).toHaveBeenCalledWith(-1);
+    } finally {
+      exit.mockRestore();
+    }
+  });
+
+  it('should log an error and exit when the port is taken and exactPort is set', async () => {
+    vi.mocked(detectPort).mockResolvedValue(4000);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+
+    try {
+      await getServerPort(port, { exactPort: true });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        `Port ${port} is not available. Exiting because --exact-port was provided.`
+      );
+      expect(exit).toHaveBeenCalledWith(-1);
+    } finally {
+      exit.mockRestore();
+    }
   });
 });
 

@@ -223,9 +223,9 @@ This feature is currently only supported for React projects. We [welcome feedbac
 
 Type: `boolean`
 
-Default: `false`
+Control the agentic review workflow: the review UI in the Storybook manager and the server-side review channel that AI agents (via the [MCP server](../../ai/mcp/overview.mdx)) use to push a curated review of their code changes. Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
 
-Enable the agentic review workflow: the review UI in the Storybook manager and the server-side review channel that AI agents (via the [MCP server](../../ai/mcp/overview.mdx)) use to push a curated review of their code changes. Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
+When left unset, review is off for direct use — no review UI appears and MCP clients connecting directly to the MCP server are not offered review tools — but the Storybook AI CLI plugins (Claude Code / Codex) can use the review workflow out of the box. Set it to `false` to opt out of review entirely, including for the plugins. Set it to `true` to also enable review for direct MCP clients:
 
 <CodeSnippets path="main-config-features-experimental-review.md" />
 

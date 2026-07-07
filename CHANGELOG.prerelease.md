@@ -1,3 +1,7 @@
+## 10.5.0-beta.1
+
+- Core: Add experimentalReview feature flag and make the features type augmentable - [#35379](https://github.com/storybookjs/storybook/pull/35379), thanks @yannbf!
+
 ## 10.5.0-beta.0
 
 

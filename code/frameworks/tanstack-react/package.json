@@ -1,6 +1,6 @@
 {
   "name": "@storybook/tanstack-react",
-  "version": "10.5.0-alpha.11",
+  "version": "10.5.0-beta.1",
   "description": "Storybook for TanStack (React, Vite): Router and Start ready Storybook framework",
   "keywords": [
     "storybook",

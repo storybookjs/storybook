@@ -129,9 +129,7 @@ export async function runAiTool(
   }
 
   const resolution = await resolveReadyInstance(
-    options.cwd,
-    options.configDir,
-    parsedPort.port,
+    { cwd: options.cwd, configDir: options.configDir, port: parsedPort.port },
     deps
   );
   if (resolution.kind === 'error') {
@@ -460,27 +458,28 @@ type InstanceResolution =
  * the project has a compatible Storybook.
  */
 async function resolveReadyInstance(
-  cwdInput: string | undefined,
-  configDirInput: string | undefined,
-  port: number | undefined,
+  target: { cwd?: string; configDir?: string; port?: number },
   deps: AiToolRunDeps
 ): Promise<InstanceResolution> {
-  const cwd = resolve(cwdInput ?? process.cwd());
-  const configDir = resolveStorybookConfigDir({ cwd, configDir: configDirInput });
+  const cwd = resolve(target.cwd ?? process.cwd());
+  const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
   const records = await readRegistry(deps.registryDir);
   const resolution = resolveInstance(records, {
     cwd,
     configDir,
-    configDirExplicit: configDirInput != null,
-    port,
+    configDirExplicit: target.configDir != null,
+    port: target.port,
     agent: detectAgent()?.name,
   });
 
   if (resolution.kind === 'intercept') {
     return {
       kind: 'error',
-      output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
+      output: getInterceptMarkdown(resolution.reason, {
+        records: resolution.records,
+        port: target.port,
+      }),
       reason: resolution.reason,
     };
   }

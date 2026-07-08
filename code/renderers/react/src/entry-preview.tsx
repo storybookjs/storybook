@@ -72,10 +72,9 @@ export const beforeAll = async () => {
               resolve();
             }, 0);
 
-            if (jestFakeTimersAreEnabled()) {
-              (
-                globalThis as { jest?: { advanceTimersByTime: (ms: number) => void } }
-              ).jest?.advanceTimersByTime(0);
+            const jestFakeTimers = getActiveJestFakeTimers(globalThis);
+            if (jestFakeTimers) {
+              jestFakeTimers.advanceTimersByTime(0);
             }
           });
 
@@ -99,17 +98,20 @@ export const beforeAll = async () => {
   }
 };
 
-/** The function is used to configure jest's fake timers in environments where React's act is enabled */
-function jestFakeTimersAreEnabled() {
-  const { jest } = globalThis as { jest?: { advanceTimersByTime: (ms: number) => void } };
-  if (typeof jest !== 'undefined' && jest !== null) {
-    return (
-      // legacy timers
-
-      (setTimeout as any)._isMockFunction === true || // modern timers
-      Object.prototype.hasOwnProperty.call(setTimeout, 'clock')
-    );
+/** Returns jest's fake-timer API when it's active, so callers can advance fake timers safely. */
+function getActiveJestFakeTimers(
+  g: typeof globalThis
+): { advanceTimersByTime: (ms: number) => void } | undefined {
+  const jest = Reflect.get(g, 'jest');
+  if (jest === undefined || jest === null) {
+    return undefined;
   }
 
-  return false;
+  const fakeTimersEnabled =
+    // legacy timers
+
+    (setTimeout as any)._isMockFunction === true || // modern timers
+    Object.prototype.hasOwnProperty.call(setTimeout, 'clock');
+
+  return fakeTimersEnabled ? jest : undefined;
 }

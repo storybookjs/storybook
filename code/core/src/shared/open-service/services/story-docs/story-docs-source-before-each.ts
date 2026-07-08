@@ -2,7 +2,6 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
 
-import type { StoryDocsService } from 'storybook/open-service';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import { selectSnippetForStory } from './snippet.ts';
@@ -21,10 +20,14 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     return;
   }
 
-  let service: StoryDocsService;
-  try {
-    service = getService<StoryDocsService>('core/story-docs');
-  } catch {
+  const service = (() => {
+    try {
+      return getService('core/story-docs');
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!service) {
     return;
   }
 
@@ -35,7 +38,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   // Do not await story-docs I/O here — story render should start immediately. Cleanup flips
   // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
   // so navigation waits for in-flight work to settle.
-  const codePanelSnippetPromise = service.queries.getStoryDocs
+  const codePanelSnippetPromise = service.queries.storyDocs
     .loaded({ id: componentId })
     .then((payload) => {
       if (cancelled) {

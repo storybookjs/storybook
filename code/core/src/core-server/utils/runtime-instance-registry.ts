@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/p
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
+import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
@@ -21,6 +22,12 @@ export type RuntimeInstanceRecord = {
   instanceId: string;
   pid: number;
   cwd: string;
+  /**
+   * Resolved config directory of the running Storybook. Lets `storybook ai` find this instance
+   * from a different cwd in a monorepo (storybookjs/storybook#35359). Optional because records
+   * written by older Storybooks lack it.
+   */
+  configDir?: string;
   url: string;
   port: number;
   agent?: string;
@@ -58,10 +65,9 @@ export function getOrigin(address: string) {
 export function getMcpMetadataFromMainConfig(
   mainConfig: Pick<StorybookConfig, 'addons'>
 ): RuntimeInstanceRecord['mcp'] {
+  // Normalize entries so addons registered via `getAbsolutePath()` are recognized, not just bare names.
   const addon = mainConfig.addons?.find(
-    (entry) =>
-      entry === STORYBOOK_MCP_ADDON ||
-      (typeof entry === 'object' && entry.name === STORYBOOK_MCP_ADDON)
+    (entry) => normalizeAddonName(entry) === STORYBOOK_MCP_ADDON
   );
 
   if (!addon) {
@@ -87,6 +93,7 @@ function detectRuntimeInstanceAgent() {
 export function createRuntimeInstanceRecord({
   address,
   agent,
+  configDir,
   cwd = process.cwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
@@ -97,6 +104,7 @@ export function createRuntimeInstanceRecord({
 }: {
   address: string;
   agent?: string;
+  configDir?: string;
   cwd?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
@@ -113,6 +121,7 @@ export function createRuntimeInstanceRecord({
     instanceId,
     pid,
     cwd: resolve(cwd),
+    ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
     url: origin,
     port,
     ...(agent ? { agent } : {}),
@@ -319,6 +328,7 @@ function registerProcessCleanup(recordPath: string) {
 export async function writeStorybookRuntimeInstanceRecord({
   address,
   agent = detectRuntimeInstanceAgent(),
+  configDir,
   cwd,
   mcp,
   pid,
@@ -329,6 +339,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }: {
   address: string;
   agent?: string;
+  configDir?: string;
   cwd?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
@@ -340,6 +351,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   const record = createRuntimeInstanceRecord({
     address,
     agent,
+    configDir,
     cwd,
     mcp,
     pid,

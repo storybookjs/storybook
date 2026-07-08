@@ -1,13 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { CoreWebpackCompiler, SupportedFramework } from 'storybook/internal/types';
 import type {
   CoreCommon_StorybookInfo,
   PackageJson,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import {
+  CoreWebpackCompiler,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 

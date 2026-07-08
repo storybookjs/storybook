@@ -1261,15 +1261,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     } = store.getState();
 
     // Config sidebar filters first, then our managed filters override any conflicts
-    await store.setState({
+    await store.setState(({ filters }) => ({
       filters: {
-        ...store.getState().filters,
+        ...filters,
         ...configFilters,
         [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
         [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
         [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
       },
-    });
+    }));
 
     // If the index was already set, re-apply it so the new filters take effect
     const { internal_index: index } = store.getState();

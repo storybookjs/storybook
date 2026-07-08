@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import { AngularJSON, editJsonText } from 'storybook/internal/cli';
+import { AngularJSON, editJsonText, type JSONEditPath } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -153,8 +153,23 @@ interface JsonTargetTransformResult {
   allStorybookTargetsZonelessTrue: boolean;
 }
 
-const isStorybookTarget = (target: any): boolean => {
-  const ref: unknown = target?.builder ?? target?.executor;
+/** An `angular.json` architect target or Nx `project.json` target. */
+interface StorybookBuilderTarget {
+  builder?: string;
+  executor?: string;
+  options?: {
+    compodoc?: boolean;
+    experimentalZoneless?: boolean;
+    [key: string]: unknown;
+  };
+}
+
+const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
+  if (typeof target !== 'object' || target === null) {
+    return false;
+  }
+  const ref =
+    (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
   return (
     typeof ref === 'string' &&
     (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
@@ -170,6 +185,88 @@ const rewriteStorybookBuilderRef = (ref: string): string | null => {
     return `${ANGULAR_VITE_PACKAGE}:build-storybook`;
   }
   return null;
+};
+
+/** Applies a single format-preserving edit; shared by `AngularJSON` and `TextJsonEditor` below. */
+interface TargetEditor {
+  edit(path: JSONEditPath, value: unknown): void;
+}
+
+/** A `targets`-shaped object (angular.json's `architect`, or project.json's `targets`) and the JSON path to it. */
+interface TargetGroup {
+  pathPrefix: JSONEditPath;
+  targets: Record<string, unknown>;
+}
+
+/** Accumulates sequential `editJsonText` edits against an in-memory string (project.json's editor). */
+class TextJsonEditor implements TargetEditor {
+  content: string;
+
+  constructor(content: string) {
+    this.content = content;
+  }
+
+  edit(path: JSONEditPath, value: unknown): void {
+    this.content = editJsonText(this.content, path, value);
+  }
+}
+
+/**
+ * Rewrite Angular CLI builder/executor references, detect Compodoc/zone.js signals, and rename
+ * any leftover `experimentalZoneless` key to `zoneless`, across every `:start-storybook`/
+ * `:build-storybook` target found in `targetGroups`. Shared by `transformAngularJson` and
+ * `transformProjectJson`, which differ only in how targets are grouped (nested `projects.<name>`
+ * vs a single flat group) and how an edit is applied (in-place via `AngularJSON` vs accumulated
+ * via `TextJsonEditor`) — both funnel through the same `TargetEditor.edit` shape.
+ */
+const processStorybookTargets = (
+  editor: TargetEditor,
+  targetGroups: TargetGroup[]
+): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
+  allZonelessTrue: boolean;
+} => {
+  let changed = false;
+  let disablesCompodoc = false;
+  let hasStorybookTarget = false;
+  let allZonelessTrue = true;
+
+  for (const { pathPrefix, targets } of targetGroups) {
+    for (const [targetName, target] of Object.entries(targets)) {
+      if (!isStorybookTarget(target)) {
+        continue;
+      }
+      hasStorybookTarget = true;
+
+      // Snapshot everything needed from this target before issuing any edits: `edit()` on
+      // `AngularJSON` reparses its `json`, which would invalidate this object reference.
+      const currentRef = target.builder ?? target.executor ?? null;
+      const compodocDisabled = target.options?.compodoc === false;
+      const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
+      const zonelessValue = target.options?.experimentalZoneless;
+
+      if (compodocDisabled) {
+        disablesCompodoc = true;
+      }
+      if (zonelessValue !== true) {
+        allZonelessTrue = false;
+      }
+
+      const newRef = currentRef ? rewriteStorybookBuilderRef(currentRef) : null;
+      if (newRef) {
+        const refKey = 'builder' in target ? 'builder' : 'executor';
+        editor.edit([...pathPrefix, targetName, refKey], newRef);
+        changed = true;
+      }
+
+      if (hasOldZonelessKey) {
+        editor.edit([...pathPrefix, targetName, 'options', 'zoneless'], zonelessValue);
+        editor.edit([...pathPrefix, targetName, 'options', 'experimentalZoneless'], undefined);
+        changed = true;
+      }
+    }
+  }
+
+  return { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue };
 };
 
 /**
@@ -195,56 +292,15 @@ const transformAngularJson = (
     };
   }
 
-  let changed = false;
-  let disablesCompodoc = false;
-  let hasStorybookTarget = false;
-  let allZonelessTrue = true;
+  const targetGroups: TargetGroup[] = Object.entries(angularJSON.projects)
+    .filter(([, project]) => project?.architect && typeof project.architect === 'object')
+    .map(([projectName, project]) => ({
+      pathPrefix: ['projects', projectName, 'architect'],
+      targets: project.architect,
+    }));
 
-  for (const [projectName, project] of Object.entries<any>(angularJSON.projects)) {
-    const architect = project?.architect;
-    if (!architect || typeof architect !== 'object') {
-      continue;
-    }
-
-    for (const [targetName, target] of Object.entries<any>(architect)) {
-      if (!isStorybookTarget(target)) {
-        continue;
-      }
-      hasStorybookTarget = true;
-
-      // Snapshot everything needed from this target before issuing any edits: `edit()`
-      // reparses `angularJSON.json`, which would invalidate this object reference.
-      const currentBuilder = typeof target.builder === 'string' ? target.builder : null;
-      const compodocDisabled = target.options?.compodoc === false;
-      const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      const zonelessValue = target.options?.experimentalZoneless;
-
-      if (compodocDisabled) {
-        disablesCompodoc = true;
-      }
-      if (zonelessValue !== true) {
-        allZonelessTrue = false;
-      }
-
-      const newBuilder = currentBuilder ? rewriteStorybookBuilderRef(currentBuilder) : null;
-      if (newBuilder) {
-        angularJSON.edit(['projects', projectName, 'architect', targetName, 'builder'], newBuilder);
-        changed = true;
-      }
-
-      if (hasOldZonelessKey) {
-        angularJSON.edit(
-          ['projects', projectName, 'architect', targetName, 'options', 'zoneless'],
-          zonelessValue
-        );
-        angularJSON.edit(
-          ['projects', projectName, 'architect', targetName, 'options', 'experimentalZoneless'],
-          undefined
-        );
-        changed = true;
-      }
-    }
-  }
+  const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
+    processStorybookTargets(angularJSON, targetGroups);
 
   if (changed && !dryRun) {
     angularJSON.write();
@@ -273,53 +329,15 @@ const transformProjectJson = async (
     const json = JSON.parse(original);
     const targets = json?.targets;
 
-    let content = original;
-    let disablesCompodoc = false;
-    let hasStorybookTarget = false;
-    let allZonelessTrue = true;
+    const editor = new TextJsonEditor(original);
+    const targetGroups: TargetGroup[] =
+      targets && typeof targets === 'object' ? [{ pathPrefix: ['targets'], targets }] : [];
 
-    if (targets && typeof targets === 'object') {
-      for (const [targetName, target] of Object.entries<any>(targets)) {
-        if (!isStorybookTarget(target)) {
-          continue;
-        }
-        hasStorybookTarget = true;
+    const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
+      processStorybookTargets(editor, targetGroups);
 
-        const currentExecutor = typeof target.executor === 'string' ? target.executor : null;
-        const compodocDisabled = target.options?.compodoc === false;
-        const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-        const zonelessValue = target.options?.experimentalZoneless;
-
-        if (compodocDisabled) {
-          disablesCompodoc = true;
-        }
-        if (zonelessValue !== true) {
-          allZonelessTrue = false;
-        }
-
-        const newExecutor = currentExecutor ? rewriteStorybookBuilderRef(currentExecutor) : null;
-        if (newExecutor) {
-          content = editJsonText(content, ['targets', targetName, 'executor'], newExecutor);
-        }
-
-        if (hasOldZonelessKey) {
-          content = editJsonText(
-            content,
-            ['targets', targetName, 'options', 'zoneless'],
-            zonelessValue
-          );
-          content = editJsonText(
-            content,
-            ['targets', targetName, 'options', 'experimentalZoneless'],
-            undefined
-          );
-        }
-      }
-    }
-
-    const changed = content !== original;
     if (changed && !dryRun) {
-      await writeFile(projectJsonPath, content);
+      await writeFile(projectJsonPath, editor.content);
     }
 
     return {

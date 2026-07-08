@@ -33,7 +33,8 @@ const detectRenderers = (dependencies: string[]): string[] => {
 };
 
 export function buildRendererImportRegex(renderer: string): RegExp {
-  return new RegExp(`(['"])${renderer}(['"])`, 'g');
+  const escaped = renderer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(['"])${escaped}(['"])`, 'g');
 }
 
 const replaceImports = (source: string, renderer: string, framework: string) => {
@@ -186,14 +187,17 @@ export const rendererToFramework: Fix<MigrationResult> = {
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false, storiesPaths, configDir } = options;
 
-    for (const { rendererPackage, selectedFramework } of resolveFrameworkRendererPairs(
-      result.frameworks,
-      (reason) => logger.warn(reason)
-    )) {
+    const pairs = resolveFrameworkRendererPairs(result.frameworks, (reason) => logger.warn(reason));
+    if (pairs.length === 0) {
+      return;
+    }
+
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    const configFiles = await globby([`${configDir}/**/*`]);
+
+    for (const { rendererPackage, selectedFramework } of pairs) {
       logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
-      // eslint-disable-next-line depend/ban-dependencies
-      const { globby } = await import('globby');
-      const configFiles = await globby([`${configDir}/**/*`]);
 
       await transformSourceFiles(
         [...storiesPaths, ...configFiles].filter(Boolean) as string[],

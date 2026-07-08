@@ -22,13 +22,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
   commonGlobOptions: () => ({}),
   getProjectRoot: () => '/project/root',
 }));
-vi.mock('storybook/internal/node-logger', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
-  logger: {
-    debug: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const mockPackageJson = {
   dependencies: {
@@ -340,7 +334,7 @@ describe('run / detectMissedTransformations onSkip wiring', () => {
 
     await rendererToFramework.run!(options);
 
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('skipping'));
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(expect.stringContaining('skipping'));
   });
 
   it('should NOT call logger.warn when detectMissedTransformations resolves the same malformed input', () => {
@@ -351,7 +345,7 @@ describe('run / detectMissedTransformations onSkip wiring', () => {
     });
 
     expect(pairs).toEqual([]);
-    expect(logger.warn).not.toHaveBeenCalled();
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
 });
 

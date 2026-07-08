@@ -2,17 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { transformImportFiles } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import type { CheckOptions } from './index.ts';
 import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 
 // Mock dependencies
-vi.mock('node:fs/promises', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('node:fs/promises')>()),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-}));
+vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -24,10 +21,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  transformImportFiles: vi.fn().mockResolvedValue([]),
-}));
+vi.mock('storybook/internal/common', { spy: true });
 
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue([]),
@@ -50,6 +44,8 @@ describe('nextjs-to-nextjs-vite', () => {
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+    vi.mocked(transformImportFiles).mockResolvedValue([]);
+    mockWriteFile.mockResolvedValue(undefined);
   });
 
   describe('check function', () => {

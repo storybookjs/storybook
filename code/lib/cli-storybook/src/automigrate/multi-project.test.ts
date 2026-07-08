@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
+
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
@@ -11,28 +13,17 @@ import {
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
 
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs')>();
-  return {
-    ...actual,
-    promises: {
-      ...actual.promises,
-      stat: vi.fn(),
-      readFile: vi.fn(),
-    },
-  };
-});
+vi.mock('node:fs', { spy: true });
 vi.mock('globby', () => ({
   globby: vi.fn(),
 }));
+// Kept as a full stub (not spy: true): the real p-limit schedules work asynchronously, which
+// would make call-order assertions in this file non-deterministic. This synchronous pass-through
+// is deliberate.
 vi.mock('p-limit', () => ({
   default: vi.fn(() => vi.fn((fn) => fn())),
 }));
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal()),
-  commonGlobOptions: () => ({}),
-  getProjectRoot: () => '/project/root',
-}));
+vi.mock('storybook/internal/common', { spy: true });
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
@@ -71,6 +62,9 @@ const { mockFixWithDetection } = vi.hoisted(() => {
   return { mockFixWithDetection };
 });
 
+// Kept as a full stub (not spy: true): this substitutes the real 19-entry `allFixes` catalog with
+// a single controlled fake fix so the multi-project logic can be tested in isolation. spy: true
+// would fall through to the real array instead, defeating that isolation.
 vi.mock('./fixes', () => ({
   allFixes: [mockFixWithDetection],
 }));
@@ -91,6 +85,8 @@ describe('multi-project automigrations', () => {
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(getProjectRoot).mockReturnValue('/project/root');
+    vi.mocked(commonGlobOptions).mockReturnValue({});
   });
 
   afterEach(() => {

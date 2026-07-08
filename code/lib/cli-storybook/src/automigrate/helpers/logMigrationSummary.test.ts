@@ -6,23 +6,7 @@ import type { FixSummary } from '../types.ts';
 import { FixStatus } from '../types.ts';
 import { logMigrationSummary } from './logMigrationSummary.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: {
-    log: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    step: vi.fn(),
-  },
-  CLI_COLORS: {
-    success: vi.fn((text: string) => text),
-    error: vi.fn((text: string) => text),
-    warning: vi.fn((text: string) => text),
-    info: vi.fn((text: string) => text),
-    debug: vi.fn((text: string) => text),
-    cta: vi.fn((text: string) => text),
-    dimmed: vi.fn((text: string) => text),
-  },
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 describe('logMigrationSummary', () => {
   beforeEach(() => {

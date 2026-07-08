@@ -1,7 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 export function buildImportRenameRegex(from: string): RegExp {
-  return new RegExp(`(['"])${from}(\\/.*)?\\1`, 'g');
+  const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(['"])${escaped}(\\/.*)?\\1`, 'g');
 }
 
 function transformImports(source: string, renamedImports: Record<string, string>) {

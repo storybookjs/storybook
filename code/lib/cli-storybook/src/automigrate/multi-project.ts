@@ -8,7 +8,10 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { allFixes } from './fixes/index.ts';
 import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
-import { detectMissedTransformations } from './helpers/missedTransformations.ts';
+import {
+  collectMissedTransformationPatterns,
+  detectMissedTransformations,
+} from './helpers/missedTransformations.ts';
 import type {
   CheckOptions,
   Fix,
@@ -408,16 +411,7 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
-          if (typeof fix.detectMissedTransformations === 'function') {
-            try {
-              const patterns = fix.detectMissedTransformations(result);
-              missedTransformationPatterns.push(...patterns.map((p) => ({ fixId: fix.id, ...p })));
-            } catch (patternError) {
-              logger.debug(
-                `Failed to compute missed-transformation patterns for ${fix.id}: ${patternError}`
-              );
-            }
-          }
+          missedTransformationPatterns.push(...collectMissedTransformationPatterns(fix, result));
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }
       } catch (error) {

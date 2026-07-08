@@ -9,6 +9,26 @@ export interface EnrichCsfOptions {
   enrichCsf?: CsfEnricher;
 }
 
+const isMetaStoryFactory = (storyExport: t.Node) =>
+  t.isCallExpression(storyExport) &&
+  t.isMemberExpression(storyExport.callee) &&
+  t.isIdentifier(storyExport.callee.object) &&
+  storyExport.callee.object.name === 'meta';
+
+// A base declared in this same file (e.g. `Primary` in `Primary.extend(...)`) is only
+// trusted as a CSF factory if `CsfFile` itself recognized it as one; bases we can't
+// resolve locally (e.g. imported from another file) default to trusting `.extend()`.
+const isLocalNonFactoryStory = (csfSource: CsfFile, name: string) =>
+  name in csfSource._stories && !csfSource._stories[name].__stats?.factory;
+
+const isStoryExtendFactory = (storyExport: t.Node, csfSource: CsfFile) =>
+  t.isCallExpression(storyExport) &&
+  t.isMemberExpression(storyExport.callee) &&
+  t.isIdentifier(storyExport.callee.property) &&
+  storyExport.callee.property.name === 'extend' &&
+  t.isIdentifier(storyExport.callee.object) &&
+  !isLocalNonFactoryStory(csfSource, storyExport.callee.object.name);
+
 export const enrichCsfStory = (
   csf: CsfFile,
   csfSource: CsfFile,
@@ -17,11 +37,7 @@ export const enrichCsfStory = (
 ) => {
   const storyExport = csfSource.getStoryExport(key);
   const isCsfFactory =
-    t.isCallExpression(storyExport) &&
-    t.isMemberExpression(storyExport.callee) &&
-    ((t.isIdentifier(storyExport.callee.object) && storyExport.callee.object.name === 'meta') ||
-      (t.isIdentifier(storyExport.callee.property) &&
-        storyExport.callee.property.name === 'extend'));
+    isMetaStoryFactory(storyExport) || isStoryExtendFactory(storyExport, csfSource);
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);

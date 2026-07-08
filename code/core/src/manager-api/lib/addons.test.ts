@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { Channel } from 'storybook/internal/channels';
+
 import { clearChannel, getChannel as readInstalledChannel } from '../../channels/channel-slot.ts';
-import { Channel } from '../../channels/main.ts';
 import { AddonStore } from './addons.ts';
 
 describe('AddonStore channel', () => {

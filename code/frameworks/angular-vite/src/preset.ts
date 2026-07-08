@@ -232,8 +232,6 @@ export function angularOptionsPlugin(
   { normalizePath, zoneless }: any
 ): Plugin {
   let resolvedConfig: UserConfig;
-  // Resolved once in config() rather than per-transform() call: transform() has no id-pattern
-  // pre-filter, so it runs for every module and findConfigFile does disk I/O.
   let resolvedPreviewPath: string | undefined;
   return {
     name: 'storybook-angular-vite-options-plugin',

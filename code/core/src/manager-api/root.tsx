@@ -132,6 +132,11 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
   modules: ReturnType<ModuleFn>[];
 
+  // Addon register callbacks run in the constructor (before mount) so manager-side listeners exist
+  // before the preview iframe emits its first events. React's this.setState is a no-op before mount,
+  // so store writes during registration are applied directly to this.state until this flips true.
+  mounted = false;
+
   static displayName = 'Manager';
 
   constructor(props: ManagerProviderProps) {
@@ -150,6 +155,20 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     const store = new Store({
       getState: () => this.state,
       setState: (stateChange: Partial<State>, callback) => {
+        if (!this.mounted) {
+          // Before mount (e.g. during addon registration in the constructor) React's setState is a
+          // no-op, so apply the patch directly to this.state and resolve synchronously. This ensures
+          // register-time writes (like experimental_setFilter) land in the first render.
+          const patch =
+            typeof stateChange === 'function'
+              ? (stateChange as (s: State) => Partial<State>)(this.state)
+              : stateChange;
+          this.state = { ...this.state, ...patch };
+          callback?.(this.state);
+
+          return this.state;
+        }
+
         this.setState(stateChange, () => callback(this.state));
 
         return this.state;
@@ -198,6 +217,10 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
     // listeners (e.g. open-service) exist before preview JS can emit sync-start.
     props.provider.handleAPI(this.api);
+  }
+
+  componentDidMount() {
+    this.mounted = true;
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {

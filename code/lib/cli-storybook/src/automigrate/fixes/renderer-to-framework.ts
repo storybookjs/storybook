@@ -32,8 +32,12 @@ const detectRenderers = (dependencies: string[]): string[] => {
     .filter((pkg) => !Object.keys(frameworkPackages).includes(pkg));
 };
 
+export function buildRendererImportRegex(renderer: string): RegExp {
+  return new RegExp(`(['"])${renderer}(['"])`, 'g');
+}
+
 const replaceImports = (source: string, renderer: string, framework: string) => {
-  const regex = new RegExp(`(['"])${renderer}(['"])`, 'g');
+  const regex = buildRendererImportRegex(renderer);
   return regex.test(source) ? source.replace(regex, `$1${framework}$2`) : null;
 };
 
@@ -117,6 +121,32 @@ const checkPackageJson = async (
   return { frameworks, renderers };
 };
 
+export function resolveFrameworkRendererPairs(
+  frameworks: string[],
+  onSkip?: (reason: string) => void
+): Array<{ rendererPackage: string; selectedFramework: string }> {
+  const pairs: Array<{ rendererPackage: string; selectedFramework: string }> = [];
+  for (const selectedFramework of frameworks) {
+    const frameworkName = frameworkPackages[selectedFramework];
+    if (!frameworkName) {
+      onSkip?.(`Framework name not found for ${selectedFramework}, skipping.`);
+      continue;
+    }
+    const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
+    const [rendererPackage] =
+      Object.entries(rendererPackages).find(([, r]) => r === rendererName) ?? [];
+    if (!rendererPackage) {
+      onSkip?.(`Renderer package not found for ${selectedFramework}, skipping.`);
+      continue;
+    }
+    if (rendererPackage === selectedFramework) {
+      continue;
+    }
+    pairs.push({ rendererPackage, selectedFramework });
+  }
+  return pairs;
+}
+
 export const rendererToFramework: Fix<MigrationResult> = {
   id: 'renderer-to-framework',
   promptType: 'auto',
@@ -156,27 +186,11 @@ export const rendererToFramework: Fix<MigrationResult> = {
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false, storiesPaths, configDir } = options;
 
-    for (const selectedFramework of result.frameworks) {
-      const frameworkName = frameworkPackages[selectedFramework];
-      if (!frameworkName) {
-        logger.warn(`Framework name not found for ${selectedFramework}, skipping.`);
-        continue;
-      }
-      const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
-      const [rendererPackage] =
-        Object.entries(rendererPackages).find(([, renderer]) => renderer === rendererName) ?? [];
-
-      if (!rendererPackage) {
-        logger.warn(`Renderer package not found for ${selectedFramework}, skipping.`);
-        continue;
-      }
-
-      if (rendererPackage === selectedFramework) {
-        continue;
-      }
-
+    for (const { rendererPackage, selectedFramework } of resolveFrameworkRendererPairs(
+      result.frameworks,
+      (reason) => logger.warn(reason)
+    )) {
       logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
-
       // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
       const configFiles = await globby([`${configDir}/**/*`]);
@@ -189,13 +203,18 @@ export const rendererToFramework: Fix<MigrationResult> = {
       );
 
       logger.debug('Updating package.json files...');
-
-      // Update all package.json files to remove renderers
       await Promise.all(
         result.packageJsonFiles.map((file: string) =>
           removeRendererInPackageJson(file, rendererPackage, dryRun)
         )
       );
     }
+  },
+
+  detectMissedTransformations(result) {
+    return resolveFrameworkRendererPairs(result.frameworks).map(({ rendererPackage }) => ({
+      label: rendererPackage,
+      regex: buildRendererImportRegex(rendererPackage),
+    }));
   },
 };

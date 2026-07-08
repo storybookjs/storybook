@@ -8,7 +8,15 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { allFixes } from './fixes/index.ts';
 import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
-import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
+import { detectMissedTransformations } from './helpers/missedTransformations.ts';
+import type {
+  CheckOptions,
+  Fix,
+  FixId,
+  MissedTransformationMatch,
+  MissedTransformationPattern,
+  RunOptions,
+} from './types.ts';
 import { FixStatus } from './types.ts';
 import { RN_STORYBOOK_DIR } from '../../../../core/src/shared/constants/config-folder.ts';
 
@@ -49,6 +57,7 @@ export interface MultiProjectRunAutomigrationOptions {
   dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
+  projects: ProjectAutomigrationData[];
 }
 
 /** Collects all applicable automigrations across multiple projects */
@@ -272,9 +281,13 @@ export type AutomigrationResult = {
 export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
-): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { dryRun, skipInstall, automigrations, yes } = options;
+): Promise<{
+  projectResults: Record<ConfigDir, AutomigrationResult>;
+  missedTransformations: MissedTransformationMatch[];
+}> {
+  const { dryRun, skipInstall, automigrations, yes, projects } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
+  const missedTransformationPatterns: Array<{ fixId: FixId } & MissedTransformationPattern> = [];
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
     am.reports.every((rep) => rep.status !== 'not_applicable')
@@ -395,6 +408,16 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
+          if (typeof fix.detectMissedTransformations === 'function') {
+            try {
+              const patterns = fix.detectMissedTransformations(result);
+              missedTransformationPatterns.push(...patterns.map((p) => ({ fixId: fix.id, ...p })));
+            } catch (patternError) {
+              logger.debug(
+                `Failed to compute missed-transformation patterns for ${fix.id}: ${patternError}`
+              );
+            }
+          }
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }
       } catch (error) {
@@ -426,7 +449,27 @@ export async function runAutomigrationsForProjects(
     };
   }
 
-  return projectResults;
+  const safeFiles = projects.flatMap((p) =>
+    [p.mainConfigPath, p.previewConfigPath, ...p.storiesPaths].filter(Boolean)
+  ) as string[];
+  const safeDirs = projects.map((p) => p.configDir);
+  // When 2+ projects both successfully run the same detectMissedTransformations-opted
+  // fix, the same { fixId, label } pattern is pushed once per project above. Dedupe by
+  // fixId+label before scanning so a single leftover file isn't matched (and reported)
+  // multiple times under the same group.
+  const dedupedPatterns = [
+    ...new Map(missedTransformationPatterns.map((p) => [`${p.fixId}::${p.label}`, p])).values(),
+  ];
+  const missedTransformations =
+    dedupedPatterns.length > 0
+      ? await detectMissedTransformations({
+          patterns: dedupedPatterns,
+          safeFiles,
+          safeDirs,
+        })
+      : [];
+
+  return { projectResults, missedTransformations };
 }
 
 export async function runAutomigrations(
@@ -435,6 +478,7 @@ export async function runAutomigrations(
 ): Promise<{
   detectedAutomigrations: AutomigrationCheckResult[];
   automigrationResults: Record<string, AutomigrationResult>;
+  missedTransformations: MissedTransformationMatch[];
 }> {
   // Prepare project data for automigrations
   const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
@@ -477,12 +521,14 @@ export async function runAutomigrations(
     yes: options.yes,
   });
   // Run selected automigrations for each project
-  const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {
-    automigrations: detectedAutomigrations,
-    dryRun: options.dryRun,
-    yes: options.yes,
-    skipInstall: options.skipInstall,
-  });
+  const { projectResults: automigrationResults, missedTransformations } =
+    await runAutomigrationsForProjects(selectedAutomigrations, {
+      automigrations: detectedAutomigrations,
+      dryRun: options.dryRun,
+      yes: options.yes,
+      skipInstall: options.skipInstall,
+      projects: projectAutomigrationData,
+    });
 
   // Special case handling for rnstorybook-config which renames the config dir
   // TODO: Remove this as soon as the rn-storybook-config automigration is removed
@@ -501,5 +547,6 @@ export async function runAutomigrations(
   return {
     detectedAutomigrations,
     automigrationResults,
+    missedTransformations,
   };
 }

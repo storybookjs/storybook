@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
 import { removeRendererInPackageJson, transformSourceFiles } from './renderer-to-framework.ts';
@@ -19,6 +21,13 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   commonGlobOptions: () => ({}),
   getProjectRoot: () => '/project/root',
+}));
+vi.mock('storybook/internal/node-logger', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+  },
 }));
 
 const mockPackageJson = {
@@ -307,5 +316,79 @@ describe('check', () => {
     const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toBeNull();
+  });
+});
+
+describe('run / detectMissedTransformations onSkip wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(readFile).mockImplementation(() => Promise.resolve(''));
+    vi.mocked(writeFile).mockImplementation(() => Promise.resolve());
+  });
+
+  it('should call logger.warn (with a "skipping" message) when run() cannot resolve a framework', async () => {
+    const options = {
+      result: {
+        frameworks: ['not-a-real-framework'],
+        renderers: [],
+        packageJsonFiles: [],
+      },
+      dryRun: true,
+      storiesPaths: [],
+      configDir: 'test',
+    } as any;
+
+    await rendererToFramework.run!(options);
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('skipping'));
+  });
+
+  it('should NOT call logger.warn when detectMissedTransformations resolves the same malformed input', () => {
+    const pairs = rendererToFramework.detectMissedTransformations!({
+      frameworks: ['not-a-real-framework'],
+      renderers: [],
+      packageJsonFiles: [],
+    });
+
+    expect(pairs).toEqual([]);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('detectMissedTransformations', () => {
+  it('should return a label and regex for each resolved renderer/framework pair', () => {
+    const result = {
+      frameworks: ['@storybook/react-vite'],
+      renderers: [],
+      packageJsonFiles: [],
+    };
+
+    const pairs = rendererToFramework.detectMissedTransformations!(result);
+
+    expect(pairs).toEqual([{ label: '@storybook/react', regex: expect.any(RegExp) }]);
+  });
+
+  it('should return a regex that matches the plain renderer import specifier', () => {
+    const result = {
+      frameworks: ['@storybook/react-vite'],
+      renderers: [],
+      packageJsonFiles: [],
+    };
+
+    const pairs = rendererToFramework.detectMissedTransformations!(result);
+
+    expect(pairs[0].regex.test("import x from '@storybook/react'")).toBe(true);
+  });
+
+  it('should return a regex that does not match a longer package name sharing the same prefix', () => {
+    const result = {
+      frameworks: ['@storybook/react-vite'],
+      renderers: [],
+      packageJsonFiles: [],
+    };
+
+    const pairs = rendererToFramework.detectMissedTransformations!(result);
+
+    expect(pairs[0].regex.test("import x from '@storybook/react-vite'")).toBe(false);
   });
 });

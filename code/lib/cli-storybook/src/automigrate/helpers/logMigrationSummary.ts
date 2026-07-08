@@ -3,8 +3,10 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { shortenPath } from '../../util.ts';
 import type { FixSummary } from '../types.ts';
 import { FixStatus } from '../types.ts';
+import { formatMissedTransformationsMessage } from './missedTransformations.ts';
 
 export const messageDivider = '\n\n';
 const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';
@@ -56,7 +58,15 @@ export function logMigrationSummary({
   const messages = [];
   messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
 
-  messages.push(dedent`If you'd like to run the migrations again, you can do so by running 
+  const missedTransformationsMessage = formatMissedTransformationsMessage(
+    fixSummary.missedTransformations,
+    { shortenPath }
+  );
+  if (missedTransformationsMessage) {
+    messages.push(missedTransformationsMessage);
+  }
+
+  messages.push(dedent`If you'd like to run the migrations again, you can do so by running
     ${picocolors.cyan('npx storybook automigrate')}
     
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.

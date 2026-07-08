@@ -16,6 +16,7 @@ import type {
   Fix,
   FixId,
   FixSummary,
+  MissedTransformationPattern,
   PreCheckFailure,
   Prompt,
 } from './fixes/index.ts';
@@ -23,6 +24,7 @@ import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
 import { getStorybookData } from './helpers/mainConfigFile.ts';
+import { detectMissedTransformations } from './helpers/missedTransformations.ts';
 
 const logAvailableMigrations = () => {
   const availableFixes = [...allFixes, ...commandFixes]
@@ -262,6 +264,7 @@ export async function runFixes({
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
   // Collects core addons that fixes add but whose postinstall must run after `installDependencies`.
   const addonsToPostinstall: string[] = [];
+  const missedTransformationPatterns: Array<{ fixId: FixId } & MissedTransformationPattern> = [];
 
   for (let i = 0; i < fixes.length; i += 1) {
     const f = fixes[i] as Fix;
@@ -403,6 +406,16 @@ export async function runFixes({
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
+            if (typeof f.detectMissedTransformations === 'function') {
+              try {
+                const patterns = f.detectMissedTransformations(result);
+                missedTransformationPatterns.push(...patterns.map((p) => ({ fixId: f.id, ...p })));
+              } catch (error) {
+                logger.debug(
+                  `Failed to compute missed-transformation patterns for ${f.id}: ${error}`
+                );
+              }
+            }
             fixSummary.succeeded.push(f.id);
             currentTaskLogger.success(`Ran ${picocolors.cyan(f.id)} migration`);
           } catch (error) {
@@ -420,6 +433,17 @@ export async function runFixes({
       }
     } else {
       fixResults[f.id] = fixResults[f.id] || FixStatus.UNNECESSARY;
+    }
+  }
+
+  if (missedTransformationPatterns.length > 0) {
+    const missedTransformations = await detectMissedTransformations({
+      patterns: missedTransformationPatterns,
+      safeFiles: [mainConfigPath, previewConfigPath, ...storiesPaths].filter(Boolean) as string[],
+      safeDirs: [configDir],
+    });
+    if (missedTransformations.length > 0) {
+      fixSummary.missedTransformations = missedTransformations;
     }
   }
 

@@ -1,4 +1,9 @@
-import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/internal/common';
+import {
+  buildImportRenameRegex,
+  getAddonNames,
+  removeAddon,
+  transformImportFiles,
+} from 'storybook/internal/common';
 
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
@@ -14,7 +19,7 @@ interface AddonDocsOptions {
   allDeps: Record<string, string>;
 }
 
-const consolidatedAddons = {
+export const consolidatedAddons = {
   '@storybook/addon-actions': 'storybook/actions',
   '@storybook/addon-controls': 'storybook/internal/controls',
   '@storybook/addon-toolbars': 'storybook/internal/toolbars',
@@ -124,6 +129,13 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
 
   prompt() {
     return "In Storybook 9.0, several addons have been moved into Storybook's core and are no longer needed as separate packages. We'll remove the unnecessary addons from your configuration and dependencies, and update your code to use the new core features.";
+  },
+
+  detectMissedTransformations() {
+    return Object.keys(consolidatedAddons).map((addon) => ({
+      label: addon,
+      regex: buildImportRenameRegex(addon),
+    }));
   },
 
   async run({

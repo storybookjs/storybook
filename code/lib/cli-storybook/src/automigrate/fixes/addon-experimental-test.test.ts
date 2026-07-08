@@ -151,6 +151,16 @@ describe('addon-experimental-test fix', () => {
     });
   });
 
+  describe('detectMissedTransformations', () => {
+    it('returns a bare-literal pattern matching the old package name', () => {
+      const patterns = addonExperimentalTest.detectMissedTransformations!({ matchingFiles: [] });
+      expect(patterns).toEqual([
+        { label: '@storybook/experimental-addon-test', regex: expect.any(RegExp) },
+      ]);
+      expect(patterns[0].regex.test('@storybook/experimental-addon-test')).toBe(true);
+    });
+  });
+
   describe('run function', () => {
     it('should replace @storybook/experimental-addon-test in files', async () => {
       packageManager.getModulePackageJSON.mockImplementation(async (packageName: string) => {

@@ -8,7 +8,8 @@ import type { CheckOptions } from './index.ts';
 import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 
 // Mock dependencies
-vi.mock('node:fs/promises', () => ({
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
   readFile: vi.fn(),
   writeFile: vi.fn(),
 }));
@@ -23,7 +24,8 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   transformImportFiles: vi.fn().mockResolvedValue([]),
 }));
 
@@ -110,6 +112,17 @@ describe('nextjs-to-nextjs-vite', () => {
 
       expect(prompt).toContain('@storybook/nextjs');
       expect(prompt).toContain('@storybook/nextjs-vite');
+    });
+  });
+
+  describe('detectMissedTransformations', () => {
+    it('returns a pattern for @storybook/nextjs that does not false-positive on @storybook/nextjs-vite', () => {
+      const patterns = nextjsToNextjsVite.detectMissedTransformations!(null as any);
+      expect(patterns).toEqual([{ label: '@storybook/nextjs', regex: expect.any(RegExp) }]);
+      const { regex } = patterns[0];
+      expect(regex.test(`import x from '@storybook/nextjs'`)).toBe(true);
+      regex.lastIndex = 0;
+      expect(regex.test(`import x from '@storybook/nextjs-vite'`)).toBe(false);
     });
   });
 

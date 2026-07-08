@@ -1,11 +1,38 @@
+import { promises as fs } from 'node:fs';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
   promptForAutomigrations,
+  runAutomigrations,
+  runAutomigrationsForProjects,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    promises: {
+      ...actual.promises,
+      stat: vi.fn(),
+      readFile: vi.fn(),
+    },
+  };
+});
+vi.mock('globby', () => ({
+  globby: vi.fn(),
+}));
+vi.mock('p-limit', () => ({
+  default: vi.fn(() => vi.fn((fn) => fn())),
+}));
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal()),
+  commonGlobOptions: () => ({}),
+  getProjectRoot: () => '/project/root',
+}));
 
 vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   return {
@@ -13,6 +40,12 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     prompt: {
       multiselect: vi.fn(),
       error: vi.fn(),
+      taskLog: vi.fn(() => ({
+        message: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        group: vi.fn(),
+      })),
     },
     logger: {
       log: vi.fn(),
@@ -25,6 +58,22 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     },
   };
 });
+
+const { mockFixWithDetection } = vi.hoisted(() => {
+  const mockFixWithDetection = {
+    id: 'fix-with-detection',
+    check: vi.fn(),
+    prompt: vi.fn().mockReturnValue('Prompt for fix-with-detection'),
+    promptType: 'auto',
+    run: vi.fn().mockResolvedValue(undefined),
+    detectMissedTransformations: vi.fn(),
+  };
+  return { mockFixWithDetection };
+});
+
+vi.mock('./fixes', () => ({
+  allFixes: [mockFixWithDetection],
+}));
 
 const taskLogMock = {
   message: vi.fn(),
@@ -252,6 +301,149 @@ describe('multi-project automigrations', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Detected automigrations (dry run - no changes will be made):'
       );
+    });
+  });
+
+  describe('runAutomigrationsForProjects - missed transformations', () => {
+    beforeEach(() => {
+      vi.mocked(fs.stat)
+        .mockReset()
+        .mockResolvedValue({ size: 100 } as any);
+      vi.mocked(fs.readFile).mockReset().mockResolvedValue('');
+    });
+
+    it('excludes another project`s own safe-set files from the aggregated missedTransformations even though they match the pattern (monorepo cross-contamination guard)', async () => {
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockReset();
+
+      const fix = createMockFix('fix-with-detection', { needsFix: true });
+      fix.detectMissedTransformations = vi
+        .fn()
+        .mockReturnValue([{ label: 'old-pattern', regex: /old-pattern/ }]);
+
+      // Project A is the one that actually ran the fix.
+      const projectA: ProjectAutomigrationData = {
+        ...createMockProject('/project1/.storybook'),
+        mainConfigPath: '/project1/.storybook/main.ts',
+      };
+      // Project B did not run this fix, but it is part of the same run and has
+      // its own legitimate story file that happens to still contain the stale pattern.
+      const projectB: ProjectAutomigrationData = {
+        ...createMockProject('/project2/.storybook'),
+        mainConfigPath: '/project2/.storybook/main.ts',
+        storiesPaths: ['/project2/src/Button.stories.ts'],
+      };
+
+      vi.mocked(globby).mockResolvedValue([
+        // Belongs to project B's own safe set - must be excluded.
+        '/project2/src/Button.stories.ts',
+        // A genuine leftover file outside any known project's safe set.
+        '/packages/other-app/src/leftover.ts',
+      ]);
+      vi.mocked(fs.readFile).mockResolvedValue("import x from 'old-pattern';");
+
+      const automigrations = [
+        {
+          fix,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: projectA,
+            },
+          ],
+        },
+      ];
+
+      const { missedTransformations } = await runAutomigrationsForProjects(automigrations, {
+        automigrations,
+        dryRun: false,
+        yes: false,
+        skipInstall: false,
+        // The safe set must be built from ALL projects known in this run, not
+        // just the ones with successful fixes.
+        projects: [projectA, projectB],
+      });
+
+      expect(missedTransformations).toEqual([
+        {
+          file: '/packages/other-app/src/leftover.ts',
+          fixId: 'fix-with-detection',
+          label: 'old-pattern',
+        },
+      ]);
+    });
+  });
+
+  describe('runAutomigrations - missed transformations aggregation', () => {
+    const createMockCollectProjectsResult = (configDir: string, storiesPaths: string[] = []) =>
+      ({
+        configDir,
+        packageManager: {} as any,
+        mainConfig: {} as any,
+        mainConfigPath: `${configDir}/main.ts`,
+        previewConfigPath: undefined,
+        isUpgrade: true,
+        beforeVersion: '7.0.0',
+        currentCLIVersion: '8.0.0',
+        latestCLIVersionOnNPM: '8.0.0',
+        autoblockerCheckResults: null,
+        storiesPaths,
+        hasCsfFactoryPreview: false,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+      }) as any;
+
+    beforeEach(() => {
+      mockFixWithDetection.check.mockReset();
+      mockFixWithDetection.run.mockReset().mockResolvedValue(undefined);
+      mockFixWithDetection.detectMissedTransformations.mockReset();
+      vi.mocked(fs.stat)
+        .mockReset()
+        .mockResolvedValue({ size: 100 } as any);
+      vi.mocked(fs.readFile).mockReset().mockResolvedValue('');
+    });
+
+    it('scans for missed transformations once per run (not once per project) and returns a single flat list', async () => {
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockReset();
+      vi.mocked(globby).mockResolvedValue(['/packages/other-app/src/leftover.ts']);
+      vi.mocked(fs.readFile).mockResolvedValue("import x from 'stale-import';");
+
+      mockFixWithDetection.check.mockResolvedValue({ needsFix: true });
+      mockFixWithDetection.detectMissedTransformations.mockReturnValue([
+        { label: 'stale-import', regex: /stale-import/ },
+      ]);
+
+      const projectA = createMockCollectProjectsResult('/project1/.storybook');
+      const projectB = createMockCollectProjectsResult('/project2/.storybook');
+
+      const result = await runAutomigrations([projectA, projectB], {
+        dryRun: false,
+        yes: true,
+        skipInstall: true,
+        disableTelemetry: true,
+      } as any);
+
+      // The expensive filesystem scan must happen exactly once for the whole
+      // run, regardless of how many projects successfully ran the fix.
+      expect(globby).toHaveBeenCalledTimes(1);
+
+      // Both projectA and projectB successfully ran the same fix, so the same
+      // { fixId, label } pattern was produced twice. The leftover file must still
+      // be reported exactly once, not once per project that ran the fix.
+      expect(result.missedTransformations).toEqual([
+        {
+          file: '/packages/other-app/src/leftover.ts',
+          fixId: 'fix-with-detection',
+          label: 'stale-import',
+        },
+      ]);
     });
   });
 });

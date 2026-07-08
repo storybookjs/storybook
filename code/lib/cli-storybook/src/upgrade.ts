@@ -26,12 +26,14 @@ import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils.ts';
+import { formatMissedTransformationsMessage } from './automigrate/helpers/missedTransformations.ts';
 import {
   type AutomigrationCheckResult,
   type AutomigrationResult,
   runAutomigrations,
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
+import type { MissedTransformationMatch } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
@@ -210,7 +212,8 @@ function getUpgradeResults(
 function logUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
   detectedAutomigrations: AutomigrationCheckResult[],
-  doctorResults: Record<string, ProjectDoctorResults>
+  doctorResults: Record<string, ProjectDoctorResults>,
+  missedTransformations: MissedTransformationMatch[]
 ) {
   const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
     projectResults,
@@ -248,6 +251,13 @@ function logUpgradeResults(
         `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }
+  }
+
+  const missedTransformationsMessage = formatMissedTransformationsMessage(missedTransformations, {
+    shortenPath,
+  });
+  if (missedTransformationsMessage) {
+    logger.log(missedTransformationsMessage);
   }
 
   const automigrationLinks = detectedAutomigrations
@@ -442,13 +452,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
+    let missedTransformations: MissedTransformationMatch[] = [];
     if (options.skipAutomigrations) {
       logger.log('Skipping automigrations (--skip-automigrations).');
     } else {
-      ({ automigrationResults, detectedAutomigrations } = await runAutomigrations(
-        storybookProjects,
-        options
-      ));
+      ({ automigrationResults, detectedAutomigrations, missedTransformations } =
+        await runAutomigrations(storybookProjects, options));
     }
 
     // Install dependencies
@@ -527,7 +536,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
 
     // Display upgrade results summary
-    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
+    logUpgradeResults(
+      automigrationResults,
+      detectedAutomigrations,
+      doctorResults,
+      missedTransformations
+    );
 
     // TELEMETRY
     for (const project of storybookProjects) {

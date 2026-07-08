@@ -131,7 +131,7 @@ function main(options?: UserOptions): PluginOption {
                   {
                     name: 'storybook:enforce-env-base',
                     enforce: 'post',
-                    config: () => ({ base: basePath }),
+                    config: () => ({ base: basePath, server: { hmr: config.server?.hmr } }),
                   },
                 ],
                 cacheDir: 'node_modules/.cache/storybook-vite-deps',
@@ -145,8 +145,6 @@ function main(options?: UserOptions): PluginOption {
               configurable: !0,
               writable: !0,
             });
-
-            sbConfig.server.hmr = true;
 
             return new DevEnvironment('client', sbConfig, {
               ...context,
@@ -183,18 +181,18 @@ function main(options?: UserOptions): PluginOption {
       sb.port = server.config.server.port;
       await sb.presets.apply('experimental_devServer', polkaServer, sb);
 
-      server.httpServer?.prependListener('upgrade', (req) => {
-        const protocol = req.headers['sec-websocket-protocol'];
-        if (
-          basePath !== '/' &&
-          (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
-          req.url?.startsWith(basePath)
-        ) {
-          req.url = req.url.slice(basePath.length - 1) || '/';
-        }
-      });
-
       if (server.httpServer) {
+        server.httpServer?.prependListener('upgrade', (req) => {
+          const protocol = req.headers['sec-websocket-protocol'];
+          if (
+            basePath !== '/' &&
+            (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
+            req.url?.startsWith(basePath)
+          ) {
+            req.url = req.url.slice(basePath.length - 1) || '/';
+          }
+        });
+
         const channel = createServerChannel(
           server.httpServer as Parameters<typeof createServerChannel>[0],
           '/storybook-server-channel',
@@ -204,6 +202,7 @@ function main(options?: UserOptions): PluginOption {
 
         await sb.presets.apply('experimental_serverChannel', channel);
       } else {
+        // vite is in middleware mode
         const globalWithChannel = globalThis as typeof globalThis & {
           __SB_CHANNEL_UPGRADE__?: EventEmitter;
           __SB_CHANNEL__?: ReturnType<typeof createServerChannel>;
@@ -213,27 +212,37 @@ function main(options?: UserOptions): PluginOption {
         const hmrOpts = server.config.server.hmr;
         const hostServer = typeof hmrOpts == 'object' && hmrOpts && hmrOpts.server;
         if (hostServer) {
-          let CHANNEL = '/storybook-server-channel';
-          let originals = hostServer.rawListeners('upgrade');
+          const CHANNEL = '/storybook-server-channel';
+
+          const hostHmrBase = server.config.base || '/';
+          const originals = hostServer.rawListeners('upgrade');
           hostServer.removeAllListeners('upgrade');
           hostServer.on('upgrade', (req, socket, head) => {
             if (req?.url?.startsWith(CHANNEL)) {
               sharedUpgrades.emit('upgrade', req, socket, head);
               return;
             }
-            for (let fn of originals) fn.call(hostServer, req, socket, head);
+            const protocol = req.headers['sec-websocket-protocol'];
+            if (
+              (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
+              req.url?.startsWith(basePath)
+            ) {
+              const queryIndex = req.url.indexOf('?');
+              req.url = hostHmrBase + (queryIndex >= 0 ? req.url.slice(queryIndex) : '');
+            }
+            for (const fn of originals) fn.call(hostServer, req, socket, head);
           });
-        } else {
-          if (!globalWithChannel.__SB_CHANNEL__) {
-            globalWithChannel.__SB_CHANNEL__ = createServerChannel(
-              sharedUpgrades,
-              '/storybook-server-channel',
-              wsToken
-            );
-            await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
-          }
-          sb.channel = globalWithChannel.__SB_CHANNEL__;
         }
+
+        if (!globalWithChannel.__SB_CHANNEL__) {
+          globalWithChannel.__SB_CHANNEL__ = createServerChannel(
+            sharedUpgrades,
+            '/storybook-server-channel',
+            wsToken
+          );
+          await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
+        }
+        sb.channel = globalWithChannel.__SB_CHANNEL__;
       }
 
       const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');

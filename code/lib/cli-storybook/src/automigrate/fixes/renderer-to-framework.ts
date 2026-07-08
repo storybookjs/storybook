@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
+  escapeRegExp,
   frameworkPackages,
   frameworkToRenderer,
   rendererPackages,
@@ -33,8 +34,7 @@ const detectRenderers = (dependencies: string[]): string[] => {
 };
 
 export function buildRendererImportRegex(renderer: string): RegExp {
-  const escaped = renderer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(['"])${escaped}(['"])`, 'g');
+  return new RegExp(`(['"])${escapeRegExp(renderer)}(['"])`, 'g');
 }
 
 const replaceImports = (source: string, renderer: string, framework: string) => {

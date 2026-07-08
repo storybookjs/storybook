@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveDevCommandOptions } from './dev-options.ts';
 
@@ -11,7 +11,34 @@ const getErrorMessage = (callback: () => unknown) => {
   throw new Error('Expected callback to throw');
 };
 
+// detectAgent() reads the live process.env via std-env, so ambient agent
+// variables (e.g. when this suite itself runs under an AI agent) must be
+// cleared for the non-agent expectations below to hold.
+const agentEnvVars = [
+  'AI_AGENT',
+  'AUGMENT_AGENT',
+  'CLAUDECODE',
+  'CLAUDE_CODE',
+  'CODEX_SANDBOX',
+  'CODEX_THREAD_ID',
+  'CURSOR_AGENT',
+  'GEMINI_CLI',
+  'GOOSE_PROVIDER',
+  'OPENCODE',
+  'REPL_ID',
+];
+
 describe('resolveDevCommandOptions', () => {
+  beforeEach(() => {
+    for (const key of agentEnvVars) {
+      vi.stubEnv(key, undefined);
+    }
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('preserves truthy getEnvConfig-style env overrides for existing dev options', () => {
     expect(
       resolveDevCommandOptions(
@@ -105,6 +132,29 @@ describe('resolveDevCommandOptions', () => {
   it('keeps the browser opening default outside Claude preview', () => {
     expect(resolveDevCommandOptions({ open: true }, { env: {} })).toMatchObject({
       open: true,
+    });
+  });
+
+  it.each([
+    ['CLAUDECODE', '1'],
+    ['CODEX_SANDBOX', '1'],
+    ['CODEX_THREAD_ID', '1'],
+    ['CURSOR_AGENT', '1'],
+    ['AI_AGENT', 'copilot'],
+  ])('suppresses browser opening when %s marks an AI agent environment', (name, value) => {
+    vi.stubEnv(name, value);
+
+    expect(resolveDevCommandOptions({ open: true }, { env: {} })).toMatchObject({
+      open: false,
+    });
+  });
+
+  it('keeps explicit --port precedence over PORT in agent shells outside Claude preview', () => {
+    vi.stubEnv('CLAUDECODE', '1');
+
+    expect(resolveDevCommandOptions({ port: '7007' }, { env: { PORT: '6123' } })).toMatchObject({
+      open: false,
+      port: 7007,
     });
   });
 

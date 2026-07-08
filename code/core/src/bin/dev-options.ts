@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { HandledError } from 'storybook/internal/common';
 
 import { isClaudePreviewLaunch, type AgentEnvironment } from '../shared/utils/agent-environment.ts';
+import { detectAgent } from '../telemetry/detect-agent.ts';
 
 type DevCommandEnvironment = AgentEnvironment & {
   CI?: string;
@@ -45,6 +46,9 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   { env = process.env }: { env?: DevCommandEnvironment } = {}
 ) {
   const isClaudePreview = isClaudePreviewLaunch(env);
+  // AI agents usually start Storybook to verify changes; auto-opening the system
+  // browser next to their own preview is pure noise, so suppress it silently.
+  const isAgentSession = isClaudePreview || detectAgent() !== undefined;
   const PORT = env.PORT ?? undefined;
   const SBCONFIG_PORT = env.SBCONFIG_PORT ?? undefined;
 
@@ -57,7 +61,7 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
     port: isClaudePreview
       ? (PORT ?? options.port ?? SBCONFIG_PORT)
       : (options.port ?? SBCONFIG_PORT ?? PORT),
-    open: isClaudePreview ? false : options.open,
+    open: isAgentSession ? false : options.open,
   });
 
   if (!result.success) {

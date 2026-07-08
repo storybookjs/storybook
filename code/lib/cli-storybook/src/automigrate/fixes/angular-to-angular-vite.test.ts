@@ -845,7 +845,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
-          "import 'zone.js';\nexport default {};"
+          expect.stringContaining('import "zone.js";')
         );
         expect(logger.step).toHaveBeenCalledWith(expect.stringContaining(previewConfigPath));
       });
@@ -885,7 +885,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
-          expect.stringContaining("import 'zone.js';")
+          expect.stringContaining('import "zone.js";')
         );
       });
 
@@ -956,7 +956,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
         expect(mockWriteFile).toHaveBeenCalledWith(
           tsxPreviewPath,
-          expect.stringContaining("import 'zone.js';")
+          expect.stringContaining('import "zone.js";')
         );
       });
 
@@ -1044,7 +1044,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
-          expect.stringContaining("import 'zone.js';")
+          expect.stringContaining('import "zone.js";')
         );
       });
 
@@ -1081,7 +1081,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
-          expect.stringContaining("import 'zone.js';")
+          expect.stringContaining('import "zone.js";')
         );
       });
 
@@ -1157,7 +1157,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         // Injection fires because appB's target is unset (multi-target rule).
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
-          expect.stringContaining("import 'zone.js';")
+          expect.stringContaining('import "zone.js";')
         );
 
         const angularJsonWrite = mockWriteFileSync.mock.calls.find(

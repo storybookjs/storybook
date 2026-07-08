@@ -13,12 +13,7 @@ export type JSONEditPath = (string | number)[];
 
 const JSON_EDIT_FORMATTING = { insertSpaces: true, tabSize: 2, eol: '\n' } as const;
 
-/**
- * Apply a single format-preserving edit to a JSON string at `path`, returning the new text.
- * Passing `value === undefined` removes the key/element at `path`. Everything outside the
- * touched node (indentation, array density, …) is left byte-for-byte unchanged, unlike a
- * parse-mutate-`JSON.stringify` round trip, which reformats the whole document.
- */
+/** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */
 export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
   applyEdits(text, modify(text, path, value, { formattingOptions: JSON_EDIT_FORMATTING }));
 

@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { types as t } from 'storybook/internal/babel';
 import { AngularJSON, editJsonText, type JSONEditPath } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -212,12 +212,8 @@ class TextJsonEditor implements TargetEditor {
 }
 
 /**
- * Rewrite Angular CLI builder/executor references, detect Compodoc/zone.js signals, and rename
- * any leftover `experimentalZoneless` key to `zoneless`, across every `:start-storybook`/
- * `:build-storybook` target found in `targetGroups`. Shared by `transformAngularJson` and
- * `transformProjectJson`, which differ only in how targets are grouped (nested `projects.<name>`
- * vs a single flat group) and how an edit is applied (in-place via `AngularJSON` vs accumulated
- * via `TextJsonEditor`) — both funnel through the same `TargetEditor.edit` shape.
+ * Rewrite builder/executor references, detect Compodoc/zone.js signals, and rename any leftover
+ * `experimentalZoneless` key to `zoneless`, across every storybook target in `targetGroups`.
  */
 const processStorybookTargets = (
   editor: TargetEditor,
@@ -237,8 +233,7 @@ const processStorybookTargets = (
       }
       hasStorybookTarget = true;
 
-      // Snapshot everything needed from this target before issuing any edits: `edit()` on
-      // `AngularJSON` reparses its `json`, which would invalidate this object reference.
+      // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
       const currentRef = target.builder ?? target.executor ?? null;
       const compodocDisabled = target.options?.compodoc === false;
       const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
@@ -269,13 +264,6 @@ const processStorybookTargets = (
   return { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue };
 };
 
-/**
- * Rewrite Angular CLI builder references, detect Compodoc/zone.js signals, and rename any
- * leftover `experimentalZoneless` key to `zoneless`, across every `:start-storybook`/
- * `:build-storybook` target in an `angular.json`. Edits are applied via `AngularJSON` (backed by
- * `jsonc-parser`), so only the touched nodes change — the rest of the file's formatting is left
- * byte-for-byte untouched, unlike a parse-mutate-`JSON.stringify` round trip.
- */
 const transformAngularJson = (
   angularJsonPath: string,
   dryRun: boolean
@@ -315,10 +303,8 @@ const transformAngularJson = (
 };
 
 /**
- * Same transform as `transformAngularJson`, for Nx `project.json` files. Nx's shape is flatter
- * (a single project's `targets` object, keyed by `executor` rather than `builder`, with no
- * `projects.<name>` nesting), so it doesn't fit `AngularJSON`'s model — this applies the same
- * kind of format-preserving `editJsonText` edits directly against the file's raw text instead.
+ * Same as `transformAngularJson`, for Nx `project.json` files: a flat `targets` object with no
+ * `projects.<name>` nesting, so it doesn't fit `AngularJSON`'s model.
  */
 const transformProjectJson = async (
   projectJsonPath: string,
@@ -356,30 +342,27 @@ const transformProjectJson = async (
   }
 };
 
-/**
- * Prepend `import 'zone.js';` to the Storybook preview when the migrated project needs zone-based
- * change detection (see `needsZoneJs` in `run()`). @storybook/angular-vite defaults to zoneless
- * outside `ng run`, so without this the polyfill is dropped for `storybook dev`, `storybook build`,
- * and standalone Vitest, breaking `NgZone`-dependent stories. Idempotent, and a no-op in dry runs.
- */
 const addZoneJsPreviewImport = async (
   previewConfigPath: string,
   dryRun: boolean
 ): Promise<void> => {
   try {
-    const content = await readFile(previewConfigPath, 'utf-8');
+    const preview = await readConfig(previewConfigPath);
 
-    // Leave an existing zone.js import (any quote style, incl. subpaths) alone.
-    if (/import\s+['"]zone\.js(\/[^'"]*)?['"]/.test(content)) {
+    // Leave an existing zone.js import (incl. subpaths like zone.js/testing) alone.
+    const hasZoneJsImport = preview._ast.program.body.some(
+      (node) =>
+        t.isImportDeclaration(node) &&
+        typeof node.source.value === 'string' &&
+        (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
+    );
+    if (hasZoneJsImport || dryRun) {
       return;
     }
 
-    if (dryRun) {
-      return;
-    }
-
-    // zone.js must be imported before Angular loads, so it goes at the very top.
-    await writeFile(previewConfigPath, `import 'zone.js';\n${content}`);
+    preview.setImport(null, 'zone.js');
+    const formatted = await formatFileContent(previewConfigPath, formatConfig(preview));
+    await writeFile(previewConfigPath, formatted);
     logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
   } catch (error) {
     logger.warn(
@@ -576,9 +559,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // Track whether any migrated builder config disabled Compodoc, so the
     // intent can be carried into framework.options (step 4b).
     let disableCompodoc = false;
-    // Track the flag-only zone.js detection signal across every storybook target seen in
-    // angular.json/project.json (steps 3/3b): injection fires unless EVERY storybook target
-    // explicitly sets `experimentalZoneless: true`.
+    // Injection fires unless EVERY storybook target sets `experimentalZoneless: true`.
     let anyStorybookTarget = false;
     let allZonelessTrue = true;
 
@@ -660,8 +641,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // 4c. Add a `zone.js` import to the preview when any migrated storybook target needs it
-    // (flag unset, or explicitly `false`) and not every storybook target opted into zoneless.
+    // 4c. Add a `zone.js` import to the preview if the project needs it.
     const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
     if (needsZoneJs && previewConfigPath) {
       await addZoneJsPreviewImport(previewConfigPath, dryRun);

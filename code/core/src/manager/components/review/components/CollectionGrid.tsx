@@ -256,7 +256,6 @@ const StoryPreviewCell: FC<{
         data-content-height={rememberedDimensions?.height}
         tabIndex={-1}
         scrolling="no"
-        onLoad={finishCurrent}
         onError={finishCurrent}
       />
     </div>

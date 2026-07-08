@@ -14,8 +14,8 @@ import {
   type IframeResizeDimensions,
 } from '../../../../shared/constants/iframe-resize.ts';
 import {
-  PREVIEW_SETTLE_TIMEOUT_MS,
   enqueuePreview,
+  PREVIEW_SETTLE_TIMEOUT_MS,
   type PreviewHandle,
 } from './previewScheduler.ts';
 import {
@@ -24,11 +24,25 @@ import {
   thumbnailReducer,
 } from './previewThumbnailState.ts';
 
+/** If iframe.resize never arrives, clear the spinner anyway. */
+const PREVIEW_SCALE_SETTLE_FALLBACK_MS = 4500;
+
+/** How often to poll a booting frame so its scheduler slot is released the moment it comes up. */
+const PREVIEW_BOOT_POLL_MS = 150;
+
 /**
- * If iframe.resize never arrives, clear the spinner anyway. 3× the scheduler slot deadline so even
- * a boot that spent a full queue round waiting still gets time to report.
+ * A booted preview constructs `__STORYBOOK_PREVIEW__` on its window early (before the story renders),
+ * so its presence marks the boot as complete. Same-origin embeds can be inspected; a cross-origin
+ * embed throws, in which case we assume booted so the scheduler slot is never held indefinitely.
  */
-const PREVIEW_SCALE_SETTLE_FALLBACK_MS = PREVIEW_SETTLE_TIMEOUT_MS * 3;
+const previewRuntimeBooted = (iframe: HTMLIFrameElement | null): boolean => {
+  try {
+    return !!(iframe?.contentWindow as unknown as { __STORYBOOK_PREVIEW__?: unknown })
+      ?.__STORYBOOK_PREVIEW__;
+  } catch {
+    return true;
+  }
+};
 
 // IntersectionObserver `rootMargin`s for the preview lifecycle: mount a cell's
 // iframe well before it scrolls into view, evict it only much further out.
@@ -143,12 +157,48 @@ export const usePreviewThumbnail = ({
     };
   }, [isInView, storyId, getPreviewHref]);
 
+  // Boots are serialized (one scheduler slot), so this frame is the only one coming up. Hold the
+  // slot until the preview runtime is constructed, then release it so the next queued preview
+  // begins; the scheduler's own deadline is the backstop if the runtime never comes up. The
+  // fallback only clears the spinner so a frame that renders without reporting its size still shows.
   useEffect(() => {
     if (!src) {
       return undefined;
     }
-    const timer = setTimeout(() => dispatch({ type: 'settled' }), PREVIEW_SCALE_SETTLE_FALLBACK_MS);
-    return () => clearTimeout(timer);
+    let pollTimer = 0;
+    let released = false;
+    // Stop polling once the scheduler's own deadline would have released the slot anyway.
+    let pollsLeft = Math.ceil(PREVIEW_SETTLE_TIMEOUT_MS / PREVIEW_BOOT_POLL_MS);
+
+    const releaseSlot = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      handleRef.current?.release();
+    };
+
+    const pollBoot = () => {
+      if (previewRuntimeBooted(iframeRef.current)) {
+        releaseSlot();
+        return;
+      }
+      if (pollsLeft-- <= 0) {
+        return;
+      }
+      pollTimer = window.setTimeout(pollBoot, PREVIEW_BOOT_POLL_MS);
+    };
+
+    const fallbackTimer = window.setTimeout(
+      () => dispatch({ type: 'settled' }),
+      PREVIEW_SCALE_SETTLE_FALLBACK_MS
+    );
+    pollBoot();
+
+    return () => {
+      window.clearTimeout(pollTimer);
+      window.clearTimeout(fallbackTimer);
+    };
   }, [bootId, src]);
 
   const handleResize = useCallback((dimensions: IframeResizeDimensions) => {

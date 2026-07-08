@@ -127,16 +127,21 @@ const SummaryContent = styled(MarkdownWrapper)({
 });
 
 // A real heading for the summary label, styled to look identical to the inline
-// bold "Summary:" text it replaces (the DocumentWrapper ancestor otherwise gives
-// h2 a larger size and a bottom border).
+// bold "Summary:" text it replaces.
 const SummaryHeading = styled.h2(({ theme }) => ({
-  display: 'inline',
-  margin: 0,
-  fontSize: 'inherit',
-  fontWeight: theme.typography.weight.bold,
-  lineHeight: 'inherit',
-  color: 'inherit',
-  border: 'none',
+  // Double the ampersand to outrank the DocumentWrapper's `.wrapper h2` rule
+  // (specificity 0,1,1), which would otherwise enlarge this and add a bottom
+  // border, so the label stays identical to the inline bold it replaces.
+  '&&': {
+    display: 'inline',
+    margin: 0,
+    padding: 0,
+    fontSize: 'inherit',
+    fontWeight: theme.typography.weight.bold,
+    lineHeight: 'inherit',
+    color: 'inherit',
+    border: 'none',
+  },
 }));
 
 // A plain clickable row, not a semantic control: making the whole header

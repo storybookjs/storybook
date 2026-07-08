@@ -48,10 +48,7 @@ const Cell = styled.div({
   display: 'flex',
   flexDirection: 'column',
   minWidth: 0,
-  // No `overflow: hidden` here: it would crop the Frame's focus ring (which is
-  // drawn with an outline offset just outside the cell). The preview media is
-  // already clipped by `Frame`'s own `overflow: hidden`, and the label truncates
-  // via its own overflow, so this cell does not need to clip.
+  overflow: 'hidden',
 });
 
 const FrameShell = styled.div({
@@ -133,9 +130,9 @@ const Frame = styled.a(({ theme }) => ({
   },
   '&:focus-visible': {
     outline: `${theme.barSelectedColor} solid 2px`,
-    outlineOffset: 2,
-    // Draw the focus ring above neighbouring cells so it is never overlapped.
-    zIndex: 1,
+    // Inset the outline so the focus ring stays fully visible inside the cell's
+    // `overflow: hidden` clipping.
+    outlineOffset: -2,
   },
 }));
 

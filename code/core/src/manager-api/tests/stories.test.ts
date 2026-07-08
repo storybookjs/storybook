@@ -1477,6 +1477,7 @@ describe('stories API', () => {
       const entries: StoryIndex['entries'] = {
         'a--1': {
           type: 'story',
+          subtype: 'story',
           id: 'a--1',
           title: 'a',
           name: '1',
@@ -1485,6 +1486,7 @@ describe('stories API', () => {
         },
         'b--1': {
           type: 'story',
+          subtype: 'story',
           id: 'b--1',
           title: 'b',
           name: '1',

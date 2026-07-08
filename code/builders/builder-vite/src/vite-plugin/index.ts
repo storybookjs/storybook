@@ -66,6 +66,8 @@ function main(options?: UserOptions): PluginOption {
         plugins: sbPlugins,
       })) as InlineConfig;
 
+      finalConfig.plugins = await withoutFrameworkDevtools(finalConfig.plugins ?? []);
+
       return { sb, finalConfig };
     }));
   let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
@@ -247,4 +249,17 @@ function main(options?: UserOptions): PluginOption {
       },
     },
   ];
+}
+
+async function withoutFrameworkDevtools(plugins: PluginOption[]): Promise<PluginOption[]> {
+  const resolved = await Promise.all(plugins);
+  const result: PluginOption[] = [];
+  for (const plugin of resolved) {
+    if (Array.isArray(plugin)) {
+      result.push(await withoutFrameworkDevtools(plugin));
+    } else if (!plugin || !/devtools/i.test(plugin.name)) {
+      result.push(plugin);
+    }
+  }
+  return result;
 }

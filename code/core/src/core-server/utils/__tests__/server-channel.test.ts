@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
+import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 
 import { EventEmitter } from 'events';
 import type { Server } from 'http';
-import { stringify } from 'telejson';
+import { parse, stringify } from 'telejson';
+import WebSocket from 'ws';
 
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
 
@@ -363,5 +364,66 @@ describe('ServerChannelTransport', () => {
     expect(socket.write).not.toHaveBeenCalled();
     expect(destroySpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
+  });
+});
+
+describe('ServerChannelTransport heartbeat priority', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const connectFakeClient = (transport: ServerChannelTransport) => {
+    const client = { readyState: WebSocket.OPEN, send: vi.fn() };
+    // @ts-expect-error (an internal API; mirrors how WebSocketServer itself populates `clients`)
+    transport.socket.clients.add(client);
+    return client;
+  };
+
+  const sentTypes = (client: { send: (data: string) => void }) =>
+    (client.send as any).mock.calls.map(([data]: [string]) => parse(data).type);
+
+  it('proactively sends a ping from send() once the heartbeat is overdue, without waiting for the scheduled interval', () => {
+    const server = new EventEmitter() as any as Server;
+    const transport = new ServerChannelTransport(server, options);
+    const client = connectFakeClient(transport);
+
+    transport.send({ type: 'STORY_RENDERED' });
+
+    // Jump the clock past HEARTBEAT_INTERVAL without advancing any timers, so the scheduled
+    // `setInterval` callback never runs. Only the opportunistic check inside send() can be
+    // responsible for the ping that follows.
+    vi.setSystemTime(new Date(Date.now() + HEARTBEAT_INTERVAL));
+
+    transport.send({ type: 'STORY_RENDERED' });
+
+    expect(sentTypes(client)).toEqual(['STORY_RENDERED', 'ping', 'STORY_RENDERED']);
+  });
+
+  it('does not send a redundant ping from send() when the heartbeat is not yet overdue', () => {
+    const server = new EventEmitter() as any as Server;
+    const transport = new ServerChannelTransport(server, options);
+    const client = connectFakeClient(transport);
+
+    transport.send({ type: 'STORY_RENDERED' });
+    vi.setSystemTime(new Date(Date.now() + HEARTBEAT_INTERVAL - 1));
+    transport.send({ type: 'STORY_RENDERED' });
+
+    expect(sentTypes(client)).toEqual(['STORY_RENDERED', 'STORY_RENDERED']);
+  });
+
+  it('does not double up when send() is asked to broadcast a ping directly', () => {
+    const server = new EventEmitter() as any as Server;
+    const transport = new ServerChannelTransport(server, options);
+    const client = connectFakeClient(transport);
+
+    vi.setSystemTime(new Date(Date.now() + HEARTBEAT_INTERVAL));
+    transport.send({ type: 'ping' });
+
+    expect(sentTypes(client)).toEqual(['ping']);
   });
 });

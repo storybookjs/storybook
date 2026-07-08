@@ -46,7 +46,7 @@ export class StorybookReporter implements Reporter {
         cause: e.cause,
       };
     });
-    this.testManager.onTestRunEnd({
+    await this.testManager.onTestRunEnd({
       totalTestCount,
       unhandledErrors: serializedErrors as unknown as VitestError[],
     });

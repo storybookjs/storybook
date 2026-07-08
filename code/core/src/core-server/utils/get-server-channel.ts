@@ -29,6 +29,8 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
+  private lastPingSentAt = Date.now();
+
   constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
@@ -92,6 +94,22 @@ export class ServerChannelTransport {
   }
 
   send(event: any) {
+    if (event.type === 'ping') {
+      this.lastPingSentAt = Date.now();
+    } else if (Date.now() - this.lastPingSentAt >= HEARTBEAT_INTERVAL) {
+      // Any outgoing broadcast is an opportunity to top up the heartbeat. A provider that floods
+      // this channel with events (e.g. addon-vitest relaying status updates for a large test run)
+      // calls send() far more often than the ping `setInterval` ticks, so piggybacking the ping here
+      // means clients keep getting one within HEARTBEAT_INTERVAL regardless of whether the event
+      // loop is otherwise busy enough to delay that interval's own callback.
+      this.lastPingSentAt = Date.now();
+      this.broadcast({ type: 'ping' });
+    }
+
+    this.broadcast(event);
+  }
+
+  private broadcast(event: any) {
     const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)

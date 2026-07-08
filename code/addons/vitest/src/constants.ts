@@ -33,6 +33,14 @@ export const DEFAULT_TEST_STATUS_FLUSH_INTERVAL = 500;
  */
 export const TEST_STATUS_FLUSH_INTERVAL_ENV_VAR = 'STORYBOOK_TEST_STATUS_FLUSH_INTERVAL';
 
+/**
+ * Maximum number of batched test-case results applied per flush. Bounds how large a single flush's
+ * status-store update (and the resulting outgoing channel message) can grow, so a run that produces
+ * results faster than they're flushed can't turn into one oversized synchronous burst - the backlog
+ * is drained in bounded slices across subsequent flushes instead.
+ */
+export const DEFAULT_MAX_TEST_CASE_RESULTS_PER_FLUSH = 200;
+
 export const storeOptions = {
   id: ADDON_ID,
   initialState: {

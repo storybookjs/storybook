@@ -14,6 +14,7 @@ import { type ThrottledFunction, throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
 import {
+  DEFAULT_MAX_TEST_CASE_RESULTS_PER_FLUSH,
   DEFAULT_TEST_STATUS_FLUSH_INTERVAL,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
@@ -46,6 +47,12 @@ export type TestManagerOptions = {
    * large storybooks at the cost of less frequent sidebar/status updates.
    */
   flushTestCaseResultsInterval?: number;
+  /**
+   * Maximum number of batched test-case results applied per flush. Defaults to
+   * {@link DEFAULT_MAX_TEST_CASE_RESULTS_PER_FLUSH}, which is safe for any project size and isn't
+   * meant to be tuned - this option exists so tests can shrink it to exercise chunking directly.
+   */
+  maxTestCaseResultsPerFlush?: number;
 };
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
@@ -79,6 +86,8 @@ export class TestManager {
     reports?: Report[];
   }[] = [];
 
+  private maxTestCaseResultsPerFlush: number;
+
   constructor(options: TestManagerOptions) {
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
@@ -87,6 +96,10 @@ export class TestManager {
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
     this.configLoader = options.configLoader;
+    this.maxTestCaseResultsPerFlush = Math.max(
+      1,
+      options.maxTestCaseResultsPerFlush ?? DEFAULT_MAX_TEST_CASE_RESULTS_PER_FLUSH
+    );
 
     this.throttledFlushTestCaseResults = throttle(
       this.flushTestCaseResults,
@@ -235,15 +248,25 @@ export class TestManager {
    *
    * This function:
    *
-   * 1. Takes all batched test case results and clears the batch
+   * 1. Takes up to {@link TestManagerOptions.maxTestCaseResultsPerFlush} batched test case results
+   *    and removes them from the batch. Any remainder is drained via `setImmediate` rather than by
+   *    re-arming the throttle: the throttle could synchronously re-enter this function when its
+   *    interval has already elapsed, draining an unbounded number of chunks in one burst instead of
+   *    yielding between them
    * 2. Updates the store state with new test counts (component tests and a11y tests)
    * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
    * 4. Creates status objects for component tests and updates the component test status store
    * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
    */
   private flushTestCaseResults = () => {
-    const testCaseResultsToFlush = this.batchedTestCaseResults;
-    this.batchedTestCaseResults = [];
+    const testCaseResultsToFlush = this.batchedTestCaseResults.splice(
+      0,
+      this.maxTestCaseResultsPerFlush
+    );
+
+    if (testCaseResultsToFlush.length === 0) {
+      return;
+    }
 
     const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
       storyId,
@@ -343,10 +366,23 @@ export class TestManager {
         },
       };
     });
+
+    if (this.batchedTestCaseResults.length > 0) {
+      setImmediate(this.flushTestCaseResults);
+    }
   };
 
-  onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
-    this.throttledFlushTestCaseResults.flush();
+  async onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
+    this.throttledFlushTestCaseResults.cancel();
+    // Kick off (or continue) draining in the same bounded slices used during the run, then wait for
+    // it to finish rather than flushing everything in one go - so a run that produces a lot of
+    // results right before finishing can't turn the final flush into one oversized synchronous burst
+    // either. flushTestCaseResults re-schedules itself via setImmediate while a backlog remains, so
+    // this loop only needs to wait for that chain to catch up.
+    this.flushTestCaseResults();
+    while (this.batchedTestCaseResults.length > 0) {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
     this.store.setState((s) => {
       const focusedRunTotal =
         s.currentRun.componentTestCount.success + s.currentRun.componentTestCount.error;

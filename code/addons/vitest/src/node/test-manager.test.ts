@@ -545,6 +545,118 @@ describe('TestManager', () => {
     }
   });
 
+  it('drains at most one bounded chunk per elapsed interval, never cascading through a backlog in one synchronous burst', () => {
+    vi.useFakeTimers();
+    try {
+      const testManager = new TestManager({
+        ...options,
+        flushTestCaseResultsInterval: 500,
+        maxTestCaseResultsPerFlush: 2,
+      });
+      const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+      // 3x the cap, pushed synchronously in a burst - enough that a reentrant continuation (e.g. one
+      // that re-arms via the throttle instead of a real event-loop tick) would drain more than one
+      // extra chunk here.
+      const storyIds = [
+        'story--one',
+        'story--two',
+        'another--one',
+        'another--two',
+        'parent--story',
+        'parent--story:test',
+      ];
+      storyIds.forEach((storyId) => {
+        testManager.onTestCaseResult({ storyId, testResult: passedResult });
+      });
+
+      const setMock = vi.mocked(mockComponentTestStatusStore.set);
+      // Leading edge: only the first pushed result was in the batch at the moment the throttle fired.
+      expect(setMock).toHaveBeenCalledTimes(1);
+
+      // A single elapsed interval must drain exactly one more bounded chunk, not the rest of the
+      // backlog in the same synchronous callback.
+      vi.advanceTimersByTime(500);
+      expect(setMock).toHaveBeenCalledTimes(2);
+      expect(setMock.mock.calls[1][0].length).toBeLessThanOrEqual(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should cap test case results per flush and drain the remainder across subsequent throttle ticks', () => {
+    vi.useFakeTimers();
+    try {
+      const testManager = new TestManager({
+        ...options,
+        flushTestCaseResultsInterval: 500,
+        maxTestCaseResultsPerFlush: 2,
+      });
+      const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+      const storyIds = ['story--one', 'story--two', 'another--one', 'another--two'];
+
+      storyIds.forEach((storyId) => {
+        testManager.onTestCaseResult({ storyId, testResult: passedResult });
+      });
+
+      // Give the throttle plenty of ticks to drain the backlog.
+      for (let i = 0; i < 5; i++) {
+        vi.advanceTimersByTime(500);
+      }
+
+      // The full backlog was eventually applied, but every individual flush was capped instead of
+      // being applied as one unbounded burst.
+      const setCalls = vi.mocked(mockComponentTestStatusStore.set).mock.calls;
+      expect(setCalls.length).toBeGreaterThan(1);
+      for (const [statuses] of setCalls) {
+        expect(statuses.length).toBeLessThanOrEqual(2);
+      }
+      const flushedStoryIds = setCalls.flatMap(([statuses]) =>
+        statuses.map((status) => status.storyId)
+      );
+      expect(flushedStoryIds).toEqual(storyIds);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should drain the full backlog across multiple bounded flushes when a run ends', async () => {
+    vi.useFakeTimers();
+    try {
+      const testManager = new TestManager({
+        ...options,
+        flushTestCaseResultsInterval: 500,
+        maxTestCaseResultsPerFlush: 2,
+      });
+      const passedResult = { state: 'passed', errors: [] } as unknown as TestResult;
+      const storyIds = ['story--one', 'story--two', 'another--one', 'another--two'];
+
+      storyIds.forEach((storyId) => {
+        testManager.onTestCaseResult({ storyId, testResult: passedResult });
+      });
+
+      const onTestRunEndPromise = testManager.onTestRunEnd({
+        totalTestCount: storyIds.length,
+        unhandledErrors: [],
+      });
+
+      await vi.runAllTimersAsync();
+      await onTestRunEndPromise;
+
+      const setCalls = vi.mocked(mockComponentTestStatusStore.set).mock.calls;
+      expect(setCalls.length).toBeGreaterThan(1);
+      for (const [statuses] of setCalls) {
+        expect(statuses.length).toBeLessThanOrEqual(2);
+      }
+      const flushedStoryIds = setCalls.flatMap(([statuses]) =>
+        statuses.map((status) => status.storyId)
+      );
+      expect(flushedStoryIds).toEqual(storyIds);
+      expect(mockStore.getState().currentRun.totalTestCount).toBe(storyIds.length);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should restart Vitest before a test run if coverage is enabled', async () => {
     const testManager = await TestManager.start(options);
     expect(createVitest).toHaveBeenCalledTimes(1);

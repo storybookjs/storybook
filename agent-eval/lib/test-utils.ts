@@ -365,21 +365,153 @@ export function expectValidStorybookLaunchConfig(): void {
 	).toBe('string');
 }
 
+// Preview-surface outcome check, per plugin surface — both branches check
+// tool usage in the transcript:
+// - claude-code: the dev server must be started through the Claude preview
+//   tooling (the preview_start tool), which presents the app's preview browser.
+// - codex: the agent must open the Storybook URL in the in-app browser and
+//   leave the dev server running. Codex drives the browser through the
+//   node_repl `js` tool (the control-in-app-browser skill), so the tool-usage
+//   evidence is a successful `js` call whose code navigates a tab to the
+//   Storybook URL; "left running" is asserted as the absence of any
+//   self-describing dev-server kill command (see findDevServerKillCommands —
+//   a kill routed through an unrelated variable, e.g. `PID=$(lsof -ti:6006)`
+//   then `kill $PID` in a later command, is beyond this heuristic).
+//   A liveness probe at eval time is deliberately NOT used: the sandbox
+//   Storybook can crash on its own after run-story-tests (the storybook/test
+//   vitest sub-runner dies on "Restarting Vitest due to config change" →
+//   "No projects matched the filter", taking the dev-server process with it;
+//   local runs 2026-07-08), so a probe would fail on that infra bug, not on
+//   agent behavior. The stories skill gates browser-opening on the
+//   control-in-app-browser skill being available; the assertion does not,
+//   because the codex plugin experiment always installs that skill and its
+//   browser mock (writeCodexInAppBrowserMock in lib/templates.ts).
+// MCP cells have no preview surface installed, so nothing is asserted there.
 export function expectPreviewBrowserStarted(): void {
-	if (!usesClaudePreviewTooling()) {
+	const { agent, integration } = getEvalContext();
+	if (integration !== 'plugin') {
 		return;
 	}
 
-	const started = getTranscript().events.some(
-		(event) =>
-			event.type === 'tool_call' &&
-			typeof event.tool?.originalName === 'string' &&
-			/__preview_start$/.test(event.tool.originalName),
-	);
+	if (usesClaudePreviewTooling()) {
+		const started = getTranscript().events.some(
+			(event) =>
+				event.type === 'tool_call' &&
+				typeof event.tool?.originalName === 'string' &&
+				event.tool.originalName.endsWith('__preview_start'),
+		);
+		expect(
+			started,
+			'Expected the Claude preview browser to be opened via the preview_start tool',
+		).toBe(true);
+		return;
+	}
+
+	if (agent !== 'codex') {
+		expect.fail(
+			`Unknown plugin agent "${agent}" — teach expectPreviewBrowserStarted its preview surface`,
+		);
+	}
+
+	const navigatedUrls = parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
+	const storybookUrls = [...new Set(navigatedUrls.filter(isLocalStorybookPreviewUrl))];
 	expect(
-		started,
-		'Expected the Claude preview browser to be opened via the preview_start tool',
-	).toBe(true);
+		storybookUrls.length,
+		`Expected an in-app browser navigation to the local Storybook review or story preview URL (a node_repl js tool call whose code calls goto). Navigations found: ${JSON.stringify(navigatedUrls)}`,
+	).toBeGreaterThan(0);
+
+	const killCommands = findDevServerKillCommands(getShellCommands(), storybookUrls);
+	expect(
+		killCommands,
+		'The dev server must be left running for the user — never kill it after verification',
+	).toEqual([]);
+}
+
+// Shell commands that kill the dev server the in-app browser navigated to: a
+// kill-style command that also references Storybook, a recorded pidfile, or
+// one of the navigated dev-server ports in the same command string. Scoped
+// that way so killing an unrelated process (e.g. a stray test worker) does
+// not count; the flip side is that a kill routed through an unrelated
+// variable in a later command escapes this heuristic (accepted — the eval
+// fails loud on the missing navigation instead when the server dies early).
+const KILL_COMMAND_PATTERN = /\b(?:kill|pkill|killall)\b|\bfuser\b[^;&|]*\s-[a-z]*k/i;
+
+export function findDevServerKillCommands(commands: string[], navigatedUrls: string[]): string[] {
+	const ports = [
+		...new Set(
+			navigatedUrls.flatMap((url) => {
+				try {
+					const { port } = new URL(url);
+					return port ? [port] : [];
+				} catch {
+					return [];
+				}
+			}),
+		),
+	];
+	const target = new RegExp(
+		['storybook', String.raw`\.pid\b`, ...ports.map((port) => String.raw`\b${port}\b`)].join('|'),
+		'i',
+	);
+	return commands.filter((command) => KILL_COMMAND_PATTERN.test(command) && target.test(command));
+}
+
+// URLs the in-app browser navigated to, from the codex raw transcript: each
+// successful node_repl `js` tool call is scanned for `goto('<url>')` string
+// literals in its code argument. This mirrors how plugin workflow calls are
+// parsed out of `storybook ai` shell commands. A dynamically composed URL
+// (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
+// loud rather than passing vacuously.
+export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
+	return rawTranscript.split('\n').flatMap((line) => {
+		const event = parseJson(line);
+		if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
+			return [];
+		}
+
+		const item = event.item;
+		if (
+			item.type !== 'mcp_tool_call' ||
+			item.server !== 'node_repl' ||
+			item.tool !== 'js' ||
+			item.status !== 'completed' ||
+			(item.error !== null && item.error !== undefined)
+		) {
+			return [];
+		}
+
+		const code = isRecord(item.arguments) ? item.arguments.code : undefined;
+		if (typeof code !== 'string') {
+			return [];
+		}
+
+		return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
+			match[2] === undefined ? [] : [match[2]],
+		);
+	});
+}
+
+export function isLocalDevServerUrl(value: string): boolean {
+	try {
+		const { protocol, hostname } = new URL(value);
+		return (
+			(protocol === 'http:' || protocol === 'https:') &&
+			['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(hostname)
+		);
+	} catch {
+		return false;
+	}
+}
+
+// The URL shapes the Storybook workflow hands out: manager page links
+// (?path=/review/…, ?path=/story/…) and iframe preview links
+// (/iframe.html?id=…). A bare local origin does not count — navigating to
+// the app's own dev server (or just Storybook's root) is not opening the
+// Storybook result the skill demands.
+const STORYBOOK_PREVIEW_URL_PATTERN = /[?&]path=\/|\/iframe\.html\?/;
+
+export function isLocalStorybookPreviewUrl(value: string): boolean {
+	return isLocalDevServerUrl(value) && STORYBOOK_PREVIEW_URL_PATTERN.test(value);
 }
 
 // Story IDs must come from a discovery tool (get-changed-stories, or the

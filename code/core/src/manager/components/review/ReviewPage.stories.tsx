@@ -376,6 +376,11 @@ export const PendingUpdateAccept = meta.story({
 
 export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   parameters: {
+    // Clicking "Update" at the end of the play function swaps in a fresh review whose
+    // preview-thumbnail iframes are still loading and self-measuring at capture time, so the
+    // snapshot (in Edge especially) differs on nearly every build and had to be re-accepted
+    // over and over. The flow itself is still covered as an interaction test.
+    chromatic: { disableSnapshot: true },
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {
       path: '/story/manager-settings-guidepage--default',

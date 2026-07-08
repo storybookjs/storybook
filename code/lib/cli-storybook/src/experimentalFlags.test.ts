@@ -18,17 +18,9 @@ import {
 } from './experimentalFlags.ts';
 import type { CollectProjectsSuccessResult } from './util.ts';
 
-vi.mock('storybook/internal/node-logger', async (importOriginal) => {
-  return {
-    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
-    prompt: { multiselect: vi.fn() },
-    logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
-  };
-});
-
-vi.mock('storybook/internal/telemetry');
-
-vi.mock('./automigrate/helpers/mainConfigFile.ts', () => ({ updateMainConfig: vi.fn() }));
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('./automigrate/helpers/mainConfigFile.ts', { spy: true });
 
 const createMockProject = (overrides: Partial<CollectProjectsSuccessResult> = {}) =>
   ({
@@ -45,9 +37,16 @@ const [reviewFlag, docgenFlag] = EXPERIMENTAL_FLAGS_REGISTRY;
 
 describe('experimentalFlags', () => {
   beforeEach(() => {
-    // clearMocks resets call history but not implementations, so give multiselect a safe default
-    // (an unresolved-value fallthrough would otherwise crash any test that unexpectedly reaches it).
+    // Spy mocks call through to the real implementations unless stubbed, so give every
+    // collaborator a safe inert default (a real prompt would hang, real telemetry and config
+    // writes would do I/O).
     vi.mocked(prompt.multiselect).mockResolvedValue([]);
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(updateMainConfig).mockResolvedValue(undefined);
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(logger.error).mockImplementation(() => {});
+    vi.mocked(logger.debug).mockImplementation(() => {});
   });
 
   describe('projectNeedsFlagsHighlight', () => {

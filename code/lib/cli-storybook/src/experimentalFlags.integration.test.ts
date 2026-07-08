@@ -1,24 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
+
+import * as memfs from 'memfs';
+import { vol } from 'memfs';
 
 import { runExperimentalFlagsHighlightStep } from './experimentalFlags.ts';
 import type { CollectProjectsSuccessResult } from './util.ts';
 
-vi.mock('storybook/internal/node-logger', async (importOriginal) => {
-  return {
-    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
-    prompt: { multiselect: vi.fn() },
-    logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
-  };
-});
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 
-vi.mock('storybook/internal/telemetry');
+// Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
+// csf-tools' readConfig/writeConfigFile to `memfs` so disk state stays scoped to `vol`.
+vi.mock('node:fs/promises', { spy: true });
+
+const MAIN_CONFIG_PATH = '/project/.storybook/main.ts';
 
 // Realistic generated main.ts shape, as produced by `storybook init`.
 const FIXTURE_MAIN_TS = `import type { StorybookConfig } from '@storybook/react-vite';
@@ -34,13 +34,10 @@ const config: StorybookConfig = {
 export default config;
 `;
 
-const createMockProject = (
-  mainConfigPath: string,
-  overrides: Partial<CollectProjectsSuccessResult> = {}
-) =>
+const createMockProject = (overrides: Partial<CollectProjectsSuccessResult> = {}) =>
   ({
-    configDir: path.dirname(mainConfigPath),
-    mainConfigPath,
+    configDir: '/project/.storybook',
+    mainConfigPath: MAIN_CONFIG_PATH,
     mainConfig: {} as any,
     beforeVersion: '10.4.0',
     currentCLIVersion: '10.5.0',
@@ -48,23 +45,30 @@ const createMockProject = (
     ...overrides,
   }) as CollectProjectsSuccessResult;
 
-describe('experimentalFlags integration (real csf-tools read/write)', () => {
-  let tmpDir: string;
-  let mainConfigPath: string;
+const readMainConfig = () => memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8') as string;
 
+describe('experimentalFlags integration (real csf-tools read/write on memfs)', () => {
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sb-experimental-flags-'));
-    mainConfigPath = path.join(tmpDir, 'main.ts');
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof readFile
+    );
+    vi.mocked(writeFile).mockImplementation(
+      memfs.fs.promises.writeFile as unknown as typeof writeFile
+    );
+    // Spy mocks call through to the real implementations unless stubbed; keep prompts, logs, and
+    // telemetry inert.
     vi.mocked(prompt.multiselect).mockResolvedValue([]);
-  });
-
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(logger.error).mockImplementation(() => {});
+    vi.mocked(logger.debug).mockImplementation(() => {});
   });
 
   it('writes the requested flag to disk while preserving the rest of the file', async () => {
-    fs.writeFileSync(mainConfigPath, FIXTURE_MAIN_TS);
-    const project = createMockProject(mainConfigPath, { mainConfig: {} as any });
+    vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
+    const project = createMockProject({ mainConfig: {} as any });
 
     await runExperimentalFlagsHighlightStep([project], {
       features: 'experimentalReview',
@@ -72,7 +76,7 @@ describe('experimentalFlags integration (real csf-tools read/write)', () => {
       dryRun: false,
     });
 
-    const written = fs.readFileSync(mainConfigPath, 'utf-8');
+    const written = readMainConfig();
 
     expect(written).toMatch(/features:\s*{\s*experimentalReview:\s*true/);
 
@@ -93,9 +97,8 @@ describe('experimentalFlags integration (real csf-tools read/write)', () => {
       '};\nexport default config;',
       '  features: { experimentalReview: false },\n};\nexport default config;'
     );
-    fs.writeFileSync(mainConfigPath, fixtureWithFlagSet);
-    const before = fs.readFileSync(mainConfigPath, 'utf-8');
-    const project = createMockProject(mainConfigPath, {
+    vol.fromJSON({ [MAIN_CONFIG_PATH]: fixtureWithFlagSet });
+    const project = createMockProject({
       mainConfig: { features: { experimentalReview: false } } as any,
     });
 
@@ -106,29 +109,28 @@ describe('experimentalFlags integration (real csf-tools read/write)', () => {
       dryRun: false,
     });
 
-    const after = fs.readFileSync(mainConfigPath, 'utf-8');
-    expect(after).toBe(before);
+    expect(readMainConfig()).toBe(fixtureWithFlagSet);
   });
 
   it('is idempotent: a second run with the same already-applied flag does not rewrite the file', async () => {
-    fs.writeFileSync(mainConfigPath, FIXTURE_MAIN_TS);
-    const project = createMockProject(mainConfigPath, { mainConfig: {} as any });
+    vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
+    const project = createMockProject({ mainConfig: {} as any });
     const options = { features: 'experimentalDocgenServer', yes: false, dryRun: false };
 
     await runExperimentalFlagsHighlightStep([project], options);
-    const afterFirstRun = fs.readFileSync(mainConfigPath, 'utf-8');
+    const afterFirstRun = readMainConfig();
     expect(afterFirstRun).toMatch(/features:\s*{\s*experimentalDocgenServer:\s*true/);
 
     await runExperimentalFlagsHighlightStep([project], options);
-    const afterSecondRun = fs.readFileSync(mainConfigPath, 'utf-8');
+    const afterSecondRun = readMainConfig();
 
     expect(afterSecondRun).toBe(afterFirstRun);
   });
 
   it('writes the interactively selected flag to disk and sends prompt-source telemetry', async () => {
-    fs.writeFileSync(mainConfigPath, FIXTURE_MAIN_TS);
+    vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
     vi.mocked(prompt.multiselect).mockResolvedValue(['experimentalDocgenServer']);
-    const project = createMockProject(mainConfigPath, {
+    const project = createMockProject({
       beforeVersion: '10.4.0',
       currentCLIVersion: '10.5.0',
       mainConfig: {} as any,
@@ -140,8 +142,7 @@ describe('experimentalFlags integration (real csf-tools read/write)', () => {
       dryRun: false,
     });
 
-    const written = fs.readFileSync(mainConfigPath, 'utf-8');
-    expect(written).toMatch(/features:\s*{\s*experimentalDocgenServer:\s*true/);
+    expect(readMainConfig()).toMatch(/features:\s*{\s*experimentalDocgenServer:\s*true/);
     expect(telemetry).toHaveBeenCalledWith('upgrade-experimental-flags', {
       flags: ['experimentalDocgenServer'],
       source: 'prompt',

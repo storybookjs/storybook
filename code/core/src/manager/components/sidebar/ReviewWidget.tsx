@@ -1,22 +1,16 @@
 import React, { useMemo, type SyntheticEvent } from 'react';
 
 import { ActionList, Card } from 'storybook/internal/components';
-import type { StatusesByStoryIdAndTypeId, StoryIndex } from 'storybook/internal/types';
 
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
 import { useNavigate } from 'storybook/internal/router';
-import {
-  experimental_useStatusStore,
-  useChannel,
-  useStorybookApi,
-  useStorybookState,
-} from 'storybook/manager-api';
+import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { EVENTS } from '../review/constants.ts';
 import { navigateToReviewSummary } from '../review/review-actions.ts';
-import { REVIEWING_STATUS_VALUE as REVIEWING } from '../review/review-status.ts';
+import { collectReviewStoryIds } from '../review/review-status.ts';
 import { useReview } from '../review/review-store.ts';
 
 const HeaderContent = styled(ActionList.Text)({
@@ -42,26 +36,11 @@ const DismissIcon = styled(CloseAltIcon)({
   padding: 1,
 });
 
-export const useReviewingStoryCount = () => {
-  const { internal_index: index } = useStorybookState();
-  const allStatuses = experimental_useStatusStore() as StatusesByStoryIdAndTypeId;
+/** Story count for the displayed review payload, not the sidebar status store. */
+export const useActiveReviewStoryCount = () => {
+  const { state } = useReview();
 
-  return useMemo(() => {
-    if (!index) {
-      return 0;
-    }
-    const entries = (index as StoryIndex).entries ?? {};
-    let count = 0;
-    for (const [storyId, statusesByType] of Object.entries(allStatuses)) {
-      if (!entries[storyId]) {
-        continue;
-      }
-      if (Object.values(statusesByType).some(({ value }) => value === REVIEWING)) {
-        count += 1;
-      }
-    }
-    return count;
-  }, [index, allStatuses]);
+  return useMemo(() => (state ? collectReviewStoryIds(state).size : 0), [state]);
 };
 
 const useActiveReviewTitle = () => {
@@ -72,7 +51,7 @@ const useActiveReviewTitle = () => {
 export const ReviewWidget = () => {
   const api = useStorybookApi();
   const navigate = useNavigate();
-  const storyCount = useReviewingStoryCount();
+  const storyCount = useActiveReviewStoryCount();
   const reviewTitle = useActiveReviewTitle();
   const {
     includedStatusFilters = [],

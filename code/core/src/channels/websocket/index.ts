@@ -51,12 +51,6 @@ export class WebsocketTransport implements ChannelTransport {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
 
-      // Any message arriving proves the connection is alive, so reset the heartbeat before running
-      // the handler rather than gating the reset behind a specific event type. The channel handler
-      // can be slow when the channel is busy (e.g. addon-vitest flushing status updates during a
-      // large test run), and a backlog of queued messages could otherwise delay resetting the
-      // heartbeat past the timeout and close a healthy connection - relying on `ping` alone doesn't
-      // fully fix this if the backlog is deep enough that the ping itself is stuck behind it.
       this.heartbeat();
 
       if (event.type === 'ping') {

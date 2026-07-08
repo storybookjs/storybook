@@ -1,5 +1,30 @@
 # @storybook/mcp
 
+## 0.8.0
+
+### Minor Changes
+
+- [#298](https://github.com/storybookjs/mcp/pull/298) [`ae6e9bb`](https://github.com/storybookjs/mcp/commit/ae6e9bbdb55f4262e697a68437a00d4cd4accc4d) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Expose serverless Storybook AI metadata from addon-mcp presets. The new preset returns MCP-shaped instructions and tool descriptors, plus a local `get-storybook-story-instructions` runner that shares the same builders as the live MCP server.
+
+- [#308](https://github.com/storybookjs/mcp/pull/308) [`ff09619`](https://github.com/storybookjs/mcp/commit/ff09619079520ed238eff91bd385b7ba0cb7b102) Thanks [@JReinhold](https://github.com/JReinhold)! - Support v0 (inline) and v1 (split/ref) Storybook manifest formats. `@storybook/mcp` follows `$ref` pointers into sibling `services/` payloads for static and remote sources; `@storybook/addon-mcp` adds an in-process manifest provider for `experimentalDocgenServer` dev mode and fixes composition so local docgen-server and remote v0/v1 composed sources all work.
+
+### Patch Changes
+
+- [#329](https://github.com/storybookjs/mcp/pull/329) [`86ff2bf`](https://github.com/storybookjs/mcp/commit/86ff2bfb62818cf1370aacec1a672f1f608e8cf2) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Fold the "CRITICAL: Never hallucinate component properties!" guidance from the documented AGENTS.md snippet into the Documentation Workflow server instructions, so the docs no longer need to recommend a manual AGENTS.md addition. The separate "Verification Rules" section is merged into the Documentation Workflow (the guidance is about checking documentation before starting work, not about verifying it afterwards), keeping the full default instructions under the 2,048-character client truncation limit.
+
+- [#242](https://github.com/storybookjs/mcp/pull/242) [`d142450`](https://github.com/storybookjs/mcp/commit/d142450ba94ce341d0a0ef869ddd057610d10fbd) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Show private composed Storybooks as own-MCP guidance when accessed through the local MCP proxy.
+
+- [#335](https://github.com/storybookjs/mcp/pull/335) [`3486c0d`](https://github.com/storybookjs/mcp/commit/3486c0d81bbbfb25940291a0b8560fa6c0e625b5) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Close the shared-code and docs-question gaps in the default (review-off) workflow steering, which eval runs showed agents falling through:
+
+  - The dev and validation instructions now trigger on "anything that changes how the UI looks" (the stories skill's proven phrasing) instead of only "any component or story" — a theme-token edit is literally neither, so agents (GPT-5.5 on the MCP path consistently) finished shared-file changes with shell-level verification only, never calling preview-stories or run-story-tests. The preview-stories and run-story-tests descriptions carry the same trigger, including that a shared file has no stories of its own so the consumers' stories are the ones to surface, and that typecheck/lint does not replace story tests.
+  - The docs-question rule now opens the server instructions ("Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions") — Claude Code was observed grepping component source for props questions without ever reaching the rule further down. Design-system discovery is unconditional for new UI work — agents answered docs requests by grepping component source while still producing a correct-looking answer. The get-documentation and list-all-documentation descriptions repeat that steering at the tool level, where it reaches agents even when a client truncates server instructions, and get-storybook-story-instructions (the tool billed as the source of truth for story work, on both the MCP and `storybook ai` CLI channels) appends a Design-System Documentation section whenever the docs tools are registered.
+
+  The review-off server instructions stay under the 2,048-char client truncation limit (now 2,046 chars), paid for by tightening existing sentences without dropping any rule.
+
+- [#320](https://github.com/storybookjs/mcp/pull/320) [`da8d525`](https://github.com/storybookjs/mcp/commit/da8d525167045299985bcb6f236f91502716c9e8) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Slimmed the `experimentalReview` server instructions under the 2,048-character client truncation limit. Claude Code hard-truncates MCP server instructions at 2,048 characters, and the review-flavored instructions had grown to ~8.7k — the Validation and Documentation workflow sections never reached the model and agents stopped using the documentation tools. With the flag on, the dev, test, and docs sections now use slim variants that only carry the workflow triggers; the detailed guidance moved into the tool descriptions and tool results (`get-stories-by-component`, `get-changed-stories`, `display-review`, `list-all-documentation`), which are never truncated. The default (review off) instructions are unchanged. A unit test enforces the limit for every toolset configuration in both review modes.
+
+- [#279](https://github.com/storybookjs/mcp/pull/279) [`367ecc1`](https://github.com/storybookjs/mcp/commit/367ecc1eabdc92f3fa60e6159b2d79a2bb2f6f77) Thanks [@huang-julien](https://github.com/huang-julien)! - Support the externalized-docgen component manifest format. Newer Storybooks emit a `components.json` whose entries are lightweight stubs carrying a `docgen.$ref` pointer instead of inline `path`/docgen data, with the full component data served from a referenced file. `get-documentation` and `get-documentation-for-story` now resolve that reference (through the same auth-aware manifest provider) before formatting, so composition/multi-source documentation works against Storybooks using the new format. `path` and the top-level manifest `v` field are now optional to accommodate stubs and referenced docgen files.
+
 ## 0.7.0
 
 ### Minor Changes

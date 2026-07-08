@@ -2,6 +2,11 @@ import type { Options } from 'storybook/internal/types';
 
 export type ReviewStatus = {
 	available: boolean;
+	/**
+	 * Review gate for the `storybook ai` CLI channel (the Claude/Codex plugins):
+	 * on by default, `experimentalReview: false` is the explicit opt-out.
+	 */
+	availableForCli: boolean;
 	hasFeatureFlag: boolean;
 };
 
@@ -19,11 +24,13 @@ export const getReviewStatus = async (
 			| { changeDetection?: boolean; experimentalReview?: boolean }
 			| undefined);
 	const hasFeatureFlag = !!resolvedFeatures?.experimentalReview;
+	const changeDetection = !!resolvedFeatures?.changeDetection;
 
 	return {
-		// Review is opt-in via `experimentalReview` and builds on the
-		// change-detection pipeline, so it needs both flags.
-		available: hasFeatureFlag && !!resolvedFeatures?.changeDetection,
+		// Review is opt-in via `experimentalReview` for direct MCP clients and
+		// builds on the change-detection pipeline, so it needs both flags.
+		available: hasFeatureFlag && changeDetection,
+		availableForCli: resolvedFeatures?.experimentalReview !== false && changeDetection,
 		hasFeatureFlag,
 	};
 };

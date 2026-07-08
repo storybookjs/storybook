@@ -237,14 +237,15 @@ describe('mcpServerHandler', () => {
 	async function getRegisteredToolNames(
 		mockOptions: any,
 		port: number,
-		handlerOptions: { sources?: any[] } = {},
+		handlerOptions: { sources?: any[]; headers?: Record<string, string> } = {},
 	): Promise<string[]> {
 		const host = `localhost:${port}`;
 		const addonOptions = { toolsets: { dev: true, docs: true } };
+		const { headers: extraHeaders = {}, ...restHandlerOptions } = handlerOptions;
 
 		const initReq = createMockIncomingMessage({
 			method: 'POST',
-			headers: { 'content-type': 'application/json', host },
+			headers: { 'content-type': 'application/json', host, ...extraHeaders },
 			body: createMCPInitializeRequest(),
 		});
 		const { response: initResponse } = createMockServerResponse();
@@ -254,12 +255,12 @@ describe('mcpServerHandler', () => {
 			options: mockOptions,
 			addonOptions,
 			compositionAuth: new CompositionAuth(),
-			...handlerOptions,
+			...restHandlerOptions,
 		});
 
 		const listReq = createMockIncomingMessage({
 			method: 'POST',
-			headers: { 'content-type': 'application/json', host },
+			headers: { 'content-type': 'application/json', host, ...extraHeaders },
 			body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
 		});
 		const { response: listResponse, getResponseData } = createMockServerResponse();
@@ -269,7 +270,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions,
 			addonOptions,
 			compositionAuth: new CompositionAuth(),
-			...handlerOptions,
+			...restHandlerOptions,
 		});
 
 		const { body } = getResponseData();
@@ -568,7 +569,7 @@ describe('mcpServerHandler', () => {
 		expect(toolNames).toContain('display-review');
 	});
 
-	it('does not register display-review when only the changeDetection feature flag is on', async () => {
+	it('does not list display-review for direct MCP clients when only the changeDetection feature flag is on', async () => {
 		const mockOptions = createMockOptions({
 			port: 6013,
 			presets: {
@@ -582,6 +583,42 @@ describe('mcpServerHandler', () => {
 
 		const toolNames = await getRegisteredToolNames(mockOptions, 6013);
 		expect(toolNames).toContain('get-changed-stories');
+		expect(toolNames).not.toContain('display-review');
+	});
+
+	it('lists display-review for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
+		const mockOptions = createMockOptions({
+			port: 6014,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { changeDetection: true };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
+			headers: { 'x-storybook-mcp-proxy': 'true' },
+		});
+		expect(toolNames).toContain('display-review');
+	});
+
+	it('does not list display-review for CLI requests when experimentalReview is explicitly false', async () => {
+		const mockOptions = createMockOptions({
+			port: 6015,
+			presets: {
+				apply: vi.fn(async (key: string, defaultValue?: any) => {
+					if (key === 'core') return { disableTelemetry: false };
+					if (key === 'features') return { changeDetection: true, experimentalReview: false };
+					return defaultValue;
+				}),
+			},
+		});
+
+		const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
+			headers: { 'x-storybook-mcp-proxy': 'true' },
+		});
 		expect(toolNames).not.toContain('display-review');
 	});
 });

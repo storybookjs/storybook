@@ -4,9 +4,22 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { enableExperimentalReview } from './templates.ts';
+import { enableExperimentalReview, isReviewEnabledFor } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
+
+// EVAL_REVIEW is unset in unit-test runs, so this asserts the default gate:
+// plugin sandboxes are always review-on (the addon enables review for the
+// `storybook ai` CLI channel by default), MCP sandboxes review-off.
+describe('isReviewEnabledFor', () => {
+	it('is always on for the plugin integration', () => {
+		expect(isReviewEnabledFor('plugin')).toBe(true);
+	});
+
+	it('is off for the mcp integration without EVAL_REVIEW=1', () => {
+		expect(isReviewEnabledFor('mcp')).toBe(false);
+	});
+});
 
 describe('enableExperimentalReview', () => {
 	it('injects the experimentalReview feature into a Storybook main.ts', () => {

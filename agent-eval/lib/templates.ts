@@ -87,11 +87,20 @@ const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.t
 const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-// EVAL_REVIEW=1 enables the opt-in `experimentalReview` feature flag in
-// every sandbox Storybook; default runs leave it off, matching released
-// users. EVAL.ts assertions read the same signal from the agent context
-// (see isReviewEnabled in test-utils).
+// EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
+// sandbox Storybook, turning review on for the MCP integration too. Plugin
+// runs don't need it: review is on by default for the `storybook ai` CLI
+// channel, so plugin sandboxes always run review-on, matching released
+// users of either integration. EVAL.ts assertions read the effective
+// per-run signal from the agent context (see isReviewEnabled in test-utils).
 const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
+
+// The review mode a sandbox actually runs in: the plugin integration gets
+// review by default from the addon; the MCP integration only with the
+// EVAL_REVIEW=1 feature-flag override.
+export function isReviewEnabledFor(integration: EvalIntegration): boolean {
+	return REVIEW_ENABLED || integration === 'plugin';
+}
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
@@ -186,7 +195,7 @@ async function writeEvalSupportFiles(
 			{
 				agent: options.agent,
 				integration: options.integration,
-				review: REVIEW_ENABLED,
+				review: isReviewEnabledFor(options.integration),
 			},
 			null,
 			2,

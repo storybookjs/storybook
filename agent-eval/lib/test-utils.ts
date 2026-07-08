@@ -33,7 +33,7 @@ type AgentContext = {
 type EvalContext = {
 	agent: string;
 	integration: 'mcp' | 'plugin';
-	/** Whether the sandbox Storybook runs with the `experimentalReview` feature flag on. */
+	/** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
 	review: boolean;
 };
 
@@ -75,11 +75,13 @@ export function getEvalContext(): EvalContext {
 	return { agent, integration, review: agentContext.review === true };
 }
 
-// Review mode of this run: EVAL_REVIEW=1 (the ci:review PR label) enables the
-// opt-in `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
+// Review mode of this run. Plugin runs are always review-on — the addon
+// enables review by default for the `storybook ai` CLI channel — while MCP
+// runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
+// the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
 // files branch on this — with review on, visual work must end in a published
-// display-review; with review off (the default), display-review is not even
-// registered and the workflow ends in preview-stories links.
+// display-review; with review off, display-review is not even exposed and
+// the workflow ends in preview-stories links.
 export function isReviewEnabled(): boolean {
 	return getEvalContext().review;
 }

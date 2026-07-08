@@ -79,7 +79,7 @@ pnpm --filter @storybook/codex-plugin run marketplace:add
 
 Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex caches plugins under `~/.codex/plugins/cache/` and does not pick up file changes until you reinstall.
 
-The plugin uses CLI-based skills and does not require a running MCP proxy.
+The plugin uses CLI-based skills and does not require a running MCP server.
 
 To test from a Git branch, install the repository-level marketplace and pin the
 branch:
@@ -117,7 +117,7 @@ Use `remove` for a full uninstall without manual config edits.
 
 ## MCP Runtime
 
-The plugin's `plugins/storybook/.mcp.json` contains no MCP servers. The plugin uses CLI-based skills and the `@storybook/mcp-proxy` package has been removed.
+The plugin's `plugins/storybook/.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook ai` CLI instead.
 
 ## Smoke Test
 

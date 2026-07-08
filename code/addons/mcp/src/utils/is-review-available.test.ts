@@ -5,7 +5,7 @@ import { getReviewStatus } from './is-review-available.ts';
 
 function createMockOptions({
 	changeDetection = false,
-	experimentalReview = false,
+	experimentalReview,
 	hasFeaturesObject = true,
 	configDir = '/project/.storybook',
 }: {
@@ -33,25 +33,33 @@ describe('getReviewStatus', () => {
 			createMockOptions({ changeDetection: true, experimentalReview: true }),
 		);
 
-		expect(result).toEqual({ available: true, hasFeatureFlag: true });
+		expect(result).toEqual({ available: true, availableForCli: true, hasFeatureFlag: true });
 	});
 
-	it('is unavailable by default when only changeDetection is on', async () => {
+	it('is unavailable to direct MCP clients but available to the CLI when only changeDetection is on', async () => {
 		const result = await getReviewStatus(createMockOptions({ changeDetection: true }));
 
-		expect(result).toEqual({ available: false, hasFeatureFlag: false });
+		expect(result).toEqual({ available: false, availableForCli: true, hasFeatureFlag: false });
+	});
+
+	it('is unavailable everywhere when experimentalReview is explicitly false', async () => {
+		const result = await getReviewStatus(
+			createMockOptions({ changeDetection: true, experimentalReview: false }),
+		);
+
+		expect(result).toEqual({ available: false, availableForCli: false, hasFeatureFlag: false });
 	});
 
 	it('is unavailable when experimentalReview is on but changeDetection is off', async () => {
 		const result = await getReviewStatus(createMockOptions({ experimentalReview: true }));
 
-		expect(result).toEqual({ available: false, hasFeatureFlag: true });
+		expect(result).toEqual({ available: false, availableForCli: false, hasFeatureFlag: true });
 	});
 
 	it('returns hasFeatureFlag=false when features object is missing the flag', async () => {
 		const result = await getReviewStatus(createMockOptions({ hasFeaturesObject: false }));
 
-		expect(result).toEqual({ available: false, hasFeatureFlag: false });
+		expect(result).toEqual({ available: false, availableForCli: false, hasFeatureFlag: false });
 	});
 
 	it('uses pre-resolved features when provided and skips presets.apply', async () => {
@@ -63,7 +71,7 @@ describe('getReviewStatus', () => {
 			features: { changeDetection: true, experimentalReview: true },
 		});
 
-		expect(result).toEqual({ available: true, hasFeatureFlag: true });
+		expect(result).toEqual({ available: true, availableForCli: true, hasFeatureFlag: true });
 		expect(mockOptions.presets.apply).not.toHaveBeenCalledWith('features', expect.anything());
 	});
 });

@@ -71,6 +71,14 @@ export type AddonContext = StorybookContext & {
 	a11yEnabled?: boolean;
 
 	toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
+
+	/**
+	 * Effective review gate for the current request: the explicit
+	 * `experimentalReview` feature flag, or the CLI default when the request
+	 * carries the trusted local-client header (`storybook ai` / the plugins).
+	 * Gates the `display-review` tool and the instruction variant.
+	 */
+	reviewEnabled?: boolean;
 };
 
 const StoryInputProps = {

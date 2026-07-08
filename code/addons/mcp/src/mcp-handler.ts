@@ -16,7 +16,7 @@ import {
 import { estimateTokens } from './utils/estimate-tokens.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
-import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 import type { DocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
@@ -26,6 +26,7 @@ let origin: string | undefined;
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
 let a11yEnabled: boolean | undefined;
+let reviewGates: { reviewEnabled: boolean; reviewEnabledForCli: boolean } | undefined;
 
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const core = await options.presets.apply('core', {});
@@ -39,6 +40,10 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 	const rawAvailability = await getToolAvailability(options, { features });
 	const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
 	a11yEnabled = availability.a11yEnabled;
+	reviewGates = {
+		reviewEnabled: availability.reviewEnabled,
+		reviewEnabledForCli: availability.reviewEnabledForCli,
+	};
 
 	let server: McpServer<any, AddonContext>;
 
@@ -51,7 +56,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 				docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
 				changeDetectionEnabled: availability.changeDetectionEnabled,
 				moduleGraphSupported: availability.moduleGraphSupported,
-				reviewEnabled: availability.reviewEnabled,
+				reviewEnabled: server?.ctx.custom?.reviewEnabled ?? availability.reviewEnabled,
 			});
 		},
 		capabilities: {
@@ -145,6 +150,7 @@ export const mcpServerHandler = async ({
 		options,
 		endpoint,
 		toolsets: getToolsets(webRequest, addonOptions),
+		reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
 		origin: origin!,
 		disableTelemetry: disableTelemetry!,
 		a11yEnabled,
@@ -247,6 +253,22 @@ export async function webResponseToServerResponse(
 	}
 
 	nodeResponse.end();
+}
+
+/**
+ * Review is on for a request when the `experimentalReview` flag enables it
+ * globally, or when the request marks itself as coming from the `storybook ai`
+ * CLI (the Claude/Codex plugins) via {@link STORYBOOK_MCP_PROXY_HEADER} —
+ * that channel gets review by default, direct MCP clients stay opt-in.
+ */
+export function isReviewEnabledForRequest(
+	request: Request,
+	gates: { reviewEnabled: boolean; reviewEnabledForCli: boolean },
+): boolean {
+	return (
+		gates.reviewEnabled ||
+		(gates.reviewEnabledForCli && request.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true')
+	);
 }
 
 export function getToolsets(

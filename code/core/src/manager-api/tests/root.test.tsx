@@ -10,12 +10,19 @@ import type { API, Combo, State } from '../root.tsx';
 import { Provider as ManagerProvider, mockChannel } from '../root.tsx';
 
 // The stories module destructures `fetch` from `@storybook/global` at import time to fetch the
-// index on init. Reject it so the init no-ops (into indexError) instead of hitting the network,
-// while preserving the real global (document, etc.) that other manager modules rely on.
+// index on init. Reject it so the init no-ops (into indexError) instead of hitting the network.
+// Return a fresh `global` object rather than mutating the shared global in place, so the mocked
+// `fetch` cannot leak into other test files. We copy all own property descriptors (a plain spread
+// drops non-enumerable globals like happy-dom's `document`) and keep the prototype, so the other
+// globals that manager modules rely on are preserved.
 vi.mock('@storybook/global', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@storybook/global')>();
-  mod.global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in test')) as any;
-  return mod;
+  const global = Object.create(
+    Object.getPrototypeOf(mod.global),
+    Object.getOwnPropertyDescriptors(mod.global)
+  );
+  global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in test'));
+  return { ...mod, global };
 });
 
 afterEach(() => {
@@ -84,7 +91,9 @@ describe('ManagerProvider', () => {
     expect(latestState?.filters).toHaveProperty('addon-filter');
 
     // The preview would emit SET_INDEX after mount; setIndex reads state.filters, which already
-    // contains the filter registered during addon registration.
+    // contains the filter registered during addon registration. setIndex's returned promise
+    // resolves via React's class-component setState callback, which does not settle within an
+    // async act() here, so trigger it inside act() and assert on the resulting state via waitFor.
     act(() => {
       void api!.setIndex(mockIndex);
     });

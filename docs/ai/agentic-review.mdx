@@ -2,36 +2,44 @@
 title: Agentic review
 hideRendererSelector: true
 sidebar:
+  hidden: true
   order: 2
 ---
 
 <Callout variant="info" icon="🧪">
 
-Storybook's AI capabilities are currently in [preview](../releases/features.mdx#preview). The experience may change in future releases. We welcome feedback and contributions to help improve this feature.
+Agentic review is currently [experimental](../releases/features.mdx#experimental). The experience may change in future releases. We welcome feedback and contributions to help improve this feature.
 
 </Callout>
 
-Storybook allows AI agents to produce a review of the UI work they've done. After the work is completed, the agent will provide a link to the review summary, which can be opened in a browser. It includes agent-curated collections of stories demonstrating the work, along with a summary of the changes made. Each thumbnail can be clicked to open the story directly, where you can inspect the component and its code.
+Storybook's agentic review provides a quick look at the UI work an AI agent has done. To do this, Storybook equips agents with the tools it needs to choose the most relevant stories to show and provide a summary of the work.
 
-[TK - image - Review summary page]
+You can then review the agent's work in a browser or an Agentic Development Environment (ADE) preview, where you can inspect the components and their code.
+
+[TK - image - Review summary page or something else?]
 ![Review summary page, showing a text summary of the work and curated collections of stories](../_assets/ai/agentic-review-summary.png)
 
 ## Requirements
 
-- [MCP server](./mcp/overview.mdx) running (directly or via a [plugin](#TK)) and accessible to the agent.
+- [`experimentalReview` feature flag](../api/main-config/main-config-features.mdx#experimentalreview) enabled in your Storybook configuration.
+    - This is automatically enabled if you are using a Storybook [ADE plugin](./plugins.mdx).
+- [MCP server](./mcp/overview.mdx) running (directly or via an [ADE plugin](./plugins.mdx)) and accessible to the agent.
 
 ## Reviewing changes
 
-Open the review summary by either clicking the link provided by the agent, requesting a review from your agent, or clicking the review widget that appears in the Storybook sidebar when a review is available.
+Open the review summary by either clicking the link provided by the agent, requesting a review from your agent in a prompt, or clicking the review widget that appears in the Storybook sidebar when a review is available.
 
 [TK - image - Review widget in sidebar]
 ![Review widget in the Storybook sidebar summarizing the availability of a review](../_assets/ai/agentic-review-widget.png)
 
 Note: If you are also using [change detection](../configure/user-interface/change-detection.mdx), the review widget will take precedence. You can still use the change detection filters to view new and modified stories, but the review widget will always be visible when a review is available.
 
+[TK - image - Review summary page]
+![Review summary page, showing a text summary of the work and curated collections of stories](../_assets/ai/agentic-review-summary.png)
+
 Everything on this page is generated or curated by the agent, to help you understand and review the work it has done. Stories are grouped into collections of related work, with a helpful title and summary. It's important to note that this is _not_ a comprehensive list of all affected stories, but rather a curated selection of the most relevant ones.
 
-To look at a thumbnail in more detail, click the thumbnail to open the full story. You can inspect the component and its code, and even run tests if your Storybook is configured to do so.
+To look at a story in more detail, click its thumbnail to open the full story. You can inspect the component and its code, and even run tests if your Storybook is configured to do so.
 
 [TK - image - Review detail page]
 ![Review detail page, showing a full story with toolbar and navigation buttons](../_assets/ai/agentic-review-detail.png)
@@ -40,7 +48,7 @@ When in this view, you can use the next and previous buttons in the top right co
 
 If you do some work after a review is generated, you'll see a banner informing you that the review may be stale. You can use the provided prompt to request a new review from your agent at any time.
 
-[TK - image - Stale review banner]
+[TK - image - Stale review banner (confirm it's still a banner)]
 ![Review stale banner, informing the user that the review may be outdated](../_assets/ai/agentic-review-stale.png)
 
 Once you're finished reviewing the work, you can return to your Storybook by clicking the Storybook logo in the top left corner of the page.

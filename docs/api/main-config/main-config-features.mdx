@@ -20,6 +20,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   experimentalCodeExamples?: boolean;
+  experimentalReview?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -178,6 +179,16 @@ Enable the new code example generation method for React components (as seen in t
 Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
 
 <CodeSnippets path="main-config-features-experimental-code-examples.md" />
+
+## `experimentalReview`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
+
+<CodeSnippets path="main-config-features-experimental-review.md" />
 
 ## `experimentalTestSyntax`
 

@@ -11,7 +11,10 @@ Storybook's AI capabilities are currently in [preview](../releases/features.mdx#
 
 </Callout>
 
-Users of Claude Code, Claude Desktop, and Codex can use Storybook's plugin to connect agents to your Storybook.
+You can use Storybook's plugin in Claude Code, Claude Desktop, and Codex to connect agents to your Storybook. Agents can then use the plugin's toolsets to generate UI, run tests, and preview their work in your Storybook. If you're using an Agentic Development Environment (ADE), the agent can automatically open relevant stories in the ADE preview, so you can inspect the components and their code.
+
+[TK - image - Story open in ADE preview]
+![An ADE working on a UI task with a story open in the preview](../_assets/ai/ade-preview-story.png)
 
 ## Requirements
 
@@ -53,7 +56,27 @@ You're all set!
 <details>
 <summary><h3 id="claude-desktop"><strong>Claude Desktop</strong></h3></summary>
 
-TK
+1. Run this command to add the Storybook marketplace to Claude Desktop:
+
+    ```bash
+    /plugin marketplace add storybookjs/mcp@main --scope user
+    ```
+
+2. Then install the plugin:
+
+    ```bash
+    /plugin install storybook@storybook --scope user
+    ```
+
+3. Confirm the plugin is available:
+
+    ```bash
+    /plugin
+    ```
+
+    Then go to the Installed tab to confirm the plugin is listed.
+
+You're all set!
 
 </details>
 
@@ -91,26 +114,24 @@ To remove a plugin:
 <details>
 <summary>Claude Code</summary>
 
-1. Run this command to remove the plugin from Claude Code:
-
-    ```bash
-    claude plugin uninstall storybook@storybook --scope user
-    ```
-
-2. Then remove the Storybook marketplace:
+1. Run this command to remove the Storybook marketplace, which will also uninstall the plugin:
 
     ```bash
     claude plugin marketplace remove storybook --scope user
     ```
 
-3. Follow the [installation instructions above](#claude-code) to re-add the marketplace and install the plugin again.
+2. Follow the [installation instructions above](#claude-code) to re-add the marketplace and install the plugin again.
 
 </details>
 
 <details>
 <summary>Claude Desktop</summary>
 
-TK
+1. Run `/plugin` and go to the Marketplaces tab
+
+2. Remove the "storybook" marketplace
+
+3. Follow the [installation instructions above](#claude-desktop) to re-add the marketplace and install the plugin again.
 
 </details>
 
@@ -135,106 +156,36 @@ TK
 
 ## Usage
 
-TK - Expand this with ADE/preview details
+The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/stories`) to have the agent perform specific actions.
 
-Once you have installed a plugin, using it is as simple as prompting your agent to do some UI development. Let's demonstrate how these toolsets can work together in some typical workflows.
+If you're using an Agentic Development Environment (ADE), the agent can automatically open relevant stories or an [agentic review summary](./agentic-review.mdx) in the ADE preview, so you can inspect the components and their code.
 
-**1. Generating UI with existing components**
+[TK - image - Agentic review open in ADE preview]
+![An ADE working on a UI task with an agentic review open in the preview](../_assets/ai/ade-preview-review.png)
 
-_Prompt: Build a login form_
+## Skills
 
-1. The agent queries the [docs toolset](#docs) to find components that match the requirements of a login form, e.g. a `TextInput` component for the username and password fields, and a `Button` component for the submit button.
+These skills are available to agents that have the Storybook plugin installed. They can be referenced in prompts (e.g. `/stories`) or the agent can use them indirectly while working on a task.
 
-1. The agent queries the [docs toolset](#docs) again to reference more detailed information about specific components, e.g., it learns that the `TextInput` component has a `type` prop that can be set to "password" to obscure the input.
+### `init`
 
-1. The agent generates a LoginForm component that composes those components together.
+Initializes Storybook in your project, if it isn't already set up. This is the same as running [`npx storybook init`](../get-started/install.mdx) in your project.
 
-1. The agent uses the [development toolset](#development) to generate stories that render LoginForm in its various states.
+### `setup`
 
-1. The agent uses the [testing toolset](#testing) to run tests on the generated component, and finds that the submit button does not have an accessible level of color contrast.
+Writes basic stories for your project.
 
-1. The agent updates the LoginForm component to use a different color (found by using the [docs toolset](#docs) to reference your documented theme colors) for the submit button.
+### `stories`
 
-1. The agent uses the [testing toolset](#testing) to re-run the tests to confirm that the issue is resolved.
-1. The agent uses the [development toolset](#development) to show you previews of each relevant story.
+TK
 
-**2. Previewing work with stories**
+### `upgrade`
 
-_Prompt: Show me the Button in dark mode_
+Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](../releases/upgrading.mdx) in your project.
 
-1. The agent uses the [development toolset](#development) to share a preview of or link to the default Button story in dark mode.
+## Tools
 
-**3. Running tests**
-
-_Prompt: Run tests for all the stories that contain the Header component_
-
-1. Agent uses grep (or "file system lookup") to determine which components use Header.
-
-1. Agent finds all the stories for those components.
-
-1. The agent uses the [testing toolset](#testing) to run tests on those stories, and returns a summary of the results.
-
-**4. Generating tests**
-
-_Prompt: Write a story to test the login form submit action_
-
-1. The agent uses the [development toolset](#development) to generate a story that demonstrates the submit action of the login form, e.g. by writing a [play function](../../writing-tests/interaction-testing.mdx#writing-interaction-tests) to simulate a user filling out the form and clicking the submit button, then asserting that the expected outcome occurs (e.g. a success message appears, the user is redirected, etc.).
-
-## Toolsets
-
-The plugin provides a set of tools that an agent can call to interact with your Storybook. The available tools are organized into three toolsets: development, docs, and testing. Each toolset provides a different set of capabilities for the agent to use when developing UI.
-
-### Development
-
-The development toolset provides tools for authoring well-considered stories (including [interaction tests](../writing-tests/interaction-testing.mdx)) and previewing those stories in the agent's chat interface. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
-
-The development toolset includes the following tools:
-
-#### `get-changed-stories`
-
-Returns a list of stories that are changed or possibly affected by local file changes (requires [change detection](../configure/user-interface/change-detection.mdx) to be enabled).
-
-#### `get-storybook-story-instructions`
-
-Returns instructions on how to write useful stories, including which props to capture and how to write interaction tests for the story (if applicable).
-
-#### `preview-stories`
-
-Returns story previews rendered in the agent's chat interface, if the agent supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview#client-support). Otherwise, it returns a link to the [review summary](./agentic-review.mdx) or links to relevant stories in Storybook.
-
-### Docs
-
-The docs toolset provides tools that help the agent reuse components from your Storybook when generating UI. The agent can query the manifests to find components that match the requirements of the UI it's trying to build, and reference your documentation to understand how to use those components correctly. This helps ensure the generated UI is consistent with your existing design system and uses the components you've already built.
-
-The docs toolset includes the following tools:
-
-#### `get-documentation`
-
-Returns the detailed documentation for a specific component, including its props, the first three stories, an index of the remaining stories, and any additional documentation you've provided.
-
-#### `get-documentation-for-story`
-
-Returns the full story and associated documentation for a specific story. The agent calls this tool when `get-documentation` doesn't provide enough information for the agent to use a component effectively.
-
-#### `list-all-documentation`
-
-Returns an index containing components and unattached docs entries.
-
-### Testing
-
-If you have [Storybook Test](../writing-tests/index.mdx) set up in your Storybook, the testing toolset provides tools that allow the agent to run component tests (including [accessibility checks](../writing-tests/accessibility-testing.mdx), if set up) and interpret their results. It also includes instructions to resolve issues. As the agent develops, it can choose to run tests to validate its work. If it finds issues, it can fix them and re-run the tests to confirm they are resolved. This creates a _self-healing_ loop that helps ensure the quality of the generated UI, without requiring you to intervene.
-
-The testing toolset includes the following tool:
-
-#### `run-story-tests`
-
-Runs tests for specific stories and returns results, including any accessibility issues (if configured). Also instructs the agent to interpret the results and resolve any issues found.
-
-## FAQ
-
-### Why is the docs toolset React-only?
-
-The docs toolset relies on the [manifests](./mcp/manifests.mdx) generated by Storybook, which is currently limited to React projects. After we ensure a solid experience with React projects, we plan to expand support to the other core Storybook renderers: Vue, Angular, Web Components, and Svelte.
+All of [Storybook MCP server's tools](./mcp/overview.mdx#toolsets) are available to agents that have the plugin installed.
 
 {/* TODO: Update these across other pages */}
 **More AI resources**

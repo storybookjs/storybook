@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,9 +19,19 @@ import {
 } from './angular-to-angular-vite.ts';
 
 // Mock dependencies
-vi.mock('node:fs/promises', () => ({
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
   readFile: vi.fn(),
   writeFile: vi.fn(),
+}));
+
+// AngularJSON (pulled in transitively via `storybook/internal/cli`) reads/writes angular.json
+// synchronously, unlike the rest of this fix's async `node:fs/promises` I/O.
+vi.mock('node:fs', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs')>()),
+  existsSync: vi.fn(() => false),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -37,7 +48,8 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   transformImportFiles: vi.fn().mockResolvedValue([]),
   getProjectRoot: vi.fn().mockReturnValue('/project'),
   formatFileContent: vi.fn((_filePath: string, content: string) => Promise.resolve(content)),
@@ -61,6 +73,9 @@ vi.mock('../helpers/mainConfigFile.ts', () => ({
 
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
+const mockExistsSync = vi.mocked(existsSync);
+const mockReadFileSync = vi.mocked(readFileSync);
+const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
 const mockUpdateMainConfig = vi.mocked(updateMainConfig);
@@ -80,7 +95,21 @@ describe('angular-to-angular-vite', () => {
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+    // Default: angular.json doesn't exist (AngularJSON gracefully skips it). Tests that need
+    // angular.json content override this via `mockAngularJson(...)`.
+    mockExistsSync.mockReturnValue(false);
   });
+
+  /** Wire the sync `node:fs` mocks so `AngularJSON` reads `/project/angular.json` as `content`. */
+  const mockAngularJson = (content: string) => {
+    mockExistsSync.mockImplementation((p: any) => String(p).endsWith('angular.json'));
+    mockReadFileSync.mockImplementation((p: any) => {
+      if (String(p).endsWith('angular.json')) {
+        return content;
+      }
+      throw new Error(`ENOENT: ${p}`);
+    });
+  };
 
   describe('check function', () => {
     it('returns null when @storybook/angular is not installed', async () => {
@@ -387,12 +416,10 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
           },
         },
       });
+      mockAngularJson(angularJsonContent);
 
       mockReadFile.mockImplementation((filePath: any) => {
         const p = String(filePath);
-        if (p.endsWith('angular.json')) {
-          return Promise.resolve(angularJsonContent) as any;
-        }
         if (p.endsWith('package.json')) {
           return Promise.resolve('{}') as any;
         }
@@ -410,11 +437,11 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
         '/project/angular.json',
         expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
       );
-      expect(mockWriteFile).toHaveBeenCalledWith(
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
         '/project/angular.json',
         expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:build-storybook`)
       );
@@ -788,11 +815,9 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         });
 
       const mockFilesFor = (angularJsonContent: string, previewContent: string) => {
+        mockAngularJson(angularJsonContent);
         mockReadFile.mockImplementation((filePath: any) => {
           const p = String(filePath);
-          if (p.endsWith('angular.json')) {
-            return Promise.resolve(angularJsonContent) as any;
-          }
           if (p === previewConfigPath) {
             return Promise.resolve(previewContent) as any;
           }
@@ -900,16 +925,15 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         } as any);
 
         expect(mockWriteFile).not.toHaveBeenCalled();
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
       });
 
       it('works with a .tsx preview file', async () => {
         mockPromptConfirm.mockResolvedValue(false);
         const tsxPreviewPath = '/project/.storybook/preview.tsx';
+        mockAngularJson(angularJsonWithFlag(undefined));
         mockReadFile.mockImplementation((filePath: any) => {
           const p = String(filePath);
-          if (p.endsWith('angular.json')) {
-            return Promise.resolve(angularJsonWithFlag(undefined)) as any;
-          }
           if (p === tsxPreviewPath) {
             return Promise.resolve('export default {};') as any;
           }
@@ -972,13 +996,12 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
           storybookVersion: '9.0.0',
         } as any);
 
-        const angularJsonWrite = mockWriteFile.mock.calls.find(
+        const angularJsonWrite = mockWriteFileSync.mock.calls.find(
           ([p]) => p === '/project/angular.json'
         );
         expect(angularJsonWrite).toBeDefined();
-        const written = String(angularJsonWrite![1]);
-        expect(written).toContain('"zoneless":true');
-        expect(written).not.toContain('experimentalZoneless');
+        const written = JSON.parse(String(angularJsonWrite![1]));
+        expect(written.projects.myApp.architect.storybook.options).toEqual({ zoneless: true });
       });
 
       it('handles Nx project.json storybook targets identically to angular.json targets', async () => {
@@ -1137,7 +1160,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
           expect.stringContaining("import 'zone.js';")
         );
 
-        const angularJsonWrite = mockWriteFile.mock.calls.find(
+        const angularJsonWrite = mockWriteFileSync.mock.calls.find(
           ([p]) => p === '/project/angular.json'
         );
         expect(angularJsonWrite).toBeDefined();

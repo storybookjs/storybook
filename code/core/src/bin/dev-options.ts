@@ -45,14 +45,10 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   options: TOptions,
   {
     env = process.env,
-    // std-env can only detect agents from the live process.env, not from the injected `env`.
-    // Tests pass `null` to force non-agent behavior instead of scrubbing the real environment.
     agent = detectAgent(),
   }: { env?: DevCommandEnvironment; agent?: AgentInfo | null } = {}
 ) {
   const isClaudePreview = isClaudePreviewLaunch(env);
-  // AI agents usually start Storybook to verify changes; auto-opening the system
-  // browser next to their own preview is pure noise, so suppress it silently.
   const isAgentSession = isClaudePreview || !!agent;
   const PORT = env.PORT ?? undefined;
   const SBCONFIG_PORT = env.SBCONFIG_PORT ?? undefined;

@@ -120,7 +120,6 @@ describe('resolveDevCommandOptions', () => {
     ['CODEX_SANDBOX', '1'],
     ['CODEX_THREAD_ID', '1'],
     ['CURSOR_AGENT', '1'],
-    // AI_AGENT is std-env's explicit override: any agent can self-identify with it.
     ['AI_AGENT', 'my-custom-agent'],
   ])('suppresses browser opening when %s marks an AI agent environment', (name, value) => {
     vi.stubEnv(name, value);

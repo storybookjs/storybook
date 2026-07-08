@@ -17,6 +17,29 @@ const JSON_EDIT_FORMATTING = { insertSpaces: true, tabSize: 2, eol: '\n' } as co
 export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
   applyEdits(text, modify(text, path, value, { formattingOptions: JSON_EDIT_FORMATTING }));
 
+/** An `angular.json` architect target or Nx `project.json` target. */
+export interface StorybookBuilderTarget {
+  builder?: string;
+  executor?: string;
+  options?: {
+    compodoc?: boolean;
+    experimentalZoneless?: boolean;
+    [key: string]: unknown;
+  };
+}
+
+export const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
+  if (typeof target !== 'object' || target === null) {
+    return false;
+  }
+  const ref =
+    (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
+  return (
+    typeof ref === 'string' &&
+    (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
+  );
+};
+
 export class AngularJSON {
   json: {
     projects: Record<string, { root: string; projectType: string; architect: Record<string, any> }>;

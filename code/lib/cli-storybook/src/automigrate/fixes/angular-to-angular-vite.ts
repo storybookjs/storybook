@@ -1,7 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import { AngularJSON, editJsonText, type JSONEditPath } from 'storybook/internal/cli';
+import {
+  AngularJSON,
+  editJsonText,
+  isStorybookTarget,
+  type JSONEditPath,
+} from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -152,29 +157,6 @@ interface JsonTargetTransformResult {
   hasStorybookTarget: boolean;
   allStorybookTargetsZonelessTrue: boolean;
 }
-
-/** An `angular.json` architect target or Nx `project.json` target. */
-interface StorybookBuilderTarget {
-  builder?: string;
-  executor?: string;
-  options?: {
-    compodoc?: boolean;
-    experimentalZoneless?: boolean;
-    [key: string]: unknown;
-  };
-}
-
-const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
-  if (typeof target !== 'object' || target === null) {
-    return false;
-  }
-  const ref =
-    (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
-  return (
-    typeof ref === 'string' &&
-    (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
-  );
-};
 
 /** Map the old @storybook/angular builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
 const rewriteStorybookBuilderRef = (ref: string): string | null => {

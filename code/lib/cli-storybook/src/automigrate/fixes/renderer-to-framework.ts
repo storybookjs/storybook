@@ -133,7 +133,7 @@ export function resolveFrameworkRendererPairs(
       onSkip?.(`Framework name not found for ${selectedFramework}, skipping.`);
       continue;
     }
-    const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
+    const rendererName = frameworkToRenderer[frameworkName];
     const [rendererPackage] =
       Object.entries(rendererPackages).find(([, r]) => r === rendererName) ?? [];
     if (!rendererPackage) {

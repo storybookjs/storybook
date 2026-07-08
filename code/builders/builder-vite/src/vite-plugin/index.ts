@@ -210,15 +210,30 @@ function main(options?: UserOptions): PluginOption {
         };
         const sharedUpgrades = (globalWithChannel.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
 
-        if (!globalWithChannel.__SB_CHANNEL__) {
-          globalWithChannel.__SB_CHANNEL__ = createServerChannel(
-            sharedUpgrades,
-            '/storybook-server-channel',
-            wsToken
-          );
-          await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
+        const hmrOpts = server.config.server.hmr;
+        const hostServer = typeof hmrOpts == 'object' && hmrOpts && hmrOpts.server;
+        if (hostServer) {
+          let CHANNEL = '/storybook-server-channel';
+          let originals = hostServer.rawListeners('upgrade');
+          hostServer.removeAllListeners('upgrade');
+          hostServer.on('upgrade', (req, socket, head) => {
+            if (req?.url?.startsWith(CHANNEL)) {
+              sharedUpgrades.emit('upgrade', req, socket, head);
+              return;
+            }
+            for (let fn of originals) fn.call(hostServer, req, socket, head);
+          });
+        } else {
+          if (!globalWithChannel.__SB_CHANNEL__) {
+            globalWithChannel.__SB_CHANNEL__ = createServerChannel(
+              sharedUpgrades,
+              '/storybook-server-channel',
+              wsToken
+            );
+            await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
+          }
+          sb.channel = globalWithChannel.__SB_CHANNEL__;
         }
-        sb.channel = globalWithChannel.__SB_CHANNEL__;
       }
 
       const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');

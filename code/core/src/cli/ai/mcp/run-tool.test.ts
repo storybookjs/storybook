@@ -232,6 +232,37 @@ describe('runAiTool', () => {
     });
   });
 
+  it('routes via the recorded configDir when the dev server was started from the monorepo root', async () => {
+    const rootInstance = {
+      ...record,
+      cwd: resolve('/repo'),
+      configDir: resolve('/repo/packages/ui/.storybook'),
+    };
+    vi.mocked(readRegistry).mockResolvedValue([rootInstance]);
+
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/repo/packages/ui' });
+
+    expect(callMcpTool).toHaveBeenCalledWith(rootInstance, expect.anything(), undefined);
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('routes via --config-dir from the monorepo root when the dev server was started from the leaf', async () => {
+    const leafInstance = {
+      ...record,
+      cwd: resolve('/repo/packages/ui'),
+      configDir: resolve('/repo/packages/ui/.storybook'),
+    };
+    vi.mocked(readRegistry).mockResolvedValue([leafInstance]);
+
+    const result = await runAiTool('list-all-documentation', [], {
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(callMcpTool).toHaveBeenCalledWith(leafInstance, expect.anything(), undefined);
+    expect(result.exitCode).toBe(0);
+  });
+
   it('defaults the cwd to process.cwd()', async () => {
     vi.mocked(readRegistry).mockResolvedValue([{ ...record, cwd: process.cwd() }]);
     const result = await runAiTool('list-all-documentation', []);
@@ -267,8 +298,44 @@ describe('runAiTool', () => {
 
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('No Storybook is running at this cwd');
-    expect(result.output).toContain('/projects/foo');
+    expect(result.output).toContain('No running Storybook matches this project');
+    expect(result.output).toContain('- cwd `/projects/foo` (http://localhost:6006)');
+    expect(result.output).toContain('- `storybook ai --cwd /projects/foo <command> [args...]`');
+    expect(result.output).toContain('BEFORE the command name');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+  });
+
+  it('includes a --config-dir retry example in the no-instance markdown when recorded', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([
+      { ...record, cwd: '/repo', configDir: '/repo/packages/ui/.storybook' },
+    ]);
+
+    const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain(
+      '- cwd `/repo`, config dir `/repo/packages/ui/.storybook` (http://localhost:6006)'
+    );
+    expect(result.output).toContain(
+      '- `storybook ai --config-dir /repo/packages/ui/.storybook <command> [args...]`'
+    );
+    expect(result.output).not.toContain('storybook ai --cwd');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+  });
+
+  it('does not route by cwd when an explicit --config-dir targets a different config', async () => {
+    // Only the root Storybook runs; the agent explicitly targets the (not running) ui package.
+    vi.mocked(readRegistry).mockResolvedValue([
+      { ...record, cwd: resolve('/repo'), configDir: resolve('/repo/.storybook') },
+    ]);
+
+    const result = await runAiTool('list-all-documentation', [], {
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
@@ -464,8 +531,8 @@ describe('runAiTool', () => {
     vi.mocked(readRegistry).mockResolvedValue([record, sibling]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple matching Storybook instances');
-    expect(result.output).toContain('Matching instances at `/projects/foo`');
+    expect(result.output).toContain('Multiple Storybook instances match this project');
+    expect(result.output).toContain('cwd `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
@@ -515,8 +582,8 @@ describe('runAiTool', () => {
         undefined
       );
       expect(result.exitCode).toBe(0);
-      expect(result.output).toContain('Multiple matching Storybook instances');
-      expect(result.output).toContain('Matching instances at `/projects/foo`');
+      expect(result.output).toContain('Multiple Storybook instances match this project');
+      expect(result.output).toContain('cwd `/projects/foo`');
       expect(result.output).toContain('pid `2`');
       expect(result.output).toContain('pid `3`');
       expect(result.output).not.toContain('pid `4`');

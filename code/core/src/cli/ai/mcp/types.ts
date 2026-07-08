@@ -24,6 +24,12 @@ export const StorybookInstanceRecordSchema = v.object({
   instanceId: v.string(),
   pid: v.pipe(v.number(), v.minValue(1), v.integer()),
   cwd: v.string(),
+  /**
+   * Resolved config directory of the running Storybook, used as a second matching key so
+   * monorepo instances are found from a different cwd (storybookjs/storybook#35359). Optional:
+   * records written by Storybooks older than 10.5 lack it.
+   */
+  configDir: v.optional(v.string()),
   url: v.string(),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
   agent: v.optional(v.string()),

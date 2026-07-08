@@ -31,6 +31,8 @@ describe('AddonVitestService', () => {
       getInstalledVersion: vi.fn(),
       runPackageCommand: vi.fn(),
       getPackageCommand: vi.fn(),
+      getCatalogVersion: vi.fn().mockReturnValue(null),
+      syncWorkspaceCatalog: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     service = new AddonVitestService(mockPackageManager);
@@ -155,6 +157,71 @@ describe('AddonVitestService', () => {
       expect(deps).toContain('@vitest/browser@3.2.0');
       expect(deps).toContain('@vitest/coverage-v8@3.2.0');
       expect(deps).toContain('playwright'); // no version for playwright
+    });
+
+    it('references the default catalog and registers entries for a "catalog:" vitest dependency', async () => {
+      // In a pnpm catalog workspace, vitest is declared as "catalog:" and node_modules may not be
+      // materialized yet, so getInstalledVersion returns null. The derived @vitest/* packages must
+      // reuse the catalog convention and get registered in pnpm-workspace.yaml so install succeeds.
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        vitest: 'catalog:',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest version check
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
+
+      const deps = await service.collectDependencies();
+
+      // Version < 4.0.0, so uses @vitest/browser
+      expect(deps).toContain('@vitest/browser@catalog:');
+      expect(deps).toContain('@vitest/coverage-v8@catalog:');
+      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', undefined);
+      expect(mockPackageManager.syncWorkspaceCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          '@vitest/browser': '^3.2.0',
+          '@vitest/coverage-v8': '^3.2.0',
+        }),
+        undefined
+      );
+    });
+
+    it('references a named catalog for a "catalog:<name>" vitest dependency', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        vitest: 'catalog:testing',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest version check
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('@vitest/coverage-v8@catalog:testing');
+      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', 'testing');
+      expect(mockPackageManager.syncWorkspaceCatalog).toHaveBeenCalledWith(
+        expect.objectContaining({ '@vitest/coverage-v8': '^3.2.0' }),
+        'testing'
+      );
+    });
+
+    it('falls back to bare packages when a catalog vitest version cannot be resolved', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        vitest: 'catalog:',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest version check
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue(null);
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps.every((d) => !d.includes('catalog:'))).toBe(true);
+      expect(mockPackageManager.syncWorkspaceCatalog).not.toHaveBeenCalled();
     });
   });
 

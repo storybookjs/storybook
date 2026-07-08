@@ -52,11 +52,24 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Determine Vitest version/range from installed or declared dependency to avoid pulling
-    // incompatible majors by default.
+    // Vitest may be declared through a pnpm catalog (`catalog:` or `catalog:<name>`). When it is, the
+    // derived `@vitest/*` packages we add must also become catalog entries — copying the raw
+    // `catalog:` specifier onto them produces e.g. `@vitest/coverage-v8@catalog:`, which fails
+    // install because no such catalog entry exists.
+    const catalogMatch = allDeps['vitest']?.match(/^catalog:(.*)$/);
+    const catalogName = catalogMatch?.[1] || undefined;
+
+    // Determine the Vitest version/range used to keep the derived `@vitest/*` packages on a
+    // compatible major. Prefer the resolved installed version, then the catalog entry, then a plain
+    // declared semver range. Protocol specifiers like `catalog:`/`workspace:` are never copied
+    // verbatim onto the derived packages.
     let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!vitestVersionSpecifier && allDeps['vitest']) {
-      vitestVersionSpecifier = allDeps['vitest'];
+    if (!vitestVersionSpecifier) {
+      if (catalogMatch) {
+        vitestVersionSpecifier = this.packageManager.getCatalogVersion('vitest', catalogName);
+      } else if (allDeps['vitest'] && validRange(allDeps['vitest'])) {
+        vitestVersionSpecifier = allDeps['vitest'];
+      }
     }
 
     let isVitest4OrNewer = true;
@@ -92,13 +105,24 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // Apply version specifiers to vitest-related packages
+    // Apply version specifiers to vitest-related packages.
+    const catalogEntries: Record<string, string> = {};
     const versionedDependencies = dependencies.map((pkg) => {
-      if (pkg.includes('vitest') && vitestVersionSpecifier) {
-        return `${pkg}@${vitestVersionSpecifier}`;
+      if (!pkg.includes('vitest') || !vitestVersionSpecifier) {
+        return pkg;
       }
-      return pkg;
+      if (catalogMatch) {
+        // Mirror the project's catalog convention: reference the catalog from package.json and
+        // register the resolved version in pnpm-workspace.yaml below.
+        catalogEntries[pkg] = vitestVersionSpecifier;
+        return `${pkg}@catalog:${catalogName ?? ''}`;
+      }
+      return `${pkg}@${vitestVersionSpecifier}`;
     });
+
+    if (Object.keys(catalogEntries).length > 0) {
+      this.packageManager.syncWorkspaceCatalog(catalogEntries, catalogName);
+    }
 
     return versionedDependencies;
   }

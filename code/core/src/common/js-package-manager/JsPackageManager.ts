@@ -297,6 +297,24 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Returns the version declared for a package in a workspace catalog (the default catalog when no
+   * name is given), or null when there is no such entry. Catalogs are a pnpm-only feature, so every
+   * other package manager returns null.
+   */
+  public getCatalogVersion(_packageName: string, _catalogName?: string): string | null {
+    return null;
+  }
+
+  /**
+   * Registers `entries` (package name -> version range) in a workspace catalog, creating the entries
+   * that don't exist yet. Catalogs are a pnpm-only feature, so this is a no-op for every other
+   * package manager.
+   */
+  public syncWorkspaceCatalog(_entries: Record<string, string>, _catalogName?: string): void {
+    // no-op — overridden by PNPMProxy
+  }
+
+  /**
    * Add dependencies to a project using `yarn add` or `npm install`.
    *
    * @example

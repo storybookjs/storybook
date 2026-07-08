@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -12,6 +12,7 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
+import { parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
@@ -217,6 +218,74 @@ export class PNPMProxy extends JsPackageManager {
         ...versions,
       },
     };
+  }
+
+  /**
+   * Locate the `pnpm-workspace.yaml` that governs this project's catalogs, walking up from the
+   * package.json we operate on. Catalogs are only valid inside a pnpm workspace, so a `catalog:`
+   * specifier implies this file exists somewhere up the tree.
+   */
+  #findWorkspaceYaml(): string | undefined {
+    return find.up('pnpm-workspace.yaml', {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
+  }
+
+  /**
+   * The key path within a parsed `pnpm-workspace.yaml` for a catalog. The default catalog (referenced
+   * as `catalog:` or `catalog:default`) lives under the top-level `catalog` key; named catalogs live
+   * under `catalogs.<name>`.
+   */
+  #catalogKeyPath(catalogName?: string): string[] {
+    return !catalogName || catalogName === 'default' ? ['catalog'] : ['catalogs', catalogName];
+  }
+
+  override getCatalogVersion(packageName: string, catalogName?: string): string | null {
+    const workspaceYamlPath = this.#findWorkspaceYaml();
+    if (!workspaceYamlPath) {
+      return null;
+    }
+    try {
+      const doc = parseDocument(readFileSync(workspaceYamlPath, 'utf8'));
+      const version = doc.getIn([...this.#catalogKeyPath(catalogName), packageName]);
+      return typeof version === 'string' ? version : null;
+    } catch (e) {
+      logger.debug(`Could not read pnpm catalog from ${workspaceYamlPath}: ${String(e)}`);
+      return null;
+    }
+  }
+
+  override syncWorkspaceCatalog(entries: Record<string, string>, catalogName?: string): void {
+    const workspaceYamlPath = this.#findWorkspaceYaml();
+    if (!workspaceYamlPath) {
+      logger.warn(
+        `Could not find pnpm-workspace.yaml to register catalog entries for: ${Object.keys(entries).join(', ')}`
+      );
+      return;
+    }
+
+    try {
+      // Edit the document (rather than re-serializing a parsed object) so existing formatting and
+      // comments in the user's workspace file are preserved.
+      const doc = parseDocument(readFileSync(workspaceYamlPath, 'utf8'));
+      const keyPath = this.#catalogKeyPath(catalogName);
+      let changed = false;
+
+      for (const [packageName, version] of Object.entries(entries)) {
+        // Never override an entry the user already pinned themselves.
+        if (doc.getIn([...keyPath, packageName]) === undefined) {
+          doc.setIn([...keyPath, packageName], version);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        writeFileSync(workspaceYamlPath, doc.toString(), 'utf8');
+      }
+    } catch (e) {
+      logger.warn(`Could not update pnpm catalog in ${workspaceYamlPath}: ${String(e)}`);
+    }
   }
 
   protected runInstall(options?: { force?: boolean }) {

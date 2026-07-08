@@ -1249,7 +1249,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     api.setPreviewInitialized(ref);
   });
 
-  provider.channel?.on(SET_CONFIG, () => {
+  provider.channel?.on(SET_CONFIG, async () => {
     const config = provider.getConfig();
     const configFilters = config?.sidebar?.filters || {};
     const {
@@ -1261,7 +1261,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     } = store.getState();
 
     // Config sidebar filters first, then our managed filters override any conflicts
-    store.setState({
+    await store.setState({
       filters: {
         ...store.getState().filters,
         ...configFilters,
@@ -1270,6 +1270,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
       },
     });
+
+    // If the index was already set, re-apply it so the new filters take effect
+    const { internal_index: index } = store.getState();
+    if (index) {
+      await api.setIndex(index);
+    }
   });
 
   fullStatusStore.onAllStatusChange(async () => {

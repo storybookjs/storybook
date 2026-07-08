@@ -6,6 +6,7 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SET_CONFIG,
   SET_INDEX,
   SET_STORIES,
   STORY_ARGS_UPDATED,
@@ -15,7 +16,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { type API_StoryEntry } from 'storybook/internal/types';
+import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -1457,6 +1458,55 @@ describe('stories API', () => {
         },
         true
       );
+    });
+  });
+  describe('SET_CONFIG', () => {
+    it('applies config sidebar filters to an index that was already set', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          tagPresets: {},
+          includedTagFilters: [],
+          excludedTagFilters: [],
+          includedStatusFilters: [],
+          excludedStatusFilters: [],
+        } as Partial<State>,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+
+      const entries: StoryIndex['entries'] = {
+        'a--1': {
+          type: 'story',
+          id: 'a--1',
+          title: 'a',
+          name: '1',
+          tags: ['dev'],
+          importPath: './a.ts',
+        },
+        'b--1': {
+          type: 'story',
+          id: 'b--1',
+          title: 'b',
+          name: '1',
+          tags: ['dev'],
+          importPath: './b.ts',
+        },
+      };
+
+      // The index arrives before the addon config (e.g. slow-loading manager entry)
+      await api.setIndex({ v: 5, entries });
+
+      expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
+
+      // Now the addon config with sidebar filters lands
+      provider.getConfig.mockReturnValue({
+        sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
+      });
+      provider.channel.emit(SET_CONFIG);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const { filteredIndex } = store.getState();
+      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
     });
   });
   describe('experimental_setFilter', () => {

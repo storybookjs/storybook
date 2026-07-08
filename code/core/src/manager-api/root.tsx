@@ -132,6 +132,11 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
   modules: ReturnType<ModuleFn>[];
 
+  // React silently drops setState calls (and never invokes their callbacks) before the component
+  // is mounted. Addon register callbacks run in the constructor, so state changes they make
+  // (e.g. `experimental_setFilter`) must be applied to `this.state` directly until we are mounted.
+  mounted = false;
+
   static displayName = 'Manager';
 
   constructor(props: ManagerProviderProps) {
@@ -149,7 +154,13 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
     const store = new Store({
       getState: () => this.state,
-      setState: (stateChange: Partial<State>, callback) => {
+      setState: (stateChange: Partial<State> | ((state: State) => Partial<State>), callback) => {
+        if (!this.mounted) {
+          const patch = typeof stateChange === 'function' ? stateChange(this.state) : stateChange;
+          this.state = { ...this.state, ...patch };
+          callback(this.state);
+          return this.state;
+        }
         this.setState(stateChange, () => callback(this.state));
 
         return this.state;
@@ -198,6 +209,10 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
     // listeners (e.g. open-service) exist before preview JS can emit sync-start.
     props.provider.handleAPI(this.api);
+  }
+
+  componentDidMount() {
+    this.mounted = true;
   }
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {

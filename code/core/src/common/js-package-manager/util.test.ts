@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
+import { PackageManagerName } from './JsPackageManager.ts';
+import { NPMProxy } from './NPMProxy.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
 import {
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
+  getMswInitCommand,
+  getRemotePackageRunnerArgs,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  getVitestStorybookRunCommand,
   hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
@@ -87,6 +93,24 @@ describe('js package manager util', () => {
     );
     expect(getStorybookRerunCommand('create', '10.3.2')).toBe('npx create-storybook@10.3.2');
     expect(getStorybookRerunCommand('upgrade', '10.3.2')).toBe('npx storybook@10.3.2 upgrade');
+  });
+
+  it('builds remote package runner args for the active package manager', () => {
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.NPM, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['--yes', '@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.PNPM, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+  });
+
+  it('builds package-manager-aware setup commands', () => {
+    const npm = new NPMProxy({ cwd: process.cwd(), configDir: '.storybook' });
+    const pnpm = new PNPMProxy({ cwd: process.cwd(), configDir: '.storybook' });
+
+    expect(getVitestStorybookRunCommand(npm)).toBe('npx vitest --project storybook run');
+    expect(getVitestStorybookRunCommand(pnpm)).toBe('pnpm exec vitest --project storybook run');
+    expect(getMswInitCommand(pnpm)).toBe('pnpm exec msw init ./public --save');
   });
 
   it('extracts structured error logs', () => {

@@ -1,5 +1,9 @@
 import { dedent } from 'ts-dedent';
-import type { ProjectInfo, SetupInstructionsContext as InstructionsContext } from '../../types.ts';
+import {
+  getMswInitCommand,
+  getVitestStorybookRunCommand,
+} from '../../../../common/js-package-manager/util.ts';
+import type { SetupInstructionsContext as InstructionsContext, ProjectInfo } from '../../types.ts';
 import {
   getInteractionPlayExample,
   getMainConfigExample,
@@ -60,12 +64,15 @@ export function verifyStep(
   projectInfo: ProjectInfo,
   { packageManager, tsx }: InstructionsContext
 ): { title: string; body: string } {
+  const vitestRunAll = getVitestStorybookRunCommand(packageManager);
+  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
+
   return {
     title: `Verify in one batch, then iterate only on failures`,
     body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
-    npx vitest --project storybook run
+    ${vitestRunAll}
     \`\`\`
 
     Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
@@ -74,7 +81,7 @@ export function verifyStep(
 
     1. Read the error.
     2. If multiple stories share the failure, fix the shared preview setup, not the stories.
-    3. Re-run vitest **only for the affected file(s)**: \`npx vitest --project storybook run path/to/Foo.stories.${tsx}\`.
+    3. Re-run vitest **only for the affected file(s)**: \`${vitestRunFile}\`.
     4. Repeat until the file passes, then move on. Cap retries at ~5 per file — if it still fails, leave \`'needs-work'\` tag to inform the user.
     5. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
 
@@ -86,12 +93,15 @@ export function verifyWithAllowedFailureStep(
   projectInfo: ProjectInfo,
   { packageManager, tsx }: InstructionsContext
 ): { title: string; body: string } {
+  const vitestRunAll = getVitestStorybookRunCommand(packageManager);
+  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
+
   return {
     title: `Verify in one batch, then iterate only on failures`,
     body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
-    npx vitest --project storybook run
+    ${vitestRunAll}
     \`\`\`
 
     Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
@@ -100,7 +110,7 @@ export function verifyWithAllowedFailureStep(
 
     1. Read the error.
     2. If multiple stories share the failure, fix the shared preview setup, not the stories.
-    3. In subsequent runs, re-run Vitest **only for the affected file(s)**: \`npx vitest --project storybook run path/to/Foo.stories.${tsx}\`.
+    3. In subsequent runs, re-run Vitest **only for the affected file(s)**: \`${vitestRunFile}\`.
     4. Fix any TypeScript issues needed for story files to pass, then re-run TS and Vitest only for those files. Repeat until files pass, or until you have tried 5 times.
     5. If a story file still fails after those retries, leave the file tagged \`'needs-work'\` and move on — do not keep chasing project-wide TS errors caused by preserved \`'needs-work'\` files.
     6. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
@@ -171,15 +181,17 @@ export function buildPortalStep(
 
 export function mswStep(
   projectInfo: ProjectInfo,
-  { configDir, mswInstall, ts }: InstructionsContext
+  { configDir, mswInstall, packageManager, ts }: InstructionsContext
 ): { title: string; body: string } {
+  const mswInit = getMswInitCommand(packageManager);
+
   return {
     title: 'MSW handlers (only what stories will hit)',
     body: `Use \`msw-storybook-addon\`. Install with:
 
     \`\`\`bash
     ${mswInstall}
-    npx msw init ./public --save
+    ${mswInit}
     \`\`\`
 
     Make sure \`${configDir}/main.${ts}\` serves \`./public\`:

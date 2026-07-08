@@ -118,6 +118,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: true,
         showAiInstructions: true,
+        aiSetupCommand: 'pnpm exec storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -126,7 +127,9 @@ describe('FinalizationCommand', () => {
       expect(logger.step).toHaveBeenCalledWith(
         expect.stringContaining('is not entirely set up yet')
       );
-      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai setup'));
+      expect(logger.step).toHaveBeenCalledWith(
+        expect.stringContaining('pnpm exec storybook ai setup')
+      );
       const logCalls = vi.mocked(logger.log).mock.calls.map((c) => String(c[0]));
       expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/llms.txt'))).toBe(true);
       expect(logCalls.some((msg) => msg.includes('https://discord.gg/storybook/'))).toBe(false);

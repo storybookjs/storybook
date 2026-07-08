@@ -1,5 +1,8 @@
 import { gt, prerelease, valid } from 'semver';
 
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
+
 export type StorybookInstallContext = 'create' | 'upgrade';
 
 export const STORYBOOK_PACKAGE_PATTERNS = [
@@ -109,6 +112,31 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
 
   return latestStableVersion;
 };
+
+/** Args for `runPackageCommand({ useRemotePkg: true })` when bootstrapping a Storybook CLI package. */
+export function getRemotePackageRunnerArgs(
+  packageManagerType: PackageManagerName,
+  pkg: string,
+  version: string,
+  args: string[]
+): string[] {
+  const pkgWithVersion = `${pkg}@${version}`;
+  return packageManagerType === PackageManagerName.NPM
+    ? ['--yes', pkgWithVersion, ...args]
+    : [pkgWithVersion, ...args];
+}
+
+export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
+  const args = ['vitest', '--project', 'storybook', 'run'];
+  if (file) {
+    args.push(file);
+  }
+  return packageManager.getPackageCommand(args);
+}
+
+export function getMswInitCommand(packageManager: JsPackageManager) {
+  return packageManager.getPackageCommand(['msw', 'init', './public', '--save']);
+}
 
 export const getStorybookRerunCommand = (
   installContext: StorybookInstallContext,

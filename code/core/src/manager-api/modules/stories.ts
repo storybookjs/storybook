@@ -1275,6 +1275,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const { internal_index: index } = store.getState();
     if (index) {
       await api.setIndex(index);
+
+      const refs = await fullAPI.getRefs();
+      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+      }
     }
   });
 

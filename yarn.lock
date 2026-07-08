@@ -11999,7 +11999,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/types@npm:8.60.0, @typescript-eslint/types@npm:^8.35.0, @typescript-eslint/types@npm:^8.60.0":
+"@typescript-eslint/types@npm:8.60.0":
   version: 8.60.0
   resolution: "@typescript-eslint/types@npm:8.60.0"
   checksum: 10c0/d2b6d46081a6521f204fda30e8f03712480b788d80b62b311e0f33764752d3db3bd415dd4e1f8d28495931316da1dfb5ee259e40c5de970367fbaa1efe97223f

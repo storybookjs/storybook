@@ -324,13 +324,14 @@ export const Search = React.memo<SearchProps>(function Search({
   const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
 
   return (
-    // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
+      // @ts-expect-error (non strict)
       stateReducer={stateReducer}
       // @ts-expect-error (Converted from ts-ignore)
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
+      // @ts-expect-error (non strict)
       onSelect={onSelect}
       onInputValueChange={onInputValueChange}
     >

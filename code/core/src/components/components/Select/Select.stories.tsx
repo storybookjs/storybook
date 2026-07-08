@@ -4,7 +4,7 @@ import { Button, Toolbar } from 'storybook/internal/components';
 
 import { LinuxIcon } from '@storybook/icons';
 
-import type { StoryAnnotations } from 'core/src/types';
+import type { StoryAnnotations } from '../../../types/index.ts';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 

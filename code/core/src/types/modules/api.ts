@@ -152,8 +152,8 @@ export interface API_LoadedRefData {
   indexError?: Error;
   previewInitialized: boolean;
   /**
-   * Runtime story enrichment (args, argTypes, parameters, prepared) received from the ref preview
-   * via STORY_PREPARED / DOCS_PREPARED, cached so it survives ref index (re)builds. See
+   * Runtime story enrichment (args, argTypes, parameters, initialArgs, prepared) received from the
+   * ref preview via STORY_PREPARED / DOCS_PREPARED, cached so it survives ref index (re)builds. See
    * `API_RefStoryRuntimeData`.
    */
   storyUpdates?: API_RefStoryRuntimeData;

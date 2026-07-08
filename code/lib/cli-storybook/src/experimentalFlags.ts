@@ -225,6 +225,10 @@ export async function runExperimentalFlagsHighlightStep(
     return;
   }
 
+  // The version gate decides only WHETHER the interactive step triggers. Once triggered, the
+  // skip check, dry-run summary, prompt, and writes below intentionally operate on ALL projects
+  // in the upgrade (per spec: one prompt covers all projects and a single selection applies to
+  // all of them), not just the boundary-crossing ones.
   const eligibleProjects = selectProjectsNeedingFlagsHighlight(storybookProjects);
   if (eligibleProjects.length === 0) {
     return;

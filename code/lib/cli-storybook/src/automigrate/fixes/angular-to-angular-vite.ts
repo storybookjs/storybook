@@ -623,7 +623,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // 4c. Add a `zone.js` import to the preview if the project needs it.
     const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
     if (needsZoneJs && previewConfigPath) {
       await addZoneJsPreviewImport(previewConfigPath, dryRun);

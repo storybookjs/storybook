@@ -22,7 +22,12 @@ import {
   testsUnit_linux,
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
+import {
+  getSandboxSplitAtoms,
+  getSandboxes,
+  getSplitSandboxes,
+  sandboxesNoOpJob,
+} from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
@@ -34,20 +39,41 @@ import type {
   JobOrNoOpJob,
   NoOpJobImplementationObj,
 } from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
+import { STATIC_WORKFLOWS, type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
 /**
- * Generate the CircleCI config for a given workflow.
+ * Parse the `workflow` pipeline parameter into its atoms.
  *
- * @param workflow - The workflow to generate the config for.
- * @returns The generated config for CircleCI in JS format.
+ * A single cadence workflow (`normal`, `merged`, `daily`, `docs`) behaves as before. Split atoms
+ * (`core`, a framework such as `react`, or a builder such as `vite`) can be combined with `+`,
+ * e.g. `core+react`, and the resulting config is the union of each atom's jobs.
  */
-function generateConfig(workflow: Workflow) {
+function parseWorkflowAtoms(value: string): Workflow[] {
+  const atoms = value.split('+').filter(Boolean);
+  // `skipped` never reaches the generator: the setup workflow in .circleci/config.yml does not
+  // run for it, so it is not accepted here either.
+  const validAtoms = [
+    ...STATIC_WORKFLOWS.filter((workflow) => workflow !== 'skipped'),
+    ...getSandboxSplitAtoms(),
+  ];
+  const invalidAtoms = atoms.filter((atom) => !validAtoms.includes(atom));
+  if (atoms.length === 0 || invalidAtoms.length > 0) {
+    throw new Error(
+      `Invalid --workflow value "${value}". Each "+"-separated atom must be one of: ${validAtoms.join(', ')}`
+    );
+  }
+  return atoms;
+}
+
+/** Collect the jobs for a single workflow atom. */
+function collectJobs(workflow: Workflow): JobOrNoOpJob[] {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
+  } else if (getSandboxSplitAtoms().includes(workflow)) {
+    jobs.push(sandboxesNoOpJob, ...getSplitSandboxes(workflow));
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);
@@ -71,8 +97,9 @@ function generateConfig(workflow: Workflow) {
       internalStorybookBuildE2e,
       benchmarkPackages,
 
-      sandboxesNoOpJob,
-      ...sandboxes,
+      // `core` runs no sandboxes at all; leave the group out instead of
+      // emitting an orphaned no-op job.
+      ...(sandboxes.length > 0 ? [sandboxesNoOpJob, ...sandboxes] : []),
 
       testStorybooksNoOpJob,
       ...testStorybooks,
@@ -81,6 +108,20 @@ function generateConfig(workflow: Workflow) {
       ...initEmpty
     );
   }
+  return jobs;
+}
+
+/**
+ * Generate the CircleCI config for a given workflow.
+ *
+ * @param workflowParam - The value of the `workflow` pipeline parameter (one or more atoms).
+ * @returns The generated config for CircleCI in JS format.
+ */
+function generateConfig(workflowParam: string) {
+  const atoms = parseWorkflowAtoms(workflowParam);
+  // Duplicate jobs across atoms (e.g. `react+vite` both containing react-vite
+  // sandboxes) are deduplicated by id in `ensureRequiredJobs`.
+  const jobs: JobOrNoOpJob[] = atoms.flatMap(collectJobs);
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -134,14 +175,14 @@ function generateConfig(workflow: Workflow) {
       (acc, job) => {
         acc[job.id] =
           typeof job.implementation === 'function'
-            ? job.implementation(workflow)
+            ? job.implementation(workflowParam)
             : job.implementation;
         return acc;
       },
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${atoms.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

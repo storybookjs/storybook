@@ -34,12 +34,20 @@ Add these labels to the PR:
 - `BREAKING CHANGE` - breaks compatibility
 - `other` - doesn't fit above
 
-**CI (required, pick one):**
+**CI (required, pick one cadence label OR one or more split labels):**
+
+Cadence labels (pick at most one, do not combine with split labels):
 
 - `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set
 - `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
 - `ci:docs` - documentation-only changes (use with `documentation` category)
+
+Split labels (combinable with each other; faster and more targeted than cadence labels):
+
+- `ci:core` - internal e2e tests and all non-sandbox-specific tests; use for changes that don't affect sandbox behavior
+- `ci:<framework>` (e.g. `ci:react`, `ci:vue3`, `ci:angular`, `ci:svelte`, `ci:html`, `ci:preact`, `ci:web-components`, `ci:solid`) - all sandboxes for that framework
+- `ci:<builder>` (`ci:vite`, `ci:webpack`, `ci:rsbuild`) - all sandboxes for that builder
 
 **QA (required, pick one):**
 

@@ -31,7 +31,7 @@ Use **AskQuestion** for three questions. Options from `.github/PULL_REQUEST_TEMP
 
 | Question | Options |
 | -------- | ------- |
-| CI label | `ci:normal`, `ci:merged`, `ci:daily` |
+| CI label | `ci:normal`, `ci:merged`, `ci:daily`, or split labels: `ci:core` and/or framework/builder labels (`ci:react`, `ci:vue3`, `ci:angular`, `ci:vite`, `ci:webpack`, ...) |
 | QA label | `qa:needed`, `qa:skip` |
 | Type label | `bug`, `maintenance`, `dependencies`, `build`, `cleanup`, `documentation`, `feature request`, `BREAKING CHANGE`, `other` |
 

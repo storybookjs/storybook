@@ -1,6 +1,5 @@
 import type { executors } from './executors.ts';
 import { toId } from './helpers.ts';
-import type { parameters } from './parameters.ts';
 
 export type Job<K extends string> = {
   id: string;
@@ -108,14 +107,31 @@ export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrN
   };
 }
 
-export type Workflow = (typeof parameters.workflow.enum)[number];
+/**
+ * The statically-known workflows. `normal`, `merged` and `daily` are the cadence workflows with
+ * increasing sandbox coverage. `docs` only checks formatting. `core` runs everything `normal` runs
+ * except the sandbox jobs.
+ *
+ * Besides these, a workflow can be a sandbox-split atom derived at runtime from the sandbox
+ * template metadata: a framework (e.g. `react`, `vue3`, `angular`) or a builder (e.g. `vite`,
+ * `webpack`). See `getSandboxSplitAtoms` in `../sandboxes.ts`. Multiple atoms are combined with
+ * `+` in the CircleCI `workflow` pipeline parameter (e.g. `core+react`) and validated in
+ * `../main.ts`.
+ */
+export const STATIC_WORKFLOWS = ['normal', 'merged', 'daily', 'skipped', 'docs', 'core'] as const;
+
+export type Workflow = (typeof STATIC_WORKFLOWS)[number] | (string & {});
 
 /**
  * Checks if the current workflow is at least the minimum workflow.
  *
  * `normal` → `merged` → `daily`
  *
- * `docs` is unique, in that it's not considered below of above anything.
+ * `core` is `normal` minus the sandbox jobs, so it counts as `normal`-level for everything that
+ * keys off `normal` (the sandbox list itself is resolved separately and is empty for `core`).
+ *
+ * `docs` is unique, in that it's not considered below of above anything. Sandbox-split atoms
+ * (frameworks/builders) are never "at or above" any cadence workflow.
  *
  * @example
  *
@@ -132,6 +148,8 @@ export type Workflow = (typeof parameters.workflow.enum)[number];
  */
 export function isWorkflowOrAbove(current: Workflow, minimum: Workflow): boolean {
   switch (current) {
+    case 'core':
+      return minimum === 'normal' || minimum === 'core';
     case 'normal':
       return minimum === 'normal';
     case 'merged':

@@ -518,6 +518,60 @@ const getListOfSandboxes = (workflow: Workflow) => {
   }
 };
 
+/**
+ * Maps a template's `expected.renderer` package to the framework atom used by the
+ * `ci:<framework>` labels (e.g. `ci:react`, `ci:vue3`, `ci:angular`). Both Angular packages map
+ * to the single `angular` atom on purpose: `ci:angular` should cover the webpack-based and the
+ * vite-based framework alike.
+ */
+const RENDERER_TO_FRAMEWORK_ATOM: Record<string, string> = {
+  '@storybook/react': 'react',
+  '@storybook/vue3': 'vue3',
+  '@storybook/angular': 'angular',
+  '@storybook/angular-vite': 'angular',
+  '@storybook/svelte': 'svelte',
+  '@storybook/html': 'html',
+  '@storybook/preact': 'preact',
+  '@storybook/web-components': 'web-components',
+  '@storybook/server': 'server',
+  '@storybook/ember': 'ember',
+  'storybook-solidjs-vite': 'solid',
+};
+
+/** Maps a template's `expected.builder` package to the atom used by the `ci:<builder>` labels. */
+const BUILDER_TO_BUILDER_ATOM: Record<string, string> = {
+  '@storybook/builder-vite': 'vite',
+  '@storybook/builder-webpack5': 'webpack',
+  'storybook-builder-rsbuild': 'rsbuild',
+};
+
+/**
+ * The sandbox pool the split workflows draw from. `daily` is the complete set of templates CI
+ * knows how to run, so `ci:react` and friends really target ALL sandboxes of a framework or
+ * builder — including the ones only exercised by `merged`/`daily` — not just the `normal` subset.
+ */
+const SPLIT_POOL = sandboxTemplates.daily;
+
+const getTemplateAtoms = (key: TemplateKey): string[] => {
+  const { expected } = sandboxTemplates.allTemplates[key];
+  return [
+    RENDERER_TO_FRAMEWORK_ATOM[expected.renderer],
+    BUILDER_TO_BUILDER_ATOM[expected.builder],
+  ].filter((atom): atom is string => !!atom);
+};
+
+/** All valid sandbox-split workflow atoms, derived from the sandbox template metadata. */
+export function getSandboxSplitAtoms(): string[] {
+  return [...new Set(SPLIT_POOL.flatMap(getTemplateAtoms))];
+}
+
+/** The sandbox jobs for a single split atom (a framework or a builder). */
+export function getSplitSandboxes(atom: string): JobOrNoOpJob[] {
+  return SPLIT_POOL.filter((key) => getTemplateAtoms(key).includes(atom))
+    .map(defineSandboxFlow)
+    .flatMap((sandbox) => sandbox.jobs);
+}
+
 export function getSandboxes(workflow: Workflow) {
   const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 

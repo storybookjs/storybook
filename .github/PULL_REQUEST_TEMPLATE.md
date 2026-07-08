@@ -50,7 +50,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 ## Checklist for Maintainers
 
-- [ ] When this PR is ready for testing, make sure to add `ci:normal`, `ci:merged` or `ci:daily` GH label to it to run a specific set of sandboxes. The particular set of sandboxes can be found in `code/lib/cli-storybook/src/sandbox-templates.ts`
+- [ ] When this PR is ready for testing, add a CI label to it: `ci:normal`, `ci:merged` or `ci:daily` to run a specific set of sandboxes (see `code/lib/cli-storybook/src/sandbox-templates.ts`), or the faster split labels — `ci:core` (internal e2e tests and non-sandbox tests) combined with framework labels (`ci:react`, `ci:vue3`, `ci:angular`, ...) and/or builder labels (`ci:vite`, `ci:webpack`) that run all sandboxes for that framework or builder
 - [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>

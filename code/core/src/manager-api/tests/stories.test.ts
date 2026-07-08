@@ -7,6 +7,7 @@ import {
   DOCS_PREPARED,
   RESET_STORY_ARGS,
   SET_CONFIG,
+  SET_FILTER,
   SET_INDEX,
   SET_STORIES,
   STORY_ARGS_UPDATED,
@@ -1509,6 +1510,46 @@ describe('stories API', () => {
 
       const { filteredIndex } = store.getState();
       expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+    });
+  });
+  describe('experimental_setFilters', () => {
+    it('applies multiple filters in a single call', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({
+        one: (item: any) => !item.id.startsWith('b'),
+        two: (item: any) => !item.id.startsWith('custom'),
+      });
+
+      expect(store.getState().filters).toEqual(
+        expect.objectContaining({
+          one: expect.any(Function),
+          two: expect.any(Function),
+        })
+      );
+      expect(Object.keys(store.getState().filteredIndex!)).toEqual(['a', 'a--1', 'a--2']);
+    });
+
+    it('emits SET_FILTER for each filter once the index is set', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const listener = vi.fn();
+      provider.channel.on(SET_FILTER, listener);
+
+      // Without an index, nothing is emitted (the filters only take effect later)
+      await api.experimental_setFilters({ one: () => true });
+      expect(listener).not.toHaveBeenCalled();
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({ one: () => true, two: () => true });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenCalledWith({ id: 'one' });
+      expect(listener).toHaveBeenCalledWith({ id: 'two' });
     });
   });
   describe('experimental_setFilter', () => {

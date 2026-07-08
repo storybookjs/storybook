@@ -18,11 +18,11 @@ You can use Storybook's plugin in Claude Code, Claude Desktop, and Codex to conn
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/code), [Claude Desktop](https://claude.ai/desktop), or [Codex](https://codex.com/).
+- [Claude Code](https://claude.ai/code), [Claude Desktop](https://claude.ai/desktop), or [Codex](https://openai.com/codex/).
 
 ## Installation
 
-<Callout variant="warning" icon="ℹ️">
+<Callout variant="info" icon="ℹ️">
 
 Because the plugins are in preview, they have not yet been added to Claude or Codex's marketplace. These instructions guide you to add the Storybook marketplace to your harness and install the plugin from there.
 
@@ -33,21 +33,21 @@ Because the plugins are in preview, they have not yet been added to Claude or Co
 
 1. Run this command to add the Storybook marketplace to Claude Code:
 
-    ```bash
-    claude plugin marketplace add storybookjs/mcp@main --scope user
-    ```
+   ```bash
+   claude plugin marketplace add storybookjs/mcp@main --scope user
+   ```
 
 2. Then install the plugin:
 
-    ```bash
-    claude plugin install storybook@storybook --scope user
-    ```
+   ```bash
+   claude plugin install storybook@storybook --scope user
+   ```
 
 3. Confirm the plugin is available:
 
-    ```bash
-    claude plugin list
-    ```
+   ```bash
+   claude plugin list
+   ```
 
 You're all set!
 
@@ -58,23 +58,23 @@ You're all set!
 
 1. Run this command to add the Storybook marketplace to Claude Desktop:
 
-    ```bash
-    /plugin marketplace add storybookjs/mcp@main --scope user
-    ```
+   ```bash
+   /plugin marketplace add storybookjs/mcp@main --scope user
+   ```
 
 2. Then install the plugin:
 
-    ```bash
-    /plugin install storybook@storybook --scope user
-    ```
+   ```bash
+   /plugin install storybook@storybook --scope user
+   ```
 
 3. Confirm the plugin is available:
 
-    ```bash
-    /plugin
-    ```
+   ```bash
+   /plugin
+   ```
 
-    Then go to the Installed tab to confirm the plugin is listed.
+   Then go to the Installed tab to confirm the plugin is listed.
 
 You're all set!
 
@@ -85,21 +85,21 @@ You're all set!
 
 1. Run this command to add the Storybook marketplace to Codex:
 
-    ```bash
-    codex plugin marketplace add storybookjs/mcp --ref main
-    ```
+   ```bash
+   codex plugin marketplace add storybookjs/mcp --ref main
+   ```
 
 2. Then install the plugin:
 
-    ```bash
-    codex plugin add storybook@storybook
-    ```
+   ```bash
+   codex plugin add storybook@storybook
+   ```
 
 3. Confirm the plugin is available:
 
-    ```bash
-    codex plugin list --marketplace storybook
-    ```
+   ```bash
+   codex plugin list --marketplace storybook
+   ```
 
 You're all set!
 
@@ -116,9 +116,9 @@ To remove a plugin:
 
 1. Run this command to remove the Storybook marketplace, which will also uninstall the plugin:
 
-    ```bash
-    claude plugin marketplace remove storybook --scope user
-    ```
+   ```bash
+   claude plugin marketplace remove storybook --scope user
+   ```
 
 2. Follow the [installation instructions above](#claude-code) to re-add the marketplace and install the plugin again.
 
@@ -140,15 +140,15 @@ To remove a plugin:
 
 1. Run this command to remove the plugin from Codex:
 
-    ```bash
-    codex plugin remove storybook@storybook
-    ```
+   ```bash
+   codex plugin remove storybook@storybook
+   ```
 
 2. Then remove the Storybook marketplace:
 
-    ```bash
-    codex plugin marketplace remove storybook
-    ```
+   ```bash
+   codex plugin marketplace remove storybook
+   ```
 
 3. Follow the [installation instructions above](#codex) to re-add the marketplace and install the plugin again.
 
@@ -158,7 +158,7 @@ To remove a plugin:
 
 The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/stories`) to have the agent perform specific actions.
 
-If you're using an Agentic Development Environment (ADE), the agent can automatically open relevant stories or an [agentic review summary](./agentic-review.mdx) in the ADE preview, so you can inspect the components and their code.
+If you're using an Agentic Development Environment (ADE) like Claude Desktop or Codex, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](./agentic-review.mdx) in the ADE preview, so you can review the agent's work.
 
 [TK - image - Agentic review open in ADE preview]
 ![An ADE working on a UI task with an agentic review open in the preview](../_assets/ai/ade-preview-review.png)
@@ -187,10 +187,10 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 All of [Storybook MCP server's tools](./mcp/overview.mdx#toolsets) are available to agents that have the plugin installed.
 
-{/* TODO: Update these across other pages */}
 **More AI resources**
 
 - [Agentic setup](./setup.mdx)
+- [Agentic review](./agentic-review.mdx)
 - [MCP server overview](./mcp/overview.mdx)
 - [MCP server API](./mcp/api.mdx)
 - [Sharing your MCP server](./mcp/sharing.mdx)

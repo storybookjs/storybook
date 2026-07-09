@@ -74,7 +74,7 @@ export const ReviewStateSchema = v.object({
 	collections: v.pipe(
 		v.array(ReviewCollectionSchema),
 		v.description(
-			'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups. Each item is an object with three required fields: `title` (string, what the group is), `rationale` (string, why it is relevant), and `storyIds` (array of story ID strings the group renders). Note the field is `storyIds` (a plain array of ID strings), not `stories`.',
+			'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups.',
 		),
 	),
 	changedFiles: v.pipe(

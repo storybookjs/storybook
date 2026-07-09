@@ -772,7 +772,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 	describe('Tool: preview-stories', () => {
 		it('should return story URLs for valid stories', async () => {
-			const cwd = process.cwd();
+			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
 				? `${cwd}/stories/components/Button.stories.ts`
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
@@ -955,7 +955,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 
 		it('should run tests for a story and report accessibility violations', async () => {
-			const cwd = process.cwd();
+			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
 				? `${cwd}/stories/components/Button.stories.ts`
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
@@ -981,7 +981,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 
 		it('should run tests for multiple stories', async () => {
-			const cwd = process.cwd();
+			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
 				? `${cwd}/stories/components/Button.stories.ts`
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
@@ -1029,7 +1029,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 
 		it('should sequentialize 4 concurrent calls to run-story-tests', async () => {
-			const cwd = process.cwd();
+			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
 				? `${cwd}/stories/components/Button.stories.ts`
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;

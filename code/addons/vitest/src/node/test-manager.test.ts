@@ -350,6 +350,56 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one', 'story--two'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+          reports: [{ type: 'a11y', status: 'passed', result: { id: 'a11y-1' } } as Report],
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        // During the run the heavy per-run arrays must NOT be synced into the store - only counts
+        // advance. Syncing them every flush is the O(N^2) re-serialization that trips the heartbeat.
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.a11yStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.reports).toEqual({});
+        expect(mockStore.getState().currentRun.a11yReports).toEqual({});
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(1);
+
+        testManager.onTestCaseResult({
+          storyId: 'story--two',
+          testResult: passedResult,
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(2);
+
+        testManager.onTestRunEnd({ totalTestCount: 2, unhandledErrors: [] });
+      },
+    });
+
+    // Materialized exactly once, at run end.
+    const { currentRun } = mockStore.getState();
+    expect(currentRun.componentTestStatuses.map((status) => status.storyId)).toEqual([
+      'story--one',
+      'story--two',
+    ]);
+    expect(currentRun.a11yStatuses).toHaveLength(1);
+    expect(currentRun.reports['story--one']).toHaveLength(1);
+    expect(currentRun.a11yReports['story--one']).toHaveLength(1);
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await TestManager.start(options);

@@ -68,6 +68,23 @@ export class TestManager {
     reports?: Report[];
   }[] = [];
 
+  /**
+   * Full-run results are accumulated here, on the node side, instead of in the synced store. The
+   * store broadcasts its entire state on every `setState`, so accumulating these arrays in
+   * `currentRun` and flushing every 500ms re-serializes and re-broadcasts the whole run each time -
+   * O(N²) work across a run. Late in a large run (thousands of stories) a single flush can block the
+   * manager main thread past the WebSocket heartbeat window, dropping the connection with code 3008.
+   * Keeping them local bounds the per-flush payload to counts only; they are materialized into
+   * `currentRun` once, at run end, for the `TEST_RUN_COMPLETED` payload.
+   */
+  private runComponentTestStatuses: CurrentRun['componentTestStatuses'] = [];
+
+  private runA11yStatuses: CurrentRun['a11yStatuses'] = [];
+
+  private runReports: CurrentRun['reports'] = {};
+
+  private runA11yReports: CurrentRun['a11yReports'] = {};
+
   constructor(options: TestManagerOptions) {
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
@@ -142,6 +159,11 @@ export class TestManager {
     this.componentTestStatusStore.unset(storyIds);
     this.a11yStatusStore.unset(storyIds);
 
+    this.runComponentTestStatuses = [];
+    this.runA11yStatuses = [];
+    this.runReports = {};
+    this.runA11yReports = {};
+
     const runConfig = configOverride ?? this.store.getState().config;
 
     this.store.setState((s) => ({
@@ -208,13 +230,14 @@ export class TestManager {
    * This function:
    *
    * 1. Takes all batched test case results and clears the batch
-   * 2. Updates the store state with new test counts (component tests and a11y tests)
-   * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
-   * 4. Creates status objects for component tests and updates the component test status store
-   * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
+   * 2. Updates the status stores (the live, per-story source of truth for the sidebar) with the
+   *    just-processed batch
+   * 3. Accumulates the full-run statuses/reports locally (not in the synced store - see the
+   *    `runComponentTestStatuses` field) so the per-flush channel payload stays bounded
+   * 4. Updates the synced store with the new counts only (and an adjusted totalTestCount)
    *
-   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
-   * eventually causing the manager and dev server to lose connection.
+   * The throttling (500ms) still batches channel traffic, but the payload no longer grows with the
+   * run, so a busy channel can't starve the WebSocket heartbeat late in a large run.
    */
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
@@ -261,6 +284,16 @@ export class TestManager {
       this.a11yStatusStore.set(a11yStatuses);
     }
 
+    // Accumulate the full run locally; materialized into `currentRun` once, at run end.
+    if (componentTestStatuses.length > 0) {
+      this.runComponentTestStatuses.push(...componentTestStatuses);
+    }
+    if (a11yStatuses.length > 0) {
+      this.runA11yStatuses.push(...a11yStatuses);
+    }
+    Object.assign(this.runReports, reportsByStoryId);
+    Object.assign(this.runA11yReports, a11yReportsByStoryId);
+
     this.store.setState((s) => {
       let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
       let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
@@ -294,20 +327,6 @@ export class TestManager {
             warning: a11yWarning,
             error: a11yError,
           },
-          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
-          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
-          /*
-            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
-            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
-          */
-          a11yReports: {
-            ...s.currentRun.a11yReports,
-            ...a11yReportsByStoryId,
-          },
-          reports: {
-            ...s.currentRun.reports,
-            ...reportsByStoryId,
-          },
           // in some cases successes and errors can exceed the anticipated totalTestCount
           // e.g. when testing more tests than the stories we know about upfront
           // in those cases, we set the totalTestCount to the sum of successes and errors
@@ -335,6 +354,17 @@ export class TestManager {
           totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,
           unhandledErrors: endResult.unhandledErrors,
           finishedAt: Date.now(),
+          // Materialize the full-run results (accumulated locally during the run) into the store
+          // exactly once, so the TEST_RUN_COMPLETED payload and post-run state stay complete
+          // without paying the per-flush re-serialization cost.
+          componentTestStatuses: this.runComponentTestStatuses,
+          a11yStatuses: this.runA11yStatuses,
+          /*
+            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
+            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
+          */
+          a11yReports: this.runA11yReports,
+          reports: this.runReports,
         },
       };
     });

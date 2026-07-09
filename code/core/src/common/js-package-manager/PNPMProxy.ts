@@ -11,6 +11,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 import { parseDocument } from 'yaml';
 
@@ -220,6 +221,38 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
+  override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
+    }
+    const declared = this.getAllDependencies()[packageName];
+    const catalogName = this.#getCatalogName(declared);
+    if (catalogName !== null) {
+      return this.#getCatalogVersion(packageName, catalogName);
+    }
+    return declared && validRange(declared) ? declared : null;
+  }
+
+  override applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    anchorPackage: string
+  ): string[] {
+    const catalogName = this.#getCatalogName(this.getAllDependencies()[anchorPackage]);
+    if (catalogName === null) {
+      return super.applyVersionToRelatedPackages(packages, version, anchorPackage);
+    }
+    // The anchor (e.g. vitest) is declared through a catalog, so mirror that: register the packages
+    // in the same catalog and reference it from package.json. Copying the raw `catalog:` specifier
+    // without registering would fail install, since no such catalog entry exists.
+    this.#syncWorkspaceCatalog(
+      Object.fromEntries(packages.map((pkg) => [pkg, version])),
+      catalogName
+    );
+    return packages.map((pkg) => `${pkg}@catalog:${catalogName}`);
+  }
+
   /**
    * Catalog helpers edit `pnpm-workspace.yaml` directly via the `yaml` document API, unlike the
    * `minimumReleaseAge*` settings above which go through `pnpm config get/set`. This is deliberate:
@@ -229,6 +262,15 @@ export class PNPMProxy extends JsPackageManager {
    * entry — so neither CLI path can deterministically register a scoped `catalog:` reference.
    * Editing the parsed document keeps it deterministic, offline, and preserves the user's comments.
    */
+
+  /**
+   * If `specifier` is a pnpm catalog reference (`catalog:` / `catalog:<name>`), return the catalog
+   * name (`''` for the default catalog); otherwise return null.
+   */
+  #getCatalogName(specifier: string | undefined): string | null {
+    const match = specifier?.match(/^catalog:(.*)$/);
+    return match ? match[1].trim() : null;
+  }
 
   /**
    * Locate the `pnpm-workspace.yaml` that governs this project's catalogs, walking up from the
@@ -251,7 +293,7 @@ export class PNPMProxy extends JsPackageManager {
     return !catalogName || catalogName === 'default' ? ['catalog'] : ['catalogs', catalogName];
   }
 
-  override getCatalogVersion(packageName: string, catalogName?: string): string | null {
+  #getCatalogVersion(packageName: string, catalogName?: string): string | null {
     const workspaceYamlPath = this.#findWorkspaceYaml();
     if (!workspaceYamlPath) {
       return null;
@@ -268,7 +310,7 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  override syncWorkspaceCatalog(entries: Record<string, string>, catalogName?: string): void {
+  #syncWorkspaceCatalog(entries: Record<string, string>, catalogName?: string): void {
     const workspaceYamlPath = this.#findWorkspaceYaml();
     if (!workspaceYamlPath) {
       logger.warn(

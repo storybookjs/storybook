@@ -31,8 +31,11 @@ describe('AddonVitestService', () => {
       getInstalledVersion: vi.fn(),
       runPackageCommand: vi.fn(),
       getPackageCommand: vi.fn(),
-      getCatalogVersion: vi.fn().mockReturnValue(null),
-      syncWorkspaceCatalog: vi.fn(),
+      getDeclaredVersionSpecifier: vi.fn().mockResolvedValue(null),
+      // Default to the base-class behavior (pin each package directly).
+      applyVersionToRelatedPackages: vi.fn((packages: string[], version: string) =>
+        packages.map((pkg) => `${pkg}@${version}`)
+      ),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     service = new AddonVitestService(mockPackageManager);
@@ -50,16 +53,12 @@ describe('AddonVitestService', () => {
   describe('collectDeps', () => {
     beforeEach(() => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+      // getInstalledVersion is only used here for the coverage reporters (v8 / istanbul).
       vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
     });
 
     it('should collect base packages when not installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       expect(deps).toContain('vitest');
@@ -75,8 +74,8 @@ describe('AddonVitestService', () => {
         '@vitest/browser': '3.0.0',
         playwright: '1.0.0',
       });
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.0.0');
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest version
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
@@ -90,12 +89,6 @@ describe('AddonVitestService', () => {
     // Note: collectDependencies doesn't add framework-specific packages
     // It only collects base vitest packages
     it('should collect base packages without framework-specific additions', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       // Should only contain base packages, not framework-specific ones
@@ -108,21 +101,13 @@ describe('AddonVitestService', () => {
     });
 
     it('should not add @storybook/nextjs-vite for non-Next.js frameworks', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
     });
 
     it('should not add coverage reporter if v8 already installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
@@ -132,96 +117,41 @@ describe('AddonVitestService', () => {
     });
 
     it('skips coverage if istanbul', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce('3.0.0') // @vitest/coverage-istanbul
-        .mockResolvedValueOnce(null); // vitest version
+        .mockResolvedValueOnce('3.0.0'); // @vitest/coverage-istanbul
 
       const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
     });
 
-    it('applies version', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.2.0') // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+    it('pins vitest-related packages to the resolved version via the package manager', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.2.0');
 
       const deps = await service.collectDependencies();
 
-      expect(deps).toContain('vitest@3.2.0');
       // Version 3.2.0 < 4.0.0, so uses @vitest/browser
+      expect(deps).toContain('vitest@3.2.0');
       expect(deps).toContain('@vitest/browser@3.2.0');
       expect(deps).toContain('@vitest/coverage-v8@3.2.0');
-      expect(deps).toContain('playwright'); // no version for playwright
-    });
-
-    it('references the default catalog and registers entries for a "catalog:" vitest dependency', async () => {
-      // In a pnpm catalog workspace, vitest is declared as "catalog:" and node_modules may not be
-      // materialized yet, so getInstalledVersion returns null. The derived @vitest/* packages must
-      // reuse the catalog convention and get registered in pnpm-workspace.yaml so install succeeds.
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        vitest: 'catalog:',
-      });
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
-
-      const deps = await service.collectDependencies();
-
-      // Version < 4.0.0, so uses @vitest/browser
-      expect(deps).toContain('@vitest/browser@catalog:');
-      expect(deps).toContain('@vitest/coverage-v8@catalog:');
-      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', undefined);
-      expect(mockPackageManager.syncWorkspaceCatalog).toHaveBeenCalledWith(
-        expect.objectContaining({
-          '@vitest/browser': '^3.2.0',
-          '@vitest/coverage-v8': '^3.2.0',
-        }),
-        undefined
+      expect(deps).toContain('playwright'); // playwright is versioned independently
+      // Only the vitest-related packages are handed to the package manager for version pinning.
+      expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
+        ['vitest', '@vitest/browser', '@vitest/coverage-v8'],
+        '3.2.0',
+        'vitest'
       );
     });
 
-    it('references a named catalog for a "catalog:<name>" vitest dependency', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        vitest: 'catalog:testing',
-      });
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
-
-      const deps = await service.collectDependencies();
-
-      expect(deps).toContain('@vitest/coverage-v8@catalog:testing');
-      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', 'testing');
-      expect(mockPackageManager.syncWorkspaceCatalog).toHaveBeenCalledWith(
-        expect.objectContaining({ '@vitest/coverage-v8': '^3.2.0' }),
-        'testing'
-      );
-    });
-
-    it('falls back to bare packages when a catalog vitest version cannot be resolved', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        vitest: 'catalog:',
-      });
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue(null);
+    it('does not pin anything when the vitest version cannot be resolved', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
 
       const deps = await service.collectDependencies();
 
       expect(deps).toContain('@vitest/coverage-v8');
-      expect(deps.every((d) => !d.includes('catalog:'))).toBe(true);
-      expect(mockPackageManager.syncWorkspaceCatalog).not.toHaveBeenCalled();
+      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@3.'))).toBe(true);
+      expect(mockPackageManager.applyVersionToRelatedPackages).not.toHaveBeenCalled();
     });
   });
 
@@ -244,42 +174,6 @@ describe('AddonVitestService', () => {
       // minVersion() alone keeps `4.0.0-beta.1`, which fails `>=4.0.0`; coercing to `4.0.0` fixes the
       // major check and keeps it consistent with the postinstall template selection.
       expect(AddonVitestService.getComparableVersion('4.0.0-beta.1')).toBe('4.0.0');
-    });
-  });
-
-  describe('resolveVitestVersionSpecifier', () => {
-    it('prefers the installed version', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: 'catalog:' });
-      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue('3.2.1');
-
-      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('3.2.1');
-      // Installed version short-circuits — the catalog is not consulted.
-      expect(mockPackageManager.getCatalogVersion).not.toHaveBeenCalled();
-    });
-
-    it('falls back to the catalog entry when not installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        vitest: 'catalog:testing',
-      });
-      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
-      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
-
-      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('^3.2.0');
-      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', 'testing');
-    });
-
-    it('falls back to a plain declared semver range when not installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: '^3.2.0' });
-      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
-
-      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('^3.2.0');
-    });
-
-    it('returns null for a non-semver protocol specifier', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: 'workspace:*' });
-      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
-
-      await expect(service.resolveVitestVersionSpecifier()).resolves.toBeNull();
     });
   });
 

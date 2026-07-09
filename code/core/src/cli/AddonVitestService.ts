@@ -54,29 +54,6 @@ export class AddonVitestService {
   }
 
   /**
-   * Resolve the Vitest version/range used both to keep the derived `@vitest/*` packages on a
-   * compatible major and to select the right config template. Prefers the resolved installed
-   * version, then a pnpm catalog entry when vitest is declared as `catalog:` / `catalog:<name>`,
-   * then a plain declared semver range. Non-semver protocol specifiers (`workspace:`, an
-   * unregistered `catalog:`, ...) resolve to null so they are never copied onto other packages.
-   */
-  async resolveVitestVersionSpecifier(): Promise<string | null> {
-    const declared = this.packageManager.getAllDependencies()['vitest'];
-
-    let specifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!specifier && declared) {
-      const catalogMatch = declared.match(/^catalog:(.*)$/);
-      if (catalogMatch) {
-        const catalogName = catalogMatch[1].trim() || undefined;
-        specifier = this.packageManager.getCatalogVersion('vitest', catalogName);
-      } else if (validRange(declared)) {
-        specifier = declared;
-      }
-    }
-    return specifier;
-  }
-
-  /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
    * Returns versioned package strings ready for installation:
@@ -89,16 +66,9 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Vitest may be declared through a pnpm catalog (`catalog:` or `catalog:<name>`). When it is, the
-    // derived `@vitest/*` packages we add must also become catalog entries — copying the raw
-    // `catalog:` specifier onto them produces e.g. `@vitest/coverage-v8@catalog:`, which fails
-    // install because no such catalog entry exists.
-    const catalogMatch = allDeps['vitest']?.match(/^catalog:(.*)$/);
-    const catalogName = catalogMatch?.[1]?.trim() || undefined;
-
-    // Resolve the Vitest version/range (catalog-aware) to keep the derived `@vitest/*` packages on a
-    // compatible major.
-    const vitestVersionSpecifier = await this.resolveVitestVersionSpecifier();
+    // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
+    // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
+    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
 
     const versionToCheck = AddonVitestService.getComparableVersion(vitestVersionSpecifier);
     const isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
@@ -127,26 +97,23 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // Apply version specifiers to vitest-related packages.
-    const catalogEntries: Record<string, string> = {};
-    const versionedDependencies = dependencies.map((pkg) => {
-      if (!pkg.includes('vitest') || !vitestVersionSpecifier) {
-        return pkg;
-      }
-      if (catalogMatch) {
-        // Mirror the project's catalog convention: reference the catalog from package.json and
-        // register the resolved version in pnpm-workspace.yaml below.
-        catalogEntries[pkg] = vitestVersionSpecifier;
-        return `${pkg}@catalog:${catalogName ?? ''}`;
-      }
-      return `${pkg}@${vitestVersionSpecifier}`;
-    });
-
-    if (Object.keys(catalogEntries).length > 0) {
-      this.packageManager.syncWorkspaceCatalog(catalogEntries, catalogName);
+    if (!vitestVersionSpecifier) {
+      return dependencies;
     }
 
-    return versionedDependencies;
+    // Pin the vitest-related packages to the resolved vitest version, letting the package manager
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
+    // independently, so it is left untouched.
+    const related = dependencies.filter((pkg) => pkg.includes('vitest'));
+    const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
+    return [
+      ...this.packageManager.applyVersionToRelatedPackages(
+        related,
+        vitestVersionSpecifier,
+        'vitest'
+      ),
+      ...rest,
+    ];
   }
 
   /**

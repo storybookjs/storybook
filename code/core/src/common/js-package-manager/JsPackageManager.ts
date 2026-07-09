@@ -10,7 +10,7 @@ import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies } from 'semver';
+import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
@@ -297,21 +297,31 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Returns the version declared for a package in a workspace catalog (the default catalog when no
-   * name is given), or null when there is no such entry. Catalogs are a pnpm-only feature, so every
-   * other package manager returns null.
+   * Resolve the effective version/range of a declared dependency: the installed version if present,
+   * otherwise the declared semver range. Returns null when the package is not declared or only a
+   * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
    */
-  public getCatalogVersion(_packageName: string, _catalogName?: string): string | null {
-    return null;
+  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
+    }
+    const declared = this.getAllDependencies()[packageName];
+    return declared && validRange(declared) ? declared : null;
   }
 
   /**
-   * Registers `entries` (package name -> version range) in a workspace catalog, creating the entries
-   * that don't exist yet. Catalogs are a pnpm-only feature, so this is a no-op for every other
-   * package manager.
+   * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
+   * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
+   * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
+   * referenced as `catalog:` instead. Returns the install specifiers to write to package.json.
    */
-  public syncWorkspaceCatalog(_entries: Record<string, string>, _catalogName?: string): void {
-    // no-op — overridden by PNPMProxy
+  public applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    _anchorPackage: string
+  ): string[] {
+    return packages.map((pkg) => `${pkg}@${version}`);
   }
 
   /**

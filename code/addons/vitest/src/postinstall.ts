@@ -72,12 +72,12 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const addonVitestService = new AddonVitestService(packageManager);
 
-  // Determine the Vitest version/range (catalog-aware, so a pnpm `catalog:` specifier resolves to
+  // Determine the Vitest version/range (the package manager resolves a pnpm `catalog:` reference to
   // the real version) to avoid pulling incompatible majors and to select the right config template.
   // Reduce to a plain comparable version via the same helper collectDependencies() uses, so template
   // selection and dependency collection agree on the major.
   const vitestVersionSpecifier = AddonVitestService.getComparableVersion(
-    await addonVitestService.resolveVitestVersionSpecifier()
+    await packageManager.getDeclaredVersionSpecifier('vitest')
   );
 
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);

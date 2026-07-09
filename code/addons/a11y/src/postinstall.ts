@@ -29,5 +29,11 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  await jsPackageManager.runPackageCommand({ args, useRemotePkg: !!options.skipInstall });
+  // stdio must not be left as open pipes: the nested CLI (and the npm exec layers in between)
+  // can block on them forever, which freezes the outer upgrade/add command without any output.
+  await jsPackageManager.runPackageCommand({
+    args,
+    stdio: 'ignore',
+    useRemotePkg: !!options.skipInstall,
+  });
 }

@@ -6,7 +6,7 @@ import { useNavigate } from 'storybook/internal/router';
 import { useStorybookApi } from 'storybook/manager-api';
 
 import { navigateToReviewEntry } from '../review-actions.ts';
-import { prettifyComponentId, type ReviewNavEntry } from '../review-navigation.ts';
+import { prettifyComponentId, resolveNavIndex, type ReviewNavEntry } from '../review-navigation.ts';
 import { type StoryInfo } from '../review-types.ts';
 import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
 
@@ -51,16 +51,21 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
   const navigate = useNavigate();
   const filtersRef = useReviewFiltersRef();
 
-  // The option value is the entry's index in `entries`, which is both stable
-  // (a story can appear under several collections) and the position the toolbar
-  // already reports, so preselecting is a direct lookup.
-  const options = entries.map((entry) => {
+  // Each option carries the entry's index in `entries` as its value. A story can
+  // appear under several collections, so its storyId is not unique — the index is,
+  // which lets us resolve the exact selected slot (not just the first duplicate).
+  const options = entries.map((entry, index) => {
     const { component, story } = derivePickerLabel(entry.storyId, storyInfo[entry.storyId]);
-    return { value: entry.storyId, title: component, description: story };
+    return { value: index, title: component, description: story };
   });
 
+  // Preselect the active slot without driving navigation: `resolveNavIndex` matches
+  // both storyId and collectionIndex, so the picker highlights the correct duplicate.
+  const activeValue = resolveNavIndex(entries, activeEntry);
+
   // Creates a buffer that helps batch useEffects on quick switch and limit performance issues in the listbox.
-  const [nextStory, setNextStory] = React.useState<ReviewNavEntry | undefined>(activeEntry);
+  // Starts undefined so the navigation effect only fires after an explicit user selection, never on mount.
+  const [nextStory, setNextStory] = React.useState<ReviewNavEntry | undefined>(undefined);
 
   useEffect(() => {
     if (nextStory) {
@@ -74,10 +79,10 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
       size="small"
       padding="small"
       options={options}
-      defaultOptions={nextStory?.storyId}
+      defaultOptions={activeValue >= 0 ? activeValue : undefined}
       showSelectedOptionTitle={false}
       onSelect={(value) => {
-        const entry = entries.find((e) => e.storyId === value);
+        const entry = typeof value === 'number' ? entries[value] : undefined;
         setNextStory(entry);
       }}
     >

@@ -404,6 +404,7 @@
     "valibot": "^1.4.0",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
+    "yaml": "^2.8.2",
     "zod": "^3.25.76"
   },
   "peerDependencies": {

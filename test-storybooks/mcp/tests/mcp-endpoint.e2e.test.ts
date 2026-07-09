@@ -532,6 +532,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				          "type": "array",
 				        },
 				        "collections": {
+				          "description": "Groups of stories to show in the review, most relevant first. Prefer 2-5 groups. Each item is an object with three required fields: \`title\` (string, what the group is), \`rationale\` (string, why it is relevant), and \`storyIds\` (array of story ID strings the group renders). Note the field is \`storyIds\` (a plain array of ID strings), not \`stories\`.",
 				          "items": {
 				            "properties": {
 				              "rationale": {

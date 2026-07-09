@@ -1,6 +1,7 @@
 import { x } from 'tinyexec';
+import { fileURLToPath } from 'node:url';
 
-export const STORYBOOK_DIR = new URL('..', import.meta.url).pathname;
+export const STORYBOOK_DIR = fileURLToPath(new URL('..', import.meta.url));
 
 export function createMCPRequestBody(method: string, params: any = {}, id: number = 1) {
 	return {

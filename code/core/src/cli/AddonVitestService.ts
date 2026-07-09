@@ -52,6 +52,18 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
+    // A package is "aliased" when an override/resolution remaps its name to a *different* package
+    // via npm's `npm:other@spec` form — e.g. Vite+ ships its own test runner as
+    // `vitest: npm:@voidzero-dev/vite-plus-test@latest`. Adding a direct dependency on such a
+    // package is both redundant (the alias already supplies it) and breaks the manifest: npm
+    // rejects a direct dependency that also has a top-level override with `EOVERRIDE`
+    // ("Override for X conflicts with direct dependency"). So we never add an aliased package as a
+    // direct dependency. We still pin the non-aliased sibling @vitest/* packages to the resolved
+    // vitest version — for Vite+ `getInstalledVersion` reports the real vendored vitest version
+    // (not the wrapper), so that version is a valid one to match them against.
+    const overrides = this.packageManager.getOverrides();
+    const isAliased = (pkg: string) => (overrides[pkg] ?? '').startsWith('npm:');
+
     // Determine Vitest version/range from installed or declared dependency to avoid pulling
     // incompatible majors by default.
     let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
@@ -75,9 +87,9 @@ export class AddonVitestService {
       isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
     ];
 
-    // Only install these dependencies if they are not already installed
+    // Only install these dependencies if they are not already installed or aliased via overrides
     for (const pkg of basePackages) {
-      if (!allDeps[pkg]) {
+      if (!allDeps[pkg] && !isAliased(pkg)) {
         dependencies.push(pkg);
       }
     }
@@ -88,7 +100,7 @@ export class AddonVitestService {
       '@vitest/coverage-istanbul'
     );
 
-    if (!v8Version && !istanbulVersion) {
+    if (!v8Version && !istanbulVersion && !isAliased('@vitest/coverage-v8')) {
       dependencies.push('@vitest/coverage-v8');
     }
 

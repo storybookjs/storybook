@@ -29,6 +29,7 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
+      getOverrides: vi.fn().mockReturnValue({}),
       runPackageCommand: vi.fn(),
       getPackageCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
@@ -155,6 +156,55 @@ describe('AddonVitestService', () => {
       expect(deps).toContain('@vitest/browser@3.2.0');
       expect(deps).toContain('@vitest/coverage-v8@3.2.0');
       expect(deps).toContain('playwright'); // no version for playwright
+    });
+
+    // Regression: Vite+ aliases `vitest` to its own fork via npm `overrides`
+    // (`vitest: npm:@voidzero-dev/vite-plus-test@latest`). Adding a direct `vitest`
+    // dependency alongside that alias makes the manifest uninstallable — npm fails with
+    // EOVERRIDE ("Override for vitest@... conflicts with direct dependency").
+    it('does not add a package that is aliased via overrides', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+      vi.mocked(mockPackageManager.getOverrides).mockReturnValue({
+        vite: 'npm:@voidzero-dev/vite-plus-core@latest',
+        vitest: 'npm:@voidzero-dev/vite-plus-test@latest',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest version check
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+
+      const deps = await service.collectDependencies();
+
+      // vitest is supplied by the alias, so it must not be added as a direct dependency...
+      expect(deps).not.toContain('vitest');
+      expect(deps.some((d) => d.startsWith('vitest@'))).toBe(false);
+      // ...while the non-aliased packages are still added.
+      expect(deps).toContain('playwright');
+      expect(deps).toContain('@vitest/browser-playwright');
+      expect(deps).toContain('@vitest/coverage-v8');
+    });
+
+    // When vitest is aliased to the Vite+ fork, `getInstalledVersion` still reports the *real*
+    // vendored vitest version (not the wrapper), so the non-aliased sibling @vitest/* packages are
+    // still pinned to that version — only the aliased `vitest` itself is omitted.
+    it('still pins non-aliased sibling packages to the resolved vitest version', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+      vi.mocked(mockPackageManager.getOverrides).mockReturnValue({
+        vitest: 'npm:@voidzero-dev/vite-plus-test@latest',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('3.2.0') // vendored vitest version reported for the alias
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+
+      const deps = await service.collectDependencies();
+
+      // The aliased vitest is omitted, but its siblings track the vendored version (3.2.0 < 4 →
+      // @vitest/browser).
+      expect(deps.some((d) => d.startsWith('vitest@') || d === 'vitest')).toBe(false);
+      expect(deps).toContain('@vitest/browser@3.2.0');
+      expect(deps).toContain('@vitest/coverage-v8@3.2.0');
+      expect(deps).toContain('playwright');
     });
   });
 

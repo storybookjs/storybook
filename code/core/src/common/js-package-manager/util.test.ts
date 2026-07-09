@@ -96,11 +96,22 @@ describe('js package manager util', () => {
   });
 
   it('builds remote package runner args for the active package manager', () => {
+    // npm and Yarn Classic run through npx, which needs --yes to skip the install prompt
     expect(
       getRemotePackageRunnerArgs(PackageManagerName.NPM, '@storybook/cli', '10.3.2', ['upgrade'])
     ).toEqual(['--yes', '@storybook/cli@10.3.2', 'upgrade']);
     expect(
+      getRemotePackageRunnerArgs(PackageManagerName.YARN1, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['--yes', '@storybook/cli@10.3.2', 'upgrade']);
+    // dlx/bunx-based managers download without prompting, so no --yes
+    expect(
       getRemotePackageRunnerArgs(PackageManagerName.PNPM, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.YARN2, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.BUN, '@storybook/cli', '10.3.2', ['upgrade'])
     ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
   });
 

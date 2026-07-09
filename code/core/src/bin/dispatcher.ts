@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 import { pathToFileURL } from 'node:url';
 
-import { executeNodeCommand } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  executeNodeCommand,
+  getRemotePackageRunnerArgs,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { JsPackageManagerFactory } from '../common/js-package-manager/JsPackageManagerFactory.ts';
-import { getRemotePackageRunnerArgs } from '../common/js-package-manager/util.ts';
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';

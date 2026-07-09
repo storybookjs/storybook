@@ -14,7 +14,7 @@ export type FinalizationCommandOptions = {
   /** When true, show the "paste this prompt to your AI agent" instructions */
   showAiInstructions: boolean;
   /** Package-manager-aware `storybook ai setup` command shown to agents */
-  aiSetupCommand?: string;
+  aiSetupCommand: string;
 };
 
 type ExecuteFinalizationParams = {
@@ -85,13 +85,8 @@ export class FinalizationCommand {
     } catch {}
   }
 
-  /** Print success message with feature summary */
-  private getAiSetupCommandText(): string {
-    return this.options.aiSetupCommand ?? 'npx storybook ai setup';
-  }
-
   private getAiSetupPromptText(): string {
-    return `Run \`${this.getAiSetupCommandText()}\` and follow its instructions precisely.`;
+    return `Run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`;
   }
 
   private printSuccessMessage(storybookCommand?: string | null): void {
@@ -99,7 +94,7 @@ export class FinalizationCommand {
       logger.step(
         CLI_COLORS.storybook(
           dedent`Storybook is installed but is not entirely set up yet.
-          To finish setting up, now run \`${this.getAiSetupCommandText()}\` and follow its instructions precisely.`
+          To finish setting up, now run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`
         )
       );
     } else {

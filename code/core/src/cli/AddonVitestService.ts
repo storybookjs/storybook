@@ -40,6 +40,20 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Reduce a Vitest version specifier (exact or range) to a single concrete version for
+   * `semver.satisfies` comparisons, so dependency collection and postinstall template selection make
+   * the same major/minor decision. Uses the lower bound of a valid range, then coerces so a
+   * prerelease like `4.0.0-beta.1` is treated as `4.0.0` rather than failing `>=4.0.0`.
+   */
+  static getComparableVersion(specifier: string | null | undefined): string | undefined {
+    if (!specifier) {
+      return undefined;
+    }
+    const range = validRange(specifier);
+    return coerce(range ? minVersion(range)?.version : specifier)?.version;
+  }
+
+  /**
    * Resolve the Vitest version/range used both to keep the derived `@vitest/*` packages on a
    * compatible major and to select the right config template. Prefers the resolved installed
    * version, then a pnpm catalog entry when vitest is declared as `catalog:` / `catalog:<name>`,
@@ -86,14 +100,8 @@ export class AddonVitestService {
     // compatible major.
     const vitestVersionSpecifier = await this.resolveVitestVersionSpecifier();
 
-    let isVitest4OrNewer = true;
-    if (vitestVersionSpecifier) {
-      const range = validRange(vitestVersionSpecifier);
-      const versionToCheck = range
-        ? minVersion(range)?.version
-        : coerce(vitestVersionSpecifier)?.version;
-      isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
-    }
+    const versionToCheck = AddonVitestService.getComparableVersion(vitestVersionSpecifier);
+    const isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
 
     // only install these dependencies if they are not already installed
     const basePackages = [

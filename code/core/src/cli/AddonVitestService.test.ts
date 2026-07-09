@@ -225,6 +225,28 @@ describe('AddonVitestService', () => {
     });
   });
 
+  describe('getComparableVersion', () => {
+    it('returns undefined for empty input', () => {
+      expect(AddonVitestService.getComparableVersion(null)).toBeUndefined();
+      expect(AddonVitestService.getComparableVersion(undefined)).toBeUndefined();
+    });
+
+    it('passes through an exact version', () => {
+      expect(AddonVitestService.getComparableVersion('3.2.1')).toBe('3.2.1');
+    });
+
+    it('reduces a range to its lower bound', () => {
+      expect(AddonVitestService.getComparableVersion('^3.2.0')).toBe('3.2.0');
+      expect(AddonVitestService.getComparableVersion('>=4.1.0 <5.0.0')).toBe('4.1.0');
+    });
+
+    it('strips the prerelease tag so a beta compares by its release major', () => {
+      // minVersion() alone keeps `4.0.0-beta.1`, which fails `>=4.0.0`; coercing to `4.0.0` fixes the
+      // major check and keeps it consistent with the postinstall template selection.
+      expect(AddonVitestService.getComparableVersion('4.0.0-beta.1')).toBe('4.0.0');
+    });
+  });
+
   describe('resolveVitestVersionSpecifier', () => {
     it('prefers the installed version', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: 'catalog:' });

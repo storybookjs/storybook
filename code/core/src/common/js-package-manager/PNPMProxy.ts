@@ -221,6 +221,16 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   /**
+   * Catalog helpers edit `pnpm-workspace.yaml` directly via the `yaml` document API, unlike the
+   * `minimumReleaseAge*` settings above which go through `pnpm config get/set`. This is deliberate:
+   * `pnpm config` rejects scoped keys (`pnpm config set catalog.@vitest/coverage-v8 …` →
+   * `ERR_PNPM_UNEXPECTED_TOKEN_IN_PROPERTY_PATH`), and `pnpm add --save-catalog` writes a resolved
+   * direct version instead of `catalog:` whenever the requested range doesn't match an existing
+   * entry — so neither CLI path can deterministically register a scoped `catalog:` reference.
+   * Editing the parsed document keeps it deterministic, offline, and preserves the user's comments.
+   */
+
+  /**
    * Locate the `pnpm-workspace.yaml` that governs this project's catalogs, walking up from the
    * package.json we operate on. Catalogs are only valid inside a pnpm workspace, so a `catalog:`
    * specifier implies this file exists somewhere up the tree.

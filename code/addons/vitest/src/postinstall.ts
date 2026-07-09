@@ -24,7 +24,7 @@ import { SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
-import { coerce, satisfies } from 'semver';
+import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
@@ -74,10 +74,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
   // Determine the Vitest version/range (catalog-aware, so a pnpm `catalog:` specifier resolves to
   // the real version) to avoid pulling incompatible majors and to select the right config template.
-  // Coerce to a plain version string, dropping range specifiers like ^ or ~, so it can be checked
-  // with semver.satisfies below.
-  const vitestVersionSpecifier =
-    coerce(await addonVitestService.resolveVitestVersionSpecifier())?.version ?? null;
+  // Reduce to a plain comparable version via the same helper collectDependencies() uses, so template
+  // selection and dependency collection agree on the major.
+  const vitestVersionSpecifier = AddonVitestService.getComparableVersion(
+    await addonVitestService.resolveVitestVersionSpecifier()
+  );
 
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier

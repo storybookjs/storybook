@@ -71,7 +71,12 @@ export const ReviewStateSchema = v.object({
 			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
 		),
 	),
-	collections: v.array(ReviewCollectionSchema),
+	collections: v.pipe(
+		v.array(ReviewCollectionSchema),
+		v.description(
+			'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups. Each item is an object with three required fields: `title` (string, what the group is), `rationale` (string, why it is relevant), and `storyIds` (array of story ID strings the group renders). Note the field is `storyIds` (a plain array of ID strings), not `stories`.',
+		),
+	),
 	changedFiles: v.pipe(
 		v.array(v.string()),
 		v.description(

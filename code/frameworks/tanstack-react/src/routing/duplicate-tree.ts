@@ -3,6 +3,7 @@ import {
   createRoute,
   RootRoute,
   createRootRouteWithContext,
+  interpolatePath,
   joinPaths,
 } from '@tanstack/react-router';
 
@@ -190,25 +191,55 @@ export function originalRouteId(tree: DuplicatedTree, route: AnyRoute): string |
  *
  * Resolution order:
  *
- * 1. The route whose `fullPath` exactly matches the explicit `path` parameter.
+ * 1. The route whose mount path (from the cloned parent chain's options —
+ *    `fullPath` getters are undefined before `init()`) matches the explicit
+ *    `path` parameter, either literally or after interpolating `params`.
  * 2. The route bound to the story (`boundRouteId`), if it is present in the cloned tree.
  * 3. The first top-level child of the root.
  * 4. The root itself.
  */
 export function resolveStoryLeaf(
   tree: DuplicatedTree,
-  { path, boundRouteId }: { path?: string | undefined; boundRouteId?: string | undefined }
+  {
+    path,
+    boundRouteId,
+    params,
+  }: {
+    path?: string | undefined;
+    boundRouteId?: string | undefined;
+    params?: Record<string, unknown> | undefined;
+  }
 ): AnyRoute {
   const { root, byId } = tree;
 
   if (path) {
+    // The explicitly bound route wins whenever its own mount path matches the
+    // requested path — without this, a parent whose mount path ties with its
+    // bound index child would steal the leaf by scan order.
+    const bound = boundRouteId ? byId.get(boundRouteId) : undefined;
+    if (bound) {
+      const boundCandidate = mountPathFor(bound);
+      const boundInterpolated = params
+        ? interpolatePath({ path: boundCandidate, params }).interpolatedPath
+        : boundCandidate;
+      if (boundCandidate === path || boundInterpolated === path) {
+        return bound;
+      }
+    }
+
     let bestMatch: AnyRoute | undefined;
     let bestMatchLength = -1;
     for (const route of byId.values()) {
-      const fullPath = (route as any).fullPath as string | undefined;
-      if (fullPath && fullPath === path && fullPath.length > bestMatchLength) {
+      if (route === (root as unknown as AnyRoute)) {
+        continue;
+      }
+      const candidate = mountPathFor(route);
+      const interpolated = params
+        ? interpolatePath({ path: candidate, params }).interpolatedPath
+        : candidate;
+      if ((candidate === path || interpolated === path) && candidate.length > bestMatchLength) {
         bestMatch = route;
-        bestMatchLength = fullPath.length;
+        bestMatchLength = candidate.length;
       }
     }
     if (bestMatch) {

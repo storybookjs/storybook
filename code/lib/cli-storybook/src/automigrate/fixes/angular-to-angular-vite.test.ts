@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -5,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
@@ -18,9 +19,19 @@ import {
 } from './angular-to-angular-vite.ts';
 
 // Mock dependencies
-vi.mock('node:fs/promises', () => ({
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
   readFile: vi.fn(),
   writeFile: vi.fn(),
+}));
+
+// AngularJSON (pulled in transitively via `storybook/internal/cli`) reads/writes angular.json
+// synchronously, unlike the rest of this fix's async `node:fs/promises` I/O.
+vi.mock('node:fs', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs')>()),
+  existsSync: vi.fn(() => false),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -37,7 +48,8 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   transformImportFiles: vi.fn().mockResolvedValue([]),
   getProjectRoot: vi.fn().mockReturnValue('/project'),
   formatFileContent: vi.fn((_filePath: string, content: string) => Promise.resolve(content)),
@@ -61,6 +73,9 @@ vi.mock('../helpers/mainConfigFile.ts', () => ({
 
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
+const mockExistsSync = vi.mocked(existsSync);
+const mockReadFileSync = vi.mocked(readFileSync);
+const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockPromptConfirm = vi.mocked(prompt.confirm);
 const mockAdd = vi.mocked(add);
 const mockUpdateMainConfig = vi.mocked(updateMainConfig);
@@ -80,7 +95,21 @@ describe('angular-to-angular-vite', () => {
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+    // Default: angular.json doesn't exist (AngularJSON gracefully skips it). Tests that need
+    // angular.json content override this via `mockAngularJson(...)`.
+    mockExistsSync.mockReturnValue(false);
   });
+
+  /** Wire the sync `node:fs` mocks so `AngularJSON` reads `/project/angular.json` as `content`. */
+  const mockAngularJson = (content: string) => {
+    mockExistsSync.mockImplementation((p: any) => String(p).endsWith('angular.json'));
+    mockReadFileSync.mockImplementation((p: any) => {
+      if (String(p).endsWith('angular.json')) {
+        return content;
+      }
+      throw new Error(`ENOENT: ${p}`);
+    });
+  };
 
   describe('check function', () => {
     it('returns null when @storybook/angular is not installed', async () => {
@@ -387,12 +416,10 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
           },
         },
       });
+      mockAngularJson(angularJsonContent);
 
       mockReadFile.mockImplementation((filePath: any) => {
         const p = String(filePath);
-        if (p.endsWith('angular.json')) {
-          return Promise.resolve(angularJsonContent) as any;
-        }
         if (p.endsWith('package.json')) {
           return Promise.resolve('{}') as any;
         }
@@ -410,11 +437,11 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
         '/project/angular.json',
         expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
       );
-      expect(mockWriteFile).toHaveBeenCalledWith(
+      expect(mockWriteFileSync).toHaveBeenCalledWith(
         '/project/angular.json',
         expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:build-storybook`)
       );
@@ -768,6 +795,380 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         '/project/vitest.config.ts',
         expect.anything()
       );
+    });
+
+    describe('zone.js detection and preview injection', () => {
+      const previewConfigPath = '/project/.storybook/preview.ts';
+
+      const angularJsonWithFlag = (flag: boolean | undefined) =>
+        JSON.stringify({
+          projects: {
+            myApp: {
+              architect: {
+                storybook: {
+                  builder: '@storybook/angular:start-storybook',
+                  options: flag === undefined ? {} : { experimentalZoneless: flag },
+                },
+              },
+            },
+          },
+        });
+
+      const mockFilesFor = (angularJsonContent: string, previewContent: string) => {
+        mockAngularJson(angularJsonContent);
+        mockReadFile.mockImplementation((filePath: any) => {
+          const p = String(filePath);
+          if (p === previewConfigPath) {
+            return Promise.resolve(previewContent) as any;
+          }
+          if (p.endsWith('package.json')) {
+            return Promise.resolve('{}') as any;
+          }
+          return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+        });
+      };
+
+      it("prepends `import 'zone.js';` and logs a step when the flag is unset", async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+        expect(logger.step).toHaveBeenCalledWith(expect.stringContaining(previewConfigPath));
+      });
+
+      it('does not modify the preview when every storybook target sets experimentalZoneless: true', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(angularJsonWithFlag(true), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+      });
+
+      it('behaves like unset when experimentalZoneless is explicitly false: injection happens', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(angularJsonWithFlag(false), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+      });
+
+      it('is idempotent: leaves a preview that already imports zone.js (incl. deep imports) untouched', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(
+          angularJsonWithFlag(undefined),
+          "import 'zone.js/testing';\nexport default {};"
+        );
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+      });
+
+      it('performs no file writes in --dry-run while still reporting the planned change', async () => {
+        mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: true,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalled();
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
+      });
+
+      it('works with a .tsx preview file', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        const tsxPreviewPath = '/project/.storybook/preview.tsx';
+        mockAngularJson(angularJsonWithFlag(undefined));
+        mockReadFile.mockImplementation((filePath: any) => {
+          const p = String(filePath);
+          if (p === tsxPreviewPath) {
+            return Promise.resolve('export default {};') as any;
+          }
+          if (p.endsWith('package.json')) {
+            return Promise.resolve('{}') as any;
+          }
+          return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+        });
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath: tsxPreviewPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          tsxPreviewPath,
+          expect.stringContaining('import "zone.js";')
+        );
+      });
+
+      it('warns with manual-import guidance when no preview file was found, without throwing', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
+
+        await expect(
+          angularToAngularVite.run!({
+            result: baseResult,
+            dryRun: false,
+            packageManager: mockPackageManager,
+            mainConfigPath: '/project/.storybook/main.ts',
+            previewConfigPath: undefined,
+            storiesPaths: [],
+            configDir: '.storybook',
+            storybookVersion: '9.0.0',
+          } as any)
+        ).resolves.toBeUndefined();
+
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('manually'));
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+      });
+
+      it('renames a leftover experimentalZoneless key to zoneless with the same boolean value', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(angularJsonWithFlag(true), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        const angularJsonWrite = mockWriteFileSync.mock.calls.find(
+          ([p]) => p === '/project/angular.json'
+        );
+        expect(angularJsonWrite).toBeDefined();
+        const written = JSON.parse(String(angularJsonWrite![1]));
+        expect(written.projects.myApp.architect.storybook.options).toEqual({ zoneless: true });
+      });
+
+      it('handles Nx project.json storybook targets identically to angular.json targets', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        // eslint-disable-next-line depend/ban-dependencies
+        const { globby } = await import('globby');
+        vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+        const projectJsonContent = JSON.stringify({
+          name: 'soba',
+          targets: {
+            storybook: {
+              executor: '@storybook/angular:start-storybook',
+              options: {},
+            },
+          },
+        });
+
+        mockReadFile.mockImplementation((filePath: any) => {
+          const p = String(filePath);
+          if (p.endsWith('project.json')) {
+            return Promise.resolve(projectJsonContent) as any;
+          }
+          if (p === previewConfigPath) {
+            return Promise.resolve('export default {};') as any;
+          }
+          return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+        });
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+      });
+
+      it('injects when one of multiple storybook targets leaves the flag unset (multi-target rule)', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        const angularJsonContent = JSON.stringify({
+          projects: {
+            myApp: {
+              architect: {
+                storybook: {
+                  builder: '@storybook/angular:start-storybook',
+                  options: { experimentalZoneless: true },
+                },
+                'build-storybook': {
+                  builder: '@storybook/angular:build-storybook',
+                  options: {},
+                },
+              },
+            },
+          },
+        });
+        mockFilesFor(angularJsonContent, 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+      });
+
+      it('skips injection when every one of multiple storybook targets sets the flag true', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        const angularJsonContent = JSON.stringify({
+          projects: {
+            myApp: {
+              architect: {
+                storybook: {
+                  builder: '@storybook/angular:start-storybook',
+                  options: { experimentalZoneless: true },
+                },
+                'build-storybook': {
+                  builder: '@storybook/angular:build-storybook',
+                  options: { experimentalZoneless: true },
+                },
+              },
+            },
+          },
+        });
+        mockFilesFor(angularJsonContent, 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+      });
+
+      it('only renames/detects the correct project when two projects name their storybook target identically', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        const angularJsonContent = JSON.stringify({
+          projects: {
+            appA: {
+              architect: {
+                storybook: {
+                  builder: '@storybook/angular:start-storybook',
+                  options: { experimentalZoneless: true },
+                },
+              },
+            },
+            appB: {
+              architect: {
+                storybook: {
+                  builder: '@storybook/angular:start-storybook',
+                  options: {},
+                },
+              },
+            },
+          },
+        });
+        mockFilesFor(angularJsonContent, 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        // Injection fires because appB's target is unset (multi-target rule).
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+
+        const angularJsonWrite = mockWriteFileSync.mock.calls.find(
+          ([p]) => p === '/project/angular.json'
+        );
+        expect(angularJsonWrite).toBeDefined();
+        const written = JSON.parse(String(angularJsonWrite![1]));
+        // Only appA's target (which explicitly carried the old key) is renamed.
+        expect(written.projects.appA.architect.storybook.options).toEqual({ zoneless: true });
+        expect(written.projects.appB.architect.storybook.options).toEqual({});
+      });
     });
   });
 });

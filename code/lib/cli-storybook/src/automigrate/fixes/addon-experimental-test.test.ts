@@ -155,7 +155,11 @@ describe('addon-experimental-test fix', () => {
     it('returns a bare-literal pattern matching the old package name', () => {
       const patterns = addonExperimentalTest.detectMissedTransformations!({ matchingFiles: [] });
       expect(patterns).toEqual([
-        { label: '@storybook/experimental-addon-test', regex: expect.any(RegExp) },
+        {
+          label: '@storybook/experimental-addon-test',
+          regex: expect.any(RegExp),
+          replacement: '@storybook/addon-vitest',
+        },
       ]);
       expect(patterns[0].regex.test('@storybook/experimental-addon-test')).toBe(true);
     });

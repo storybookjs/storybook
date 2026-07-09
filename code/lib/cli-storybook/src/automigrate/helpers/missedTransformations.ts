@@ -79,7 +79,12 @@ export async function detectMissedTransformations({
             for (const pattern of patterns) {
               pattern.regex.lastIndex = 0;
               if (pattern.regex.test(content)) {
-                matches.push({ file, fixId: pattern.fixId, label: pattern.label });
+                matches.push({
+                  file,
+                  fixId: pattern.fixId,
+                  label: pattern.label,
+                  replacement: pattern.replacement,
+                });
               }
             }
           } catch {
@@ -130,20 +135,28 @@ export function formatMissedTransformationsMessage(
     return null;
   }
 
-  const byKey = new Map<string, { fixId: FixId; label: string; files: string[] }>();
+  const byKey = new Map<
+    string,
+    { fixId: FixId; label: string; replacement: string; files: string[] }
+  >();
   for (const m of matches) {
     const key = `${m.fixId}::${m.label}`;
-    const entry = byKey.get(key) ?? { fixId: m.fixId, label: m.label, files: [] };
+    const entry = byKey.get(key) ?? {
+      fixId: m.fixId,
+      label: m.label,
+      replacement: m.replacement,
+      files: [],
+    };
     entry.files.push(m.file);
     byKey.set(key, entry);
   }
 
   const MAX_FILES_SHOWN = 20;
-  const groups = [...byKey.values()].map(({ fixId, label, files }) => {
+  const groups = [...byKey.values()].map(({ fixId, label, replacement, files }) => {
     const shown = files.slice(0, MAX_FILES_SHOWN);
     const remaining = files.length - shown.length;
     return [
-      `${fixId} (still contains "${label}"):`,
+      `${fixId} (still contains "${label}", replace with "${replacement}"):`,
       ...shown.map((f) => `  - ${shortenPath(f)}`),
       ...(remaining > 0 ? [`  ...and ${remaining} more file(s)`] : []),
     ].join('\n');

@@ -216,9 +216,12 @@ export const rendererToFramework: Fix<MigrationResult> = {
   },
 
   detectMissedTransformations(result) {
-    return resolveFrameworkRendererPairs(result.frameworks).map(({ rendererPackage }) => ({
-      label: rendererPackage,
-      regex: buildRendererImportRegex(rendererPackage),
-    }));
+    return resolveFrameworkRendererPairs(result.frameworks).map(
+      ({ rendererPackage, selectedFramework }) => ({
+        label: rendererPackage,
+        regex: buildRendererImportRegex(rendererPackage),
+        replacement: selectedFramework,
+      })
+    );
   },
 };

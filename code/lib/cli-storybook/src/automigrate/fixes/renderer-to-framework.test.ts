@@ -359,7 +359,13 @@ describe('detectMissedTransformations', () => {
 
     const pairs = rendererToFramework.detectMissedTransformations!(result);
 
-    expect(pairs).toEqual([{ label: '@storybook/react', regex: expect.any(RegExp) }]);
+    expect(pairs).toEqual([
+      {
+        label: '@storybook/react',
+        regex: expect.any(RegExp),
+        replacement: '@storybook/react-vite',
+      },
+    ]);
   });
 
   it('should return a regex that matches the plain renderer import specifier', () => {

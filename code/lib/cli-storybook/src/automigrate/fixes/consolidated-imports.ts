@@ -179,13 +179,15 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
   },
   detectMissedTransformations() {
     return [
-      ...Object.keys(consolidatedPackages).map((dep) => ({
+      ...Object.entries(consolidatedPackages).map(([dep, replacement]) => ({
         label: dep,
         regex: buildImportRenameRegex(dep),
+        replacement,
       })),
-      ...Object.keys(internalPackageRenames).map((dep) => ({
+      ...Object.entries(internalPackageRenames).map(([dep, replacement]) => ({
         label: dep,
         regex: buildImportRenameRegex(dep),
+        replacement,
       })),
     ];
   },

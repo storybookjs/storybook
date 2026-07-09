@@ -27,6 +27,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
       {
         label: '@storybook/experimental-addon-test',
         regex: /@storybook\/experimental-addon-test/g,
+        replacement: '@storybook/addon-vitest',
       },
     ];
   },

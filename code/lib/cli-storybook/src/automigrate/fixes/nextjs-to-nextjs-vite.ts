@@ -45,7 +45,13 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   defaultSelected: false,
 
   detectMissedTransformations() {
-    return [{ label: '@storybook/nextjs', regex: buildImportRenameRegex('@storybook/nextjs') }];
+    return [
+      {
+        label: '@storybook/nextjs',
+        regex: buildImportRenameRegex('@storybook/nextjs'),
+        replacement: '@storybook/nextjs-vite',
+      },
+    ];
   },
 
   async check({ packageManager }): Promise<NextjsToNextjsViteOptions | null> {

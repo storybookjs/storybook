@@ -59,6 +59,7 @@ describe('logMigrationSummary', () => {
           file: '/project/src/some-file.ts',
           fixId: 'my-fix',
           label: '@storybook/old-package',
+          replacement: '@storybook/new-package',
         },
       ],
     };
@@ -72,5 +73,6 @@ describe('logMigrationSummary', () => {
     expect(loggedMessage).toContain('Possible missed transformations');
     expect(loggedMessage).toContain('my-fix');
     expect(loggedMessage).toContain('@storybook/old-package');
+    expect(loggedMessage).toContain('@storybook/new-package');
   });
 });

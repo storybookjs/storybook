@@ -164,24 +164,29 @@ describe('formatMissedTransformationsMessage', () => {
   it('groups multiple matches by fixId+label and includes the expected heading', () => {
     const message = formatMissedTransformationsMessage(
       [
-        { file: '/a.ts', fixId: 'fix-a', label: 'pattern-a' },
-        { file: '/b.ts', fixId: 'fix-a', label: 'pattern-a' },
-        { file: '/c.ts', fixId: 'fix-b', label: 'pattern-b' },
+        { file: '/a.ts', fixId: 'fix-a', label: 'pattern-a', replacement: 'pattern-a-new' },
+        { file: '/b.ts', fixId: 'fix-a', label: 'pattern-a', replacement: 'pattern-a-new' },
+        { file: '/c.ts', fixId: 'fix-b', label: 'pattern-b', replacement: 'pattern-b-new' },
       ],
       { shortenPath }
     );
 
     expect(message).toContain('Possible missed transformations');
-    expect(message).toContain('fix-a (still contains "pattern-a"):');
+    expect(message).toContain('fix-a (still contains "pattern-a", replace with "pattern-a-new"):');
     expect(message).toContain('  - /a.ts');
     expect(message).toContain('  - /b.ts');
-    expect(message).toContain('fix-b (still contains "pattern-b"):');
+    expect(message).toContain('fix-b (still contains "pattern-b", replace with "pattern-b-new"):');
     expect(message).toContain('  - /c.ts');
   });
 
   it('caps displayed files at 20 with a "...and N more file(s)" tail', () => {
     const files = Array.from({ length: 25 }, (_, i) => `/file-${i}.ts`);
-    const matches = files.map((file) => ({ file, fixId: 'fix-a', label: 'pattern-a' }));
+    const matches = files.map((file) => ({
+      file,
+      fixId: 'fix-a',
+      label: 'pattern-a',
+      replacement: 'pattern-a-new',
+    }));
 
     const message = formatMissedTransformationsMessage(matches, { shortenPath });
 

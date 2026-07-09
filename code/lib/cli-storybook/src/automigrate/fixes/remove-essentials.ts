@@ -132,9 +132,10 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
   },
 
   detectMissedTransformations() {
-    return Object.keys(consolidatedAddons).map((addon) => ({
+    return Object.entries(consolidatedAddons).map(([addon, replacement]) => ({
       label: addon,
       regex: buildImportRenameRegex(addon),
+      replacement,
     }));
   },
 

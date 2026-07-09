@@ -316,7 +316,9 @@ describe('multi-project automigrations', () => {
       const fix = createMockFix('fix-with-detection', { needsFix: true });
       fix.detectMissedTransformations = vi
         .fn()
-        .mockReturnValue([{ label: 'old-pattern', regex: /old-pattern/ }]);
+        .mockReturnValue([
+          { label: 'old-pattern', regex: /old-pattern/, replacement: 'new-pattern' },
+        ]);
 
       // Project A is the one that actually ran the fix.
       const projectA: ProjectAutomigrationData = {
@@ -367,6 +369,7 @@ describe('multi-project automigrations', () => {
           file: '/packages/other-app/src/leftover.ts',
           fixId: 'fix-with-detection',
           label: 'old-pattern',
+          replacement: 'new-pattern',
         },
       ]);
     });
@@ -413,7 +416,7 @@ describe('multi-project automigrations', () => {
 
       mockFixWithDetection.check.mockResolvedValue({ needsFix: true });
       mockFixWithDetection.detectMissedTransformations.mockReturnValue([
-        { label: 'stale-import', regex: /stale-import/ },
+        { label: 'stale-import', regex: /stale-import/, replacement: 'fresh-import' },
       ]);
 
       const projectA = createMockCollectProjectsResult('/project1/.storybook');
@@ -438,6 +441,7 @@ describe('multi-project automigrations', () => {
           file: '/packages/other-app/src/leftover.ts',
           fixId: 'fix-with-detection',
           label: 'stale-import',
+          replacement: 'fresh-import',
         },
       ]);
     });

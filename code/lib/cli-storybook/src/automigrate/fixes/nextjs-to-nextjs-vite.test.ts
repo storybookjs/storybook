@@ -114,7 +114,13 @@ describe('nextjs-to-nextjs-vite', () => {
   describe('detectMissedTransformations', () => {
     it('returns a pattern for @storybook/nextjs that does not false-positive on @storybook/nextjs-vite', () => {
       const patterns = nextjsToNextjsVite.detectMissedTransformations!(null as any);
-      expect(patterns).toEqual([{ label: '@storybook/nextjs', regex: expect.any(RegExp) }]);
+      expect(patterns).toEqual([
+        {
+          label: '@storybook/nextjs',
+          regex: expect.any(RegExp),
+          replacement: '@storybook/nextjs-vite',
+        },
+      ]);
       const { regex } = patterns[0];
       expect(regex.test(`import x from '@storybook/nextjs'`)).toBe(true);
       regex.lastIndex = 0;

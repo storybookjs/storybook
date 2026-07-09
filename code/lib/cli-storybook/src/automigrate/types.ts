@@ -54,6 +54,8 @@ export interface MissedTransformationPattern {
   label: string;
   /** Matches stale content indicating this fix's transformation was needed but not applied. */
   regex: RegExp;
+  /** What the stale pattern should be replaced with, shown to the user as a manual next step. */
+  replacement: string;
 }
 
 type BaseFix<ResultType = any> = {
@@ -152,4 +154,5 @@ export interface MissedTransformationMatch {
   file: string;
   fixId: FixId;
   label: string;
+  replacement: string;
 }

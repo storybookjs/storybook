@@ -2,13 +2,11 @@ import React, { type FC } from 'react';
 
 import { ReviewSummaryHost } from '../screens/ReviewSummaryHost.tsx';
 import { useReviewNavigationInterceptor } from '../useReviewNavigationInterceptor.ts';
-import { useReviewShortcuts } from '../useReviewShortcuts.ts';
 import { ReviewNotification } from './ReviewNotification.tsx';
 import { ReviewProvider } from './ReviewProvider.tsx';
 
 const ReviewNavigationLayer: FC = () => {
   useReviewNavigationInterceptor();
-  useReviewShortcuts();
 
   return (
     <>

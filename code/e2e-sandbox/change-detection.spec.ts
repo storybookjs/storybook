@@ -115,8 +115,6 @@ test.describe('Change Detection', () => {
     );
     const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.ts');
 
-    console.log({ newStoryPath });
-
     try {
       fs.writeFileSync(
         newStoryPath,
@@ -143,14 +141,12 @@ test.describe('Change Detection', () => {
     const storyPath = headerStoriesPath as string;
     const original = fs.readFileSync(storyPath, 'utf-8');
 
-    console.log({ storyPath });
-
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
 
       // Branch-level "Modified" change-detection icon is gated on the modified
       // status filter being active. Activate it via the FilterPanel.
-      const filtersButton = page.getByRole('button', { name: /filter/i });
+      const filtersButton = page.getByRole('button', { name: 'Tag filters' });
       await expect(filtersButton).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
       await filtersButton.click();
 

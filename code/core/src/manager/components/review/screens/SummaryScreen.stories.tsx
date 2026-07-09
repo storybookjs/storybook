@@ -483,9 +483,9 @@ export const Minimal = meta.story({
 
     // The "Summary:" label is a real level-2 heading, not just bold text.
     await expect(canvas.getByRole('heading', { level: 2, name: /Summary/ })).toBeInTheDocument();
-    // The collection title is a level-2 heading and names its group container.
+    // The collection title is a level-2 heading and names its region landmark.
     await expect(canvas.getByRole('heading', { level: 2, name: 'Button' })).toBeInTheDocument();
-    await expect(canvas.getByRole('group', { name: 'Button' })).toBeInTheDocument();
+    await expect(canvas.getByRole('region', { name: 'Button' })).toBeInTheDocument();
     // The story count exposes an accessible label describing what it counts.
     await expect(canvas.getByLabelText('2 stories')).toBeInTheDocument();
   },

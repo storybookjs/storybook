@@ -5,6 +5,9 @@ import { parse, stringify } from 'telejson';
 import { HEARTBEAT_INTERVAL, HEARTBEAT_MAX_LATENCY, WebsocketTransport } from './index.ts';
 
 const TIMEOUT = HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY;
+// Keep in sync with HEARTBEAT_STARVATION_SLACK in ./index.ts. Defined locally (rather than
+// imported) so these tests express the required behavior independently of the implementation.
+const STARVATION_SLACK = 1000;
 
 const socketRef = { current: undefined as unknown as MockWebSocket };
 
@@ -165,5 +168,75 @@ describe('WebsocketTransport heartbeat', () => {
 
     vi.advanceTimersByTime(TIMEOUT - 1);
     expect(socket.closed).toBeUndefined();
+  });
+});
+
+describe('WebsocketTransport heartbeat starvation', () => {
+  let fakeNow: number;
+
+  beforeEach(() => {
+    fakeNow = 0;
+    // Exclude 'performance' from toFake: vitest's default fake timers advance performance.now in
+    // lockstep with advanceTimersByTime, which makes a "late" timer fire impossible to simulate.
+    // Stubbing performance.now manually lets wall-clock time move further than the timers were
+    // advanced, mimicking a main thread that was blocked past the deadline.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.stubGlobal('WebSocket', MockWebSocket);
+    vi.stubGlobal('performance', { now: () => fakeNow });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('re-arms instead of closing when the timer fires late (starved main thread)', () => {
+    const { socket } = createConnectedTransport();
+
+    // Main thread blocked well past the deadline: the timer only runs after the stall, so more
+    // wall-clock time has elapsed than the timeout it was armed with.
+    fakeNow = TIMEOUT + STARVATION_SLACK + 1;
+    vi.advanceTimersByTime(TIMEOUT);
+    expect(socket.closed).toBeUndefined();
+
+    // The grace window then elapses on time with no message: genuinely dead, so close.
+    fakeNow += TIMEOUT;
+    vi.advanceTimersByTime(TIMEOUT);
+    expect(socket.closed).toEqual({ code: 3008, reason: 'timeout' });
+  });
+
+  it('still closes when the timer fires on time', () => {
+    const { socket } = createConnectedTransport();
+
+    fakeNow = TIMEOUT;
+    vi.advanceTimersByTime(TIMEOUT);
+    expect(socket.closed).toEqual({ code: 3008, reason: 'timeout' });
+  });
+
+  it('a message during the grace window restores a fresh grace allowance', () => {
+    const { socket } = createConnectedTransport();
+
+    fakeNow = TIMEOUT + STARVATION_SLACK + 1;
+    vi.advanceTimersByTime(TIMEOUT);
+    expect(socket.closed).toBeUndefined();
+
+    // Backlog drains: a queued ping is finally processed and re-arms with grace available again.
+    socket.receive({ type: 'ping' });
+
+    // A second starvation episode is spared again rather than closing.
+    fakeNow += TIMEOUT + STARVATION_SLACK + 1;
+    vi.advanceTimersByTime(TIMEOUT);
+    expect(socket.closed).toBeUndefined();
+  });
+
+  it('closes when the grace window itself fires late with no message in between', () => {
+    const { socket } = createConnectedTransport();
+
+    fakeNow = TIMEOUT + STARVATION_SLACK + 1;
+    vi.advanceTimersByTime(TIMEOUT); // fired late -> grace window granted
+    fakeNow += TIMEOUT + STARVATION_SLACK + 1;
+    vi.advanceTimersByTime(TIMEOUT); // late again with grace spent -> close
+    expect(socket.closed).toEqual({ code: 3008, reason: 'timeout' });
   });
 });

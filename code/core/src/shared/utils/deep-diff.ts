@@ -104,5 +104,8 @@ const diffInternal = (
   }
 };
 
-export const deepDiff = (value: unknown, update: unknown): unknown =>
-  diffInternal(value, update, new Set(), 0);
+export function deepDiff<T>(value: T, update: T): T | typeof DEEPLY_EQUAL;
+export function deepDiff(value: unknown, update: unknown): unknown;
+export function deepDiff(value: unknown, update: unknown): unknown {
+  return diffInternal(value, update, new Set(), 0);
+}

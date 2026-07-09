@@ -1,6 +1,6 @@
 import React, { type FC, type ReactNode } from 'react';
 
-import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
@@ -61,7 +61,7 @@ const SubtitleText = styled.span(({ theme }) => ({
   color: theme.color.defaultText,
 }));
 
-const Counter = styled(Button)(({ theme }) => ({
+const Counter = styled.span(({ theme }) => ({
   fontVariantNumeric: 'tabular-nums',
   fontFamily: theme.typography.fonts.mono,
   fontWeight: theme.typography.weight.regular,
@@ -135,33 +135,6 @@ export const ReviewToolbarHeader: FC = () => {
       </>
     ) : undefined;
 
-  const counter =
-    totalStories > 0 ? (
-      <WithTooltip
-        trigger="click"
-        closeOnOutsideClick
-        placement="bottom"
-        tooltip={({ onHide }) => (
-          <Popover hasChrome padding={0}>
-            <ReviewCollectionPicker
-              entries={flattenedEntries}
-              storyInfo={storyInfo}
-              activeEntry={activeEntry}
-              onClose={onHide}
-            />
-          </Popover>
-        )}
-      >
-        <Counter variant="ghost" size="small" ariaLabel="Select story">
-          {activeIndex + 1}/{totalStories}
-        </Counter>
-      </WithTooltip>
-    ) : (
-      <Counter variant="ghost" size="small" ariaLabel={false} readOnly>
-        {activeIndex + 1}/{totalStories}
-      </Counter>
-    );
-
   return (
     <Root data-testid="review-toolbar-header">
       {banner && <AttentionBanner {...banner} />}
@@ -193,7 +166,15 @@ export const ReviewToolbarHeader: FC = () => {
           subtitle={subtitle}
           actions={
             <>
-              {counter}
+              <ReviewCollectionPicker
+                entries={flattenedEntries}
+                activeEntry={activeEntry}
+                storyInfo={storyInfo}
+              >
+                <Counter>
+                  {activeIndex + 1}/{totalStories}
+                </Counter>
+              </ReviewCollectionPicker>
               <NavButton
                 entry={previousEntry}
                 ariaLabel="Previous story"

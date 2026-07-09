@@ -1,4 +1,12 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+  type ReactNode,
+} from 'react';
 
 import {
   Button,
@@ -21,6 +29,7 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
+import { useLandmark } from '../../../hooks/useLandmark.ts';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';
 import { CollectionGrid } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
@@ -92,7 +101,7 @@ const ListScroll = styled.div({
   minHeight: 0,
 });
 
-const List = styled.div({
+const Main = styled.main({
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
@@ -115,6 +124,19 @@ const SummaryCard = styled(Card)({
     marginTop: 4,
   },
 });
+
+const SummaryLandmark: FC<{ children: ReactNode }> = ({ children }) => {
+  const asideRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'complementary', 'aria-label': 'Summary' },
+    asideRef
+  );
+  return (
+    <aside ref={asideRef} {...landmarkProps}>
+      {children}
+    </aside>
+  );
+};
 
 const SummaryContent = styled(MarkdownWrapper)({
   flex: 1,
@@ -203,6 +225,32 @@ const Footer = styled.div(({ theme }) => ({
   textAlign: 'center',
   textWrap: 'balance',
 }));
+
+const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
+  titleId,
+  children,
+}) => {
+  const regionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark({ role: 'region', 'aria-labelledby': titleId }, regionRef);
+  return (
+    <section ref={regionRef} {...landmarkProps}>
+      {children}
+    </section>
+  );
+};
+
+const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
+  const regionRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'contentinfo', 'aria-label': 'About this review' },
+    regionRef
+  );
+  return (
+    <Footer as="footer" ref={regionRef} {...landmarkProps}>
+      {children}
+    </Footer>
+  );
+};
 
 const pluralize = (count: number, singular: string, plural = `${singular}s`): string =>
   `${count} ${count === 1 ? singular : plural}`;
@@ -382,13 +430,15 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
 
       <ListScroll>
         <ScrollArea vertical>
-          <List>
-            <SummaryCard color="agentic">
-              <WandIcon />
-              <SummaryContent>
-                <SummaryHeading>Summary:</SummaryHeading> <Markdown>{state.description}</Markdown>
-              </SummaryContent>
-            </SummaryCard>
+          <Main>
+            <SummaryLandmark>
+              <SummaryCard color="agentic">
+                <WandIcon />
+                <SummaryContent>
+                  <SummaryHeading>Summary:</SummaryHeading> <Markdown>{state.description}</Markdown>
+                </SummaryContent>
+              </SummaryCard>
+            </SummaryLandmark>
             {visibleCollections.length === 0 ? (
               <Footer>{showNewOnly ? 'No new stories found.' : 'No collections found.'}</Footer>
             ) : (
@@ -396,66 +446,70 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                 const isExpanded = expandedCollections.has(index);
                 const titleId = `review-collection-title-${index}`;
                 return (
-                  <Card key={`${collection.title}-${index}`} role="group" aria-labelledby={titleId}>
-                    <Collapsible
-                      collapsed={!isExpanded}
-                      summary={
-                        <CardHead onClick={() => toggleCollection(index)}>
-                          <CardTitle id={titleId}>{collection.title}</CardTitle>
-                          <CardControls>
-                            <CardCount aria-label={pluralize(storyIds.length, 'story', 'stories')}>
-                              {storyIds.length}
-                            </CardCount>
-                            <IconButton
-                              variant="ghost"
-                              size="small"
-                              padding="small"
-                              ariaLabel={
-                                isExpanded
-                                  ? `Collapse collection ${collection.title}`
-                                  : `Expand collection ${collection.title}`
-                              }
-                              aria-expanded={isExpanded}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleCollection(index);
-                              }}
-                            >
-                              <ToggleChevronIcon
-                                style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                              />
-                            </IconButton>
-                          </CardControls>
-                        </CardHead>
-                      }
-                    >
-                      {collection.rationale ? (
-                        <CardRationale>
-                          <Markdown>{collection.rationale}</Markdown>
-                        </CardRationale>
-                      ) : null}
-                      <CollectionGrid
-                        storyIds={storyIds}
-                        showAll={showAllCollections.has(index)}
-                        onShowAll={() => markCollectionShowAll(index)}
-                        storyInfo={storyInfo}
-                        getStoryHref={(storyId) =>
-                          buildReviewStoryHref({ collectionIndex: index, storyId })
+                  <CollectionLandmark key={`${collection.title}-${index}`} titleId={titleId}>
+                    <Card>
+                      <Collapsible
+                        collapsed={!isExpanded}
+                        summary={
+                          <CardHead onClick={() => toggleCollection(index)}>
+                            <CardTitle id={titleId}>{collection.title}</CardTitle>
+                            <CardControls>
+                              <CardCount
+                                aria-label={pluralize(storyIds.length, 'story', 'stories')}
+                              >
+                                {storyIds.length}
+                              </CardCount>
+                              <IconButton
+                                variant="ghost"
+                                size="small"
+                                padding="small"
+                                ariaLabel={
+                                  isExpanded
+                                    ? `Collapse collection ${collection.title}`
+                                    : `Expand collection ${collection.title}`
+                                }
+                                aria-expanded={isExpanded}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggleCollection(index);
+                                }}
+                              >
+                                <ToggleChevronIcon
+                                  style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                                />
+                              </IconButton>
+                            </CardControls>
+                          </CardHead>
                         }
-                        getStoryPreviewHref={getStoryPreviewHref}
-                        summaryHidden={summaryHidden}
-                      />
-                    </Collapsible>
-                  </Card>
+                      >
+                        {collection.rationale ? (
+                          <CardRationale>
+                            <Markdown>{collection.rationale}</Markdown>
+                          </CardRationale>
+                        ) : null}
+                        <CollectionGrid
+                          storyIds={storyIds}
+                          showAll={showAllCollections.has(index)}
+                          onShowAll={() => markCollectionShowAll(index)}
+                          storyInfo={storyInfo}
+                          getStoryHref={(storyId) =>
+                            buildReviewStoryHref({ collectionIndex: index, storyId })
+                          }
+                          getStoryPreviewHref={getStoryPreviewHref}
+                          summaryHidden={summaryHidden}
+                        />
+                      </Collapsible>
+                    </Card>
+                  </CollectionLandmark>
                 );
               })
             )}
-            <Footer>
+            <FooterLandmark>
               This review shows the {pluralize(storyCount, 'story', 'stories')} most relevant for
               you to spot-check right now. Because this is AI-curated, results may be inaccurate or
               incomplete.
-            </Footer>
-          </List>
+            </FooterLandmark>
+          </Main>
         </ScrollArea>
       </ListScroll>
     </Page>

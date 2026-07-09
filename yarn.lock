@@ -9205,23 +9205,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-mcp@npm:*":
+"@storybook/addon-mcp@https://pkg.pr.new/storybookjs/mcp/@storybook/addon-mcp@main":
   version: 0.6.0
-  resolution: "@storybook/addon-mcp@npm:0.6.0"
+  resolution: "@storybook/addon-mcp@https://pkg.pr.new/storybookjs/mcp/@storybook/addon-mcp@main"
   dependencies:
-    "@storybook/mcp": "npm:0.7.0"
+    "@storybook/mcp": "https://pkg.pr.new/storybookjs/mcp/@storybook/mcp@f0f41008be3fce9628fabd23042c5cafe4d9f9d1"
     "@tmcp/adapter-valibot": "npm:^0.1.5"
     "@tmcp/transport-http": "npm:^0.8.5"
     picoquery: "npm:^2.5.0"
-    tmcp: "npm:^1.19.3"
+    tmcp: "npm:^1.19.4"
     valibot: "npm:1.2.0"
   peerDependencies:
-    "@storybook/addon-vitest": ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
-    storybook: ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    "@storybook/addon-vitest": ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0
+    storybook: ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0
   peerDependenciesMeta:
     "@storybook/addon-vitest":
       optional: true
-  checksum: 10c0/f1edf6edd3ee242a54f3fb6cfb967a71504cca3ae160b43012d9d25d5485ad521b10d382010732428714ba58ad691c6638ec0a1393f7d16b0e736221f8ded8c0
+  checksum: 10c0/b4beac3d8b6feab69e6c911eb45705bd9e2134d3d217631d31bbfb1eab8a1ecd8d94347895c9560aca5c531c557e16e4384c4d2c1e888318cd678231aa9f460a
   languageName: node
   linkType: hard
 
@@ -9507,7 +9507,7 @@ __metadata:
     "@storybook/addon-designs": "npm:^11.0.3"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-mcp": "npm:*"
+    "@storybook/addon-mcp": "https://pkg.pr.new/storybookjs/mcp/@storybook/addon-mcp@main"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
@@ -9721,15 +9721,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/mcp@npm:0.7.0":
+"@storybook/mcp@https://pkg.pr.new/storybookjs/mcp/@storybook/mcp@f0f41008be3fce9628fabd23042c5cafe4d9f9d1":
   version: 0.7.0
-  resolution: "@storybook/mcp@npm:0.7.0"
+  resolution: "@storybook/mcp@https://pkg.pr.new/storybookjs/mcp/@storybook/mcp@f0f41008be3fce9628fabd23042c5cafe4d9f9d1"
   dependencies:
     "@tmcp/adapter-valibot": "npm:^0.1.5"
     "@tmcp/transport-http": "npm:^0.8.5"
-    tmcp: "npm:^1.19.3"
+    tmcp: "npm:^1.19.4"
     valibot: "npm:1.2.0"
-  checksum: 10c0/56c90e597684e55e40451da47fc41e581d21365f405990c3cfbaaf8a19b71da17ede83399ed1524c6a1726050b0e0ba55474de5344cdeefe0cf9045faccb92b8
+  checksum: 10c0/3887c48f343a1899d168c51ec276c413fe8b6c95704d42554d667706248e7be859b7592d9b3c7b6d013c47230aa42a1c01bd245598c5a6268fefaeb4433bad47
   languageName: node
   linkType: hard
 
@@ -32373,7 +32373,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tmcp@npm:^1.19.3":
+"tmcp@npm:^1.19.4":
   version: 1.19.4
   resolution: "tmcp@npm:1.19.4"
   dependencies:

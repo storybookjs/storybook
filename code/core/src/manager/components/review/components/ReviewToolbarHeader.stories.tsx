@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 import { expect, fn, within } from 'storybook/test';
 
 import { MemoryRouter } from 'storybook/internal/router';
@@ -15,7 +13,6 @@ import { ADDON_ID, EVENTS } from '../constants.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 import { reviewStore } from '../review-store.ts';
-import { useReviewShortcuts } from '../useReviewShortcuts.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 
@@ -125,9 +122,7 @@ const meta = preview.meta({
       >
         <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>
           <ReviewProvider>
-            <ReviewShortcutsHarness>
-              <Story />
-            </ReviewShortcutsHarness>
+            <Story />
           </ReviewProvider>
         </MemoryRouter>
       </ManagerContext.Provider>
@@ -145,11 +140,6 @@ const meta = preview.meta({
     internal_fullStatusStore.unset();
   },
 });
-
-const ReviewShortcutsHarness = ({ children }: { children: ReactNode }) => {
-  useReviewShortcuts();
-  return children;
-};
 
 export const OnReviewedStory = meta.story({
   parameters: {

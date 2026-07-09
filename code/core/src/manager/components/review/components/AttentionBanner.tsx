@@ -1,13 +1,19 @@
-import React, { type FC } from 'react';
+import React, { type FC, useRef } from 'react';
 
 import { Button, Link, PopoverProvider } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { CheckIcon, CopyIcon, TransferIcon } from '@storybook/icons';
+import { useLandmark } from '../../../hooks/useLandmark.ts';
 import { CopyButton } from './CopyButton.tsx';
 
 const STALE_REFRESH_PROMPT =
   'Generate a fresh review including my latest changes using the display-review tool.';
+
+// Landmark wrapper so keyboard/screen-reader users can jump to the review notification via F6.
+const Region = styled.div({
+  flexShrink: 0,
+});
 
 const Bar = styled.div(({ theme }) => ({
   display: 'flex',
@@ -64,56 +70,65 @@ export type AttentionBannerProps =
  */
 export const AttentionBanner: FC<AttentionBannerProps> = (props) => {
   const { kind } = props;
+  const regionRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'region', 'aria-label': 'Review status' },
+    regionRef
+  );
 
   if (kind === 'pending-update') {
     const { onAccept } = props;
     return (
-      <Bar role="status" aria-live="polite">
-        <span>A new review is available.</span>
-        <Button variant="solid" padding="small" onClick={onAccept}>
-          Update
-        </Button>
-      </Bar>
+      <Region ref={regionRef} {...landmarkProps}>
+        <Bar role="status" aria-live="polite">
+          <span>A new review is available.</span>
+          <Button variant="solid" padding="small" onClick={onAccept}>
+            Update
+          </Button>
+        </Bar>
+      </Region>
     );
   }
 
   return (
-    <Bar role="status" aria-live="polite">
-      <span>
-        Code changes detected. This review may be stale.{' '}
-        <PopoverProvider
-          ariaLabel="Prompt to refresh stale review"
-          placement="bottom"
-          padding={0}
-          popover={
-            <PopoverContent>
-              <Message>
-                <Title>Prompt for your agent to refresh this review:</Title>
-                <Prompt>{STALE_REFRESH_PROMPT}</Prompt>
-                <CopyButton
-                  appearance="agentic"
-                  padding="small"
-                  ariaLabel="Copy prompt to refresh this review"
-                  ariaLabelOnCopy="Prompt copied to clipboard"
-                  content={STALE_REFRESH_PROMPT}
-                  childrenOnCopy={
-                    <>
-                      <CheckIcon /> Copy prompt
-                    </>
-                  }
-                >
-                  <CopyIcon />
-                  Copy prompt
-                </CopyButton>
-              </Message>
-            </PopoverContent>
-          }
-        >
-          <Link>
-            <strong>Ask your agent to refresh it.</strong>
-          </Link>
-        </PopoverProvider>
-      </span>
-    </Bar>
+    <Region ref={regionRef} {...landmarkProps}>
+      <Bar role="status" aria-live="polite">
+        <span>
+          Code changes detected. This review may be stale.{' '}
+          <PopoverProvider
+            ariaLabel="Prompt to refresh stale review"
+            placement="bottom"
+            padding={0}
+            popover={
+              <PopoverContent>
+                <Message>
+                  <Title>Prompt for your agent to refresh this review:</Title>
+                  <Prompt>{STALE_REFRESH_PROMPT}</Prompt>
+                  <CopyButton
+                    appearance="agentic"
+                    padding="small"
+                    ariaLabel="Copy prompt to refresh this review"
+                    ariaLabelOnCopy="Prompt copied to clipboard"
+                    content={STALE_REFRESH_PROMPT}
+                    childrenOnCopy={
+                      <>
+                        <CheckIcon /> Copy prompt
+                      </>
+                    }
+                  >
+                    <CopyIcon />
+                    Copy prompt
+                  </CopyButton>
+                </Message>
+              </PopoverContent>
+            }
+          >
+            <Link>
+              <strong>Ask your agent to refresh it.</strong>
+            </Link>
+          </PopoverProvider>
+        </span>
+      </Bar>
+    </Region>
   );
 };

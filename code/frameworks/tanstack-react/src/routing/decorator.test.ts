@@ -98,3 +98,59 @@ describe('createStoryRouter with a pathless layout that already has an index chi
     expect(router.state.location.pathname).toBe('/products');
   });
 });
+
+// Explicit `path` selection previously compared init-backed `fullPath`
+// getters (always undefined on clones), so it silently fell through to the
+// bound route or the root's first child.
+describe('createStoryRouter leaf selection by path', () => {
+  it('selects the route matching an explicit path when only the routeTree is bound', async () => {
+    const root = createRootRoute();
+    const home = createRoute({ path: '/', getParentRoute: () => root });
+    const about = createRoute({ path: '/about', getParentRoute: () => root });
+    root.addChildren([home, about]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/about' }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/about');
+    expect((router as any).routesById['/about'].options.component).toBeDefined();
+    expect((router as any).routesById['/'].options.component).toBeUndefined();
+  });
+
+  it('selects a param route by interpolating the provided params', async () => {
+    const root = createRootRoute();
+    const list = createRoute({ path: '/users', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([list, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/42', params: { userId: '42' } }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/users/42');
+    expect((router as any).routesById['/users/$userId'].options.component).toBeDefined();
+    expect((router as any).routesById['/users'].options.component).toBeUndefined();
+  });
+
+  it('prefers the bound route when its mount path matches the explicit path', async () => {
+    const root = createRootRoute();
+    const post = createRoute({ path: '/posts/$postId', getParentRoute: () => root });
+    const postIndex = createRoute({ path: '/', getParentRoute: () => post });
+    post.addChildren([postIndex]);
+    root.addChildren([post]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(postIndex, { path: '/posts/$postId' }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/posts/$postId/'].options.component).toBeDefined();
+    expect((router as any).routesById['/posts/$postId'].options.component).toBeUndefined();
+  });
+});

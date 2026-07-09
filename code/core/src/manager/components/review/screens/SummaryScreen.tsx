@@ -239,10 +239,13 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
   );
 };
 
+// A `contentinfo` landmark must stay top-level, but this footer is rendered
+// inside the `main` landmark, so it is exposed as a named `region` instead
+// (a `<footer>` nested in `<main>` has no implicit `contentinfo` role).
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const { landmarkProps } = useLandmark(
-    { role: 'contentinfo', 'aria-label': 'About this review' },
+    { role: 'region', 'aria-label': 'About this review' },
     regionRef
   );
   return (

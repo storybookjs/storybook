@@ -15,6 +15,15 @@ interface WebsocketTransportArgs extends Partial<Config> {
 
 export const HEARTBEAT_INTERVAL = 15000;
 export const HEARTBEAT_MAX_LATENCY = 5000;
+const HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY;
+
+/**
+ * If the heartbeat timer fires this much later than scheduled, the main thread was blocked at the
+ * deadline (e.g. a message backlog draining, a GC pause, or a heavy render). Queued messages —
+ * including the server's pings — may not have been processed yet, so the silence is not evidence
+ * of a dead connection.
+ */
+export const HEARTBEAT_STARVATION_SLACK = 1000;
 
 const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
 
@@ -31,12 +40,23 @@ export class WebsocketTransport implements ChannelTransport {
 
   private pingTimeout: number | NodeJS.Timeout = 0;
 
-  private heartbeat() {
+  private heartbeat(isGraceWindow = false) {
     clearTimeout(this.pingTimeout);
 
+    const armedAt = performance.now();
     this.pingTimeout = setTimeout(() => {
+      const firedLate =
+        performance.now() - armedAt > HEARTBEAT_TIMEOUT + HEARTBEAT_STARVATION_SLACK;
+      if (firedLate && !isGraceWindow) {
+        // The main thread was blocked past the deadline, so incoming messages (including the
+        // server's pings) may still be queued behind this callback. Grant one full extra window
+        // instead of killing a likely-healthy connection. Any message received in the meantime
+        // re-arms the heartbeat with a fresh grace allowance.
+        this.heartbeat(true);
+        return;
+      }
       this.socket.close(3008, 'timeout');
-    }, HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY);
+    }, HEARTBEAT_TIMEOUT);
   }
 
   constructor({ url, onError, page }: WebsocketTransportArgs) {

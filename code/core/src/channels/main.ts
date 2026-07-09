@@ -127,6 +127,17 @@ export class Channel implements ChannelLike {
     this.removeListener(eventName, listener);
   }
 
+  /**
+   * Delivers an event that arrived from an external source, exactly as if it had been received
+   * from one of this channel's transports: local listeners are invoked, but the event is NOT
+   * re-broadcast to the channel's transports. Use this instead of `emit` when relaying an event
+   * that external clients either already received or will receive through another mechanism, to
+   * avoid duplicate delivery.
+   */
+  receive(event: ChannelEvent) {
+    this.handleEvent(event);
+  }
+
   private handleEvent(event: ChannelEvent) {
     const listeners = this.listeners(event.type);
     if (listeners && listeners.length) {

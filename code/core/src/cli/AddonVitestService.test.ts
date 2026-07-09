@@ -225,6 +225,42 @@ describe('AddonVitestService', () => {
     });
   });
 
+  describe('resolveVitestVersionSpecifier', () => {
+    it('prefers the installed version', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: 'catalog:' });
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue('3.2.1');
+
+      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('3.2.1');
+      // Installed version short-circuits — the catalog is not consulted.
+      expect(mockPackageManager.getCatalogVersion).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the catalog entry when not installed', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        vitest: 'catalog:testing',
+      });
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getCatalogVersion).mockReturnValue('^3.2.0');
+
+      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('^3.2.0');
+      expect(mockPackageManager.getCatalogVersion).toHaveBeenCalledWith('vitest', 'testing');
+    });
+
+    it('falls back to a plain declared semver range when not installed', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: '^3.2.0' });
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+
+      await expect(service.resolveVitestVersionSpecifier()).resolves.toBe('^3.2.0');
+    });
+
+    it('returns null for a non-semver protocol specifier', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ vitest: 'workspace:*' });
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+
+      await expect(service.resolveVitestVersionSpecifier()).resolves.toBeNull();
+    });
+  });
+
   describe('validatePackageVersions', () => {
     it('should return compatible when vitest >=3.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)

@@ -40,6 +40,29 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Resolve the Vitest version/range used both to keep the derived `@vitest/*` packages on a
+   * compatible major and to select the right config template. Prefers the resolved installed
+   * version, then a pnpm catalog entry when vitest is declared as `catalog:` / `catalog:<name>`,
+   * then a plain declared semver range. Non-semver protocol specifiers (`workspace:`, an
+   * unregistered `catalog:`, ...) resolve to null so they are never copied onto other packages.
+   */
+  async resolveVitestVersionSpecifier(): Promise<string | null> {
+    const declared = this.packageManager.getAllDependencies()['vitest'];
+
+    let specifier = await this.packageManager.getInstalledVersion('vitest');
+    if (!specifier && declared) {
+      const catalogMatch = declared.match(/^catalog:(.*)$/);
+      if (catalogMatch) {
+        const catalogName = catalogMatch[1].trim() || undefined;
+        specifier = this.packageManager.getCatalogVersion('vitest', catalogName);
+      } else if (validRange(declared)) {
+        specifier = declared;
+      }
+    }
+    return specifier;
+  }
+
+  /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
    * Returns versioned package strings ready for installation:
@@ -57,20 +80,11 @@ export class AddonVitestService {
     // `catalog:` specifier onto them produces e.g. `@vitest/coverage-v8@catalog:`, which fails
     // install because no such catalog entry exists.
     const catalogMatch = allDeps['vitest']?.match(/^catalog:(.*)$/);
-    const catalogName = catalogMatch?.[1] || undefined;
+    const catalogName = catalogMatch?.[1]?.trim() || undefined;
 
-    // Determine the Vitest version/range used to keep the derived `@vitest/*` packages on a
-    // compatible major. Prefer the resolved installed version, then the catalog entry, then a plain
-    // declared semver range. Protocol specifiers like `catalog:`/`workspace:` are never copied
-    // verbatim onto the derived packages.
-    let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!vitestVersionSpecifier) {
-      if (catalogMatch) {
-        vitestVersionSpecifier = this.packageManager.getCatalogVersion('vitest', catalogName);
-      } else if (allDeps['vitest'] && validRange(allDeps['vitest'])) {
-        vitestVersionSpecifier = allDeps['vitest'];
-      }
-    }
+    // Resolve the Vitest version/range (catalog-aware) to keep the derived `@vitest/*` packages on a
+    // compatible major.
+    const vitestVersionSpecifier = await this.resolveVitestVersionSpecifier();
 
     let isVitest4OrNewer = true;
     if (vitestVersionSpecifier) {

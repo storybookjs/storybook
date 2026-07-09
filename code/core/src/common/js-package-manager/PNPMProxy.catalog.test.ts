@@ -56,6 +56,13 @@ describe('PNPMProxy catalogs', () => {
 
       expect(pnpmProxy.getCatalogVersion('vitest')).toBeNull();
     });
+
+    it('reads a bare numeric pin that YAML parses as a number', () => {
+      // `vitest: 4` parses as the number 4; it must not be silently dropped.
+      vi.mocked(readFileSync).mockReturnValue('catalog:\n  vitest: 4\n' as any);
+
+      expect(pnpmProxy.getCatalogVersion('vitest')).toBe('4');
+    });
   });
 
   describe('syncWorkspaceCatalog', () => {

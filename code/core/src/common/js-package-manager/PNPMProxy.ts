@@ -249,7 +249,9 @@ export class PNPMProxy extends JsPackageManager {
     try {
       const doc = parseDocument(readFileSync(workspaceYamlPath, 'utf8'));
       const version = doc.getIn([...this.#catalogKeyPath(catalogName), packageName]);
-      return typeof version === 'string' ? version : null;
+      // Catalog pins are strings, but YAML parses a bare numeric range like `vitest: 4` as a number.
+      // Accept those too rather than silently dropping the pin.
+      return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
     } catch (e) {
       logger.debug(`Could not read pnpm catalog from ${workspaceYamlPath}: ${String(e)}`);
       return null;

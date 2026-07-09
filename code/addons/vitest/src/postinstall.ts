@@ -70,20 +70,14 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const allDeps = packageManager.getAllDependencies();
 
-  // Determine Vitest version/range from installed or declared dependency to avoid pulling
-  // incompatible majors by default.
-  let vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  if (!vitestVersionSpecifier && allDeps['vitest']) {
-    vitestVersionSpecifier = allDeps['vitest'];
-  }
+  const addonVitestService = new AddonVitestService(packageManager);
 
-  /**
-   * Coerce the version specifier to a version string
-   *
-   * This removed any version range specifiers like ^, ~, etc. which is needed to check with
-   * semver.satisfies.
-   */
-  vitestVersionSpecifier = coerce(vitestVersionSpecifier)?.version ?? null;
+  // Determine the Vitest version/range (catalog-aware, so a pnpm `catalog:` specifier resolves to
+  // the real version) to avoid pulling incompatible majors and to select the right config template.
+  // Coerce to a plain version string, dropping range specifiers like ^ or ~, so it can be checked
+  // with semver.satisfies below.
+  const vitestVersionSpecifier =
+    coerce(await addonVitestService.resolveVitestVersionSpecifier())?.version ?? null;
 
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
@@ -99,8 +93,6 @@ export default async function postInstall(options: PostinstallOptions) {
   // framework/builder — causing the prerequisite check below to fail incorrectly.
   const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
-
-  const addonVitestService = new AddonVitestService(packageManager);
 
   // Use AddonVitestService for compatibility validation
   const compatibilityResult = await addonVitestService.validateCompatibility({

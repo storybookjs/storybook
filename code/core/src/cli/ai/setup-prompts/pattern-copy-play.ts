@@ -10,6 +10,8 @@
  * Update this header when iterating: bump the iteration number and link the
  * latest eval run so reviewers can compare variants without spelunking git.
  */
+import { getMswInitCommand, getVitestStorybookRunCommand } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';
@@ -450,6 +452,11 @@ function getPageStoryExample(projectInfo: ProjectInfo): string {
 export function instructions(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
   const typeImport = getTypeImportSource(projectInfo);
+  const mswInit = getMswInitCommand(projectInfo.packageManager);
+  const vitestRunFile = getVitestStorybookRunCommand(
+    projectInfo.packageManager,
+    '<path-to-story-file>'
+  );
 
   return dedent`
     Attention: The following instructions must be followed in order to successfully set up Storybook in this project. Do not skip steps or attempt to do them out of order.
@@ -602,7 +609,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     All network/data queries should be handled by the default Storybook environment.
 
     - Always use \`msw-storybook-addon\` for query mocking.
-    - If you introduce MSW, run \`npx msw init ./public --save\` to create the worker file.
+    - If you introduce MSW, run \`${mswInit}\` to create the worker file.
     - Make sure Storybook serves \`./public\` as a static dir so \`mockServiceWorker.js\` is available.
     - Do not mock \`fetch\` directly.
     - Network/data queries should return deterministic mock data.
@@ -824,7 +831,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     As you work, verify the stories with Vitest:
 
     \`\`\`bash
-    npx vitest --project storybook <path-to-story-file>
+    ${vitestRunFile}
     \`\`\`
 
     Also verify types so you catch missing required props, broken imports, and preview typing issues. Run the same TypeScript command the project itself uses.

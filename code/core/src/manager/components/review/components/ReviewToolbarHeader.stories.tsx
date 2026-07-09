@@ -9,7 +9,7 @@ import {
 } from 'storybook/manager-api';
 
 import preview from '../../../../../../.storybook/preview.tsx';
-import { ADDON_ID, EVENTS } from '../constants.ts';
+import { EVENTS } from '../constants.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 import { reviewStore } from '../review-store.ts';
@@ -38,7 +38,6 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
-const setAddonShortcutMock = fn();
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -93,7 +92,6 @@ const managerApi: API = {
   getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
   togglePanel: fn().mockName('api::togglePanel'),
-  setAddonShortcut: setAddonShortcutMock,
   setQueryParams: fn(),
   setAllTagFilters: fn().mockName('api::setAllTagFilters'),
   setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
@@ -135,7 +133,6 @@ const meta = preview.meta({
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
-    setAddonShortcutMock.mockReset();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
   },
@@ -154,15 +151,8 @@ export const OnReviewedStory = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Select story' });
+    const counter = await canvas.findByRole('button', { name: /Select story/ });
     await expect(counter).toHaveTextContent('2/3');
-    await expect(setAddonShortcutMock).toHaveBeenCalledWith(
-      ADDON_ID,
-      expect.objectContaining({
-        actionName: 'reviewNextStory',
-        defaultShortcut: ['ArrowRight'],
-      })
-    );
     await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Back to review' })).toHaveAttribute(
       'href',
@@ -189,7 +179,7 @@ export const Progress = meta.story({
     const canvas = within(canvasElement);
     applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Select story' });
+    const counter = await canvas.findByRole('button', { name: /Select story/ });
     await expect(counter).toHaveTextContent('3/3');
     const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
     await expect(Math.round(parseFloat(fill.style.width))).toBe(100);

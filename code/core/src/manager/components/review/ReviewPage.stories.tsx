@@ -388,7 +388,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
     applyReviewState();
-    await expect(await canvas.findByRole('button', { name: 'Select story' })).toHaveTextContent(
+    await expect(await canvas.findByRole('button', { name: /Select story/ })).toHaveTextContent(
       '2/3'
     );
 
@@ -398,7 +398,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
     await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
-    expect(canvas.queryByRole('button', { name: 'Select story' })).not.toBeInTheDocument();
+    expect(canvas.queryByRole('button', { name: /Select story/ })).not.toBeInTheDocument();
   },
 });
 

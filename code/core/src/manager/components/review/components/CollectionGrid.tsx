@@ -130,8 +130,6 @@ const Frame = styled.a(({ theme }) => ({
   },
   '&:focus-visible': {
     outline: `${theme.barSelectedColor} solid 2px`,
-    // Inset the outline so the focus ring stays fully visible inside the cell's
-    // `overflow: hidden` clipping.
     outlineOffset: -2,
   },
 }));

@@ -10,12 +10,10 @@
  * Update this header when iterating: bump the iteration number and link the
  * latest eval run so reviewers can compare variants without spelunking git.
  */
+import { getMswInitCommand, getVitestStorybookRunCommand } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 
-import {
-  getMswInitCommand,
-  getVitestStorybookRunCommand,
-} from '../../../common/js-package-manager/util.ts';
 import type { ProjectInfo } from '../types.ts';
 import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
 import { getTypeImportSource } from '../utils/type-import-source.ts';

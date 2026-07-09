@@ -1,8 +1,7 @@
+import { getMswInitCommand, getVitestStorybookRunCommand } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
-import {
-  getMswInitCommand,
-  getVitestStorybookRunCommand,
-} from '../../../../common/js-package-manager/util.ts';
+
 import type { SetupInstructionsContext as InstructionsContext, ProjectInfo } from '../../types.ts';
 import {
   getInteractionPlayExample,

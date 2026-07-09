@@ -182,6 +182,20 @@ export function mountPathFor(route: AnyRoute): string {
 }
 
 /**
+ * The original (pre-clone) id of a cloned route — the key users address it by
+ * in `routeOverrides`. The clone's own `id` getter is init-backed and
+ * undefined at resolution time.
+ */
+export function originalRouteId(tree: DuplicatedTree, route: AnyRoute): string | undefined {
+  for (const [id, cloned] of tree.byId) {
+    if (cloned === route) {
+      return id;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Picks the route in the cloned tree that should host the `<Story />`.
  *
  * Resolution order:

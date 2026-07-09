@@ -98,3 +98,26 @@ describe('createStoryRouter with a pathless layout that already has an index chi
     expect(router.state.location.pathname).toBe('/products');
   });
 });
+
+// Overrides are keyed by the ORIGINAL route id; the cloned leaf's `id` getter
+// is init-backed and undefined at injection time, so the guard that respects
+// a user's component override must resolve the original id instead.
+describe('createStoryRouter with routeOverrides', () => {
+  it('respects a component override on the story-bound route', async () => {
+    const root = createRootRoute();
+    const page = createRoute({ path: '/page', getParentRoute: () => root });
+    root.addChildren([page]);
+    const Marker = () => null;
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(page, {
+        routeOverrides: { '/page': { component: Marker } },
+      }),
+    });
+    await router.load();
+
+    const clonedPage = (router as any).routesById['/page'];
+    expect(clonedPage.options.component).toBe(Marker);
+  });
+});

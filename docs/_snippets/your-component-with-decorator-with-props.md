@@ -8,7 +8,7 @@
   const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
-      (_, { parameters }) => ({
+      (story, { parameters }) => ({
         Component: MarginDecorator,
         // 👇 Pass props to the MarginDecorator component
         props: { size: parameters.smallMargin ? 'small' : 'medium' },
@@ -25,7 +25,7 @@ import MarginDecorator from './MarginDecorator.svelte';
 export default {
   component: YourComponent,
   decorators: [
-    (_, { parameters }) => ({
+    (story, { parameters }) => ({
       Component: MarginDecorator,
       // 👇 Pass props to the MarginDecorator component
       props: { size: parameters.smallMargin ? 'small' : 'medium' },
@@ -44,7 +44,7 @@ export default {
   const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
-      (_, { parameters }) => ({
+      (story, { parameters }) => ({
         Component: MarginDecorator,
         // 👇 Pass props to the MarginDecorator component
         props: { size: parameters.smallMargin ? 'small' : 'medium' },
@@ -64,7 +64,7 @@ import MarginDecorator from './MarginDecorator.svelte';
 const meta = {
   component: YourComponent,
   decorators: [
-    (_, { parameters }) => ({
+    (story, { parameters }) => ({
       Component: MarginDecorator,
       // 👇 Pass props to the MarginDecorator component
       props: { size: parameters.smallMargin ? 'small' : 'medium' },

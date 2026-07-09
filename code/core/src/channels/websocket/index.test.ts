@@ -47,8 +47,6 @@ class MockWebSocket {
   }
 }
 
-vi.stubGlobal('WebSocket', MockWebSocket);
-
 const createConnectedTransport = () => {
   const handler = vi.fn();
   const onError = vi.fn();
@@ -68,11 +66,13 @@ const sentEvents = (socket: MockWebSocket) => socket.sent.map((data) => parse(da
 describe('WebsocketTransport heartbeat', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.stubGlobal('WebSocket', MockWebSocket);
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('closes with code 3008 when no message is received within the timeout window', () => {

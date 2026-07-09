@@ -64,7 +64,12 @@ describe('detectMissedTransformations', () => {
 
     const result = await detectMissedTransformations({
       patterns: [
-        { fixId: 'my-fix', label: '@storybook/old-package', regex: /@storybook\/old-package/ },
+        {
+          fixId: 'my-fix',
+          label: '@storybook/old-package',
+          regex: /@storybook\/old-package/,
+          replacement: '@storybook/new-package',
+        },
       ],
       safeFiles: [],
       safeDirs: ['/project/root/.storybook'],
@@ -75,6 +80,7 @@ describe('detectMissedTransformations', () => {
         file: '/project/root/packages/other-app/src/Button.stories.ts',
         fixId: 'my-fix',
         label: '@storybook/old-package',
+        replacement: '@storybook/new-package',
       },
     ]);
   });
@@ -87,7 +93,12 @@ describe('detectMissedTransformations', () => {
 
     const result = await detectMissedTransformations({
       patterns: [
-        { fixId: 'my-fix', label: '@storybook/old-package', regex: /@storybook\/old-package/ },
+        {
+          fixId: 'my-fix',
+          label: '@storybook/old-package',
+          regex: /@storybook\/old-package/,
+          replacement: '@storybook/new-package',
+        },
       ],
       safeFiles: [],
       safeDirs: [],
@@ -98,6 +109,7 @@ describe('detectMissedTransformations', () => {
         file: '/project/root/packages/app/src/index.ts',
         fixId: 'my-fix',
         label: '@storybook/old-package',
+        replacement: '@storybook/new-package',
       },
     ]);
   });
@@ -110,7 +122,12 @@ describe('detectMissedTransformations', () => {
 
     const result = await detectMissedTransformations({
       patterns: [
-        { fixId: 'my-fix', label: '@storybook/old-package', regex: /@storybook\/old-package/ },
+        {
+          fixId: 'my-fix',
+          label: '@storybook/old-package',
+          regex: /@storybook\/old-package/,
+          replacement: '@storybook/new-package',
+        },
       ],
       safeFiles: [],
       safeDirs: [],
@@ -136,7 +153,12 @@ describe('detectMissedTransformations', () => {
 
     const result = await detectMissedTransformations({
       patterns: [
-        { fixId: 'my-fix', label: '@storybook/old-package', regex: /@storybook\/old-package/ },
+        {
+          fixId: 'my-fix',
+          label: '@storybook/old-package',
+          regex: /@storybook\/old-package/,
+          replacement: '@storybook/new-package',
+        },
       ],
       safeFiles: [],
       safeDirs: [],
@@ -147,6 +169,7 @@ describe('detectMissedTransformations', () => {
         file: '/project/root/packages/app/src/ok.ts',
         fixId: 'my-fix',
         label: '@storybook/old-package',
+        replacement: '@storybook/new-package',
       },
     ]);
   });

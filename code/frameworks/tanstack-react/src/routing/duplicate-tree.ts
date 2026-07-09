@@ -1,5 +1,10 @@
 import type { AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import { createRoute, RootRoute, createRootRouteWithContext } from '@tanstack/react-router';
+import {
+  createRoute,
+  RootRoute,
+  createRootRouteWithContext,
+  joinPaths,
+} from '@tanstack/react-router';
 
 import type { RouteTreeOverrides } from './types.ts';
 
@@ -140,6 +145,30 @@ export function duplicateRouteTree(
   }
 
   return { root: newRoot, byId };
+}
+
+/**
+ * URL contributed by a route's pathful ancestors (pathless segments contribute
+ * nothing). A bare `/` segment (an index route) likewise contributes nothing
+ * beyond its parent's own path — including it as a literal segment would
+ * leave a stray trailing slash once `joinPaths` collapses the rest.
+ *
+ * Cloned routes are not `init()`ed until `createRouter()` runs, so their
+ * `fullPath`/`id` getters are undefined at resolution time; this walk reads
+ * the cloned parent chain's options instead.
+ */
+export function mountPathFor(route: AnyRoute): string {
+  const segments: string[] = [];
+  let current: AnyRoute | undefined = route;
+  for (let i = 0; i < MAX_PARENT_WALK && current; i += 1) {
+    const routePath = (current as any).options?.path as string | undefined;
+    if (routePath && routePath !== '/') {
+      segments.unshift(routePath);
+    }
+    const getParent: (() => AnyRoute) | undefined = (current as any).options?.getParentRoute;
+    current = typeof getParent === 'function' ? getParent() : undefined;
+  }
+  return joinPaths(['/', ...segments]);
 }
 
 /**

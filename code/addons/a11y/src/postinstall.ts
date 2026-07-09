@@ -29,11 +29,12 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  // stdio must not be left as open pipes: the nested CLI (and the npm exec layers in between)
-  // can block on them forever, which freezes the outer upgrade/add command without any output.
+  // stdin must not be left as an open pipe: the nested CLI (and the npm exec layers in between)
+  // never receive EOF on it and block forever, which freezes the outer upgrade/add command
+  // without any output. stdout/stderr stay piped so a failure still carries the child's output.
   await jsPackageManager.runPackageCommand({
     args,
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
     useRemotePkg: !!options.skipInstall,
   });
 }

@@ -1,33 +1,24 @@
-import type { DocgenProviderPreset } from 'storybook/internal/types';
+import { fileURLToPath } from 'node:url';
+
+import type { DocgenProviderDescriptor } from 'storybook/internal/types';
 
 /**
- * Phase-1 mock docgen provider for the React renderer.
+ * React renderer docgen provider.
  *
- * Bails to `nextDocgen` for paths that don't look like CSF story files (e.g. `.mdx`
- * attached-docs). For CSF paths it synthesizes a deterministic name + description from the
- * importPath, merged with downstream via the documented spread + `??` idiom so unknown fields
- * are preserved.
+ * Contributes a {@link DocgenProviderDescriptor} pointing at {@link ./docgen-worker.ts}, which
+ * core's docgen worker imports and runs off the main thread. The renderer owns no threading code —
+ * it only resolves the worker module path; nothing else needs to cross the worker boundary, since
+ * `react-component-meta` extraction reads nothing from the user's `typescript` options (see
+ * {@link ./docgen-worker.ts}).
  *
- * Phase 3 will replace this body with a real RCM-backed provider.
+ * The descriptor is appended to the accumulated array so addon providers can stack on top, mirroring
+ * the previous middleware chain — just composed inside the worker instead of in this process.
  */
-export const experimental_docgenProvider: DocgenProviderPreset = async (nextDocgen) => {
-  return async (input) => {
-    if (!/\.stories\.[cm]?[jt]sx?$/.test(input.importPath)) {
-      return nextDocgen(input);
-    }
-
-    const downstream = await nextDocgen(input);
-    const componentId = input.importPath
-      .replace(/^.*\//, '')
-      .replace(/\.stories\.[cm]?[jt]sx?$/, '');
-    const fallbackDescription = `Mocked docgen for ${input.importPath}`;
-
-    return {
-      ...downstream,
-      componentId: downstream?.componentId ?? componentId,
-      name: downstream?.name ?? componentId,
-      description: downstream?.description ?? fallbackDescription,
-      props: downstream?.props ?? [],
-    };
-  };
-};
+export const experimental_docgenProvider = async (
+  existing: DocgenProviderDescriptor[] = []
+): Promise<DocgenProviderDescriptor[]> => [
+  ...existing,
+  {
+    moduleSpecifier: fileURLToPath(import.meta.resolve('@storybook/react/internal/docgen-worker')),
+  },
+];

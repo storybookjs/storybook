@@ -44,6 +44,7 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
@@ -56,6 +57,7 @@ const defaultOptions = {
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
   disableAddonDocs: true,
+  initialGlobals: {},
 } satisfies UserOptions;
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -374,6 +376,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
+            [STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY]: finalOptions.initialGlobals,
           },
 
           include: [...includeStories, ...getComponentTestPaths()],

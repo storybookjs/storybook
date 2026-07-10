@@ -36,7 +36,7 @@ export interface RunOptions<ResultType> {
    * hook can only be resolved once the package is on disk, and automigrate batches installs to the
    * end of the run.
    */
-  addonsToConfigure?: string[];
+  addonsToPostinstall?: string[];
 }
 
 /**

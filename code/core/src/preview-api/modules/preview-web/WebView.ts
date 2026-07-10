@@ -74,7 +74,10 @@ export class WebView implements View<HTMLElement> {
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
 
-    return this.storyRoot();
+    const storyRoot = this.storyRoot();
+    this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
+
+    return storyRoot;
   }
 
   storyRoot(): HTMLElement {
@@ -116,6 +119,17 @@ export class WebView implements View<HTMLElement> {
     document.body.classList.remove(this.currentLayoutClass!);
     document.body.classList.add(layoutClass);
     this.currentLayoutClass = layoutClass;
+  }
+
+  /**
+   * Injects a BCP-47 lang attribute to the story root, or removes it if `lang` is null.
+   */
+  applyHtmlLang(element: HTMLElement, lang?: string) {
+    if (lang) {
+      element.setAttribute('lang', lang);
+    } else {
+      element.removeAttribute('lang');
+    }
   }
 
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {

@@ -295,6 +295,7 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+
   await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
@@ -313,6 +314,7 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    configDir: options.configDir,
     mcp,
     port,
     storybookVersion,

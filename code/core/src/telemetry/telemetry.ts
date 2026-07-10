@@ -66,18 +66,28 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
   const sessionId = await getSessionId();
   const eventId = nanoid();
   const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
+  const signal = AbortSignal.timeout(30_000);
+  const maxRetries = 3;
 
   return retryingFetch(URL, {
     method: 'post',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
-    retries: 3,
-    retryOn: [503, 504],
     retryDelay: (attempt: number) =>
       2 ** attempt *
       (typeof options?.retryDelay === 'number' && !Number.isNaN(options?.retryDelay)
         ? options.retryDelay
         : 1000),
+    retryOn: (attempt, error, response) => {
+      // If explicitly aborted (e.g. by the timeout above), or if we've exhausted our retries, give up.
+      if (signal.aborted || attempt >= maxRetries) {
+        return false;
+      }
+
+      // Retry transient network errors and server-overload responses.
+      return Boolean(error) || response?.status === 503 || response?.status === 504;
+    },
+    signal,
   });
 };
 

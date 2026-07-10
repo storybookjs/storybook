@@ -260,11 +260,13 @@ export type AutomigrationResult = {
   automigrationStatuses: Record<FixId, FixStatus>;
   automigrationErrors: Record<FixId, ErrorMessage>;
   /**
-   * Core addons added by fixes whose postinstall configuration must run after dependencies are
-   * installed. The upgrade flow installs once all projects' automigrations have run, so it
-   * configures these afterwards (see `upgrade.ts`).
+   * Core addons whose postinstall configuration must run AFTER dependencies are installed. A fix
+   * that adds a core addon via `add(..., { skipPostinstall: true })` pushes the addon name here.
+   * Deferral is required because an addon's postinstall hook can only be resolved once the package
+   * is on disk, and the upgrade flow batches installs to the end of the run (after all projects'
+   * automigrations); it configures these addons afterwards (see `upgrade.ts`).
    */
-  addonsToConfigure?: string[];
+  addonsToPostinstall?: string[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
@@ -346,7 +348,7 @@ export async function runAutomigrationsForProjects(
     const fixResults: Record<FixId, FixStatus> = {};
     const fixFailures: Record<FixId, ErrorMessage> = {};
     // Core addons added by fixes that must be configured after the upgrade installs dependencies.
-    const addonsToConfigure: string[] = [];
+    const addonsToPostinstall: string[] = [];
 
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
@@ -388,7 +390,7 @@ export async function runAutomigrationsForProjects(
             storybookVersion: project.storybookVersion,
             storiesPaths: project.storiesPaths,
             yes,
-            addonsToConfigure,
+            addonsToPostinstall,
           };
 
           await fix.run(runOptions);
@@ -420,7 +422,7 @@ export async function runAutomigrationsForProjects(
     projectResults[configDir] = {
       automigrationStatuses: fixResults,
       automigrationErrors: fixFailures,
-      addonsToConfigure,
+      addonsToPostinstall,
     };
   }
 

@@ -1,166 +1,168 @@
+import { normalize } from 'pathe';
 import { vi } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import { getService } from '../../shared/open-service/server.ts';
+import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
+import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
+import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
+import type { QueryState } from '../../shared/open-service/types.ts';
 
-import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/index.ts';
-import { ChangeDetectionService } from './ChangeDetectionService.ts';
+/** Wraps a value as a settled `success`/`idle` {@link QueryState}, mirroring a real subscription emission. */
+function toSuccessState<TData>(data: TData): QueryState<TData> {
+  return {
+    data,
+    error: undefined,
+    status: 'success',
+    loadStatus: 'idle',
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    isLoading: false,
+    isInitialLoading: false,
+    isRefreshing: false,
+  };
+}
 import {
-  ChangeDetectionResolverFactory,
-  DependencyGraphBuilder,
-  IncrementalPatcher,
-  ReverseIndexImpl,
-} from './dependency-graph/index.ts';
-import { StoryDependencyGraphService } from './StoryDependencyGraphService.ts';
+  errorToErrorLike,
+  toStoryIndexPath,
+} from '../../shared/open-service/services/module-graph/types.ts';
+import { ChangeDetectionService } from './change-detection-service.ts';
+
+export {
+  createDeferred,
+  createMockAdapter,
+  createStoryIndex,
+  buildReverseIndex,
+  installDependencyGraphMocks,
+  type MockAdapterHandle,
+} from '../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Shared scaffolding for the change-detection unit tests. The dependency-graph constructors are
- * mocked per test file (each file declares its own `vi.mock('./dependency-graph/index.ts', ...)`);
- * these helpers drive those mocks and build synthetic adapters / indexes / reverse indexes.
+ * Installs a `getService('core/module-graph')` mock backed by a real {@link ModuleGraphEngine}
+ * instance (for tests that call `graph.start(adapter)`).
  */
-
-export function createDeferred<T>() {
-  let resolve!: (value: T) => void;
-
-  return {
-    promise: new Promise<T>((fulfill) => {
-      resolve = fulfill;
-    }),
-    resolve,
+export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
+  let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
+  let graphRevision = 0;
+  let latestChangedStoryFiles: string[] = [];
+  const statusSubscribers = new Set<(next: QueryState<ModuleGraphStatus>) => void>();
+  const revisionSubscribers = new Set<(next: QueryState<number>) => void>();
+  const emitStatus = () => {
+    statusSubscribers.forEach((subscriber) => subscriber(toSuccessState(status)));
   };
-}
+  const emitRevision = () => {
+    revisionSubscribers.forEach((subscriber) => subscriber(toSuccessState(graphRevision)));
+  };
+  const storiesForFiles = ({ files }: { files: string[] }) =>
+    files.map((file) => {
+      const hits = engine.lookup(normalize(file));
+      return [...hits.entries()].map(([storyFile, depth]) => ({
+        storyFile: toStoryIndexPath(storyFile, '/repo'),
+        depth,
+      }));
+    });
 
-export function createStoryIndex(
-  entries: Array<{ storyId: string; importPath: string; title?: string; name?: string }>
-): StoryIndex {
-  return {
-    v: 5,
-    entries: Object.fromEntries(
-      entries.map(({ storyId, importPath, title = 'Story', name = 'Default' }) => [
-        storyId,
-        {
-          id: storyId,
-          type: 'story',
-          subtype: 'story',
-          title,
-          name,
-          importPath,
+  vi.mocked(getService).mockReturnValue({
+    queries: {
+      status: {
+        get: () => status,
+        loaded: async () => {
+          await engine.whenSettled();
+          return status;
         },
-      ])
-    ),
-  };
-}
-
-export interface MockAdapterHandle {
-  adapter: ChangeDetectionAdapter;
-  emitFileChange: (event: FileChangeEvent) => void;
-  emitStartupFailure: (event: { reason: string; error?: Error }) => void;
-  hasFileChangeSubscriber: () => boolean;
-  hasStartupFailureSubscriber: () => boolean;
-}
-
-/**
- * Constructs a {@link StoryDependencyGraphService} wired to a {@link ChangeDetectionService} the
- * same way the dev-server does: the graph is always injected, and its lifecycle callbacks are
- * routed to the service's `onGraph*` handlers. Tests drive `graph.start(adapter)` and
- * `service.start(adapter, enabled)` themselves (to keep timing control) and dispose both.
- */
-export function createWiredChangeDetection(options: Omit<ChangeDetectionServiceOptions, 'graph'>): {
-  service: ChangeDetectionService;
-  graph: StoryDependencyGraphService;
-} {
-  const ref: { current?: ChangeDetectionService } = {};
-  const graph = new StoryDependencyGraphService({
-    storyIndexGeneratorPromise: options.storyIndexGeneratorPromise,
-    workingDir: options.workingDir,
-    onReady: () => ref.current?.onGraphReady(),
-    onChange: () => ref.current?.onGraphChange(),
-    onError: (error) => ref.current?.onGraphError(error),
-    onUnavailable: (reason, error) => ref.current?.onGraphUnavailable(reason, error),
-  });
-  const service = new ChangeDetectionService({ ...options, graph });
-  ref.current = service;
-  return { service, graph };
-}
-
-export function createMockAdapter(opts?: {
-  resolveConfig?: { projectRoot?: string };
-  withoutStartupFailure?: boolean;
-}): MockAdapterHandle {
-  const fileHandlers = new Set<(e: FileChangeEvent) => void>();
-  const startupHandlers = new Set<(e: { reason: string; error?: Error }) => void>();
-
-  const adapter: ChangeDetectionAdapter = {
-    async getResolveConfig() {
-      return {
-        projectRoot: opts?.resolveConfig?.projectRoot ?? '/repo',
-      };
+        subscribe: vi.fn(
+          (_input: undefined, callback: (next: QueryState<ModuleGraphStatus>) => void) => {
+            statusSubscribers.add(callback);
+            callback(toSuccessState(status));
+            return () => statusSubscribers.delete(callback);
+          }
+        ),
+      },
+      storiesForFiles: {
+        get: storiesForFiles,
+        loaded: async (input: { files: string[] }) => {
+          await engine.whenSettled();
+          return storiesForFiles(input);
+        },
+      },
+      graphRevision: {
+        get: () => 0,
+        subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
+          revisionSubscribers.add(callback);
+          callback(toSuccessState(graphRevision));
+          return () => revisionSubscribers.delete(callback);
+        }),
+      },
+      latestStoryChanges: {
+        get: () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
+        subscribe: vi.fn(() => () => undefined),
+      },
     },
-    onFileChange(handler) {
-      fileHandlers.add(handler);
-      return () => fileHandlers.delete(handler);
-    },
-  };
-
-  if (!opts?.withoutStartupFailure) {
-    adapter.onStartupFailure = (handler) => {
-      startupHandlers.add(handler);
-      return () => startupHandlers.delete(handler);
-    };
-  }
+  } as unknown as ModuleGraphService);
 
   return {
-    adapter,
-    emitFileChange: (event) => {
-      fileHandlers.forEach((h) => h(event));
+    applySnapshot: () => {
+      // The snapshot marks the graph ready but is the revision baseline, not a change.
+      status = { value: 'ready' };
+      emitStatus();
     },
-    emitStartupFailure: (event) => {
-      startupHandlers.forEach((h) => h(event));
+    applyUpdate: (bumpedStoryFiles: string[] = []) => {
+      // Out-of-graph changes bump no stories, so they must not advance the revision.
+      if (bumpedStoryFiles.length === 0) {
+        return;
+      }
+      graphRevision += 1;
+      latestChangedStoryFiles = bumpedStoryFiles;
+      emitRevision();
     },
-    hasFileChangeSubscriber: () => fileHandlers.size > 0,
-    hasStartupFailureSubscriber: () => startupHandlers.size > 0,
+    bumpGraphRevision: () => {
+      graphRevision += 1;
+      emitRevision();
+    },
+    applyError: (error: Error) => {
+      status = { value: 'error', error: errorToErrorLike(error) };
+      emitStatus();
+    },
+    applyUnavailable: (reason: string, error?: Error) => {
+      status = {
+        value: 'unavailable',
+        reason,
+        ...(error ? { error: errorToErrorLike(error) } : {}),
+      };
+      emitStatus();
+    },
   };
 }
 
 /**
- * Build a ReverseIndexImpl populated with the given (dep -> story -> depth) entries.
- * Used by tests to control what `reverseIndex.lookup(changedFile)` returns.
+ * Constructs {@link ChangeDetectionService} with lifecycle hooks wired to a
+ * {@link ModuleGraphEngine}, matching dev-server behaviour for integration-style tests.
  */
-export function buildReverseIndex(
-  edges: Iterable<readonly [string, string, number]>
-): ReverseIndexImpl {
-  const reverseIndex = new ReverseIndexImpl();
-  for (const [dep, story, depth] of edges) {
-    reverseIndex.record(dep, story, depth);
-  }
-  return reverseIndex;
-}
-
-/**
- * Stub the dependency-graph constructors so the service under test uses an in-test
- * ReverseIndexImpl + an inert IncrementalPatcher. The mock implementations must be regular
- * `function`s, not arrow functions: the service calls them with `new`, which arrow functions do
- * not support.
- */
-export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
-  patchSpy: ReturnType<typeof vi.fn>;
-  buildSpy: ReturnType<typeof vi.fn>;
+export function createWiredChangeDetection(
+  options: Omit<ChangeDetectionServiceOptions, 'graph'>,
+  graphOptions?: { withoutStartupFailure?: boolean }
+): {
+  service: ChangeDetectionService;
+  graph: ModuleGraphEngine;
+  moduleGraphMock: ReturnType<typeof installModuleGraphQueryMock>;
 } {
-  const patchSpy = vi.fn(async () => undefined);
-  const buildSpy = vi.fn(async () => ({ reverseIndex, graph: new Map() }));
-
-  vi.mocked(ChangeDetectionResolverFactory).mockImplementation(function () {
-    return {
-      resolve: vi.fn(async () => null),
-    } as unknown as ChangeDetectionResolverFactory;
-  } as unknown as new () => ChangeDetectionResolverFactory);
-  vi.mocked(DependencyGraphBuilder).mockImplementation(function () {
-    return { build: buildSpy } as unknown as DependencyGraphBuilder;
-  } as unknown as new () => DependencyGraphBuilder);
-  vi.mocked(IncrementalPatcher).mockImplementation(function () {
-    return { patch: patchSpy } as unknown as IncrementalPatcher;
-  } as unknown as new () => IncrementalPatcher);
-
-  return { patchSpy, buildSpy };
+  const moduleGraphMockRef: { current?: ReturnType<typeof installModuleGraphQueryMock> } = {};
+  const graph = new ModuleGraphEngine({
+    getIndex: async () => {
+      const storyIndexGenerator = await options.storyIndexGeneratorPromise;
+      return storyIndexGenerator.getIndex();
+    },
+    workingDir: options.workingDir,
+    onSnapshot: () => moduleGraphMockRef.current?.applySnapshot(),
+    onUpdate: ({ bumpedStoryFiles }) => moduleGraphMockRef.current?.applyUpdate(bumpedStoryFiles),
+    onError: (error) => moduleGraphMockRef.current?.applyError(error),
+    onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),
+  });
+  const service = new ChangeDetectionService(options);
+  const moduleGraphMock = installModuleGraphQueryMock(graph);
+  moduleGraphMockRef.current = moduleGraphMock;
+  void graphOptions;
+  return { service, graph, moduleGraphMock };
 }

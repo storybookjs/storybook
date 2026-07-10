@@ -1,34 +1,48 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
+import { Channel, clearChannel, getChannel, setChannel } from 'storybook/internal/channels';
 
-import { type Task, initTransport, modifyErrorMessage } from './setup-file.ts';
+import {
+  type Task,
+  initTransport,
+  modifyErrorMessage,
+  restoreDefaultChannel,
+} from './setup-file.ts';
 
 describe('initTransport', () => {
   afterEach(() => {
-    // Cleanup the global channel so each test can assert initialization behavior independently.
-
-    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      undefined;
+    clearChannel();
   });
 
   it('should initialize the addons channel when missing', () => {
-    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
-      undefined;
+    clearChannel();
 
     initTransport();
 
-    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBeInstanceOf(Channel);
+    expect(getChannel()).toBeInstanceOf(Channel);
+  });
+
+  it('restoreDefaultChannel reinstalls the default when the slot was replaced', () => {
+    initTransport();
+    const defaultRef = getChannel();
+
+    setChannel(new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } }));
+
+    restoreDefaultChannel();
+
+    expect(getChannel()).toBe(defaultRef);
   });
 
   it('should not overwrite an existing addons channel', () => {
     const transport = { setHandler: vi.fn(), send: vi.fn() };
     const existingChannel = new Channel({ transport });
-    globalThis.__STORYBOOK_ADDONS_CHANNEL__ = existingChannel;
+    clearChannel();
+    (globalThis as { __STORYBOOK_ADDONS_CHANNEL__?: Channel }).__STORYBOOK_ADDONS_CHANNEL__ =
+      existingChannel;
 
     initTransport();
 
-    expect(globalThis.__STORYBOOK_ADDONS_CHANNEL__).toBe(existingChannel);
+    expect(getChannel()).toBe(existingChannel);
   });
 });
 

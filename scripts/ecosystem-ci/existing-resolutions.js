@@ -26,4 +26,5 @@ export const EXISTING_RESOLUTIONS = new Set([
   'rxjs',
   'react-joyride/type-fest',
   'typescript',
+  'valibot',
 ]);

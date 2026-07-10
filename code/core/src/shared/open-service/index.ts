@@ -1,11 +1,21 @@
 /**
- * Public API for the open-service system.
+ * Environment-agnostic open-service API (`storybook/open-service`).
  *
- * This barrel intentionally exposes only the authoring and runtime entry points that callers
- * outside this directory should rely on. Tests and internal modules can import implementation
- * files directly without widening the supported public surface.
+ * Use this entrypoint for shared service definitions imported by manager, preview, and server.
+ * Register in the manager with `storybook/manager-api` (hooks), in preview with `storybook/preview-api`,
+ * or on the server via core-server experimental APIs.
  */
 export { defineService } from './service-definition.ts';
+export { seedQueryState } from './query-state.ts';
+
+export type { DocgenService } from './services/docgen/definition.ts';
+export type { DocgenPayload } from './services/docgen/types.ts';
+export type { StoryDocsService } from './services/story-docs/definition.ts';
+export {
+  prependImportToSnippet,
+  selectSnippetForStory,
+  selectStoryDoc,
+} from './services/story-docs/snippet.ts';
 
 export type {
   AnyServiceDefinition,
@@ -15,11 +25,14 @@ export type {
   CommandSelf,
   LoadCtx,
   LoadSelf,
+  LoadStatus,
   OperationDescriptor,
   Query,
   QueryCtx,
   QueryDefinition,
   QuerySelf,
+  QueryState,
+  QueryStatus,
   RuntimeService,
   SchemaDescriptor,
   ServerServiceRegistration,
@@ -29,6 +42,7 @@ export type {
   ServiceInstance,
   ServiceInstanceOf,
   ServiceRegistrationOptions,
+  ServiceState,
   ServiceSummary,
   StaticStore,
 } from './types.ts';

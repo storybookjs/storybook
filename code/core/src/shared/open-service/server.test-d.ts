@@ -2,8 +2,8 @@ import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
-import { registerService } from './server.ts';
+import { type MutableRecordLookupService, mutableRecordLookupServiceDef } from './fixtures.ts';
+import { getService, registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
 const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -15,9 +15,24 @@ const registrationOnlyServiceDef = defineService({
     valuesById: {} as Record<string, string | undefined>,
   },
   queries: {
-    getValue: {
+    value: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
+      handler: (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+        expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
+        expectTypeOf(
+          ctx.getService('internal-fixture/missing-service')
+        ).toEqualTypeOf<RuntimeService>();
+
+        return ctx.self.state.valuesById[input.entryId] ?? null;
+      },
+      load: async (input, ctx) => {
+        await ctx.self.commands.preloadValue(input);
+      },
       staticPath: (input) => {
         expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
         return `${input.entryId}.json`;
@@ -38,26 +53,7 @@ const registrationOnlyServiceDef = defineService({
 
 const registeredService = registerService(registrationOnlyServiceDef, {
   queries: {
-    getValue: {
-      handler: (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        expectTypeOf(ctx.self.state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
-        // @ts-expect-error query handlers do not receive commands on self
-        void ctx.self.commands;
-        expectTypeOf(ctx.getService).parameter(0).toEqualTypeOf<string>();
-        expectTypeOf(
-          ctx.getService('internal-fixture/missing-service')
-        ).toEqualTypeOf<RuntimeService>();
-
-        return ctx.self.state.valuesById[input.entryId] ?? null;
-      },
-      load: async (input, ctx) => {
-        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
-        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
-          entryId: string;
-        }>();
-        await ctx.self.commands.preloadValue(input);
-      },
+    value: {
       staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
@@ -83,11 +79,11 @@ const registeredService = registerService(registrationOnlyServiceDef, {
 
 describe('open-service registration types', () => {
   it('infers registration overrides and the registered runtime surface', () => {
-    expectTypeOf(registeredService.queries.getValue).parameter(0).toEqualTypeOf<{
+    expectTypeOf(registeredService.queries.value.get).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<string | null>();
-    expectTypeOf(registeredService.queries.getValue.loaded).returns.toEqualTypeOf<
+    expectTypeOf(registeredService.queries.value.get).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(registeredService.queries.value.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
 
@@ -106,9 +102,18 @@ describe('open-service registration types', () => {
   it('rejects invalid registration overrides', () => {
     registerService(registrationOnlyServiceDef, {
       queries: {
-        getValue: {
-          // @ts-expect-error query registration output must match the declared schema
-          handler: () => 123,
+        value: {
+          // @ts-expect-error query handlers belong on the definition, not at registration
+          handler: () => 'wrong',
+        },
+      },
+    });
+
+    registerService(registrationOnlyServiceDef, {
+      queries: {
+        value: {
+          // @ts-expect-error load must be declared on the definition, not at registration
+          load: async () => {},
         },
       },
     });
@@ -125,29 +130,58 @@ describe('open-service registration types', () => {
     });
   });
 
-  it('types cross-service lookups when getService receives a definition generic', () => {
+  it('types cross-service lookups when getService receives an instance generic', () => {
     registerService(mutableRecordLookupServiceDef);
-    registerService(registrationOnlyServiceDef, {
-      queries: {
-        getValue: {
-          handler: (_input, ctx) => {
-            const lookup = ctx.getService<typeof mutableRecordLookupServiceDef>(
-              'internal-fixture/mutable-record-lookup'
-            );
+    registerService(
+      defineService({
+        id: 'internal-fixture/open-service-registration-cross-service',
+        initialState: { valuesById: {} as Record<string, string | undefined> },
+        queries: {
+          value: {
+            input: entryIdInputSchema,
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => {
+              const lookup = ctx.getService<MutableRecordLookupService>(
+                'internal-fixture/mutable-record-lookup'
+              );
 
-            expectTypeOf(lookup.queries.getRecordFields).returns.toEqualTypeOf<Record<
-              string,
-              string
-            > | null>();
-            const missingService = ctx.getService('internal-fixture/missing-service');
-            expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
-            // @ts-expect-error getRecordFields requires an entryId string
-            lookup.queries.getRecordFields({});
+              expectTypeOf(lookup.queries.recordFields.get).returns.toEqualTypeOf<Record<
+                string,
+                string
+              > | null>();
+              const missingService = ctx.getService('internal-fixture/missing-service');
+              expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
+              // @ts-expect-error recordFields requires an entryId string
+              lookup.queries.recordFields.get({});
 
-            return null;
+              return null;
+            },
           },
         },
-      },
-    });
+        commands: {},
+      })
+    );
+  });
+});
+
+describe('typed core getService (server)', () => {
+  it('types known core service ids without an explicit generic', () => {
+    expectTypeOf(getService('core/docgen').queries.docgen.get).parameter(0).toEqualTypeOf<{
+      id: string;
+    }>();
+    expectTypeOf(getService('core/story-docs').queries.storyDocs.get).parameter(0).toEqualTypeOf<{
+      id: string;
+    }>();
+    expectTypeOf(
+      getService('core/module-graph').queries.latestStoryChanges.subscribe
+    ).toBeFunction();
+  });
+
+  it('falls back to RuntimeService for unknown ids', () => {
+    expectTypeOf(getService('addon-docs/mdx')).toEqualTypeOf<RuntimeService>();
+  });
+
+  it('honors an explicit generic over a known core id', () => {
+    expectTypeOf(getService<RuntimeService>('core/docgen')).toEqualTypeOf<RuntimeService>();
   });
 });

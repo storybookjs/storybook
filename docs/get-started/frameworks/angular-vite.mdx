@@ -28,7 +28,7 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
   versions={[
     {
       name: 'Angular',
-      range: '21',
+      range: '≥ 21',
       icon: '/images/logos/renderers/logo-angular.svg',
     },
     {
@@ -148,7 +148,7 @@ export default config;
 
 ### Application-wide providers
 
-If your component relies on application-wide providers (such as those set up by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any module using the `forRoot` pattern), apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to supply them via the [bootstrapApplication](https://angular.dev/api/platform-browser/bootstrapApplication) function.
+If your component relies on application-wide providers (such as those returned by `provide`-style functions or set up by any module using the `forRoot` pattern), apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to supply them via the [bootstrapApplication](https://angular.dev/api/platform-browser/bootstrapApplication) function.
 
 <CodeSnippets path="angular-vite-application-providers-in-meta-and-story.md" />
 

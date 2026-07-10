@@ -527,8 +527,11 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     } else {
       logger.debug('Updating dependencies...');
       await packageManager.removeDependencies([ANGULAR_PACKAGE]);
+
+      const allDeps = packageManager.getAllDependencies();
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
+        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
       ]);
     }
 

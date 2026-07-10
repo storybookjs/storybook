@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+import { copyTemplateFiles } from 'storybook/internal/cli';
 import { executeCommand } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedLanguage } from 'storybook/internal/types';
@@ -35,7 +35,6 @@ describe('REACT_NATIVE generator module', () => {
     }) as any;
 
   beforeEach(() => {
-    vi.mocked(getBabelDependencies).mockResolvedValue([]);
     vi.mocked(copyTemplateFiles).mockResolvedValue();
     vi.mocked(generateReactNativeEntrypoint).mockResolvedValue({
       targetPath: '.rnstorybook/index.js',

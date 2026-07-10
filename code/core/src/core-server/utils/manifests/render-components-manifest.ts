@@ -17,10 +17,11 @@ import type {
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 
@@ -36,16 +37,31 @@ interface ComponentManifestLikeWithDocgen extends ComponentSubcomponentManifest 
   reactComponentMeta?: ReactComponentMetaDoc;
 }
 
+export type ComponentManifestStory = ComponentManifest['stories'][number];
+export type ComponentManifestStories =
+  | ComponentManifest['stories']
+  | Record<string, ComponentManifestStory>;
+
 /** Extended component manifest that may include docs from the docs addon */
-interface ComponentManifestWithDocs extends ComponentManifestLikeWithDocgen, ComponentManifest {
+export interface ComponentManifestWithDocs
+  extends ComponentManifestLikeWithDocgen, Omit<ComponentManifest, 'stories' | 'subcomponents'> {
+  stories: ComponentManifestStories;
   docs?: Record<string, DocsManifestEntry>;
   subcomponents?: Record<string, ComponentManifestLikeWithDocgen>;
+}
+
+export interface ComponentsManifestForRenderer extends Omit<ComponentsManifest, 'components'> {
+  components: Record<string, ComponentManifestWithDocs>;
+}
+
+function storyEntries(stories?: ComponentManifestStories): ComponentManifestStory[] {
+  return Array.isArray(stories) ? stories : Object.values(stories ?? {});
 }
 
 // AI generated manifests/components.html page
 // Only HTML/CSS no JS
 export function renderComponentsManifest(
-  manifest: ComponentsManifest | undefined,
+  manifest: ComponentsManifestForRenderer | undefined,
   docsManifest?: DocsManifest
 ) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
@@ -800,8 +816,9 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
     );
   }
 
-  const totalStories = c.stories?.length ?? 0;
-  const storyErrors = (c.stories ?? []).filter((e) => !!e?.error).length;
+  const allStories = storyEntries(c.stories);
+  const totalStories = allStories.length;
+  const storyErrors = allStories.filter((e) => !!e?.error).length;
   const storyOk = totalStories - storyErrors;
 
   // Analyze attached docs
@@ -870,7 +887,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -907,7 +924,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const allStories = c.stories ?? [];
+  const allStories = storyEntries(c.stories);
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
   const subcomponentEntries = Object.entries(c.subcomponents ?? {});
@@ -950,7 +967,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
     engine: cardEngine,
     filePath,
     exportName,
-  } = getDocgenRenderData(c, a.hasPropTypeError);
+  } = docgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -1116,7 +1133,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1130,7 +1147,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`
@@ -1174,7 +1191,7 @@ type DocgenRenderData = {
   exportName?: string;
 };
 
-const getDocgenRenderData = (
+const docgenRenderData = (
   component: ComponentManifestLikeWithDocgen,
   hasPropTypeError: boolean
 ): DocgenRenderData => {
@@ -1217,10 +1234,7 @@ function renderSubcomponentNote(
   subcomponent: ComponentManifestLikeWithDocgen
 ) {
   const hasPropTypeError = Boolean(subcomponent.error);
-  const { parsed, engine, filePath, exportName } = getDocgenRenderData(
-    subcomponent,
-    hasPropTypeError
-  );
+  const { parsed, engine, filePath, exportName } = docgenRenderData(subcomponent, hasPropTypeError);
   const propEntries = Object.entries(parsed?.props ?? {});
   const tags =
     subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'

@@ -87,7 +87,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     // Configure addons whose postinstall a fix deferred until after install (mirrors CLI init's
     // install-then-configure ordering). Their postinstall hooks can only be resolved now that the
     // packages are on disk; running them earlier (during the fix) silently no-ops.
-    await configureDeferredAddons(outcome?.addonsToConfigure ?? [], {
+    await configureDeferredAddons(outcome?.addonsToPostinstall ?? [], {
       packageManager: packageManager.type,
       configDir,
       yes: options.yes,
@@ -136,7 +136,7 @@ export const automigrate = async ({
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
   /** Core addons added by fixes that must be configured after dependencies are installed. */
-  addonsToConfigure?: string[];
+  addonsToPostinstall?: string[];
 } | null> => {
   if (list) {
     logAvailableMigrations();
@@ -189,7 +189,7 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure, addonsToConfigure } = await runFixes({
+  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall } = await runFixes({
     fixes,
     packageManager,
     rendererPackage,
@@ -218,7 +218,7 @@ export const automigrate = async ({
     });
   }
 
-  return { fixResults, preCheckFailure, addonsToConfigure };
+  return { fixResults, preCheckFailure, addonsToPostinstall };
 };
 
 type RunFixesOptions = {
@@ -256,12 +256,12 @@ export async function runFixes({
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
   fixSummary: FixSummary;
-  addonsToConfigure: string[];
+  addonsToPostinstall: string[];
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
   // Collects core addons that fixes add but whose postinstall must run after `installDependencies`.
-  const addonsToConfigure: string[] = [];
+  const addonsToPostinstall: string[] = [];
 
   for (let i = 0; i < fixes.length; i += 1) {
     const f = fixes[i] as Fix;
@@ -398,7 +398,7 @@ export async function runFixes({
               storybookVersion,
               storiesPaths,
               yes,
-              addonsToConfigure,
+              addonsToPostinstall,
             });
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
@@ -423,5 +423,5 @@ export async function runFixes({
     }
   }
 
-  return { fixResults, fixSummary, addonsToConfigure };
+  return { fixResults, fixSummary, addonsToPostinstall };
 }

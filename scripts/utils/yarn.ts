@@ -129,16 +129,6 @@ export const addWorkaroundResolutions = async ({
     };
   }
 
-  if (key === 'angular-cli/vite-default-ts') {
-    // Vite 8 bundles rolldown@1.0.0 (has the `Visitor` export). @angular/build
-    // pulls rolldown@1.0.0-rc.4 which does not, causing the preview server to
-    // fail with `does not provide an export named 'Visitor'`.
-    additionalResolutions = {
-      ...additionalResolutions,
-      rolldown: '1.0.0',
-    };
-  }
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',

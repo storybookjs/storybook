@@ -61,7 +61,7 @@ export async function configureMain({
 
   stories.push(`${prefix}/**/*.stories.@(${extensions.join('|')})`);
 
-  const config: Record<string, any> = {
+  const config: Record<string, unknown> = {
     stories,
     addons,
     ...custom,

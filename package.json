@@ -54,13 +54,14 @@
     "@types/react": "^18.0.0",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
     "aria-query@5.3.0": "^5.3.0",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.28.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "react": "^18.2.0",
     "react-joyride/type-fest": "~2.19",
     "rxjs": "^7.8.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "valibot": "^1.4.0"
   },
   "devDependencies": {
     "@nx/workspace": "^22.6.1",

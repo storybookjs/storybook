@@ -38,3 +38,29 @@ it('should extract @param tag with type', () => {
     }
   `);
 });
+
+it('preserves blank lines and newlines in the description so Markdown survives', () => {
+  const code = dedent`
+    ## Example button component
+
+    Comes in three sizes: \`small\`, \`medium\`, and \`large\`.
+
+    Can be primary or secondary.
+
+    _This description is written as a comment above the component_
+    @summary short summary`;
+  const { description, tags } = extractJSDocInfo(code);
+
+  expect(description).toBe(
+    [
+      '## Example button component',
+      '',
+      'Comes in three sizes: `small`, `medium`, and `large`.',
+      '',
+      'Can be primary or secondary.',
+      '',
+      '_This description is written as a comment above the component_',
+    ].join('\n')
+  );
+  expect(tags).toEqual({ summary: ['short summary'] });
+});

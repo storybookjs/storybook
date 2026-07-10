@@ -9,7 +9,7 @@ You can use Storybook's Codex plugin to connect agents to your Storybook. Agents
 
 ## Installation
 
-> ![NOTE]
+> [!NOTE]
 > Because the plugin is [experimental](https://storybook.js.org/docs/releases/features#experimental), it has not yet been added to Codex's marketplace. These instructions guide you to add the Storybook marketplace to Codex and install the plugin from there.
 
 1. Run this command to add the Storybook marketplace to Codex:
@@ -64,7 +64,7 @@ These skills are available to agents that have the Storybook plugin installed. T
 
 ### `init`
 
-Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](./packages/addon-mcp), then runs the [setup](#setup) skill.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../addon-mcp), then runs the [setup](#setup) skill.
 
 ### `setup`
 

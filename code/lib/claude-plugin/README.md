@@ -9,7 +9,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 
 ## Installation
 
-> ![NOTE]
+> [!NOTE]
 > Because the plugins are [experimental](https://storybook.js.org/docs/releases/features#experimental), they have not yet been added to Claude's marketplace. These instructions guide you to add the Storybook marketplace to your harness and install the plugin from there.
 
 <details>
@@ -79,7 +79,7 @@ To remove a plugin:
    claude plugin marketplace remove storybook --scope user
    ```
 
-2. Follow the [installation instructions above](#claude-code) to re-add the marketplace and install the plugin again.
+2. Follow the [installation instructions above](#installation) (expand the "Claude Code" section) to re-add the marketplace and install the plugin again.
 
 </details>
 
@@ -90,7 +90,7 @@ To remove a plugin:
 
 2. Remove the "storybook" marketplace
 
-3. Follow the [installation instructions above](#claude-desktop) to re-add the marketplace and install the plugin again.
+3. Follow the [installation instructions above](#installation) (expand the "Claude Desktop" section) to re-add the marketplace and install the plugin again.
 
 </details>
 
@@ -106,7 +106,7 @@ These skills are available to agents that have the Storybook plugin installed. T
 
 ### `init`
 
-Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](./packages/addon-mcp), then runs the [setup](#setup) skill.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../addon-mcp), then runs the [setup](#setup) skill.
 
 ### `setup`
 

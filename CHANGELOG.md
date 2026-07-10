@@ -1,3 +1,22 @@
+## 10.5.0
+
+- Angular: Fix zone.js drop in angular-to-angular-vite migration + schema sync + transform widening - [#35386](https://github.com/storybookjs/storybook/pull/35386), thanks @valentinpalkovic!
+- Angular: Install @analogjs/vite-plugin-angular in angular-to-angular-vite automigration - [#35432](https://github.com/storybookjs/storybook/pull/35432), thanks @valentinpalkovic!
+- CLI: Do not auto-open the browser in storybook dev under AI agents - [#35412](https://github.com/storybookjs/storybook/pull/35412), thanks @kasperpeulen!
+- CLI: Fix angular-to-angular-vite migration failing to configure addon-vitest - [#35404](https://github.com/storybookjs/storybook/pull/35404), thanks @valentinpalkovic!
+- CLI: Fix silent hang in deferred addon configuration during upgrade - [#35423](https://github.com/storybookjs/storybook/pull/35423), thanks @valentinpalkovic!
+- CLI: Skip a11y addon automigration prompting when not applicable - [#35376](https://github.com/storybookjs/storybook/pull/35376), thanks @yannbf!
+- CLI: Use detected package manager instead of npx for remote commands - [#35409](https://github.com/storybookjs/storybook/pull/35409), thanks @ghengeveld!
+- Channel: Ensure every runtime installs the real channel and stop the mock fallback from poisoning it - [#35410](https://github.com/storybookjs/storybook/pull/35410), thanks @ndelangen!
+- Cli: Allow -p shorthand to --port for ai command - [#35390](https://github.com/storybookjs/storybook/pull/35390), thanks @huang-julien!
+- Cli: Handle nested array schema for AI help - [#35424](https://github.com/storybookjs/storybook/pull/35424), thanks @huang-julien!
+- Controls: Load controls for composed-ref stories on direct deep-link - [#35402](https://github.com/storybookjs/storybook/pull/35402), thanks @ndelangen!
+- Core: Fix potential race condition in SET_CONFIG hook - [#35401](https://github.com/storybookjs/storybook/pull/35401), thanks @mrginglymus!
+- Core: Reset WebsocketTransport heartbeat on every message, not just ping - [#35422](https://github.com/storybookjs/storybook/pull/35422), thanks @valentinpalkovic!
+- Init: Support pnpm catalogs when adding addon-vitest dependencies - [#35415](https://github.com/storybookjs/storybook/pull/35415), thanks @yannbf!
+- Manager: Apply addon-registered filters to the initial story index - [#35408](https://github.com/storybookjs/storybook/pull/35408), thanks @ndelangen!
+- Review: Fix accessibility/UX issues in the review UI - [#35398](https://github.com/storybookjs/storybook/pull/35398), thanks @Sidnioulz!
+
 ## 10.4.6
 
 - CSF: Allow partial globals overrides in story and meta annotations - [#34985](https://github.com/storybookjs/storybook/pull/34985), thanks @TheSeydiCharyyev!

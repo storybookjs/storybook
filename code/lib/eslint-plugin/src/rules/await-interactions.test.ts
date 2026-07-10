@@ -199,6 +199,28 @@ ruleTester.run('await-interactions', rule, {
       ],
     },
     {
+      // Storybook v10 exposes these from the bare `storybook/test` entry point,
+      // so the rule must apply to that import too.
+      code: dedent`
+        import { expect, findByText } from 'storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          expect(args.onClick).toHaveBeenCalled()
+          const element = findByText(canvasElement, 'asdf')
+        }
+      `,
+      output: dedent`
+        import { expect, findByText } from 'storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          await expect(args.onClick).toHaveBeenCalled()
+          const element = await findByText(canvasElement, 'asdf')
+        }
+      `,
+      errors: [
+        { messageId: 'interactionShouldBeAwaited', data: { method: 'toHaveBeenCalled' } },
+        { messageId: 'interactionShouldBeAwaited', data: { method: 'findByText' } },
+      ],
+    },
+    {
       code: dedent`
         WithModalOpen.play = ({ canvasElement }) => {
           const canvas = within(canvasElement)

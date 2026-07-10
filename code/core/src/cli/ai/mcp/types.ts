@@ -67,6 +67,34 @@ export const ToolCallResultSchema = v.looseObject({
 });
 export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
 
+/**
+ * A JSON Schema node, as far as the `storybook ai <tool> --help` renderer walks it:
+ * object `properties`, array `items`, and `anyOf`/`oneOf` variants. Recursive, so the
+ * schema is built with `v.lazy` and annotated with the interface (valibot can't infer
+ * a recursive type). Kept a `looseObject` so unknown JSON Schema keywords pass through.
+ */
+export interface JsonSchemaNode {
+  type?: string;
+  description?: string;
+  properties?: Record<string, JsonSchemaNode>;
+  required?: string[];
+  items?: JsonSchemaNode | JsonSchemaNode[];
+  anyOf?: JsonSchemaNode[];
+  oneOf?: JsonSchemaNode[];
+}
+
+export const JsonSchemaNodeSchema: v.GenericSchema<JsonSchemaNode> = v.lazy(() =>
+  v.looseObject({
+    type: v.optional(v.string()),
+    description: v.optional(v.string()),
+    properties: v.optional(v.record(v.string(), JsonSchemaNodeSchema)),
+    required: v.optional(v.array(v.string())),
+    items: v.optional(v.union([JsonSchemaNodeSchema, v.array(JsonSchemaNodeSchema)])),
+    anyOf: v.optional(v.array(JsonSchemaNodeSchema)),
+    oneOf: v.optional(v.array(JsonSchemaNodeSchema)),
+  })
+);
+
 /** A tool descriptor from an MCP `tools/list` response. */
 export const McpToolDescriptorSchema = v.looseObject({
   name: v.string(),

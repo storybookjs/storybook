@@ -80,7 +80,7 @@ export function registerAiMcpPassthrough(
     )
     .option('--cwd <path>', CWD_DESCRIPTION)
     .option('-c, --config-dir <dir-name>', CONFIG_DIR_DESCRIPTION)
-    .option('--port <number>', PORT_DESCRIPTION)
+    .option('-p, --port <number>', PORT_DESCRIPTION)
     .option(
       '--json <object>',
       'Raw JSON object with the command arguments (escape hatch for complex values)'

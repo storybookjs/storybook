@@ -68,7 +68,8 @@ const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): bo
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const api = useStorybookApi();
   const navigate = useNavigate();
-  const { index, path, viewMode, customQueryParams, location } = useStorybookState();
+  const { index, internal_index, path, viewMode, customQueryParams, location } =
+    useStorybookState();
   const { state, pendingReview, isStale, isInReviewMode } = useReview();
   // Last review page reported to telemetry; dedupes pageviews across re-renders.
   const lastPageviewKeyRef = useRef<string | null>(null);
@@ -135,8 +136,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   const storyInfo = useMemo(
-    () => (state ? buildStoryInfo(state, index, api, allStatuses, newlyAddedStoryIds) : {}),
-    [allStatuses, api, index, newlyAddedStoryIds, state]
+    () =>
+      state
+        ? buildStoryInfo(state, index, internal_index, api, allStatuses, newlyAddedStoryIds)
+        : {},
+    [allStatuses, api, index, internal_index, newlyAddedStoryIds, state]
   );
 
   const collectionIndex = parseCollectionIndex(collectionParam);

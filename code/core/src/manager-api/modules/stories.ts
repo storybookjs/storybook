@@ -832,6 +832,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
+        // Cache the runtime enrichment on the ref so it survives index (re)builds in `setRef` and is
+        // applied even when it arrives before the ref index is first composed (the deep-link race in
+        // #34553, where the preview sends STORY_PREPARED once, before the index has been composed).
+        const storyUpdates = {
+          ...ref.storyUpdates,
+          [storyId]: { ...ref.storyUpdates?.[storyId], ...update },
+        };
         if (index && index[storyId]) {
           index[storyId] = {
             ...index[storyId],
@@ -844,7 +851,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             ...update,
           } as API_StoryEntry;
         }
-        await fullAPI.updateRef(refId, { index, filteredIndex });
+        await fullAPI.updateRef(refId, { index, filteredIndex, storyUpdates });
       }
     },
     updateDocs: async (
@@ -871,15 +878,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
-        index[docsId] = {
-          ...index[docsId],
-          ...update,
-        } as API_DocsEntry;
-        filteredIndex[docsId] = {
-          ...filteredIndex[docsId],
-          ...update,
-        } as API_DocsEntry;
-        await fullAPI.updateRef(refId, { index, filteredIndex });
+        const storyUpdates = {
+          ...ref.storyUpdates,
+          [docsId]: { ...ref.storyUpdates?.[docsId], ...update },
+        };
+        if (index && index[docsId]) {
+          index[docsId] = {
+            ...index[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        if (filteredIndex && filteredIndex[docsId]) {
+          filteredIndex[docsId] = {
+            ...filteredIndex[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        await fullAPI.updateRef(refId, { index, filteredIndex, storyUpdates });
       }
     },
     setPreviewInitialized: async (ref) => {
@@ -1261,15 +1276,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     } = store.getState();
 
     // Config sidebar filters first, then our managed filters override any conflicts
-    store.setState({
+    store.setState(({ filters }) => ({
       filters: {
-        ...store.getState().filters,
+        ...filters,
         ...configFilters,
         [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
         [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
         [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
       },
-    });
+    }));
   });
 
   fullStatusStore.onAllStatusChange(async () => {

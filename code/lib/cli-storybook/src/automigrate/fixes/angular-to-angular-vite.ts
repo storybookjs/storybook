@@ -527,8 +527,16 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     } else {
       logger.debug('Updating dependencies...');
       await packageManager.removeDependencies([ANGULAR_PACKAGE]);
+
+      // @analogjs/vite-plugin-angular is a required peer dependency of @storybook/angular-vite
+      // that a webpack-based Angular project won't have. npm auto-installs missing peers, but
+      // yarn and pnpm do not, so it must be added explicitly — mirroring the init generator.
+      // An already-declared version is left untouched. `vite` is a direct dependency of the
+      // framework, so it needs no entry here.
+      const allDeps = packageManager.getAllDependencies();
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
+        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
       ]);
     }
 

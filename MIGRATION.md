@@ -530,7 +530,6 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
-<<<<<<< HEAD
 ## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated

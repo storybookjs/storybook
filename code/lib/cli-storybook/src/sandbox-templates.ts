@@ -799,10 +799,7 @@ export const baseTemplates = {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
       // See `angular-vite/default-ts` for why Compodoc is listed here.
-      extraDependencies: [
-        '@angular/forms@^21.2.0',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^21.2.0', '@compodoc/compodoc'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -827,11 +824,7 @@ export const baseTemplates = {
       // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
       // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
       // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
-      extraDependencies: [
-        '@angular/forms@^22',
-        'typescript@^6',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^22', 'typescript@^6', '@compodoc/compodoc'],
       useCsfFactory: true,
       // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
       // docgen path is now an explicit opt-out rather than the absence of a flag.

@@ -52,9 +52,10 @@ const extractApplicationProviders = async (metadata: NgModuleMetadata, component
 };
 
 describe('PropertyExtractor', () => {
-  const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const consoleWarnSpy = vi.spyOn(console, 'warn');
 
   beforeEach(() => {
+    consoleWarnSpy.mockImplementation(() => {});
     consoleWarnSpy.mockClear();
   });
 

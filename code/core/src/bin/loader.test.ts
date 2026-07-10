@@ -1,5 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,7 +40,9 @@ describe('loader', () => {
     });
 
     it('transforms a plain .ts URL with esbuild', async () => {
-      const result = await load('file:///project/main.ts', {} as any, nextLoad);
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
 
       expect(transform).toHaveBeenCalled();
       expect(nextLoad).not.toHaveBeenCalled();
@@ -50,9 +53,14 @@ describe('loader', () => {
       // Regression test: importModule appends `?<timestamp>` to bust the module cache when
       // skipCache is set. That must not cause this loader to skip the file and fall through to
       // Node's native handling, which does not elide type-only named imports the way esbuild does.
-      const result = await load('file:///project/main.ts?1234567890', {} as any, nextLoad);
+      const path =
+        os.platform() === 'win32'
+          ? 'file:///C:/project/main.ts?1234567890'
+          : 'file:///project/main.ts?1234567890';
+      const expected = os.platform() === 'win32' ? 'C:\\project\\main.ts' : '/project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
 
-      expect(readFile).toHaveBeenCalledWith('/project/main.ts', 'utf-8');
+      expect(readFile).toHaveBeenCalledWith(expected, 'utf-8');
       expect(transform).toHaveBeenCalled();
       expect(nextLoad).not.toHaveBeenCalled();
       expect(result).toMatchObject({ format: 'module', shortCircuit: true });
@@ -61,10 +69,12 @@ describe('loader', () => {
     it('delegates non-TS URLs to nextLoad', async () => {
       nextLoad.mockResolvedValue({ format: 'module', shortCircuit: true, source: '' });
 
-      await load('file:///project/main.js', {} as any, nextLoad);
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.js' : 'file:///project/main.js';
+      await load(path, {} as any, nextLoad);
 
       expect(transform).not.toHaveBeenCalled();
-      expect(nextLoad).toHaveBeenCalledWith('file:///project/main.js', {});
+      expect(nextLoad).toHaveBeenCalledWith(path, {});
     });
   });
 

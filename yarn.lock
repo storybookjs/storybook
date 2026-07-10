@@ -9308,7 +9308,7 @@ __metadata:
     "@angular/platform-browser-dynamic": ">=21.0.0 < 22.0.0"
     rxjs: ^7.4.0
     storybook: "workspace:^"
-    typescript: ^5.9.0
+    typescript: ">= 5.9.x"
     vite: ">=8.0.0"
     zone.js: ">=0.16.0"
   peerDependenciesMeta:

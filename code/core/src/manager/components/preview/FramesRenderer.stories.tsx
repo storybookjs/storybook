@@ -23,6 +23,7 @@ const api: any = {
   getStoryHrefs,
   getIsFullscreen: fn(() => false),
   getIsNavShown: fn(() => true),
+  getNavAvailability: fn(() => 'shown'),
   getCurrentParameter: fn(() => undefined),
   getGlobals: fn(() => ({})),
   getStoryGlobals: fn(() => ({})),

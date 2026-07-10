@@ -1,8 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
+import {
+  AngularJSON,
+  editJsonText,
+  isStorybookTarget,
+  type JSONEditPath,
+} from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -145,61 +151,206 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
   }
 };
 
-/**
- * Detect whether a Storybook builder target in an `angular.json` or Nx
- * `project.json` explicitly disables Compodoc (`options.compodoc: false`).
- * Compodoc now runs only from the framework Vite plugin (default on), so a
- * disabled builder option must be carried into `main.ts` framework.options to
- * preserve intent — otherwise the cold-start default would re-enable it.
- */
-const detectDisabledCompodoc = (content: string): boolean => {
-  let json: any;
-  try {
-    json = JSON.parse(content);
-  } catch {
-    return false;
+interface JsonTargetTransformResult {
+  changed: boolean;
+  disablesCompodoc: boolean;
+  hasStorybookTarget: boolean;
+  allStorybookTargetsZonelessTrue: boolean;
+}
+
+/** Map the old @storybook/angular builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
+const rewriteStorybookBuilderRef = (ref: string): string | null => {
+  if (ref === `${ANGULAR_PACKAGE}:start-storybook`) {
+    return `${ANGULAR_VITE_PACKAGE}:start-storybook`;
   }
-
-  const targetDisablesCompodoc = (target: any): boolean => {
-    const ref: unknown = target?.builder ?? target?.executor;
-    return (
-      typeof ref === 'string' &&
-      (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook')) &&
-      target?.options?.compodoc === false
-    );
-  };
-
-  // angular.json: projects.<name>.architect.<target>; project.json: targets.<target>
-  const targetGroups: any[] = [];
-  if (json?.projects && typeof json.projects === 'object') {
-    for (const project of Object.values<any>(json.projects)) {
-      targetGroups.push(project?.architect, project?.targets);
-    }
+  if (ref === `${ANGULAR_PACKAGE}:build-storybook`) {
+    return `${ANGULAR_VITE_PACKAGE}:build-storybook`;
   }
-  targetGroups.push(json?.targets);
-
-  return targetGroups.some(
-    (group) =>
-      group && typeof group === 'object' && Object.values<any>(group).some(targetDisablesCompodoc)
-  );
+  return null;
 };
 
-const transformJsonFile = async (
-  filePath: string,
+/** Applies a single format-preserving edit; shared by `AngularJSON` and `TextJsonEditor` below. */
+interface TargetEditor {
+  edit(path: JSONEditPath, value: unknown): void;
+}
+
+/** A `targets`-shaped object (angular.json's `architect`, or project.json's `targets`) and the JSON path to it. */
+interface TargetGroup {
+  pathPrefix: JSONEditPath;
+  targets: Record<string, unknown>;
+}
+
+/** Accumulates sequential `editJsonText` edits against an in-memory string (project.json's editor). */
+class TextJsonEditor implements TargetEditor {
+  content: string;
+
+  constructor(content: string) {
+    this.content = content;
+  }
+
+  edit(path: JSONEditPath, value: unknown): void {
+    this.content = editJsonText(this.content, path, value);
+  }
+}
+
+/**
+ * Rewrite builder/executor references, detect Compodoc/zone.js signals, and rename any leftover
+ * `experimentalZoneless` key to `zoneless`, across every storybook target in `targetGroups`.
+ */
+const processStorybookTargets = (
+  editor: TargetEditor,
+  targetGroups: TargetGroup[]
+): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
+  allZonelessTrue: boolean;
+} => {
+  let changed = false;
+  let disablesCompodoc = false;
+  let hasStorybookTarget = false;
+  let allZonelessTrue = true;
+
+  for (const { pathPrefix, targets } of targetGroups) {
+    for (const [targetName, target] of Object.entries(targets)) {
+      if (!isStorybookTarget(target)) {
+        continue;
+      }
+      hasStorybookTarget = true;
+
+      // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
+      const currentRef = target.builder ?? target.executor ?? null;
+      const compodocDisabled = target.options?.compodoc === false;
+      const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
+      const zonelessValue = target.options?.experimentalZoneless;
+
+      if (compodocDisabled) {
+        disablesCompodoc = true;
+      }
+      if (zonelessValue !== true) {
+        allZonelessTrue = false;
+      }
+
+      const newRef = currentRef ? rewriteStorybookBuilderRef(currentRef) : null;
+      if (newRef) {
+        const refKey = 'builder' in target ? 'builder' : 'executor';
+        editor.edit([...pathPrefix, targetName, refKey], newRef);
+        changed = true;
+      }
+
+      if (hasOldZonelessKey) {
+        editor.edit([...pathPrefix, targetName, 'options', 'zoneless'], zonelessValue);
+        editor.edit([...pathPrefix, targetName, 'options', 'experimentalZoneless'], undefined);
+        changed = true;
+      }
+    }
+  }
+
+  return { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue };
+};
+
+const transformAngularJson = (
+  angularJsonPath: string,
   dryRun: boolean
-): Promise<{ changed: boolean; disablesCompodoc: boolean }> => {
+): JsonTargetTransformResult => {
+  let angularJSON: AngularJSON;
   try {
-    const content = await readFile(filePath, 'utf-8');
-    const transformed = rewriteBuilderRefs(content);
-    const changed = transformed !== content;
+    angularJSON = new AngularJSON(angularJsonPath);
+  } catch {
+    return {
+      changed: false,
+      disablesCompodoc: false,
+      hasStorybookTarget: false,
+      allStorybookTargetsZonelessTrue: true,
+    };
+  }
+
+  const targetGroups: TargetGroup[] = Object.entries(angularJSON.projects)
+    .filter(([, project]) => project?.architect && typeof project.architect === 'object')
+    .map(([projectName, project]) => ({
+      pathPrefix: ['projects', projectName, 'architect'],
+      targets: project.architect,
+    }));
+
+  const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
+    processStorybookTargets(angularJSON, targetGroups);
+
+  if (changed && !dryRun) {
+    angularJSON.write();
+  }
+
+  return {
+    changed,
+    disablesCompodoc,
+    hasStorybookTarget,
+    allStorybookTargetsZonelessTrue: allZonelessTrue,
+  };
+};
+
+/**
+ * Same as `transformAngularJson`, for Nx `project.json` files: a flat `targets` object with no
+ * `projects.<name>` nesting, so it doesn't fit `AngularJSON`'s model.
+ */
+const transformProjectJson = async (
+  projectJsonPath: string,
+  dryRun: boolean
+): Promise<JsonTargetTransformResult> => {
+  try {
+    const original = await readFile(projectJsonPath, 'utf-8');
+    const json = JSON.parse(original);
+    const targets = json?.targets;
+
+    const editor = new TextJsonEditor(original);
+    const targetGroups: TargetGroup[] =
+      targets && typeof targets === 'object' ? [{ pathPrefix: ['targets'], targets }] : [];
+
+    const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
+      processStorybookTargets(editor, targetGroups);
 
     if (changed && !dryRun) {
-      await writeFile(filePath, transformed);
+      await writeFile(projectJsonPath, editor.content);
     }
 
-    return { changed, disablesCompodoc: detectDisabledCompodoc(content) };
+    return {
+      changed,
+      disablesCompodoc,
+      hasStorybookTarget,
+      allStorybookTargetsZonelessTrue: allZonelessTrue,
+    };
   } catch {
-    return { changed: false, disablesCompodoc: false };
+    return {
+      changed: false,
+      disablesCompodoc: false,
+      hasStorybookTarget: false,
+      allStorybookTargetsZonelessTrue: true,
+    };
+  }
+};
+
+const addZoneJsPreviewImport = async (
+  previewConfigPath: string,
+  dryRun: boolean
+): Promise<void> => {
+  try {
+    const preview = await readConfig(previewConfigPath);
+
+    // Leave an existing zone.js import (incl. subpaths like zone.js/testing) alone.
+    const hasZoneJsImport = preview._ast.program.body.some(
+      (node) =>
+        t.isImportDeclaration(node) &&
+        typeof node.source.value === 'string' &&
+        (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
+    );
+    if (hasZoneJsImport || dryRun) {
+      return;
+    }
+
+    preview.setImport(null, 'zone.js');
+    const formatted = await formatFileContent(previewConfigPath, formatConfig(preview));
+    await writeFile(previewConfigPath, formatted);
+    logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
+  } catch (error) {
+    logger.warn(
+      `Could not add a \`zone.js\` import to ${previewConfigPath} automatically: ${error}. ` +
+        "If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview."
+    );
   }
 };
 
@@ -318,6 +469,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     result,
     dryRun = false,
     mainConfigPath,
+    previewConfigPath,
     storiesPaths,
     configDir,
     packageManager,
@@ -389,14 +541,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // Track whether any migrated builder config disabled Compodoc, so the
     // intent can be carried into framework.options (step 4b).
     let disableCompodoc = false;
+    // Injection fires unless EVERY storybook target sets `experimentalZoneless: true`.
+    let anyStorybookTarget = false;
+    let allZonelessTrue = true;
 
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, disablesCompodoc } = await transformJsonFile(angularJsonPath, dryRun);
+      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
+        transformAngularJson(angularJsonPath, dryRun);
       disableCompodoc ||= disablesCompodoc;
+      if (hasStorybookTarget) {
+        anyStorybookTarget = true;
+        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+      }
       if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
       }
@@ -415,8 +575,13 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       absolute: true,
     });
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, disablesCompodoc } = await transformJsonFile(projectJsonPath, dryRun);
+      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
+        await transformProjectJson(projectJsonPath, dryRun);
       disableCompodoc ||= disablesCompodoc;
+      if (hasStorybookTarget) {
+        anyStorybookTarget = true;
+        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+      }
       if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
       }
@@ -456,6 +621,15 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             "Set `compodoc: false` in your main config's framework.options manually."
         );
       }
+    }
+
+    const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
+    if (needsZoneJs && previewConfigPath) {
+      await addZoneJsPreviewImport(previewConfigPath, dryRun);
+    } else if (needsZoneJs && !previewConfigPath) {
+      logger.warn(
+        "Could not find a Storybook preview file to add the zone.js import to. If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview file manually."
+      );
     }
 
     // 5. Update import statements across config and story files.

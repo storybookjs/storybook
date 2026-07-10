@@ -1,142 +1,125 @@
 # Storybook Claude Code Plugin
 
-Build, preview, and test UI components from Claude.
+You can use Storybook's plugin in Claude Code or Claude Desktop to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. If you're using Claude Desktop, the agent can automatically open relevant stories in the Agentic Development Environment (ADE) preview, so you can review the agent's work.
 
-This package installs Storybook-specific skills for Claude.
+## Requirements
 
-## Testing from GitHub
+- Storybook 10.5 or later
+- [Claude Code](https://claude.ai/code) or [Claude Desktop](https://claude.ai/desktop)
 
-Install the Storybook marketplace directly from this repository's `main` branch:
+## Installation
 
-```sh
-claude plugin marketplace add storybookjs/mcp@main --scope user
-claude plugin install storybook@storybook --scope user
-```
+> ![NOTE]
+> Because the plugins are [experimental](https://storybook.js.org/docs/releases/features#experimental), they have not yet been added to Claude's marketplace. These instructions guide you to add the Storybook marketplace to your harness and install the plugin from there.
 
-Verify the installed plugin:
+<details>
+<summary>Claude Code</summary>
 
-```sh
-claude plugin list --json
-claude mcp list
-```
+1. Run this command to add the Storybook marketplace to Claude Code:
 
-The output should include `storybook@storybook` with `"enabled": true`, and
-`claude mcp list` should show `plugin:storybook:storybook` with no MCP servers (the plugin uses CLI-based skills).
+   ```bash
+   claude plugin marketplace add storybookjs/mcp@main --scope user
+   ```
 
-## Local development
+2. Then install the plugin:
 
-This package includes a local Claude marketplace descriptor at `.claude-plugin/marketplace.json`. It points at this same directory so you can register, install, and update the plugin the same way users will once it ships through the official marketplace.
+   ```bash
+   claude plugin install storybook@storybook --scope user
+   ```
 
-Claude has two lifecycle layers:
+3. Confirm the plugin is available:
 
-- the **marketplace** entry, which tells Claude where to find this plugin catalog
-- the installed **plugin**, `storybook@storybook`, which is installed from that marketplace
+   ```bash
+   claude plugin list
+   ```
 
-Run package scripts from the repository root with `pnpm --filter @storybook/claude-code-plugin run <script>`, or from this package directory with `pnpm run <script>`.
+You're all set!
 
-Validate the marketplace and plugin manifests:
+</details>
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run validate
-```
+<details>
+<summary>Claude Desktop</summary>
 
-Run the same validation in vitest before pushing changes (from the repository root):
+1. Run this command to add the Storybook marketplace to Claude Desktop:
 
-```sh
-pnpm vitest run --project=@storybook/claude-code-plugin
-```
+   ```bash
+   /plugin marketplace add storybookjs/mcp@main --scope user
+   ```
 
-The test runs `claude plugin validate` for the marketplace and plugin manifests. It skips when the Claude CLI is not installed. Use `validate` for manual checks or CI, and `plugin:install` below for local install testing.
+2. Then install the plugin:
 
-Install the plugin from this checkout at user scope:
+   ```bash
+   /plugin install storybook@storybook --scope user
+   ```
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:install
-```
+3. Confirm the plugin is available:
 
-This validates the manifests, adds this package directory as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
+   ```bash
+   /plugin
+   ```
 
-After changing plugin files, refresh the installed plugin from the local marketplace:
+   Then go to the Installed tab to confirm the plugin is listed.
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run marketplace:update
-pnpm --filter @storybook/claude-code-plugin run plugin:update
-```
+You're all set!
 
-If the installed plugin cache still looks stale, reinstall it:
+</details>
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run remove
-pnpm --filter @storybook/claude-code-plugin run plugin:install
-```
+### Update a plugin
 
-To fully uninstall Storybook from Claude (plugin, marketplace, and local cache):
+Until the plugins are available in the official marketplaces, you can update a plugin by removing it and following the installation instructions again.
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run remove
-```
+To remove a plugin:
 
-Verify the installed plugin:
+<details>
+<summary>Claude Code</summary>
 
-```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:list
-```
+1. Run this command to remove the Storybook marketplace, which will also uninstall the plugin:
 
-The output should include `storybook@storybook` with:
+   ```bash
+   claude plugin marketplace remove storybook --scope user
+   ```
 
-- `"scope": "user"`
-- `"enabled": true`
+2. Follow the [installation instructions above](#claude-code) to re-add the marketplace and install the plugin again.
 
-Check that Claude Code picks up the plugin-provided MCP server:
+</details>
 
-```sh
-claude mcp list
-```
+<details>
+<summary>Claude Desktop</summary>
 
-The output should include:
+1. Run `/plugin` and go to the Marketplaces tab
 
-```text
-plugin:storybook:storybook: (no MCP servers)
-```
+2. Remove the "storybook" marketplace
 
-The important signal for this package is that `plugin:storybook:storybook` appears and the Storybook skills are available.
+3. Follow the [installation instructions above](#claude-desktop) to re-add the marketplace and install the plugin again.
 
-To test in Claude Desktop, restart Claude Desktop after installing or updating the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
+</details>
 
-## Scripts
+## Usage
 
-- `validate`: Validate this package's marketplace and plugin manifests.
-- `marketplace:add`: Add this package directory as the `storybook` marketplace at user scope.
-- `marketplace:update`: Update the configured `storybook` marketplace checkout.
-- `marketplace:remove`: Remove the configured `storybook` marketplace.
-- `plugin:install`: Validate, add the marketplace, and install `storybook@storybook` at user scope.
-- `plugin:update`: Update the installed `storybook@storybook` plugin cache.
-- `plugin:remove`: Uninstall `storybook@storybook` from user scope.
-- `remove`: Uninstall the plugin, remove the marketplace, and delete `~/.claude/plugins/cache/storybook`.
-- `plugin:list`: Print installed Claude plugins as JSON.
+The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
 
-## Distribution
+If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/10.5/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
-This package is private during development. The repository root includes
-`.claude-plugin/marketplace.json` so testers can install from GitHub with
-`claude plugin marketplace add storybookjs/mcp@main`. The local marketplace in
-this package is for package-local development and validation. The plugin will
-eventually ship through the official Claude plugin marketplace.
+## Skills
 
-The plugin directory must include these files:
+These skills are available to agents that have the Storybook plugin installed. They can be referenced in prompts (e.g. `/upgrade`) or the agent can use them indirectly while working on a task.
 
-- `.claude-plugin/marketplace.json` (package-local testing only)
-- `.claude-plugin/plugin.json`
-- `.mcp.json`
-- `skills/**`
-- `README.md`
+### `init`
 
-## MCP server
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](./packages/addon-mcp), then runs the [setup](#setup) skill.
 
-The plugin's `.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook ai` CLI instead.
+### `setup`
 
-## Included Skills
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
 
-- `storybook-init`: Add Storybook to a project that does not have it yet.
-- `storybook-setup`: Run `storybook ai setup` and follow its output.
-- `storybook-upgrade`: Upgrade older Storybook projects when repair or version checks require it.
+### `stories`
+
+Instructs the agent to use stories for all UI work.
+
+### `upgrade`
+
+Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](https://storybook.js.org/docs/releases/upgrading) in your project.
+
+## Tools
+
+All of [Storybook MCP server's tools](https://storybook.js.org/docs/ai/mcp/overview#toolsets) are available to agents that have the plugin installed.

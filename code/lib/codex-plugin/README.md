@@ -1,149 +1,83 @@
 # Storybook Codex Plugin
 
-Private workspace package for the Storybook Codex plugin. It bundles Storybook setup, init, and upgrade skills with MCP configuration for UI component workflows.
+You can use Storybook's Codex plugin to connect agents to your Storybook. Agents can then use the plugin's skills and tools to generate UI, run tests, and preview their work in your Storybook. The agent can automatically open relevant stories in the ADE preview, so you can inspect the components and their code.
 
-This package is intentionally shaped like a Codex plugin while living under `packages/` so it can be tested from this repository and later submitted to the official Codex marketplace. Codex does not install plugins from npm directly; it discovers plugin folders through a marketplace catalog. The repository root contains the GitHub-installable marketplace, and this package includes `.agents/plugins/marketplace.json` for package-local development.
+## Requirements
 
-## Testing from GitHub
+- Storybook 10.5 or later
+- [Codex](https://openai.com/codex/)
 
-Install the Storybook marketplace directly from this repository's `main` branch:
+## Installation
 
-```sh
-codex plugin marketplace add storybookjs/mcp --ref main
-codex plugin add storybook@storybook
-```
+> ![NOTE]
+> Because the plugin is [experimental](https://storybook.js.org/docs/releases/features#experimental), it has not yet been added to Codex's marketplace. These instructions guide you to add the Storybook marketplace to Codex and install the plugin from there.
 
-Verify the marketplace and plugin:
+1. Run this command to add the Storybook marketplace to Codex:
 
-```sh
-codex plugin marketplace list
-codex plugin list --marketplace storybook
-```
+   ```bash
+   codex plugin marketplace add storybookjs/mcp --ref main
+   ```
 
-The plugin should appear as `storybook@storybook` with status `installed, enabled`.
+2. Then install the plugin:
 
-## Package layout
+   ```bash
+   codex plugin add storybook@storybook
+   ```
 
-```text
-packages/codex-plugin/
-  .agents/plugins/marketplace.json
-  plugins/storybook/
-    .codex-plugin/plugin.json
-    .mcp.json
-    skills/
-    assets/
-```
+3. Confirm the plugin is available:
 
-This matches the layout Codex expects for bundled marketplaces such as `openai-bundled`: the marketplace root contains `.agents/plugins/marketplace.json`, and each plugin lives under `plugins/<name>/`.
+   ```bash
+   codex plugin list --marketplace storybook
+   ```
 
-## Local Testing
+You're all set!
 
-Codex exposes marketplace lifecycle and plugin install commands in the CLI.
+### Update a plugin
 
-Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
+Until the plugins are available in the official marketplaces, you can update a plugin by removing it and following the installation instructions again.
 
-Run marketplace validation before pushing changes:
+To remove a plugin:
 
-```sh
-pnpm --filter @storybook/codex-plugin validate:marketplace
-```
+1. Run this command to remove the plugin from Codex:
 
-This checks the marketplace/plugin layout and that `codex plugin marketplace add` succeeds against a clean `CODEX_HOME`.
+   ```bash
+   codex plugin remove storybook@storybook
+   ```
 
-Add this package directory as the local Storybook marketplace:
+2. Then remove the Storybook marketplace:
 
-```sh
-pnpm --filter @storybook/codex-plugin run marketplace:add
-```
+   ```bash
+   codex plugin marketplace remove storybook
+   ```
 
-Or from this directory:
+3. Follow the [installation instructions above](#installation) to re-add the marketplace and install the plugin again.
 
-```sh
-pnpm run marketplace:add
-```
+## Usage
 
-Then test the plugin in the Codex app:
+The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
 
-1. Restart Codex so it reloads `~/.codex/config.toml`.
-2. Open the Codex plugin picker.
-3. Select the `Storybook` marketplace.
-4. Install the `Storybook` plugin from the Coding section.
-5. Use one of the starter prompts, such as `Set up Storybook for Codex`, to verify the plugin metadata and bundled skills are available.
+The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/10.5/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
-If you edit this package while testing, force a clean reinstall:
+## Skills
 
-```sh
-pnpm --filter @storybook/codex-plugin run remove
-pnpm --filter @storybook/codex-plugin run marketplace:add
-```
+These skills are available to agents that have the Storybook plugin installed. They can be referenced in prompts (e.g. `/upgrade`) or the agent can use them indirectly while working on a task.
 
-Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex caches plugins under `~/.codex/plugins/cache/` and does not pick up file changes until you reinstall.
+### `init`
 
-The plugin uses CLI-based skills and does not require a running MCP server.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](./packages/addon-mcp), then runs the [setup](#setup) skill.
 
-To test from a Git branch, install the repository-level marketplace and pin the
-branch:
+### `setup`
 
-```sh
-codex plugin marketplace add storybookjs/mcp --ref <branch>
-codex plugin add storybook@storybook
-```
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
 
-In the Codex **Add marketplace** UI, use the same values:
+### `stories`
 
-| Field   | Value                                                               |
-| ------- | ------------------------------------------------------------------- |
-| Source  | `storybookjs/mcp`                                                   |
-| Git ref | your branch name, for example `kasper/create-claude-plugin-package` |
+Instructs the agent to use stories for all UI work.
 
-Do **not** use `plugins/codex` — that path does not exist in this repository.
+### `upgrade`
 
-For day-to-day development, prefer the local marketplace command instead of the Git UI:
+Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](https://storybook.js.org/docs/releases/upgrading) in your project.
 
-```sh
-pnpm --filter @storybook/codex-plugin run marketplace:add
-```
+## Tools
 
-After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, run `remove` and `marketplace:add`, then reinstall the plugin in Codex.
-
-## Scripts
-
-- `validate:marketplace`: Validate layout and run a clean `CODEX_HOME` marketplace add smoke test.
-- `marketplace:add`: Add this package directory as a local Codex marketplace.
-- `marketplace:remove`: Remove the configured `storybook` Codex marketplace.
-- `remove`: Remove the marketplace, delete `[plugins."storybook@storybook"]` from `~/.codex/config.toml`, and delete `~/.codex/plugins/cache/storybook`.
-
-Use `remove` for a full uninstall without manual config edits.
-
-## MCP Runtime
-
-The plugin's `plugins/storybook/.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook ai` CLI instead.
-
-## Smoke Test
-
-Use a clean Codex config directory to verify that the marketplace descriptor is loadable without relying on existing local state. Run this from `packages/codex-plugin`:
-
-```sh
-CODEX_HOME=$(mktemp -d)
-CODEX_HOME="$CODEX_HOME" codex plugin marketplace add "$(pwd)"
-```
-
-The command should report:
-
-```text
-Added marketplace `storybook`
-```
-
-Then inspect the clean config:
-
-```sh
-cat "$CODEX_HOME/config.toml"
-```
-
-The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should include the `storybook` MCP server from `plugins/storybook/.mcp.json`.
-
-## Included Skills
-
-- `init`: Add Storybook to a project that does not have it yet.
-- `setup`: Run `storybook ai setup` and follow its output.
-- `upgrade`: Upgrade older Storybook projects when repair or version checks require it.
+All of [Storybook MCP server's tools](https://storybook.js.org/docs/ai/mcp/overview#toolsets) are available to agents that have the plugin installed.

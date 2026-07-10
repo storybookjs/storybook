@@ -245,7 +245,7 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const { landmarkProps } = useLandmark(
-    { role: 'region', 'aria-label': 'About this review' },
+    { role: 'contentinfo', 'aria-label': 'About this review' },
     regionRef
   );
   return (

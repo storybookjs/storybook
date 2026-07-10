@@ -5,7 +5,7 @@ import {
 
 import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { resolve } from 'pathe';
+import { join, resolve } from 'pathe';
 import polka from 'polka';
 import {
   BuildEnvironment,
@@ -245,7 +245,11 @@ function main(options?: UserOptions): PluginOption {
         sb.channel = globalWithChannel.__SB_CHANNEL__;
       }
 
-      const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel');
+      const addonsDir = join(
+        server.config.root,
+        'node_modules/.cache/storybook-vite-manager/sb-addons'
+      );
+      const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel', addonsDir);
 
       // derived here (not at plugin creation) so the storybook-mode basePath override applies
       const baseNoSlash = basePath.replace(/\/+$/, '');
@@ -255,6 +259,7 @@ function main(options?: UserOptions): PluginOption {
         options: sb,
         basePath,
         managerHtml,
+        addonsDir,
         storyIndexGenerator,
         staticHandlers,
         proxy: createProxyMiddleware({

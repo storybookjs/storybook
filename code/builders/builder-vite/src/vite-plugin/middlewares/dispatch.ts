@@ -7,7 +7,7 @@ import { join } from 'pathe';
 import type { Connect, DevEnvironment, ViteDevServer } from 'vite';
 
 import { renderIframeHtml } from './iframe.ts';
-import { createManagerAssetsHandler } from './manager.ts';
+import { createAddonsAssetsHandler, createManagerAssetsHandler } from './manager.ts';
 
 const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx?)(?:$|\?)/;
 const cssLangsRE = /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -54,6 +54,7 @@ export interface StorybookMiddlewareOptions {
   options: Options;
   basePath: string;
   managerHtml: string;
+  addonsDir: string;
   storyIndexGenerator: StoryIndexGenerator;
   staticHandlers: Connect.NextHandleFunction[];
   proxy: Connect.NextHandleFunction;
@@ -72,6 +73,7 @@ function createStorybookMiddleware(
     options,
     basePath,
     managerHtml,
+    addonsDir,
     storyIndexGenerator,
     staticHandlers,
     proxy,
@@ -80,6 +82,7 @@ function createStorybookMiddleware(
   const DEPS_STORYBOOK_PREFIX = '/node_modules/.cache/storybook-vite-deps/deps/';
   const prefix = basePath.replace(/\/+$/, '');
   const managerAssets = createManagerAssetsHandler();
+  const addonsAssets = createAddonsAssetsHandler(addonsDir);
 
   return async (req, res, next) => {
     const originalUrl = req.url;
@@ -130,6 +133,16 @@ function createStorybookMiddleware(
       if (pathname.startsWith('/sb-manager/')) {
         req.url = url.slice('/sb-manager'.length) || '/';
         managerAssets(req, res, () => {
+          req.url = originalUrl;
+          res.statusCode = 404;
+          res.end();
+        });
+        return;
+      }
+
+      if (pathname.startsWith('/sb-addons/')) {
+        req.url = url.slice('/sb-addons'.length) || '/';
+        addonsAssets(req, res, () => {
           req.url = originalUrl;
           res.statusCode = 404;
           res.end();

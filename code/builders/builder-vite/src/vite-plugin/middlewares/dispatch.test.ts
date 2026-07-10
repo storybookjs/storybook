@@ -11,6 +11,14 @@ vi.mock('./iframe.ts', () => ({
 }));
 vi.mock('./manager.ts', () => ({
   createManagerAssetsHandler: (): Connect.NextHandleFunction => (_req, _res, next) => next(),
+  createAddonsAssetsHandler: (): Connect.NextHandleFunction => (req, res, next) => {
+    if (req.url === '/manager-bundle.js') {
+      res.statusCode = 200;
+      (res as unknown as { end(body?: unknown): void }).end('addon-bundle');
+      return;
+    }
+    next();
+  },
 }));
 
 const MANAGER_HTML = '<html>manager</html>';
@@ -31,6 +39,7 @@ function createMiddleware(basePath: string) {
     options: {} as Options,
     basePath,
     managerHtml: MANAGER_HTML,
+    addonsDir: '/project/node_modules/.cache/storybook-vite-manager/sb-addons',
     storyIndexGenerator: {
       getIndex: async () => ({ v: 5, entries: {} }),
     } as unknown as StoryIndexGenerator,
@@ -114,6 +123,23 @@ describe('storybook dispatch middleware', () => {
     const { next } = await run(middleware, '/__storybook-docs/page');
 
     expect(next).toHaveBeenCalled();
+  });
+
+  it('serves compiled addon bundles from the sb-addons mount', async () => {
+    const middleware = createMiddleware('/__storybook/');
+    const { res, next } = await run(middleware, '/__storybook/sb-addons/manager-bundle.js');
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe('addon-bundle');
+  });
+
+  it('404s for unknown sb-addons assets instead of falling through', async () => {
+    const middleware = createMiddleware('/__storybook/');
+    const { res, next } = await run(middleware, '/__storybook/sb-addons/missing.js');
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(404);
   });
 
   it('serves the manager HTML at the root without redirecting when mounted at /', async () => {

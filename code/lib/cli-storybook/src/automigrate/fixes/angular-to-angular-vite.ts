@@ -528,15 +528,25 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       logger.debug('Updating dependencies...');
       await packageManager.removeDependencies([ANGULAR_PACKAGE]);
 
-      // @analogjs/vite-plugin-angular is a required peer dependency of @storybook/angular-vite
-      // that a webpack-based Angular project won't have. npm auto-installs missing peers, but
-      // yarn and pnpm do not, so it must be added explicitly — mirroring the init generator.
-      // An already-declared version is left untouched. `vite` is a direct dependency of the
-      // framework, so it needs no entry here.
+      // Required peer dependencies of @storybook/angular-vite that a webpack-based Angular
+      // project may not have (@angular/animations is only an optional peer of
+      // @storybook/angular). npm auto-installs missing peers, but yarn and pnpm do not, so
+      // they must be added explicitly — mirroring the init generator. Packages the project
+      // already declares are left untouched. `vite` is a direct dependency of the framework,
+      // so it needs no entry here.
       const allDeps = packageManager.getAllDependencies();
+      const angularVersion = packageManager.getDependencyVersion('@angular/core');
+      const requiredPeerDeps = [
+        { name: '@analogjs/vite-plugin-angular', spec: '@analogjs/vite-plugin-angular' },
+        {
+          name: '@angular/animations',
+          spec: angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+        },
+      ];
+
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
-        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
+        ...requiredPeerDeps.filter(({ name }) => !allDeps[name]).map(({ spec }) => spec),
       ]);
     }
 

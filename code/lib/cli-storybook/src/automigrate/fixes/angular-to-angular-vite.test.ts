@@ -353,20 +353,48 @@ describe('angular-to-angular-vite', () => {
       } as any);
 
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
-      // @analogjs/vite-plugin-angular is a required peer of @storybook/angular-vite and is
-      // installed alongside the framework because yarn/pnpm do not auto-install missing peers.
+      // Required peers of @storybook/angular-vite are installed alongside the framework because
+      // yarn/pnpm do not auto-install missing peer dependencies.
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
-        [`${ANGULAR_VITE_PACKAGE}@9.0.0`, '@analogjs/vite-plugin-angular']
+        [`${ANGULAR_VITE_PACKAGE}@9.0.0`, '@analogjs/vite-plugin-angular', '@angular/animations']
       );
     });
 
-    it('does not re-add @analogjs/vite-plugin-angular when the project already declares it', async () => {
+    it('pins @angular/animations to the declared @angular/core range', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+      vi.mocked(mockPackageManager.getDependencyVersion).mockImplementation((dep: string) =>
+        dep === '@angular/core' ? '^21.2.0' : null
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        [
+          `${ANGULAR_VITE_PACKAGE}@9.0.0`,
+          '@analogjs/vite-plugin-angular',
+          '@angular/animations@^21.2.0',
+        ]
+      );
+    });
+
+    it('does not re-add peer dependencies the project already declares', async () => {
       mockPromptConfirm.mockResolvedValue(false);
       mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
         '@analogjs/vite-plugin-angular': '^2.5.0',
+        '@angular/animations': '^21.0.0',
       });
 
       await angularToAngularVite.run!({

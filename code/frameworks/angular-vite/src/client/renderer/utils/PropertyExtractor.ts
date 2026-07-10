@@ -126,12 +126,11 @@ export class PropertyExtractor implements NgModuleMetadata {
       console.warn(
         dedent`
           Storybook Warning:
-          "${ngModuleName}" was found in moduleMetadata.imports, but @storybook/angular-vite no longer registers its providers automatically.
-          This module is part of Angular's deprecated legacy animations API (deprecated since Angular 20.2, intended for removal in v23).
+          "${ngModuleName}" was found and removed from moduleMetadata.imports, but @storybook/angular-vite no longer registers its providers automatically.
+          This module is part of Angular's legacy animations API, which is deprecated since Angular 20.2 and intended for removal in v23.
           To migrate:
-            - Preferred: use native CSS transitions or the 'animate.enter' / 'animate.leave' bindings (Angular 20.2+).
-            - Or: keep using the legacy animations API yourself by adding '${provideFn}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
-          "${ngModuleName}" was removed from moduleMetadata.imports; no providers were added automatically.
+            - Preferred: Use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+).
+            - Or: Keep using the legacy animations API yourself by adding '${provideFn}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
         `
       );
       return [true];

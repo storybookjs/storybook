@@ -32,6 +32,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         for (let attempt = 1; attempt <= MAX_DTS_ATTEMPTS; attempt++) {
           let timer: ReturnType<typeof setTimeout> | undefined;
+          let killTimer: ReturnType<typeof setTimeout> | undefined;
           const dtsProcess = spawn(
             `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
             [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
@@ -63,20 +64,27 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
                 resolve(void 0);
               });
             }),
-            new Promise((resolve) => {
+            new Promise<void>(() => {
+              // This promise never resolves: the exit/error/close listeners above
+              // settle the race once the child has actually terminated, so a retry
+              // can never overlap a timed-out process that is still writing .d.ts
+              // files. 'SIGTERM' (not a number): an invalid signal makes kill()
+              // throw ERR_UNKNOWN_SIGNAL, crashing the build instead of retrying.
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
-
-                // 'SIGTERM' (not a number): an invalid signal makes kill() throw
-                // ERR_UNKNOWN_SIGNAL, crashing the build instead of retrying.
-                dtsProcess.kill('SIGTERM'); // timed out
-                resolve(void 0);
+                dtsProcess.kill('SIGTERM');
+                killTimer = setTimeout(() => {
+                  dtsProcess.kill('SIGKILL');
+                }, 5000);
               }, 120000);
             }),
           ]);
 
           if (timer) {
             clearTimeout(timer);
+          }
+          if (killTimer) {
+            clearTimeout(killTimer);
           }
 
           if (dtsProcess.exitCode !== 0) {

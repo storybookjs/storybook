@@ -198,6 +198,94 @@ ruleTester.run('await-interactions', rule, {
         },
       ],
     },
+    // v10 serves userEvent/expect from the bare `storybook/test` entry point. The next
+    // two cases gate through one helper each (expect-only, then userEvent-only) so both
+    // import checks are covered independently.
+    {
+      code: dedent`
+        import { expect, findByText } from 'storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          // should complain
+          expect(args.onClick).toHaveBeenCalled()
+          const element = findByText(canvasElement, 'asdf')
+        }
+      `,
+      output: dedent`
+        import { expect, findByText } from 'storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          // should complain
+          await expect(args.onClick).toHaveBeenCalled()
+          const element = await findByText(canvasElement, 'asdf')
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'toHaveBeenCalled' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect, findByText } from 'storybook/test'
+                WithModalOpen.play = async ({ args }) => {
+                  // should complain
+                  await expect(args.onClick).toHaveBeenCalled()
+                  const element = findByText(canvasElement, 'asdf')
+                }
+              `,
+            },
+          ],
+        },
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'findByText' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect, findByText } from 'storybook/test'
+                WithModalOpen.play = async ({ args }) => {
+                  // should complain
+                  expect(args.onClick).toHaveBeenCalled()
+                  const element = await findByText(canvasElement, 'asdf')
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import { userEvent } from 'storybook/test'
+        Basic.play = async () => {
+          userEvent.click(button)
+        }
+      `,
+      output: dedent`
+        import { userEvent } from 'storybook/test'
+        Basic.play = async () => {
+          await userEvent.click(button)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'userEvent' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { userEvent } from 'storybook/test'
+                Basic.play = async () => {
+                  await userEvent.click(button)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
     {
       code: dedent`
         WithModalOpen.play = ({ canvasElement }) => {

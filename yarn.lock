@@ -360,7 +360,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/animations@npm:^21.0.0, @angular/animations@npm:^21.2.14":
+"@angular/animations@npm:^21.0.0":
   version: 21.2.22
   resolution: "@angular/animations@npm:21.2.22"
   dependencies:
@@ -11214,7 +11214,6 @@ __metadata:
     "@angular-devkit/architect": "npm:^0.2102.12"
     "@angular-devkit/build-angular": "npm:^21.2.12"
     "@angular-devkit/core": "npm:^21.2.12"
-    "@angular/animations": "npm:^21.2.14"
     "@angular/common": "npm:^21.2.14"
     "@angular/compiler": "npm:^21.2.14"
     "@angular/compiler-cli": "npm:^21.2.14"
@@ -11240,7 +11239,6 @@ __metadata:
     "@analogjs/vite-plugin-angular": ">=2.0.0"
     "@angular-devkit/architect": ">=0.2100.0 < 0.2300.0"
     "@angular-devkit/core": ">=21.0.0 < 23.0.0"
-    "@angular/animations": ">=21.0.0 < 23.0.0"
     "@angular/build": ">=21.0.0 < 23.0.0"
     "@angular/cli": ">=21.0.0 < 23.0.0"
     "@angular/common": ">=21.0.0 < 23.0.0"

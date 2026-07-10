@@ -177,7 +177,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         '@storybook/angular-vite',
         '@angular/compiler',
         '@angular/platform-browser',
-        '@angular/platform-browser/animations',
         '@angular/common/http',
         'tslib',
         ...(zoneless ? [] : ['zone.js']),

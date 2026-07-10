@@ -67,7 +67,9 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
 
-                dtsProcess.kill(408); // timed out
+                // 'SIGTERM' (not a number): an invalid signal makes kill() throw
+                // ERR_UNKNOWN_SIGNAL, crashing the build instead of retrying.
+                dtsProcess.kill('SIGTERM'); // timed out
                 resolve(void 0);
               }, 120000);
             }),

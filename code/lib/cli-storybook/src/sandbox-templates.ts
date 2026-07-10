@@ -740,7 +740,7 @@ export const baseTemplates = {
     modifications: {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
-      extraDependencies: ['@angular/forms@^21.2.0', '@angular/animations@^21.2.0'],
+      extraDependencies: ['@angular/forms@^21.2.0'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -759,10 +759,10 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
-      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms. Match the `^22` major
+      // `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
-      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      extraDependencies: ['@angular/forms@^22', 'typescript@^6'],
       useCsfFactory: true,
     },
     extraCiSteps: {

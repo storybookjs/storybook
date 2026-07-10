@@ -1,5 +1,66 @@
 # @storybook/addon-mcp
 
+## 0.7.0
+
+### Minor Changes
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Added the `display-review` tool. The agent pushes a curated review of current changes and returns the review-page URL. Pairs with the `@storybook/addon-review` Storybook addon.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add the `get-stories-by-component` tool. Maps component source files to the stories that render them via Storybook's live reverse dependency graph, returning grounded story IDs ranked by import distance. Also hardens change detection: `get-changed-stories` now surfaces working-tree files that are unreachable from any story, and story-index resolution and reverse-graph lookups are normalized for cross-platform (Windows) path handling.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Introduced the `get-changed-stories` tool to retrieve metadata for stories marked as new, modified, or affected.
+  Updated `dev-instructions.md` and `storybook-story-instructions.md` to reflect the new workflow for calling `get-changed-stories` before `preview-stories`.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Enabled the review workflow by default for the `storybook ai` CLI channel (the Claude/Codex plugins). Requests carrying the trusted local-client header get `display-review` and the review instructions without setting `experimentalReview`; direct MCP clients keep the opt-in flag, and `experimentalReview: false` turns review off for both channels.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add an optional MCP endpoint setting for the addon dev server.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Make the review tooling opt-in via the new `experimentalReview` feature flag. Previously `display-review` (and the review-mode behavior of `preview-stories` / `get-changed-stories`) was enabled whenever the `changeDetection` feature flag was on — which is Storybook's default. Now review requires explicitly enabling `features.experimentalReview` in `.storybook/main.ts` (on top of `changeDetection`), so change detection stays on by default while review ships disabled by default.
+
+  With the flag off, the server instructions are byte-identical to the previous release; the review-flavored instructions are only served with the flag on.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Expose serverless Storybook AI metadata from addon-mcp presets. The new preset returns MCP-shaped instructions and tool descriptors, plus a local `get-storybook-story-instructions` runner that shares the same builders as the live MCP server.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Support v0 (inline) and v1 (split/ref) Storybook manifest formats. `@storybook/mcp` follows `$ref` pointers into sibling `services/` payloads for static and remote sources; `@storybook/addon-mcp` adds an in-process manifest provider for `experimentalDocgenServer` dev mode and fixes composition so local docgen-server and remote v0/v1 composed sources all work.
+
+### Patch Changes
+
+- [#359](https://github.com/storybookjs/mcp/pull/359) [`4eb4a2e`](https://github.com/storybookjs/mcp/commit/4eb4a2eff337fc9fa04ce3c30d07d0f7f255b68f) Thanks [@huang-julien](https://github.com/huang-julien)! - Add a schema description to the `collections` argument of the `display-review` tool. The field now documents that collections are groups of stories to show in the review, ordered most-relevant-first, with a preferred 2-5 range. Previously it carried no description, so MCP clients and the `storybook ai display-review` help had no guidance on the argument's shape or intent.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Make display-review the single ending for visual work: the after-change instruction step now feeds story discovery into the review instead of ending at preview URLs, preview-stories is framed as a mid-loop tool, the "or you skipped it" escape is removed (non-visual changes say so plainly instead of listing links), and get-changed-stories results append a "publish the review now" next-step hint when review is enabled. Fixes agents completing visual changes but handing back preview links instead of the review.
+
+  The preview-stories tool also closes the review exit ramp: when review is enabled its description states display-review's availability as fact instead of hedging with "when available" (which let an agent that wrongly believed the tool was missing treat raw links as a sanctioned fallback), and its results append a recovery nudge pointing finished visual work and browse requests back to display-review. When review is disabled, the description no longer mentions display-review at all — the tool is not registered in those sessions.
+
+  The get-storybook-story-instructions story-linking workflow gets the same review-aware rewrite: with review enabled it now routes discovered story IDs into display-review and forbids constructing IDs from file names or memory, instead of framing get-changed-stories as a preview-stories helper. The `storybook ai --help` output embeds the same server instructions, so on the CLI/plugin path the two channels contradicted each other — this tool, billed as the source of truth for story work, still pointed discovery at previews, and agents were observed resolving the conflict by publishing reviews with hand-derived story IDs and zero discovery calls.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Refine the review/preview workflow so agents reuse the running Storybook and present a single set of links:
+
+  - **Reuse the running Storybook.** A successful tool call proves Storybook is already running, so the agent is instructed never to start another instance (no `storybook dev`, launcher, or new port) just to view a review — a busy port is the instance to reuse, not a conflict to route around.
+  - **`display-review` triggers on insight requests too.** Beyond post-change reviews, it now fires when the user wants to browse stories/components (e.g. "show me all badge components"), rendering exactly those stories with no diff (`changedFiles` omitted).
+  - **One set of links in the final response.** When `display-review` is available, the response links only the curated review page ("You can see a curated summary of stories in the Storybook review page"); otherwise it lists the individual preview URLs — never both.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Show private composed Storybooks as own-MCP guidance when accessed through the local MCP proxy.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Add Storybook 10.5 prerelease packages to the supported peer dependency range.
+
+  The `display-review` tool schema now requires `changedFiles`: pass the paths of
+  the files you changed (most central first), or an empty array `[]` for browse
+  requests where no code changed. Payloads that previously omitted the field will
+  fail validation.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Gate the `display-review` tool solely on the `changeDetection` feature flag. The previous `@storybook/addon-review` package-presence check is removed, since review is now built into Storybook core.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Close the shared-code and docs-question gaps in the default (review-off) workflow steering, which eval runs showed agents falling through:
+
+  - The dev and validation instructions now trigger on "anything that changes how the UI looks" (the stories skill's proven phrasing) instead of only "any component or story" — a theme-token edit is literally neither, so agents (GPT-5.5 on the MCP path consistently) finished shared-file changes with shell-level verification only, never calling preview-stories or run-story-tests. The preview-stories and run-story-tests descriptions carry the same trigger, including that a shared file has no stories of its own so the consumers' stories are the ones to surface, and that typecheck/lint does not replace story tests.
+  - The docs-question rule now opens the server instructions ("Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions") — Claude Code was observed grepping component source for props questions without ever reaching the rule further down. Design-system discovery is unconditional for new UI work — agents answered docs requests by grepping component source while still producing a correct-looking answer. The get-documentation and list-all-documentation descriptions repeat that steering at the tool level, where it reaches agents even when a client truncates server instructions, and get-storybook-story-instructions (the tool billed as the source of truth for story work, on both the MCP and `storybook ai` CLI channels) appends a Design-System Documentation section whenever the docs tools are registered.
+
+  The review-off server instructions stay under the 2,048-char client truncation limit (now 2,046 chars), paid for by tightening existing sentences without dropping any rule.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Slimmed the `experimentalReview` server instructions under the 2,048-character client truncation limit. Claude Code hard-truncates MCP server instructions at 2,048 characters, and the review-flavored instructions had grown to ~8.7k — the Validation and Documentation workflow sections never reached the model and agents stopped using the documentation tools. With the flag on, the dev, test, and docs sections now use slim variants that only carry the workflow triggers; the detailed guidance moved into the tool descriptions and tool results (`get-stories-by-component`, `get-changed-stories`, `display-review`, `list-all-documentation`), which are never truncated. The default (review off) instructions are unchanged. A unit test enforces the limit for every toolset configuration in both review modes.
+
+- [#357](https://github.com/storybookjs/mcp/pull/357) [`4a19151`](https://github.com/storybookjs/mcp/commit/4a1915199892b3f733728844113a6b918ff70be9) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Surface the change-detection and review tools on the `/mcp` landing page. The "Available Toolsets" list now includes `get-stories-by-component`, `get-changed-stories`, and `display-review` under **dev** (each with an enabled/disabled badge reflecting its real runtime gate), and `get-documentation-for-story` under **docs**.
+
 ## 0.6.0
 
 ### Minor Changes

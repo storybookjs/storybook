@@ -74,7 +74,14 @@ export class ComponentMetaManager {
   private _documentRegistry: ts.DocumentRegistry | undefined;
 
   private get documentRegistry(): ts.DocumentRegistry {
-    this._documentRegistry ??= this.typescript.createDocumentRegistry();
+    // A LanguageService always reaches the registry through its *WithKey APIs, passing a path it
+    // canonicalized against its own host, so the registry's `currentDirectory` is never consulted
+    // and is left at its default — it could not hold one value correctly across projects anyway.
+    // `useCaseSensitiveFileNames` is still passed explicitly to match the host, since defaulting it
+    // to `false` would silently lowercase path keys on case-sensitive filesystems.
+    this._documentRegistry ??= this.typescript.createDocumentRegistry(
+      this.typescript.sys.useCaseSensitiveFileNames
+    );
     return this._documentRegistry;
   }
 

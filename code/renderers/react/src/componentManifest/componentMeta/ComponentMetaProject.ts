@@ -186,8 +186,12 @@ export class ComponentMetaProject {
     }
   }
 
+  getSourceFile(fileName: string): ts.SourceFile | undefined {
+    return this.ls.getProgram()?.getSourceFile(fileName);
+  }
+
   hasSourceFile(fileName: string): boolean {
-    return !!this.ls.getProgram()?.getSourceFile(fileName);
+    return !!this.getSourceFile(fileName);
   }
 
   /**

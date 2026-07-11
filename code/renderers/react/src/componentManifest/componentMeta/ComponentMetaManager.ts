@@ -66,8 +66,11 @@ export class ComponentMetaManager {
 
   /**
    * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
-   * private copy of lib.d.ts, React's types and node_modules. Recreated after a heap-pressure
-   * recycle, since the old registry is only released once the projects holding it are disposed.
+   * private copy of lib.d.ts, React's types and node_modules.
+   *
+   * It needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds,
+   * and the registry evicts an entry once its last reference goes, so a heap-pressure recycle empties
+   * it as a side effect of disposing the projects.
    *
    * Lazy because `this.typescript` is a constructor parameter property.
    */
@@ -173,7 +176,6 @@ export class ComponentMetaManager {
     this.inferredProject?.dispose();
     this.configProjects.clear();
     this.inferredProject = undefined;
-    this._documentRegistry = undefined;
   }
 
   // ---------------------------------------------------------------------------

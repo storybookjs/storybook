@@ -64,6 +64,20 @@ export class ComponentMetaManager {
     [number | undefined, ts.IScriptSnapshot | undefined]
   >();
 
+  /**
+   * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
+   * private copy of lib.d.ts, React's types and node_modules. Recreated after a heap-pressure
+   * recycle, since the old registry is only released once the projects holding it are disposed.
+   *
+   * Lazy because `this.typescript` is a constructor parameter property.
+   */
+  private _documentRegistry: ts.DocumentRegistry | undefined;
+
+  private get documentRegistry(): ts.DocumentRegistry {
+    this._documentRegistry ??= this.typescript.createDocumentRegistry();
+    return this._documentRegistry;
+  }
+
   // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
   private readonly heapRecycleThresholdBytes: number;
 
@@ -152,6 +166,7 @@ export class ComponentMetaManager {
     this.inferredProject?.dispose();
     this.configProjects.clear();
     this.inferredProject = undefined;
+    this._documentRegistry = undefined;
   }
 
   // ---------------------------------------------------------------------------
@@ -332,7 +347,8 @@ export class ComponentMetaManager {
           getCommandLine(),
           tsconfig,
           this.fsFileSnapshots,
-          getCommandLine
+          getCommandLine,
+          this.documentRegistry
         );
         this.configProjects.set(tsconfig, project);
 
@@ -371,7 +387,9 @@ export class ComponentMetaManager {
           errors: [],
         },
         undefined,
-        this.fsFileSnapshots
+        this.fsFileSnapshots,
+        undefined,
+        this.documentRegistry
       );
     }
 

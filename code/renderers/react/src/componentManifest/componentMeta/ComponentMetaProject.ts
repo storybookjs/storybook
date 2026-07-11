@@ -59,7 +59,16 @@ export class ComponentMetaProject {
       string,
       [number | undefined, ts.IScriptSnapshot | undefined]
     > = new Map(),
-    private getCommandLineFn?: () => ts.ParsedCommandLine
+    private getCommandLineFn?: () => ts.ParsedCommandLine,
+    /**
+     * Shared document registry owned by ComponentMetaManager.
+     *
+     * Without one, every LanguageService keeps a private copy of each parsed+bound SourceFile, so
+     * each project re-parses lib.d.ts, React's types and node_modules from scratch — the snapshot
+     * cache above only dedupes the file *reads*, not the ASTs. Sharing the registry lets projects
+     * with matching compiler options reuse those SourceFiles.
+     */
+    private documentRegistry?: ts.DocumentRegistry
   ) {
     // Adapted from:
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L110-L141
@@ -124,7 +133,7 @@ export class ComponentMetaProject {
       projectHost
     );
 
-    this.ls = typescript.createLanguageService(languageServiceHost);
+    this.ls = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
   }
 
   getCommandLine(): ts.ParsedCommandLine {

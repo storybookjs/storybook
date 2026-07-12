@@ -117,8 +117,7 @@ describe('multi-project management', () => {
   it('reuses parsed source files across projects', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 
-    // Both projects pull in shared.ts, and both pull in React's declarations via the JSX in their
-    // own component. Neither project has the other's component as a root file.
+    // Two projects that both reach shared.ts, neither having the other's component as a root file.
     writeFiles(tempDir, {
       'shared.ts': `export type Variant = 'primary' | 'secondary';`,
       'app/tsconfig.json': tsconfigJSON(),
@@ -146,10 +145,9 @@ describe('multi-project management', () => {
     const fromCard = cardProject.getSourceFile(sharedPath);
 
     expect(fromButton).toBeDefined();
-    // Identity, not equality: without a shared DocumentRegistry each LanguageService parses and binds
-    // its own copy of every file it reaches — including all of lib.d.ts and React's types, which is
-    // what makes a project-per-package monorepo blow up. Nothing in the extracted docgen output would
-    // reveal the regression, so the shared instance is the only thing left to assert.
+    // Identity, not equality. Without a shared DocumentRegistry each LanguageService parses its own
+    // copy of every file it reaches, and the extracted docgen is unchanged either way, so the shared
+    // instance is the only observable difference.
     expect(fromButton).toBe(fromCard);
   });
 

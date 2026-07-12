@@ -61,12 +61,9 @@ export class ComponentMetaProject {
     > = new Map(),
     private getCommandLineFn?: () => ts.ParsedCommandLine,
     /**
-     * Shared document registry owned by ComponentMetaManager.
-     *
-     * Without one, every LanguageService keeps a private copy of each parsed+bound SourceFile, so
-     * each project re-parses lib.d.ts, React's types and node_modules from scratch — the snapshot
-     * cache above only dedupes the file *reads*, not the ASTs. Sharing the registry lets projects
-     * with matching compiler options reuse those SourceFiles.
+     * Shared by ComponentMetaManager so projects with matching compiler options reuse parsed+bound
+     * SourceFiles. The snapshot cache above dedupes the file *reads*, not the ASTs: without a shared
+     * registry each LanguageService re-parses lib.d.ts, React's types and node_modules from scratch.
      */
     private documentRegistry?: ts.DocumentRegistry
   ) {

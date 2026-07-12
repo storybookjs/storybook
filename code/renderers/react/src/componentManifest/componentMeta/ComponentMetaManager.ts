@@ -68,20 +68,15 @@ export class ComponentMetaManager {
    * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
    * private copy of lib.d.ts, React's types and node_modules.
    *
-   * It needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds,
-   * and the registry evicts an entry once its last reference goes, so a heap-pressure recycle empties
-   * it as a side effect of disposing the projects.
-   *
-   * Lazy because `this.typescript` is a constructor parameter property.
+   * Needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds, and
+   * the registry drops an entry once its last reference goes, so a heap-pressure recycle empties it
+   * as a side effect of disposing the projects.
    */
   private _documentRegistry: ts.DocumentRegistry | undefined;
 
   private get documentRegistry(): ts.DocumentRegistry {
-    // A LanguageService always reaches the registry through its *WithKey APIs, passing a path it
-    // canonicalized against its own host, so the registry's `currentDirectory` is never consulted
-    // and is left at its default — it could not hold one value correctly across projects anyway.
-    // `useCaseSensitiveFileNames` is still passed explicitly to match the host, since defaulting it
-    // to `false` would silently lowercase path keys on case-sensitive filesystems.
+    // `useCaseSensitiveFileNames` defaults to `false`, which would lowercase the registry's path keys
+    // on case-sensitive filesystems, so pass the host's value explicitly.
     this._documentRegistry ??= this.typescript.createDocumentRegistry(
       this.typescript.sys.useCaseSensitiveFileNames
     );

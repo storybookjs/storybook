@@ -216,8 +216,38 @@ ruleTester.run('await-interactions', rule, {
         }
       `,
       errors: [
-        { messageId: 'interactionShouldBeAwaited', data: { method: 'toHaveBeenCalled' } },
-        { messageId: 'interactionShouldBeAwaited', data: { method: 'findByText' } },
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'toHaveBeenCalled' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect, findByText } from 'storybook/test'
+                WithModalOpen.play = async ({ args }) => {
+                  await expect(args.onClick).toHaveBeenCalled()
+                  const element = findByText(canvasElement, 'asdf')
+                }
+              `,
+            },
+          ],
+        },
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'findByText' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect, findByText } from 'storybook/test'
+                WithModalOpen.play = async ({ args }) => {
+                  expect(args.onClick).toHaveBeenCalled()
+                  const element = await findByText(canvasElement, 'asdf')
+                }
+              `,
+            },
+          ],
+        },
       ],
     },
     {

@@ -24,7 +24,6 @@ import { Filter } from './Filter.tsx';
 import type { HeadingProps } from './Heading.tsx';
 import { Heading } from './Heading.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
-import ReviewSidebarFilters from './ReviewSidebarFilters.tsx';
 import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
@@ -202,7 +201,6 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
-            belowSearchContent={<ReviewSidebarFilters />}
             {...lastViewedProps}
           >
             {({

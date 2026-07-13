@@ -247,14 +247,16 @@ export const PreviewRemountOnStoryChange = meta.story({
     const cell = await canvas.findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell);
 
-    expect(cell.querySelector('iframe')?.title).toBe('manager-main--default');
+    expect(cell.querySelector('iframe')?.title).toBe('Manager Main – Default');
 
     await userEvent.click(canvas.getByTestId('swap-preview-story'));
 
     let nextCell: HTMLElement | undefined;
     await waitFor(async () => {
       nextCell = await canvas.findByTestId('review-collection-grid-cell');
-      expect(nextCell.querySelector('iframe')?.title).toBe('manager-settings-aboutscreen--default');
+      expect(nextCell.querySelector('iframe')?.title).toBe(
+        'Manager Settings Aboutscreen – Default'
+      );
     });
     await waitForCellPreviewSettled(nextCell!, { width: 280, height: 180 });
   },
@@ -345,6 +347,32 @@ export const FortyStoriesOverflow = meta.story({
     for (const height of getRowNeighborHeights()) {
       expect(height).toBe(reviewAllHeight);
     }
+  },
+});
+
+// The grid is a list of story items, and each story link is named by its
+// human-formatted title rather than its raw story id.
+export const Accessibility = meta.story({
+  args: {
+    storyIds: ['button-component--base', 'button-component--variants', 'button-component--sizes'],
+    getStoryHref: (storyId: string) => `?path=/story/${storyId}`,
+    showAll: true,
+  },
+  globals: { viewport: { value: 'desktop' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const list = await canvas.findByRole('list');
+    const items = within(list).getAllByRole('listitem');
+    await expect(items.length).toBe(3);
+
+    // Accessible name uses the formatted component/story title, not the raw id.
+    await expect(
+      await canvas.findByRole('link', { name: 'Review story Button Component – Base' })
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('link', { name: /button-component--base/ })
+    ).not.toBeInTheDocument();
   },
 });
 

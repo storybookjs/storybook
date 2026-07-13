@@ -192,6 +192,83 @@ describe('bootTestRunner', () => {
     expect(mockChannel.last('some-event')).toEqual(['foo']);
   });
 
+  it('should deliver universal store events from the child without re-broadcasting them', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    message({ type: 'ready' });
+    await promise;
+    transport.send.mockClear();
+
+    const storeEvent = {
+      type: 'UNIVERSAL_STORE:storybook/test',
+      args: [{ event: { type: '__SET_STATE', payload: {} }, eventInfo: { actor: { id: 'x' } } }],
+      from: 'child',
+    };
+    const listener = vi.fn();
+    mockChannel.on('UNIVERSAL_STORE:storybook/test', listener);
+    message(storeEvent);
+
+    // Local listeners (e.g. the store leader living in this process) receive the event, but it
+    // is not sent to the channel's transports: the leader's own forwarding is responsible for
+    // the single broadcast to connected clients.
+    expect(listener).toHaveBeenCalledWith(storeEvent.args[0]);
+    expect(transport.send).not.toHaveBeenCalled();
+    mockChannel.off('UNIVERSAL_STORE:storybook/test', listener);
+
+    // Non-store events still go through emit and reach the transports.
+    message({ type: 'other-event', args: ['bar'] });
+    expect(transport.send).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'other-event' }),
+      expect.anything()
+    );
+  });
+
+  it('should broadcast child store events to clients exactly once, via the leader forward', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    message({ type: 'ready' });
+    await promise;
+
+    // A real leader store on the real channel, like the one the addon preset creates in the
+    // dev-server process. Browsers rely on ITS forwarding as the only copy of each child store
+    // event — zero copies means test results silently never reach the manager; two means every
+    // event is duplicated on the wire.
+    const { experimental_UniversalStore } = await import('storybook/internal/core-server');
+    experimental_UniversalStore.__prepare(
+      mockChannel,
+      experimental_UniversalStore.Environment.SERVER
+    );
+    const leader = experimental_UniversalStore.create({ ...storeOptions, leader: true });
+    try {
+      await leader.untilReady();
+      transport.send.mockClear();
+
+      message({
+        type: 'UNIVERSAL_STORE:storybook/test',
+        args: [
+          {
+            event: { type: '__SET_STATE', payload: { state: leader.getState() } },
+            eventInfo: {
+              actor: {
+                id: 'child-follower',
+                type: experimental_UniversalStore.ActorType.FOLLOWER,
+                environment: experimental_UniversalStore.Environment.SERVER,
+              },
+            },
+          },
+        ],
+        from: 'child',
+      });
+
+      expect(transport.send).toHaveBeenCalledTimes(1);
+      const [forwarded] = transport.send.mock.calls[0];
+      expect(forwarded.type).toBe('UNIVERSAL_STORE:storybook/test');
+      expect(forwarded.args[0].eventInfo.actor.id).toBe('child-follower');
+      expect(forwarded.args[0].eventInfo.forwardingActor).toBeDefined();
+    } finally {
+      // Drop the leader's channel subscription so it cannot interfere with other tests.
+      mockChannel.removeAllListeners('UNIVERSAL_STORE:storybook/test');
+    }
+  });
+
   it('should resend init event', async () => {
     const promise = runTestRunner({
       channel: mockChannel,

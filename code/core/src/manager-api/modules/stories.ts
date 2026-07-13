@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
+import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -81,6 +82,13 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
+
+/**
+ * Statuses stream in continuously during test runs (multiple store updates per second, for
+ * thousands of stories). Rebuilding the index on every update floods the manager with O(index)
+ * work, so status-driven rebuilds are throttled to this interval.
+ */
+const STATUS_CHANGE_REBUILD_THROTTLE = 1000;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 
@@ -1287,23 +1295,30 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }));
   });
 
-  fullStatusStore.onAllStatusChange(async () => {
-    // re-apply the filters when the statuses change
-    recomputeStatusFilter();
+  // Re-apply the filters when the statuses change. Setting the index again is enough: the
+  // registered status filter reads statuses live from the store when applied, so it must NOT be
+  // re-registered here — that would trigger a second full index rebuild per status update. The
+  // trailing throttle edge guarantees the last status update is always applied.
+  fullStatusStore.onAllStatusChange(
+    throttle(
+      async () => {
+        const { internal_index: index } = store.getState();
 
-    const { internal_index: index } = store.getState();
+        if (!index) {
+          return;
+        }
+        // apply the existing filters by setting the index again
+        await api.setIndex(index);
 
-    if (!index) {
-      return;
-    }
-    // apply new filters by setting the index again
-    await api.setIndex(index);
-
-    const refs = await fullAPI.getRefs();
-    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-    });
-  });
+        const refs = await fullAPI.getRefs();
+        Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+          fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+        });
+      },
+      STATUS_CHANGE_REBUILD_THROTTLE,
+      { edges: ['leading', 'trailing'] }
+    )
+  );
 
   const config = provider.getConfig();
   const configFilters = config?.sidebar?.filters || {};

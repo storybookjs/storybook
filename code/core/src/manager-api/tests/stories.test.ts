@@ -2023,6 +2023,138 @@ describe('stories API', () => {
         expect(Object.keys(filteredIndex!)).not.toContain('a--2');
       });
     });
+
+    it('re-applies active filters on status changes without re-registering the status filter', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:error'], false);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toHaveLength(0);
+      });
+
+      // During test runs statuses stream in continuously; each change must be reflected by
+      // re-applying the already-registered filter (which reads statuses live from the store)
+      // rather than by re-registering it, which would trigger a second full index rebuild
+      // per status update.
+      const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toContain('a--1');
+        expect(Object.keys(filteredIndex!)).not.toContain('a--2');
+      });
+      expect(setFilterSpy).not.toHaveBeenCalled();
+    });
+
+    it('stress: a stream of status updates triggers a bounded number of index rebuilds', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+
+      // During a test run of a large project, statuses stream in continuously — multiple store
+      // updates per second for thousands of stories, for minutes. Every index rebuild
+      // re-transforms the entire index (twice: filtered and unfiltered), so rebuilds MUST be
+      // decoupled from the event rate, otherwise the manager main thread falls behind the
+      // stream, the UI lags minutes behind the actual run, and the WebSocket heartbeat kills
+      // the connection with a false "Server timed out" (code 3008).
+      const setIndexSpy = vi.spyOn(api, 'setIndex');
+      const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+
+      const BURST = 50;
+      for (let i = 0; i < BURST; i += 1) {
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: i % 2 === 0 ? 'a--1' : 'a--2',
+            value: i === BURST - 1 ? 'status-value:error' : 'status-value:pending',
+            title: 'title',
+            description: `update ${i}`,
+          },
+        ]);
+      }
+
+      // The final state must always be applied (trailing edge), even after the burst ends.
+      await vi.waitFor(
+        () => {
+          const allStatuses = fullStatusStore.getAll();
+          expect(allStatuses['a--2']?.['addon-id']?.value).toBe('status-value:error');
+          const rebuilds = setIndexSpy.mock.calls.length;
+          expect(rebuilds).toBeGreaterThanOrEqual(1);
+        },
+        { timeout: 3000 }
+      );
+
+      // Unthrottled, this burst would cost 50 rebuilds — plus another 50 when each status
+      // update also re-registers the status filter (2 full rebuilds per update). Bound the
+      // total at a small constant: leading + trailing edge, plus generous slack for timing.
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      expect(setIndexSpy.mock.calls.length).toBeLessThanOrEqual(4);
+      expect(setFilterSpy).not.toHaveBeenCalled();
+    });
+
+    it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
+      vi.mock('../stores/status');
+      // The mocked status store is shared across tests in this file; start from a clean slate so
+      // the filter results below are attributable to this test's own updates.
+      fullStatusStore.unset();
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:error'], false);
+
+      // First update: consumed by the throttle's leading edge.
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+      await vi.waitFor(() => {
+        expect(Object.keys(store.getState().filteredIndex!)).toContain('a--1');
+      });
+
+      // Second update lands within the throttle window, with nothing after it. Only the trailing
+      // invocation can apply it — without the trailing edge, the final stretch of every test
+      // run's statuses would never reach the index and the sidebar would stay stale.
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--2',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+      await vi.waitFor(
+        () => {
+          expect(Object.keys(store.getState().filteredIndex!)).toContain('a--2');
+        },
+        { timeout: 3000 }
+      );
+    });
   });
 
   describe('selectFirstStory with status filters', () => {

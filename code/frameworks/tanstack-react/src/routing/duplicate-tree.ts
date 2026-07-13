@@ -101,6 +101,14 @@ function cloneChild(
     (cloned as any).update({ id: originalId });
   }
 
+  // `.lazy()` bindings (routeTree.gen chains them for `*.lazy.tsx` files)
+  // live on the route instance as `lazyFn`, not in options, so carry them
+  // over explicitly or clones lose their lazily-loaded component.
+  const lazyFn = (oldRoute as any).lazyFn;
+  if (lazyFn) {
+    (cloned as any).lazy(lazyFn);
+  }
+
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
   const children = (oldRoute as any).children as AnyRoute[] | undefined;

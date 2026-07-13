@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createLazyRoute,
   createMemoryHistory,
   createRootRoute,
   createRoute,
@@ -176,6 +177,26 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
     const { root: cloned } = duplicateRouteTree(root as any);
 
     expect((await matchedRouteIds(cloned, '/posts/7')).join(',')).toContain('$postId');
+  });
+
+  it('carries lazy route bindings onto clones', async () => {
+    // routeTree.gen chains `.lazy(() => import('./page.lazy'))` on eager
+    // routes; `.lazy()` stores the loader as an instance property (`lazyFn`),
+    // not an option, so an options-only clone silently drops the component.
+    const marker = () => null;
+    const root = createRootRoute();
+    const page = createRoute({ path: '/lazy', getParentRoute: () => root });
+    page.lazy(() => Promise.resolve(createLazyRoute('/lazy')({ component: marker })));
+    root.addChildren([page]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const router = createRouter({
+      routeTree: cloned,
+      history: createMemoryHistory({ initialEntries: ['/lazy'] }),
+    });
+    await router.load();
+
+    expect((router.routesById['/lazy'] as any).options.component).toBe(marker);
   });
 
   it('applies routeOverrides to cloned pathless routes by original id', async () => {

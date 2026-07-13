@@ -39,6 +39,22 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     npm.check(),
+    workspace.pack(
+      [
+        // Workspace-root node_modules folders. Yarn hoists shared/singleton
+        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+        // jobs otherwise only receive these via the shared `save_cache`, which is
+        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+        // freshly-built `dist` but no root `node_modules`, producing errors like
+        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
+        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+        `${WORKING_DIR}/node_modules`,
+        `${WORKING_DIR}/code/node_modules`,
+        `${WORKING_DIR}/scripts/node_modules`,
+      ],
+      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
+    ),
     {
       run: {
         name: 'Compile',
@@ -56,22 +72,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
-    workspace.pack(
-      [
-        // Workspace-root node_modules folders. Yarn hoists shared/singleton
-        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-        // jobs otherwise only receive these via the shared `save_cache`, which is
-        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-        // freshly-built `dist` but no root `node_modules`, producing errors like
-        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
-        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
-        `${WORKING_DIR}/node_modules`,
-        `${WORKING_DIR}/code/node_modules`,
-        `${WORKING_DIR}/scripts/node_modules`,
-      ],
-      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
-    ),
+    workspace.awaitPack(),
     workspace.persist([
       PACKED_NODE_MODULES_ARCHIVE,
       ...packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'dist')}`),

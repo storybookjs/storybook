@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 
 import * as v from 'valibot';
 
+import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import {
@@ -9,17 +10,17 @@ import {
   resolveStorybookConfigDir,
   type StorybookAiMetadata,
 } from './local-metadata.ts';
-import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
 import { parsePort, parseToolArgs } from './tool-args.ts';
-import { ToolCallResultSchema } from './types.ts';
 import type {
   InterceptReason,
+  JsonSchemaNode,
   McpToolDescriptor,
   StorybookInstanceRecord,
   ToolCallResult,
 } from './types.ts';
+import { JsonSchemaNodeSchema, ToolCallResultSchema } from './types.ts';
 
 /**
  * Why an invocation failed before any command executed, for the `ai-command` telemetry event
@@ -543,6 +544,69 @@ function getLocalToolNames(metadata: StorybookAiMetadata): Set<string> {
   return new Set(Object.keys(metadata.localTools ?? {}));
 }
 
+const MAX_SCHEMA_DEPTH = 4;
+
+function schemaItem(schema: JsonSchemaNode): JsonSchemaNode | undefined {
+  return Array.isArray(schema.items) ? schema.items[0] : schema.items;
+}
+
+function schemaTypeLabel(schema: JsonSchemaNode): string | undefined {
+  if (schema.type === 'array') {
+    const item = schemaItem(schema);
+    return item?.type ? `array of ${item.type}` : 'array';
+  }
+  if (schema.anyOf || schema.oneOf) {
+    return 'one of';
+  }
+  return schema.type;
+}
+
+function schemaChildLines(schema: JsonSchemaNode, indent: string, depth: number): string[] {
+  if (depth <= 0) {
+    return [];
+  }
+  const lines: string[] = [];
+
+  if (schema.type === 'object' && schema.properties) {
+    const required = new Set(schema.required ?? []);
+    for (const [name, child] of Object.entries(schema.properties)) {
+      lines.push(...schemaLines(`\`${name}\``, child, required.has(name), indent, depth));
+    }
+  }
+
+  const item = schemaItem(schema);
+  if (item && ((item.type === 'object' && item.properties) || item.anyOf || item.oneOf)) {
+    lines.push(`${indent}each item:`);
+    lines.push(...schemaChildLines(item, `${indent}  `, depth - 1));
+  }
+
+  const variants = schema.anyOf ?? schema.oneOf;
+  if (variants) {
+    variants.forEach((variant, index) => {
+      const suffix = variant.description ? `: ${variant.description}` : '';
+      lines.push(`${indent}option ${index + 1}${suffix}`);
+      lines.push(...schemaChildLines(variant, `${indent}  `, depth - 1));
+    });
+  }
+
+  return lines;
+}
+
+function schemaLines(
+  label: string,
+  schema: JsonSchemaNode,
+  isRequired: boolean,
+  indent: string,
+  depth: number
+): string[] {
+  const meta = [schemaTypeLabel(schema), isRequired ? 'required' : undefined]
+    .filter(Boolean)
+    .join(', ');
+  const description = schema.description ? `: ${schema.description}` : '';
+  const head = `${indent}- ${label}${meta ? ` (${meta})` : ''}${description}`;
+  return [head, ...schemaChildLines(schema, `${indent}  `, depth - 1)];
+}
+
 function formatToolHelp(tool: McpToolDescriptor, { local }: { local: boolean }): string {
   const lines = [`Usage: storybook ai ${tool.name} [--key value ...]`];
   if (tool.description) {
@@ -557,17 +621,17 @@ function formatToolHelp(tool: McpToolDescriptor, { local }: { local: boolean }):
   const properties = Object.entries(tool.inputSchema?.properties ?? {});
   if (properties.length > 0) {
     const required = new Set(tool.inputSchema?.required ?? []);
-    lines.push(
-      '',
-      'Arguments:',
-      ...properties.map(([name, schema]) => {
-        const meta = [schema.type, required.has(name) ? 'required' : undefined]
-          .filter(Boolean)
-          .join(', ');
-        const description = schema.description ? `: ${schema.description}` : '';
-        return `- \`--${name}\`${meta ? ` (${meta})` : ''}${description}`;
-      })
-    );
+    lines.push('', 'Arguments:');
+    for (const [name, schema] of properties) {
+      // Validate at this boundary rather than tightening the lenient tools/list
+      // parse: an unmodeled schema shape falls back to its top-level type and
+      // description instead of dropping the argument or failing the command.
+      const parsed = v.safeParse(JsonSchemaNodeSchema, schema);
+      const node: JsonSchemaNode = parsed.success
+        ? parsed.output
+        : { type: schema.type, description: schema.description };
+      lines.push(...schemaLines(`\`--${name}\``, node, required.has(name), '', MAX_SCHEMA_DEPTH));
+    }
   }
   return lines.join('\n');
 }

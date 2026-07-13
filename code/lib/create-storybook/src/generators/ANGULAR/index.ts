@@ -146,9 +146,15 @@ export default defineGeneratorModule({
         : '@angular-devkit/build-angular',
       devkitVersion ? `@angular-devkit/architect@${devkitVersion}` : '@angular-devkit/architect',
       angularVersion ? `@angular-devkit/core@${angularVersion}` : '@angular-devkit/core',
-      angularVersion
-        ? `@angular/platform-browser-dynamic@${angularVersion}`
-        : '@angular/platform-browser-dynamic',
+      // @storybook/angular-vite renders via bootstrapApplication from @angular/platform-browser,
+      // so platform-browser-dynamic is only a peer requirement of the webpack framework.
+      ...(isVite
+        ? []
+        : [
+            angularVersion
+              ? `@angular/platform-browser-dynamic@${angularVersion}`
+              : '@angular/platform-browser-dynamic',
+          ]),
     ];
 
     // pnpm's strict isolation hides transitively-installed `@types/node`, so a fresh Angular

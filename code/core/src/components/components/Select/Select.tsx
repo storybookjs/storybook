@@ -244,7 +244,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     // and @react-aria/overlays to remove the inert attribute set up by MinimalistPopover.
     useEffect(() => {
       if (!otState.isOpen && shouldRefocusTrigger) {
-        triggerRef.current?.focus();
+        // Only focus a trigger that still lives in a real browsing context.
+        if (triggerRef.current?.ownerDocument?.defaultView) {
+          triggerRef.current.focus();
+        }
         setShouldRefocusTrigger(false);
       }
     }, [otState.isOpen, shouldRefocusTrigger, triggerRef]);

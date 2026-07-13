@@ -23,8 +23,6 @@ import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
 export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
-const EMPTY_LINKS: Link[] = [];
-
 function getGoToLabel(context: API_HashEntry): string | null {
   if (context.type === 'docs') {
     return 'Go to page';
@@ -65,21 +63,10 @@ export const ContextMenu: FC<{
   onSelectStoryId: (id: string) => void;
   api: API;
   entryMethod?: ContextMenuEntryMethod;
-  /** Per-status entries (navigate + select the status); rendered as their own group. */
-  statusLinks?: Link[];
   /** Whether any test provider addon is registered (they add entries for branch rows). */
   hasTestProviders?: boolean;
 }> = memo(
-  ({
-    context,
-    isOpen,
-    setIsOpen,
-    onSelectStoryId,
-    api,
-    entryMethod,
-    statusLinks = EMPTY_LINKS,
-    hasTestProviders = false,
-  }) => {
+  ({ context, isOpen, setIsOpen, onSelectStoryId, api, entryMethod, hasTestProviders = false }) => {
     const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
     const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
       children: 'Copy story name',
@@ -157,8 +144,7 @@ export const ContextMenu: FC<{
       return null;
     }
 
-    const shouldRender =
-      !context.refId && (topLinks.length > 0 || statusLinks.length > 0 || hasTestProviders);
+    const shouldRender = !context.refId && (topLinks.length > 0 || hasTestProviders);
     if (!shouldRender) {
       return null;
     }
@@ -170,7 +156,7 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<LiveContextMenu context={context} links={[topLinks, statusLinks]} />}
+        popover={<LiveContextMenu context={context} links={topLinks} />}
         hasChrome={true}
         padding={0}
       >

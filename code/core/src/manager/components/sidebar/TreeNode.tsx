@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 
-import { Addon_TypesEnum, REVIEW_STATUS_TYPE_ID, type StatusValue } from 'storybook/internal/types';
+import { Addon_TypesEnum, type StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
@@ -8,19 +8,16 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-
-import { getStatus, shouldShowChangeStatus, statusPriority } from '../../utils/status.tsx';
+import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ContextMenu, generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { CollapseIcon } from './CollapseIcon.tsx';
+import { RowUiContext } from './RowUiContext.tsx';
+import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
-import { StatusContext } from './StatusContext.tsx';
-import { RowUiContext } from './RowUiContext.tsx';
-import { CollapseIcon } from './CollapseIcon.tsx';
 
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all
@@ -263,11 +260,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-  const {
-    allStatuses,
-    groupDualStatus,
-    isModifiedFilterActive = false,
-  } = useContext(StatusContext);
+  const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
 
   // Selection accents and context-menu state come from a subscription store rather than props:
   // as react-aria collection dependencies they re-rendered every row in the tree on each
@@ -356,30 +349,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   );
   const shortcutKeys = api.getShortcutKeys();
 
-  // Per-status entries for the context menu: navigate to the story and select the status
-  // (e.g. to open the matching panel). Review statuses stay out of the menu.
-  const statusLinks = useMemo<Link[]>(() => {
-    if (!renderContextMenu || (item.type !== 'story' && item.type !== 'docs')) {
-      return [];
-    }
-    return Object.entries(allStatuses?.[item.id] ?? {})
-      .filter(([, status]) => status.sidebarContextMenu !== false)
-      .filter(([, status]) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-      .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
-      .map(([typeId, status]) => ({
-        id: typeId,
-        title: status.title,
-        description: status.description,
-        // Describe the action, not the status — the status itself is already announced on the row.
-        'aria-label': `Open ${status.title} results for this story`,
-        icon: getStatus(theme, status.value).icon,
-        onClick: () => {
-          onSelectStoryId(item.id);
-          fullStatusStore.selectStatuses([status]);
-        },
-      }));
-  }, [renderContextMenu, allStatuses, item, onSelectStoryId, theme]);
-
   // Compute final aria-label including test status and keyboard shortcut discovery.
   const ariaLabel = useMemo(() => {
     let label = item.renderAriaLabel?.(item, api, { location }) || item.name;
@@ -446,7 +415,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                   onSelectStoryId={onSelectStoryId}
                   api={api}
                   entryMethod={contextMenuEntryMethod}
-                  statusLinks={statusLinks}
                   hasTestProviders={providerMenuAvailable}
                 />
               }

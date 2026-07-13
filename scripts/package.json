@@ -78,7 +78,6 @@
     "@types/window-size": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260701.1",
     "@vitest/coverage-v8": "^4.1.5",
     "ansi-regex": "^6.0.1",
     "chromatic": "^13.3.4",

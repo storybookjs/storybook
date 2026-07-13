@@ -25,8 +25,9 @@ export type BuildEntries = {
   entries: BuildEntriesByPlatform;
   /**
    * Override the d.ts bundler for this package (defaults to the --dts-bundler
-   * CLI flag). Use 'rolldown' to emit declarations with tsc instead of tsgo
-   * for packages where tsgo misbehaves.
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
    */
   dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
   /**

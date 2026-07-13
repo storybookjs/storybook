@@ -420,4 +420,22 @@ describe('jsxDecorator', () => {
       context
     );
   });
+
+  it('should skip JSX rendering for portable stories', () => {
+    const storyOutput = <div>Portable Story</div>;
+    mockStoryFn.mockReturnValue(storyOutput);
+
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+        __isPortableStory: true,
+      },
+      originalStoryFn: () => <div>Test Story</div>,
+    };
+
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+    expect(result).toEqual(storyOutput);
+  });
 });

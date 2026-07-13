@@ -11,7 +11,7 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { babelParse, traverse, types as t } from '../../code/core/src/babel/index.ts';
+import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
@@ -29,7 +29,12 @@ import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/const
 import { exec } from '../utils/exec.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
-import { updatePackageScripts } from '../utils/package-json.ts';
+import {
+  addPackageDependencies,
+  injectResolutions,
+  removePackageDependencies,
+  updatePackageScripts,
+} from '../utils/package-json.ts';
 import { findFirstPath } from '../utils/paths.ts';
 import { workspacePath } from '../utils/workspace.ts';
 import {
@@ -338,6 +343,7 @@ export const init: Task['run'] = async (
 
   switch (template.expected.framework) {
     case '@storybook/angular':
+    case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:
@@ -558,9 +564,16 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
+  // Angular sandboxes need `yarn docs:json` to run before any preview-evaluating
+  // task so `.storybook/preview.ts`'s static `import docJson from "../documentation.json"`
+  // resolves real compodoc data. `prepareAngularSandbox` already wires this into
+  // the `storybook` and `build-storybook` scripts; do the same for `vitest` when
+  // the script exists (added only by the Angular template path).
+  const vitestCmd = 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000';
+  const hasDocsJson = !!packageJson.scripts?.['docs:json'];
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+    vitest: hasDocsJson ? `yarn docs:json && ${vitestCmd}` : vitestCmd,
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode
@@ -631,38 +644,62 @@ export async function addExtraDependencies({
   dryRun,
   debug,
   extraDeps,
+  extraDevDeps,
+  removeDeps,
+  removeDevDeps,
+  resolutions,
 }: {
   cwd: string;
   dryRun: boolean;
   debug: boolean;
   extraDeps?: string[];
+  extraDevDeps?: string[];
+  removeDeps?: string[];
+  removeDevDeps?: string[];
+  resolutions?: Record<string, string>;
 }) {
-  const extraDevDeps = ['@storybook/test-runner@latest'];
-
-  if (debug) {
-    logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
-  }
-
   if (dryRun) {
     return;
   }
 
+  // Resolutions must be in place before dependencies are added, so they are honored by the
+  // install that follows.
+  if (resolutions) {
+    await injectResolutions({ cwd, resolutions });
+  }
+
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
 
-  await packageManager.addDependencies(
-    { type: 'devDependencies', skipInstall: true },
-    extraDevDeps
-  );
+  // Resolve bare package names to concrete versions. Already-versioned specs, `npm:` aliases and
+  // dist-tags are returned unchanged.
+  const versionedDeps = extraDeps?.length
+    ? await packageManager.getVersionedPackages(extraDeps)
+    : [];
+  const versionedDevDeps = extraDevDeps?.length
+    ? await packageManager.getVersionedPackages(extraDevDeps)
+    : [];
 
-  if (extraDeps) {
-    const versionedExtraDeps = await packageManager.getVersionedPackages(extraDeps);
+  if (debug) {
+    logger.log('\uD83C\uDF81 Adding extra deps', versionedDeps);
+    logger.log('\uD83C\uDF81 Adding extra dev deps', versionedDevDeps);
+  }
+
+  // Write to package.json without installing; the sandbox is reinstalled once afterwards.
+  await addPackageDependencies({
+    cwd,
+    dependencies: versionedDeps,
+    devDependencies: versionedDevDeps,
+  });
+
+  if (removeDeps?.length || removeDevDeps?.length) {
     if (debug) {
-      logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
+      logger.log('\uD83D\uDDD1\uFE0F Removing deps', { removeDeps, removeDevDeps });
     }
-    await packageManager.addDependencies(
-      { type: 'devDependencies', skipInstall: true },
-      versionedExtraDeps
-    );
+    await removePackageDependencies({
+      cwd,
+      dependencies: removeDeps,
+      devDependencies: removeDevDeps,
+    });
   }
 }
 
@@ -1102,14 +1139,6 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
     /**
-     * Sets compodoc option in angular.json projects to false. We have to generate compodoc manually
-     * to avoid symlink issues related to the template-stories folder. In a second step a docs:json
-     * script is placed into the package.json to generate the Compodoc documentation.json, which
-     * respects symlinks
-     */
-    angularJson.projects[projectName].architect.storybook.options.compodoc = false;
-    angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
-    /**
      * Sets preserveSymlinks option in angular.json projects to true. This is necessary to respect
      * symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
      */
@@ -1124,7 +1153,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': `DIR=$PWD; yarn --cwd ${join(ROOT_DIRECTORY, 'scripts')} jiti combine-compodoc $DIR`,
+    'docs:json': `DIR=$(pwd); yarn --cwd ${slash(join(ROOT_DIRECTORY, 'scripts'))} jiti combine-compodoc $DIR`,
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };
@@ -1147,6 +1176,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
+    // @analogjs/vite-plugin-angular only compiles files referenced by the
+    // tsconfig program. Template renderer components (e.g. pre.component.ts)
+    // are symlinked into `template-stories/components` and must be part of the
+    // program too — otherwise @Input/@Output decorators are stripped and
+    // bindings never resolve at runtime.
+    '../template-stories/components/**/*.ts',
     // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];

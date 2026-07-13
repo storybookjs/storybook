@@ -21,10 +21,10 @@ const jsonResponse = (body: unknown, status = 200, headers: Record<string, strin
     headers: { 'Content-Type': 'application/json', ...headers },
   });
 
-const sseResponse = (body: string, status = 200) =>
+const sseResponse = (body: string, status = 200, headers: Record<string, string> = {}) =>
   new Response(body, {
     status,
-    headers: { 'Content-Type': 'text/event-stream' },
+    headers: { 'Content-Type': 'text/event-stream', ...headers },
   });
 
 /**
@@ -224,7 +224,14 @@ describe('listMcpTools', () => {
 describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
   const initializeResponse = (sessionId?: string) =>
     jsonResponse(
-      { jsonrpc: '2.0', id: 'init', result: { protocolVersion: '2025-06-18', serverInfo: {} } },
+      {
+        jsonrpc: '2.0',
+        id: 'init',
+        result: {
+          protocolVersion: '2025-06-18',
+          serverInfo: {},
+        },
+      },
       200,
       sessionId ? { 'mcp-session-id': sessionId } : {}
     );
@@ -234,6 +241,13 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       jsonrpc: '2.0',
       id: 'call',
       result: { content: [{ type: 'text', text: 'hi' }] },
+    });
+
+  const toolListResult = (tools: unknown[] = []) =>
+    jsonResponse({
+      jsonrpc: '2.0',
+      id: 'list',
+      result: { tools },
     });
 
   it('sends initialize with the storybook-cli clientInfo before the actual request', async () => {
@@ -299,10 +313,16 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
   });
 
   it('ignores the session id of a non-ok handshake response', async () => {
+    let canceled = false;
+    const initBody = new ReadableStream<Uint8Array>({
+      cancel() {
+        canceled = true;
+      },
+    });
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response('boom', { status: 500, headers: { 'mcp-session-id': 'session-broken' } })
+        new Response(initBody, { status: 500, headers: { 'mcp-session-id': 'session-broken' } })
       )
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
@@ -310,6 +330,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
 
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
     expect(headers).not.toHaveProperty('Mcp-Session-Id');
+    expect(canceled).toBe(true);
   });
 
   it('drains the handshake response body before sending the actual request', async () => {
@@ -359,5 +380,41 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       string
     >;
     expect(headers['Mcp-Session-Id']).toBe('session-7');
+  });
+
+  it.each([
+    [
+      'malformed JSON',
+      () =>
+        new Response('not json', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'mcp-session-id': 'session-1' },
+        }),
+    ],
+    [
+      'a JSON-RPC error',
+      () => jsonResponse({ jsonrpc: '2.0', id: 'init', error: { code: -32000, message: 'bad' } }),
+    ],
+    ['no result', () => jsonResponse({ jsonrpc: '2.0', id: 'init' })],
+  ])('keeps tools/list working when initialize returns %s', async (_label, initResponse) => {
+    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initResponse())
+      .mockResolvedValueOnce(toolListResult(tools)) as unknown as typeof fetch;
+
+    await expect(listMcpTools(record, fetchImpl)).resolves.toEqual(tools);
+  });
+
+  it('keeps listMcpTools returning only the tool descriptors', async () => {
+    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(initializeResponse('session-1'))
+      .mockResolvedValueOnce(
+        jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools } })
+      ) as unknown as typeof fetch;
+
+    await expect(listMcpTools(record, fetchImpl)).resolves.toEqual(tools);
   });
 });

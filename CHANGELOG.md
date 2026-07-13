@@ -12,6 +12,7 @@ Storybook 10.5 contains hundreds of fixes and improvements:
 
 <details>
 <summary>List of all updates</summary>
+
 - A11y: Fix MDX heading anchors not keyboard accessible - [#34368](https://github.com/storybookjs/storybook/pull/34368), thanks @TheSeydiCharyyev!
 - A11y: Handle lang attribute throughout preview - [#35321](https://github.com/storybookjs/storybook/pull/35321), thanks @Sidnioulz!
 - A11y: Surface required args and keyboard-reachable Setup controls in ArgsTable - [#35306](https://github.com/storybookjs/storybook/pull/35306), thanks @Sidnioulz!
@@ -173,6 +174,7 @@ Storybook 10.5 contains hundreds of fixes and improvements:
 - Vue: Fix Unicode Default Values In Docs - [#34909](https://github.com/storybookjs/storybook/pull/34909), thanks @Arunsiva003!
 - Vue: Use AST to inject __docgenInfo correctly - [#35201](https://github.com/storybookjs/storybook/pull/35201), thanks @Sidnioulz!
 - Webpack: Gate lazy-compilation import pipeline on webpack version - [#34931](https://github.com/storybookjs/storybook/pull/34931), thanks @copilot-swe-agent!
+
 </details>
 
 ## 10.4.6

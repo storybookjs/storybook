@@ -116,6 +116,28 @@ describe('duplicateRouteTree with pathless layout routes', () => {
 
     expect((await matchedRouteIds(cloned, '/posts/settings')).join(',')).toContain('settings');
   });
+
+  it('preserves composed ids through cloning so strict from-lookups match', async () => {
+    // Real routeTree.gen output for `posts/_archive/archived.tsx`: the nested
+    // pathless layout keeps its id AND carries the pathful prefix as `path`.
+    // Strict hooks (`Route.useLoaderData()`) resolve matches by the original
+    // composed id, so clones must compose to identical ids.
+    const root = createRootRoute();
+    const layout = (
+      createFileRoute('/posts/_archive')({ getParentRoute: () => root }) as any
+    ).update({ id: '/posts/_archive', path: '/posts', getParentRoute: () => root } as any);
+    const archived = (
+      createFileRoute('/posts/_archive/archived')({ getParentRoute: () => layout }) as any
+    ).update({ id: '/archived', path: '/archived', getParentRoute: () => layout } as any);
+    layout.addChildren([archived]);
+    root.addChildren([layout]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const ids = await matchedRouteIds(cloned, '/posts/archived');
+
+    expect(ids).toContain('/posts/_archive');
+    expect(ids).toContain('/posts/_archive/archived');
+  });
 });
 
 describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {

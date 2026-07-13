@@ -122,7 +122,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
           ariaLabel="Open navigation menu"
           aria-expanded={isMobileMenuOpen}
-          aria-controls="storybook-mobile-menu"
+          aria-controls={isMobileMenuOpen ? 'storybook-mobile-menu' : undefined}
           shortcut={navShortcut}
         >
           <MenuIcon />
@@ -139,7 +139,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobilePanelOpen(true)}
           ariaLabel="Open addon panel"
           aria-expanded={isMobilePanelOpen}
-          aria-controls="storybook-mobile-addon-panel"
+          aria-controls={isMobilePanelOpen ? 'storybook-mobile-addon-panel' : undefined}
         >
           <BottomBarToggleIcon />
         </BottomBarButton>

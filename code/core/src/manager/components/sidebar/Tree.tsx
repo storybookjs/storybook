@@ -372,12 +372,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [updateFocusedItemId]);
 
-  // VSCode-style sticky scroll: pin the ancestor chain of the topmost visible row, stacked in
-  // order. Membership follows the viewport (not the selection), so the stack retracts as soon
-  // as a subtree scrolls past, and leaf rows are never pinned (only strict ancestors are).
-  // Rows are marked with data-sticky-pinned + a --sticky-top slot; CSS position:sticky does the
-  // actual pinning/unpinning as rows cross their slot. Runs rAF-throttled on scroll and resize,
-  // and whenever the expansion state or data changes.
+  // VSCode-style sticky scroll: pin the ancestor chain of the topmost visible row (plus that
+  // row itself while its own subtree continues below it), stacked in order. Membership follows
+  // the viewport (not the selection), so the stack retracts as soon as a subtree scrolls past,
+  // and leaf rows are never pinned. Rows are marked with data-sticky-pinned + a --sticky-top
+  // slot; CSS position:sticky does the actual pinning/unpinning as rows cross their slot, which
+  // is what makes branches pin as soon as they are partially hidden. Runs rAF-throttled on
+  // scroll and resize, and whenever the expansion state or data changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -408,17 +409,27 @@ export const Tree = React.memo<TreeProps>(function Tree({
       for (const row of [...pinnedRows]) {
         clearRow(row);
       }
-      container.style.setProperty('--sticky-stack-height', '0px');
     };
 
     const slotOf = (row: HTMLElement) =>
       parseFloat(row.style.getPropertyValue('--sticky-top')) || 0;
 
+    // Snapshotting every row is O(n) on a tree that can hold thousands of rows, so cache the
+    // list and invalidate it when the DOM changes (rows mount/unmount on expand, ref loads).
+    let cachedRows: HTMLElement[] | null = null;
+    const getRows = () =>
+      (cachedRows ??= Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]')));
+    const rowsObserver = new win.MutationObserver(() => {
+      cachedRows = null;
+      scheduleUpdate();
+    });
+    rowsObserver.observe(container, { childList: true, subtree: true });
+
     const update = () => {
       rafId = null;
       const scrollerTop =
         scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
-      const allRows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
+      const allRows = getRows();
       if (allRows.length === 0) {
         clearAll();
         return;
@@ -476,6 +487,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
       // Desired stack: the top row's strict ancestors, root-most first. Copy before reversing:
       // getAncestorIds returns a memoized array.
       const chainIds = [...getAncestorIds(collapsedDataRef.current, topId)].reverse();
+      // The top row itself joins the stack while its own subtree continues below it, so a
+      // branch pins the moment it is partially hidden (by the stack above it, or the viewport
+      // for top-level rows) instead of popping in only once fully scrolled past. Leaves and
+      // collapsed branches never qualify: the row after them is not their descendant.
+      const nextId = allRows[topIndex + 1]?.getAttribute('data-item-id');
+      if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
+        chainIds.push(topId);
+      }
       const desired: HTMLElement[] = [];
       for (const id of chainIds) {
         const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
@@ -484,7 +503,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
         }
       }
 
+      // Read row heights before any writes: interleaving offsetHeight reads with attribute
+      // and style writes would force a layout per iteration.
+      const heights = desired.map((row) => row.offsetHeight);
+
       // Write phase: release rows that left the stack, then (re)assign slots top-down.
+      // All writes are change-guarded: redundant attribute/property writes would invalidate
+      // styles every frame while scrolling.
       const desiredSet = new Set(desired);
       for (const row of [...pinnedRows]) {
         if (!desiredSet.has(row) || !row.isConnected) {
@@ -492,26 +517,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
         }
       }
       let cumulativeTop = 0;
-      for (const row of desired) {
-        row.setAttribute('data-sticky-pinned', '');
+      desired.forEach((row, i) => {
+        if (!row.hasAttribute('data-sticky-pinned')) {
+          row.setAttribute('data-sticky-pinned', '');
+        }
         const slot = `${cumulativeTop}px`;
         if (row.style.getPropertyValue('--sticky-top') !== slot) {
           row.style.setProperty('--sticky-top', slot);
         }
         pinnedRows.add(row);
-        cumulativeTop += row.offsetHeight;
-      }
-
-      // Expose the engaged stack height so scrolled-to rows land below the stack.
-      let stackHeight = 0;
-      for (const row of desired) {
-        const rect = row.getBoundingClientRect();
-        const slot = slotOf(row);
-        if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
-          stackHeight = slot + rect.height;
-        }
-      }
-      container.style.setProperty('--sticky-stack-height', `${stackHeight}px`);
+        cumulativeTop += heights[i];
+      });
     };
 
     const scheduleUpdate = () => {
@@ -535,19 +551,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return () => {
       scrollEventTarget.removeEventListener('scroll', scheduleUpdate);
       resizeObserver?.disconnect();
+      rowsObserver.disconnect();
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
       clearAll();
-      container.style.removeProperty('--sticky-stack-height');
     };
   }, [expanded, collapsedData]);
 
   // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
   // report their stuck rect, which would fool scrollIntoView into thinking a row far above
   // the viewport is already visible; data-sticky-measuring temporarily disables pinning while
-  // the browser measures, and the rows' scroll-margin-top (the pinned stack height) keeps the
-  // target row below the stack.
+  // the browser measures, and a temporary scroll-margin-top (the prospective stack height)
+  // keeps the target row below the stack.
   const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
     const container = containerRef.current;
     if (!container) {

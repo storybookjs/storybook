@@ -591,20 +591,40 @@ export const StickyAncestors: Story = {
     const scroller = await canvas.findByTestId('sticky-scroller');
     const row = (id: string) =>
       canvasElement.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
-    const pinnedRows = () => canvasElement.querySelectorAll('[data-sticky-pinned]');
+    const pinnedRows = () => canvasElement.querySelectorAll<HTMLElement>('[data-sticky-pinned]');
+    const scrollerTop = () => scroller.getBoundingClientRect().top;
 
     await waitFor(() => expect(row(stickyStoryId)).not.toBeNull());
 
-    // At the very top of the tree nothing is pinned and no pin state lingers.
+    // At the very top of the tree nothing is visually displaced: at most the topmost branch
+    // row is marked (so it pins the instant it becomes partially hidden), sitting exactly at
+    // its natural spot, and every row carrying a slot is actually in the pinned chain.
     scroller.scrollTop = 0;
     await waitFor(() => {
-      expect(pinnedRows().length).toBe(0);
-      expect(canvasElement.querySelectorAll('[style*="--sticky-top"]').length).toBe(0);
+      const pinned = [...pinnedRows()];
+      expect(pinned.length).toBeLessThanOrEqual(1);
+      pinned.forEach((el) => {
+        expect(Math.abs(el.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
+      });
+      canvasElement.querySelectorAll<HTMLElement>('[style*="--sticky-top"]').forEach((el) => {
+        expect(el).toHaveAttribute('data-sticky-pinned');
+      });
+    });
+
+    // A branch pins as soon as it is partially hidden, not only after scrolling fully past
+    // it: nudge the deep chain's root 10px beyond the viewport top and it must already be
+    // stuck at slot 0.
+    const rootRow = row(stickyChainIds[0])!;
+    scroller.scrollTop =
+      scroller.scrollTop + rootRow.getBoundingClientRect().top - scrollerTop() + 10;
+    await waitFor(() => {
+      const r = row(stickyChainIds[0])!;
+      expect(r).toHaveAttribute('data-sticky-pinned');
+      expect(Math.abs(r.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
     });
 
     // Scroll so the deep story leaf is the topmost visible row: its strict ancestors pin,
     // stacked in order, while the leaf itself must never pin.
-    const scrollerTop = () => scroller.getBoundingClientRect().top;
     const targetRow = row(stickyStoryId)!;
     scroller.scrollTop = scroller.scrollTop + targetRow.getBoundingClientRect().top - scrollerTop();
     await waitFor(() => {
@@ -628,10 +648,15 @@ export const StickyAncestors: Story = {
       expect(componentRow!.style.getPropertyValue('--sticky-top')).toBe('');
     });
 
-    // And back to the top: the whole stack releases.
+    // And back to the top: the whole stack releases (at most the topmost branch stays
+    // marked, at its natural position).
     scroller.scrollTop = 0;
     await waitFor(() => {
-      expect(pinnedRows().length).toBe(0);
+      const pinned = [...pinnedRows()];
+      expect(pinned.length).toBeLessThanOrEqual(1);
+      pinned.forEach((el) => {
+        expect(Math.abs(el.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
+      });
     });
   },
 };

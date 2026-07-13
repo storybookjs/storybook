@@ -52,9 +52,13 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
+// Shifts by exactly one hue cycle (the gradient repeats its hues twice), so the loop wraps
+// seamlessly. Animating transform instead of background-position keeps the infinite shimmer
+// on the compositor — background-position forced a main-thread repaint on every frame for as
+// long as the card was mounted.
 const slide = keyframes({
   to: {
-    backgroundPositionX: '36%',
+    transform: 'translateX(-50%)',
   },
 });
 
@@ -100,10 +104,14 @@ const CardOutline = styled.div<{
     opacity: 1,
 
     ...(animation === 'rainbow' && {
+      width: '1000%',
       animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181))`,
-      backgroundSize: '1000%',
-      backgroundPositionX: '100%',
+      willChange: 'transform, opacity',
+      '@media (prefers-reduced-motion: reduce)': {
+        animation: 'none',
+        width: '100%',
+      },
     }),
 
     ...(animation === 'spin' && {

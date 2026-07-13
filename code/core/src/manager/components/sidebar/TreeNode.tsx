@@ -46,9 +46,6 @@ const StyledTreeItem = styled(TreeItem)<{
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
 
-  // Keep rows below the pinned sticky stack when scrolled into view (set by Tree.tsx).
-  scrollMarginTop: 'var(--sticky-stack-height, 0px)',
-
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
   '--trace-color': theme.appBorderColor,
@@ -132,12 +129,17 @@ const StyledTreeItem = styled(TreeItem)<{
     [MEDIA_DESKTOP_BREAKPOINT]: {
       '--sticky-bg': theme.background.app,
     },
-    backgroundColor: 'var(--sticky-bg)',
-    // The hover background is translucent; layer it over the opaque sidebar background so
-    // rows scrolling beneath a pinned row never bleed through on hover.
-    '&:hover:not([data-selected="true"]), &[data-focused="true"]:not([data-selected="true"])': {
-      background: 'var(--sticky-bg)',
-      backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
+    // Paint the opaque cover on a square ::before rather than the row itself: the row keeps
+    // its border radius for hover/selection fills, and a radiused background would let rows
+    // scrolling beneath peek through the corners. overflow must not clip the pseudo to the
+    // radius, and translucent hover fills compose over the opaque backdrop.
+    overflow: 'visible',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      zIndex: -1,
+      backgroundColor: 'var(--sticky-bg)',
     },
   },
 
@@ -147,7 +149,6 @@ const StyledTreeItem = styled(TreeItem)<{
     position: 'relative',
     top: 'auto',
     zIndex: 'auto',
-    backgroundColor: 'transparent',
   },
 }));
 

@@ -122,11 +122,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     useEffect(() => {
-      const timer = setTimeout(() => {
-        if (isAnimating) {
-          setIsAnimating(false);
-        }
-      }, 1000);
+      // Only arm the timer while animating: an unconditional timeout costs one timer per
+      // mounted Button, which adds up fast (the sidebar mounts one per visible tree row).
+      if (!isAnimating) {
+        return undefined;
+      }
+      const timer = setTimeout(() => setIsAnimating(false), 1000);
       return () => clearTimeout(timer);
     }, [isAnimating]);
 

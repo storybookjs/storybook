@@ -10,13 +10,13 @@ export const PreviewContainer = styled.div({
   overflow: 'hidden',
 });
 
-export const FrameWrap = styled.main({
+export const FrameWrap = styled.main(({ theme }) => ({
   overflow: 'auto',
   width: '100%',
   zIndex: 3,
-  background: 'transparent',
+  background: theme.background.app,
   flex: 1,
-});
+}));
 export const CanvasWrap = styled.div<{ show: boolean }>(
   {
     alignContent: 'center',

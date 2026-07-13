@@ -22,6 +22,7 @@ import {
 import { getChannel } from '../../channels/channel-slot.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectServiceToChannel } from './service-transport.ts';
 import type {
@@ -186,6 +187,12 @@ export interface ServiceRegisterOptions {
    * iframe) keep the default `false` — with a single transport there is nothing to forward.
    */
   relay?: boolean;
+  /**
+   * When set, queries with `staticPath` fetch prebuilt JSON snapshots instead of running their
+   * authored `load` hooks. Browser entrypoints pass {@link createBrowserStaticLoader}; the server
+   * omits this so static builds still run real loads to generate files.
+   */
+  staticLoader?: StaticLoader;
 }
 
 /**
@@ -204,7 +211,7 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
-  { relay = false }: ServiceRegisterOptions = {}
+  { relay = false, staticLoader }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   const registry = getRegistry();
 
@@ -226,7 +233,7 @@ export function registerService<
   // shared `initialState` (which would otherwise leak state across registrations).
   const runtime = createServiceRuntime(
     resolvedDefinition,
-    { registryApi: serviceRegistryApi },
+    { registryApi: serviceRegistryApi, staticLoader },
     structuredClone(resolvedDefinition.initialState)
   );
 

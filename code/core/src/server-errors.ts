@@ -276,6 +276,17 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
   }
 }
 
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({
@@ -558,6 +569,21 @@ export class StatusTypeIdMismatchError extends StorybookError {
         null,
         2
       )}`,
+    });
+  }
+}
+
+export class NoFreePortError extends StorybookError {
+  constructor(public data: { requestedPort?: number }) {
+    super({
+      name: 'NoFreePortError',
+      category: Category.CORE_SERVER,
+      // Note: 17 is taken by OxcParseError in ../oxc-parser/errors.ts
+      code: 18,
+      message: dedent`
+        Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
+        Your environment appears to block Storybook from listening on network ports.
+        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
     });
   }
 }

@@ -131,6 +131,22 @@ describe('readRegistry', () => {
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([minimal]);
   });
 
+  it('accepts records with an optional configDir (written by Storybook >= 10.5)', async () => {
+    const withConfigDir = { ...aliveRecord, configDir: '/projects/alive/packages/ui/.storybook' };
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: { 'config-dir.json': JSON.stringify(withConfigDir) },
+    });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([withConfigDir]);
+  });
+
+  it('accepts records with optional agent provenance', async () => {
+    const agentRecord = { ...aliveRecord, agent: 'claude-preview' };
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'agent.json': JSON.stringify(agentRecord) } });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([agentRecord]);
+  });
+
   it('rejects out-of-range ports', async () => {
     vol.fromNestedJSON({
       [REGISTRY_DIR]: {

@@ -136,9 +136,6 @@ async function generateExportsFile(): Promise<void> {
   // Get the module list from the globals reference map (the source of truth)
   const { globalPackages } = await import('../src/manager/globals/globals.ts');
 
-  // Extract named exports using a single rolldown build with virtual entry per module.
-  // Rolldown statically resolves exports without evaluating any code.
-  // For CJS modules (e.g. react) that don't expose ESM exports, fall back to require().
   const input: Record<string, string> = {};
   const virtualModules: Record<string, string> = {};
 

@@ -13,14 +13,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
+import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './TreeNode.tsx';
 import { index } from './mockdata.large.ts';
-
-// TODO: add stories showcasing the Ctrl+Shift+U shortcut
 
 const managerContext: any = {
   state: {
@@ -284,6 +284,12 @@ export const WithContextContent: Story = {
     const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+
+    // The first actionable item is focused on open (menu-button pattern), so keyboard
+    // users can act without tabbing past the popover container first.
+    await waitFor(() => {
+      expect(within(popover).getByText('Open in editor').closest('button')).toHaveFocus();
+    });
   },
 };
 
@@ -372,6 +378,60 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
   // active; activate it so the dual-slot design (change + test) is visible.
   ['status-value:modified']
 );
+
+/**
+ * Ctrl+Shift+U flow: the tree opens the menu for the selected story when the shortcut's channel
+ * event fires, prepends a "Go to story" navigation item, and focuses it so keyboard users can act
+ * immediately. Status links describe their click action; opted-out statuses stay hidden.
+ */
+export const ContextMenuKeyboardEntry: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
+        sidebarContextMenu: false,
+      },
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('marketing hero');
+
+    // Simulate the global shortcut by invoking the handler the tree registered for the
+    // shortcut's channel event. Registrations accumulate across stories in the mocked
+    // api, so take the latest — earlier ones belong to unmounted trees.
+    const registrations = managerContext.api.on.mock.calls.filter(
+      ([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU
+    );
+    const handler = registrations.at(-1)?.[1];
+    await expect(handler).toBeDefined();
+    handler();
+
+    const popover = await screen.findByRole('dialog');
+
+    await waitFor(() => {
+      expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
+    });
+
+    // Status links describe the click action, not the status — the row announces the status.
+    await expect(
+      within(popover).getByLabelText('Open Vitest results for this story')
+    ).toBeVisible();
+    // Change-detection statuses opt out of the context menu.
+    expect(within(popover).queryByText('Change Detection')).not.toBeInTheDocument();
+  },
+};
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
@@ -499,11 +559,11 @@ export const WithNew: Story = {
   },
 };
 
-// ─── Sticky selected-node ancestor chain (VSCode-style sticky scroll) ────────────────────────────
+// ─── Sticky ancestors of the topmost visible row (VSCode-style sticky scroll) ────────────────────
 
 const stickyStoryId =
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--base';
-/** Ancestor chain of `stickyStoryId`, root-most first — the rows expected to pin while scrolling. */
+/** Ancestor chain of `stickyStoryId`, root-most first — the rows expected to pin when it is the topmost visible row. */
 const stickyChainIds = [
   'webapp-screens',
   'webapp-screens-marketing',
@@ -512,7 +572,7 @@ const stickyChainIds = [
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
 ];
 
-export const StickySelectedAncestors: Story = {
+export const StickyAncestors: Story = {
   args: {
     isBrowsing: true,
     isMain: true,
@@ -531,44 +591,83 @@ export const StickySelectedAncestors: Story = {
     const scroller = await canvas.findByTestId('sticky-scroller');
     const row = (id: string) =>
       canvasElement.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
+    const pinnedRows = () => canvasElement.querySelectorAll('[data-sticky-pinned]');
 
     await waitFor(() => expect(row(stickyStoryId)).not.toBeNull());
 
-    // Scroll so the selected story sits at the bottom of the viewport. The distant ancestors
-    // (root and top-level group, which have hundreds of rows between themselves and the
-    // selection) must be pinned at the top of the scroller, stacked in order. Nearby ancestors
-    // sit adjacent to the selection so they never need to pin from this scroll position.
-    const selectedRow = row(stickyStoryId)!;
-    scroller.scrollTop = selectedRow.offsetTop - scroller.clientHeight + TREE_ROW_HEIGHT * 2;
+    // At the very top of the tree nothing is pinned and no pin state lingers.
+    scroller.scrollTop = 0;
     await waitFor(() => {
-      const scrollerTop = scroller.getBoundingClientRect().top;
-      stickyChainIds.slice(0, 2).forEach((id, i) => {
-        const ancestorRow = row(id);
-        expect(ancestorRow).not.toBeNull();
-        expect(ancestorRow!).not.toHaveAttribute('data-sticky-suspended');
-        const { top } = ancestorRow!.getBoundingClientRect();
-        expect(Math.abs(top - scrollerTop - i * TREE_ROW_HEIGHT)).toBeLessThanOrEqual(2);
-      });
+      expect(pinnedRows().length).toBe(0);
+      expect(canvasElement.querySelectorAll('[style*="--sticky-top"]').length).toBe(0);
     });
 
-    // Rows outside the chain are never sticky.
-    const unrelatedRow = row('images');
-    if (unrelatedRow) {
-      expect(getComputedStyle(unrelatedRow).position).not.toBe('sticky');
-    }
+    // Scroll so the deep story leaf is the topmost visible row: its strict ancestors pin,
+    // stacked in order, while the leaf itself must never pin.
+    const scrollerTop = () => scroller.getBoundingClientRect().top;
+    const targetRow = row(stickyStoryId)!;
+    scroller.scrollTop = scroller.scrollTop + targetRow.getBoundingClientRect().top - scrollerTop();
+    await waitFor(() => {
+      stickyChainIds.forEach((id, i) => {
+        const ancestorRow = row(id);
+        expect(ancestorRow).not.toBeNull();
+        expect(ancestorRow!).toHaveAttribute('data-sticky-pinned');
+        const { top } = ancestorRow!.getBoundingClientRect();
+        expect(Math.abs(top - scrollerTop() - i * TREE_ROW_HEIGHT)).toBeLessThanOrEqual(2);
+      });
+      expect(row(stickyStoryId)!).not.toHaveAttribute('data-sticky-pinned');
+    });
 
-    // Scroll to the very bottom: the deepest chain rows' subtrees have fully scrolled past, so
-    // their stickiness is suspended (the stack retracts instead of covering unrelated rows).
+    // Scroll to the very bottom: the viewport has left the deep component's subtree, so its
+    // row retracts and leaves no stale pin state behind (no holes in the tree).
     scroller.scrollTop = scroller.scrollHeight;
     await waitFor(() => {
       const componentRow = row(stickyChainIds[stickyChainIds.length - 1]);
       expect(componentRow).not.toBeNull();
-      expect(componentRow!).toHaveAttribute('data-sticky-suspended');
+      expect(componentRow!).not.toHaveAttribute('data-sticky-pinned');
+      expect(componentRow!.style.getPropertyValue('--sticky-top')).toBe('');
+    });
+
+    // And back to the top: the whole stack releases.
+    scroller.scrollTop = 0;
+    await waitFor(() => {
+      expect(pinnedRows().length).toBe(0);
     });
   },
 };
 
-export const StickySelectedAncestorsDark: Story = {
-  ...StickySelectedAncestors,
+export const StickyAncestorsDark: Story = {
+  ...StickyAncestors,
   globals: { sb_theme: 'dark' },
+};
+
+/** Plain arrow keys must move focus between rows (react-aria keyboard navigation). */
+export const KeyboardNavigation: Story = {
+  args: {
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const first = await canvas.findByText('marketing hero');
+    await userEvent.click(first);
+    const focusedId = () =>
+      canvasElement
+        .querySelector('[data-item-id][data-focused="true"]')
+        ?.getAttribute('data-item-id');
+    await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
+
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(focusedId()).toBe('images--brand'));
+
+    await userEvent.keyboard('{ArrowUp}');
+    await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
+  },
 };

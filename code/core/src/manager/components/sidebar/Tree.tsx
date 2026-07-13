@@ -180,18 +180,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return entry.parent ?? null;
   }, [selectedStoryId, collapsedData]);
 
-  // Sticky chain (VSCode-style sticky scroll): the selected node's ancestor chain, root-most
-  // first, plus the selected node itself. These rows pin below one another while scrolling
-  // through their subtree; leaf rows never effectively pin because their subtree ends with
-  // themselves (see the suspension effect below).
-  const stickyChainIds = useMemo<string[]>(() => {
-    if (!selectedStoryId || !collapsedData[selectedStoryId]) {
-      return EMPTY_STICKY_CHAIN;
-    }
-    // Copy before reversing: getAncestorIds returns a memoized array.
-    return [...getAncestorIds(collapsedData, selectedStoryId)].reverse().concat(selectedStoryId);
-  }, [selectedStoryId, collapsedData]);
-
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
   const handleExpandedChange = useCallback(
     (keys: Set<React.Key>) => {
@@ -384,25 +372,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [updateFocusedItemId]);
 
-  // Keep the sticky stack in sync with the scroll position: suspend stickiness for chain rows
-  // whose subtree has fully scrolled past their pinned slot (so the stack retracts instead of
-  // lingering over unrelated sections, mirroring VSCode's sticky scroll), pin each row below
-  // the measured height of the rows above it, and expose the stack height so scroll-into-view
-  // can keep targets out from underneath the stack. Runs rAF-throttled on scroll and resize,
-  // and whenever the chain, expansion state, or data changes.
+  // VSCode-style sticky scroll: pin the ancestor chain of the topmost visible row, stacked in
+  // order. Membership follows the viewport (not the selection), so the stack retracts as soon
+  // as a subtree scrolls past, and leaf rows are never pinned (only strict ancestors are).
+  // Rows are marked with data-sticky-pinned + a --sticky-top slot; CSS position:sticky does the
+  // actual pinning/unpinning as rows cross their slot. Runs rAF-throttled on scroll and resize,
+  // and whenever the expansion state or data changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
-    if (stickyChainIds.length === 0) {
-      container.style.removeProperty('--sticky-stack-height');
-      return;
-    }
 
     const doc = container.ownerDocument;
     const win = doc.defaultView;
-    // Fall back to the document scroller so pinned rows still retract in unusual embeddings.
+    // Fall back to the document scroller so pinned rows still work in unusual embeddings.
     const scroller = getScrollParent(container) ?? (doc.scrollingElement as HTMLElement | null);
     if (!scroller || !win) {
       return;
@@ -410,49 +394,121 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const scrollEventTarget: EventTarget = scroller === doc.scrollingElement ? win : scroller;
 
     let rafId: number | null = null;
+    // Rows currently owned by the sticky controller, tracked for exact cleanup so no stale
+    // pin state (attribute, slot offset) survives navigation or data changes.
+    const pinnedRows = new Set<HTMLElement>();
+
+    const clearRow = (row: HTMLElement) => {
+      row.removeAttribute('data-sticky-pinned');
+      row.style.removeProperty('--sticky-top');
+      pinnedRows.delete(row);
+    };
+
+    const clearAll = () => {
+      for (const row of [...pinnedRows]) {
+        clearRow(row);
+      }
+      container.style.setProperty('--sticky-stack-height', '0px');
+    };
+
+    const slotOf = (row: HTMLElement) =>
+      parseFloat(row.style.getPropertyValue('--sticky-top')) || 0;
 
     const update = () => {
       rafId = null;
       const scrollerTop =
         scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
       const allRows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
-      const rowIndexById = new Map(
-        allRows.map((row, index) => [row.getAttribute('data-item-id'), index] as const)
-      );
+      if (allRows.length === 0) {
+        clearAll();
+        return;
+      }
 
-      // Read phase: measure every chain row and its subtree end before any attribute/style
-      // write, so the frame forces at most one layout pass.
-      const measured = stickyChainIds.map((id) => {
-        const index = rowIndexById.get(id);
-        const row = index === undefined ? undefined : allRows[index];
-        if (!row || index === undefined) {
-          return null;
+      // Height of the currently engaged stack: pinned rows actually stuck at their slot.
+      let engagedHeight = 0;
+      for (const row of pinnedRows) {
+        const rect = row.getBoundingClientRect();
+        const slot = slotOf(row);
+        if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
+          engagedHeight = Math.max(engagedHeight, slot + rect.height);
         }
-        return {
-          row,
-          height: row.offsetHeight,
-          subtreeEnd: getSubtreeEndPosition(container, allRows, index),
-        };
-      });
+      }
+      const boundary = scrollerTop + engagedHeight + 1;
 
-      // Write phase.
-      let stackHeight = 0;
-      for (const measurement of measured) {
-        if (!measurement) {
-          continue;
-        }
-        const { row, height, subtreeEnd } = measurement;
-        // The row stays pinned as long as part of its subtree is below its pinned slot.
-        const isActive = subtreeEnd - scrollerTop > stackHeight + height;
-        row.toggleAttribute('data-sticky-suspended', !isActive);
-        if (isActive) {
-          // Pin below the measured stack rather than the TREE_ROW_HEIGHT estimate baked into
-          // the CSS, so rows taller than the estimate (custom labels, zoom) never overlap.
-          const top = `${stackHeight}px`;
-          if (row.style.top !== top) {
-            row.style.top = top;
+      // Topmost content row: the first row whose natural position ends below the engaged
+      // stack. Rows are in document order so natural rects are monotonic; engaged pinned rows
+      // report their stuck rect, but they are always naturally above the boundary, so treating
+      // them as "before" keeps the binary search valid.
+      const isBeforeBoundary = (row: HTMLElement) => {
+        const rect = row.getBoundingClientRect();
+        if (row.hasAttribute('data-sticky-pinned')) {
+          const slot = slotOf(row);
+          if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
+            return true;
           }
-          stackHeight += height;
+        }
+        return rect.bottom <= boundary;
+      };
+
+      let lo = 0;
+      let hi = allRows.length - 1;
+      let topIndex = allRows.length;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (isBeforeBoundary(allRows[mid])) {
+          lo = mid + 1;
+        } else {
+          topIndex = mid;
+          hi = mid - 1;
+        }
+      }
+      if (topIndex >= allRows.length) {
+        // Scrolled past this tree entirely.
+        clearAll();
+        return;
+      }
+      const topId = allRows[topIndex].getAttribute('data-item-id');
+      if (!topId) {
+        clearAll();
+        return;
+      }
+
+      // Desired stack: the top row's strict ancestors, root-most first. Copy before reversing:
+      // getAncestorIds returns a memoized array.
+      const chainIds = [...getAncestorIds(collapsedDataRef.current, topId)].reverse();
+      const desired: HTMLElement[] = [];
+      for (const id of chainIds) {
+        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
+        if (row) {
+          desired.push(row);
+        }
+      }
+
+      // Write phase: release rows that left the stack, then (re)assign slots top-down.
+      const desiredSet = new Set(desired);
+      for (const row of [...pinnedRows]) {
+        if (!desiredSet.has(row) || !row.isConnected) {
+          clearRow(row);
+        }
+      }
+      let cumulativeTop = 0;
+      for (const row of desired) {
+        row.setAttribute('data-sticky-pinned', '');
+        const slot = `${cumulativeTop}px`;
+        if (row.style.getPropertyValue('--sticky-top') !== slot) {
+          row.style.setProperty('--sticky-top', slot);
+        }
+        pinnedRows.add(row);
+        cumulativeTop += row.offsetHeight;
+      }
+
+      // Expose the engaged stack height so scrolled-to rows land below the stack.
+      let stackHeight = 0;
+      for (const row of desired) {
+        const rect = row.getBoundingClientRect();
+        const slot = slotOf(row);
+        if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
+          stackHeight = slot + rect.height;
         }
       }
       container.style.setProperty('--sticky-stack-height', `${stackHeight}px`);
@@ -482,17 +538,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
-      // Leave --sticky-stack-height in place: React runs this cleanup before sibling effects
-      // (like the selection scroll) on the same commit, and those need the current stack
-      // height for scroll margins. update() refreshes it right after; the no-chain path
-      // clears it for good.
-      for (const id of stickyChainIds) {
-        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
-        row?.removeAttribute('data-sticky-suspended');
-        row?.style.removeProperty('--sticky-top');
-      }
+      clearAll();
+      container.style.removeProperty('--sticky-stack-height');
     };
-  }, [stickyChainIds, expanded, collapsedData]);
+  }, [expanded, collapsedData]);
 
   // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
   // report their stuck rect, which would fool scrollIntoView into thinking a row far above
@@ -508,10 +557,23 @@ export const Tree = React.memo<TreeProps>(function Tree({
     if (!element) {
       return false;
     }
+    // After the scroll, the target's own ancestors will pin above it; reserve their combined
+    // height (not the current stack's) so the row lands fully below the future stack.
+    const prospectiveStack = getAncestorIds(collapsedDataRef.current, itemId).reduce(
+      (height, ancestorId) => {
+        const row = container.querySelector<HTMLElement>(
+          `[data-item-id="${CSS.escape(ancestorId)}"]`
+        );
+        return height + (row?.offsetHeight ?? 0);
+      },
+      0
+    );
     container.toggleAttribute('data-sticky-measuring', true);
+    element.style.scrollMarginTop = `${prospectiveStack}px`;
     try {
       element.scrollIntoView({ block });
     } finally {
+      element.style.removeProperty('scroll-margin-top');
       container.removeAttribute('data-sticky-measuring');
     }
     return true;
@@ -544,15 +606,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // One dependencies array shared by every Collection level, so react-aria's cached nodes are
   // invalidated consistently — a drifted copy at one level renders stale rows.
   const collectionDependencies = useMemo(
-    () => [
-      expanded,
-      selectedStoryId,
-      selectedParentId,
-      contextMenuState,
-      groupDualStatus,
-      stickyChainIds,
-    ],
-    [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus, stickyChainIds]
+    () => [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus],
+    [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus]
   );
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
@@ -568,7 +623,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
         contextMenuState,
         openContextMenu,
         closeContextMenu,
-        stickyChainIds,
         hasTestProviders,
         collectionDependencies,
       }),
@@ -581,7 +635,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
       contextMenuState,
       openContextMenu,
       closeContextMenu,
-      stickyChainIds,
       hasTestProviders,
       collectionDependencies,
     ]
@@ -618,9 +671,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 });
 
-// Stable module-level constants so empty-state props don't bust React.memo equality checks.
+// Stable module-level constant so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
-const EMPTY_STICKY_CHAIN: string[] = [];
 
 /** Find the nearest scrollable ancestor (the element sticky rows pin to). */
 function getScrollParent(element: HTMLElement): HTMLElement | null {
@@ -635,32 +687,12 @@ function getScrollParent(element: HTMLElement): HTMLElement | null {
   return null;
 }
 
-/**
- * Viewport position of the end of a row's subtree: the top of the next row at the same or a
- * shallower level (react-aria renders tree rows flat, in document order, with `data-level`), or
- * the bottom of the tree when the subtree runs to the end.
- */
-function getSubtreeEndPosition(
-  container: HTMLElement,
-  allRows: HTMLElement[],
-  rowIndex: number
-): number {
-  const level = Number(allRows[rowIndex].getAttribute('data-level') ?? '1');
-  for (let i = rowIndex + 1; i < allRows.length; i++) {
-    if (Number(allRows[i].getAttribute('data-level') ?? '1') <= level) {
-      return allRows[i].getBoundingClientRect().top;
-    }
-  }
-  return container.getBoundingClientRect().bottom;
-}
-
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
   selectedParentId: string | null;
   expanded: Set<string>;
   contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
-  stickyChainIds: string[];
   hasTestProviders: boolean;
   /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
   collectionDependencies: unknown[];
@@ -672,13 +704,10 @@ function renderNode({
   contextMenuState,
   openContextMenu,
   closeContextMenu,
-  stickyChainIds,
   hasTestProviders,
   collectionDependencies,
   ...props
 }: RenderNodeProps) {
-  const stickyIndexById = new Map(stickyChainIds.map((id, index) => [id, index] as const));
-
   const renderNodeLevel = (item: TreeEntry) => {
     return (
       <TreeNode
@@ -694,7 +723,6 @@ function renderNode({
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}
-        stickyIndex={stickyIndexById.get(item.id)}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>

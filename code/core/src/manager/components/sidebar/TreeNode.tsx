@@ -22,7 +22,6 @@ import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 
-// FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all
 
@@ -32,8 +31,7 @@ export const TREE_ROW_HEIGHT = 28;
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
-  $stickyIndex?: number;
-}>(({ $level, theme, $textColor, $stickyIndex }) => ({
+}>(({ $level, theme, $textColor }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -122,14 +120,12 @@ const StyledTreeItem = styled(TreeItem)<{
     display: 'none',
   },
 
-  /* Sticky ancestors of the selected node (VSCode-style sticky scroll).
-   * Rows in the selected node's parent chain pin below one another while their subtree
-   * scrolls; Tree.tsx suspends stickiness (data-sticky-suspended) once a row's subtree
-   * has fully scrolled past its pinned slot. */
-  ...($stickyIndex !== undefined && {
+  /* Sticky ancestors (VSCode-style sticky scroll). Tree.tsx marks the ancestor chain of the
+   * topmost visible row with data-sticky-pinned and assigns each row's slot via --sticky-top,
+   * so rows pin below one another while their subtree scrolls. Leaf rows are never marked. */
+  '&[data-sticky-pinned]': {
     position: 'sticky',
-    // Initial estimate; Tree.tsx overrides with the measured stack height via --sticky-top.
-    top: `var(--sticky-top, ${$stickyIndex * TREE_ROW_HEIGHT}px)`,
+    top: 'var(--sticky-top, 0px)',
     zIndex: 3,
     // Match the sidebar background so pinned rows fully cover the rows scrolling beneath.
     '--sticky-bg': theme.background.content,
@@ -143,16 +139,16 @@ const StyledTreeItem = styled(TreeItem)<{
       background: 'var(--sticky-bg)',
       backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
     },
-    // Suspended by Tree.tsx once the row's subtree scrolls past its slot, and while
-    // Tree.tsx measures natural row positions for scroll-into-view. `top` must reset too,
-    // or position:relative would displace the row by its former pinned offset.
-    '&[data-sticky-suspended], [data-sticky-measuring] &': {
-      position: 'relative',
-      top: 'auto',
-      zIndex: 'auto',
-      backgroundColor: 'transparent',
-    },
-  }),
+  },
+
+  // While Tree.tsx measures natural row positions for scroll-into-view, pinning is disabled
+  // (a pinned row's rect would report the stuck position instead of the layout position).
+  '[data-sticky-measuring] &[data-sticky-pinned]': {
+    position: 'relative',
+    top: 'auto',
+    zIndex: 'auto',
+    backgroundColor: 'transparent',
+  },
 }));
 
 const StyledContent = styled.div({
@@ -261,12 +257,6 @@ export interface TreeNodeProps {
   openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
   /** Close the currently-open context menu. */
   closeContextMenu?: () => void;
-  /**
-   * Position of this node in the selected node's sticky parent chain (0 = root-most ancestor).
-   * When set, the row sticks below the previous chain rows while its subtree scrolls, like
-   * VSCode's sticky scroll. Undefined for rows outside the chain.
-   */
-  stickyIndex?: number;
   /** Whether any test provider addon is registered (enables the menu on group rows). */
   hasTestProviders?: boolean;
   children?: React.ReactNode;
@@ -299,7 +289,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   contextMenuEntryMethod,
   openContextMenu,
   closeContextMenu,
-  stickyIndex,
   hasTestProviders = false,
   children,
 }) {
@@ -398,7 +387,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         id: typeId,
         title: status.title,
         description: status.description,
-        'aria-label': `Test status for ${status.title}: ${status.value}`,
+        // Describe the action, not the status — the status itself is already announced on the row.
+        'aria-label': `Open ${status.title} results for this story`,
         icon: getStatus(theme, status.value).icon,
         onClick: () => {
           onSelectStoryId(item.id);
@@ -450,7 +440,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
-      $stickyIndex={stickyIndex}
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}

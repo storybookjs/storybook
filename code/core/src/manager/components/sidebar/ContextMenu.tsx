@@ -1,5 +1,5 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -206,6 +206,21 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
 
+  // Move focus to the first menu item on open, per the menu-button pattern. React-aria only
+  // focuses the popover container, which forces keyboard users to Tab into the menu. Deferred
+  // a frame so it wins over react-aria's own FocusScope autofocus, which runs after child effects.
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelector<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   /**
    * The context menu can take a list of lists of links, so that the links are grouped and separated
    * by a line separator, so we need to make sure that links are contained within arrays (but not
@@ -216,7 +231,11 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
 
   const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
 
-  return <TooltipLinkList {...rest} links={all} />;
+  return (
+    <div ref={listRef}>
+      <TooltipLinkList {...rest} links={all} />
+    </div>
+  );
 };
 
 type ExcludesNull = <T>(x: T | null) => x is T;

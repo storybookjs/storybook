@@ -155,7 +155,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fills the remaining sidebar height: the virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;

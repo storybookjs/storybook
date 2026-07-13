@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 
-import { Button, ScrollArea } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type {
   API_LoadedRefData,
   StatusesByStoryIdAndTypeId,
@@ -56,6 +56,9 @@ const Stack = styled.div({
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
+  // Fill the sidebar so the virtualized tree (which scrolls itself) gets a bounded height.
+  flex: '1 1 auto',
+  minHeight: 0,
 });
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
@@ -162,71 +165,72 @@ export const Sidebar = React.memo(function Sidebar({
         Storybook
       </h1>
       <IconSymbols />
-      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
-        <Stack>
-          <div>
-            <Heading
-              className="sidebar-header"
-              menuHighlighted={menuHighlighted}
-              menu={menu}
-              skipLinkHref={skipLinkHref}
-              isLoading={isLoading}
-              onMenuClick={onMenuClick}
-            />
-            {!showOnboardingChecklist ? null : <ChecklistWidget />}
-          </div>
-          {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
-          <Search
-            dataset={dataset}
-            enableShortcuts={enableShortcuts}
-            searchBarContent={
-              showCreateStoryButton && (
-                <>
-                  <CreateNewStoryButton
-                    isMobile={isMobile}
-                    onClick={() => {
-                      setIsFileSearchModalOpen(true);
-                    }}
-                    ariaLabel="Create a new story"
-                    variant="outline"
-                    padding="small"
-                  >
-                    <PlusIcon />
-                  </CreateNewStoryButton>
-                  <CreateNewStoryFileModal
-                    open={isFileSearchModalOpen}
-                    onOpenChange={setIsFileSearchModalOpen}
-                  />
-                </>
-              )
-            }
-            searchFieldContent={<Filter />}
-            {...lastViewedProps}
-          >
-            {({
-              query,
-              results,
-              isNavVisible,
-              isNavReachable,
-              isSearchResultRendered,
-              closeMenu,
-              getMenuProps,
-              getItemProps,
-              highlightedIndex,
-            }) => (
+      <Stack>
+        <div>
+          <Heading
+            className="sidebar-header"
+            menuHighlighted={menuHighlighted}
+            menu={menu}
+            skipLinkHref={skipLinkHref}
+            isLoading={isLoading}
+            onMenuClick={onMenuClick}
+          />
+          {!showOnboardingChecklist ? null : <ChecklistWidget />}
+        </div>
+        {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+        <Search
+          dataset={dataset}
+          enableShortcuts={enableShortcuts}
+          searchBarContent={
+            showCreateStoryButton && (
               <>
-                {
-                  <Explorer
-                    api={api}
-                    dataset={dataset}
-                    selected={selected}
-                    isLoading={isLoading}
-                    isBrowsing={isNavVisible}
-                    isHidden={!isNavReachable}
-                    hasEntries={hasEntries}
-                  />
-                }
-                {isSearchResultRendered && (
+                <CreateNewStoryButton
+                  isMobile={isMobile}
+                  onClick={() => {
+                    setIsFileSearchModalOpen(true);
+                  }}
+                  ariaLabel="Create a new story"
+                  variant="outline"
+                  padding="small"
+                >
+                  <PlusIcon />
+                </CreateNewStoryButton>
+                <CreateNewStoryFileModal
+                  open={isFileSearchModalOpen}
+                  onOpenChange={setIsFileSearchModalOpen}
+                />
+              </>
+            )
+          }
+          searchFieldContent={<Filter />}
+          {...lastViewedProps}
+        >
+          {({
+            query,
+            results,
+            isNavVisible,
+            isNavReachable,
+            isSearchResultRendered,
+            closeMenu,
+            getMenuProps,
+            getItemProps,
+            highlightedIndex,
+          }) => (
+            <>
+              {
+                <Explorer
+                  api={api}
+                  dataset={dataset}
+                  selected={selected}
+                  isLoading={isLoading}
+                  isBrowsing={isNavVisible}
+                  isHidden={!isNavReachable}
+                  hasEntries={hasEntries}
+                />
+              }
+              {isSearchResultRendered && (
+                // Scrolls on its own now that the sidebar no longer has an outer scroller.
+                <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
                   <SearchResults
                     query={query}
                     results={results}
@@ -238,13 +242,13 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     clearLastViewed={lastViewedProps.clearLastViewed}
                   />
-                )}
-              </>
-            )}
-          </Search>
-        </Stack>
-        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
-      </ScrollArea>
+                </div>
+              )}
+            </>
+          )}
+        </Search>
+      </Stack>
+      {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
     </Container>
   );
 });

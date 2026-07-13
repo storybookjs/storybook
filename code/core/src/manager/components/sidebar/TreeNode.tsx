@@ -10,7 +10,6 @@ import { styled, useTheme } from 'storybook/theming';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getStatus, shouldShowChangeStatus, statusPriority } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
@@ -29,10 +28,14 @@ import { CollapseIcon } from './CollapseIcon.tsx';
 /** Height of a tree row in px. Rows are single-line (labels ellipsize), so this is constant. */
 export const TREE_ROW_HEIGHT = 28;
 
+/** Gap above a top-level section that follows another section's subtree, carried as row padding. */
+export const SECTION_GAP = 14;
+
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
-}>(({ $level, theme, $textColor }) => ({
+  $hasSectionGap: boolean;
+}>(({ $level, theme, $textColor, $hasSectionGap }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -46,6 +49,10 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
+
+  // Inter-section spacing, carried by the section-start row itself: the tree is virtualized
+  // (rows are absolutely positioned), so sibling margins cannot create the gap.
+  paddingBlockStart: $hasSectionGap ? SECTION_GAP : 0,
 
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
@@ -116,40 +123,6 @@ const StyledTreeItem = styled(TreeItem)<{
   },
   '&:hover .static-only, &:focus-visible .static-only': {
     display: 'none',
-  },
-
-  /* Sticky ancestors (VSCode-style sticky scroll). Tree.tsx marks the ancestor chain of the
-   * topmost visible row with data-sticky-pinned and assigns each row's slot via --sticky-top,
-   * so rows pin below one another while their subtree scrolls. Leaf rows are never marked. */
-  '&[data-sticky-pinned]': {
-    position: 'sticky',
-    top: 'var(--sticky-top, 0px)',
-    zIndex: 3,
-    // Match the sidebar background so pinned rows fully cover the rows scrolling beneath.
-    '--sticky-bg': theme.background.content,
-    [MEDIA_DESKTOP_BREAKPOINT]: {
-      '--sticky-bg': theme.background.app,
-    },
-    // Paint the opaque cover on a square ::before rather than the row itself: the row keeps
-    // its border radius for hover/selection fills, and a radiused background would let rows
-    // scrolling beneath peek through the corners. overflow must not clip the pseudo to the
-    // radius, and translucent hover fills compose over the opaque backdrop.
-    overflow: 'visible',
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: 0,
-      zIndex: -1,
-      backgroundColor: 'var(--sticky-bg)',
-    },
-  },
-
-  // While Tree.tsx measures natural row positions for scroll-into-view, pinning is disabled
-  // (a pinned row's rect would report the stuck position instead of the layout position).
-  '[data-sticky-measuring] &[data-sticky-pinned]': {
-    position: 'relative',
-    top: 'auto',
-    zIndex: 'auto',
   },
 }));
 
@@ -246,6 +219,8 @@ export interface TreeNodeProps {
   refId: string;
   /** Whether this node is currently expanded. */
   isExpanded: boolean;
+  /** Whether this row starts a new top-level section and carries the inter-section gap. */
+  hasSectionGap?: boolean;
   /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
   api: API;
@@ -278,6 +253,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
   isExpanded,
+  hasSectionGap = false,
   api,
   onSelectStoryId,
   openContextMenu,
@@ -447,6 +423,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
+      $hasSectionGap={hasSectionGap}
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}

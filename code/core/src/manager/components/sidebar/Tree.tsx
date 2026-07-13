@@ -5,6 +5,7 @@ import { TooltipNote } from 'storybook/internal/components';
 
 import { Collection } from 'react-aria-components/Collection';
 import { Tree as AriaTree } from 'react-aria-components/Tree';
+import { ListLayout, Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
   type TreeEntry,
@@ -12,7 +13,7 @@ import {
   getAncestorIds,
   indexToTree,
 } from '../../utils/tree.ts';
-import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+import { SECTION_GAP, TREE_ROW_HEIGHT, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
 import {
   Addon_TypesEnum,
@@ -25,10 +26,12 @@ import { shortcutToHumanString } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
+import { CollapseIcon } from './CollapseIcon.tsx';
 import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
@@ -41,18 +44,66 @@ const StyledAriaTree = styled(AriaTree)(() => ({
   padding: 0,
   margin: 0,
   outline: 'none',
-  // Contain the sticky rows' z-index so overlay UI outside the tree (Radix scrollbar,
-  // the focus tooltip) still paints above pinned rows.
-  isolation: 'isolate' as const,
+  // The virtualizer makes the tree its own scroll container; the parent must bound its height.
+  height: '100%',
+  overflow: 'auto',
 
   // Show trace lines on hover or keyboard focus.
   '&:hover, &:has(:focus-visible)': {
     '--trace-opacity': 1,
   },
+}));
 
-  // Add spacing between top-level expanded subtree and its next sibling.
-  '*[data-level]:not([data-level="1"]) + *[data-level="1"]': {
-    marginTop: 14,
+const TreeWrapper = styled.div({
+  position: 'relative',
+  height: '100%',
+  minHeight: 0,
+  // Contain the overlay's z-index so UI outside the tree still paints above it.
+  isolation: 'isolate',
+});
+
+const PinnedOverlay = styled.div(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 3,
+  '--sticky-bg': theme.background.content,
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--sticky-bg': theme.background.app,
+  },
+}));
+
+const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  height: TREE_ROW_HEIGHT,
+  border: 0,
+  margin: 0,
+  paddingBlock: 0,
+  paddingInlineEnd: 0,
+  paddingInlineStart: `calc(${$level} * 20px + 7px)`,
+  gap: 6,
+  cursor: 'pointer',
+  textAlign: 'left',
+  font: 'inherit',
+  color: theme.color.defaultText,
+  backgroundColor: 'var(--sticky-bg)',
+  '&:hover': {
+    backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
+  },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
+  '& svg': {
+    flexShrink: 0,
+  },
+  '& > span': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
 }));
 
@@ -386,239 +437,128 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [updateFocusedItemId]);
 
-  // VSCode-style sticky scroll: pin the ancestor chain of the topmost visible row (plus that
-  // row itself while its own subtree continues below it), stacked in order. Membership follows
-  // the viewport (not the selection): a chain stays pinned until the next subtree's rows reach
-  // the top of the viewport, and leaf rows are never pinned. Rows are marked with
-  // data-sticky-pinned + a --sticky-top slot; CSS position:sticky does the actual
-  // pinning/unpinning as rows cross their slot, which is what makes branches pin as soon as
-  // they are partially hidden. Runs rAF-throttled on scroll and resize, and whenever the
-  // expansion state or data changes.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-
-    const doc = container.ownerDocument;
-    const win = doc.defaultView;
-    // Fall back to the document scroller so pinned rows still work in unusual embeddings.
-    const scroller = getScrollParent(container) ?? (doc.scrollingElement as HTMLElement | null);
-    if (!scroller || !win) {
-      return;
-    }
-    const scrollEventTarget: EventTarget = scroller === doc.scrollingElement ? win : scroller;
-
-    let rafId: number | null = null;
-    // Rows currently owned by the sticky controller, tracked for exact cleanup so no stale
-    // pin state (attribute, slot offset) survives navigation or data changes.
-    const pinnedRows = new Set<HTMLElement>();
-
-    const clearRow = (row: HTMLElement) => {
-      row.removeAttribute('data-sticky-pinned');
-      row.style.removeProperty('--sticky-top');
-      pinnedRows.delete(row);
-    };
-
-    const clearAll = () => {
-      for (const row of [...pinnedRows]) {
-        clearRow(row);
-      }
-    };
-
-    // Natural row geometry — positions measured with pinning disabled, relative to the
-    // container, cached until the DOM or layout changes. Chain membership is derived from
-    // natural positions only, never from which rows are currently stuck: deriving it from the
-    // engaged stack feeds the stack height back into the boundary, which oscillates when a
-    // subtree's last rows have less than the stack's height of room (parent pins → covers the
-    // leaf → boundary moves → parent unpins → leaf reappears → parent pins again, every frame).
-    interface RowGeometry {
-      rows: HTMLElement[];
-      ids: (string | null)[];
-      tops: number[];
-      bottoms: number[];
-      indexById: Map<string, number>;
-    }
-    let geometry: RowGeometry | null = null;
-    const measureGeometry = (): RowGeometry => {
-      if (geometry) {
-        return geometry;
-      }
-      const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
-      container.toggleAttribute('data-sticky-measuring', true);
-      const containerTop = container.getBoundingClientRect().top;
-      const ids: (string | null)[] = [];
-      const tops: number[] = [];
-      const bottoms: number[] = [];
-      const indexById = new Map<string, number>();
-      rows.forEach((row, i) => {
-        const rect = row.getBoundingClientRect();
-        const id = row.getAttribute('data-item-id');
-        ids.push(id);
-        tops.push(rect.top - containerTop);
-        bottoms.push(rect.bottom - containerTop);
-        if (id) {
-          indexById.set(id, i);
+  // Flattened visible rows in render order, with arithmetic geometry. The tree is
+  // virtualized, so most rows have no DOM node to measure: positions derive from the fixed
+  // row height plus the deterministic section gap (mirrored in TreeNode's padding rule).
+  const flatRows = useMemo(() => {
+    const ids: string[] = [];
+    const gapIds = new Set<string>();
+    const offsets: number[] = [];
+    const indexById = new Map<string, number>();
+    let y = 0;
+    let prevLevel1 = true;
+    const walk = (entries: TreeEntry[], level: number) => {
+      for (const entry of entries) {
+        const isLevel1 = level === 1;
+        const hasGap = isLevel1 && ids.length > 0 && !prevLevel1;
+        if (hasGap) {
+          gapIds.add(entry.id);
         }
-      });
-      container.removeAttribute('data-sticky-measuring');
-      geometry = { rows, ids, tops, bottoms, indexById };
-      return geometry;
+        indexById.set(entry.id, ids.length);
+        ids.push(entry.id);
+        offsets.push(y + (hasGap ? SECTION_GAP : 0));
+        y += TREE_ROW_HEIGHT + (hasGap ? SECTION_GAP : 0);
+        prevLevel1 = isLevel1;
+        if (entry.resolvedChildren?.length && expanded.has(entry.id)) {
+          walk(entry.resolvedChildren, level + 1);
+        }
+      }
     };
-    const rowsObserver = new win.MutationObserver(() => {
-      geometry = null;
-      scheduleUpdate();
-    });
-    rowsObserver.observe(container, { childList: true, subtree: true });
+    walk(tree, 1);
+    return { ids, gapIds, offsets, indexById, totalHeight: y };
+  }, [tree, expanded]);
+  const flatRowsRef = useRef(flatRows);
+  flatRowsRef.current = flatRows;
 
+  // VSCode-style sticky scroll, rendered as an overlay above the virtualized scroller (CSS
+  // position:sticky cannot work on virtualized, absolutely-positioned rows). The chain is the
+  // strict ancestors of the row at the viewport's top line, plus that row itself while its own
+  // subtree continues below it; it stays pinned until the next subtree's rows reach the top.
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  useEffect(() => {
+    const scroller = containerRef.current;
+    if (!scroller) {
+      return;
+    }
+    let rafId: number | null = null;
     const update = () => {
       rafId = null;
-      const { rows, ids, tops, bottoms, indexById } = measureGeometry();
-      if (rows.length === 0) {
-        clearAll();
-        return;
-      }
-
-      // The viewport's top line in the tree's natural coordinates. The container itself never
-      // pins, so its rect is always the natural one.
-      const scrollerTop =
-        scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
-      const targetY = scrollerTop - container.getBoundingClientRect().top;
-
-      // Top row: the row the viewport's top line passes through (or the next one, when the
-      // line falls in a section gap). This keeps the current chain pinned until the next
-      // subtree's rows actually reach the top of the viewport.
+      const { ids, offsets, indexById } = flatRowsRef.current;
+      const targetY = scroller.scrollTop;
+      // First row whose bottom is below the top line (bottom = next row's offset, or the
+      // row's own offset + height for the last row).
       let lo = 0;
-      let hi = rows.length - 1;
-      let topIndex = rows.length;
+      let hi = ids.length - 1;
+      let topIndex = ids.length;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
-        if (bottoms[mid] <= targetY) {
+        const bottom = mid + 1 < ids.length ? offsets[mid + 1] : offsets[mid] + TREE_ROW_HEIGHT;
+        if (bottom <= targetY) {
           lo = mid + 1;
         } else {
           topIndex = mid;
           hi = mid - 1;
         }
       }
-      if (topIndex >= rows.length) {
-        // Scrolled past this tree entirely.
-        clearAll();
-        return;
-      }
-      const topId = ids[topIndex];
-      if (!topId) {
-        clearAll();
-        return;
-      }
-
-      // Desired stack: the top row's strict ancestors, root-most first. Copy before reversing:
-      // getAncestorIds returns a memoized array.
-      const chainIds = [...getAncestorIds(collapsedDataRef.current, topId)].reverse();
-      // The top row itself joins the stack while its own subtree continues below it, so a
-      // branch pins the moment it is partially hidden (by the stack above it, or the viewport
-      // for top-level rows) instead of popping in only once fully scrolled past. Leaves and
-      // collapsed branches never qualify: the row after them is not their descendant.
-      const nextId = ids[topIndex + 1];
-      if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
-        chainIds.push(topId);
-      }
-      const desired: { row: HTMLElement; height: number }[] = [];
-      for (const id of chainIds) {
-        const index = indexById.get(id);
-        if (index !== undefined) {
-          desired.push({ row: rows[index], height: bottoms[index] - tops[index] });
+      let chainIds: string[] = [];
+      if (topIndex < ids.length) {
+        const topId = ids[topIndex];
+        chainIds = [...getAncestorIds(collapsedDataRef.current, topId)].reverse();
+        const nextId = ids[topIndex + 1];
+        if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
+          chainIds.push(topId);
         }
+        // Only chain rows that are actually above their slot pin; keep the rest natural so a
+        // chain root at the top of the viewport is not overlaid by its own copy.
+        chainIds = chainIds.filter((id, i) => {
+          const index = indexById.get(id);
+          return index !== undefined && offsets[index] < targetY + i * TREE_ROW_HEIGHT;
+        });
       }
-
-      // Write phase: release rows that left the stack, then (re)assign slots top-down.
-      // All writes are change-guarded: redundant attribute/property writes would invalidate
-      // styles every frame while scrolling.
-      const desiredSet = new Set(desired.map(({ row }) => row));
-      for (const row of [...pinnedRows]) {
-        if (!desiredSet.has(row) || !row.isConnected) {
-          clearRow(row);
-        }
-      }
-      let cumulativeTop = 0;
-      for (const { row, height } of desired) {
-        if (!row.hasAttribute('data-sticky-pinned')) {
-          row.setAttribute('data-sticky-pinned', '');
-        }
-        const slot = `${cumulativeTop}px`;
-        if (row.style.getPropertyValue('--sticky-top') !== slot) {
-          row.style.setProperty('--sticky-top', slot);
-        }
-        pinnedRows.add(row);
-        cumulativeTop += height;
-      }
+      setPinnedIds((prev) =>
+        prev.length === chainIds.length && prev.every((id, i) => id === chainIds[i])
+          ? prev
+          : chainIds
+      );
     };
-
     const scheduleUpdate = () => {
       if (rafId === null) {
         rafId = requestAnimationFrame(update);
       }
     };
-
     update();
-    scrollEventTarget.addEventListener('scroll', scheduleUpdate, { passive: true });
-
-    // Content can move without a scroll event (a sibling ref tree loading or collapsing,
-    // window resizes); those shifts also invalidate the measured natural geometry.
-    const resizeObserver =
-      typeof win.ResizeObserver === 'function'
-        ? new win.ResizeObserver(() => {
-            geometry = null;
-            scheduleUpdate();
-          })
-        : null;
-    resizeObserver?.observe(scroller);
-    if (scroller.firstElementChild) {
-      resizeObserver?.observe(scroller.firstElementChild);
-    }
-
+    scroller.addEventListener('scroll', scheduleUpdate, { passive: true });
     return () => {
-      scrollEventTarget.removeEventListener('scroll', scheduleUpdate);
-      resizeObserver?.disconnect();
-      rowsObserver.disconnect();
+      scroller.removeEventListener('scroll', scheduleUpdate);
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
-      clearAll();
     };
-  }, [expanded, collapsedData]);
+  }, [flatRows]);
 
-  // Scroll a row into view from its natural (unpinned) layout position. Pinned chain rows
-  // report their stuck rect, which would fool scrollIntoView into thinking a row far above
-  // the viewport is already visible; data-sticky-measuring temporarily disables pinning while
-  // the browser measures, and a temporary scroll-margin-top (the prospective stack height)
-  // keeps the target row below the stack.
+  // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
+  // pinned overlay covers the top of the viewport, so the target lands below the prospective
+  // stack (the target's own ancestors).
   const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
-    const container = containerRef.current;
-    if (!container) {
+    const scroller = containerRef.current;
+    if (!scroller) {
       return false;
     }
-    const element = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(itemId)}"]`);
-    if (!element) {
+    const { offsets, indexById } = flatRowsRef.current;
+    const index = indexById.get(itemId);
+    if (index === undefined) {
       return false;
     }
-    // After the scroll, the target's own ancestors will pin above it; reserve their combined
-    // height (not the current stack's) so the row lands fully below the future stack.
-    const prospectiveStack = getAncestorIds(collapsedDataRef.current, itemId).reduce(
-      (height, ancestorId) => {
-        const row = container.querySelector<HTMLElement>(
-          `[data-item-id="${CSS.escape(ancestorId)}"]`
-        );
-        return height + (row?.offsetHeight ?? 0);
-      },
-      0
-    );
-    container.toggleAttribute('data-sticky-measuring', true);
-    element.style.scrollMarginTop = `${prospectiveStack}px`;
-    try {
-      element.scrollIntoView({ block });
-    } finally {
-      element.style.removeProperty('scroll-margin-top');
-      container.removeAttribute('data-sticky-measuring');
+    const offset = offsets[index];
+    const stack = getAncestorIds(collapsedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
+    if (block === 'center') {
+      scroller.scrollTop = offset - Math.max((scroller.clientHeight - TREE_ROW_HEIGHT) / 2, stack);
+      return true;
+    }
+    const viewTop = scroller.scrollTop + stack;
+    const viewBottom = scroller.scrollTop + scroller.clientHeight - TREE_ROW_HEIGHT;
+    if (offset < viewTop || offset > viewBottom) {
+      scroller.scrollTop = offset - stack;
     }
     return true;
   }, []);
@@ -671,6 +611,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         refId,
         onSelectStoryId,
         expanded,
+        gapIds: flatRows.gapIds,
         openContextMenu,
         closeContextMenu,
         hasTestProviders,
@@ -681,12 +622,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
       refId,
       onSelectStoryId,
       expanded,
+      flatRows.gapIds,
       openContextMenu,
       closeContextMenu,
       hasTestProviders,
       collectionDependencies,
     ]
   );
+
+  // Rows are fixed-height except section starts, which carry the gap as padding; the layout
+  // measures rendered rows against this estimate.
+  const treeLayout = useMemo(() => new ListLayout({ estimatedRowHeight: TREE_ROW_HEIGHT }), []);
 
   // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
   // every TreeNode through the context.
@@ -699,20 +645,47 @@ export const Tree = React.memo<TreeProps>(function Tree({
   return (
     <StatusContext.Provider value={statusContextValue}>
       <RowUiContext.Provider value={rowUiStoreRef.current}>
-        <StyledAriaTree
-          ref={containerRef}
-          aria-label="Stories"
-          selectionMode="single"
-          expandedKeys={expanded}
-          onExpandedChange={handleExpandedChange}
-          selectedKeys={selectedKeys}
-          onSelectionChange={handleSelectionChange}
-          onAction={handleAction}
-        >
-          <Collection items={tree} dependencies={collectionDependencies}>
-            {nodeRenderer}
-          </Collection>
-        </StyledAriaTree>
+        <TreeWrapper>
+          <Virtualizer layout={treeLayout}>
+            <StyledAriaTree
+              ref={containerRef}
+              aria-label="Stories"
+              selectionMode="single"
+              expandedKeys={expanded}
+              onExpandedChange={handleExpandedChange}
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
+              onAction={handleAction}
+            >
+              <Collection items={tree} dependencies={collectionDependencies}>
+                {nodeRenderer}
+              </Collection>
+            </StyledAriaTree>
+          </Virtualizer>
+          {pinnedIds.length > 0 && (
+            <PinnedOverlay data-testid="sticky-overlay">
+              {pinnedIds.map((id) => {
+                const entry = collapsedData[id];
+                if (!entry) {
+                  return null;
+                }
+                return (
+                  <PinnedRow
+                    key={id}
+                    $level={entry.type === 'root' ? 0 : (entry.depth ?? 0)}
+                    data-pinned-item-id={id}
+                    type="button"
+                    onClick={() => scrollRowIntoView(id, 'start')}
+                    aria-label={`Scroll to ${entry.name}`}
+                  >
+                    <CollapseIcon isExpanded />
+                    <span>{entry.name}</span>
+                  </PinnedRow>
+                );
+              })}
+            </PinnedOverlay>
+          )}
+        </TreeWrapper>
         {focusedItemShortcutLabel && (
           <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
         )}
@@ -747,21 +720,10 @@ function useStableIdentity<T extends Record<string, any> | undefined>(value: T):
   return ref.current;
 }
 
-/** Find the nearest scrollable ancestor (the element sticky rows pin to). */
-function getScrollParent(element: HTMLElement): HTMLElement | null {
-  let parent = element.parentElement;
-  while (parent) {
-    const { overflowY } = getComputedStyle(parent);
-    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-      return parent;
-    }
-    parent = parent.parentElement;
-  }
-  return null;
-}
-
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
   expanded: Set<string>;
+  /** Section-start rows that carry the inter-section gap as padding. */
+  gapIds: Set<string>;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
   hasTestProviders: boolean;
@@ -771,6 +733,7 @@ interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelec
 
 function renderNode({
   expanded,
+  gapIds,
   openContextMenu,
   closeContextMenu,
   hasTestProviders,
@@ -784,6 +747,7 @@ function renderNode({
         key={item.id}
         item={item}
         isExpanded={expanded.has(item.id)}
+        hasSectionGap={gapIds.has(item.id)}
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}

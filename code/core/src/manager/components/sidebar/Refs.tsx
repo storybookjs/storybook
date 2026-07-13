@@ -24,6 +24,8 @@ export interface RefProps {
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
+  // The main tree fills the remaining sidebar height and scrolls itself (virtualized).
+  ...(isMain && { flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }),
   position: 'relative',
   marginTop: isMain ? undefined : 0,
 }));

@@ -583,106 +583,58 @@ export const StickyAncestors: Story = {
   render: (args) => {
     const [selectedId, setSelectedId] = useState(stickyStoryId);
     return (
-      <div data-testid="sticky-scroller" style={{ height: 320, overflowY: 'auto' }}>
+      <div data-testid="sticky-harness" style={{ height: 320 }}>
         <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
-        {/* Trailing content (like composed refs) lets the tree's end scroll up under the stack. */}
-        <div style={{ height: 400 }} />
       </div>
     );
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const scroller = await canvas.findByTestId('sticky-scroller');
-    const row = (id: string) =>
-      canvasElement.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
-    const pinnedRows = () => canvasElement.querySelectorAll<HTMLElement>('[data-sticky-pinned]');
-    const scrollerTop = () => scroller.getBoundingClientRect().top;
+    // The virtualized tree is its own scroll container; pinned ancestors render in an overlay.
+    const scroller = canvasElement.querySelector<HTMLElement>('[role="treegrid"]')!;
+    const overlayIds = () =>
+      [
+        ...canvasElement.querySelectorAll('[data-testid="sticky-overlay"] [data-pinned-item-id]'),
+      ].map((el) => el.getAttribute('data-pinned-item-id'));
+    const frame = () =>
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    await waitFor(() => expect(row(stickyStoryId)).not.toBeNull());
-
-    // At the very top of the tree nothing is visually displaced: at most the topmost branch
-    // row is marked (so it pins the instant it becomes partially hidden), sitting exactly at
-    // its natural spot, and every row carrying a slot is actually in the pinned chain.
-    scroller.scrollTop = 0;
+    // The selected deep story is centered on mount; the overlay shows (a suffix of) its
+    // ancestor chain, in order, and never the leaf itself.
     await waitFor(() => {
-      const pinned = [...pinnedRows()];
-      expect(pinned.length).toBeLessThanOrEqual(1);
-      pinned.forEach((el) => {
-        expect(Math.abs(el.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
-      });
-      canvasElement.querySelectorAll<HTMLElement>('[style*="--sticky-top"]').forEach((el) => {
-        expect(el).toHaveAttribute('data-sticky-pinned');
-      });
+      const ids = overlayIds();
+      expect(ids.length).toBeGreaterThan(0);
+      expect(stickyChainIds.join(',')).toContain(ids.join(','));
+      expect(ids).not.toContain(stickyStoryId);
     });
 
-    // A branch pins as soon as it is partially hidden, not only after scrolling fully past
-    // it: nudge the deep chain's root 10px beyond the viewport top and it must already be
-    // stuck at slot 0.
-    const rootRow = row(stickyChainIds[0])!;
-    scroller.scrollTop =
-      scroller.scrollTop + rootRow.getBoundingClientRect().top - scrollerTop() + 10;
-    await waitFor(() => {
-      const r = row(stickyChainIds[0])!;
-      expect(r).toHaveAttribute('data-sticky-pinned');
-      expect(Math.abs(r.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
-    });
-
-    // Scroll so the deep story leaf is the topmost visible row: its strict ancestors pin,
-    // stacked in order, while the leaf itself must never pin.
-    const targetRow = row(stickyStoryId)!;
-    scroller.scrollTop = scroller.scrollTop + targetRow.getBoundingClientRect().top - scrollerTop();
-    await waitFor(() => {
-      stickyChainIds.forEach((id, i) => {
-        const ancestorRow = row(id);
-        expect(ancestorRow).not.toBeNull();
-        expect(ancestorRow!).toHaveAttribute('data-sticky-pinned');
-        const { top } = ancestorRow!.getBoundingClientRect();
-        expect(Math.abs(top - scrollerTop() - i * TREE_ROW_HEIGHT)).toBeLessThanOrEqual(2);
-      });
-      expect(row(stickyStoryId)!).not.toHaveAttribute('data-sticky-pinned');
-    });
-
-    // Jitter regression: park the deep subtree's very last row fully under its pinned chain.
-    // The chain must stay pinned and stable across single-pixel scrolls instead of fighting
-    // with the leaf (membership used to be derived from the engaged stack, which oscillated
-    // whenever the last rows had less room than the stack height).
-    const deepRows = canvasElement.querySelectorAll<HTMLElement>(
-      `[data-item-id^="${stickyChainIds[stickyChainIds.length - 1]}--"]`
-    );
-    const lastDeep = deepRows[deepRows.length - 1];
-    const chainHeight = stickyChainIds.length * TREE_ROW_HEIGHT;
-    scroller.scrollTop +=
-      lastDeep.getBoundingClientRect().top - scrollerTop() - (chainHeight - TREE_ROW_HEIGHT - 4);
-    const pinnedSnapshot = async () => {
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      return [...pinnedRows()].map((el) => el.getAttribute('data-item-id')).join();
-    };
-    const stableSet = await pinnedSnapshot();
-    await expect(stableSet).not.toBe('');
+    // Jitter regression: overlay membership must be stable across single-pixel scrolls
+    // (membership derives from row offsets only, never from the engaged stack).
+    const stable = overlayIds().join();
     for (const delta of [-1, 1, -1]) {
       scroller.scrollTop += delta;
-      await expect(await pinnedSnapshot()).toBe(stableSet);
+      await frame();
+      expect(overlayIds().join()).toBe(stable);
     }
 
-    // Scroll to the very bottom: the viewport has left the deep component's subtree, so its
-    // row retracts and leaves no stale pin state behind (no holes in the tree).
-    scroller.scrollTop = scroller.scrollHeight;
-    await waitFor(() => {
-      const componentRow = row(stickyChainIds[stickyChainIds.length - 1]);
-      expect(componentRow).not.toBeNull();
-      expect(componentRow!).not.toHaveAttribute('data-sticky-pinned');
-      expect(componentRow!.style.getPropertyValue('--sticky-top')).toBe('');
-    });
-
-    // And back to the top: the whole stack releases (at most the topmost branch stays
-    // marked, at its natural position).
+    // Back at the very top nothing is pinned.
     scroller.scrollTop = 0;
     await waitFor(() => {
-      const pinned = [...pinnedRows()];
-      expect(pinned.length).toBeLessThanOrEqual(1);
-      pinned.forEach((el) => {
-        expect(Math.abs(el.getBoundingClientRect().top - scrollerTop())).toBeLessThanOrEqual(2);
-      });
+      expect(overlayIds()).toEqual([]);
+    });
+
+    // A branch pins as soon as it is partially hidden: expand the first top-level branch,
+    // nudge it 10px past the viewport top, and it is already pinned. Collapsed branches
+    // never pin (their next row is not a descendant).
+    const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
+    const firstRowId = firstRow.getAttribute('data-item-id');
+    // The virtualizer disables pointer events on rows briefly while scrolling.
+    await waitFor(() => {
+      expect(getComputedStyle(firstRow).pointerEvents).not.toBe('none');
+    });
+    await userEvent.click(firstRow);
+    scroller.scrollTop = 10;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([firstRowId]);
     });
   },
 };

@@ -40,7 +40,6 @@ const StyledTreeItem = styled(TreeItem)<{
   alignItems: 'flex-start',
   background: 'transparent',
   minHeight: TREE_ROW_HEIGHT,
-  borderRadius: 4,
   overflow: 'hidden',
   cursor: 'pointer',
 
@@ -51,6 +50,19 @@ const StyledTreeItem = styled(TreeItem)<{
   // (rows are absolutely positioned), so sibling margins cannot create the gap.
   paddingBlockStart: $hasSectionGap ? SECTION_GAP : 0,
 
+  // Hover/selection/focus decorations paint on this inner surface, which excludes the
+  // section-gap padding — painting them on the row itself would bleed into the gap.
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: $hasSectionGap ? SECTION_GAP : 0,
+    borderRadius: 4,
+    pointerEvents: 'none',
+  },
+
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
   '--trace-color': theme.appBorderColor,
@@ -58,28 +70,34 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Hover colors: data-focused is set by RAC on hovered items (it mixes hover/focus states).
   '&:hover, &[data-focused="true"]': {
-    background: theme.background.hoverable,
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
     '--trace-color': transparentize(0.52, theme.color.secondary),
     svg: { color: 'currentColor' },
   },
+  '&:hover::before, &[data-focused="true"]::before': {
+    background: theme.background.hoverable,
+  },
 
   // Selected colors.
   '&[data-selected="true"]': {
     color: theme.color.lightest,
-    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
     svg: { color: theme.color.lightest },
   },
+  '&[data-selected="true"]::before': {
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+  },
 
-  // Focus colors.
+  // Focus colors. The ring is inset so neighboring rows and the scroller edges never crop it.
   '&:focus-visible': {
     outline: 'none',
-    boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
     '--trace-color': transparentize(0.88, theme.color.secondary),
     anchorName: '--focused-treenode',
     zIndex: 1,
+  },
+  '&:focus-visible::before': {
+    boxShadow: `inset 0 0 0 2px ${theme.color.secondary}, inset 0 0 0 4px ${theme.background.app}`,
   },
 
   /* ContextMenu and StatusIcon visibility.
@@ -161,7 +179,7 @@ const StyledTraceLine = styled.span<{ $offset: number; $forceVisible?: boolean }
   })
 );
 
-const Traces = ({
+export const Traces = ({
   level,
   isAlongsideSelected,
 }: {

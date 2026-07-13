@@ -13,7 +13,7 @@ import {
   getAncestorIds,
   indexToTree,
 } from '../../utils/tree.ts';
-import { SECTION_GAP, TREE_ROW_HEIGHT, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+import { SECTION_GAP, TREE_ROW_HEIGHT, Traces, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
 import {
   Addon_TypesEnum,
@@ -24,6 +24,7 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import type { IndexHash } from 'storybook/manager-api';
+import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
@@ -39,7 +40,7 @@ import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 // FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
 // FIXME/TODO: add a level for trees with a RefHead.
 
-const StyledAriaTree = styled(AriaTree)(() => ({
+const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   listStyle: 'none',
   padding: 0,
   margin: 0,
@@ -48,19 +49,56 @@ const StyledAriaTree = styled(AriaTree)(() => ({
   height: '100%',
   overflow: 'auto',
 
+  // Match the ScrollArea look: a thin muted thumb on a transparent track, only visible while
+  // hovering or keyboard-focused inside the tree.
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'transparent transparent',
+  '&::-webkit-scrollbar': {
+    width: 6,
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+  },
+  '&:hover, &:focus-within': {
+    scrollbarColor: `${transparentize(0.5, theme.textMutedColor)} transparent`,
+  },
+  '&:hover::-webkit-scrollbar-thumb, &:focus-within::-webkit-scrollbar-thumb': {
+    backgroundColor: transparentize(0.5, theme.textMutedColor),
+  },
+  '&::-webkit-scrollbar-thumb:hover': {
+    backgroundColor: transparentize(0.2, theme.textMutedColor),
+  },
+
   // Show trace lines on hover or keyboard focus.
   '&:hover, &:has(:focus-visible)': {
     '--trace-opacity': 1,
   },
 }));
 
-const TreeWrapper = styled.div({
+const TreeWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   height: '100%',
   minHeight: 0,
   // Contain the overlay's z-index so UI outside the tree still paints above it.
   isolation: 'isolate',
-});
+  '--sticky-bg': theme.background.content,
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--sticky-bg': theme.background.app,
+  },
+  // Soft fade at the bottom of the scroll area, easing the cut-off into the rest of the UI.
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 16,
+    pointerEvents: 'none',
+    background: 'linear-gradient(to top, var(--sticky-bg), transparent)',
+  },
+}));
 
 const PinnedOverlay = styled.div(({ theme }) => ({
   position: 'absolute',
@@ -68,21 +106,32 @@ const PinnedOverlay = styled.div(({ theme }) => ({
   left: 0,
   right: 0,
   zIndex: 3,
-  '--sticky-bg': theme.background.content,
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--sticky-bg': theme.background.app,
+  '--trace-color': theme.appBorderColor,
+  '--trace-opacity': 1,
+  // Soft fade between the pinned stack and the scrolling rows beneath it.
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    height: SECTION_GAP,
+    pointerEvents: 'none',
+    background: 'linear-gradient(to bottom, var(--sticky-bg), transparent)',
   },
 }));
 
 const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
   width: '100%',
   height: TREE_ROW_HEIGHT,
+  overflow: 'hidden',
   border: 0,
   margin: 0,
   paddingBlock: 0,
-  paddingInlineEnd: 0,
+  paddingInlineEnd: 8,
   paddingInlineStart: `calc(${$level} * 20px + 7px)`,
   gap: 6,
   cursor: 'pointer',
@@ -93,19 +142,29 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   '&:hover': {
     backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
   },
-  '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: -2,
-  },
   '& svg': {
     flexShrink: 0,
   },
-  '& > span': {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
 }));
+
+// Zero-width anchor at the content start so the pinned row's trace lines share the same
+// coordinate system as real rows (lines offset backwards from the content edge).
+const PinnedTraceAnchor = styled.span({
+  position: 'relative',
+  alignSelf: 'stretch',
+  width: 0,
+  flex: 'none',
+});
+
+// The label must own the free space and truncate stably, or the row content jitters
+// horizontally as pinned rows swap while scrolling.
+const PinnedLabel = styled.span({
+  flex: '1 1 auto',
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
 
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,
@@ -536,6 +595,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [flatRows]);
 
+  // Clicking a pinned row scrolls its real row to the exact position the pinned copy occupies
+  // (slot i of the overlay), so nothing appears to move.
+  const scrollPinnedRowIntoPlace = useCallback((itemId: string, overlayIndex: number) => {
+    const scroller = containerRef.current;
+    const { offsets, indexById } = flatRowsRef.current;
+    const index = indexById.get(itemId);
+    if (!scroller || index === undefined) {
+      return;
+    }
+    scroller.scrollTop = offsets[index] - overlayIndex * TREE_ROW_HEIGHT;
+  }, []);
+
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
   // pinned overlay covers the top of the viewport, so the target lands below the prospective
   // stack (the target's own ancestors).
@@ -663,23 +734,29 @@ export const Tree = React.memo<TreeProps>(function Tree({
             </StyledAriaTree>
           </Virtualizer>
           {pinnedIds.length > 0 && (
-            <PinnedOverlay data-testid="sticky-overlay">
-              {pinnedIds.map((id) => {
+            // Purely a pointer affordance: the real rows carry the accessible tree semantics,
+            // so the overlay stays out of the tab order and the accessibility tree.
+            <PinnedOverlay data-testid="sticky-overlay" aria-hidden="true">
+              {pinnedIds.map((id, overlayIndex) => {
                 const entry = collapsedData[id];
                 if (!entry) {
                   return null;
                 }
+                const level = entry.type === 'root' ? 0 : (entry.depth ?? 0);
                 return (
                   <PinnedRow
                     key={id}
-                    $level={entry.type === 'root' ? 0 : (entry.depth ?? 0)}
+                    $level={level}
                     data-pinned-item-id={id}
                     type="button"
-                    onClick={() => scrollRowIntoView(id, 'start')}
-                    aria-label={`Scroll to ${entry.name}`}
+                    tabIndex={-1}
+                    onClick={() => scrollPinnedRowIntoPlace(id, overlayIndex)}
                   >
+                    <PinnedTraceAnchor>
+                      <Traces level={level} isAlongsideSelected={false} />
+                    </PinnedTraceAnchor>
                     <CollapseIcon isExpanded />
-                    <span>{entry.name}</span>
+                    <PinnedLabel>{entry.name}</PinnedLabel>
                   </PinnedRow>
                 );
               })}

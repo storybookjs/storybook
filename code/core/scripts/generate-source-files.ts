@@ -133,7 +133,6 @@ async function generateExportsFile(): Promise<void> {
   const destination = join(CORE_ROOT_DIR, 'src', 'manager', 'globals', 'exports.ts');
   const require = createRequire(join(CORE_ROOT_DIR, 'package.json'));
 
-  // Get the module list from the globals reference map (the source of truth)
   const { globalPackages } = await import('../src/manager/globals/globals.ts');
 
   const input: Record<string, string> = {};

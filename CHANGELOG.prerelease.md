@@ -1,3 +1,6 @@
+## 10.6.0-alpha.0
+
+
 ## 10.5.0-beta.2
 
 - Angular: Support Angular 22 in Webpack framework - [#35318](https://github.com/storybookjs/storybook/pull/35318), thanks @EtiennePasteur!

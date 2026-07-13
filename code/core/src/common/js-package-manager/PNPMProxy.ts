@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -12,6 +12,7 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
+import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
@@ -220,6 +221,143 @@ export class PNPMProxy extends JsPackageManager {
         ...versions,
       },
     };
+  }
+
+  override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const specifier = await super.getDeclaredVersionSpecifier(packageName);
+    if (specifier) {
+      return specifier;
+    }
+    const catalogName = this.#getCatalogName(this.getAllDependencies()[packageName]);
+    if (catalogName === null) {
+      return null;
+    }
+    const workspace = this.#readWorkspaceYaml();
+    if (!workspace) {
+      return null;
+    }
+    const version = workspace.doc.getIn([
+      ...this.#catalogKeyPath(workspace.doc, catalogName),
+      packageName,
+    ]);
+    // Catalog pins are strings, but YAML parses a bare numeric range like `vitest: 4` as a number.
+    // Accept those too rather than silently dropping the pin.
+    return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
+  }
+
+  override applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    anchorPackage: string
+  ): string[] {
+    const catalogName = this.#getCatalogName(this.getAllDependencies()[anchorPackage]);
+    // When the anchor (e.g. vitest) is declared through a catalog, mirror that: register the
+    // packages in the same catalog and reference it from package.json. Copying the raw `catalog:`
+    // specifier without registering would fail install, since no such catalog entry exists. If the
+    // catalog cannot be updated, fall back to direct pins, which always install.
+    if (
+      catalogName !== null &&
+      this.#registerCatalogEntries(packages, version, anchorPackage, catalogName)
+    ) {
+      return packages.map((pkg) => `${pkg}@catalog:${catalogName}`);
+    }
+    return super.applyVersionToRelatedPackages(packages, version, anchorPackage);
+  }
+
+  /**
+   * If `specifier` is a pnpm catalog reference (`catalog:` / `catalog:<name>`), return the catalog
+   * name (`''` for the default catalog); otherwise return null.
+   */
+  #getCatalogName(specifier: string | undefined): string | null {
+    const match = specifier?.match(/^catalog:(.*)$/);
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * Locate and parse the `pnpm-workspace.yaml` that governs this project's catalogs, walking up
+   * from the package.json we operate on. Returns null when the file is missing or malformed.
+   */
+  #readWorkspaceYaml(): { path: string; doc: Document } | null {
+    const path = find.up('pnpm-workspace.yaml', {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
+    if (!path) {
+      return null;
+    }
+    try {
+      const doc = parseDocument(readFileSync(path, 'utf8'));
+      if (doc.errors.length > 0) {
+        throw doc.errors[0];
+      }
+      return { path, doc };
+    } catch (e) {
+      logger.debug(`Could not read pnpm workspace file ${path}: ${String(e)}`);
+      return null;
+    }
+  }
+
+  /**
+   * The key path within a parsed `pnpm-workspace.yaml` for a catalog. Named catalogs live under
+   * `catalogs.<name>`. The default catalog (referenced as `catalog:` or `catalog:default`) may be
+   * defined either as top-level `catalog` or as `catalogs.default` — defining both is a pnpm config
+   * error, so follow whichever form the workspace already uses.
+   */
+  #catalogKeyPath(doc: Document, catalogName: string): string[] {
+    if (catalogName && catalogName !== 'default') {
+      return ['catalogs', catalogName];
+    }
+    return doc.hasIn(['catalogs', 'default']) ? ['catalogs', 'default'] : ['catalog'];
+  }
+
+  /**
+   * Register `packages` in the same catalog as `anchorPackage`, editing `pnpm-workspace.yaml` via
+   * the `yaml` document API so the user's comments and formatting are preserved. The pnpm CLI can't
+   * do this: `pnpm config set` rejects scoped keys and `pnpm add --save-catalog` writes a resolved
+   * direct version whenever the requested range doesn't match an existing entry. Entries the user
+   * already pinned are never overridden. Returns whether the entries are now present, i.e. whether
+   * `catalog:` references to them will resolve.
+   */
+  #registerCatalogEntries(
+    packages: string[],
+    version: string,
+    anchorPackage: string,
+    catalogName: string
+  ): boolean {
+    const workspace = this.#readWorkspaceYaml();
+    if (!workspace) {
+      logger.warn(
+        `Could not read pnpm-workspace.yaml to register catalog entries for: ${packages.join(', ')}`
+      );
+      return false;
+    }
+    try {
+      const keyPath = this.#catalogKeyPath(workspace.doc, catalogName);
+      // Reuse the anchor's own catalog entry when present (e.g. `^3.2.0`) so the new entries match
+      // the format the user chose, rather than an exact installed version.
+      const anchorVersion = workspace.doc.getIn([...keyPath, anchorPackage]);
+      const entryVersion =
+        typeof anchorVersion === 'string' || typeof anchorVersion === 'number'
+          ? String(anchorVersion)
+          : version;
+      let changed = false;
+
+      for (const pkg of packages) {
+        // Never override an entry the user already pinned themselves.
+        if (workspace.doc.getIn([...keyPath, pkg]) === undefined) {
+          workspace.doc.setIn([...keyPath, pkg], entryVersion);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+      }
+      return true;
+    } catch (e) {
+      logger.warn(`Could not update pnpm catalog in ${workspace.path}: ${String(e)}`);
+      return false;
+    }
   }
 
   protected runInstall(options?: { force?: boolean }) {

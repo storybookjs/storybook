@@ -1,23 +1,68 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
+import { applyEdits, modify } from 'jsonc-parser';
+
 export const ANGULAR_JSON_PATH = 'angular.json';
+
+/** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
+export type JSONEditPath = (string | number)[];
+
+const JSON_EDIT_FORMATTING = { insertSpaces: true, tabSize: 2, eol: '\n' } as const;
+
+/** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */
+export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
+  applyEdits(text, modify(text, path, value, { formattingOptions: JSON_EDIT_FORMATTING }));
+
+/** An `angular.json` architect target or Nx `project.json` target. */
+export interface StorybookBuilderTarget {
+  builder?: string;
+  executor?: string;
+  options?: {
+    compodoc?: boolean;
+    experimentalZoneless?: boolean;
+    [key: string]: unknown;
+  };
+}
+
+export const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
+  if (typeof target !== 'object' || target === null) {
+    return false;
+  }
+  const ref =
+    (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
+  return (
+    typeof ref === 'string' &&
+    (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
+  );
+};
 
 export class AngularJSON {
   json: {
     projects: Record<string, { root: string; projectType: string; architect: Record<string, any> }>;
   };
 
-  constructor() {
-    if (!existsSync(ANGULAR_JSON_PATH)) {
-      throw new MissingAngularJsonError({ path: join(process.cwd(), ANGULAR_JSON_PATH) });
+  private rawText: string;
+
+  private readonly path: string;
+
+  constructor(path: string = ANGULAR_JSON_PATH) {
+    if (!existsSync(path)) {
+      throw new MissingAngularJsonError({ path: resolve(path) });
     }
 
-    const jsonContent = readFileSync(ANGULAR_JSON_PATH, 'utf8');
-    this.json = JSON.parse(jsonContent);
+    this.path = path;
+    this.rawText = readFileSync(path, 'utf8');
+    this.json = JSON.parse(this.rawText);
+  }
+
+  /** Apply a format-preserving edit at `path` and keep `json` in sync with the result. */
+  edit(path: JSONEditPath, value: unknown): void {
+    this.rawText = editJsonText(this.rawText, path, value);
+    this.json = JSON.parse(this.rawText);
   }
 
   get projects() {
@@ -36,7 +81,10 @@ export class AngularJSON {
     return Object.keys(this.projects).some((projectName) => {
       const { architect } = this.projects[projectName];
       return Object.keys(architect).some((key) => {
-        return architect[key].builder === '@storybook/angular:start-storybook';
+        return (
+          architect[key].builder === '@storybook/angular:start-storybook' ||
+          architect[key].builder === '@storybook/angular-vite:start-storybook'
+        );
       });
     });
   }
@@ -73,35 +121,46 @@ export class AngularJSON {
     storybookFolder,
     useCompodoc,
     root,
+    useVite = false,
   }: {
     angularProjectName: string;
     storybookFolder: string;
     useCompodoc: boolean;
     root: string;
+    useVite?: boolean;
   }) {
     // add an entry to the angular.json file to setup the storybook builders
     const { architect } = this.projects[angularProjectName];
 
+    const builderPackage = useVite ? '@storybook/angular-vite' : '@storybook/angular';
+
     const baseOptions = {
       configDir: storybookFolder,
       browserTarget: `${angularProjectName}:build`,
-      compodoc: useCompodoc,
-      ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
+      // Compodoc for the Vite framework is configured in main.ts
+      // (framework.options) because the Vite plugin owns it; only the Webpack
+      // builder reads Compodoc options from angular.json.
+      ...(useVite
+        ? {}
+        : {
+            compodoc: useCompodoc,
+            ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
+          }),
     };
 
     if (!architect.storybook) {
-      architect.storybook = {
-        builder: '@storybook/angular:start-storybook',
+      this.edit(['projects', angularProjectName, 'architect', 'storybook'], {
+        builder: `${builderPackage}:start-storybook`,
         options: {
           ...baseOptions,
           port: 6006,
         },
-      };
+      });
     }
 
     if (!architect['build-storybook']) {
-      architect['build-storybook'] = {
-        builder: '@storybook/angular:build-storybook',
+      this.edit(['projects', angularProjectName, 'architect', 'build-storybook'], {
+        builder: `${builderPackage}:build-storybook`,
         options: {
           ...baseOptions,
           outputDir:
@@ -109,11 +168,11 @@ export class AngularJSON {
               ? `storybook-static`
               : `dist/storybook/${angularProjectName}`,
         },
-      };
+      });
     }
   }
 
   write() {
-    writeFileSync(ANGULAR_JSON_PATH, JSON.stringify(this.json, null, 2));
+    writeFileSync(this.path, this.rawText);
   }
 }

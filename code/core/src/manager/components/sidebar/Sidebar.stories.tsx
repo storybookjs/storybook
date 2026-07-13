@@ -16,6 +16,7 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
@@ -38,7 +39,13 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
-const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
+const managerContext: any = (
+  args: Meta<typeof Sidebar>['args'],
+  options: {
+    includedStatusFilters?: StatusValue[];
+    excludedStatusFilters?: StatusValue[];
+  } = {}
+) => ({
   state: {
     docsOptions: {
       defaultName: 'Docs',
@@ -46,6 +53,8 @@ const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
       docsMode: false,
     },
     internal_index: args?.indexJson,
+    includedStatusFilters: options.includedStatusFilters ?? [],
+    excludedStatusFilters: options.excludedStatusFilters ?? [],
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -54,9 +63,7 @@ const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
     once: fn().mockName('api::once'),
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
-    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-      'api::getShortcutKeys'
-    ),
+    getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
@@ -71,6 +78,7 @@ const managerContext: any = (args: Meta<typeof Sidebar>['args']) => ({
       url: 'http://localhost:6006/',
     }),
     applyQueryParams: fn().mockName('api::applyQueryParams'),
+    setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
   },
 });
 
@@ -106,8 +114,8 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn, { args, globals, title }) => (
-      <ManagerContext.Provider value={managerContext(args)}>
+    (storyFn, { args, globals, title, parameters }) => (
+      <ManagerContext.Provider value={managerContext(args, parameters?.contextOptions ?? {})}>
         <LayoutProvider
           forceDesktop={
             globals.viewport?.value === 'desktop' ||
@@ -218,7 +226,10 @@ export const SimpleNoChecklist: Story = {
   },
   beforeEach: () => {
     const features = global.FEATURES;
-    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
+    global.FEATURES = {
+      ...features,
+      sidebarOnboardingChecklist: false,
+    };
     return () => {
       global.FEATURES = features;
     };
@@ -256,6 +267,45 @@ export const EmptyMobile: Story = {
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
   play: waitForChecklistWidget,
+};
+
+export const EmptyWithFilters: Story = {
+  args: Empty.args,
+  decorators: [
+    (storyFn, { args, globals, title }) => {
+      const context = managerContext(args);
+      return (
+        <ManagerContext.Provider
+          value={{
+            ...context,
+            state: {
+              ...context.state,
+              includedTagFilters: ['A'],
+              excludedTagFilters: ['B'],
+              includedStatusFilters: [],
+              excludedStatusFilters: [],
+            },
+          }}
+        >
+          <LayoutProvider
+            forceDesktop={
+              globals.viewport?.value === 'desktop' ||
+              globals.viewport?.value === undefined ||
+              title.endsWith('scrolled')
+            }
+          >
+            {storyFn()}
+          </LayoutProvider>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    await waitForChecklistWidget();
+    const canvas = within(canvasElement);
+    const clearFiltersButton = await canvas.findByRole('button', { name: 'Clear filters' });
+    await expect(clearFiltersButton).toBeInTheDocument();
+  },
 };
 
 export const EmptyIndex: Story = {
@@ -534,69 +584,6 @@ export const Scrolled: Story = {
     // @ts-expect-error (non strict)
     await expect(scrollable.scrollTop).toBe(scrollable.scrollHeight - scrollable.clientHeight);
   },
-};
-
-export const StatusesNew: Story = {
-  args: {
-    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
-      if (item.type !== 'story') return acc;
-      return {
-        ...acc,
-        [id]: {
-          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
-            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
-            storyId: id,
-            value: 'status-value:new' as StatusValue,
-            title: 'Change Detection',
-            description: 'This story is new',
-          },
-        },
-      } satisfies StatusesByStoryIdAndTypeId;
-    }, {} as StatusesByStoryIdAndTypeId),
-  },
-  play: waitForChecklistWidget,
-};
-
-export const StatusesModified: Story = {
-  args: {
-    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
-      if (item.type !== 'story') return acc;
-      return {
-        ...acc,
-        [id]: {
-          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
-            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
-            storyId: id,
-            value: 'status-value:modified' as StatusValue,
-            title: 'Change Detection',
-            description: 'This story was modified',
-          },
-        },
-      } satisfies StatusesByStoryIdAndTypeId;
-    }, {} as StatusesByStoryIdAndTypeId),
-  },
-  play: waitForChecklistWidget,
-};
-
-export const StatusesRelated: Story = {
-  args: {
-    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
-      if (item.type !== 'story') return acc;
-      return {
-        ...acc,
-        [id]: {
-          [CHANGE_DETECTION_STATUS_TYPE_ID]: {
-            typeId: CHANGE_DETECTION_STATUS_TYPE_ID,
-            storyId: id,
-            value: 'status-value:affected' as StatusValue,
-            title: 'Change Detection',
-            description: 'This story is related to a change',
-          },
-        },
-      } satisfies StatusesByStoryIdAndTypeId;
-    }, {} as StatusesByStoryIdAndTypeId),
-  },
-  play: waitForChecklistWidget,
 };
 
 export const StatusesMixed: Story = {

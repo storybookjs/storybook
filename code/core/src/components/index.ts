@@ -130,6 +130,9 @@ export { withReset, codeCommon } from './components/typography/lib/common.tsx';
 
 export { ClipboardCode } from './components/clipboard/ClipboardCode.tsx';
 
+export { useCopyButton } from '../shared/useCopyButton.ts';
+export type { UseCopyButtonOptions, UseCopyButtonResult } from '../shared/useCopyButton.ts';
+
 export const components = typography.components;
 
 const resetComponents: Record<string, ElementType> = {};

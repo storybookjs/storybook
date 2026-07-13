@@ -1,7 +1,10 @@
 <h1>Migration</h1>
 
+- [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
+  - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
   - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
+  - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -522,6 +525,14 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 10.4.0 to 10.5.0
+
+### ExternalDocs and ExternalDocsContainer are deprecated
+
+The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
+
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
+
 ## From version 10.3.0 to 10.4.0
 
 ### React Native: on-device addons moved to `deviceAddons`
@@ -551,6 +562,65 @@ export default {
   ],
 };
 ```
+
+### TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`
+
+Projects using `@storybook/react-vite` together with `@tanstack/react-router` (or `@tanstack/react-start`) can migrate to the dedicated `@storybook/tanstack-react` framework. The new framework provides built-in TanStack Router and TanStack Query support: every story is automatically wrapped in a TanStack Router instance (in-memory history), so any manual decorator that creates a `RouterProvider`, `createRouter`, `createMemoryHistory` or `createRootRoute` is no longer needed and should be removed.
+
+To run the automigration:
+
+```sh
+npx storybook automigrate
+```
+
+The migration will:
+
+- Replace `@storybook/react-vite` with `@storybook/tanstack-react` in `package.json`.
+- Update the framework string in `.storybook/main.*` (works for both regular and CSF factories `defineMain` configs).
+- Update import sites that reference `@storybook/react-vite` (including CSF factories `definePreview` and `defineMain` from `@storybook/react-vite/node`).
+- Detect manual TanStack Router decorators in `.storybook/preview.*`, the rest of `.storybook/`, and any `*.stories.*` file. When a decorator is detected, the migration offers to copy a ready-to-paste AI prompt to your clipboard that walks an AI assistant through removing it.
+
+After running the automigration, remove any manual TanStack Router decorators (you can use the AI prompt offered by the CLI). For stories that need to render under a specific route, use the framework's `parameters.tanstack.router` API instead. With the CSF factories syntax:
+
+```ts
+// src/stories/Page.stories.ts
+import preview from '#.storybook/preview';
+import { Route } from './Page';
+
+const meta = preview.meta({
+  title: 'Example/Page',
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route,
+      },
+    },
+  },
+});
+
+export const Default = meta.story();
+```
+
+Or with the CSF3 syntax — note that `Meta` and `StoryObj` should now be imported from `@storybook/tanstack-react` so they pick up the TanStack-aware parameter types:
+
+```ts
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { Route } from './Page';
+
+const meta = {
+  title: 'Example/Page',
+  parameters: {
+    tanstack: { router: { route: Route } },
+  },
+} satisfies Meta<typeof Route>;
+
+export default meta;
+export const Default: StoryObj<typeof meta> = {};
+```
+
+`parameters.tanstack.router` also accepts `path`, `params`, `query`, `routeOverrides`, and `useRouterContext` for finer-grained control. You can additionally register a project-wide default route by passing `route` to `definePreview` in `.storybook/preview.*`.
+
+See the [`@storybook/tanstack-react` framework documentation](https://storybook.js.org/docs/get-started/frameworks/tanstack-react) for the full list of features and APIs.
 
 ## From version 10.0.0 to 10.1.0
 

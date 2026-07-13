@@ -1,6 +1,8 @@
 import type { ErrorCategory } from './categorize-render-errors.ts';
 import { categorizeError } from './categorize-render-errors.ts';
 import type {
+  CategorizedError,
+  CssCheckOutcome,
   ErrorCategorizationResult,
   StoryTestResult,
   TestRunAnalysis,
@@ -62,11 +64,18 @@ export function extractCategorizedErrors(
  */
 const CSS_CHECK_STORY_ID_SUFFIX = '--css-check';
 
-/**
- * Analyze a list of story test results and produce a TestRunAnalysis with pass/fail counts, success
- * rates, empty render detection, and categorized errors.
- */
-export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis {
+interface ResultSummary {
+  total: number;
+  passed: number;
+  passedButEmptyRender: number;
+  successRate: number;
+  successRateWithoutEmptyRender: number;
+  uniqueErrorCount: number;
+  categorizedErrors: Record<string, CategorizedError>;
+  cssCheck: CssCheckOutcome;
+}
+
+function summarizeResults(results: StoryTestResult[]): ResultSummary {
   const total = results.length;
   const passed = results.filter((r) => r.status === 'PASS').length;
   const passedButEmptyRender = results.filter((r) => r.status === 'PASS' && r.emptyRender).length;
@@ -84,7 +93,7 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
   const cssCheckMatch = results.find((r) =>
     r.storyId.toLowerCase().endsWith(CSS_CHECK_STORY_ID_SUFFIX)
   );
-  const cssCheck: TestRunAnalysis['cssCheck'] =
+  const cssCheck: CssCheckOutcome =
     cssCheckMatch?.status === 'PASS'
       ? 'pass'
       : cssCheckMatch?.status === 'FAIL'
@@ -101,4 +110,45 @@ export function analyzeTestResults(results: StoryTestResult[]): TestRunAnalysis 
     categorizedErrors: errorClassification.categorizedErrors,
     cssCheck,
   };
+}
+
+/**
+ * Analyze a list of story test results and produce a TestRunAnalysis with pass/fail counts, success
+ * rates, empty render detection, and categorized errors.
+ *
+ * @param results Story results from the current run.
+ * @param cumulativeResults Optional aggregated results across runs (latest outcome per story).
+ *   Only the agent self-healing flow tracks history and passes this; when omitted no
+ *   `cumulative*` fields are emitted.
+ */
+export function analyzeTestResults(
+  results: StoryTestResult[],
+  cumulativeResults?: StoryTestResult[]
+): TestRunAnalysis {
+  const run = summarizeResults(results);
+
+  const analysis: TestRunAnalysis = {
+    total: run.total,
+    passed: run.passed,
+    passedButEmptyRender: run.passedButEmptyRender,
+    successRate: run.successRate,
+    successRateWithoutEmptyRender: run.successRateWithoutEmptyRender,
+    uniqueErrorCount: run.uniqueErrorCount,
+    categorizedErrors: run.categorizedErrors,
+    cssCheck: run.cssCheck,
+  };
+
+  if (cumulativeResults) {
+    const cumulative = summarizeResults(cumulativeResults);
+    analysis.cumulativeTotal = cumulative.total;
+    analysis.cumulativePassed = cumulative.passed;
+    analysis.cumulativePassedButEmptyRender = cumulative.passedButEmptyRender;
+    analysis.cumulativeSuccessRate = cumulative.successRate;
+    analysis.cumulativeSuccessRateWithoutEmptyRender = cumulative.successRateWithoutEmptyRender;
+    analysis.cumulativeUniqueErrorCount = cumulative.uniqueErrorCount;
+    analysis.cumulativeCategorizedErrors = cumulative.categorizedErrors;
+    analysis.cumulativeCssCheck = cumulative.cssCheck;
+  }
+
+  return analysis;
 }

@@ -10,7 +10,7 @@ import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies } from 'semver';
+import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
@@ -36,6 +36,33 @@ const indentSymbol = Symbol('indent');
 type PackageJsonWithIndent = PackageJsonWithDepsAndDevDeps & {
   [indentSymbol]?: any;
 };
+
+/** Human-friendly labels for each package manager type */
+const PACKAGE_MANAGER_LABEL: Record<PackageManagerName, string> = {
+  [PackageManagerName.NPM]: 'npm',
+  [PackageManagerName.YARN1]: 'Yarn Classic (v1)',
+  [PackageManagerName.YARN2]: 'Yarn Berry',
+  [PackageManagerName.PNPM]: 'pnpm',
+  [PackageManagerName.BUN]: 'Bun',
+};
+
+function isValidPackageManagerName(name: string): name is PackageManagerName {
+  return Object.hasOwn(PACKAGE_MANAGER_LABEL, name);
+}
+
+/**
+ * Prints a package manager's name in a way that's easier to compute by humans and agents.
+ * @param packageManager The package manager's internal name (e.g. "yarn1")
+ * @return A human-friendly name for the package manager (e.g. "Yarn Classic (v1)")
+ */
+export function getPrettyPackageManagerName(packageManager: string | undefined): string {
+  if (!packageManager) {
+    return 'unknown package manager';
+  }
+  return isValidPackageManagerName(packageManager)
+    ? PACKAGE_MANAGER_LABEL[packageManager]
+    : packageManager;
+}
 
 /**
  * Extract package name and version from input
@@ -109,6 +136,12 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
+  /** Returns the name of the command to invoke this package manager. */
+  abstract getCommandName(): string;
+
+  /** Installs package dependencies. */
+  abstract getInstallCommand(deps: string[], dev?: boolean): string;
+
   /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;
 
@@ -155,6 +188,12 @@ export abstract class JsPackageManager {
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();
   }
+
+  async precheckStorybookPackageInstall(options: {
+    storybookVersion: string;
+    nonInteractive: boolean;
+    installContext: 'create' | 'upgrade';
+  }): Promise<void> {}
 
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
@@ -232,12 +271,10 @@ export abstract class JsPackageManager {
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
-    const cachedPackageJson: PackageJsonWithIndent = {
-      ...packageJsonToWrite,
-      dependencies: { ...(packageJsonToWrite.dependencies || {}) },
-      devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
-      peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
-    };
+    const cachedPackageJson = packageJsonToWrite as PackageJsonWithIndent;
+    cachedPackageJson.dependencies = { ...(packageJsonToWrite.dependencies || {}) };
+    cachedPackageJson.devDependencies = { ...(packageJsonToWrite.devDependencies || {}) };
+    cachedPackageJson.peerDependencies = { ...(packageJsonToWrite.peerDependencies || {}) };
     cachedPackageJson[indentSymbol] = indent;
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
@@ -257,6 +294,34 @@ export abstract class JsPackageManager {
 
   isDependencyInstalled(dependency: string) {
     return Object.keys(this.getAllDependencies()).includes(dependency);
+  }
+
+  /**
+   * Resolve the effective version/range of a declared dependency: the installed version if present,
+   * otherwise the declared semver range. Returns null when the package is not declared or only a
+   * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
+   */
+  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
+    }
+    const declared = this.getAllDependencies()[packageName];
+    return declared && validRange(declared) ? declared : null;
+  }
+
+  /**
+   * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
+   * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
+   * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
+   * referenced as `catalog:` instead. Returns the install specifiers to write to package.json.
+   */
+  public applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    _anchorPackage: string
+  ): string[] {
+    return packages.map((pkg) => `${pkg}@${version}`);
   }
 
   /**
@@ -506,6 +571,7 @@ export abstract class JsPackageManager {
       JsPackageManager.latestVersionCache.set(cacheKey, result);
       return result;
     } catch (e) {
+      logger.debug(`Failed to fetch the latest version for ${packageName}: ${String(e)}`);
       JsPackageManager.latestVersionCache.set(cacheKey, null);
       return null;
     }
@@ -573,16 +639,11 @@ export abstract class JsPackageManager {
   public addScripts(scripts: Record<string, string>) {
     const { operationDir, packageJson } = this.#getPrimaryPackageJson();
 
-    this.writePackageJson(
-      {
-        ...packageJson,
-        scripts: {
-          ...packageJson.scripts,
-          ...scripts,
-        },
-      },
-      operationDir
-    );
+    packageJson.scripts = {
+      ...packageJson.scripts,
+      ...scripts,
+    };
+    this.writePackageJson(packageJson, operationDir);
   }
 
   public addPackageResolutions(versions: Record<string, string>) {
@@ -632,7 +693,6 @@ export abstract class JsPackageManager {
     pattern?: string[],
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
-  public abstract parseErrorFromLogs(logs?: string): string;
 
   // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */

@@ -45,6 +45,7 @@ const userSettingSchema = z.object({
           onboardingSurvey: statusValue,
           organizeStories: statusValue,
           publishStorybook: statusValue,
+          shareStorybook: statusValue,
           renderComponent: statusValue,
           runTests: statusValue,
           viewports: statusValue,

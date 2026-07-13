@@ -88,12 +88,16 @@ export interface RunBatchOptions {
   batchTimestamp?: string;
   /** Required when `descriptors` are not provided — prompt variant name from the CLI registry. */
   prompt?: string;
+  /** Optional list of prompts to fan out across in a single batch (in addition to or in place of `prompt`). */
+  prompts?: string[];
   /** Skip interactive confirmation (large API / token usage). */
   yes?: boolean;
   agents?: (typeof BATCH_AGENT_IDS)[number][];
   claudeEfforts?: (typeof CLAUDE_EFFORTS)[number][];
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
   codexEffort?: (typeof CODEX_EFFORTS)[number];
+  /** Restrict the batch to a subset of projects. Defaults to BATCH_PROJECT_NAMES. */
+  projects?: (typeof BATCH_PROJECT_NAMES)[number][];
   /** Repetitions per (project × variant). Defaults to BATCH_REPETITIONS. */
   repetitions?: number;
   log?: (message: string) => void;
@@ -151,11 +155,12 @@ export async function runBatch(
   const descriptors =
     options.descriptors ??
     buildBatchRunDescriptors({
-      prompt: requireBatchPrompt(options),
+      prompts: requireBatchPrompts(options),
       agents: options.agents,
       claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
       codexEffort: options.codexEffort,
+      projects: options.projects,
       repetitions: options.repetitions,
     });
 
@@ -181,16 +186,25 @@ export async function runBatch(
   const limit = pLimit(concurrency);
   let started = 0;
   let finished = 0;
+  const total = descriptors.length;
+  const padTotal = String(total).length;
+  const shortLabel = (descriptor: BatchRunDescriptor) =>
+    `${descriptor.project} ${descriptor.agent}/${descriptor.effort} ${descriptor.prompt} r${String(descriptor.repetition).padStart(2, '0')}`;
 
-  log(
-    `Starting eval batch ${batchTimestamp}: ${descriptors.length} runs, concurrency ${concurrency}, logs ${logsDir}`
-  );
+  for (const line of formatBatchHeader({
+    batchTimestamp,
+    descriptors,
+    concurrency,
+    logsDir,
+  })) {
+    log(line);
+  }
 
   await Promise.all(
     descriptors.map((descriptor, index) =>
       limit(async () => {
         started += 1;
-        log(`[start ${started}/${descriptors.length}] ${descriptor.label}`);
+        log(`[${String(started).padStart(padTotal)}/${total}] start  ${shortLabel(descriptor)}`);
 
         const result = await runBatchDescriptor(descriptor, {
           repoRoot,
@@ -202,8 +216,10 @@ export async function runBatch(
 
         finished += 1;
         const reason = result.status === 'failed' ? await readFailureReason(result.logPath) : '';
+        const tag = result.status === 'success' ? '✓' : '✗';
+        const exitInfo = result.status === 'success' ? '' : ` ${formatExitResult(result)}`;
         log(
-          `[finish ${finished}/${descriptors.length}] ${descriptor.label} ${result.status} ${formatExitResult(result)} ${result.durationMs}ms${reason ? ` — ${reason}` : ''}`
+          `[${String(finished).padStart(padTotal)}/${total}] ${tag} ${shortLabel(descriptor)} ${formatDuration(result.durationMs)}${exitInfo}${reason ? ` — ${reason}` : ''}`
         );
       })
     )
@@ -227,11 +243,17 @@ export async function runBatch(
 
   await writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
 
+  log('');
   log(
-    `Finished eval batch ${batchTimestamp}: ${summary.totalRuns} total, ${summary.succeeded} succeeded, ${summary.failed} failed`
+    `Finished eval batch ${batchTimestamp} in ${formatDuration(summary.durationMs)}: ${summary.succeeded}/${summary.totalRuns} succeeded${summary.failed > 0 ? `, ${summary.failed} failed` : ''}`
   );
 
+  for (const line of formatPerProjectSummary(summary.runs)) {
+    log(line);
+  }
+
   if (summary.failed > 0) {
+    log('');
     log('Failures:');
     for (const run of summary.runs) {
       if (run.status === 'success') continue;
@@ -301,11 +323,13 @@ export function buildBatchVariants(
 }
 
 export function buildBatchRunDescriptors(options: {
-  prompt: string;
+  prompt?: string;
+  prompts?: string[];
   agents?: RunBatchOptions['agents'];
   claudeEfforts?: RunBatchOptions['claudeEfforts'];
   claudeEffort?: RunBatchOptions['claudeEffort'];
   codexEffort?: RunBatchOptions['codexEffort'];
+  projects?: RunBatchOptions['projects'];
   repetitions?: number;
 }): BatchRunDescriptor[] {
   const knownProjects = new Set(PROJECTS.map((project) => project.name));
@@ -315,6 +339,9 @@ export function buildBatchRunDescriptors(options: {
       throw new Error(`Configured batch project is missing from PROJECTS: ${project}`);
     }
   }
+
+  const projects = resolveBatchProjects(options.projects);
+  const prompts = resolveBatchPrompts({ prompt: options.prompt, prompts: options.prompts });
 
   const descriptors: BatchRunDescriptor[] = [];
   const variants =
@@ -327,9 +354,11 @@ export function buildBatchRunDescriptors(options: {
 
   const totalRepetitions = options.repetitions ?? BATCH_REPETITIONS;
   for (let repetition = 1; repetition <= totalRepetitions; repetition += 1) {
-    for (const variant of variants) {
-      for (const project of BATCH_PROJECT_NAMES) {
-        descriptors.push(createBatchRunDescriptor(project, variant, repetition, options.prompt));
+    for (const prompt of prompts) {
+      for (const variant of variants) {
+        for (const project of projects) {
+          descriptors.push(createBatchRunDescriptor(project, variant, repetition, prompt));
+        }
       }
     }
   }
@@ -337,23 +366,68 @@ export function buildBatchRunDescriptors(options: {
   return descriptors;
 }
 
-function requireBatchPrompt(options: RunBatchOptions): string {
-  if (options.prompt == null || options.prompt.trim() === '') {
+function resolveBatchPrompts(options: { prompt?: string; prompts?: string[] }): string[] {
+  const merged = [...(options.prompts ?? []), ...(options.prompt != null ? [options.prompt] : [])]
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (merged.length === 0) {
     throw new Error(
-      'runBatch: pass `prompt` (prompt template basename) or provide `descriptors` explicitly.'
+      'runBatch: pass `prompt` or `prompts` (prompt template basename) or provide `descriptors` explicitly.'
     );
   }
 
-  const prompt = options.prompt.trim();
   const available = listPrompts();
+  const lookup = new Map(available.map((name) => [name.toLowerCase(), name]));
 
-  const canonical = available.find((name) => name.toLowerCase() === prompt.toLowerCase());
-
-  if (!canonical) {
-    throw new Error(`Unknown prompt "${prompt}". Available prompts: ${available.join(', ')}`);
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  const unknown: string[] = [];
+  for (const value of merged) {
+    const canonical = lookup.get(value.toLowerCase());
+    if (!canonical) {
+      unknown.push(value);
+      continue;
+    }
+    if (seen.has(canonical)) continue;
+    seen.add(canonical);
+    ordered.push(canonical);
   }
 
-  return canonical;
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown prompt(s): ${unknown.join(', ')}. Available prompts: ${available.join(', ')}`
+    );
+  }
+
+  return ordered;
+}
+
+function resolveBatchProjects(projects?: RunBatchOptions['projects']) {
+  if (projects == null || projects.length === 0) {
+    return [...BATCH_PROJECT_NAMES];
+  }
+
+  const allowed = new Set<string>(BATCH_PROJECT_NAMES);
+  const unknown = projects.filter((project) => !allowed.has(project));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown project(s): ${unknown.join(', ')}. Available: ${BATCH_PROJECT_NAMES.join(', ')}`
+    );
+  }
+
+  const seen = new Set<string>();
+  const ordered: (typeof BATCH_PROJECT_NAMES)[number][] = [];
+  for (const project of projects) {
+    if (seen.has(project)) continue;
+    seen.add(project);
+    ordered.push(project);
+  }
+  return ordered;
+}
+
+function requireBatchPrompts(options: RunBatchOptions): string[] {
+  return resolveBatchPrompts({ prompt: options.prompt, prompts: options.prompts });
 }
 
 async function runBatchDescriptor(
@@ -463,23 +537,34 @@ function defaultSpawn(command: string, args: string[], options: SpawnOptions) {
   return spawnChild(command, args, options);
 }
 
-const runBatchArgsSchema = z.object({
-  concurrency: z.coerce.number().int().positive().optional(),
-  prompt: z.string().min(1),
-  yes: z.boolean().optional(),
-  agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
-  claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
-  claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
-  codexEffort: z.enum(CODEX_EFFORTS).optional(),
-  repetitions: z.coerce.number().int().positive().optional(),
-});
+const runBatchArgsSchema = z
+  .object({
+    concurrency: z.coerce.number().int().positive().optional(),
+    prompt: z.string().min(1).optional(),
+    prompts: z.array(z.string().min(1)).nonempty().optional(),
+    yes: z.boolean().optional(),
+    agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
+    claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
+    claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
+    codexEffort: z.enum(CODEX_EFFORTS).optional(),
+    projects: z.array(z.string().min(1)).nonempty().optional(),
+    repetitions: z.coerce.number().int().positive().optional(),
+  })
+  .refine((value) => value.prompt != null || value.prompts != null, {
+    message: 'pass --prompt or --prompts',
+    path: ['prompt'],
+  });
 
 const runBatchOptions = {
   concurrency: { type: 'string' as const, description: 'Max concurrent runs (default: 8)' },
   prompt: {
     type: 'string' as const,
     description:
-      'Prompt variant name (required; registered in code/lib/cli-storybook/src/ai/setup-prompts/)',
+      'Prompt variant name (required unless --prompts is set; registered in code/core/src/cli/ai/setup-prompts/)',
+  },
+  prompts: {
+    type: 'string' as const,
+    description: 'Comma-separated list of prompt variant names to fan out across',
   },
   agents: {
     type: 'string' as const,
@@ -491,6 +576,10 @@ const runBatchOptions = {
   },
   'claude-effort': { type: 'string' as const, description: 'Single Claude effort level' },
   'codex-effort': { type: 'string' as const, description: 'Single Codex effort level' },
+  projects: {
+    type: 'string' as const,
+    description: 'Comma-separated project names to run (default: all batch projects)',
+  },
   repetitions: {
     type: 'string' as const,
     description: `Repetitions per (project × variant) (default: ${BATCH_REPETITIONS})`,
@@ -514,6 +603,8 @@ export function parseRunBatchArgs(
       | 'codexEffort'
       | 'concurrency'
       | 'prompt'
+      | 'prompts'
+      | 'projects'
       | 'yes'
       | 'repetitions'
     >
@@ -531,11 +622,13 @@ export function parseRunBatchArgs(
   const parsed = runBatchArgsSchema.safeParse({
     concurrency: values.concurrency,
     prompt: values.prompt,
+    prompts: parseList(values.prompts),
     yes: values.yes,
     agents: parseAgentArgs(values.agents),
     claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
     claudeEffort: values['claude-effort'],
     codexEffort: values['codex-effort'],
+    projects: parseProjects(values.projects),
     repetitions: values.repetitions,
   });
 
@@ -571,6 +664,21 @@ function parseClaudeEfforts(value?: string) {
     .filter(Boolean);
 }
 
+function parseProjects(value?: string) {
+  return parseList(value);
+}
+
+function parseList(value?: string) {
+  if (value == null) {
+    return undefined;
+  }
+  const items = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
 function resolveBatchAgents(agents?: RunBatchOptions['agents']) {
   if (agents == null || agents.length === 0) {
     return [...BATCH_DEFAULT_AGENT_IDS];
@@ -600,6 +708,89 @@ function formatBatchTimestamp(date: Date) {
 
 function formatExitResult(result: Pick<BatchRunSummaryEntry, 'exitCode' | 'signal'>) {
   return result.signal ? `signal=${result.signal}` : `exit=${result.exitCode ?? 'null'}`;
+}
+
+export function formatDuration(ms: number) {
+  if (!Number.isFinite(ms) || ms < 0) return `${ms}ms`;
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+}
+
+function uniqueSorted(values: readonly string[]) {
+  return [...new Set(values)].sort();
+}
+
+export function formatBatchHeader(opts: {
+  batchTimestamp: string;
+  descriptors: BatchRunDescriptor[];
+  concurrency: number;
+  logsDir: string;
+}): string[] {
+  const { batchTimestamp, descriptors, concurrency, logsDir } = opts;
+  const projects = uniqueSorted(descriptors.map((d) => d.project));
+  const agents = uniqueSorted(descriptors.map((d) => d.agent));
+  const models = uniqueSorted(descriptors.map((d) => d.model));
+  const efforts = uniqueSorted(descriptors.map((d) => d.effort));
+  const prompts = uniqueSorted(descriptors.map((d) => d.prompt));
+  const reps = Math.max(...descriptors.map((d) => d.repetition));
+
+  return [
+    `Eval batch ${batchTimestamp}`,
+    `  runs:        ${descriptors.length} (${projects.length} projects × ${prompts.length} prompt(s) × ${agents.length} agent(s) × ${models.length} model(s) × ${efforts.length} effort(s) × ${reps} rep(s))`,
+    `  prompts:     ${prompts.join(', ')}`,
+    `  agents:      ${agents.join(', ')}`,
+    `  models:      ${models.join(', ')}`,
+    `  efforts:     ${efforts.join(', ')}`,
+    `  projects:    ${projects.join(', ')}`,
+    `  concurrency: ${concurrency}`,
+    `  logs:        ${logsDir}`,
+    '',
+  ];
+}
+
+export function formatPerProjectSummary(runs: BatchRunSummaryEntry[]): string[] {
+  if (runs.length === 0) return [];
+
+  const byProject = new Map<string, BatchRunSummaryEntry[]>();
+  for (const run of runs) {
+    const list = byProject.get(run.project) ?? [];
+    list.push(run);
+    byProject.set(run.project, list);
+  }
+
+  const projectCol = Math.max('project'.length, ...[...byProject.keys()].map((p) => p.length));
+  const headers = ['project', 'ok', 'min', 'med', 'max'];
+  const rows = [...byProject.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([project, projectRuns]) => {
+      const ok = projectRuns.filter((r) => r.status === 'success').length;
+      const sortedDurations = projectRuns.map((r) => r.durationMs).sort((a, b) => a - b);
+      const mid = Math.floor(sortedDurations.length / 2);
+      const median =
+        sortedDurations.length % 2 === 0
+          ? Math.round((sortedDurations[mid - 1] + sortedDurations[mid]) / 2)
+          : sortedDurations[mid];
+      return [
+        project,
+        `${ok}/${projectRuns.length}`,
+        formatDuration(sortedDurations[0]),
+        formatDuration(median),
+        formatDuration(sortedDurations[sortedDurations.length - 1]),
+      ];
+    });
+
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((row) => row[i].length)));
+  widths[0] = Math.max(widths[0], projectCol);
+
+  const fmtRow = (cells: string[]) =>
+    `  ${cells.map((cell, i) => (i === 0 ? cell.padEnd(widths[i]) : cell.padStart(widths[i]))).join('  ')}`;
+
+  return ['', 'Per-project summary:', fmtRow(headers), ...rows.map(fmtRow)];
 }
 
 async function waitForChild(child: SpawnedBatchChild) {

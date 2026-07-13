@@ -1,10 +1,12 @@
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const execFileMock = vi.fn();
 const execFileSyncMock = vi.fn();
 const openDatabases: DatabaseSync[] = [];
 
 vi.mock('node:child_process', () => ({
+  execFile: execFileMock,
   execFileSync: execFileSyncMock,
 }));
 

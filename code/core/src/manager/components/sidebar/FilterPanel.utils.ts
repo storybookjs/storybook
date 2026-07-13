@@ -4,12 +4,17 @@ import type { FilterFunction, StatusValue, Tag } from 'storybook/internal/types'
 
 import { BUILT_IN_FILTERS, USER_TAG_FILTER } from '../../../shared/constants/tags.ts';
 
-export { countStatusesByValue, statusValueShortName } from '../../../shared/status-store/index.ts';
+export {
+  countStatusesByValue,
+  statusValueShortName,
+  statusValueDescription,
+} from '../../../shared/status-store/index.ts';
 
 export type FilterItem = {
   id: string;
   type: string;
   title: string;
+  tooltip?: string;
   count: number;
   icon: ReactElement | null;
   isIncluded: boolean;
@@ -30,11 +35,12 @@ export const BUILT_IN_TAGS = new Set([
   'manifest',
 ]);
 
-/** Only change-detection statuses are shown in the sidebar filter panel. */
+/** Change-detection and review statuses shown in the sidebar filter panel. */
 export const STATUS_DISPLAY_ORDER: StatusValue[] = [
   'status-value:new',
   'status-value:modified',
   'status-value:affected',
+  'status-value:reviewing',
 ];
 
 /**

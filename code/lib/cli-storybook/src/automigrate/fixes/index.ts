@@ -1,9 +1,11 @@
 import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { addonA11yAddonTest } from './addon-a11y-addon-test.ts';
+import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { addonA11yParameters } from './addon-a11y-parameters.ts';
 import { addonExperimentalTest } from './addon-experimental-test.ts';
 import { addonGlobalsApi } from './addon-globals-api.ts';
+import { addonMcp } from './addon-mcp.ts';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
@@ -12,6 +14,7 @@ import { fixFauxEsmRequire } from './fix-faux-esm-require.ts';
 import { initialGlobals } from './initial-globals.ts';
 import { migrateAddonConsole } from './migrate-addon-console.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
+import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeAddonInteractions } from './remove-addon-interactions.ts';
 import { removeDocsAutodocs } from './remove-docs-autodocs.ts';
 import { removeEssentials } from './remove-essentials.ts';
@@ -38,7 +41,10 @@ export const allFixes: Fix[] = [
   rnOndeviceAddonsToDeviceAddons,
   migrateAddonConsole,
   nextjsToNextjsVite,
+  angularToAngularVite,
+  reactViteToTanstackReact,
   removeAddonInteractions,
+  addonMcp,
   rendererToFramework,
   removeEssentials,
   addonA11yParameters,

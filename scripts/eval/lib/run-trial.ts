@@ -16,6 +16,7 @@ import {
   generateTrialId,
   getEvalResultsRelativePath,
   loadPrompt,
+  resolveDispatcherPath,
 } from './utils.ts';
 
 export interface TrialConfig {
@@ -23,7 +24,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt variant name — registered in `code/lib/cli-storybook/src/ai/prompts/` (e.g. "pattern-copy-play"). */
+  /** Prompt variant name — registered in `code/core/src/cli/ai/setup-prompts/` (e.g. "pattern-copy-play"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;
@@ -66,8 +67,10 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   );
 
   // 4. Load the nudge prompt the agent will receive. The agent itself runs
-  //    `npx storybook ai setup` as a tool call — mirroring what real users do
-  //    when they copy the "Set up Storybook with AI" prompt from the UI.
+  //    `node <repo>/code/core/dist/bin/dispatcher.js ai setup` as a tool call.
+  //    This mirrors the real user flow but pins execution to the local
+  //    Storybook checkout so the trial exercises in-tree changes rather than
+  //    whatever version the benchmark project has installed.
   const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
@@ -188,11 +191,13 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
 }
 
 /**
- * Run `npx storybook ai setup` inside the prepared trial workspace and return
- * its stdout — the exact project-aware markdown the agent will receive from
- * the same CLI invocation. `EVAL_SETUP_PROMPT` selects the variant;
- * `STORYBOOK_DISABLE_TELEMETRY` keeps the harness's capture invocation out of
- * telemetry.
+ * Run the local Storybook dispatcher's `ai setup` command inside the prepared
+ * trial workspace and return its stdout — the exact project-aware markdown the
+ * agent will receive from the same CLI invocation. Resolves to
+ * `code/core/dist/bin/dispatcher.js` from this checkout so it tests in-tree
+ * changes (not the project's installed Storybook). `EVAL_SETUP_PROMPT` selects
+ * the variant; `STORYBOOK_DISABLE_TELEMETRY` keeps the harness's capture
+ * invocation out of telemetry.
  *
  * Failures (spawn errors, timeouts, non-zero exit) are logged and swallowed:
  * capturing the prompt content is bookkeeping, not the thing being measured,
@@ -204,7 +209,8 @@ export async function captureAiSetupMarkdown(
   log: Logger
 ): Promise<string> {
   try {
-    const result = await x('npx', ['storybook', 'ai', 'setup'], {
+    const dispatcher = resolveDispatcherPath();
+    const result = await x('node', [dispatcher, 'ai', 'setup'], {
       throwOnError: false,
       timeout: 60_000,
       nodeOptions: {

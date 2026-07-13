@@ -11,6 +11,7 @@ import {
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
 import {
+  Addon_TypesEnum,
   type API_IndexHash,
   type API_PreparedIndexEntry,
   type API_StoryEntry,
@@ -35,7 +36,7 @@ import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
 import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
 import type { initialState } from './checklistData.state.ts';
-import { AI_SETUP_PROMPT } from '../constants/ai-prompts.ts';
+import { getAiSetupPrompt } from '../utils/ai-prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -176,7 +177,7 @@ export const checklistData = {
           showOnGuidePage: false,
           action: {
             label: 'Copy prompt',
-            copyContent: AI_SETUP_PROMPT,
+            copyContent: getAiSetupPrompt(),
             onClick: ({ api }) => {
               api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-checklist-side' });
             },
@@ -547,6 +548,97 @@ export default {
                 <li>The full hierarchy available</li>
                 <li>How to configure the sorting of your stories</li>
               </ul>
+            </>
+          ),
+        },
+      ],
+    },
+
+    {
+      id: 'share',
+      title: 'Share',
+      items: [
+        {
+          id: 'shareStorybook',
+          label: 'Share your Storybook for feedback',
+          available: () =>
+            addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has shared their Storybook',
+          subscribe: ({ api, done }) => {
+            const SHARE_PROGRESS_KEY = 'chromaui/addon-visual-tests/shareProgress';
+            const SET_VALUE = 'experimental_useSharedState_setValue';
+            return api.on(SET_VALUE, (key: string, value: { status: string } | undefined) => {
+              if (key === SHARE_PROGRESS_KEY && value?.status === 'complete') {
+                done();
+              }
+            });
+          },
+          action: {
+            label: 'Share',
+            onClick: () => document.getElementById('chromatic-share-button')?.click(),
+          },
+          content: () => (
+            <>
+              <p>
+                Share your Storybook with your team in one click using Chromatic. Click the{' '}
+                <strong>Share</strong> button in the toolbar to publish and get a shareable link.
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link href="https://www.chromatic.com/docs/sharing" target="_blank" withArrow>
+                  sharing documentation
+                </Link>
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'publishStorybook',
+          label: 'Publish your Storybook for feedback',
+          available: () =>
+            !addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has published their Storybook',
+          content: ({ api }) => (
+            <>
+              <p>
+                Publishing your Storybook is easy and unlocks super clear review cycles and other
+                collaborative workflows.
+              </p>
+              <p>
+                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
+                <Link href="https://chromatic.com" target="_blank">
+                  Chromatic
+                </Link>
+                ,{' '}
+                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+                  Vercel
+                </Link>
+                , or{' '}
+                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+                  Netlify
+                </Link>
+                .
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'sharing/publish-storybook',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  publishing documentation
+                </Link>
+              </p>
             </>
           ),
         },
@@ -1242,60 +1334,6 @@ npm install @my/awesome-project
               <ul>
                 <li>How to reference stories in your content</li>
                 <li>How to import and display markdown files, such as READMEs</li>
-              </ul>
-            </>
-          ),
-        },
-        {
-          id: 'publishStorybook',
-          label: 'Publish your Storybook to share',
-          criteria: "Have some form of `storybook build` in the project's CI config",
-          content: ({ api }) => (
-            <>
-              <p>
-                Publishing your Storybook is easy and unlocks super clear review cycles and other
-                collaborative workflows.
-              </p>
-              <p>
-                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
-                <Link href="https://chromatic.com" target="_blank">
-                  Chromatic
-                </Link>
-                ,{' '}
-                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
-                  Vercel
-                </Link>
-                , or{' '}
-                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
-                  Netlify
-                </Link>
-                .
-              </p>
-              <img
-                src={api.getDocsUrl({
-                  asset: 'sharing/prbadge-publish.png',
-                  ref: 'guide',
-                })}
-                alt="PR check for publish action"
-              />
-              <strong>Take it further</strong>
-              <p>
-                Read the{' '}
-                <Link
-                  href={api.getDocsUrl({
-                    subpath: 'sharing/publish-storybook',
-                    renderer: true,
-                    ref: 'guide',
-                  })}
-                  target="_blank"
-                >
-                  publishing documentation
-                </Link>{' '}
-                to learn:
-              </p>
-              <ul>
-                <li>How to configure the built Storybook (e.g. performance optimizations)</li>
-                <li>How to use your published Storybook to collaborate with colleagues</li>
               </ul>
             </>
           ),

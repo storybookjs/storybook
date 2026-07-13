@@ -111,6 +111,7 @@ describe('analyze-test-results', () => {
       expect(analysis.total).toBe(0);
       expect(analysis.successRate).toBe(0);
       expect(analysis.successRateWithoutEmptyRender).toBe(0);
+      expect(analysis.cumulativeTotal).toBeUndefined();
     });
 
     it('should handle PENDING tests by not counting them as passed', () => {
@@ -122,6 +123,43 @@ describe('analyze-test-results', () => {
       expect(analysis.total).toBe(2);
       expect(analysis.passed).toBe(1);
       expect(analysis.successRate).toBe(0.5);
+    });
+
+    describe('cumulative stats', () => {
+      it('omits all cumulative fields when no cumulative results are provided', () => {
+        const results: StoryTestResult[] = [
+          { storyId: 's1', status: 'PASS' },
+          { storyId: 's2', status: 'FAIL', error: 'oops' },
+        ];
+        const analysis = analyzeTestResults(results);
+        expect(analysis.cumulativeTotal).toBeUndefined();
+        expect(analysis.cumulativePassed).toBeUndefined();
+        expect(analysis.cumulativeSuccessRate).toBeUndefined();
+        expect(analysis.cumulativeUniqueErrorCount).toBeUndefined();
+        expect(analysis.cumulativeCategorizedErrors).toBeUndefined();
+        expect(analysis.cumulativeCssCheck).toBeUndefined();
+      });
+
+      it('reports cumulative stats independently when provided', () => {
+        const run: StoryTestResult[] = [
+          { storyId: 's1', status: 'FAIL', error: 'broken' },
+          { storyId: 's2', status: 'FAIL', error: 'broken' },
+          { storyId: 's3', status: 'FAIL', error: 'broken' },
+        ];
+        const cumulative: StoryTestResult[] = [
+          { storyId: 's1', status: 'PASS' },
+          { storyId: 's2', status: 'PASS' },
+          { storyId: 's3', status: 'FAIL', error: 'broken' },
+          { storyId: 's4', status: 'PASS' },
+          { storyId: 's5', status: 'PASS' },
+        ];
+        const analysis = analyzeTestResults(run, cumulative);
+        expect(analysis.total).toBe(3);
+        expect(analysis.passed).toBe(0);
+        expect(analysis.cumulativeTotal).toBe(5);
+        expect(analysis.cumulativePassed).toBe(4);
+        expect(analysis.cumulativeSuccessRate).toBe(0.8);
+      });
     });
 
     describe('cssCheck', () => {

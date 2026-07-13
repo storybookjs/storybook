@@ -12,6 +12,7 @@ export type StatusValue =
   | 'status-value:new'
   | 'status-value:modified'
   | 'status-value:affected'
+  | 'status-value:reviewing'
   | 'status-value:warning'
   | 'status-value:error'
   | 'status-value:unknown';
@@ -24,6 +25,7 @@ export const STATUS_VALUES: StatusValue[] = [
   'status-value:new',
   'status-value:modified',
   'status-value:affected',
+  'status-value:reviewing',
   'status-value:warning',
   'status-value:error',
   'status-value:unknown',
@@ -42,6 +44,19 @@ export const statusValueShortName = (value: StatusValue): string => {
   return value.slice(STATUS_VALUE_PREFIX.length);
 };
 
+export const statusValueDescription = (value: StatusValue): string =>
+  ({
+    'status-value:pending': 'Stories with pending status',
+    'status-value:success': 'Stories with passing tests',
+    'status-value:new': 'Newly added stories',
+    'status-value:modified': 'Stories closely linked to code changes',
+    'status-value:affected': 'Stories likely to be affected by code changes',
+    'status-value:reviewing': 'Stories included in the active review',
+    'status-value:warning': 'Stories with warnings',
+    'status-value:error': 'Stories with failing tests',
+    'status-value:unknown': 'Stories with unknown status',
+  })[value];
+
 export type StatusTypeId = string;
 export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
@@ -57,6 +72,17 @@ export interface Status {
 }
 
 export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
+export const REVIEW_STATUS_TYPE_ID = 'storybook/review';
+
+/**
+ * Status types that are quality/meta signals rather than test results, so they're excluded from the
+ * aggregated test status that surfaces a story's most critical result. Both are excluded by the same
+ * mechanism wherever that aggregate is computed.
+ */
+export const NON_AGGREGATED_STATUS_TYPE_IDS: string[] = [
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
+];
 
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',

@@ -19,6 +19,8 @@ import builderWebpack5Config from '../../../code/builders/builder-webpack5/build
 // @ts-ignore
 import storybookConfig from '../../../code/core/build-config';
 // @ts-ignore
+import angularViteFrameworkConfig from '../../../code/frameworks/angular-vite/build-config';
+// @ts-ignore
 import angularFrameworkConfig from '../../../code/frameworks/angular/build-config';
 // @ts-ignore
 import emberFrameworkConfig from '../../../code/frameworks/ember/build-config';
@@ -46,6 +48,8 @@ import sveltekitFrameworkConfig from '../../../code/frameworks/sveltekit/build-c
 import vue3ViteFrameworkConfig from '../../../code/frameworks/vue3-vite/build-config';
 // @ts-ignore
 import webComponentsViteFrameworkConfig from '../../../code/frameworks/web-components-vite/build-config';
+// @ts-ignore
+import tanstackReactFrameworkConfig from '../../../code/frameworks/tanstack-react/build-config';
 // @ts-ignore
 import cliConfig from '../../../code/lib/cli-storybook/build-config';
 // @ts-ignore
@@ -99,6 +103,7 @@ export const buildEntries = {
   '@storybook/builder-webpack5': builderWebpack5Config,
 
   // frameworks
+  '@storybook/angular-vite': angularViteFrameworkConfig,
   '@storybook/angular': angularFrameworkConfig,
   '@storybook/ember': emberFrameworkConfig,
   '@storybook/html-vite': htmlViteFrameworkConfig,
@@ -113,6 +118,7 @@ export const buildEntries = {
   '@storybook/sveltekit': sveltekitFrameworkConfig,
   '@storybook/vue3-vite': vue3ViteFrameworkConfig,
   '@storybook/web-components-vite': webComponentsViteFrameworkConfig,
+  '@storybook/tanstack-react': tanstackReactFrameworkConfig,
 
   // lib
   '@storybook/cli': cliConfig,

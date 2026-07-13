@@ -449,6 +449,12 @@ describe('manifests', () => {
       expect(files['/output/manifests/docs.json']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('Button');
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
+      // Deep-link contract: every component-id key in components.json must be a stable anchor id on
+      // the matching card in components.html, so tooling can open `components.html#<id>`. Asserting
+      // against a key read from the emitted JSON guards against any upstream re-keying of the cards.
+      const [componentId] = Object.keys(componentsJson.components);
+      expect(componentId).toBe('button');
+      expect(files['/output/manifests/components.html']).toContain(`id="${componentId}"`);
       // Both components.json and the HTML come from the on-disk snapshot, so the build must not
       // re-extract docgen from the live service.
       expect(docgenProvider).not.toHaveBeenCalled();

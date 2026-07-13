@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { HandledError } from 'storybook/internal/common';
 
 import { isClaudePreviewLaunch, type AgentEnvironment } from '../shared/utils/agent-environment.ts';
+import { detectAgent, type AgentInfo } from '../telemetry/detect-agent.ts';
 
 type DevCommandEnvironment = AgentEnvironment & {
   CI?: string;
@@ -42,9 +43,13 @@ const DevOptionsSchema = v.looseObject({
 
 export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
   options: TOptions,
-  { env = process.env }: { env?: DevCommandEnvironment } = {}
+  {
+    env = process.env,
+    agent = detectAgent(),
+  }: { env?: DevCommandEnvironment; agent?: AgentInfo | null } = {}
 ) {
   const isClaudePreview = isClaudePreviewLaunch(env);
+  const isAgentSession = isClaudePreview || !!agent;
   const PORT = env.PORT ?? undefined;
   const SBCONFIG_PORT = env.SBCONFIG_PORT ?? undefined;
 
@@ -57,7 +62,7 @@ export function resolveDevCommandOptions<TOptions extends DevCommandOptions>(
     port: isClaudePreview
       ? (PORT ?? options.port ?? SBCONFIG_PORT)
       : (options.port ?? SBCONFIG_PORT ?? PORT),
-    open: isClaudePreview ? false : options.open,
+    open: isAgentSession ? false : options.open,
   });
 
   if (!result.success) {

@@ -825,6 +825,8 @@ describe('stories API', () => {
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
         filteredIndex: { 'a--1': { args: { foo: 'bar' } } },
         index: { 'a--1': { args: { foo: 'bar' } } },
+        // Runtime enrichment is also cached on the ref so it survives index rebuilds (#34553).
+        storyUpdates: { 'a--1': { args: { foo: 'bar' } } },
       });
     });
     it('updateStoryArgs emits UPDATE_STORY_ARGS to the local frame and does not change anything', () => {

@@ -1,3 +1,16 @@
+## 10.6.0-alpha.0
+
+
+## 10.5.0-beta.2
+
+- Angular: Support Angular 22 in Webpack framework - [#35318](https://github.com/storybookjs/storybook/pull/35318), thanks @EtiennePasteur!
+- CLI: Match `storybook ai` instances by config dir as well as cwd - [#35392](https://github.com/storybookjs/storybook/pull/35392), thanks @kasperpeulen!
+- Core: Fix cryptic invariant crash when dev server port detection fails - [#35388](https://github.com/storybookjs/storybook/pull/35388), thanks @kasperpeulen!
+- Core: Leave experimentalReview unset by default so the AI CLI plugins can enable review - [#35396](https://github.com/storybookjs/storybook/pull/35396), thanks @kasperpeulen!
+- Core: Skip story-docs Code panel emission in portable stories - [#35387](https://github.com/storybookjs/storybook/pull/35387), thanks @ndelangen!
+- Review: Fix inaccurate review story counts in sidebar - [#35391](https://github.com/storybookjs/storybook/pull/35391), thanks @ghengeveld!
+- Telemetry: Prevent pnpm paths from leaking into framework.name - [#35345](https://github.com/storybookjs/storybook/pull/35345), thanks @Sidnioulz!
+
 ## 10.5.0-beta.1
 
 - Core: Add experimentalReview feature flag and make the features type augmentable - [#35379](https://github.com/storybookjs/storybook/pull/35379), thanks @yannbf!

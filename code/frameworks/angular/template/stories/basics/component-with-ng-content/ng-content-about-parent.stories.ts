@@ -5,7 +5,9 @@ import { componentWrapperDecorator } from '@storybook/angular';
 @Component({
   standalone: false,
   selector: 'sb-button',
-  template: `<button [style.background-color]="color"><ng-content></ng-content></button>`,
+  template: `
+    <button [style.background-color]="color"><ng-content></ng-content></button>
+  `,
   styles: [
     `
       button {

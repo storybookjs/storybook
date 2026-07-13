@@ -43,9 +43,6 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
-    // Both rolldown modes bundle a deterministic whole-program declaration
-    // pre-emit; 'rolldown' emits with the TypeScript 6 JS API, 'rolldown-tsgo'
-    // with the ~2x faster TypeScript 7 native compiler (`typescript-native`).
     'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
     'dts-resolver': { type: 'string', default: 'hybrid' },
   },

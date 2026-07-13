@@ -10,7 +10,6 @@
  * @module
  */
 
-/* oxlint-disable prefer-const -- mirrors upstream SvelteKit state.svelte.js, where these are mutable `let` bindings */
 import { fn } from 'storybook/test';
 
 /**
@@ -65,6 +64,7 @@ let pageStatus = $state.raw(defaultStatePageValues.status);
 let pageUrl = $state.raw(defaultStatePageValues.url);
 
 /** @type {Page} */
+// oxlint-disable-next-line prefer-const -- mirrors upstream SvelteKit state.svelte.js, where this is a mutable `let` binding
 export let page = {
   get data() {
     return pageData;
@@ -170,6 +170,7 @@ let navigatingDelta = $state.raw(defaultStateNavigatingValues.delta);
 let navigatingComplete = $state.raw(defaultStateNavigatingValues.complete);
 
 /** @type {Navigation} */
+// oxlint-disable-next-line prefer-const -- mirrors upstream SvelteKit state.svelte.js, where this is a mutable `let` binding
 export let navigating = {
   get from() {
     return navigatingFrom;
@@ -221,6 +222,7 @@ export function setAppStateNavigating(params = {}) {
 /** @type {boolean} */
 let updatedCurrent = $state.raw(false);
 
+// oxlint-disable-next-line prefer-const -- mirrors upstream SvelteKit state.svelte.js, where this is a mutable `let` binding
 export let updated = {
   get current() {
     return updatedCurrent;

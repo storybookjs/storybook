@@ -24,8 +24,15 @@ export const StorybookInstanceRecordSchema = v.object({
   instanceId: v.string(),
   pid: v.pipe(v.number(), v.minValue(1), v.integer()),
   cwd: v.string(),
+  /**
+   * Resolved config directory of the running Storybook, used as a second matching key so
+   * monorepo instances are found from a different cwd (storybookjs/storybook#35359). Optional:
+   * records written by Storybooks older than 10.5 lack it.
+   */
+  configDir: v.optional(v.string()),
   url: v.string(),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
+  agent: v.optional(v.string()),
   storybookVersion: v.optional(v.string()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
@@ -59,6 +66,34 @@ export const ToolCallResultSchema = v.looseObject({
   isError: v.optional(v.boolean()),
 });
 export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
+
+/**
+ * A JSON Schema node, as far as the `storybook ai <tool> --help` renderer walks it:
+ * object `properties`, array `items`, and `anyOf`/`oneOf` variants. Recursive, so the
+ * schema is built with `v.lazy` and annotated with the interface (valibot can't infer
+ * a recursive type). Kept a `looseObject` so unknown JSON Schema keywords pass through.
+ */
+export interface JsonSchemaNode {
+  type?: string;
+  description?: string;
+  properties?: Record<string, JsonSchemaNode>;
+  required?: string[];
+  items?: JsonSchemaNode | JsonSchemaNode[];
+  anyOf?: JsonSchemaNode[];
+  oneOf?: JsonSchemaNode[];
+}
+
+export const JsonSchemaNodeSchema: v.GenericSchema<JsonSchemaNode> = v.lazy(() =>
+  v.looseObject({
+    type: v.optional(v.string()),
+    description: v.optional(v.string()),
+    properties: v.optional(v.record(v.string(), JsonSchemaNodeSchema)),
+    required: v.optional(v.array(v.string())),
+    items: v.optional(v.union([JsonSchemaNodeSchema, v.array(JsonSchemaNodeSchema)])),
+    anyOf: v.optional(v.array(JsonSchemaNodeSchema)),
+    oneOf: v.optional(v.array(JsonSchemaNodeSchema)),
+  })
+);
 
 /** A tool descriptor from an MCP `tools/list` response. */
 export const McpToolDescriptorSchema = v.looseObject({

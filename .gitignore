@@ -75,7 +75,9 @@ code/core/report
 
 .junie
 CLAUDE.local.md
-.claude
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 .cursor/mcp.json
 .vscode/mcp.json
 .mcp.json

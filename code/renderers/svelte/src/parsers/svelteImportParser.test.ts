@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { ImportEdge, ImportParserContext } from 'storybook/internal/core-server';
 import { ChangeDetectionFailureError } from 'storybook/internal/core-server';
@@ -20,6 +20,16 @@ function makeContext(behavior: (source: string, virtualFilePath: string) => Impo
 }
 
 describe('svelteImportParser', () => {
+  beforeAll(async () => {
+    // Pre-warm the svelte/compiler dynamic import. The first cold load in CI can
+    // exceed vitest's default 10 s per-test timeout; loading it once here means
+    // individual tests always get the already-resolved promise.
+    await svelteImportParser.parse(
+      { filePath: '/tmp/__warmup__.svelte', source: '<div/>' },
+      makeContext(() => []).ctx
+    );
+  }, 30_000);
+
   it('claims the `.svelte` extension', () => {
     expect(svelteImportParser.extensions).toEqual(['.svelte']);
   });

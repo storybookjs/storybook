@@ -29,25 +29,19 @@ addons.register(TOOLBAR_ID, () =>
   })
 );
 
-class ReactProvider extends Provider {
-  addons: AddonStore;
+// Install the manager channel at module load, before the deferred render below and before any
+// manager entry can read it. This guarantees `addons.getChannel()` returns the real channel in the
+// manager runtime instead of falling back to a throwaway mock.
+const channel = createBrowserChannel({ page: 'manager' });
+addons.setChannel(channel);
+channel.emit(CHANNEL_CREATED);
 
-  channel: Channel;
+class ReactProvider extends Provider {
+  addons: AddonStore = addons;
+
+  channel: Channel = channel;
 
   wsDisconnected = false;
-
-  constructor() {
-    super();
-
-    const channel = createBrowserChannel({ page: 'manager' });
-
-    addons.setChannel(channel);
-
-    channel.emit(CHANNEL_CREATED);
-
-    this.addons = addons;
-    this.channel = channel;
-  }
 
   getElements(type: Addon_Types) {
     return this.addons.getElements(type);

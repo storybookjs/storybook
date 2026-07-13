@@ -108,6 +108,26 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
   const plugins = [...(options?.plugins ?? []), TransformFontImports];
 
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  // We need to re-apply the default storybook babel override from:
+  // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
+  // Because it get lost in the loadPartialConfig call above.
+  // See https://github.com/storybookjs/storybook/issues/28467
+  const shouldRemoveBugfixes =
+    globalThis?.FEATURES &&
+    'babelRemoveBugfixes' in globalThis.FEATURES &&
+    globalThis.FEATURES.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...options,
     plugins,
@@ -116,25 +136,9 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
     configFile: false,
     overrides: [
       ...(options?.overrides ?? []),
-      // We need to re-apply the default storybook babel override from:
-      // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
-      // Because it get lost in the loadPartialConfig call above.
-      // See https://github.com/storybookjs/storybook/issues/28467
       {
         include: /(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            'next/dist/compiled/babel/preset-env',
-            {
-              bugfixes: true,
-              targets: {
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['next/dist/compiled/babel/preset-env', presetConfig]],
       },
     ],
   };

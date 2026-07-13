@@ -1,5 +1,5 @@
-import { transformSync, types as t, type NodePath } from 'storybook/internal/babel';
-import { type Statement } from '@babel/types';
+import { type JSXIdentifier, type JSXOpeningElement, type Statement } from '@babel/types';
+import { types as t, transformSync, type NodePath } from 'storybook/internal/babel';
 import type { Plugin } from 'vite';
 
 interface TransformState {
@@ -387,6 +387,13 @@ function stripServerOption(options: import('@babel/types').ObjectExpression): bo
   return options.properties.length !== initialLength;
 }
 
+function getJsxRootIdentifier(name: JSXOpeningElement['name']): JSXIdentifier | null {
+  while (t.isJSXMemberExpression(name)) {
+    name = name.object;
+  }
+  return t.isJSXIdentifier(name) ? name : null;
+}
+
 /**
  * Collect all non-binding identifier references in the program.
  * Excludes binding sites (declarations) and import specifiers.
@@ -407,12 +414,9 @@ function collectReferencedIdentifiers(
       referenced.add(node.name);
     },
     JSXOpeningElement(path) {
-      let name: import('@babel/types').JSXOpeningElement['name'] = path.node.name;
-      while (t.isJSXMemberExpression(name)) {
-        name = name.object;
-      }
-      if (t.isJSXIdentifier(name)) {
-        referenced.add(name.name);
+      const root = getJsxRootIdentifier(path.node.name);
+      if (root) {
+        referenced.add(root.name);
       }
     },
   });

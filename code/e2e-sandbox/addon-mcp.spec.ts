@@ -136,12 +136,12 @@ test.describe('addon-mcp', () => {
         // Check that dev toolset is listed with its tools
         const devToolset = page.locator('.toolset', { has: page.locator('text=dev') });
         await expect(devToolset).toBeVisible();
-        await expect(devToolset.locator('.toolset-status')).toHaveText('enabled');
+        await expect(devToolset.locator('.toolset-status').first()).toHaveText('enabled');
 
         // Check that docs toolset is listed with its tools
         const docsToolset = page.locator('.toolset', { has: page.locator('text=docs') });
         await expect(docsToolset).toBeVisible();
-        await expect(docsToolset.locator('.toolset-status')).toHaveText('enabled');
+        await expect(docsToolset.locator('.toolset-status').first()).toHaveText('enabled');
 
         // Check that test toolset is listed with its tools
         const testToolset = page.locator('.toolset', { has: page.locator('text=test') });

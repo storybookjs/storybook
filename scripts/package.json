@@ -147,7 +147,7 @@
     "trash": "^7.2.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "uuid": "^9.0.1",
     "vitest": "^4.1.5",
     "wait-on": "^8.0.3",

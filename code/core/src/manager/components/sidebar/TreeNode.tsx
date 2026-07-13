@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 
 import { Addon_TypesEnum, REVIEW_STATUS_TYPE_ID, type StatusValue } from 'storybook/internal/types';
 
@@ -20,6 +20,7 @@ import type { Link } from '../../../components/components/tooltip/TooltipLinkLis
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
 import { StatusContext } from './StatusContext.tsx';
+import { RowUiContext } from './RowUiContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
@@ -243,17 +244,11 @@ export interface TreeNodeProps {
   item: TreeEntry;
   /** refId of the composed Storybook, if the item isn't from the host instance. */
   refId: string;
-  /** Whether this node is a direct sibling to the selected node. */
-  isAlongsideSelected: boolean;
   /** Whether this node is currently expanded. */
   isExpanded: boolean;
   /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
   api: API;
-  /** Whether this item's context menu is currently open. */
-  isContextMenuOpen: boolean;
-  /** How the context menu was opened — 'pointer' (click) or 'keyboard' (global shortcut). */
-  contextMenuEntryMethod?: ContextMenuEntryMethod;
   /** Open the context menu for a given item ID with the specified entry method. */
   openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
   /** Close the currently-open context menu. */
@@ -282,12 +277,9 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
-  isAlongsideSelected,
   isExpanded,
   api,
   onSelectStoryId,
-  isContextMenuOpen,
-  contextMenuEntryMethod,
   openContextMenu,
   closeContextMenu,
   hasTestProviders = false,
@@ -300,6 +292,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     groupDualStatus,
     isModifiedFilterActive = false,
   } = useContext(StatusContext);
+
+  // Selection accents and context-menu state come from a subscription store rather than props:
+  // as react-aria collection dependencies they re-rendered every row in the tree on each
+  // selection change. Only rows whose derived value changes re-render.
+  const rowUi = useContext(RowUiContext);
+  const isAlongsideSelected = useSyncExternalStore(
+    rowUi.subscribe,
+    () => item.type !== 'root' && rowUi.getState().selectedParentId === item.parent
+  );
+  const contextMenuEntryMethod = useSyncExternalStore(rowUi.subscribe, () => {
+    const menu = rowUi.getState().contextMenu;
+    return menu?.itemId === item.id ? menu.entryMethod : undefined;
+  });
+  const isContextMenuOpen = contextMenuEntryMethod !== undefined;
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 

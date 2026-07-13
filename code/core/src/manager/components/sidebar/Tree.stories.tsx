@@ -585,6 +585,8 @@ export const StickyAncestors: Story = {
     return (
       <div data-testid="sticky-scroller" style={{ height: 320, overflowY: 'auto' }}>
         <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+        {/* Trailing content (like composed refs) lets the tree's end scroll up under the stack. */}
+        <div style={{ height: 400 }} />
       </div>
     );
   },
@@ -639,6 +641,28 @@ export const StickyAncestors: Story = {
       });
       expect(row(stickyStoryId)!).not.toHaveAttribute('data-sticky-pinned');
     });
+
+    // Jitter regression: park the deep subtree's very last row fully under its pinned chain.
+    // The chain must stay pinned and stable across single-pixel scrolls instead of fighting
+    // with the leaf (membership used to be derived from the engaged stack, which oscillated
+    // whenever the last rows had less room than the stack height).
+    const deepRows = canvasElement.querySelectorAll<HTMLElement>(
+      `[data-item-id^="${stickyChainIds[stickyChainIds.length - 1]}--"]`
+    );
+    const lastDeep = deepRows[deepRows.length - 1];
+    const chainHeight = stickyChainIds.length * TREE_ROW_HEIGHT;
+    scroller.scrollTop +=
+      lastDeep.getBoundingClientRect().top - scrollerTop() - (chainHeight - TREE_ROW_HEIGHT - 4);
+    const pinnedSnapshot = async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return [...pinnedRows()].map((el) => el.getAttribute('data-item-id')).join();
+    };
+    const stableSet = await pinnedSnapshot();
+    await expect(stableSet).not.toBe('');
+    for (const delta of [-1, 1, -1]) {
+      scroller.scrollTop += delta;
+      await expect(await pinnedSnapshot()).toBe(stableSet);
+    }
 
     // Scroll to the very bottom: the viewport has left the deep component's subtree, so its
     // row retracts and leaves no stale pin state behind (no holes in the tree).

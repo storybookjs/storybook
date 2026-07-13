@@ -77,15 +77,23 @@ export const useExpanded = ({
     }
   >(
     (state, { ids, append, value }) => {
+      // No-op actions must return the same Set: the tree uses the set's identity as a
+      // react-aria collection dependency, and a fresh identity re-renders every row. The
+      // selection effect below dispatches on every story change, usually redundantly.
       if (append) {
         if (value) {
+          if (ids.every((id) => state.has(id))) {
+            return state;
+          }
           return new Set([...state, ...ids]);
-        } else {
-          return new Set([...state].filter((id) => !ids.includes(id)));
         }
-      } else {
-        return new Set(ids);
+        const remaining = [...state].filter((id) => !ids.includes(id));
+        return remaining.length === state.size ? state : new Set(remaining);
       }
+      if (ids.length === state.size && ids.every((id) => state.has(id))) {
+        return state;
+      }
+      return new Set(ids);
     },
     { refId, data, initialExpanded, selectedStoryId },
     initializeExpanded

@@ -28,6 +28,7 @@ import { styled } from 'storybook/theming';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
+import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
 import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
@@ -78,12 +79,12 @@ interface TreeProps {
 }
 
 export const Tree = React.memo<TreeProps>(function Tree({
-  allStatuses,
+  allStatuses: allStatusesProp,
   includedStatusFilters,
   refId,
-  data,
+  data: dataProp,
   selectedStoryId,
-  onSelectStoryId,
+  onSelectStoryId: onSelectStoryIdProp,
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
@@ -91,6 +92,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Whether any test provider is registered: gates the context menu on group/component rows.
   const hasTestProviders =
     Object.keys(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).length > 0;
+
+  // The manager recreates the index and status records on unrelated state ticks. Their
+  // identities feed the react-aria collection (items + dependencies) and the status context,
+  // where a fresh identity re-renders every row in the tree — seconds when fully expanded.
+  // Reuse the previous identity while the entries themselves are unchanged.
+  const data = useStableIdentity(dataProp);
+  const allStatuses = useStableIdentity(allStatusesProp);
+
+  // Keep the selection callback identity stable for the same reason: it feeds the memoized
+  // row renderer.
+  const onSelectStoryIdRef = useRef(onSelectStoryIdProp);
+  onSelectStoryIdRef.current = onSelectStoryIdProp;
+  const onSelectStoryId = useCallback((id: string) => onSelectStoryIdRef.current(id), []);
 
   // Tracks the currently focused item for the ContextMenu global shortcut.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
@@ -374,11 +388,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // VSCode-style sticky scroll: pin the ancestor chain of the topmost visible row (plus that
   // row itself while its own subtree continues below it), stacked in order. Membership follows
-  // the viewport (not the selection), so the stack retracts as soon as a subtree scrolls past,
-  // and leaf rows are never pinned. Rows are marked with data-sticky-pinned + a --sticky-top
-  // slot; CSS position:sticky does the actual pinning/unpinning as rows cross their slot, which
-  // is what makes branches pin as soon as they are partially hidden. Runs rAF-throttled on
-  // scroll and resize, and whenever the expansion state or data changes.
+  // the viewport (not the selection): a chain stays pinned until the next subtree's rows reach
+  // the top of the viewport, and leaf rows are never pinned. Rows are marked with
+  // data-sticky-pinned + a --sticky-top slot; CSS position:sticky does the actual
+  // pinning/unpinning as rows cross their slot, which is what makes branches pin as soon as
+  // they are partially hidden. Runs rAF-throttled on scroll and resize, and whenever the
+  // expansion state or data changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -411,74 +426,86 @@ export const Tree = React.memo<TreeProps>(function Tree({
       }
     };
 
-    const slotOf = (row: HTMLElement) =>
-      parseFloat(row.style.getPropertyValue('--sticky-top')) || 0;
-
-    // Snapshotting every row is O(n) on a tree that can hold thousands of rows, so cache the
-    // list and invalidate it when the DOM changes (rows mount/unmount on expand, ref loads).
-    let cachedRows: HTMLElement[] | null = null;
-    const getRows = () =>
-      (cachedRows ??= Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]')));
+    // Natural row geometry — positions measured with pinning disabled, relative to the
+    // container, cached until the DOM or layout changes. Chain membership is derived from
+    // natural positions only, never from which rows are currently stuck: deriving it from the
+    // engaged stack feeds the stack height back into the boundary, which oscillates when a
+    // subtree's last rows have less than the stack's height of room (parent pins → covers the
+    // leaf → boundary moves → parent unpins → leaf reappears → parent pins again, every frame).
+    interface RowGeometry {
+      rows: HTMLElement[];
+      ids: (string | null)[];
+      tops: number[];
+      bottoms: number[];
+      indexById: Map<string, number>;
+    }
+    let geometry: RowGeometry | null = null;
+    const measureGeometry = (): RowGeometry => {
+      if (geometry) {
+        return geometry;
+      }
+      const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-item-id]'));
+      container.toggleAttribute('data-sticky-measuring', true);
+      const containerTop = container.getBoundingClientRect().top;
+      const ids: (string | null)[] = [];
+      const tops: number[] = [];
+      const bottoms: number[] = [];
+      const indexById = new Map<string, number>();
+      rows.forEach((row, i) => {
+        const rect = row.getBoundingClientRect();
+        const id = row.getAttribute('data-item-id');
+        ids.push(id);
+        tops.push(rect.top - containerTop);
+        bottoms.push(rect.bottom - containerTop);
+        if (id) {
+          indexById.set(id, i);
+        }
+      });
+      container.removeAttribute('data-sticky-measuring');
+      geometry = { rows, ids, tops, bottoms, indexById };
+      return geometry;
+    };
     const rowsObserver = new win.MutationObserver(() => {
-      cachedRows = null;
+      geometry = null;
       scheduleUpdate();
     });
     rowsObserver.observe(container, { childList: true, subtree: true });
 
     const update = () => {
       rafId = null;
-      const scrollerTop =
-        scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
-      const allRows = getRows();
-      if (allRows.length === 0) {
+      const { rows, ids, tops, bottoms, indexById } = measureGeometry();
+      if (rows.length === 0) {
         clearAll();
         return;
       }
 
-      // Height of the currently engaged stack: pinned rows actually stuck at their slot.
-      let engagedHeight = 0;
-      for (const row of pinnedRows) {
-        const rect = row.getBoundingClientRect();
-        const slot = slotOf(row);
-        if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
-          engagedHeight = Math.max(engagedHeight, slot + rect.height);
-        }
-      }
-      const boundary = scrollerTop + engagedHeight + 1;
+      // The viewport's top line in the tree's natural coordinates. The container itself never
+      // pins, so its rect is always the natural one.
+      const scrollerTop =
+        scroller === doc.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
+      const targetY = scrollerTop - container.getBoundingClientRect().top;
 
-      // Topmost content row: the first row whose natural position ends below the engaged
-      // stack. Rows are in document order so natural rects are monotonic; engaged pinned rows
-      // report their stuck rect, but they are always naturally above the boundary, so treating
-      // them as "before" keeps the binary search valid.
-      const isBeforeBoundary = (row: HTMLElement) => {
-        const rect = row.getBoundingClientRect();
-        if (row.hasAttribute('data-sticky-pinned')) {
-          const slot = slotOf(row);
-          if (Math.abs(rect.top - (scrollerTop + slot)) <= 1) {
-            return true;
-          }
-        }
-        return rect.bottom <= boundary;
-      };
-
+      // Top row: the row the viewport's top line passes through (or the next one, when the
+      // line falls in a section gap). This keeps the current chain pinned until the next
+      // subtree's rows actually reach the top of the viewport.
       let lo = 0;
-      let hi = allRows.length - 1;
-      let topIndex = allRows.length;
+      let hi = rows.length - 1;
+      let topIndex = rows.length;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
-        if (isBeforeBoundary(allRows[mid])) {
+        if (bottoms[mid] <= targetY) {
           lo = mid + 1;
         } else {
           topIndex = mid;
           hi = mid - 1;
         }
       }
-      if (topIndex >= allRows.length) {
+      if (topIndex >= rows.length) {
         // Scrolled past this tree entirely.
         clearAll();
         return;
       }
-      const topId = allRows[topIndex].getAttribute('data-item-id');
+      const topId = ids[topIndex];
       if (!topId) {
         clearAll();
         return;
@@ -491,33 +518,29 @@ export const Tree = React.memo<TreeProps>(function Tree({
       // branch pins the moment it is partially hidden (by the stack above it, or the viewport
       // for top-level rows) instead of popping in only once fully scrolled past. Leaves and
       // collapsed branches never qualify: the row after them is not their descendant.
-      const nextId = allRows[topIndex + 1]?.getAttribute('data-item-id');
+      const nextId = ids[topIndex + 1];
       if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
         chainIds.push(topId);
       }
-      const desired: HTMLElement[] = [];
+      const desired: { row: HTMLElement; height: number }[] = [];
       for (const id of chainIds) {
-        const row = container.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`);
-        if (row) {
-          desired.push(row);
+        const index = indexById.get(id);
+        if (index !== undefined) {
+          desired.push({ row: rows[index], height: bottoms[index] - tops[index] });
         }
       }
-
-      // Read row heights before any writes: interleaving offsetHeight reads with attribute
-      // and style writes would force a layout per iteration.
-      const heights = desired.map((row) => row.offsetHeight);
 
       // Write phase: release rows that left the stack, then (re)assign slots top-down.
       // All writes are change-guarded: redundant attribute/property writes would invalidate
       // styles every frame while scrolling.
-      const desiredSet = new Set(desired);
+      const desiredSet = new Set(desired.map(({ row }) => row));
       for (const row of [...pinnedRows]) {
         if (!desiredSet.has(row) || !row.isConnected) {
           clearRow(row);
         }
       }
       let cumulativeTop = 0;
-      desired.forEach((row, i) => {
+      for (const { row, height } of desired) {
         if (!row.hasAttribute('data-sticky-pinned')) {
           row.setAttribute('data-sticky-pinned', '');
         }
@@ -526,8 +549,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
           row.style.setProperty('--sticky-top', slot);
         }
         pinnedRows.add(row);
-        cumulativeTop += heights[i];
-      });
+        cumulativeTop += height;
+      }
     };
 
     const scheduleUpdate = () => {
@@ -540,9 +563,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
     scrollEventTarget.addEventListener('scroll', scheduleUpdate, { passive: true });
 
     // Content can move without a scroll event (a sibling ref tree loading or collapsing,
-    // window resizes); watch the scroller and its content wrapper to catch those shifts.
+    // window resizes); those shifts also invalidate the measured natural geometry.
     const resizeObserver =
-      typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(scheduleUpdate) : null;
+      typeof win.ResizeObserver === 'function'
+        ? new win.ResizeObserver(() => {
+            geometry = null;
+            scheduleUpdate();
+          })
+        : null;
     resizeObserver?.observe(scroller);
     if (scroller.firstElementChild) {
       resizeObserver?.observe(scroller.firstElementChild);
@@ -620,11 +648,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
   }, [mountCounter, selectedStoryId, expanded, scrollRowIntoView]);
 
   // One dependencies array shared by every Collection level, so react-aria's cached nodes are
-  // invalidated consistently — a drifted copy at one level renders stale rows.
-  const collectionDependencies = useMemo(
-    () => [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus],
-    [expanded, selectedStoryId, selectedParentId, contextMenuState, groupDualStatus]
-  );
+  // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately
+  // minimal: invalidating the collection re-renders every row in the tree, which takes seconds
+  // on fully-expanded trees. Selection and context-menu state reach rows through RowUiContext
+  // (subscription store) instead, and statuses through StatusContext.
+  const collectionDependencies = useMemo(() => [expanded], [expanded]);
+
+  // Feed interaction state to rows without re-rendering the tree: only rows whose derived
+  // value changes re-render (see RowUiContext).
+  const rowUiStoreRef = useRef<ReturnType<typeof createRowUiStore> | null>(null);
+  rowUiStoreRef.current ??= createRowUiStore();
+  useEffect(() => {
+    rowUiStoreRef.current!.setState({ selectedParentId, contextMenu: contextMenuState });
+  }, [selectedParentId, contextMenuState]);
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
@@ -634,9 +670,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         api,
         refId,
         onSelectStoryId,
-        selectedParentId,
         expanded,
-        contextMenuState,
         openContextMenu,
         closeContextMenu,
         hasTestProviders,
@@ -646,9 +680,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       api,
       refId,
       onSelectStoryId,
-      selectedParentId,
       expanded,
-      contextMenuState,
       openContextMenu,
       closeContextMenu,
       hasTestProviders,
@@ -666,29 +698,54 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // TODO: consider passing more data via the provider to limit prop drilling in renderNode? Any advantage?
   return (
     <StatusContext.Provider value={statusContextValue}>
-      <StyledAriaTree
-        ref={containerRef}
-        aria-label="Stories"
-        selectionMode="single"
-        expandedKeys={expanded}
-        onExpandedChange={handleExpandedChange}
-        selectedKeys={selectedKeys}
-        onSelectionChange={handleSelectionChange}
-        onAction={handleAction}
-      >
-        <Collection items={tree} dependencies={collectionDependencies}>
-          {nodeRenderer}
-        </Collection>
-      </StyledAriaTree>
-      {focusedItemShortcutLabel && (
-        <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
-      )}
+      <RowUiContext.Provider value={rowUiStoreRef.current}>
+        <StyledAriaTree
+          ref={containerRef}
+          aria-label="Stories"
+          selectionMode="single"
+          expandedKeys={expanded}
+          onExpandedChange={handleExpandedChange}
+          selectedKeys={selectedKeys}
+          onSelectionChange={handleSelectionChange}
+          onAction={handleAction}
+        >
+          <Collection items={tree} dependencies={collectionDependencies}>
+            {nodeRenderer}
+          </Collection>
+        </StyledAriaTree>
+        {focusedItemShortcutLabel && (
+          <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
+        )}
+      </RowUiContext.Provider>
     </StatusContext.Provider>
   );
 });
 
 // Stable module-level constant so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
+
+function shallowEqualRecords(
+  a: Record<string, unknown> | undefined,
+  b: Record<string, unknown> | undefined
+): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  const aKeys = Object.keys(a);
+  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
+}
+
+/** Reuse the previous object identity while its entries are shallow-equal (same value refs). */
+function useStableIdentity<T extends Record<string, any> | undefined>(value: T): T {
+  const ref = useRef(value);
+  if (ref.current !== value && !shallowEqualRecords(ref.current, value)) {
+    ref.current = value;
+  }
+  return ref.current;
+}
 
 /** Find the nearest scrollable ancestor (the element sticky rows pin to). */
 function getScrollParent(element: HTMLElement): HTMLElement | null {
@@ -704,9 +761,7 @@ function getScrollParent(element: HTMLElement): HTMLElement | null {
 }
 
 interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
-  selectedParentId: string | null;
   expanded: Set<string>;
-  contextMenuState: { itemId: string; entryMethod: 'pointer' | 'keyboard' } | null;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
   hasTestProviders: boolean;
@@ -716,8 +771,6 @@ interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelec
 
 function renderNode({
   expanded,
-  selectedParentId,
-  contextMenuState,
   openContextMenu,
   closeContextMenu,
   hasTestProviders,
@@ -731,11 +784,6 @@ function renderNode({
         key={item.id}
         item={item}
         isExpanded={expanded.has(item.id)}
-        isAlongsideSelected={item.type !== 'root' && selectedParentId === item.parent}
-        isContextMenuOpen={contextMenuState?.itemId === item.id}
-        contextMenuEntryMethod={
-          contextMenuState?.itemId === item.id ? contextMenuState.entryMethod : undefined
-        }
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}

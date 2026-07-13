@@ -32,6 +32,10 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
   private primaryStory?: PreparedStory<TRenderer>;
 
+  // Set by the docs render (autodocs vs MDX) so `usePrimaryStory` knows whether to filter the
+  // CSF file's stories to `autodocs`-tagged ones. See `DocsContextProps.filterByAutodocs`.
+  public filterByAutodocs?: boolean;
+
   constructor(
     public channel: Channel,
     protected store: StoryStore<TRenderer>,
@@ -280,6 +284,15 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
   componentStories = () => {
     return this.componentStoriesValue;
+  };
+
+  getComponentId = (component: Renderer['component']) => {
+    for (const csfFile of new Set(this.exportsToCSFFile.values())) {
+      if (csfFile.meta.component === component) {
+        return csfFile.meta.id;
+      }
+    }
+    return undefined;
   };
 
   componentStoriesFromCSFFile = (csfFile: CSFFile<TRenderer>) => {

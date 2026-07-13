@@ -541,8 +541,10 @@ export interface ComponentAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: Partial<
+    Globals &
+      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+  >;
 }
 
 export type StoryAnnotations<
@@ -560,8 +562,10 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: Partial<
+    Globals &
+      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+  >;
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;

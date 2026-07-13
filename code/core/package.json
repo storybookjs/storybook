@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.5.0-alpha.4",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -55,6 +55,11 @@
       "types": "./dist/actions/decorator.d.ts",
       "code": "./src/actions/decorator.ts",
       "default": "./dist/actions/decorator.js"
+    },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "code": "./src/backgrounds/index.ts",
+      "default": "./dist/backgrounds/index.js"
     },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -114,6 +119,7 @@
       "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
     },
+    "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "code": "./src/docs-tools/index.ts",
@@ -197,6 +203,11 @@
       "code": "./src/manager-api/index.ts",
       "default": "./dist/manager-api/index.js"
     },
+    "./open-service": {
+      "types": "./dist/shared/open-service/index.d.ts",
+      "code": "./src/shared/open-service/index.ts",
+      "default": "./dist/shared/open-service/index.js"
+    },
     "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
@@ -241,7 +252,8 @@
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
+    "jsonc-parser": "^3.3.1",
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "^11.19.1",
@@ -268,6 +280,7 @@
     "@happy-dom/global-registrator": "^20.0.11",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
+    "@preact/signals-core": "^1.14.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",
@@ -304,7 +317,6 @@
     "@yarnpkg/libzip": "2.3.0",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
-    "alien-signals": "^3.2.0",
     "ansi-to-html": "^0.7.2",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
@@ -315,6 +327,7 @@
     "copy-to-clipboard": "^3.3.1",
     "cross-spawn": "^7.0.6",
     "deep-object-diff": "^1.1.0",
+    "deepsignal": "^1.6.0",
     "dequal": "^2.0.2",
     "detect-indent": "^7.0.1",
     "detect-port": "^1.6.1",
@@ -323,7 +336,7 @@
     "ejs": "^3.1.10",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
     "execa": "^9.6.1",
     "exsolve": "^1.0.7",
     "extend-to-be-announced": "^2.0.0",
@@ -355,7 +368,7 @@
     "package-manager-detector": "^1.1.0",
     "picocolors": "^1.1.0",
     "picomatch": "^2.3.0",
-    "picoquery": "^1.4.0",
+    "picoquery": "^2.5.0",
     "polished": "^4.2.2",
     "polka": "^1.0.0-next.28",
     "prettier": "^3.7.1",
@@ -391,12 +404,13 @@
     "valibot": "^1.4.0",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
+    "yaml": "^2.8.2",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
-    "vite-plus": "^0.1.15"
+    "vite-plus": "^0.1.15 || ^0.2.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {

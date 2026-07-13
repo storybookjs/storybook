@@ -35,7 +35,12 @@ const Versions = {
   MAJOR: 'MAJOR',
 };
 
-const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
+const ciCadenceLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
+// Split CI labels compose: `ci:core` plus any number of framework labels (`ci:react`, `ci:vue3`,
+// `ci:angular`, ...) and builder labels (`ci:vite`, `ci:webpack`, ...). A loose pattern is enough
+// here: the label must exist on the repo to be applied, and the CircleCI config generator
+// (scripts/ci/main.ts) rejects unknown atoms. Labels with spaces ("ci: do not merge") don't match.
+const ciSplitLabelPattern = /^ci:[a-z0-9-]+$/;
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 
 const { labels } = danger.github.issue;
@@ -88,11 +93,24 @@ const checkRequiredLabels = (labels) => {
       fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
     }
 
-    const foundCILabels = intersection(ciLabels, labels);
-    if (foundCILabels.length === 0) {
-      fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
-    } else if (foundCILabels.length > 1) {
-      fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    const foundCadenceLabels = intersection(ciCadenceLabels, labels);
+    const foundSplitLabels = labels.filter(
+      (label) => ciSplitLabelPattern.test(label) && !ciCadenceLabels.includes(label)
+    );
+    if (foundCadenceLabels.length === 0 && foundSplitLabels.length === 0) {
+      fail(
+        `PR is not labeled with one of: ${JSON.stringify(
+          ciCadenceLabels
+        )}, or with split CI labels ("ci:core", a framework label such as "ci:react", or a builder label such as "ci:vite")`
+      );
+    } else if (foundCadenceLabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundCadenceLabels)}`);
+    } else if (foundCadenceLabels.length === 1 && foundSplitLabels.length > 0) {
+      fail(
+        `Please use either "${foundCadenceLabels[0]}" or the split CI labels ${JSON.stringify(
+          foundSplitLabels
+        )}, not both: the cadence label takes precedence and the split labels would be ignored.`
+      );
     }
 
     const foundQALabels = intersection(qaLabels, labels);

@@ -23,14 +23,11 @@ parameters:
     type: string
   workflow:
     default: skipped
-    description: Which workflow to run
-    enum:
-      - normal
-      - merged
-      - daily
-      - skipped
-      - docs
-    type: enum
+    description: >-
+      Which workflow to run: a single workflow (normal, merged, daily, docs, core), or a
+      `+`-separated list of sandbox-split atoms (a framework such as react/vue3/angular, or a
+      builder such as vite/webpack), e.g. "core+react". Validated by scripts/ci/main.ts.
+    type: string
 
 jobs:
   generate-and-run-config:

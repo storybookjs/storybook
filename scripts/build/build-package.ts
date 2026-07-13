@@ -18,15 +18,23 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
-import { measure } from './utils/entry-utils';
-import { generateBundle } from './utils/generate-bundle';
-import { generatePackageJsonFile } from './utils/generate-package-json';
-import { generateTypesFiles } from './utils/generate-types';
+import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
+import { measure } from './utils/entry-utils.ts';
+import { generateBundle } from './utils/generate-bundle.ts';
+import { generatePackageJsonFile } from './utils/generate-package-json.ts';
+import { generateTypesFiles } from './utils/generate-types.ts';
+import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown.ts';
 
 const {
-  values: { prod, production, optimized, watch, cwd },
+  values: {
+    prod,
+    production,
+    optimized,
+    watch,
+    cwd,
+    'dts-bundler': dtsBundler,
+    'dts-resolver': dtsResolver,
+  },
 } = parseArgs({
   options: {
     prod: { type: 'boolean', default: false },
@@ -34,13 +42,25 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
+    // 'rolldown' bundles tsc-emitted declarations: ~14x faster than the old
+    // rollup path and byte-deterministic. 'rolldown-tsgo' is ~2x faster still,
+    // but tsgo declaration emit is not yet deterministic (type aliases flap,
+    // chunk references can go stale) and hangs on some packages; keep it
+    // opt-in until it stabilizes.
+    'dts-bundler': { type: 'string', default: 'rolldown' },
+    'dts-resolver': { type: 'string', default: 'hybrid' },
   },
   allowNegative: true,
 });
 
+if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') {
+  throw new Error(`Invalid --dts-resolver: ${dtsResolver} (expected 'hybrid', 'tsc' or 'oxc')`);
+}
+const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
+
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
-  const DIR_CWD = cwd ? join(ROOT_DIRECTORY, cwd) : process.cwd();
+  const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
 
@@ -85,7 +105,24 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        await generateTypesFiles(DIR_CWD, entry);
+        switch (entry.dtsBundler ?? dtsBundler) {
+          case 'rolldown':
+            await generateTypesFilesRolldown(DIR_CWD, entry, {
+              tsgo: false,
+              resolver: resolvedDtsResolver,
+            });
+            break;
+          case 'rolldown-tsgo':
+            await generateTypesFilesRolldown(DIR_CWD, entry, {
+              tsgo: true,
+              resolver: resolvedDtsResolver,
+            });
+            break;
+          case 'rollup':
+          default:
+            await generateTypesFiles(DIR_CWD, entry);
+            break;
+        }
       }
     }),
   ]);

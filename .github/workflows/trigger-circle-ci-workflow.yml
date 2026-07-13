@@ -96,6 +96,28 @@ jobs:
       - id: daily
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> "$GITHUB_OUTPUT"
+      - id: split
+        if: github.event_name == 'pull_request_target'
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          # Combine the split CI labels — ci:core, ci:<framework> (e.g. ci:react,
+          # ci:vue3, ci:angular) and ci:<builder> (e.g. ci:vite, ci:webpack) —
+          # into a single `+`-separated workflow value such as "core+react".
+          # The cadence labels are handled by the steps above and take
+          # precedence. The label pattern below intentionally excludes labels
+          # with spaces ("ci: do not merge"); each atom is validated by the
+          # config generator (scripts/ci/main.ts), which fails the pipeline
+          # setup on unknown atoms.
+          WORKFLOW=$(echo "$LABELS" | jq -r '
+            [ .[]
+              | select(test("^ci:[a-z0-9-]+$"))
+              | ltrimstr("ci:")
+              | select(. != "normal" and . != "docs" and . != "merged" and . != "daily")
+            ] | sort | join("+")')
+          if [ -n "$WORKFLOW" ]; then
+            echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"
+          fi
       - id: trusted-author
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -132,7 +154,7 @@ jobs:
             echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
           fi
     outputs:
-      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
+      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow || steps.split.outputs.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
       ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}

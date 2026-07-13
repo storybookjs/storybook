@@ -18,8 +18,8 @@ export const parameters = {
   },
   workflow: {
     default: 'skipped',
-    description: 'Which workflow to run',
-    enum: ['normal', 'merged', 'daily', 'skipped', 'docs'] as const,
-    type: 'enum',
+    description:
+      'Which workflow to run: a single workflow (normal, merged, daily, docs, core), or a `+`-separated list of sandbox-split atoms (a framework such as react/vue3/angular, or a builder such as vite/webpack), e.g. "core+react"',
+    type: 'string',
   },
 };

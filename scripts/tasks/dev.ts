@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { connect } from 'node:net';
 import { join } from 'node:path';
 
 import waitOn from 'wait-on';
@@ -58,7 +59,20 @@ export const dev: Task = {
       await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
       return true;
     } catch {
-      return false;
+      // The fetch can fail while a dev server owns the port: a cold compile
+      // outlasting the timeout, or the server resetting connections before
+      // its middleware is up. Spawning a second server then can only crash
+      // with EADDRINUSE once it finishes compiling, so a held port must
+      // count as ready - every consumer of this task performs its own HTTP
+      // wait before using the server.
+      return await new Promise<boolean>((resolve) => {
+        const socket = connect({ port, host: '127.0.0.1' });
+        socket.once('connect', () => {
+          socket.destroy();
+          resolve(true);
+        });
+        socket.once('error', () => resolve(false));
+      });
     }
   },
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug, link }) {

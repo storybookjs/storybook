@@ -7,6 +7,9 @@ import { defineConfig, devices } from '@playwright/test';
 // process.env.STORYBOOK_URL = 'http://localhost:6006';
 // process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
 
+/** Specs that mutate sandbox files; they must not run alongside other specs. */
+const MUTATING_SPECS = /change-detection\.spec\.ts/;
+
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
   testDir: './e2e-sandbox',
@@ -25,8 +28,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * Parallel workers on CI: the specs are independent (each test drives its own
+   * page against the shared Storybook server), except for specs that mutate
+   * sandbox files — those are quarantined in the serial `chromium-mutating`
+   * project below. PLAYWRIGHT_WORKERS lets each CI job match its executor size.
+   */
+  workers: process.env.CI ? Number(process.env.PLAYWRIGHT_WORKERS || 2) : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.PLAYWRIGHT_JUNIT_OUTPUT_NAME
     ? [
@@ -62,8 +70,26 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, MUTATING_SPECS],
       dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: ['clipboard-read', 'clipboard-write'],
+      },
+    },
+    {
+      // Specs that write to the sandbox's source files trigger dev-server
+      // invalidations (HMR, index refresh) that can reload other tests' pages
+      // mid-assertion. They run serially, after the parallel pass - ordered by
+      // the task runner via two sequential invocations (see
+      // scripts/tasks/e2e-tests-build.ts), NOT via a dependency on 'chromium':
+      // Playwright runs dependency projects unfiltered, which made CI shards
+      // whose file subset contained a mutating spec re-run the entire
+      // chromium suite.
+      name: 'chromium-mutating',
+      testMatch: MUTATING_SPECS,
+      dependencies: ['setup'],
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         permissions: ['clipboard-read', 'clipboard-write'],

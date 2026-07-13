@@ -285,11 +285,11 @@ export const WithContextContent: Story = {
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
 
-    // The first actionable item is focused on open (menu-button pattern), so keyboard
-    // users can act without tabbing past the popover container first.
-    await waitFor(() => {
-      expect(within(popover).getByText('Open in editor').closest('button')).toHaveFocus();
-    });
+    // Focus stays on the popover container on open — autofocusing the first item makes
+    // screen readers announce it twice. The first Tab reaches the first actionable item.
+    await waitFor(() => expect(popover).toHaveFocus());
+    await userEvent.tab();
+    await expect(within(popover).getByText('Open in editor').closest('button')).toHaveFocus();
   },
 };
 
@@ -381,8 +381,8 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
 
 /**
  * Ctrl+Shift+U flow: the tree opens the menu for the selected story when the shortcut's channel
- * event fires, prepends a "Go to story" navigation item, and focuses it so keyboard users can act
- * immediately. Status links describe their click action; opted-out statuses stay hidden.
+ * event fires and prepends a "Go to story" navigation item, one Tab away from the focused popover
+ * container. Status links describe their click action; opted-out statuses stay hidden.
  */
 export const ContextMenuKeyboardEntry: Story = {
   ...makeDualSlotStory({
@@ -420,9 +420,11 @@ export const ContextMenuKeyboardEntry: Story = {
 
     const popover = await screen.findByRole('dialog');
 
-    await waitFor(() => {
-      expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
-    });
+    // Focus stays on the popover container on open — autofocusing the first item makes
+    // screen readers announce it twice. The first Tab reaches the "Go to story" item.
+    await waitFor(() => expect(popover).toHaveFocus());
+    await userEvent.tab();
+    await expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
 
     // Status links describe the click action, not the status — the row announces the status.
     await expect(

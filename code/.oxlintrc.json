@@ -13,11 +13,11 @@
     "storybook-static",
     "built-storybooks",
     "ember-output",
-    "lib/codemod/src/transforms/__testfixtures__",
+    "**/__testfixtures__",
+    "**/__mockdata__",
     "core/assets",
     "core/report",
     "core/src/core-server/utils/__search-files-tests__",
-    "core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "lib/cli-storybook/test/default/cli.test.cjs",
     "sandbox"
   ],
@@ -117,7 +117,6 @@
         "**/*.mockdata.*",
         "**/addons/docs/**",
         "**/__tests__/**",
-        "**/__testfixtures__/**",
         "**/template/**"
       ],
       "rules": {

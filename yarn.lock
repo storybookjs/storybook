@@ -9325,7 +9325,7 @@ __metadata:
     rimraf: "npm:^6.0.1"
     telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.9.3"
+    typescript: "npm:^6.0.3"
     vite: "npm:>=8.0.0"
     zone.js: "npm:^0.16.2"
   peerDependencies:

@@ -116,6 +116,7 @@ const enhanceContext: LoaderFunction = async (context) => {
         // Must save a real, original `focus` method outside of the patch beforehand
         const originalFocus = HTMLElement.prototype.focus;
         let currentFocus = HTMLElement.prototype.focus;
+        const noopFocus = () => {};
 
         // Use a Set to track elements that are currently undergoing a focus operation
         const focusingElements = new Set<HTMLElement>();
@@ -127,7 +128,15 @@ const enhanceContext: LoaderFunction = async (context) => {
               currentFocus = newFocus;
             },
             get() {
-              // 'this' here refers to the DOM element being operated on
+              // A node inside a removed iframe has no live browsing context as `ownerDocument.defaultView`
+              // is null. The instrumented focus dispatches events through user-event, whose getWindow()
+              // then throws "Could not determine window of node"; thrown in React's commit phase that
+              // freezes the whole UI. Focus is meaningless on such a node, so hand back a no-op instead.
+              if (!this.ownerDocument?.defaultView) {
+                return noopFocus;
+              }
+
+              // 'this' here refers to the DOM element being operated on.
               if (focusingElements.has(this)) {
                 // Recursive call detected; to break the loop, return the original focus method.
                 return originalFocus;

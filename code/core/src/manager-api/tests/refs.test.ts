@@ -1331,6 +1331,48 @@ describe('Refs API', () => {
         expect.objectContaining({ 'a--2': expect.anything() })
       );
     });
+
+    it('re-applies cached runtime story enrichment when rebuilding the index (#34553)', async () => {
+      const index: StoryIndex = {
+        v: 5,
+        entries: {
+          'a--1': {
+            id: 'a--1',
+            title: 'A',
+            name: '1',
+            importPath: './path/to/a1.ts',
+            type: 'story',
+            subtype: 'story',
+          },
+        },
+      };
+
+      // Simulate a ref whose story got enriched at runtime (via STORY_PREPARED) before/independent of
+      // its static index being (re)composed. The enrichment is cached on `storyUpdates`.
+      const initialState: Partial<State> = {
+        filters: {},
+        refs: {
+          fake: {
+            id: 'fake',
+            url: 'https://example.com',
+            previewInitialized: true,
+            storyUpdates: {
+              'a--1': { prepared: true, argTypes: { label: { name: 'label' } } as any },
+            },
+          },
+        },
+      };
+
+      const store = createMockStore(initialState);
+      const { api } = initRefs({ provider, store } as any, { runCheck: false });
+
+      // The incoming static index has no argTypes; the cached enrichment must survive the rebuild.
+      await api.setRef('fake', { storyIndex: index });
+
+      const rebuilt = api.getRefs().fake.index?.['a--1'] as any;
+      expect(rebuilt.argTypes).toEqual({ label: { name: 'label' } });
+      expect(rebuilt.prepared).toBe(true);
+    });
   });
 
   it('errors on unknown version', async () => {

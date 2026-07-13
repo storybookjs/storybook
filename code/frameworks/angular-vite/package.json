@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "10.5.0-alpha.9",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -99,10 +99,9 @@
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0",
     "@angular/core": ">=21.0.0 < 23.0.0",
     "@angular/platform-browser": ">=21.0.0 < 23.0.0",
-    "@angular/platform-browser-dynamic": ">=21.0.0 < 23.0.0",
     "rxjs": "^7.4.0",
     "storybook": "workspace:^",
-    "typescript": "^5.9.0",
+    "typescript": ">= 5.9.x",
     "vite": ">=8.0.0",
     "zone.js": ">=0.16.0"
   },

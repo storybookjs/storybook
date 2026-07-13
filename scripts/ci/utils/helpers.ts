@@ -246,10 +246,6 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    // v7: v6 caches are poisoned with a nested @typescript-eslint/types copy
-    // from a pre-rebase lockfile; prefix-fallback restores kept re-saving it
-    // under current keys because yarn's incremental link never prunes foreign
-    // directories. Bump again if node_modules cache corruption recurs.
     `v7-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',

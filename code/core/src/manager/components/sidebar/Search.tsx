@@ -1,6 +1,7 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -154,7 +155,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fills the remaining sidebar height: the virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;
@@ -164,7 +172,6 @@ export type SearchProps = {
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
-  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -175,7 +182,6 @@ export const Search = React.memo<SearchProps>(function Search({
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
-  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -191,8 +197,13 @@ export const Search = React.memo<SearchProps>(function Search({
         acc.push(
           ...Object.values(index).map((item) => {
             const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+            const ownStatusValues = Object.values(storyStatuses ?? {})
+              .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+              .map((status) => status.value);
+            // A story whose only statuses are review-typed has no own status; fall back to the
+            // group aggregate instead of surfacing the 'unknown' placeholder value.
+            const mostCriticalStatusValue = ownStatusValues.length
+              ? getMostCriticalStatusValue(ownStatusValues)
               : null;
             return {
               ...searchItem(item, dataset.hash[refId]),
@@ -435,7 +446,6 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            {!isOpen && belowSearchContent}
             <FocusContainer tabIndex={-1} id="storybook-explorer-menu">
               {children({
                 query: input,

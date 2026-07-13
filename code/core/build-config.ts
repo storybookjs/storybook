@@ -46,6 +46,14 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        // Long-lived worker that runs docgen extraction off the main thread. Exposed as an internal
+        // export so docgen-worker-client.ts resolves it via the package map (import.meta.resolve)
+        // rather than a hard-coded dist path, keeping strict package managers (pnpm) happy.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/shared/open-service/services/docgen/worker/docgen-worker.ts',
+        dts: false,
+      },
+      {
         entryPoint: './src/core-server/presets/common-override-preset.ts',
         exportEntries: ['./internal/core-server/presets/common-override-preset'],
         dts: false,
@@ -119,6 +127,10 @@ const config: BuildEntries = {
         entryPoint: './src/actions/decorator.ts',
       },
       {
+        exportEntries: ['./backgrounds'],
+        entryPoint: './src/backgrounds/index.ts',
+      },
+      {
         exportEntries: ['./viewport'],
         entryPoint: './src/viewport/index.ts',
       },
@@ -185,6 +197,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/types'],
         entryPoint: './src/types/index.ts',
+      },
+      {
+        exportEntries: ['./open-service'],
+        entryPoint: './src/shared/open-service/index.ts',
       },
     ],
     runtime: [

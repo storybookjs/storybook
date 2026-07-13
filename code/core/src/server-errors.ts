@@ -3,6 +3,9 @@ import { dedent } from 'ts-dedent';
 
 import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
+import { formatIssues } from './shared/open-service/errors.ts';
+import type { ServiceId } from './shared/open-service/types.ts';
+import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { StorybookError } from './storybook-error.ts';
 
 export { StorybookError } from './storybook-error.ts';
@@ -148,6 +151,138 @@ export class InvalidStoriesEntryError extends StorybookError {
         Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
         
         Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
+    });
+  }
+}
+
+export class OpenServiceValidationError extends StorybookError {
+  constructor(public data: ValidationMeta) {
+    super({
+      name: 'OpenServiceValidationError',
+      category: Category.CORE_COMMON,
+      code: 5,
+      message: `Invalid ${data.phase} for ${data.kind} "${data.serviceId}.${data.name}":\n${formatIssues(
+        data.issues
+      )}`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateRegistrationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceDuplicateRegistrationError',
+      category: Category.CORE_COMMON,
+      code: 6,
+      message: `A service with id "${data.serviceId}" is already registered.`,
+    });
+  }
+}
+
+export class OpenServiceMissingServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceMissingServiceError',
+      category: Category.CORE_COMMON,
+      code: 7,
+      message: `No registered service with id "${data.serviceId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceUnimplementedOperationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
+    super({
+      name: 'OpenServiceUnimplementedOperationError',
+      category: Category.CORE_COMMON,
+      code: 8,
+      message: `${data.kind[0].toUpperCase()}${data.kind.slice(1)} "${data.serviceId}.${data.name}" is not implemented for this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInvalidStaticPathError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; path: string }) {
+    super({
+      name: 'OpenServiceInvalidStaticPathError',
+      category: Category.CORE_COMMON,
+      code: 10,
+      message: `Invalid static path "${data.path}" for query "${data.serviceId}.${data.name}": use a relative path with forward slashes and no ".." segments.`,
+    });
+  }
+}
+
+export class OpenServiceAsyncSchemaError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: ServiceId;
+      name: string;
+      kind: 'query' | 'command';
+      phase: 'input' | 'output';
+    }
+  ) {
+    super({
+      name: 'OpenServiceAsyncSchemaError',
+      category: Category.CORE_COMMON,
+      code: 9,
+      message: `Async schema for ${data.kind} "${data.serviceId}.${data.name}" (${data.phase}): query input and output schemas must validate synchronously.`,
+    });
+  }
+}
+
+export class OpenServiceLoadedDrainExceededError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; iterations: number }) {
+    super({
+      name: 'OpenServiceLoadedDrainExceededError',
+      category: Category.CORE_COMMON,
+      code: 11,
+      message: `Query "${data.serviceId}.${data.name}".loaded(...) did not settle after ${data.iterations} drain iterations. Check for handlers that keep discovering new dependencies after every state change.`,
+    });
+  }
+}
+
+export class OpenServiceDocgenMissingComponentError extends StorybookError {
+  constructor(public data: { id: string }) {
+    super({
+      name: 'OpenServiceDocgenMissingComponentError',
+      category: Category.CORE_COMMON,
+      code: 12,
+      message: `No story or attached docs entry was found for component id "${data.id}". The docgen service can only return docs for components that are present in the story index.`,
+    });
+  }
+}
+
+export class OpenServiceMissingChannelError extends StorybookError {
+  constructor(public data: { serviceId?: ServiceId } = {}) {
+    super({
+      name: 'OpenServiceMissingChannelError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: data.serviceId
+        ? `Cannot register service "${data.serviceId}": the Storybook addons channel is not installed in this runtime.`
+        : 'The Storybook addons channel is not installed in this runtime.',
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceRemoteCommandDisconnectedError',
+      category: Category.CORE_COMMON,
+      code: 14,
+      message: `Service "${data.serviceId}" was unregistered before a remote command resolved.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
     });
   }
 }
@@ -434,6 +569,21 @@ export class StatusTypeIdMismatchError extends StorybookError {
         null,
         2
       )}`,
+    });
+  }
+}
+
+export class NoFreePortError extends StorybookError {
+  constructor(public data: { requestedPort?: number }) {
+    super({
+      name: 'NoFreePortError',
+      category: Category.CORE_SERVER,
+      // Note: 17 is taken by OxcParseError in ../oxc-parser/errors.ts
+      code: 18,
+      message: dedent`
+        Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
+        Your environment appears to block Storybook from listening on network ports.
+        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
     });
   }
 }

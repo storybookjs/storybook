@@ -174,7 +174,9 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
         const { children, parent, name } = entry;
         const [childId] = children;
         if (parent) {
-          const parentEntry = data[parent] as GroupEntry;
+          // Read from the accumulator, not the source data: a sibling hoist may already have
+          // rewritten this parent's children, and starting from the stale copy would undo it.
+          const parentEntry = acc[parent] as GroupEntry;
           const siblings = [...parentEntry.children];
           siblings[siblings.indexOf(entry.id)] = childId;
           acc[parent] = { ...parentEntry, children: siblings };
@@ -182,9 +184,14 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
         acc[childId] = {
           ...(data[childId] as StoryEntry),
           name,
-          parent,
+          // A hoisted story replacing a top-level component legitimately has no parent, even
+          // though the API type declares `parent` as required for stories.
+          parent: parent as StoryEntry['parent'],
           depth: data[childId].depth - 1,
         };
+        // Remove the replaced component: indexToTree resolves rows from parent pointers, so a
+        // surviving entry would render as a phantom row next to the hoisted story.
+        delete acc[entry.id];
         return acc;
       },
       { ...data }

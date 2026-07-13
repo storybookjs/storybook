@@ -93,3 +93,169 @@ describe('isStoryHoistable', () => {
     expect(output).toEqual(false);
   });
 });
+
+describe('collapseSingleStoryComponents', () => {
+  const makeData = () => ({
+    root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['button', 'card'] },
+    button: {
+      type: 'component',
+      id: 'button',
+      name: 'Button',
+      depth: 1,
+      parent: 'root',
+      children: ['button--only'],
+    },
+    'button--only': {
+      type: 'story',
+      subtype: 'story',
+      id: 'button--only',
+      name: 'Button',
+      title: 'Button',
+      depth: 2,
+      parent: 'button',
+      prepared: true,
+      importPath: './x.ts',
+      tags: [],
+      children: [],
+    },
+    card: {
+      type: 'component',
+      id: 'card',
+      name: 'Card',
+      depth: 1,
+      parent: 'root',
+      children: ['card--a', 'card--b'],
+    },
+    'card--a': {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--a',
+      name: 'A',
+      title: 'Card',
+      depth: 2,
+      parent: 'card',
+      prepared: true,
+      importPath: './x.ts',
+      tags: [],
+      children: [],
+    },
+    'card--b': {
+      type: 'story',
+      subtype: 'story',
+      id: 'card--b',
+      name: 'B',
+      title: 'Card',
+      depth: 2,
+      parent: 'card',
+      prepared: true,
+      importPath: './x.ts',
+      tags: [],
+      children: [],
+    },
+  });
+
+  it('replaces a single-story component with its hoisted story', () => {
+    const collapsed = utils.collapseSingleStoryComponents(makeData());
+
+    // The component entry is gone — no phantom row can render from its parent pointer.
+    expect(collapsed.button).toBeUndefined();
+    // The story took the component's place: name, parent and depth.
+    expect(collapsed['button--only']).toMatchObject({
+      name: 'Button',
+      parent: 'root',
+      depth: 1,
+    });
+    // The grandparent's children now point at the story.
+    expect(collapsed.root.children).toEqual(['button--only', 'card']);
+  });
+
+  it('leaves multi-story components untouched', () => {
+    const collapsed = utils.collapseSingleStoryComponents(makeData());
+    expect(collapsed.card).toBeDefined();
+    expect(collapsed['card--a'].parent).toBe('card');
+  });
+
+  it('hoisted stories do not leave phantom rows in indexToTree', () => {
+    const collapsed = utils.collapseSingleStoryComponents(makeData());
+    const tree = utils.indexToTree(collapsed);
+    const flat = [];
+    const walk = (nodes) =>
+      nodes.forEach((node) => {
+        flat.push(node.id);
+        if (node.resolvedChildren) {
+          walk(node.resolvedChildren);
+        }
+      });
+    walk(tree);
+    expect(flat.filter((id) => id.startsWith('button')).length).toBe(1);
+  });
+
+  it('hoists docs-only components', () => {
+    const data = {
+      intro: {
+        type: 'component',
+        id: 'intro',
+        name: 'Intro',
+        depth: 0,
+        children: ['intro--docs'],
+      },
+      'intro--docs': {
+        type: 'docs',
+        id: 'intro--docs',
+        name: 'Docs',
+        title: 'Intro',
+        depth: 1,
+        parent: 'intro',
+        prepared: true,
+        importPath: './x.mdx',
+        tags: [],
+      },
+    };
+    const collapsed = utils.collapseSingleStoryComponents(data);
+    expect(collapsed.intro).toBeUndefined();
+    expect(collapsed['intro--docs']).toMatchObject({ name: 'Intro', depth: 0 });
+    expect(collapsed['intro--docs'].parent).toBeUndefined();
+  });
+});
+
+describe('collapseSingleStoryComponents with sibling hoists', () => {
+  it('hoists two single-story components sharing a parent without losing either', () => {
+    const data = {
+      root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['a', 'b'] },
+      a: { type: 'component', id: 'a', name: 'A', depth: 1, parent: 'root', children: ['a--a'] },
+      'a--a': {
+        type: 'story',
+        subtype: 'story',
+        id: 'a--a',
+        name: 'A',
+        title: 'A',
+        depth: 2,
+        parent: 'a',
+        prepared: true,
+        importPath: './x.ts',
+        tags: [],
+        children: [],
+      },
+      b: { type: 'component', id: 'b', name: 'B', depth: 1, parent: 'root', children: ['b--b'] },
+      'b--b': {
+        type: 'story',
+        subtype: 'story',
+        id: 'b--b',
+        name: 'B',
+        title: 'B',
+        depth: 2,
+        parent: 'b',
+        prepared: true,
+        importPath: './x.ts',
+        tags: [],
+        children: [],
+      },
+    };
+    const collapsed = utils.collapseSingleStoryComponents(data);
+    expect(collapsed.root.children).toEqual(['a--a', 'b--b']);
+    expect(collapsed.a).toBeUndefined();
+    expect(collapsed.b).toBeUndefined();
+    expect(collapsed['a--a'].parent).toBe('root');
+    expect(collapsed['b--b'].parent).toBe('root');
+  });
+});

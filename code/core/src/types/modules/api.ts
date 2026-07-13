@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels.ts';
-import type { State } from '../../manager-api.ts';
+import type { Channel } from '../../channels/index.ts';
+import type { State } from '../../manager-api/index.ts';
 import type { RenderData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { Addon_RenderOptions } from './addons.ts';
@@ -10,6 +10,7 @@ import type {
   API_HashEntry,
   API_IndexHash,
   API_PreparedIndexEntry,
+  API_RefStoryRuntimeData,
 } from './api-stories.ts';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
@@ -17,7 +18,7 @@ import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 
-export type API_ViewMode = OrString<'story' | 'docs' | 'settings'> | undefined;
+export type API_ViewMode = OrString<'story' | 'docs' | 'settings' | 'review'> | undefined;
 
 export type API_RenderOptions = Addon_RenderOptions;
 
@@ -48,9 +49,10 @@ export interface API_Provider<API> {
   getConfig(): {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
+    selectedPanel?: string;
     StoryMapper?: API_StoryMapper;
     [k: string]: any;
-  } & Partial<API_UIOptions>;
+  };
   [key: string]: any;
 }
 
@@ -62,17 +64,6 @@ export type API_IframeRenderer = (
   scale: number,
   queryParams: Record<string, any>
 ) => ReactElement<any, any> | null;
-
-export interface API_UIOptions {
-  name?: string;
-  url?: string;
-  goFullScreen: boolean;
-  showStoriesPanel: boolean;
-  showAddonPanel: boolean;
-  addonPanelInRight: boolean;
-  theme?: ThemeVars;
-  selectedPanel?: string;
-}
 
 export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 
@@ -91,6 +82,8 @@ export interface API_Layout {
     rightPanelWidth: number;
   };
   panelPosition: API_PanelPositions;
+  showNav: boolean;
+  showPanel: boolean;
   showTabs: boolean;
   showToolbar: boolean;
 }
@@ -171,6 +164,12 @@ export interface API_LoadedRefData {
   filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
+  /**
+   * Runtime story enrichment (args, argTypes, parameters, initialArgs, prepared) received from the
+   * ref preview via STORY_PREPARED / DOCS_PREPARED, cached so it survives ref index (re)builds. See
+   * `API_RefStoryRuntimeData`.
+   */
+  storyUpdates?: API_RefStoryRuntimeData;
 }
 
 export interface API_ComposedRef extends API_LoadedRefData {
@@ -202,6 +201,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'previewInitialized'
     | 'sourceUrl'
     | 'internal_index'
+    | 'storyUpdates'
   >
 >;
 

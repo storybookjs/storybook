@@ -10,7 +10,7 @@ import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies } from 'semver';
+import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
@@ -271,12 +271,10 @@ export abstract class JsPackageManager {
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
-    const cachedPackageJson: PackageJsonWithIndent = {
-      ...packageJsonToWrite,
-      dependencies: { ...(packageJsonToWrite.dependencies || {}) },
-      devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
-      peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
-    };
+    const cachedPackageJson = packageJsonToWrite as PackageJsonWithIndent;
+    cachedPackageJson.dependencies = { ...(packageJsonToWrite.dependencies || {}) };
+    cachedPackageJson.devDependencies = { ...(packageJsonToWrite.devDependencies || {}) };
+    cachedPackageJson.peerDependencies = { ...(packageJsonToWrite.peerDependencies || {}) };
     cachedPackageJson[indentSymbol] = indent;
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
@@ -296,6 +294,34 @@ export abstract class JsPackageManager {
 
   isDependencyInstalled(dependency: string) {
     return Object.keys(this.getAllDependencies()).includes(dependency);
+  }
+
+  /**
+   * Resolve the effective version/range of a declared dependency: the installed version if present,
+   * otherwise the declared semver range. Returns null when the package is not declared or only a
+   * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
+   */
+  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
+    }
+    const declared = this.getAllDependencies()[packageName];
+    return declared && validRange(declared) ? declared : null;
+  }
+
+  /**
+   * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
+   * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
+   * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
+   * referenced as `catalog:` instead. Returns the install specifiers to write to package.json.
+   */
+  public applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    _anchorPackage: string
+  ): string[] {
+    return packages.map((pkg) => `${pkg}@${version}`);
   }
 
   /**
@@ -545,6 +571,7 @@ export abstract class JsPackageManager {
       JsPackageManager.latestVersionCache.set(cacheKey, result);
       return result;
     } catch (e) {
+      logger.debug(`Failed to fetch the latest version for ${packageName}: ${String(e)}`);
       JsPackageManager.latestVersionCache.set(cacheKey, null);
       return null;
     }
@@ -612,16 +639,11 @@ export abstract class JsPackageManager {
   public addScripts(scripts: Record<string, string>) {
     const { operationDir, packageJson } = this.#getPrimaryPackageJson();
 
-    this.writePackageJson(
-      {
-        ...packageJson,
-        scripts: {
-          ...packageJson.scripts,
-          ...scripts,
-        },
-      },
-      operationDir
-    );
+    packageJson.scripts = {
+      ...packageJson.scripts,
+      ...scripts,
+    };
+    this.writePackageJson(packageJson, operationDir);
   }
 
   public addPackageResolutions(versions: Record<string, string>) {

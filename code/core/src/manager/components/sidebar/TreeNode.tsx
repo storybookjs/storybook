@@ -1,6 +1,6 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 
-import type { StatusValue } from 'storybook/internal/types';
+import { Addon_TypesEnum, type StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
@@ -8,37 +8,60 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getStatus } from '../../utils/status.tsx';
+import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { type TreeEntry, createId } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { ContextMenu, hasContextMenu } from './ContextMenu.tsx';
+import { ContextMenu, generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
+import { CollapseIcon } from './CollapseIcon.tsx';
+import { RowUiContext } from './RowUiContext.tsx';
+import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
-import { StatusContext } from './StatusContext.tsx';
-import { CollapseIcon } from './CollapseIcon.tsx';
 
-// FIXME/TODO: we must find how to get PopoverProvider to autofocus the first menu item on menu open through RAC APIs.
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
 // FIXME/TODO: fix ref stories not loading at all
+
+/** Height of a tree row in px. Rows are single-line (labels ellipsize), so this is constant. */
+export const TREE_ROW_HEIGHT = 28;
+
+/** Gap above a top-level section that follows another section's subtree, carried as row padding. */
+export const SECTION_GAP = 14;
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
-}>(({ $level, theme, $textColor }) => ({
+  $hasSectionGap: boolean;
+}>(({ $level, theme, $textColor, $hasSectionGap }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
   background: 'transparent',
-  minHeight: 28,
-  borderRadius: 4,
+  minHeight: TREE_ROW_HEIGHT,
   overflow: 'hidden',
   cursor: 'pointer',
 
   // Indent based on tree level.
   paddingInlineStart: `calc(${$level} * 20px)`,
+
+  // Inter-section spacing, carried by the section-start row itself: the tree is virtualized
+  // (rows are absolutely positioned), so sibling margins cannot create the gap.
+  paddingBlockStart: $hasSectionGap ? SECTION_GAP : 0,
+
+  // Hover/selection/focus decorations paint on this inner surface, which excludes the
+  // section-gap padding — painting them on the row itself would bleed into the gap.
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: $hasSectionGap ? SECTION_GAP : 0,
+    borderRadius: 4,
+    pointerEvents: 'none',
+  },
 
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
@@ -47,28 +70,34 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Hover colors: data-focused is set by RAC on hovered items (it mixes hover/focus states).
   '&:hover, &[data-focused="true"]': {
-    background: theme.background.hoverable,
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
     '--trace-color': transparentize(0.52, theme.color.secondary),
     svg: { color: 'currentColor' },
   },
+  '&:hover::before, &[data-focused="true"]::before': {
+    background: theme.background.hoverable,
+  },
 
   // Selected colors.
   '&[data-selected="true"]': {
     color: theme.color.lightest,
-    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
     svg: { color: theme.color.lightest },
   },
+  '&[data-selected="true"]::before': {
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+  },
 
-  // Focus colors.
+  // Focus colors. The ring is inset so neighboring rows and the scroller edges never crop it.
   '&:focus-visible': {
     outline: 'none',
-    boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
     '--trace-color': transparentize(0.88, theme.color.secondary),
     anchorName: '--focused-treenode',
     zIndex: 1,
+  },
+  '&:focus-visible::before': {
+    boxShadow: `inset 0 0 0 2px ${theme.color.secondary}, inset 0 0 0 4px ${theme.background.app}`,
   },
 
   /* ContextMenu and StatusIcon visibility.
@@ -150,7 +179,7 @@ const StyledTraceLine = styled.span<{ $offset: number; $forceVisible?: boolean }
   })
 );
 
-const Traces = ({
+export const Traces = ({
   level,
   isAlongsideSelected,
 }: {
@@ -203,25 +232,19 @@ export interface TreeNodeProps {
   item: TreeEntry;
   /** refId of the composed Storybook, if the item isn't from the host instance. */
   refId: string;
-  /** Whether this node has no parent and isn't a natural root. */
-  isOrphan: boolean;
-  /** Whether this node is currently selected. */
-  isSelected: boolean;
-  /** Whether this node is a direct sibling to the selected node. */
-  isAlongsideSelected: boolean;
   /** Whether this node is currently expanded. */
   isExpanded: boolean;
+  /** Whether this row starts a new top-level section and carries the inter-section gap. */
+  hasSectionGap?: boolean;
   /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
   api: API;
-  /** Whether this item's context menu is currently open. */
-  isContextMenuOpen: boolean;
-  /** How the context menu was opened — 'pointer' (click) or 'keyboard' (global shortcut). */
-  contextMenuEntryMethod?: ContextMenuEntryMethod;
   /** Open the context menu for a given item ID with the specified entry method. */
   openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
   /** Close the currently-open context menu. */
   closeContextMenu?: () => void;
+  /** Whether any test provider addon is registered (enables the menu on group rows). */
+  hasTestProviders?: boolean;
   children?: React.ReactNode;
 }
 
@@ -238,25 +261,38 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:new': 'Has new stories',
   'status-value:modified': 'Has modified stories',
   'status-value:affected': 'Affected by other changes', // TODO/FIXME: talk to MA about using better copy here.
+  'status-value:reviewing': 'Included in the active review',
 };
 
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
-  isAlongsideSelected,
   isExpanded,
-  isSelected,
+  hasSectionGap = false,
   api,
   onSelectStoryId,
-  isContextMenuOpen,
-  contextMenuEntryMethod,
   openContextMenu,
   closeContextMenu,
+  hasTestProviders = false,
   children,
 }) {
   const theme = useTheme();
   const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
-  const { groupDualStatus } = useContext(StatusContext);
+  const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
+
+  // Selection accents and context-menu state come from a subscription store rather than props:
+  // as react-aria collection dependencies they re-rendered every row in the tree on each
+  // selection change. Only rows whose derived value changes re-render.
+  const rowUi = useContext(RowUiContext);
+  const isAlongsideSelected = useSyncExternalStore(
+    rowUi.subscribe,
+    () => item.type !== 'root' && rowUi.getState().selectedParentId === item.parent
+  );
+  const contextMenuEntryMethod = useSyncExternalStore(rowUi.subscribe, () => {
+    const menu = rowUi.getState().contextMenu;
+    return menu?.itemId === item.id ? menu.entryMethod : undefined;
+  });
+  const isContextMenuOpen = contextMenuEntryMethod !== undefined;
   const { isMobile } = useLayout();
   const location = isMobile ? 'bottom-bar' : 'sidebar';
 
@@ -294,6 +330,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     const changeStatus = groupDualStatus[item.id].change;
     const testStatus = groupDualStatus[item.id].test;
 
+    // 'affected' is never surfaced as an icon, and 'modified' only while its filter is active.
+    const showChangeStatus = shouldShowChangeStatus(changeStatus.value, isModifiedFilterActive);
     const { icon: changeStatusIcon, textColor: changeTextColor } = getStatus(
       theme,
       changeStatus.value
@@ -301,16 +339,32 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     const { icon: testStatusIcon, textColor: testTextColor } = getStatus(theme, testStatus.value);
 
     return {
-      changeStatus: changeStatus.value,
-      changeStatusIcon,
+      changeStatus: showChangeStatus ? changeStatus.value : 'status-value:unknown',
+      changeStatusIcon: showChangeStatus ? changeStatusIcon : null,
       testStatus: testStatus.value,
       testStatusIcon,
-      statusTextColor: testTextColor ?? changeTextColor,
+      statusTextColor: testTextColor ?? (showChangeStatus ? changeTextColor : null),
     };
-  }, [groupDualStatus, item.id, theme]);
+  }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
 
   const isBranch = guardHasChildren(item);
-  const renderContextMenu = useMemo(() => hasContextMenu(item), [item]);
+
+  // Whether a registered test provider actually contributes menu content for THIS item —
+  // gates the menu on group/component rows so the button never opens an empty popover.
+  const providerMenuAvailable = useMemo(() => {
+    if (!hasTestProviders || item.type === 'root') {
+      return false;
+    }
+    return (
+      generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), item)
+        .length > 0
+    );
+  }, [hasTestProviders, api, item]);
+
+  const renderContextMenu = useMemo(
+    () => hasContextMenu(item, providerMenuAvailable),
+    [item, providerMenuAvailable]
+  );
   const shortcutKeys = api.getShortcutKeys();
 
   // Compute final aria-label including test status and keyboard shortcut discovery.
@@ -325,7 +379,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       label += `. ${StatusLabelsInAriaLabel[changeStatus]}`;
     }
 
-    if (renderContextMenu) {
+    // The context-menu shortcut may be absent, e.g. when shortcuts are disabled.
+    if (renderContextMenu && shortcutKeys?.contextMenu) {
       const shortcut = shortcutToHumanString(shortcutKeys.contextMenu);
       label += `. Press ${shortcut} for more actions`;
     }
@@ -355,6 +410,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
+      $hasSectionGap={hasSectionGap}
       textValue={item.name}
       aria-label={ariaLabel}
       id={id}
@@ -377,14 +433,23 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                   onSelectStoryId={onSelectStoryId}
                   api={api}
                   entryMethod={contextMenuEntryMethod}
+                  hasTestProviders={providerMenuAvailable}
                 />
               }
             </MenuTriggerContainer>
           )}
           {(changeStatusIcon || testStatusIcon) && (
             <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
-              {changeStatusIcon}
-              {testStatusIcon}
+              {changeStatusIcon && (
+                <span style={{ display: 'contents' }} data-testid="tree-change-status-button">
+                  {changeStatusIcon}
+                </span>
+              )}
+              {testStatusIcon && (
+                <span style={{ display: 'contents' }} data-testid="tree-test-status-button">
+                  {testStatusIcon}
+                </span>
+              )}
             </StatusIconContainer>
           )}
         </StyledContent>

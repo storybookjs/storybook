@@ -194,10 +194,8 @@ export const Optimized = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const NoEntries = () => (
@@ -206,10 +204,8 @@ export const NoEntries = () => (
     hasEntries={false}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const IsEmpty = () => (
@@ -218,10 +214,8 @@ export const IsEmpty = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedUnknown = () => (
@@ -230,10 +224,8 @@ export const StartInjectedUnknown = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedLoading = () => (
@@ -242,10 +234,8 @@ export const StartInjectedLoading = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedReady = () => (
@@ -254,10 +244,8 @@ export const StartInjectedReady = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Versions = () => (
@@ -266,10 +254,8 @@ export const Versions = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const VersionsMissingCurrent = () => (
@@ -278,10 +264,8 @@ export const VersionsMissingCurrent = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Errored = () => (
@@ -290,10 +274,8 @@ export const Errored = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const ErroredMobile = () => (
@@ -302,10 +284,8 @@ export const ErroredMobile = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
@@ -349,10 +329,8 @@ export const Auth = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Long = () => (
@@ -361,10 +339,8 @@ export const Long = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 
@@ -374,9 +350,7 @@ export const WithSourceCode = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
-    isDevelopment
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );

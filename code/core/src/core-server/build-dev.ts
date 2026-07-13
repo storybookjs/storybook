@@ -18,7 +18,7 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
@@ -35,6 +35,11 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
+import {
+  getMcpMetadataFromMainConfig,
+  type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
 import { stripCommentsAndStrings } from './utils/strip-comments-and-strings.ts';
@@ -290,6 +295,8 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+
+  await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
@@ -302,6 +309,19 @@ export async function buildDevStandalone(
   const { managerResult, previewResult } = await buildOrThrow(async () =>
     storybookDevServer(fullOptions, server)
   );
+
+  const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
+
+  await writeStorybookRuntimeInstanceRecord({
+    address: localAddress,
+    configDir: options.configDir,
+    mcp,
+    port,
+    storybookVersion,
+  }).catch((error: unknown) => {
+    logger.warn('Storybook failed to write its runtime instance registry record.');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+  });
 
   const previewTotalTime = previewResult?.totalTime;
   const managerTotalTime = managerResult?.totalTime;

@@ -136,6 +136,12 @@ interface API_AddonShortcut {
   defaultShortcut: API_KeyCollection;
   actionName: string;
   showInMenu?: boolean;
+  /**
+   * When provided and returning false, the shortcut does not match key events (they propagate
+   * to the rest of the UI, e.g. react-aria keyboard navigation). Use this for modal shortcuts
+   * like plain arrow keys that must only apply while the addon's mode is active.
+   */
+  isActive?: () => boolean;
   action: (...args: any[]) => any;
 }
 type API_AddonShortcuts = Record<string, API_AddonShortcut>;
@@ -255,9 +261,19 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
-      const matchedFeature = actions.find((feature: API_Action) =>
-        shortcutMatchesShortcut(shortcut!, shortcuts[feature])
-      );
+      const matchedFeature = actions.find((feature: API_Action) => {
+        if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
+          return false;
+        }
+        // Addon shortcuts can be scoped to a mode (e.g. review navigation on bare arrow
+        // keys); when inactive they must not swallow keys others rely on. Bindings persisted
+        // from a previous session whose addon didn't re-register are skipped the same way.
+        const addonShortcut = addonsShortcuts[feature];
+        if (feature in addonsShortcuts || !(feature in defaultShortcuts)) {
+          return !!addonShortcut && (addonShortcut.isActive?.() ?? true);
+        }
+        return true;
+      });
       if (matchedFeature) {
         if (removedFeatures.includes(matchedFeature)) {
           return;
@@ -269,13 +285,20 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // warning: event might not have a full prototype chain because it may originate from the channel
     handleShortcutFeature(feature, event) {
+      const state = store.getState();
       const {
         ui: { enableShortcuts },
         storyId,
         refId,
         viewMode,
-      } = store.getState();
+      } = state;
       if (!enableShortcuts) {
+        return;
+      }
+
+      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+      const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
+      if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
         return;
       }
 

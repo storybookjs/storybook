@@ -1,30 +1,33 @@
 import React, { useMemo, useRef, useState } from 'react';
 
-import { Button, ScrollArea } from 'storybook/internal/components';
-import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import { Button } from 'storybook/internal/components';
+import type {
+  API_LoadedRefData,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
 
-import { type State, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, type State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
+import { focusableUIElements, isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ChecklistWidget } from './ChecklistWidget.tsx';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal.tsx';
 import { Explorer } from './Explorer.tsx';
+import { Filter } from './Filter.tsx';
 import type { HeadingProps } from './Heading.tsx';
 import { Heading } from './Heading.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
+import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
-import { Filter } from './Filter.tsx';
-import ReviewChangesButton from './ReviewChangesButton.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -53,6 +56,9 @@ const Stack = styled.div({
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
+  // Fill the sidebar so the virtualized tree (which scrolls itself) gets a bounded height.
+  flex: '1 1 auto',
+  minHeight: 0,
 });
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
@@ -138,8 +144,15 @@ export const Sidebar = React.memo(function Sidebar({
     headerRef
   );
 
-  const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
+  const isPagesShown = isPagesViewMode(viewMode);
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
+  const activeReviewStoryCount = useActiveReviewStoryCount();
+  const showReviewWidget = activeReviewStoryCount > 0;
+  const showOnboardingChecklist =
+    !isLoading &&
+    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    global.FEATURES?.sidebarOnboardingChecklist !== false &&
+    !showReviewWidget;
 
   return (
     <Container
@@ -152,73 +165,72 @@ export const Sidebar = React.memo(function Sidebar({
         Storybook
       </h1>
       <IconSymbols />
-      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
-        <Stack>
-          <div>
-            <Heading
-              className="sidebar-header"
-              menuHighlighted={menuHighlighted}
-              menu={menu}
-              skipLinkHref={skipLinkHref}
-              isLoading={isLoading}
-              onMenuClick={onMenuClick}
-            />
-            {!isLoading &&
-              global.CONFIG_TYPE === 'DEVELOPMENT' &&
-              global.FEATURES?.sidebarOnboardingChecklist !== false && <ChecklistWidget />}
-          </div>
-          <Search
-            dataset={dataset}
-            enableShortcuts={enableShortcuts}
-            searchBarContent={
-              showCreateStoryButton && (
-                <>
-                  <CreateNewStoryButton
-                    isMobile={isMobile}
-                    onClick={() => {
-                      setIsFileSearchModalOpen(true);
-                    }}
-                    ariaLabel="Create a new story"
-                    variant="outline"
-                    padding="small"
-                  >
-                    <PlusIcon />
-                  </CreateNewStoryButton>
-                  <CreateNewStoryFileModal
-                    open={isFileSearchModalOpen}
-                    onOpenChange={setIsFileSearchModalOpen}
-                  />
-                </>
-              )
-            }
-            searchFieldContent={<Filter />}
-            belowSearchContent={<ReviewChangesButton />}
-            {...lastViewedProps}
-          >
-            {({
-              query,
-              results,
-              isNavVisible,
-              isNavReachable,
-              isSearchResultRendered,
-              closeMenu,
-              getMenuProps,
-              getItemProps,
-              highlightedIndex,
-            }) => (
+      <Stack>
+        <div>
+          <Heading
+            className="sidebar-header"
+            menuHighlighted={menuHighlighted}
+            menu={menu}
+            skipLinkHref={skipLinkHref}
+            isLoading={isLoading}
+            onMenuClick={onMenuClick}
+          />
+          {!showOnboardingChecklist ? null : <ChecklistWidget />}
+        </div>
+        {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+        <Search
+          dataset={dataset}
+          enableShortcuts={enableShortcuts}
+          searchBarContent={
+            showCreateStoryButton && (
               <>
-                {
-                  <Explorer
-                    api={api}
-                    dataset={dataset}
-                    selected={selected}
-                    isLoading={isLoading}
-                    isBrowsing={isNavVisible}
-                    isHidden={!isNavReachable}
-                    hasEntries={hasEntries}
-                  />
-                }
-                {isSearchResultRendered && (
+                <CreateNewStoryButton
+                  isMobile={isMobile}
+                  onClick={() => {
+                    setIsFileSearchModalOpen(true);
+                  }}
+                  ariaLabel="Create a new story"
+                  variant="outline"
+                  padding="small"
+                >
+                  <PlusIcon />
+                </CreateNewStoryButton>
+                <CreateNewStoryFileModal
+                  open={isFileSearchModalOpen}
+                  onOpenChange={setIsFileSearchModalOpen}
+                />
+              </>
+            )
+          }
+          searchFieldContent={<Filter />}
+          {...lastViewedProps}
+        >
+          {({
+            query,
+            results,
+            isNavVisible,
+            isNavReachable,
+            isSearchResultRendered,
+            closeMenu,
+            getMenuProps,
+            getItemProps,
+            highlightedIndex,
+          }) => (
+            <>
+              {
+                <Explorer
+                  api={api}
+                  dataset={dataset}
+                  selected={selected}
+                  isLoading={isLoading}
+                  isBrowsing={isNavVisible}
+                  isHidden={!isNavReachable}
+                  hasEntries={hasEntries}
+                />
+              }
+              {isSearchResultRendered && (
+                // Scrolls on its own now that the sidebar no longer has an outer scroller.
+                <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
                   <SearchResults
                     query={query}
                     results={results}
@@ -230,13 +242,13 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     clearLastViewed={lastViewedProps.clearLastViewed}
                   />
-                )}
-              </>
-            )}
-          </Search>
-        </Stack>
-        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
-      </ScrollArea>
+                </div>
+              )}
+            </>
+          )}
+        </Search>
+      </Stack>
+      {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
     </Container>
   );
 });

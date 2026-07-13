@@ -40,7 +40,7 @@ export const TypeIconWithSymbol = React.memo<{
   item: {
     type: API_HashEntry['type'];
     subtype?: API_StoryEntry['subtype'] | API_TestEntry['subtype'];
-  }
+  };
 }>(function TypeIconWithSymbol({ item }) {
   if (item.type === 'root') {
     return null;

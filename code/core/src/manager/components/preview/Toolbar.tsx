@@ -1,20 +1,20 @@
 import React, { useEffect, useRef, type FC } from 'react';
 
 import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
-import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
+import { Addon_TypesEnum, type Addon_BaseType } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
 import type { TabListState } from '@react-stately/tabs';
 import {
-  type API,
-  type Combo,
   Consumer,
-  type LeafEntry,
-  type State,
   addons,
   merge,
   types,
+  type API,
+  type Combo,
+  type LeafEntry,
+  type State,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -31,6 +31,7 @@ const fullScreenMapper = ({ api, state }: Combo) => {
     isFullscreen: api.getIsFullscreen(),
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
+    isNavUnavailable: api.getNavAvailability() === 'unavailable',
   };
 };
 
@@ -40,11 +41,11 @@ const FullscreenTool: FC<{
   hasPanel: boolean;
   singleStory?: boolean;
 }> = ({ toggle, isFullscreen, hasPanel, singleStory }) => {
-  if (singleStory && !hasPanel) {
-    return null;
-  }
-
   useEffect(() => {
+    // The tool is hidden in single-story mode without panels; don't hijack Escape there.
+    if (singleStory && !hasPanel) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
         toggle();
@@ -57,7 +58,11 @@ const FullscreenTool: FC<{
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullscreen, toggle]);
+  }, [isFullscreen, toggle, singleStory, hasPanel]);
+
+  if (singleStory && !hasPanel) {
+    return null;
+  }
 
   return (
     <Button
@@ -88,14 +93,16 @@ export const fullScreenTool: Addon_BaseType = {
 
     return (
       <Consumer filter={fullScreenMapper}>
-        {({ toggle, isFullscreen, hasPanel, singleStory }) => (
-          <FullscreenTool
-            toggle={toggle}
-            isFullscreen={isFullscreen}
-            hasPanel={hasPanel}
-            singleStory={singleStory}
-          />
-        )}
+        {({ toggle, isFullscreen, hasPanel, singleStory, isNavUnavailable }) =>
+          !isNavUnavailable && (
+            <FullscreenTool
+              toggle={toggle}
+              isFullscreen={isFullscreen}
+              hasPanel={hasPanel}
+              singleStory={singleStory}
+            />
+          )
+        }
       </Consumer>
     );
   },

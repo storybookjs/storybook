@@ -23,6 +23,10 @@ export const EXISTING_RESOLUTIONS = new Set([
   'playwright',
   'playwright-core',
   'react',
-  'type-fest',
+  'react-aria@npm:3.48.0',
+  'react-aria@npm:^3.48.0',
+  'rxjs',
+  'react-joyride/type-fest',
   'typescript',
+  'valibot',
 ]);

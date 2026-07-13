@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "10.4.0-alpha.19",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
@@ -43,6 +43,7 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
+    "@typescript-eslint/types": "^8.48.0",
     "@typescript-eslint/utils": "^8.48.0"
   },
   "devDependencies": {

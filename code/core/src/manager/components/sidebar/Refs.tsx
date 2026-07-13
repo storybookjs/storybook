@@ -24,6 +24,8 @@ export interface RefProps {
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
+  // The main tree fills the remaining sidebar height and scrolls itself (virtualized).
+  ...(isMain && { flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }),
   position: 'relative',
   marginTop: isMain ? undefined : 0,
 }));
@@ -169,7 +171,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           <RefIndicator {...props} state={state} ref={indicatorRef} />
         </RefHead>
       )}
-      {isExpanded && index && (
+      {isExpanded && (
         <Wrapper data-title={title} isMain={isMain}>
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
@@ -183,9 +185,10 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
               activeFilterCount={activeFilterCount}
             />
           )}
-          {state === 'ready' && (
+          {state === 'ready' && index && (
             <Tree
               allStatuses={allStatuses}
+              includedStatusFilters={storybookState.includedStatusFilters}
               isBrowsing={isBrowsing}
               isMain={isMain}
               refId={refId}

@@ -1,11 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { fn } from 'storybook/test';
 
 import { createFileRoute } from '../export-mocks/react-router.ts';
 import { duplicateRouteTree } from './duplicate-tree.ts';
@@ -158,8 +157,8 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
   });
 
   it('applies routeOverrides to cloned pathless routes by original id', async () => {
-    const original = fn();
-    const override = fn();
+    const original = vi.fn();
+    const override = vi.fn();
     const { root } = buildAuthedTree({ beforeLoad: original });
 
     const { root: cloned } = duplicateRouteTree(root as any, {

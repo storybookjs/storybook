@@ -63,13 +63,14 @@ Internal tests and implementation code may import from the individual modules di
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
-- [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction, in-flight load registry, drain logic, and subscriptions
+- [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
+- [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
 - [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
-- [service-sync.ts](./service-sync.ts): last-write-wins ordering, the `deepReconcile` structural merge, and the per-service snapshot reconciler
+- [service-sync.ts](./service-sync.ts): last-write-wins ordering, `applyStatePatch` structural state application, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
@@ -93,10 +94,10 @@ Use `defineService()` to preserve the concrete query and command map types.
 
 A query is:
 
-- **synchronous at call time**: `service.queries.foo(input)` returns the validated handler result immediately
+- **synchronously readable**: `service.queries.foo.get(input)` returns the validated handler result immediately and **never** fires the query's `load`. It is a pure read of current state.
 - **read-only**: the handler receives `{ state, queries }` and cannot mutate state or call commands
-- **load-coupled**: calling a query also fires its optional `load` hook in the background, deduped per `(service, query, input)` while one is already in flight
-- **subscribable** through `query.subscribe(input, callback)`
+- **load-coupled only through `loaded()` / `subscribe()`**: the optional `load` hook fires when you `await query.loaded(input)` or hold an active `query.subscribe(input, ...)` — not on a bare `.get()` read. Inside a `load` body or a `.loaded()` discovery pass, a `.get()` read of a dependency *does* warm that dependency's load (see [Load](#load)), deduped per `(service, query, input)` while one is in flight.
+- **subscribable** through `query.subscribe(input, callback)`, where the callback receives a [`QueryState`](#query-state) (the current `data` plus its `load` lifecycle), not a bare value. The first emission is **synchronous** — the callback is invoked once before `subscribe` returns.
 - **awaitable in full** through `query.loaded(input)`, which returns a promise that settles once the load and every transitively touched dependency have completed
 - **statically buildable** when the query declares `staticPath` and `staticInputs`
 
@@ -124,7 +125,7 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 - **`load` must be idempotent.** Re-running it with the same dependencies must produce the same state. Any genuinely one-shot side effect belongs in a command invoked conditionally, never in `load` itself.
 - **Read dependencies synchronously, up front.** Only reads in the load's synchronous prefix (before the first `await`) are tracked. Read the values you depend on first, then do async work — the same idiom every signal-based resource uses.
 - **Loads that read no external signal fire exactly once** (the common case: `await ctx.self.commands.x(input)`), so existing loads are unaffected.
-- Direct `query()` / `.loaded()` calls are **not** reactive — they keep one-shot-per-call semantics. Reactivity is scoped to subscriptions and is torn down when the last subscriber unsubscribes.
+- A bare `query.get()` read never fires a load and is never reactive. A `.loaded()` call fires loads but keeps one-shot-per-call semantics. Reactivity is scoped to subscriptions and is torn down when the last subscriber unsubscribes.
 
 The runtime guards re-firing: a superseded run (its dependencies changed again before it finished) cannot overwrite a newer run's state, and changes batched together produce a single re-load.
 
@@ -135,6 +136,34 @@ The runtime guards re-firing: a superseded run (its dependencies changed again b
 - **Clear contract.** A query says "read state". A command says "do work that produces state". A bloated load blurs the line and makes the service harder to reason about.
 
 A good rule of thumb: if `load` does anything more than `await ctx.self.commands.someCommand(input)`, ask whether that "more" belongs in the command instead.
+
+### Query state
+
+Subscribers (and the `useServiceQuery` hook) receive a `QueryState<TData>`, not a bare value. It pairs the query's current `data` with its `load` lifecycle, so a UI can show loading/error states that the synchronous value alone cannot express. It is inspired by TanStack Query's status model, translated into the `load` vocabulary (this system's slow step is any `load` — a computation, a command, a remote call — not specifically a network "fetch").
+
+```ts
+type QueryState<TData> = {
+  data: TData | undefined; // last successful value; undefined before the first success
+  error: Error | undefined; // set when status === 'error'
+  status: 'pending' | 'error' | 'success'; // the primary load lifecycle
+  loadStatus: 'loading' | 'idle'; // whether a load is in flight (foreground OR background)
+  isPending: boolean; // status === 'pending'
+  isSuccess: boolean; // status === 'success'
+  isError: boolean; // status === 'error'
+  isLoading: boolean; // loadStatus === 'loading' (ANY load in flight)
+  isInitialLoading: boolean; // isPending && isLoading (first-ever load, no data yet)
+  isRefreshing: boolean; // isLoading && !isPending (background re-load over existing data)
+};
+```
+
+Two independent axes:
+
+- **`status`** tracks the `load` lifecycle. A query with no `load` is born `success` (nothing to load); a query with a `load` starts `pending` and flips to `success` once the load settles, or `error` if it rejects.
+- **`loadStatus`** tracks whether a load is currently in flight, so `pending` (first load, no data yet → `isInitialLoading`) is distinguishable from a background re-load over existing data (`success` + `loading` → `isRefreshing`). The two-axis split mirrors TanStack's `status` / `fetchStatus`.
+
+`data` and `status` are independent: `data` always reflects the synchronous handler result (the last successful value), and is retained across an `error` so the last good value stays visible. Three things map to `status: 'error'` (each keeping the last `data`): input-validation failure, a synchronous handler / output-validation throw, and a `load` rejection — surfacing a debuggable error state instead of a silently dead subscription.
+
+`status` is tracked **per subscription** (it rides alongside the existing per-subscription reactive-load effect and epoch gating); subscription deduplication is an orthogonal optimization left for later.
 
 ### Command
 
@@ -165,6 +194,14 @@ Services and operations can be hidden from discovery APIs without disabling them
 `internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
 be overridden at `registerService()` time. Static snapshot building is unaffected.
 
+### Query naming
+
+Public query names are nouns or noun phrases (`docgen`, `status`, `recordFields`) without a `get`
+prefix — callers already use `.get()`, `.loaded()`, and `.subscribe()` on the query handle.
+
+`core/module-graph` keeps deprecated `getStatus` and `getGraphRevision` aliases that delegate to
+`status` and `graphRevision` for backwards compatibility with external consumers.
+
 ### Internal operation naming
 
 Internal queries and commands must use a `_` prefix (for example `_debugState`). `defineService()`
@@ -191,12 +228,14 @@ handler: (input, ctx) => {
     'internal-fixture/mutable-record-lookup'
   );
 
-  const record = lookup.queries.getRecordFields({ entryId: input.entryId });
+  const record = lookup.queries.recordFields.get({ entryId: input.entryId });
   // record is fully typed — do not cast individual query results
 
   return record?.marker === 'match';
 };
 ```
+
+`getService` is a cheap synchronous registry lookup and always returns the same instance for a given id for the lifetime of the registration. Do not wrap it in `useMemo` — call it directly in render (or in a handler/effect when that is clearer). Memoize inputs and selectors passed to `useServiceQuery` / `useQuerySubscription` instead; those are what drive re-subscription.
 
 Guidelines:
 
@@ -206,13 +245,42 @@ Guidelines:
   surface is the correct fallback
 - Do **not** cast individual query or command results; type the service handle once instead
 - Prefer `await service.queries.foo.loaded(input)` for cross-service reads in operational code. A
-  direct `service.queries.foo(input)` read returns the current state immediately and only starts
-  that query's load in the background, so it can miss data that arrives during the load. Use the
+  direct `service.queries.foo.get(input)` read returns the current state immediately and does **not**
+  start that query's load, so it can return stale or empty data if the load has never run. Use the
   direct sync form only when "current best effort" is the intended behavior, or when you are testing
   the synchronous query contract itself.
 
 The exported `ServiceInstanceOf<typeof sourceDef>` alias is available for named handle types when
 a service is referenced from many call sites.
+
+### Core service typing
+
+Core services under `services/` are typed at the module-level `getService` entrypoints
+(`storybook/manager-api`, `storybook/preview-api`, and the server import). Known ids such as
+`getService('core/docgen')` resolve to the correct instance type without an explicit generic;
+unknown ids still fall back to `RuntimeService`, and addon services can keep using
+`getService<MyService>('my-addon/service')`.
+
+Each core service registers in a runtime-specific file next to its definition:
+
+- `services/<name>/manager.tsx` — manager registration
+- `services/<name>/preview.ts` — preview registration
+- `services/<name>/server.ts` — dev-server registration
+
+When you add a new core service or register an existing one in a new runtime, you must:
+
+1. Add or update the registrar file for that runtime (`manager.tsx`, `preview.ts`, or `server.ts`).
+2. Add the service definition to the matching list in `core-service-types.ts`
+   (`managerCoreServiceDefs`, `previewCoreServiceDefs`, or `serverCoreServiceDefs`).
+
+Those def lists are the single source of truth: the `getService` overload types
+(`ManagerCoreServices`, `PreviewCoreServices`, `ServerCoreServices`) derive their ids from each
+definition, so there is no separate id list to keep in sync. A unit test in
+`core-service-types.test.ts` compares the lists against the registrar-file convention (every listed
+service has a matching `services/<name>/<runtime>.{ts,tsx}` file, and vice versa) and fails with
+actionable guidance when they drift apart. The test guards the convention, not the actual call site,
+so still confirm the registrar is invoked (e.g. from `common-preset.ts` on the server). Handler-context
+`ctx.getService(...)` is unchanged and still requires an explicit generic when full typing is needed.
 
 ### Validation
 
@@ -226,7 +294,7 @@ Both must be Standard Schema compatible.
 The runtime validates:
 
 - caller input before a handler runs
-- handler output when a value is produced for a consumer — a direct `query()` call, `query.loaded()`,
+- handler output when a value is produced for a consumer — a direct `query.get()` read, `query.loaded()`,
   the static build, and a subscription emission
 
 Output validation reads the whole value, so it is kept out of the part of a subscription that
@@ -279,16 +347,16 @@ When any runtime registers a service definition:
 3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
 4. It builds a writable `commandSelf` reference around that state.
 5. It builds commands that validate input, run handlers, and validate output.
-6. It builds queries that validate input synchronously, fire any pending `load` in the background (deduped while in flight), run the handler synchronously, and validate the output.
+6. It builds queries whose `.get()` validates input synchronously, runs the handler synchronously, and validates the output — without firing `load`. Loads fire only through `.loaded()`, an active `subscribe()`, or a dependency `.get()` read made from within a load/`.loaded()` context (deduped while in flight).
 7. [service-registry.ts](./service-registry.ts) wraps the commands to broadcast post-mutation snapshots, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
 
 ## In-flight Load Registry
 
-`service-runtime.ts` owns one process-global in-flight load registry keyed by `${serviceId}::${queryName}::${stableHash(parsedInput)}`. The hash uses stable JSON (sorted keys) computed from the post-validation parsed input, so inputs are expected to be JSON-safe. Two concurrent callers for the same key share one load; once it settles, the entry is removed so future calls can refire it. There is no caller-facing invalidation API.
+`query-runtime.ts` owns one process-global in-flight load registry keyed by `${serviceId}::${queryName}::${stableHash(parsedInput)}`. The hash uses stable JSON (sorted keys) computed from the post-validation parsed input, so inputs are expected to be JSON-safe. Two concurrent callers for the same key share one load; once it settles, the entry is removed so future calls can refire it. There is no caller-facing invalidation API.
 
 ## `.loaded()` Drain
 
-`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler transitively reads are fully populated. Implementation lives in `runLoaded` in [service-runtime.ts](./service-runtime.ts).
+`query.loaded(input)` returns a promise that settles only when the load body and every dependency the handler transitively reads are fully populated. Implementation lives in `runLoaded` in [query-runtime.ts](./query-runtime.ts).
 
 ### Algorithm
 
@@ -313,16 +381,18 @@ If iteration count exceeds 32, throw `OpenServiceLoadedDrainExceededError`. This
 |------|--------------|
 | Setup | `session = { ancestorChain: {barKey}, collector: ∅, settledKeys: ∅ }`. `bar.load` is undefined → no own load fired. |
 | Iter 1, drain | Collector empty, skip. |
-| Iter 1, discovery | Handler runs. Reads `ctx.self.queries.foo(...)`. Default `foo` query sees the session, sees `fooKey` is not in ancestor or settled, fires `foo.load` and pushes promise into `collector`. Handler returns (state still empty). |
+| Iter 1, discovery | Handler runs. Reads `ctx.self.queries.foo.get(...)`. Because an `activeHandlerLoadSession` is set, the default `foo` query sees the session, sees `fooKey` is not in ancestor or settled, fires `foo.load` and pushes promise into `collector`. Handler returns (state still empty). |
 | Iter 2, drain | `await Promise.allSettled([fooPromise])`. Mark `fooKey` settled. State now populated by `foo.load`. |
 | Iter 2, discovery | Handler runs again. `foo` is in `settledKeys` → fires nothing. Collector stays empty. |
 | Exit | Final handler call (no session): returns the now-populated value. |
 
 ### Inside a `load` body
 
-When the discovery handler runs, sync reads via `ctx.self.queries.*` go through the *default* query map (the same one consumers see) and register against `activeHandlerLoadSession`. That works for sync code because module-scoped state is stable across one synchronous handler call.
+When the discovery handler runs, sync `.get()` reads via `ctx.self.queries.*` go through the *default* query map (the same one consumers see) and register against `activeHandlerLoadSession`. That works for sync code because module-scoped state is stable across one synchronous handler call.
 
-When an **async** `load` body runs, it instead gets a *wrapped* `ctx.self.queries.*` from `buildLoadWrappedQueries`. Each wrapper closes over the load's own ancestor chain and local collector, so reads inside the body register dependencies regardless of how many `await`s the body has between them. After the body resolves, the load promise waits for its local collector to drain before settling — which is what gives `.loaded()` its transitive guarantee through async load bodies.
+When an **async** `load` body runs, it instead gets a *wrapped* `ctx.self.queries.*` from `buildLoadWrappedQueries`. Each wrapper's `.get()` closes over the load's own ancestor chain and local collector, so reads inside the body register dependencies regardless of how many `await`s the body has between them. After the body resolves, the load promise waits for its local collector to drain before settling — which is what gives `.loaded()` its transitive guarantee through async load bodies.
+
+A **reactive subscription** load body (re-fired when its tracked signals change) gets a third wrapper from `buildReactiveLoadQueries`: a `.get()` read of a dependency fires that dependency's load fire-and-forget (and tracks the state the read touches), so a subscribed query that derives from another query still warms its dependencies even though a bare consumer `.get()` would not.
 
 Cross-service `ctx.getService(id).queries.*` calls inside a load body are **not** wrapped; authors must use `.loaded()` explicitly when they need a cross-service dep awaited from inside a load. From a sync handler, cross-service queries are tracked because they consult the module-scoped session like any other call.
 
@@ -338,10 +408,10 @@ an arbitrary style choice:
 - **Reactivity.** State is wrapped in a `deepSignal` proxy for fine-grained per-field tracking, and
   `deepSignal` throws (`"this object can't be observed"`) on scalars, `null`, and `undefined` — there
   are no fields to track on a scalar.
-- **Sync.** Cross-peer reconciliation (`deepReconcile` in [service-sync.ts](./service-sync.ts)) merges
+- **Sync.** Cross-peer reconciliation (`applyStatePatch` in [service-sync.ts](./service-sync.ts)) merges
   state by walking object keys; it has no concept of replacing a whole scalar.
 
-Arrays are a special case: `deepSignal` *can* observe them, but `deepReconcile` replaces arrays
+Arrays are a special case: `deepSignal` *can* observe them, but `applyStatePatch` replaces arrays
 wholesale rather than merging by key, so a **top-level** array state would silently fail to sync
 between peers. They are therefore rejected too. Wrap collections in a field instead:
 
@@ -373,17 +443,17 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 
 ## Subscription Flow
 
-Subscriptions are implemented in [service-runtime.ts](./service-runtime.ts):
+Subscriptions are implemented in [query-runtime.ts](./query-runtime.ts):
 
-1. `subscribe(input, callback)` (or `subscribe(input, selector, callback)`) defers all work to a microtask.
-2. The microtask validates the input synchronously. If the query has a `load`, it is run inside its own `effect()` so the external signals it reads synchronously are tracked: when they change, the effect re-runs and the load re-fires (see "Load"). Writes from a superseded run are dropped (each run carries an epoch; `setState` is gated on it), so a slow stale load can't clobber a newer result. The effect is torn down with the subscription.
+1. `subscribe(input, callback)` (or `subscribe(input, selector, callback)`) runs synchronously and emits the first `QueryState` **before it returns** — there is no microtask deferral. Callers that need to react only to *later* changes must ignore the first synchronous emission themselves.
+2. Setup validates the input synchronously. If the query has a `load`, it is run inside its own `effect()` so the external signals it reads synchronously are tracked: when they change, the effect re-runs and the load re-fires (see "Load"). Writes from a superseded run are dropped (each run carries an epoch; `setState` is gated on it), so a slow stale load can't clobber a newer result. The effect is torn down with the subscription.
 3. A `computed()` runs the synchronous handler against the deep-signal proxy, so its dependency footprint is exactly what it reads. The output is always validated, but where validation runs depends on the subscription:
-   - **No selector:** the value is validated here and emitted. Reading the whole value to validate it is the correct footprint for a whole-value subscriber, and it keeps the emitted value identical to a direct `query()` pull.
+   - **No selector:** the value is validated here and emitted. Reading the whole value to validate it is the correct footprint for a whole-value subscriber, and it keeps the emitted value identical to a direct `query.get()` pull.
    - **With a selector:** validation runs untracked (so it does not register dependencies) and only `selector(value)` is read (then detached to a plain snapshot), so a sibling field the selector ignores never re-runs the handler.
-4. An `effect()` runs the computed immediately (delivering the current value) and re-runs only when the computed's tracked fields change. A write to an unrelated key or field never re-runs the handler.
-5. Subscribers receive the current state right away, then a follow-up emission once the load settles and state changes. UI consumers that want to suppress the pre-load emission should branch on the value (e.g. show a spinner for `null`).
-6. Emissions are deduped by value: the effect compares the new value with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal value does not re-fire subscribers.
-7. The optional `selector` is the `universal-store` pattern: the callback receives the selected slice and fires only when that slice changes by value — and, because the selector drives the computed's reads, an unselected field change does not even re-run the handler.
+4. A per-subscription **lifecycle signal** carries `status` / `loadStatus` / `error` (see [Query state](#query-state)). The reactive-load effect writes it: it flips to `loading` when a load starts (preserving `pending` vs `success` so the first load reads as `isInitialLoading` and a re-load as `isRefreshing`), then to `success`/`idle` or `error`/`idle` as the load settles — all gated on the same epoch so a superseded run can't write a stale lifecycle.
+5. An `effect()` reads **both** the lifecycle signal and the data computed, builds a `QueryState`, and emits it. It runs immediately (delivering the current state) and re-runs when the computed's tracked fields change **or** the lifecycle changes — so a status-only change (e.g. a background re-load over an unchanged selected slice) still fires the callback. A write to an unrelated key or field never re-runs the handler. A synchronous handler / output-validation throw is caught here and emitted as `status: 'error'` keeping the last good `data`.
+6. Emissions are deduped on the **whole `QueryState`**: the effect compares the new state with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal value with no status change does not re-fire subscribers, but a status change always does.
+7. The optional `selector` is the `universal-store` pattern: the callback receives a `QueryState` whose `data` is the selected slice, and fires only when that slice or the lifecycle changes — and, because the selector drives the computed's reads, an unselected field change does not even re-run the handler.
 
 Tests should use `vi.waitFor(...)` when asserting the first emission or follow-up emissions.
 
@@ -422,7 +492,7 @@ If multiple tasks resolve to the same path, their states are deep-merged.
 
 `writeOpenServiceStaticFiles(outputDir)` then writes those logical paths underneath `<outputDir>/services`, converting slash-separated logical keys into native filesystem paths for the current operating system.
 
-These snapshots are currently only a build artifact for the server-side static build flow. This slice does not implement a separate runtime mode that consumes prebuilt snapshot stores instead of running `load` normally.
+In a static Storybook build (`CONFIG_TYPE === 'PRODUCTION'`), manager and preview runtimes pass a browser static loader into `registerService`. For every query that declares `staticPath`, the runtime swaps the authored `load` hook for a fetch of `./services/<serviceId>/<staticPath>` relative to the served HTML root (the same convention as `./index.json`), then applies the JSON snapshot via `applyStatePatch(..., { preserveMissingKeys: true })` so snapshots for one query input do not delete state populated by other inputs. Development mode keeps running `load` normally against the dev server.
 
 Static path rules:
 
@@ -489,9 +559,9 @@ Every channel event carries the emitter's `clientId` (generated per `registerSer
 
 Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
 
-### `deepReconcile`
+### `applyStatePatch`
 
-Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `deepReconcile` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, keys absent from the snapshot are deleted so deletions propagate, and `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `applyStatePatch` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer sync passes `false` so deletions propagate from full snapshots; static JSON loading passes `true` because each static file is a partial snapshot. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
 
 ### State sync sequence
 
@@ -635,31 +705,42 @@ The manager is connected to both the dev server and the preview, so it can invok
 in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
 calls through the manager, or implement the command on a directly-connected peer.
 
-There is **no timeout**. Invoking a command that no reachable peer implements leaves the promise
-pending forever, until the service is unregistered — `disconnect` rejects every outstanding call with
-`OpenServiceRemoteCommandDisconnectedError`.
+If no peer emits `services:command-ack` within a short window, the requester
+rejects with `OpenServiceRemoteCommandUnhandledError` — the common case in a static build when a
+query's `load` calls a server-only command. Once a peer acknowledges, the requester waits for
+`services:command-result` or `services:command-error` as before. Unregistering the service still
+rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
 
 ## React Hooks
 
 ### `useServiceQuery`
 
-Subscribes to a service query and returns its current value, re-rendering when it changes.
+Subscribes to a service query and returns its [`QueryState`](#query-state) (the current `data` plus the `load` lifecycle), re-rendering when the state changes. Pass the **query directly** so its input/output types infer per query.
 
 ```tsx
 import { useServiceQuery } from 'storybook/manager-api';
 
 // With input
-const fields = useServiceQuery(service, 'getRecordFields', { entryId: 'a' });
+const { data, isInitialLoading, isError, error } = useServiceQuery(service.queries.recordFields, {
+  entryId: 'a',
+});
 
-// Void-input query (no third argument)
-const summary = useServiceQuery(service, 'getSummary');
+// Void-input query (no input argument, no selector)
+const { data } = useServiceQuery(service.queries.summary);
+
+// With a selector the input is always positional; `data` is the selected slice.
+const { data: name } = useServiceQuery(service.queries.recordFields, { entryId: 'a' }, (r) => r?.name);
+// A void-input query passes `undefined` for the input when it needs a selector.
+const { data: count } = useServiceQuery(service.queries.summary, undefined, (s) => s?.count);
 ```
 
-Backed by `useSyncExternalStore`. The subscription is torn down and recreated when `service`, `queryName`, or `input` changes.
+The signature is `useServiceQuery(query, input?, selector?)`. The input argument is required for input queries and omittable only for void-input queries that pass no selector — `void` is just sugar for `undefined`, so there is no separate lone-selector shorthand (unlike `query.subscribe`). Backed by `useSyncExternalStore`. The subscription is torn down and recreated when the `query`, `input`, or `selector` changes.
 
-**Referential stability:** `getSnapshot` compares the new value with the previous via `isEqual` and returns the cached reference when they are deeply equal, so React bails out of re-rendering when the value hasn't logically changed.
+The first render is seeded synchronously: `useSyncExternalStore` reads `getSnapshot` during render but only runs `subscribe` in a post-paint passive effect, so a snapshot must already exist. The hook reads the current value with `query.get(input)` (a pure synchronous read that fires no load) and wraps it in a synthetic `pending`/`loading` state. The real lifecycle arrives moments later from the subscription's first (synchronous) emission and corrects `pending` to `success`/`error`.
 
-**Memoize complex inputs at the call site.** The input participates in the hook's React dependency array. Passing a new object literal on every render recreates the subscription each render. Wrap object inputs in `useMemo` or extract them to module scope.
+**The service must exist.** The hook does not special-case an absent service. A caller whose service may be missing (e.g. a docs block behind a feature flag) must guard at a parent and conditionally render a child component that calls this hook.
+
+**Referential stability:** inputs are compared with `isEqual` (so inline object literals are safe), while the query and selector are compared by reference — memoize selectors (`useCallback` / module scope) to avoid re-subscribing every render. The hook does **not** dedup emissions: it re-renders on every emission and trusts the runtime, which already skips deeply-equal emissions (see [reactive load](#load)). A hook-level deep-equal check was deliberately removed because it could mask in-place mutations of deeply-nested state.
 
 ### `useServiceCommand`
 
@@ -701,7 +782,7 @@ export const exampleServiceDef = defineService({
   description: 'Example service used in documentation.',
   initialState: { values: {} } satisfies ExampleState,
   queries: {
-    getValue: {
+    value: {
       description: 'Returns one value by id.',
       input: entryIdSchema,
       output: valueSchema,
@@ -731,11 +812,11 @@ export const exampleServiceDef = defineService({
 
 const exampleService = registerService(exampleServiceDef);
 
-// Sync read — returns current state (null if load hasn't run yet) and fires load in the background.
-const current = exampleService.queries.getValue({ entryId: 'a' });
+// Sync read — returns current state (null if the load has never run). Does NOT fire the load.
+const current = exampleService.queries.value.get({ entryId: 'a' });
 
-// Awaited variant — waits for load (and any transitive deps) to settle, then returns the value.
-const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
+// Awaited variant — fires the load, waits for it (and any transitive deps) to settle, then returns the value.
+const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 ```
 
 ## Design Rules
@@ -747,7 +828,7 @@ const ready = await exampleService.queries.getValue.loaded({ entryId: 'a' });
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
 - Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
-- Use `.loaded()` when a caller wants to await the full state; use the sync form when "current best" is fine.
+- Use `.loaded()` when a caller wants to fire the load and await the full state; use `.get()` when a synchronous "current best" read (no load) is fine.
 - No channel install is needed in manager/preview — `getChannel()` returns the channel `addons.setChannel` installed.
 - Call `clearRegistry()` in `afterEach` in tests that register services. Use `setChannel(mock)` before `registerService` when a test needs sync. Node bootstraps a noop channel at import; browser preview gets the real channel from builders before `preview.ts` loads.
 
@@ -767,7 +848,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 
 ## Agent Notes
 
-- If you need to change runtime behavior, start in [service-runtime.ts](./service-runtime.ts).
+- If you need to change runtime assembly (state, commands, static loader), start in [service-runtime.ts](./service-runtime.ts); for query reads, loads, the drain, or subscriptions, start in [query-runtime.ts](./query-runtime.ts).
 - If you need to change registration or the registry (any runtime), start in [service-registry.ts](./service-registry.ts).
 - If you need to change static snapshot building or writing, start in [server.ts](./server.ts).
 - If you need to change validation wording, start in [errors.ts](./errors.ts).

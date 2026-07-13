@@ -274,6 +274,17 @@ test('manifests generates correct id, name, description and examples ', async ()
       "v": 0,
     }
   `);
+
+  // Assert runtime/JSON insertion order explicitly so MCP consumers can rely on CSF source order
+  // for "top N" stories.
+  expect(result!.components!.components['example-button'].stories.map((story) => story.id)).toEqual(
+    [
+      'example-button--primary',
+      'example-button--secondary',
+      'example-button--large',
+      'example-button--small',
+    ]
+  );
 });
 
 async function getManifestForStory(code: string) {
@@ -1189,13 +1200,17 @@ test('should prefer story entries over attached-mdx docs entries for the same co
 
   expect(component?.name).toBe('Primary');
   expect(component?.path).toBe('./src/Primary/Primary.stories.tsx');
-  expect(component?.stories).toMatchObject([
-    {
-      id: 'example-primary--default',
-      name: 'Default',
-    },
-  ]);
-  expect(component?.stories[0]?.snippet).toContain('<Primary');
+  expect(component?.stories).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        id: 'example-primary--default',
+        name: 'Default',
+      }),
+    ])
+  );
+  expect(
+    component?.stories.find((story) => story.id === 'example-primary--default')?.snippet
+  ).toContain('<Primary');
 });
 
 test('stories are populated when meta has no explicit title', async () => {

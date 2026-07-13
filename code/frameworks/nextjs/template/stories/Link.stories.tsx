@@ -72,6 +72,10 @@ type Story = StoryObj<typeof Component>;
 
 export const Default: Story = {};
 
+export const TriggersLinkAction: Story = {
+  render: () => <Link href="/dashboard">Trigger link action</Link>,
+};
+
 export const InAppDir: Story = {
   parameters: {
     nextjs: {

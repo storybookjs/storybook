@@ -15,13 +15,18 @@
  *
  * const service = registerService(myServiceDef);
  *
- * service.queries.getColor.subscribe(undefined, (color) => {
- *   document.body.style.background = color;
+ * service.queries.color.subscribe(undefined, ({ data }) => {
+ *   document.body.style.background = data ?? 'transparent';
  * });
  * ```
  */
 
-import { registerService as registerServiceCore } from './service-registry.ts';
+import type { PreviewCoreServices, TypedGetService } from './core-service-types.ts';
+import {
+  getService as getServiceCore,
+  registerService as registerServiceCore,
+} from './service-registry.ts';
+import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
   Queries,
@@ -30,6 +35,8 @@ import type {
   ServiceRegistrationOptions,
   ServiceRegistryApi,
 } from './types.ts';
+
+export const getService = getServiceCore as TypedGetService<PreviewCoreServices>;
 
 /**
  * Registers a service in the preview and returns its runtime surface.
@@ -45,5 +52,7 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  return registerServiceCore(definition, registration);
+  return registerServiceCore(definition, registration, {
+    staticLoader: createBrowserStaticLoader(),
+  });
 }

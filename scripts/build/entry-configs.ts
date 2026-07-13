@@ -19,6 +19,8 @@ import builderWebpack5Config from '../../../code/builders/builder-webpack5/build
 // @ts-ignore
 import storybookConfig from '../../../code/core/build-config';
 // @ts-ignore
+import angularViteFrameworkConfig from '../../../code/frameworks/angular-vite/build-config';
+// @ts-ignore
 import angularFrameworkConfig from '../../../code/frameworks/angular/build-config';
 // @ts-ignore
 import emberFrameworkConfig from '../../../code/frameworks/ember/build-config';
@@ -101,6 +103,7 @@ export const buildEntries = {
   '@storybook/builder-webpack5': builderWebpack5Config,
 
   // frameworks
+  '@storybook/angular-vite': angularViteFrameworkConfig,
   '@storybook/angular': angularFrameworkConfig,
   '@storybook/ember': emberFrameworkConfig,
   '@storybook/html-vite': htmlViteFrameworkConfig,

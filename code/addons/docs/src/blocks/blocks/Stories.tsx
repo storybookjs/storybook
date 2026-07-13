@@ -9,6 +9,7 @@ import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';
 import { withMdxComponentOverride } from './with-mdx-component-override';
+import type { DocsParameters } from '../../types.ts';
 
 interface StoriesProps {
   title?: ReactElement | string;
@@ -35,7 +36,8 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
 
   let stories = componentStories();
-  const { stories: { filter } = { filter: undefined } } = projectAnnotations.parameters?.docs || {};
+  const filter = (projectAnnotations.parameters as DocsParameters | undefined)?.docs?.stories
+    ?.filter;
   if (filter) {
     stories = stories.filter((story) => filter(story, getStoryContext(story)));
   }

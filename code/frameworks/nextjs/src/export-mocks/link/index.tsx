@@ -7,7 +7,7 @@ const linkAction = fn().mockName('next/link::Link');
 const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   {
     href,
-    as: _as,
+    as,
     replace,
     scroll,
     shallow,
@@ -21,15 +21,23 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   },
   ref
 ) {
+  const resolvedHref = as ?? href;
   const hrefString =
-    typeof href === 'object'
-      ? `${href.pathname || ''}${href.query ? '?' + new URLSearchParams(href.query).toString() : ''}${href.hash || ''}`
-      : href;
+    typeof resolvedHref === 'object'
+      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash || ''}`
+      : resolvedHref;
+
+  const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.defaultPrevented) {
+      return;
+    }
+    e.preventDefault();
+    linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+  };
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
     onClick?.(e);
-    linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+    navigate(e);
   };
 
   if (legacyBehavior) {
@@ -37,11 +45,10 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
     const childProps: Record<string, any> = {
       ref,
       onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
         if (child.props && typeof child.props.onClick === 'function') {
           child.props.onClick(e);
         }
-        linkAction(hrefString, { replace, scroll, shallow, prefetch, locale });
+        navigate(e);
       },
       ...rest,
     };

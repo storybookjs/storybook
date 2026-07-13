@@ -1085,10 +1085,10 @@ describe('ChangeDetectionService', () => {
     await expect(service.dispose()).resolves.toBeUndefined();
   });
 
-  it('rescans the working tree when the story index is invalidated', async () => {
+  it('rescans the working tree when the module graph revision advances', async () => {
     // Graph-side reconciliation (replaying add/unlink, the refreshInFlight guard) is covered by
-    // module-graph-engine.test.ts; here we assert the status side of the seam: an index
-    // invalidation re-runs the git-diff scan.
+    // module-graph-engine.test.ts; here we assert the status side of the seam: a graph revision
+    // bump (from a file change or story-index reconciliation) re-runs the git-diff scan.
     const reverseIndex = buildReverseIndex([]);
     installDependencyGraphMocks(reverseIndex);
 

@@ -509,13 +509,23 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       for (const project of storybookProjects) {
         const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
         if (addonsToPostinstall?.length) {
-          await configureDeferredAddons(addonsToPostinstall, {
-            packageManager: project.packageManager.type,
-            configDir: project.configDir,
-            yes: options.yes,
-            logger,
-            prompt,
-          });
+          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+          try {
+            await configureDeferredAddons(addonsToPostinstall, {
+              packageManager: project.packageManager.type,
+              configDir: project.configDir,
+              yes: options.yes,
+              logger,
+              prompt,
+            });
+          } catch (error) {
+            logger.warn(
+              `Configuring ${addonsToPostinstall.join(', ')} failed: ${String(
+                error
+              )}. Run "npx storybook add <addon>" manually for each addon to finish the setup.`
+            );
+            logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+          }
         }
       }
     }

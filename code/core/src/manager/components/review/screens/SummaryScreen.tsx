@@ -1,4 +1,12 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState, type FC } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+  type ReactNode,
+} from 'react';
 
 import {
   Button,
@@ -7,6 +15,7 @@ import {
   DocumentWrapper,
   IconButton,
   ScrollArea,
+  ToggleButton,
 } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
@@ -20,6 +29,7 @@ import {
   WandIcon,
 } from '@storybook/icons';
 
+import { useLandmark } from '../../../hooks/useLandmark.ts';
 import { AttentionBanner } from '../components/AttentionBanner.tsx';
 import { CollectionGrid } from '../components/CollectionGrid.tsx';
 import { CopyButton } from '../components/CopyButton.tsx';
@@ -91,7 +101,7 @@ const ListScroll = styled.div({
   minHeight: 0,
 });
 
-const List = styled.div({
+const Main = styled.main({
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
@@ -115,10 +125,46 @@ const SummaryCard = styled(Card)({
   },
 });
 
+const SummaryLandmark: FC<{ children: ReactNode }> = ({ children }) => {
+  const asideRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'complementary', 'aria-label': 'Summary' },
+    asideRef
+  );
+  return (
+    <aside ref={asideRef} {...landmarkProps}>
+      {children}
+    </aside>
+  );
+};
+
 const SummaryContent = styled(MarkdownWrapper)({
   flex: 1,
   minWidth: 0,
+  // Keep the "Summary:" heading and the first description paragraph on the same
+  // line, matching the previous inline "**Summary:** …" rendering.
+  '& > p:first-of-type': {
+    display: 'inline',
+  },
 });
+
+// A real heading for the summary label, styled to look identical to the inline
+// bold "Summary:" text it replaces.
+const SummaryHeading = styled.h2(({ theme }) => ({
+  // Double the ampersand to outrank the DocumentWrapper's `.wrapper h2` rule
+  // (specificity 0,1,1), which would otherwise enlarge this and add a bottom
+  // border, so the label stays identical to the inline bold it replaces.
+  '&&': {
+    display: 'inline',
+    margin: 0,
+    padding: 0,
+    fontSize: 'inherit',
+    fontWeight: theme.typography.weight.bold,
+    lineHeight: 'inherit',
+    color: 'inherit',
+    border: 'none',
+  },
+}));
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
@@ -134,11 +180,13 @@ const CardHead = styled.div({
   cursor: 'pointer',
 });
 
-const CardTitle = styled.strong(({ theme }) => ({
+const CardTitle = styled.h2(({ theme }) => ({
   minWidth: 0,
+  margin: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  fontSize: 'inherit',
   fontWeight: theme.typography.weight.bold,
   lineHeight: '20px',
   color: theme.color.defaultText,
@@ -177,6 +225,38 @@ const Footer = styled.div(({ theme }) => ({
   textAlign: 'center',
   textWrap: 'balance',
 }));
+
+const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
+  titleId,
+  children,
+}) => {
+  const regionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark({ role: 'region', 'aria-labelledby': titleId }, regionRef);
+  return (
+    <section ref={regionRef} {...landmarkProps}>
+      {children}
+    </section>
+  );
+};
+
+// A `contentinfo` landmark must stay top-level, but this footer is rendered
+// inside the `main` landmark, so it is exposed as a named `region` instead
+// (a `<footer>` nested in `<main>` has no implicit `contentinfo` role).
+const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
+  const regionRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { role: 'region', 'aria-label': 'About this review' },
+    regionRef
+  );
+  return (
+    <Footer as="footer" ref={regionRef} {...landmarkProps}>
+      {children}
+    </Footer>
+  );
+};
+
+const pluralize = (count: number, singular: string, plural = `${singular}s`): string =>
+  `${count} ${count === 1 ? singular : plural}`;
 
 const formatCreatedAgo = (createdAt: number, nowMs: number): string => {
   const elapsedMs = Math.max(0, nowMs - createdAt);
@@ -325,9 +405,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         title={state.title}
         subtitle={
           <>
-            <span>
-              Showing {storyCount} {storyCount === 1 ? 'story' : 'stories'} for quick review
-            </span>
+            <span>Showing {pluralize(storyCount, 'story', 'stories')} for quick review</span>
             {createdAgo ? (
               <>
                 <span>&bull;</span>
@@ -338,94 +416,103 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
         }
         actions={
           newStoryCount > 0 ? (
-            <Button
+            <ToggleButton
               variant="ghost"
               size="small"
               padding="small"
               ariaLabel={false}
               tooltip="Toggle filtering of new stories"
-              active={showNewOnly}
+              pressed={showNewOnly}
               onClick={() => setShowNewOnly((v) => !v)}
             >
               {newStoryCount} new
-            </Button>
+            </ToggleButton>
           ) : null
         }
       />
 
       <ListScroll>
         <ScrollArea vertical>
-          <List>
-            <SummaryCard color="agentic">
-              <WandIcon />
-              <SummaryContent>
-                <Markdown>{'**Summary:** ' + state.description}</Markdown>
-              </SummaryContent>
-            </SummaryCard>
+          <Main>
+            <SummaryLandmark>
+              <SummaryCard color="agentic">
+                <WandIcon />
+                <SummaryContent>
+                  <SummaryHeading>Summary:</SummaryHeading> <Markdown>{state.description}</Markdown>
+                </SummaryContent>
+              </SummaryCard>
+            </SummaryLandmark>
             {visibleCollections.length === 0 ? (
               <Footer>{showNewOnly ? 'No new stories found.' : 'No collections found.'}</Footer>
             ) : (
               visibleCollections.map(({ collection, index, storyIds }) => {
                 const isExpanded = expandedCollections.has(index);
+                const titleId = `review-collection-title-${index}`;
                 return (
-                  <Card key={`${collection.title}-${index}`}>
-                    <Collapsible
-                      collapsed={!isExpanded}
-                      summary={
-                        <CardHead onClick={() => toggleCollection(index)}>
-                          <CardTitle>{collection.title}</CardTitle>
-                          <CardControls>
-                            <CardCount>{storyIds.length}</CardCount>
-                            <IconButton
-                              variant="ghost"
-                              size="small"
-                              padding="small"
-                              ariaLabel={
-                                isExpanded
-                                  ? `Collapse collection ${collection.title}`
-                                  : `Expand collection ${collection.title}`
-                              }
-                              aria-expanded={isExpanded}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleCollection(index);
-                              }}
-                            >
-                              <ToggleChevronIcon
-                                style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
-                              />
-                            </IconButton>
-                          </CardControls>
-                        </CardHead>
-                      }
-                    >
-                      {collection.rationale ? (
-                        <CardRationale>
-                          <Markdown>{collection.rationale}</Markdown>
-                        </CardRationale>
-                      ) : null}
-                      <CollectionGrid
-                        storyIds={storyIds}
-                        showAll={showAllCollections.has(index)}
-                        onShowAll={() => markCollectionShowAll(index)}
-                        storyInfo={storyInfo}
-                        getStoryHref={(storyId) =>
-                          buildReviewStoryHref({ collectionIndex: index, storyId })
+                  <CollectionLandmark key={`${collection.title}-${index}`} titleId={titleId}>
+                    <Card>
+                      <Collapsible
+                        collapsed={!isExpanded}
+                        summary={
+                          <CardHead onClick={() => toggleCollection(index)}>
+                            <CardTitle id={titleId}>{collection.title}</CardTitle>
+                            <CardControls>
+                              <CardCount
+                                aria-label={pluralize(storyIds.length, 'story', 'stories')}
+                              >
+                                {storyIds.length}
+                              </CardCount>
+                              <IconButton
+                                variant="ghost"
+                                size="small"
+                                padding="small"
+                                ariaLabel={
+                                  isExpanded
+                                    ? `Collapse collection ${collection.title}`
+                                    : `Expand collection ${collection.title}`
+                                }
+                                aria-expanded={isExpanded}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggleCollection(index);
+                                }}
+                              >
+                                <ToggleChevronIcon
+                                  style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
+                                />
+                              </IconButton>
+                            </CardControls>
+                          </CardHead>
                         }
-                        getStoryPreviewHref={getStoryPreviewHref}
-                        summaryHidden={summaryHidden}
-                      />
-                    </Collapsible>
-                  </Card>
+                      >
+                        {collection.rationale ? (
+                          <CardRationale>
+                            <Markdown>{collection.rationale}</Markdown>
+                          </CardRationale>
+                        ) : null}
+                        <CollectionGrid
+                          storyIds={storyIds}
+                          showAll={showAllCollections.has(index)}
+                          onShowAll={() => markCollectionShowAll(index)}
+                          storyInfo={storyInfo}
+                          getStoryHref={(storyId) =>
+                            buildReviewStoryHref({ collectionIndex: index, storyId })
+                          }
+                          getStoryPreviewHref={getStoryPreviewHref}
+                          summaryHidden={summaryHidden}
+                        />
+                      </Collapsible>
+                    </Card>
+                  </CollectionLandmark>
                 );
               })
             )}
-            <Footer>
-              This review shows the {storyCount} {storyCount === 1 ? 'story' : 'stories'} most
-              relevant for you to spot-check right now. Because this is AI-curated, results may be
-              inaccurate or incomplete.
-            </Footer>
-          </List>
+            <FooterLandmark>
+              This review shows the {pluralize(storyCount, 'story', 'stories')} most relevant for
+              you to spot-check right now. Because this is AI-curated, results may be inaccurate or
+              incomplete.
+            </FooterLandmark>
+          </Main>
         </ScrollArea>
       </ListScroll>
     </Page>

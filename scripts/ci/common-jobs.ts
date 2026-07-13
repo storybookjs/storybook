@@ -18,7 +18,7 @@ import {
   workspace,
 } from './utils/helpers.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
-import { defineJob, defineNoOpJob } from './utils/types.ts';
+import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
@@ -211,7 +211,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'yarn storybook:ui:build',
+          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
         },
       },
       {
@@ -404,6 +404,47 @@ export const testUnit_windows = defineJob(
     ],
   }),
   [build_windows]
+);
+
+export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
+  defineJob(
+    'CircleCI completion',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        {
+          run: {
+            name: 'Workflow completed',
+            command: 'echo "All required jobs completed successfully"',
+          },
+        },
+      ],
+    }),
+    requires
+  );
+
+export const docgenMemoryGate = defineJob(
+  'Docgen memory gate',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Docgen-server re-extraction memory gate',
+          working_directory: 'scripts',
+          command: 'yarn bench:docgen-memory',
+        },
+      },
+    ],
+  }),
+  [commonJobsNoOpJob]
 );
 
 export const benchmarkPackages = defineJob(

@@ -1,24 +1,26 @@
 import { resolve } from 'node:path';
 
-import { invariant } from 'storybook/internal/common';
+import * as v from 'valibot';
 
-import {
-  McpJsonRpcError,
-  type McpToolList,
-  callMcpTool,
-  listMcpTools,
-  listMcpToolsWithServerMetadata,
-} from './client.ts';
+import { detectAgent } from '../../../telemetry/detect-agent.ts';
+import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
+import {
+  loadStorybookAiMetadata,
+  resolveStorybookConfigDir,
+  type StorybookAiMetadata,
+} from './local-metadata.ts';
 import { readRegistry } from './registry.ts';
 import { resolveInstance } from './resolve-instance.ts';
-import { parseToolArgs } from './tool-args.ts';
+import { parsePort, parseToolArgs } from './tool-args.ts';
 import type {
   InterceptReason,
+  JsonSchemaNode,
   McpToolDescriptor,
   StorybookInstanceRecord,
   ToolCallResult,
 } from './types.ts';
+import { JsonSchemaNodeSchema, ToolCallResultSchema } from './types.ts';
 
 /**
  * Why an invocation failed before any command executed, for the `ai-command` telemetry event
@@ -30,8 +32,7 @@ export type AiCommandInterceptReason = InterceptReason | 'invalid-arguments' | '
 /**
  * Telemetry-facing classification of a run. `help` marks lookups via `--help` flags, which are not
  * command executions and are excluded from the `ai-command` event so they cannot skew command
- * success rates. `error` carries failures from the server side (error results, transport
- * failures, timeouts) for the standard sanitized error path.
+ * success rates. `error` carries command failures for the standard sanitized error path.
  */
 export type AiCommandOutcome =
   | { kind: 'success' }
@@ -42,7 +43,7 @@ export type AiCommandOutcome =
 export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiCommandOutcome };
 
 /**
- * The server executed the command and reported an error result. The message is deliberately
+ * The command executed and reported an error result. The message is deliberately
  * constant — the result text is arbitrary tool output (often containing project paths), and a
  * constant message keeps the telemetry error hash stable and aggregatable. The tool's error text
  * travels as `cause` instead, which the standard error path only uploads — path-sanitized — when
@@ -50,8 +51,15 @@ export type AiToolRunResult = { exitCode: 0 | 1; output: string; outcome: AiComm
  */
 class McpToolResultError extends Error {
   constructor(options?: ErrorOptions) {
-    super('The Storybook MCP server returned an error result', options);
+    super('The Storybook AI command returned an error result', options);
     this.name = 'McpToolResultError';
+  }
+}
+
+class LocalAiToolError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('The Storybook local AI command failed', options);
+    this.name = 'LocalAiToolError';
   }
 }
 
@@ -59,11 +67,14 @@ class McpToolResultError extends Error {
 export type AiToolRunDeps = {
   registryDir?: string;
   fetchImpl?: typeof fetch;
+  loadStorybookAiMetadata?: typeof loadStorybookAiMetadata;
 };
 
 export type AiToolOptions = {
   /** Project directory of the target Storybook; defaults to `process.cwd()`. */
   cwd?: string;
+  /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
+  configDir?: string;
   /** Port of the target Storybook, to address one specific instance when several share the cwd. */
   port?: string;
   /** Raw JSON object with tool arguments (escape hatch for complex values). */
@@ -71,9 +82,9 @@ export type AiToolOptions = {
 };
 
 /**
- * Run a single MCP tool against the Storybook running at the target cwd and return its result as
- * markdown. Intercept conditions (no running instance, addon missing, ...) return the same
- * repair-instruction markdown as `@storybook/mcp-proxy`, with exit code 1.
+ * Run a Storybook AI command and return its result as markdown. Commands exposed as local metadata
+ * run without a dev server; runtime-bound commands still go through the running Storybook MCP
+ * server and use the same repair-instruction markdown as `@storybook/mcp-proxy`.
  */
 export async function runAiTool(
   toolName: string,
@@ -82,8 +93,6 @@ export async function runAiTool(
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
   const parsed = parseToolArgs(toolArgTokens, {
-    cwd: options.cwd,
-    port: options.port,
     json: options.json,
   });
   if (!parsed.ok) {
@@ -94,10 +103,36 @@ export async function runAiTool(
     };
   }
   if (parsed.help) {
-    return toolHelp(toolName, parsed.cwd, parsed.port, deps);
+    return toolHelp(toolName, options.cwd, options.configDir, deps);
   }
 
-  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
+  const toolLookup = await lookupAiTool(toolName, options.cwd, options.configDir, deps);
+  switch (toolLookup.kind) {
+    case 'local':
+      return runLocalAiTool(toolLookup.localTool, parsed.args);
+    case 'result':
+      return toolLookup.result;
+    case 'runtime':
+      break;
+    default: {
+      const exhaustive: never = toolLookup;
+      return exhaustive;
+    }
+  }
+
+  const parsedPort = parsePort(options.port);
+  if (!parsedPort.ok) {
+    return {
+      exitCode: 1,
+      output: parsedPort.error,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    };
+  }
+
+  const resolution = await resolveReadyInstance(
+    { cwd: options.cwd, configDir: options.configDir, port: parsedPort.port },
+    deps
+  );
   if (resolution.kind === 'error') {
     return {
       exitCode: 1,
@@ -160,9 +195,9 @@ export async function runAiTool(
 }
 
 /**
- * Build the "Storybook commands" help section listing the commands provided by the running
- * Storybook, appended to `storybook ai --help`. Help must never fail, so any error degrades to a
- * short note explaining why no commands are listed.
+ * Build the "Storybook commands" help section from Storybook config metadata, appended to
+ * `storybook ai --help`. Help must never fail, so any error degrades to a short note explaining why
+ * no commands are listed.
  */
 export async function buildStorybookCommandsHelp(
   options: AiToolOptions = {},
@@ -170,91 +205,48 @@ export async function buildStorybookCommandsHelp(
 ): Promise<string> {
   const unavailable = (note: string) => `Storybook commands: (unavailable — ${note})`;
 
-  const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
-  if (!parsed.ok) {
-    return unavailable(parsed.error);
+  const metadataResult = await loadLocalMetadata(options.cwd, options.configDir, deps);
+  if (metadataResult.kind === 'error') {
+    return unavailable(
+      `the Storybook config at ${metadataResult.configDir} could not be loaded: ${formatErrorMessage(
+        metadataResult.error
+      )}`
+    );
   }
-
-  const resolution = await resolveReadyInstance(parsed.cwd, parsed.port, deps);
-  if (resolution.kind === 'error') {
-    return unavailable(helpUnavailableNote(resolution, parsed.port));
+  const { metadata, configDir } = metadataResult;
+  if (!metadata) {
+    return unavailable(formatMetadataMissingHelp(configDir));
   }
-  const { record, matches } = resolution;
-
-  let toolList: McpToolList;
-  try {
-    toolList = await listMcpToolsWithServerMetadata(record, deps.fetchImpl);
-  } catch {
-    return unavailable(`the Storybook at ${record.url} could not be reached`);
-  }
-  const { tools, serverMetadata } = toolList;
+  const { tools } = metadata;
   if (tools.length === 0) {
-    return unavailable(`the Storybook at ${record.url} provides no commands`);
+    return unavailable(`the Storybook config at ${configDir} provides no commands`);
   }
-
-  const siblingPorts = matches.filter((r) => r !== record).map((r) => r.port);
-  const siblingNote =
-    siblingPorts.length > 0
-      ? [
-          `(${matches.length} instances are running at this cwd — using the most recently started, port ${record.port}; other ports: ${siblingPorts.join(', ')}. Pass \`--port\` to target a specific one.)`,
-        ]
-      : [];
 
   const width = Math.max(...tools.map((tool) => tool.name.length)) + 2;
+  const localToolNames = getLocalToolNames(metadata);
   const lines = tools.map((tool) => {
+    const mode = localToolNames.has(tool.name) ? '[local]' : '[requires Storybook]';
     const summary = tool.description?.trim().split('\n')[0] ?? '';
-    return `  ${tool.name.padEnd(width)}${summary}`;
+    return `  ${tool.name.padEnd(width)}${mode.padEnd(21)}${summary}`;
   });
-  const version = record.storybookVersion ? `, Storybook ${record.storybookVersion}` : '';
-  const { instructions } = serverMetadata;
-  // Unreachable with a healthy addon-mcp: it gates instructions and tools on the same dev/test/docs
-  // toolsets (non-empty tools imply non-empty instructions), and the initialize handshake shares the
-  // request budget, so a slow server can't drop instructions while tools/list succeeds. Reaching here
-  // means the server returned commands but no instructions — a contract bug.
-  invariant(
-    instructions,
-    `The Storybook MCP server at ${record.url} exposed commands but no workflow instructions`
-  );
+  const { instructions } = metadata;
+  const trimmedInstructions = instructions?.trim();
+  const sections = [`Storybook help from the Storybook configuration at ${configDir}:`, ''];
+  if (trimmedInstructions) {
+    sections.push('# Storybook workflow instructions', '', trimmedInstructions, '');
+  }
 
-  return [
-    `Storybook help from the Storybook running at ${record.url}${version}:`,
-    ...siblingNote,
-    '',
-    '# Storybook workflow instructions',
-    '',
-    instructions,
-    '',
+  sections.push(
     '# Storybook commands',
     '',
     ...lines,
     '',
-    `Run 'storybook ai <command> --help' for a command's description and arguments.`,
-  ].join('\n');
-}
-
-/** One-line reason why the help section cannot list commands, accurate per intercept. */
-function helpUnavailableNote(
-  error: Extract<InstanceResolution, { kind: 'error' }>,
-  port: number | undefined
-): string {
-  switch (error.reason) {
-    case 'no-instance':
-      return 'no running Storybook detected at this cwd; start `storybook dev` to list its commands';
-    case 'port-mismatch':
-      return `no instance on port \`${port}\` at this cwd — running ports: ${error.records
-        .map((r) => r.port)
-        .join(', ')}`;
-    case 'mcp-starting':
-      return 'the Storybook at this cwd is still starting up; retry in a moment';
-    case 'addon-missing':
-      return 'the running Storybook does not provide commands — install `@storybook/addon-mcp`';
-    case 'mcp-error':
-      return "the running Storybook's command server reported an error";
-    default: {
-      const unhandled: never = error.reason;
-      throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
-    }
-  }
+    '[local] commands run from configuration metadata without a running Storybook.',
+    '[requires Storybook] commands are forwarded to the running Storybook server.',
+    '',
+    `Run 'storybook ai <command> --help' for a command's description and arguments.`
+  );
+  return sections.join('\n');
 }
 
 /** Show the description and arguments of a single command (`storybook ai <command> --help`). */
@@ -263,40 +255,185 @@ export async function runAiToolHelp(
   options: AiToolOptions = {},
   deps: AiToolRunDeps = {}
 ): Promise<AiToolRunResult> {
-  const parsed = parseToolArgs([], { cwd: options.cwd, port: options.port });
-  if (!parsed.ok) {
-    return { exitCode: 1, output: parsed.error, outcome: { kind: 'help' } };
-  }
-  return toolHelp(toolName, parsed.cwd, parsed.port, deps);
+  return toolHelp(toolName, options.cwd, options.configDir, deps);
 }
 
 /** All paths are help lookups, so every outcome is `help` regardless of success. */
 async function toolHelp(
   toolName: string,
   cwd: string | undefined,
-  port: number | undefined,
+  configDir: string | undefined,
   deps: AiToolRunDeps
 ): Promise<AiToolRunResult> {
   const outcome: AiCommandOutcome = { kind: 'help' };
 
-  const resolution = await resolveReadyInstance(cwd, port, deps);
-  if (resolution.kind === 'error') {
-    return { exitCode: 1, output: resolution.output, outcome };
+  const metadataResult = await loadLocalMetadata(cwd, configDir, deps);
+  if (metadataResult.kind === 'error') {
+    return metadataLoadFailureResult(metadataResult, outcome);
   }
-  const { record } = resolution;
-
-  let tools: McpToolDescriptor[];
-  try {
-    tools = await listMcpTools(record, deps.fetchImpl);
-  } catch (error) {
-    return { exitCode: 1, output: formatServerUnreachable(record, error), outcome };
+  const { metadata } = metadataResult;
+  if (!metadata) {
+    return metadataMissingResult(metadataResult.configDir, outcome);
   }
+  const { tools } = metadata;
 
   const tool = tools.find((candidate) => candidate.name === toolName);
   if (!tool) {
-    return { exitCode: 1, output: formatUnknownTool(toolName, tools, record), outcome };
+    return {
+      exitCode: 1,
+      output: formatUnknownMetadataTool(toolName, tools, metadataResult.configDir),
+      outcome,
+    };
   }
-  return { exitCode: 0, output: formatToolHelp(tool), outcome };
+  return {
+    exitCode: 0,
+    output: formatToolHelp(tool, { local: getLocalToolNames(metadata).has(tool.name) }),
+    outcome,
+  };
+}
+
+type StorybookAiLocalTool = NonNullable<StorybookAiMetadata['localTools']>[string];
+
+type AiToolLookup =
+  | { kind: 'local'; localTool: StorybookAiLocalTool }
+  | { kind: 'runtime' }
+  | { kind: 'result'; result: AiToolRunResult };
+
+async function lookupAiTool(
+  toolName: string,
+  cwd: string | undefined,
+  configDir: string | undefined,
+  deps: AiToolRunDeps
+): Promise<AiToolLookup> {
+  const metadataResult = await loadLocalMetadata(cwd, configDir, deps);
+  if (metadataResult.kind === 'error') {
+    return {
+      kind: 'result',
+      result: metadataLoadFailureResult(metadataResult, {
+        kind: 'error',
+        error: new LocalAiToolError({ cause: metadataResult.error }),
+      }),
+    };
+  }
+
+  const { metadata } = metadataResult;
+  if (!metadata) {
+    return {
+      kind: 'result',
+      result: metadataMissingResult(metadataResult.configDir, {
+        kind: 'intercept',
+        reason: 'addon-missing',
+      }),
+    };
+  }
+
+  const visibleTool = metadata.tools.find((tool) => tool.name === toolName);
+  if (!visibleTool) {
+    return {
+      kind: 'result',
+      result: {
+        exitCode: 1,
+        output: formatUnknownMetadataTool(toolName, metadata.tools, metadataResult.configDir),
+        outcome: { kind: 'intercept', reason: 'unknown-command' },
+      },
+    };
+  }
+
+  const localTool = metadata.localTools?.[toolName];
+  if (!localTool) {
+    return { kind: 'runtime' };
+  }
+
+  return { kind: 'local', localTool };
+}
+
+async function runLocalAiTool(
+  localTool: StorybookAiLocalTool,
+  args: Record<string, unknown>
+): Promise<AiToolRunResult> {
+  try {
+    const rawResult = await localTool.call(args);
+    const parsedResult = v.safeParse(ToolCallResultSchema, rawResult);
+    if (!parsedResult.success) {
+      return {
+        exitCode: 1,
+        output: 'The Storybook local AI command returned an unexpected response shape',
+        outcome: {
+          kind: 'error',
+          error: new LocalAiToolError({ cause: parsedResult.issues }),
+        },
+      };
+    }
+    const result = parsedResult.output;
+    const output = formatToolResult(result);
+    if (result.isError) {
+      return {
+        exitCode: 1,
+        output,
+        outcome: { kind: 'error', error: new McpToolResultError({ cause: output }) },
+      };
+    }
+    return { exitCode: 0, output, outcome: { kind: 'success' } };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error: new LocalAiToolError({ cause: error }) },
+    };
+  }
+}
+
+async function loadLocalMetadata(
+  cwd: string | undefined,
+  configDir: string | undefined,
+  deps: AiToolRunDeps
+): Promise<LocalMetadataResult> {
+  const resolvedCwd = resolve(cwd ?? process.cwd());
+  const resolvedConfigDir = resolveStorybookConfigDir({ cwd: resolvedCwd, configDir });
+  const loadMetadata = deps.loadStorybookAiMetadata ?? loadStorybookAiMetadata;
+  try {
+    return {
+      kind: 'ok',
+      cwd: resolvedCwd,
+      configDir: resolvedConfigDir,
+      metadata: await loadMetadata({ cwd: resolvedCwd, configDir: resolvedConfigDir }),
+    };
+  } catch (error) {
+    return { kind: 'error', cwd: resolvedCwd, configDir: resolvedConfigDir, error };
+  }
+}
+
+type LocalMetadataResult =
+  | { kind: 'ok'; cwd: string; configDir: string; metadata: StorybookAiMetadata | undefined }
+  | { kind: 'error'; cwd: string; configDir: string; error: unknown };
+
+function metadataLoadFailureResult(
+  metadataResult: Extract<LocalMetadataResult, { kind: 'error' }>,
+  outcome: AiCommandOutcome
+): AiToolRunResult {
+  return {
+    exitCode: 1,
+    output: `Storybook command metadata is unavailable for ${
+      metadataResult.configDir
+    }: ${formatErrorMessage(metadataResult.error)}`,
+    outcome,
+  };
+}
+
+function metadataMissingResult(configDir: string, outcome: AiCommandOutcome): AiToolRunResult {
+  return {
+    exitCode: 1,
+    output: `Storybook command metadata is unavailable for ${configDir}. Install or upgrade \`@storybook/addon-mcp\`.`,
+    outcome,
+  };
+}
+
+function formatMetadataMissingHelp(configDir: string): string {
+  return `the Storybook config at ${configDir} does not expose AI command metadata — install or upgrade \`@storybook/addon-mcp\``;
+}
+
+function formatErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown): string {
@@ -311,30 +448,40 @@ type InstanceResolution =
       kind: 'error';
       output: string;
       reason: InterceptReason;
-      records: StorybookInstanceRecord[];
     };
 
 /**
- * Resolve the running Storybook instance for `cwdInput` via the registry. No version or
- * installed checks: the CLI is invoked as `npx storybook`, so the fact that it is executing
- * already proves the project has a compatible Storybook.
+ * Resolve the running Storybook instance for the targeted project via the registry. With an
+ * explicit `--config-dir` an instance must match that config dir; otherwise it matches on its
+ * recorded cwd OR its recorded config dir (defaulted to `.storybook` under the cwd), so monorepo
+ * instances are found from a different cwd (storybookjs/storybook#35359). No version or installed
+ * checks: the CLI is invoked as `npx storybook`, so the fact that it is executing already proves
+ * the project has a compatible Storybook.
  */
 async function resolveReadyInstance(
-  cwdInput: string | undefined,
-  port: number | undefined,
+  target: { cwd?: string; configDir?: string; port?: number },
   deps: AiToolRunDeps
 ): Promise<InstanceResolution> {
-  const cwd = resolve(cwdInput ?? process.cwd());
+  const cwd = resolve(target.cwd ?? process.cwd());
+  const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
   const records = await readRegistry(deps.registryDir);
-  const resolution = resolveInstance(records, cwd, port);
+  const resolution = resolveInstance(records, {
+    cwd,
+    configDir,
+    configDirExplicit: target.configDir != null,
+    port: target.port,
+    agent: detectAgent()?.name,
+  });
 
   if (resolution.kind === 'intercept') {
     return {
       kind: 'error',
-      output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
+      output: getInterceptMarkdown(resolution.reason, {
+        records: resolution.records,
+        port: target.port,
+      }),
       reason: resolution.reason,
-      records: resolution.records ?? [],
     };
   }
 
@@ -359,19 +506,23 @@ async function describeUnknownTool(
   if (tools.some((tool) => tool.name === toolName)) {
     return null;
   }
-  return formatUnknownTool(toolName, tools, record);
+  return formatUnknownTool(toolName, tools, `The Storybook running at ${record.url}`);
 }
 
-function formatUnknownTool(
-  toolName: string,
-  tools: McpToolDescriptor[],
-  record: StorybookInstanceRecord
-): string {
-  return `Unknown command \`${toolName}\`. The Storybook running at ${record.url} provides:
+function formatUnknownTool(toolName: string, tools: McpToolDescriptor[], source: string): string {
+  return `Unknown command \`${toolName}\`. ${source} provides:
 
 ${tools.map((tool) => `- \`${tool.name}\``).join('\n')}
 
 Run \`storybook ai --help\` for all commands, or \`storybook ai <command> --help\` for a command's arguments.`;
+}
+
+function formatUnknownMetadataTool(
+  toolName: string,
+  tools: McpToolDescriptor[],
+  configDir: string
+): string {
+  return formatUnknownTool(toolName, tools, `The Storybook configuration at ${configDir}`);
 }
 
 /** Render a tools/call result as markdown: text content verbatim, other content as JSON blocks. */
@@ -389,25 +540,98 @@ function formatToolResult(result: ToolCallResult): string {
     .join('\n\n');
 }
 
-function formatToolHelp(tool: McpToolDescriptor): string {
+function getLocalToolNames(metadata: StorybookAiMetadata): Set<string> {
+  return new Set(Object.keys(metadata.localTools ?? {}));
+}
+
+const MAX_SCHEMA_DEPTH = 4;
+
+function schemaItem(schema: JsonSchemaNode): JsonSchemaNode | undefined {
+  return Array.isArray(schema.items) ? schema.items[0] : schema.items;
+}
+
+function schemaTypeLabel(schema: JsonSchemaNode): string | undefined {
+  if (schema.type === 'array') {
+    const item = schemaItem(schema);
+    return item?.type ? `array of ${item.type}` : 'array';
+  }
+  if (schema.anyOf || schema.oneOf) {
+    return 'one of';
+  }
+  return schema.type;
+}
+
+function schemaChildLines(schema: JsonSchemaNode, indent: string, depth: number): string[] {
+  if (depth <= 0) {
+    return [];
+  }
+  const lines: string[] = [];
+
+  if (schema.type === 'object' && schema.properties) {
+    const required = new Set(schema.required ?? []);
+    for (const [name, child] of Object.entries(schema.properties)) {
+      lines.push(...schemaLines(`\`${name}\``, child, required.has(name), indent, depth));
+    }
+  }
+
+  const item = schemaItem(schema);
+  if (item && ((item.type === 'object' && item.properties) || item.anyOf || item.oneOf)) {
+    lines.push(`${indent}each item:`);
+    lines.push(...schemaChildLines(item, `${indent}  `, depth - 1));
+  }
+
+  const variants = schema.anyOf ?? schema.oneOf;
+  if (variants) {
+    variants.forEach((variant, index) => {
+      const suffix = variant.description ? `: ${variant.description}` : '';
+      lines.push(`${indent}option ${index + 1}${suffix}`);
+      lines.push(...schemaChildLines(variant, `${indent}  `, depth - 1));
+    });
+  }
+
+  return lines;
+}
+
+function schemaLines(
+  label: string,
+  schema: JsonSchemaNode,
+  isRequired: boolean,
+  indent: string,
+  depth: number
+): string[] {
+  const meta = [schemaTypeLabel(schema), isRequired ? 'required' : undefined]
+    .filter(Boolean)
+    .join(', ');
+  const description = schema.description ? `: ${schema.description}` : '';
+  const head = `${indent}- ${label}${meta ? ` (${meta})` : ''}${description}`;
+  return [head, ...schemaChildLines(schema, `${indent}  `, depth - 1)];
+}
+
+function formatToolHelp(tool: McpToolDescriptor, { local }: { local: boolean }): string {
   const lines = [`Usage: storybook ai ${tool.name} [--key value ...]`];
   if (tool.description) {
     lines.push('', tool.description.trim());
   }
+  lines.push(
+    '',
+    local
+      ? 'Execution: local (no running Storybook required).'
+      : 'Execution: requires a running Storybook.'
+  );
   const properties = Object.entries(tool.inputSchema?.properties ?? {});
   if (properties.length > 0) {
     const required = new Set(tool.inputSchema?.required ?? []);
-    lines.push(
-      '',
-      'Arguments:',
-      ...properties.map(([name, schema]) => {
-        const meta = [schema.type, required.has(name) ? 'required' : undefined]
-          .filter(Boolean)
-          .join(', ');
-        const description = schema.description ? `: ${schema.description}` : '';
-        return `- \`--${name}\`${meta ? ` (${meta})` : ''}${description}`;
-      })
-    );
+    lines.push('', 'Arguments:');
+    for (const [name, schema] of properties) {
+      // Validate at this boundary rather than tightening the lenient tools/list
+      // parse: an unmodeled schema shape falls back to its top-level type and
+      // description instead of dropping the argument or failing the command.
+      const parsed = v.safeParse(JsonSchemaNodeSchema, schema);
+      const node: JsonSchemaNode = parsed.success
+        ? parsed.output
+        : { type: schema.type, description: schema.description };
+      lines.push(...schemaLines(`\`--${name}\``, node, required.has(name), '', MAX_SCHEMA_DEPTH));
+    }
   }
   return lines.join('\n');
 }
@@ -417,13 +641,16 @@ function formatMultiInstanceWarning(
   siblings: StorybookInstanceRecord[]
 ): string {
   const all = [chosen, ...siblings];
+  // Matches can span cwds (a record can match by config dir), so each line carries the
+  // instance's own cwd/config dir to tell the competing projects apart.
   const lines = all.map((r) => {
     const marker = r === chosen ? ' (used)' : '';
-    return `> - pid \`${r.pid}\` at ${r.url} (status: \`${r.mcp.status}\`)${marker}`;
+    const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';
+    return `> - pid \`${r.pid}\` at ${r.url} (cwd \`${r.cwd}\`${configDir}, status: \`${r.mcp.status}\`)${marker}`;
   });
-  return `> Warning: Multiple Storybook instances are running at this cwd. This call was sent to pid \`${chosen.pid}\`.
+  return `> Warning: Multiple Storybook instances match this project. This call was sent to pid \`${chosen.pid}\`.
 >
-> Instances at \`${chosen.cwd}\`:
+> Matching instances:
 ${lines.join('\n')}
 >
 > If results look unexpected, ask the user whether they want to stop the other instance(s).`;

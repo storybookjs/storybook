@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { Button, Link, ResetWrapper } from 'storybook/internal/components';
@@ -217,6 +217,7 @@ export interface ArgsTableOptionProps {
   sort?: SortType;
   storyId?: string;
   controlsId?: string;
+  docsLang?: string;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -342,7 +343,27 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     isLoading,
     storyId,
     controlsId,
+    docsLang,
   } = props;
+
+  const { rows, args, globals } =
+    'rows' in props ? props : { rows: undefined, args: undefined, globals: undefined };
+
+  const isResettingRef = useRef(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    isResettingRef.current = false;
+    setIsResetting(false);
+  }, [args]);
+
+  const handleResetClick = useCallback(() => {
+    if (!isResettingRef.current && resetArgs) {
+      isResettingRef.current = true;
+      setIsResetting(true);
+      resetArgs();
+    }
+  }, [resetArgs]);
 
   if ('error' in props) {
     const { error } = props;
@@ -364,9 +385,6 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   if (isLoading) {
     return <Skeleton />;
   }
-
-  const { rows, args, globals } =
-    'rows' in props ? props : { rows: undefined, args: undefined, globals: undefined };
   const groups: Sections = groupRows(
     pickBy(
       rows || {},
@@ -412,8 +430,10 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
             <StyledButton
               variant="ghost"
               padding="small"
-              onClick={() => resetArgs()}
-              ariaLabel="Reset controls"
+              onClick={handleResetClick}
+              disabled={isResetting}
+              ariaLabel={isResetting ? 'Resetting controls...' : 'Reset controls'}
+              lang="en"
             >
               <UndoIcon />
             </StyledButton>
@@ -423,6 +443,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
         <TableWrapper
           {...{ compact, inAddonPanel, inTabPanel }}
           className="docblock-argstable sb-unstyled"
+          lang="en"
         >
           <thead className="docblock-argstable-head">
             <tr>
@@ -448,7 +469,13 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
           </thead>
           <tbody className="docblock-argstable-body">
             {groups.ungrouped.map((row) => (
-              <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
+              <ArgRow
+                key={row.key}
+                row={row}
+                arg={args && args[row.key]}
+                docsLang={docsLang}
+                {...common}
+              />
             ))}
 
             {Object.entries(groups.ungroupedSubsections).map(([subcategory, subsection]) => (

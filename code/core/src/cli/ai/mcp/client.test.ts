@@ -2,13 +2,7 @@ import { versions } from 'storybook/internal/common';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  MCP_CLIENT_INFO,
-  McpJsonRpcError,
-  callMcpTool,
-  listMcpTools,
-  listMcpToolsWithServerMetadata,
-} from './client.ts';
+import { MCP_CLIENT_INFO, McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import type { StorybookInstanceRecord } from './types.ts';
 
 const record: StorybookInstanceRecord = {
@@ -228,7 +222,7 @@ describe('listMcpTools', () => {
 });
 
 describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
-  const initializeResponse = (sessionId?: string, instructions?: unknown) =>
+  const initializeResponse = (sessionId?: string) =>
     jsonResponse(
       {
         jsonrpc: '2.0',
@@ -236,29 +230,11 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
         result: {
           protocolVersion: '2025-06-18',
           serverInfo: {},
-          ...(instructions !== undefined ? { instructions } : {}),
         },
       },
       200,
       sessionId ? { 'mcp-session-id': sessionId } : {}
     );
-
-  const initializeSseResponse = (sessionId: string | undefined, instructions: unknown) => {
-    const envelope = {
-      jsonrpc: '2.0',
-      id: 'init',
-      result: {
-        protocolVersion: '2025-06-18',
-        serverInfo: {},
-        instructions,
-      },
-    };
-    return sseResponse(
-      `event: message\ndata: ${JSON.stringify(envelope)}\n\n`,
-      200,
-      sessionId ? { 'mcp-session-id': sessionId } : {}
-    );
-  };
 
   const toolResult = () =>
     jsonResponse({
@@ -406,51 +382,6 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
     expect(headers['Mcp-Session-Id']).toBe('session-7');
   });
 
-  it('returns server instructions from the initialize response alongside tools/list results', async () => {
-    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce(initializeResponse('session-1', '  Follow the story workflow.  '))
-      .mockResolvedValueOnce(
-        jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools } })
-      ) as unknown as typeof fetch;
-
-    await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
-      tools,
-      serverMetadata: { instructions: 'Follow the story workflow.' },
-    });
-  });
-
-  it('returns server instructions from an SSE initialize response', async () => {
-    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce(initializeSseResponse('session-1', '  Follow the story workflow.  '))
-      .mockResolvedValueOnce(toolListResult(tools)) as unknown as typeof fetch;
-
-    await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
-      tools,
-      serverMetadata: { instructions: 'Follow the story workflow.' },
-    });
-  });
-
-  it.each([undefined, '', '   ', 123])(
-    'omits server instructions when initialize returns %j',
-    async (instructions) => {
-      const fetchImpl = vi
-        .fn()
-        .mockResolvedValueOnce(initializeResponse('session-1', instructions))
-        .mockResolvedValueOnce(
-          jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools: [] } })
-        ) as unknown as typeof fetch;
-
-      await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
-        tools: [],
-        serverMetadata: {},
-      });
-    }
-  );
-
   it.each([
     [
       'malformed JSON',
@@ -472,17 +403,14 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       .mockResolvedValueOnce(initResponse())
       .mockResolvedValueOnce(toolListResult(tools)) as unknown as typeof fetch;
 
-    await expect(listMcpToolsWithServerMetadata(record, fetchImpl)).resolves.toEqual({
-      tools,
-      serverMetadata: {},
-    });
+    await expect(listMcpTools(record, fetchImpl)).resolves.toEqual(tools);
   });
 
   it('keeps listMcpTools returning only the tool descriptors', async () => {
     const tools = [{ name: 'get-documentation', description: 'Get docs' }];
     const fetchImpl = vi
       .fn()
-      .mockResolvedValueOnce(initializeResponse('session-1', 'Follow the story workflow.'))
+      .mockResolvedValueOnce(initializeResponse('session-1'))
       .mockResolvedValueOnce(
         jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools } })
       ) as unknown as typeof fetch;

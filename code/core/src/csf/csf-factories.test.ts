@@ -143,13 +143,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]
@@ -170,13 +170,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]

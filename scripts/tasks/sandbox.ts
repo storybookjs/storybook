@@ -110,6 +110,12 @@ export const sandbox: Task = {
       'uuid',
     ];
 
+    const extraDevDeps = [
+      ...(details.template.modifications?.extraDevDependencies ?? []),
+      // Always installed regardless of the template.
+      '@storybook/test-runner@latest',
+    ];
+
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
     if (shouldAddVitestIntegration) {
@@ -175,6 +181,10 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
+      extraDevDeps,
+      removeDeps: details.template.modifications?.removeDependencies,
+      removeDevDeps: details.template.modifications?.removeDevDependencies,
+      resolutions: details.template.modifications?.resolutions,
     });
 
     await extendMain(details, options);

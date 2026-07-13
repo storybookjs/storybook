@@ -43,11 +43,9 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
-    // 'rolldown' bundles tsc-emitted declarations: ~14x faster than the old
-    // rollup path and byte-deterministic. 'rolldown-tsgo' is ~2x faster still,
-    // but tsgo declaration emit is not yet deterministic (type aliases flap,
-    // chunk references can go stale) and hangs on some packages; keep it
-    // opt-in until it stabilizes.
+    // Both rolldown modes bundle a deterministic whole-program declaration
+    // pre-emit; 'rolldown' emits with the TypeScript 6 JS API, 'rolldown-tsgo'
+    // with the ~2x faster TypeScript 7 native compiler (`typescript-native`).
     'dts-bundler': { type: 'string', default: 'rolldown' },
     'dts-resolver': { type: 'string', default: 'hybrid' },
   },

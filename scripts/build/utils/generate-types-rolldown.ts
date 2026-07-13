@@ -1,4 +1,6 @@
+import { spawnSync } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { sep } from 'node:path';
 
 import { basename, dirname, join, relative } from 'pathe';
@@ -95,6 +97,58 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
   };
 }
 
+/** Compiler options shared by both declaration emitters (TS 6 API and TS 7 CLI). */
+function dtsEmitCompilerOptions(outDir: string) {
+  return {
+    noEmit: false,
+    noCheck: true,
+    declaration: true,
+    emitDeclarationOnly: true,
+    declarationMap: false,
+    sourceMap: false,
+    composite: false,
+    incremental: false,
+    skipLibCheck: true,
+    noEmitOnError: false,
+    stripInternal: true,
+    // Source files import with explicit .ts extensions; emitted d.ts must
+    // reference .js so that consumers (and the bundling pass) resolve them.
+    allowImportingTsExtensions: true,
+    rewriteRelativeImportExtensions: true,
+    outDir,
+    rootDir: DIR_ROOT,
+  } satisfies ts.CompilerOptions;
+}
+
+/**
+ * Handwritten declaration files (e.g. `typings.d.ts`) are program inputs, not
+ * outputs, so tsc does not place them in outDir; copy them so that
+ * side-effect imports like `import './typings.d.ts'` resolve in the tree.
+ */
+function copyHandwrittenDeclarations(fileNames: readonly string[], outDir: string): void {
+  for (const fileName of fileNames) {
+    if (/\.d\.[cm]?ts$/.test(fileName)) {
+      const target = join(outDir, relative(DIR_ROOT, fileName));
+      ts.sys.writeFile(target, ts.sys.readFile(fileName) ?? '');
+    }
+  }
+}
+
+function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
+  const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+    },
+  });
+  if (!parsed) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(`Unable to parse ${wrapperTsconfig}`);
+  }
+  return parsed;
+}
+
 /**
  * Emit declarations for the whole package (plus any cross-package sources it
  * imports) with a single `program.emit()` call into `outDir`, mirroring the
@@ -107,39 +161,13 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
  * load order produces byte-different output across runs.
  */
 function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void {
-  const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
-    ...ts.sys,
-    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
-    },
-  });
-  if (!parsed) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error(`Unable to parse ${wrapperTsconfig}`);
-  }
+  const parsed = parseWrapperTsconfig(wrapperTsconfig);
 
   const program = ts.createProgram({
     rootNames: parsed.fileNames,
     options: {
       ...parsed.options,
-      noEmit: false,
-      noCheck: true,
-      declaration: true,
-      emitDeclarationOnly: true,
-      declarationMap: false,
-      sourceMap: false,
-      composite: false,
-      incremental: false,
-      skipLibCheck: true,
-      noEmitOnError: false,
-      stripInternal: true,
-      // Source files import with explicit .ts extensions; emitted d.ts must
-      // reference .js so that consumers (and the bundling pass) resolve them.
-      allowImportingTsExtensions: true,
-      rewriteRelativeImportExtensions: true,
-      outDir,
-      rootDir: DIR_ROOT,
+      ...dtsEmitCompilerOptions(outDir),
     },
   });
 
@@ -165,15 +193,49 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
     throw new Error(`Declaration emit produced no output for ${wrapperTsconfig}`);
   }
 
-  // Handwritten declaration files (e.g. `typings.d.ts`) are program inputs,
-  // not outputs, so tsc does not place them in outDir; copy them so that
-  // side-effect imports like `import './typings.d.ts'` resolve in the tree.
-  for (const fileName of parsed.fileNames) {
-    if (/\.d\.[cm]?ts$/.test(fileName)) {
-      const target = join(outDir, relative(DIR_ROOT, fileName));
-      ts.sys.writeFile(target, ts.sys.readFile(fileName) ?? '');
-    }
+  copyHandwrittenDeclarations(parsed.fileNames, outDir);
+}
+
+/**
+ * Same contract as `emitPackageDeclarations`, but the emit runs on the
+ * TypeScript 7 native compiler (the `typescript-native` npm alias). TS 7
+ * ships no JS compiler API, so the emit options are written into a dedicated
+ * tsconfig and the emit is one `tsc -p` child process — still a single
+ * whole-program pass over the package, like the TS 6 path.
+ */
+function emitPackageDeclarationsNative(
+  emitTsconfig: string,
+  wrapperTsconfig: string,
+  outDir: string
+): void {
+  const require = createRequire(import.meta.url);
+  // The package's `exports` map only exposes the new API entry points, so
+  // resolve the package root via package.json and spawn its tsc launcher.
+  const tscPath = join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc');
+
+  const result = spawnSync(
+    process.execPath,
+    [tscPath, '--project', emitTsconfig, '--pretty', 'false'],
+    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
+  );
+  if (result.error) {
+    throw result.error;
   }
+  // With `noCheck` + `noEmitOnError: false`, diagnostics are advisory (the
+  // JS-API path behaves the same); only fail when nothing was emitted.
+  if (result.status !== 0) {
+    console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
+  }
+  const emitted = ts.sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
+  if (emitted.length === 0) {
+    console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `Native declaration emit produced no output for ${emitTsconfig} (exit code ${result.status})`
+    );
+  }
+
+  copyHandwrittenDeclarations(parseWrapperTsconfig(wrapperTsconfig).fileNames, outDir);
 }
 
 export async function generateTypesFiles(
@@ -239,18 +301,31 @@ export async function generateTypesFiles(
   // directory never ships (removed in `finally`).
   const emitDir = join(cwd, '.dts-emit');
 
-  try {
-    let input: Record<string, string> = entryMap;
+  // TS 7 has no JS compiler API, so its emit options cannot be passed
+  // programmatically; write them into a second temporary tsconfig instead.
+  const emitTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}-emit.json`);
 
-    if (!useTsgo) {
-      emitPackageDeclarations(wrapperTsconfig, emitDir);
-      input = Object.fromEntries(
-        Object.entries(entryMap).map(([name, sourcePath]) => [
-          name,
-          join(emitDir, relative(DIR_ROOT, sourcePath)).replace(/\.tsx?$/, '.d.ts'),
-        ])
+  try {
+    if (useTsgo) {
+      await writeFile(
+        emitTsconfig,
+        JSON.stringify({
+          compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
+          include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
+          exclude: DTS_EXCLUDES,
+        })
       );
+      emitPackageDeclarationsNative(emitTsconfig, wrapperTsconfig, emitDir);
+    } else {
+      emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
+
+    const input: Record<string, string> = Object.fromEntries(
+      Object.entries(entryMap).map(([name, sourcePath]) => [
+        name,
+        join(emitDir, relative(DIR_ROOT, sourcePath)).replace(/\.tsx?$/, '.d.ts'),
+      ])
+    );
 
     const out = await rolldown({
       input,
@@ -260,8 +335,7 @@ export async function generateTypesFiles(
         dts({
           cwd,
           tsconfig: wrapperTsconfig,
-          tsgo: useTsgo,
-          dtsInput: !useTsgo,
+          dtsInput: true,
           emitDtsOnly: true,
           resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
         }),
@@ -290,6 +364,7 @@ export async function generateTypesFiles(
   } finally {
     await Promise.all([
       rm(wrapperTsconfig, { force: true }),
+      rm(emitTsconfig, { force: true }),
       rm(emitDir, { recursive: true, force: true }),
     ]);
   }

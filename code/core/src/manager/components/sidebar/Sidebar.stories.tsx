@@ -174,7 +174,6 @@ const refs: Record<string, RefType> = {
   },
 };
 
-// eslint-disable-next-line local-rules/no-uncategorized-errors
 const indexError = new Error('Failed to load index');
 
 const refsError = {

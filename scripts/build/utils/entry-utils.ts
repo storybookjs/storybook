@@ -2,7 +2,7 @@ import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import * as esbuild from 'esbuild';
+import type * as esbuild from 'esbuild';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 

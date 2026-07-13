@@ -382,7 +382,7 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
 /**
  * Ctrl+Shift+U flow: the tree opens the menu for the selected story when the shortcut's channel
  * event fires and prepends a "Go to story" navigation item, one Tab away from the focused popover
- * container. Status links describe their click action; opted-out statuses stay hidden.
+ * container. Statuses stay on the rows; the menu carries navigation and provider entries.
  */
 export const ContextMenuKeyboardEntry: Story = {
   ...makeDualSlotStory({
@@ -426,11 +426,8 @@ export const ContextMenuKeyboardEntry: Story = {
     await userEvent.tab();
     await expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
 
-    // Status links describe the click action, not the status — the row announces the status.
-    await expect(
-      within(popover).getByLabelText('Open Vitest results for this story')
-    ).toBeVisible();
-    // Change-detection statuses opt out of the context menu.
+    // Status links were removed from the context menu; statuses stay on the row itself.
+    expect(within(popover).queryByText('Vitest')).not.toBeInTheDocument();
     expect(within(popover).queryByText('Change Detection')).not.toBeInTheDocument();
   },
 };

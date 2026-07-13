@@ -6,7 +6,7 @@
     "customConditions": ["code"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "incremental": false,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -17,6 +17,9 @@
     "allowImportingTsExtensions": true,
     "noImplicitAny": true,
     "noUnusedLocals": false,
+    // TS 6.0 enables this by default; Storybook intentionally relies on bundler-resolved
+    // side-effect imports (e.g. `import './x.css'`), which TS cannot resolve, so keep it off.
+    "noUncheckedSideEffectImports": false,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,

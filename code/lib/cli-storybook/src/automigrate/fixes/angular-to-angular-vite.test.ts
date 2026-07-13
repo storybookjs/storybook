@@ -95,6 +95,7 @@ describe('angular-to-angular-vite', () => {
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+    vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
     // Default: angular.json doesn't exist (AngularJSON gracefully skips it). Tests that need
     // angular.json content override this via `mockAngularJson(...)`.
     mockExistsSync.mockReturnValue(false);
@@ -352,6 +353,32 @@ describe('angular-to-angular-vite', () => {
       } as any);
 
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
+      // @analogjs/vite-plugin-angular is a required peer of @storybook/angular-vite and is
+      // installed alongside the framework because yarn/pnpm do not auto-install missing peers.
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        [`${ANGULAR_VITE_PACKAGE}@9.0.0`, '@analogjs/vite-plugin-angular']
+      );
+    });
+
+    it('does not re-add @analogjs/vite-plugin-angular when the project already declares it', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+        '@analogjs/vite-plugin-angular': '^2.5.0',
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         [`${ANGULAR_VITE_PACKAGE}@9.0.0`]

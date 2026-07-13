@@ -3,20 +3,20 @@ import { resolve } from 'node:path';
 import { ProjectType } from 'storybook/internal/cli';
 import {
   HandledError,
-  type JsPackageManager,
   PackageManagerName,
   cache,
   executeCommand,
+  type JsPackageManager,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { telemetry, setTelemetryEnabled } from 'storybook/internal/telemetry';
-import { Feature } from 'storybook/internal/types';
+import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import type {
   SupportedBuilder,
   SupportedFramework,
   SupportedRenderer,
 } from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
 import {
   executeAddonConfiguration,
@@ -190,6 +190,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
+    aiSetupCommand: packageManager.getPackageCommand(['storybook', 'ai', 'setup']),
   });
 
   // Step 9: Track telemetry

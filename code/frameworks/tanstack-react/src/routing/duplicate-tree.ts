@@ -91,6 +91,16 @@ function cloneChild(
     getParentRoute: () => parent as any,
   } as any);
 
+  // A pathful route may still carry an explicit id (routeTree.gen gives a
+  // nested pathless layout `id: '/posts/_archive'` AND `path: '/posts'`).
+  // `createRoute` rejects id+path together, but `.update()` accepts it — the
+  // same mechanism routeTree.gen uses. Restoring the id keeps composed ids
+  // identical to the source tree, which strict hooks (`Route.useLoaderData()`)
+  // rely on to find their match.
+  if (merged.path && originalId != null && !('id' in override)) {
+    (cloned as any).update({ id: originalId });
+  }
+
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
   const children = (oldRoute as any).children as AnyRoute[] | undefined;

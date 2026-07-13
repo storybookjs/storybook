@@ -131,6 +131,54 @@ describe('getMcpMetadataFromMainConfig', () => {
       endpoint: '/custom-mcp',
     });
   });
+
+  it('detects addon-mcp registered as an absolute path via getAbsolutePath()', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['/Users/me/project/node_modules/@storybook/addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('detects addon-mcp registered as an object whose name is an absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: [
+          {
+            name: '/Users/me/project/node_modules/@storybook/addon-mcp',
+            options: { endpoint: '/custom-mcp' },
+          },
+        ],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/custom-mcp',
+    });
+  });
+
+  it('detects addon-mcp from a Windows-style absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['C:\\project\\node_modules\\@storybook\\addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('does not match unrelated addons that merely contain the addon-mcp name as a substring', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['@storybook/addon-mcp-extras', 'storybook-addon-mcp'],
+      })
+    ).toEqual({
+      status: 'not-installed',
+    });
+  });
 });
 
 describe('createRuntimeInstanceRecord', () => {
@@ -158,6 +206,27 @@ describe('createRuntimeInstanceRecord', () => {
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },
     });
+  });
+
+  it('stores the configDir resolved against the cwd when provided', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(record.configDir).toBe(resolve('/repo/packages/ui/.storybook'));
+  });
+
+  it('keeps an absolute configDir as-is', () => {
+    const configDir = join(tmpdir(), 'repo', 'packages', 'ui', '.storybook');
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere', configDir });
+
+    expect(record.configDir).toBe(resolve(configDir));
+  });
+
+  it('omits configDir when not provided', () => {
+    expect(createRuntimeInstanceRecord(baseOptions)).not.toHaveProperty('configDir');
   });
 
   it('marks MCP as not-installed by default', () => {

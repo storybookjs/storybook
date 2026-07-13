@@ -452,11 +452,14 @@ export const DocsWrapper = styled.div(({ theme }) => ({
 interface DocsPageWrapperProps {
   children?: React.ReactNode;
   toc?: React.ReactNode;
+  lang?: string;
 }
 
-export const DocsPageWrapper: FC<DocsPageWrapperProps> = ({ children, toc }) => (
+export const DocsPageWrapper: FC<DocsPageWrapperProps> = ({ children, toc, lang = 'en' }) => (
   <DocsWrapper className="sbdocs sbdocs-wrapper">
     {toc}
-    <DocsContent className="sbdocs sbdocs-content">{children}</DocsContent>
+    <DocsContent className="sbdocs sbdocs-content" lang={lang}>
+      {children}
+    </DocsContent>
   </DocsWrapper>
 );

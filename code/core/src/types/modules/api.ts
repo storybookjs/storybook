@@ -10,6 +10,7 @@ import type {
   API_HashEntry,
   API_IndexHash,
   API_PreparedIndexEntry,
+  API_RefStoryRuntimeData,
 } from './api-stories.ts';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
@@ -17,7 +18,7 @@ import type { StoryIndex } from './indexer.ts';
 
 type OrString<T extends string> = T | (string & {});
 
-export type API_ViewMode = OrString<'story' | 'docs' | 'settings'> | undefined;
+export type API_ViewMode = OrString<'story' | 'docs' | 'settings' | 'review'> | undefined;
 
 export type API_RenderOptions = Addon_RenderOptions;
 
@@ -150,6 +151,12 @@ export interface API_LoadedRefData {
   filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
+  /**
+   * Runtime story enrichment (args, argTypes, parameters, initialArgs, prepared) received from the
+   * ref preview via STORY_PREPARED / DOCS_PREPARED, cached so it survives ref index (re)builds. See
+   * `API_RefStoryRuntimeData`.
+   */
+  storyUpdates?: API_RefStoryRuntimeData;
 }
 
 export interface API_ComposedRef extends API_LoadedRefData {
@@ -181,6 +188,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'previewInitialized'
     | 'sourceUrl'
     | 'internal_index'
+    | 'storyUpdates'
   >
 >;
 

@@ -3,6 +3,7 @@ import type {
   MatchingOutputSchemas,
   OperationInputSchemas,
   QueryDefinition,
+  QueryFunctions,
   ServiceDefinition,
   ServiceId,
   ServiceState,
@@ -43,7 +44,8 @@ type DefinedQueries<
     TQueryInputSchemas[TKey],
     TQueryOutputSchemas[TKey],
     TCommandInputSchemas,
-    TCommandOutputSchemas
+    TCommandOutputSchemas,
+    QueryFunctions<TQueryInputSchemas, TQueryOutputSchemas>
   > &
     InternalOperationNaming<TKey>;
 } & {
@@ -63,11 +65,16 @@ type DefinedCommands<
   TState,
   TCommandInputSchemas extends OperationInputSchemas,
   TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+  TQueryInputSchemas extends OperationInputSchemas,
+  TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
 > = {
   [TKey in keyof TCommandInputSchemas]: CommandDefinition<
     TState,
     TCommandInputSchemas[TKey],
-    TCommandOutputSchemas[TKey]
+    TCommandOutputSchemas[TKey],
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    QueryFunctions<TQueryInputSchemas, TQueryOutputSchemas>
   > &
     InternalOperationNaming<TKey>;
 } & {
@@ -93,8 +100,11 @@ export const defineService = <
   const TQueryOutputSchemas extends MatchingOutputSchemas<TQueryInputSchemas>,
   const TCommandInputSchemas extends OperationInputSchemas,
   const TCommandOutputSchemas extends MatchingOutputSchemas<TCommandInputSchemas>,
+  // `const` keeps the id a literal (e.g. `'core/docgen'`) instead of widening to `string`, so a
+  // definition's id type can be reused as a key elsewhere.
+  const TId extends ServiceId = ServiceId,
 >(def: {
-  id: ServiceId;
+  id: TId;
   description?: string;
   internal?: boolean;
   initialState: ServiceState<TState>;
@@ -105,7 +115,13 @@ export const defineService = <
     TCommandInputSchemas,
     TCommandOutputSchemas
   >;
-  commands: DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>;
+  commands: DefinedCommands<
+    TState,
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    TQueryInputSchemas,
+    TQueryOutputSchemas
+  >;
 }): ServiceDefinition<
   TState,
   DefinedQueries<
@@ -115,5 +131,12 @@ export const defineService = <
     TCommandInputSchemas,
     TCommandOutputSchemas
   >,
-  DefinedCommands<TState, TCommandInputSchemas, TCommandOutputSchemas>
+  DefinedCommands<
+    TState,
+    TCommandInputSchemas,
+    TCommandOutputSchemas,
+    TQueryInputSchemas,
+    TQueryOutputSchemas
+  >,
+  TId
 > => def;

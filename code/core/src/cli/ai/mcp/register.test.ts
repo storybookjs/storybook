@@ -242,7 +242,7 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'success' },
     });
     await parse(program, ['ai', '-o', '/out/result.md', 'tool-x']);
-    expect(writeFile).toHaveBeenCalledWith('/out/result.md', 'markdown result\n', 'utf-8');
+    expect(writeFile).toHaveBeenCalledWith(resolve('/out/result.md'), 'markdown result\n', 'utf-8');
     expect(process.stdout.write).not.toHaveBeenCalledWith('markdown result\n');
   });
 
@@ -300,6 +300,16 @@ describe('with the feature flag (passthrough registered)', () => {
     await parse(program, ['ai', '--cwd', '/x', '--port', '6006', '--help']);
     expect(buildStorybookCommandsHelp).toHaveBeenCalledWith({
       cwd: '/x',
+      configDir: undefined,
+      port: '6006',
+    });
+  });
+
+  it('accepts -p as a shorthand for --port', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '-p', '6006', '--help']);
+    expect(buildStorybookCommandsHelp).toHaveBeenCalledWith({
+      cwd: undefined,
       configDir: undefined,
       port: '6006',
     });

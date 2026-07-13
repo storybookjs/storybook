@@ -254,6 +254,17 @@ export interface DocsParameters {
     subtitle?: string;
 
     /**
+     * The BCP-47 language tag applied to Storybook-rendered docs prose (descriptions, titles,
+     * ArgTypes description cells, free MDX prose).
+     *
+     * Storybook's own chrome stays English regardless. Inherited project → meta (page-level) or
+     * project → meta → story (per-story prose).
+     *
+     * @default 'en'
+     */
+    lang?: string;
+
+    /**
      * Override the default theme
      *
      * @see https://storybook.js.org/docs/writing-docs/autodocs#override-the-default-theme

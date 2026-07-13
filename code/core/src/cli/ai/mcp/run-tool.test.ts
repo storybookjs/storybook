@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resolve } from 'node:path';
 import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
 import { readRegistry } from './registry.ts';
@@ -60,8 +61,8 @@ describe('runAiTool', () => {
       outcome: { kind: 'success' },
     });
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/.storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
     });
   });
 
@@ -133,8 +134,8 @@ describe('runAiTool', () => {
 
     expect(result.output).toBe('custom config instructions');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
     expect(readRegistry).not.toHaveBeenCalled();
   });
@@ -231,6 +232,37 @@ describe('runAiTool', () => {
     });
   });
 
+  it('routes via the recorded configDir when the dev server was started from the monorepo root', async () => {
+    const rootInstance = {
+      ...record,
+      cwd: resolve('/repo'),
+      configDir: resolve('/repo/packages/ui/.storybook'),
+    };
+    vi.mocked(readRegistry).mockResolvedValue([rootInstance]);
+
+    const result = await runAiTool('list-all-documentation', [], { cwd: '/repo/packages/ui' });
+
+    expect(callMcpTool).toHaveBeenCalledWith(rootInstance, expect.anything(), undefined);
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('routes via --config-dir from the monorepo root when the dev server was started from the leaf', async () => {
+    const leafInstance = {
+      ...record,
+      cwd: resolve('/repo/packages/ui'),
+      configDir: resolve('/repo/packages/ui/.storybook'),
+    };
+    vi.mocked(readRegistry).mockResolvedValue([leafInstance]);
+
+    const result = await runAiTool('list-all-documentation', [], {
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(callMcpTool).toHaveBeenCalledWith(leafInstance, expect.anything(), undefined);
+    expect(result.exitCode).toBe(0);
+  });
+
   it('defaults the cwd to process.cwd()', async () => {
     vi.mocked(readRegistry).mockResolvedValue([{ ...record, cwd: process.cwd() }]);
     const result = await runAiTool('list-all-documentation', []);
@@ -266,8 +298,44 @@ describe('runAiTool', () => {
 
     const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('No Storybook is running at this cwd');
-    expect(result.output).toContain('/projects/foo');
+    expect(result.output).toContain('No running Storybook matches this project');
+    expect(result.output).toContain('- cwd `/projects/foo` (http://localhost:6006)');
+    expect(result.output).toContain('- `storybook ai --cwd /projects/foo <command> [args...]`');
+    expect(result.output).toContain('BEFORE the command name');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+  });
+
+  it('includes a --config-dir retry example in the no-instance markdown when recorded', async () => {
+    vi.mocked(readRegistry).mockResolvedValue([
+      { ...record, cwd: '/repo', configDir: '/repo/packages/ui/.storybook' },
+    ]);
+
+    const result = await runAiTool('get-documentation', [], { cwd: '/projects/other' });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain(
+      '- cwd `/repo`, config dir `/repo/packages/ui/.storybook` (http://localhost:6006)'
+    );
+    expect(result.output).toContain(
+      '- `storybook ai --config-dir /repo/packages/ui/.storybook <command> [args...]`'
+    );
+    expect(result.output).not.toContain('storybook ai --cwd');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+  });
+
+  it('does not route by cwd when an explicit --config-dir targets a different config', async () => {
+    // Only the root Storybook runs; the agent explicitly targets the (not running) ui package.
+    vi.mocked(readRegistry).mockResolvedValue([
+      { ...record, cwd: resolve('/repo'), configDir: resolve('/repo/.storybook') },
+    ]);
+
+    const result = await runAiTool('list-all-documentation', [], {
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
 
@@ -463,8 +531,8 @@ describe('runAiTool', () => {
     vi.mocked(readRegistry).mockResolvedValue([record, sibling]);
     const result = await runAiTool('list-all-documentation', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('Multiple matching Storybook instances');
-    expect(result.output).toContain('Matching instances at `/projects/foo`');
+    expect(result.output).toContain('Multiple Storybook instances match this project');
+    expect(result.output).toContain('cwd `/projects/foo`');
     expect(result.output).toContain('pid `1`');
     expect(result.output).toContain('pid `2`');
     expect(result.output).toContain('(used)');
@@ -514,8 +582,8 @@ describe('runAiTool', () => {
         undefined
       );
       expect(result.exitCode).toBe(0);
-      expect(result.output).toContain('Multiple matching Storybook instances');
-      expect(result.output).toContain('Matching instances at `/projects/foo`');
+      expect(result.output).toContain('Multiple Storybook instances match this project');
+      expect(result.output).toContain('cwd `/projects/foo`');
       expect(result.output).toContain('pid `2`');
       expect(result.output).toContain('pid `3`');
       expect(result.output).not.toContain('pid `4`');
@@ -545,7 +613,7 @@ describe('buildStorybookCommandsHelp', () => {
 
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toContain(
-      'Storybook help from the Storybook configuration at /projects/foo/.storybook:'
+      `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`
     );
     expect(section).toContain('# Storybook commands');
     expect(section).toContain('get-documentation');
@@ -566,7 +634,7 @@ describe('buildStorybookCommandsHelp', () => {
     const section = await buildStorybookCommandsHelp({ cwd: '/projects/foo' });
     expect(section).toBe(
       [
-        'Storybook help from the Storybook configuration at /projects/foo/.storybook:',
+        `Storybook help from the Storybook configuration at ${resolve('/projects/foo/.storybook')}:`,
         '',
         '# Storybook workflow instructions',
         '',
@@ -625,8 +693,8 @@ describe('buildStorybookCommandsHelp', () => {
     expect(section).toContain('Storybook help from the Storybook configuration');
     expect(section).toContain('list-all-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/.storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/.storybook'),
     });
   });
 
@@ -643,8 +711,8 @@ describe('buildStorybookCommandsHelp', () => {
 
     expect(section).toContain('get-documentation');
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 });
@@ -672,6 +740,154 @@ describe('runAiToolHelp', () => {
     expect(result.output).toContain('Execution: requires a running Storybook.');
     expect(result.output).toContain('- `--id` (string, required): Documentation id');
     expect(result.outcome).toEqual({ kind: 'help' });
+  });
+
+  it('recurses into array item and object property schemas so nested fields self-document', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'display-review',
+          description: 'Publish a review.',
+          inputSchema: {
+            properties: {
+              collections: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'What the group is' },
+                    storyIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'IDs the group renders',
+                    },
+                  },
+                  required: ['title', 'storyIds'],
+                },
+              },
+              changedFiles: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Paths you changed',
+              },
+            },
+            required: ['collections', 'changedFiles'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('display-review', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    // Nested array-item fields self-document; the primitive `changedFiles` array
+    // stays flat (no "each item:" expansion).
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai display-review [--key value ...]
+
+      Publish a review.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--collections\` (array of object, required)
+        each item:
+          - \`title\` (string, required): What the group is
+          - \`storyIds\` (array of string, required): IDs the group renders
+      - \`--changedFiles\` (array of string, required): Paths you changed"
+    `);
+  });
+
+  it('describes anyOf/oneOf union variants in help', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'preview-stories',
+          description: 'Preview stories.',
+          inputSchema: {
+            properties: {
+              stories: {
+                type: 'array',
+                items: {
+                  anyOf: [
+                    {
+                      type: 'object',
+                      properties: { storyId: { type: 'string', description: 'A story id' } },
+                      required: ['storyId'],
+                    },
+                    {
+                      type: 'object',
+                      properties: {
+                        exportName: { type: 'string', description: 'An export name' },
+                      },
+                      required: ['exportName'],
+                    },
+                  ],
+                },
+                description: 'Stories to preview',
+              },
+            },
+            required: ['stories'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('preview-stories', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai preview-stories [--key value ...]
+
+      Preview stories.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--stories\` (array, required): Stories to preview
+        each item:
+          option 1
+            - \`storyId\` (string, required): A story id
+          option 2
+            - \`exportName\` (string, required): An export name"
+    `);
+  });
+
+  it('falls back to the top-level type and description when an argument schema cannot be modeled', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'exotic-tool',
+          description: 'Has an unmodeled schema.',
+          inputSchema: {
+            properties: {
+              // `items: false` is valid JSON Schema but outside the node schema, so
+              // validation fails and the help must degrade rather than throw or drop it.
+              weird: { type: 'string', description: 'An odd one', items: false },
+            },
+            required: ['weird'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('exotic-tool', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    // Degrades to the top-level type/description; no crash, no dropped argument.
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai exotic-tool [--key value ...]
+
+      Has an unmodeled schema.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--weird\` (string, required): An odd one"
+    `);
   });
 
   it('marks local commands in single-command help', async () => {
@@ -717,8 +933,8 @@ describe('runAiToolHelp', () => {
     });
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 
@@ -783,8 +999,8 @@ describe('runAiToolHelp', () => {
 
     expect(result.exitCode).toBe(0);
     expect(loadStorybookAiMetadata).toHaveBeenCalledWith({
-      cwd: '/projects/foo',
-      configDir: '/projects/foo/config/storybook',
+      cwd: resolve('/projects/foo'),
+      configDir: resolve('/projects/foo/config/storybook'),
     });
   });
 

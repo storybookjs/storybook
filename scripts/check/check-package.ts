@@ -7,9 +7,6 @@ import { parseArgs } from 'node:util';
 
 import { filterToPackageDiagnostics } from './utils/typescript.ts';
 
-// Computed locally instead of importing ../utils/constants.ts: that module
-// intentionally uses __dirname (it must stay loadable from CJS-transpiled
-// contexts), while this script runs under native node as an ES module.
 const ROOT_DIRECTORY = join(fileURLToPath(import.meta.url), '..', '..', '..');
 
 const {

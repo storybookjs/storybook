@@ -13,7 +13,7 @@ const baseProjectInfo: ProjectInfo = {
   rendererPackage: '@storybook/react',
   renderer: SupportedRenderer.REACT,
   builderPackage: '@storybook/builder-vite',
-  addons: ['@storybook/addon-docs'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-vitest'],
   configDir: '.storybook',
   storiesPaths: ['src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   packageManager: { type: 'npm' } as JsPackageManager,
@@ -23,27 +23,14 @@ const baseProjectInfo: ProjectInfo = {
   needsUserOnboarding: false,
 };
 
-const variants: Array<[string, Partial<ProjectInfo>]> = [
-  ['typescript', {}],
-  ['javascript', { language: 'js' }],
-  ['csf-factory', { hasCsfFactoryPreview: true }],
-];
+const languages = ['ts', 'js'] as const;
+const csfFactory = [false, true] as const;
 
 describe('getAiSimpleSetupMarkdownOutput', () => {
-  describe.each(variants)('%s', (_name, overrides) => {
-    it('renders without addon-vitest', () => {
+  describe.each(languages)('language: %s', (language) => {
+    it.each(csfFactory)('renders with csf-factory preview: %s', (hasCsfFactoryPreview) => {
       expect(
-        getAiSimpleSetupMarkdownOutput({ ...baseProjectInfo, ...overrides })
-      ).toMatchSnapshot();
-    });
-
-    it('renders with addon-vitest', () => {
-      expect(
-        getAiSimpleSetupMarkdownOutput({
-          ...baseProjectInfo,
-          ...overrides,
-          addons: [...baseProjectInfo.addons, '@storybook/addon-vitest'],
-        })
+        getAiSimpleSetupMarkdownOutput({ ...baseProjectInfo, language, hasCsfFactoryPreview })
       ).toMatchSnapshot();
     });
   });

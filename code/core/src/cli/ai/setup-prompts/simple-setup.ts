@@ -6,7 +6,7 @@
  * telemetry. The invoking skill guarantees the preconditions:
  *
  * - Storybook is installed and running 10.5.2 or later
- * - `@storybook/addon-mcp` is installed
+ * - `@storybook/addon-mcp` and `@storybook/addon-vitest` are installed
  * - the project has no user-written stories yet (only `storybook init` examples)
  *
  * The goal is the smallest possible first win: one story for one simple
@@ -18,11 +18,12 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../types.ts';
 import { ext } from '../utils/ext.ts';
 import { getProjectOverview } from '../utils/project-overview.ts';
+import { getTypeImportSource } from '../utils/type-import-source.ts';
 
 function getPreviewCssExample(projectInfo: ProjectInfo): string {
-  const { configDir, language, framework, rendererPackage } = projectInfo;
+  const { configDir, language } = projectInfo;
   const tsx = ext(language, true);
-  const typeImport = framework || rendererPackage || '@storybook/react-vite';
+  const typeImport = getTypeImportSource(projectInfo);
 
   if (projectInfo.hasCsfFactoryPreview) {
     return dedent`
@@ -70,9 +71,9 @@ function getPreviewCssExample(projectInfo: ProjectInfo): string {
 }
 
 function getStoryExample(projectInfo: ProjectInfo): string {
-  const { language, framework, rendererPackage } = projectInfo;
+  const { language } = projectInfo;
   const tsx = ext(language, true);
-  const typeImport = framework || rendererPackage || '@storybook/react-vite';
+  const typeImport = getTypeImportSource(projectInfo);
 
   if (projectInfo.hasCsfFactoryPreview) {
     return dedent`
@@ -189,44 +190,14 @@ function getStoryExample(projectInfo: ProjectInfo): string {
 }
 
 function instructions(projectInfo: ProjectInfo): string {
-  const { configDir, language } = projectInfo;
-  const tsx = ext(language, true);
-  const hasVitestAddon = projectInfo.addons.some((addon) =>
-    addon.includes('@storybook/addon-vitest')
-  );
-
-  const verifyStep = hasVitestAddon
-    ? dedent`
-      ### Step 4 — Start Storybook and verify
-
-      Start the Storybook dev server in the background (or reuse one that already serves this project, usually \`http://localhost:6006\`), using the project's existing \`package.json\` script. Leave it running when you are done — it is part of the deliverable.
-
-      Then run the story tests for the new file through Storybook itself and self-heal until they pass. Read the command's help in its entirety before the first run — it documents the payload shape:
-
-      \`\`\`bash
-      STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
-      \`\`\`
-
-      1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-      2. If a test fails, read the error and fix the cause — prefer fixing \`${configDir}/preview.${tsx}\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
-      3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
-    `
-    : dedent`
-      ### Step 4 — Start Storybook and verify
-
-      Start the Storybook dev server in the background (or reuse one that already serves this project, usually \`http://localhost:6006\`), using the project's existing \`package.json\` script. Leave it running when you are done — it is part of the deliverable.
-
-      Confirm the new stories render styled — the component should look exactly like it does in the app.
-    `;
-
   return dedent`
     Your goal is to write **one story file for one simple component**, so the user sees their own component rendered in Storybook. Keep it fast and minimal: no new addons, no data mocking, no refactors, no extra stories.
 
-    ${renderSteps(projectInfo, verifyStep)}
+    ${renderSteps(projectInfo)}
   `;
 }
 
-function renderSteps(projectInfo: ProjectInfo, verifyStep: string): string {
+function renderSteps(projectInfo: ProjectInfo): string {
   const { configDir, language } = projectInfo;
   const tsx = ext(language, true);
 
@@ -258,7 +229,19 @@ function renderSteps(projectInfo: ProjectInfo, verifyStep: string): string {
     - Don't add a custom \`title\`.
     - Don't create new app components or story-specific harnesses.
 
-    ${verifyStep}
+    ### Step 4 — Start Storybook and verify
+
+    Start the Storybook dev server in the background (or reuse one that already serves this project, usually \`http://localhost:6006\`), using the project's existing \`package.json\` script. Leave it running when you are done — it is part of the deliverable.
+
+    Then run the story tests for the new file through Storybook itself and self-heal until they pass. Read the command's help in its entirety before the first run — it documents the payload shape:
+
+    \`\`\`bash
+    STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
+    \`\`\`
+
+    1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
+    2. If a test fails, read the error and fix the cause — prefer fixing \`${configDir}/preview.${tsx}\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+    3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
     ### Step 5 — Wrap up
 

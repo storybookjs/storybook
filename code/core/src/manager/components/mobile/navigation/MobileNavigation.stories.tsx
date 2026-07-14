@@ -78,9 +78,10 @@ let defaultApi: {
 } | null = null;
 
 /**
- * Reactive mock of `ManagerContext`. The mobile drawer reads its open state from the manager-api
- * layout field `showMobileNavigation`, so the mock owns that field in React state and exposes
- * `toggleNav` / `setMobileNavigation` that update it, mirroring the real store behavior on mobile.
+ * Reactive mock of `ManagerContext`. The mobile drawer reads its open state from
+ * `layout.showMobileNavigation`, so the mock owns that field in React state and exposes `toggleNav`
+ * / `setMobileNavigation` that update it, mirroring the real store behavior on mobile. `ui` is
+ * stubbed because the bottom bar reads `enableShortcuts` from the store.
  */
 const MockManagerProvider: FC<
   PropsWithChildren & { index?: typeof baseIndex; exposeApi?: boolean }
@@ -98,7 +99,8 @@ const MockManagerProvider: FC<
     return {
       state: {
         index,
-        showMobileNavigation,
+        layout: { showMobileNavigation },
+        ui: { enableShortcuts: true },
       },
       api,
     };
@@ -208,9 +210,9 @@ export const MenuClosed: Story = {
   },
 };
 
-// Below the mobile breakpoint `api.toggleNav()` flips the `showMobileNavigation` layout field, which
-// the drawer reads as its single source of truth, so the sidebar keyboard shortcut opens the drawer
-// on mobile too (regression test for #32278).
+// Below the mobile breakpoint `api.toggleNav()` flips `layout.showMobileNavigation`, which the
+// drawer reads as its single source of truth, so the sidebar keyboard shortcut opens the drawer on
+// mobile too (regression test for #32278).
 export const ToggleNavShortcut: Story = {
   play: async () => {
     await expect(screen.queryByLabelText('Close navigation menu')).not.toBeInTheDocument();

@@ -1,15 +1,19 @@
 import type { Channel } from 'storybook/internal/channels';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   SHARE_ISOLATE_MODE,
-  SHARE_POPOVER_OPENED,
-  SHARE_STORY_LINK,
   SIDEBAR_FILTER_CHANGED,
-  AI_PROMPT_NUDGE,
 } from 'storybook/internal/core-events';
-import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
-import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
-import { getSessionId } from 'storybook/internal/telemetry';
+import {
+  type CacheEntry,
+  getLastEvents,
+  getSessionId,
+  type InitPayload,
+  telemetry,
+} from 'storybook/internal/telemetry';
+
+import { REVIEW_EVENTS, type ReviewPageviewPayload } from '../../shared/review/events.ts';
 
 export const makePayload = (
   userAgent: string,
@@ -43,12 +47,6 @@ export function initTelemetryChannel(channel: Channel) {
       }
     } catch {}
   });
-  channel.on(SHARE_POPOVER_OPENED, async () => {
-    telemetry('share', { action: 'popover-opened' });
-  });
-  channel.on(SHARE_STORY_LINK, async () => {
-    telemetry('share', { action: 'story-link-copied' });
-  });
   channel.on(SHARE_ISOLATE_MODE, async () => {
     telemetry('share', { action: 'isolate-mode-opened' });
   });
@@ -57,5 +55,10 @@ export function initTelemetryChannel(channel: Channel) {
   });
   channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
     telemetry('ai-prompt-nudge', { id, origin });
+  });
+  channel.on(REVIEW_EVENTS.PAGEVIEW, ({ page, reviewCreatedAt }: ReviewPageviewPayload) => {
+    // Reviews are only produced by the MCP display-review tool today; other
+    // producers should report their own `source` under the same event.
+    telemetry('review', { action: 'pageview', source: 'mcp-review', page, reviewCreatedAt });
   });
 }

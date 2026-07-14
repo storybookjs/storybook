@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { x } from 'tinyexec';
+
+const GITHUB_LABEL_MAX_LENGTH = 50;
 import type { TrialWorkspace } from './prepare-trial.ts';
 import type { EvalData } from './result-docs.ts';
 import {
@@ -32,7 +34,11 @@ export function buildTrialLabels(
     `model:${variant.model}`,
     `effort:${variant.effort}`,
     `prompt:${prompt}`,
-  ];
+  ].map(truncateLabel);
+}
+
+function truncateLabel(label: string) {
+  return label.slice(0, GITHUB_LABEL_MAX_LENGTH);
 }
 
 export async function publishTrialBranch(opts: {

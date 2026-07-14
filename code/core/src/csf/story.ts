@@ -1,4 +1,7 @@
-import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
+import type { BoundFunctions, queries } from '@testing-library/dom';
+import type { userEvent } from '@testing-library/user-event';
+
+import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
 import type { ToolbarArgType } from '../toolbar/index.ts';
 import type { SBScalarType, SBType } from './SBType.ts';
@@ -185,6 +188,7 @@ export interface GlobalTypes {
  * type-checked across all stories.
  */
 export interface AddonTypes {
+  tags?: Tag[] | undefined;
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
@@ -269,7 +273,7 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   context: StoryContext<TRenderer, TArgs>
 ) => Awaitable<void>;
 
-export interface Canvas {}
+export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
   extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
@@ -283,6 +287,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   step: StepFunction<TRenderer, TArgs>;
   context: this;
   canvas: Canvas;
+  userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];
   reporting: ReportingAPI;
 }
@@ -419,7 +424,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   render?: ArgsStoryFn<TRenderer, TArgs>;
 
   /** Named tags for a story, used to filter stories in different contexts. */
-  tags?: Tag[];
+  tags?: (TRenderer['tags'] extends Tag[] ? TRenderer['tags'] : Tag[]) | undefined;
 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
 }
@@ -541,7 +546,7 @@ export interface ComponentAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: TypedGlobals<TRenderer>;
+  globals?: Partial<TypedGlobals<TRenderer>>;
 }
 
 export type StoryAnnotations<
@@ -559,7 +564,7 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: TypedGlobals<TRenderer>;
+  globals?: Partial<TypedGlobals<TRenderer>>;
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
@@ -591,7 +596,7 @@ export type ArgsFromMeta<TRenderer extends Renderer, Meta> = Meta extends {
   decorators?: (infer Decorators)[] | (infer Decorators);
 }
   ? Simplify<
-      RemoveIndexSignature<
+      OmitIndexSignature<
         RArgs & DecoratorsArgs<TRenderer, Decorators> & LoaderArgs<TRenderer, Loaders>
       >
     >

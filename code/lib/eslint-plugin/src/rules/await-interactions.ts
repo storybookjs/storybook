@@ -2,7 +2,8 @@
  * @file Interactions should be awaited
  * @author Yann Braga
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
   isArrowFunctionExpression,

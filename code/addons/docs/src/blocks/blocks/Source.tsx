@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
@@ -11,6 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useServiceStorySnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -65,11 +66,13 @@ const getStorySource = (
 
 const useCode = ({
   snippet,
+  serviceSnippet,
   storyContext,
   typeFromProps,
   transformFromProps,
 }: {
   snippet: string;
+  serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
@@ -80,13 +83,14 @@ const useCode = ({
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
+  const staticSnippet = serviceSnippet || snippet;
   const useSnippet =
     // if user has explicitly set this as dynamic, use snippet
     type === SourceType.DYNAMIC ||
     // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && snippet && isArgsStory);
+    (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? snippet : sourceParameters.originalSource || '';
+  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
   const transformer = transformFromProps ?? sourceParameters.transform;
 
   const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
@@ -104,7 +108,8 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
-  sourceContext: SourceContextProps
+  sourceContext: SourceContextProps,
+  serviceSnippet = ''
 ): PureSourceProps => {
   const { of } = props;
 
@@ -132,6 +137,7 @@ export const useSourceProps = (
 
   const transformedCode = useCode({
     snippet: source ? source.code : '',
+    serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
     typeFromProps: props.type as SourceType,
     transformFromProps: props.transform,
@@ -170,15 +176,51 @@ export const useSourceProps = (
   };
 };
 
+const SourceWithStoryDocsSnippet: FC<
+  SourceProps & {
+    docsContext: DocsContextProps;
+    sourceContext: SourceContextProps;
+    storyId: string;
+  }
+> = ({ storyId, docsContext, sourceContext, ...props }) => {
+  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  return <PureSource {...sourceProps} />;
+};
+
 /**
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
 const SourceWithStorySnippet = (props: SourceProps) => {
+  const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
 
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+    }
+  }, [docsContext, of]);
+
+  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+    return (
+      <SourceWithStoryDocsSnippet
+        {...props}
+        docsContext={docsContext}
+        sourceContext={sourceContext}
+        storyId={story.id}
+      />
+    );
+  }
+
+  const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 

@@ -104,12 +104,21 @@ type SelectProps = ControlProps<OptionsSelection> & SelectConfig;
 
 const NO_SELECTION = 'Choose option...';
 
-const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
+const SingleSelect: FC<SelectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  options,
+  onChange,
+  argType,
+  required,
+}) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange(options[e.currentTarget.value]);
   };
   const selection = selectedKey(value, options) || NO_SELECTION;
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 
@@ -119,7 +128,13 @@ const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange
       <label htmlFor={controlId} className="sb-sr-only">
         {name}
       </label>
-      <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
+      <OptionsSelect
+        disabled={readonly}
+        id={controlId}
+        value={selection}
+        onChange={handleChange}
+        aria-required={required || undefined}
+      >
         <option disabled={selection === NO_SELECTION} key="no-selection">
           {NO_SELECTION}
         </option>
@@ -133,7 +148,16 @@ const SingleSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange
   );
 };
 
-const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange, argType }) => {
+const MultiSelect: FC<SelectProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  options,
+  onChange,
+  argType,
+  required,
+}) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selection = Array.from(e.currentTarget.options)
       .filter((option) => option.selected)
@@ -141,7 +165,7 @@ const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange,
     onChange(selectedValues(selection, options));
   };
   const selection = selectedKeys(value, options);
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 
@@ -156,6 +180,7 @@ const MultiSelect: FC<SelectProps> = ({ name, storyId, value, options, onChange,
         multiple
         value={selection}
         onChange={handleChange}
+        aria-required={required || undefined}
       >
         {Object.keys(options).map((key) => (
           <option key={key} value={key}>
@@ -174,6 +199,6 @@ export const SelectControl: FC<SelectProps> = (props) => {
     return <>-</>;
   }
 
-  // eslint-disable-next-line react/destructuring-assignment
+  // oxlint-disable-next-line react-classic/destructuring-assignment
   return props.isMulti ? <MultiSelect {...props} /> : <SingleSelect {...props} />;
 };

@@ -12,7 +12,12 @@ vi.mock('storybook/internal/telemetry', () => ({
   ),
 }));
 
+vi.mock('./agent-story-history-cache.ts', () => ({
+  mergeAndWriteStoryHistory: vi.fn(async (results) => results),
+}));
+
 const { telemetry } = await import('storybook/internal/telemetry');
+const { mergeAndWriteStoryHistory } = await import('./agent-story-history-cache.ts');
 
 function createMockTestCase({
   storyId,
@@ -63,6 +68,7 @@ describe('AgentTelemetryReporter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(mergeAndWriteStoryHistory).mockImplementation(async (results) => results);
     reporter = new AgentTelemetryReporter({
       configDir: '.storybook',
       agent: { name: 'claude' },
@@ -96,7 +102,7 @@ describe('AgentTelemetryReporter', () => {
   });
 
   describe('onTestRunEnd', () => {
-    it('should send telemetry with analysis of collected results', async () => {
+    it('should send telemetry with run analysis of collected results', async () => {
       reporter.onInit({ config: { watch: false } } as any);
 
       reporter.onTestCaseResult(createMockTestCase({ storyId: 's1', status: 'passed' }) as any);
@@ -134,6 +140,66 @@ describe('AgentTelemetryReporter', () => {
         }),
         { configDir: '.storybook', stripMetadata: true }
       );
+    });
+
+    it('should include cumulative stats merged from cache history', async () => {
+      reporter.onInit({ config: { watch: false } } as any);
+
+      // Current run: 1 failed story
+      reporter.onTestCaseResult(
+        createMockTestCase({
+          storyId: 'current-run',
+          status: 'failed',
+          errors: [{ message: 'boom' }],
+        }) as any
+      );
+
+      // Cumulative cache returns history with previously-passing stories on top
+      vi.mocked(mergeAndWriteStoryHistory).mockResolvedValueOnce([
+        { storyId: 'current-run', status: 'FAIL', error: 'boom', stack: undefined },
+        { storyId: 'previous-1', status: 'PASS' },
+        { storyId: 'previous-2', status: 'PASS' },
+      ]);
+
+      await reporter.onTestRunEnd(createMockTestModules({ passed: 0, failed: 1 }) as any, []);
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'ai-setup-self-healing-scoring',
+        expect.objectContaining({
+          analysis: expect.objectContaining({
+            total: 1,
+            passed: 0,
+            cumulativeTotal: 3,
+            cumulativePassed: 2,
+          }),
+        }),
+        expect.anything()
+      );
+    });
+
+    it('should pass collected results to mergeAndWriteStoryHistory', async () => {
+      reporter.onInit({ config: { watch: false } } as any);
+
+      reporter.onTestCaseResult(createMockTestCase({ storyId: 's1', status: 'passed' }) as any);
+
+      await reporter.onTestRunEnd(createMockTestModules({ passed: 1, failed: 0 }) as any, []);
+
+      expect(mergeAndWriteStoryHistory).toHaveBeenCalledWith([
+        expect.objectContaining({ storyId: 's1', status: 'PASS' }),
+      ]);
+    });
+
+    it('should not include storyId in the telemetry payload', async () => {
+      reporter.onInit({ config: { watch: false } } as any);
+
+      reporter.onTestCaseResult(
+        createMockTestCase({ storyId: 'my-secret-story-id', status: 'passed' }) as any
+      );
+
+      await reporter.onTestRunEnd(createMockTestModules({ passed: 1, failed: 0 }) as any, []);
+
+      const payload = JSON.stringify(vi.mocked(telemetry).mock.calls[0][1]);
+      expect(payload).not.toContain('my-secret-story-id');
     });
 
     it('should filter out example stories from analysis', async () => {

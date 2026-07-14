@@ -2,7 +2,7 @@
  * @file Do not import renderer packages directly in stories
  * @author Norbert De Langen
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';

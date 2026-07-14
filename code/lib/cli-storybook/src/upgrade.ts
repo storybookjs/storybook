@@ -1,5 +1,10 @@
 import { PackageManagerName } from 'storybook/internal/common';
-import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManagerFactory,
+  isCI,
+  isCorePackage,
+} from 'storybook/internal/common';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -9,6 +14,7 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
+  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -27,6 +33,7 @@ import {
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
+import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
@@ -385,6 +392,24 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
+      for (const project of storybookProjects) {
+        try {
+          await project.packageManager.precheckStorybookPackageInstall({
+            storybookVersion: project.currentCLIVersion,
+            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+            installContext: 'upgrade',
+          });
+        } catch (error) {
+          if (error instanceof MinimumReleaseAgeHandledError) {
+            throw error;
+          }
+
+          logger.debug(
+            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+          );
+        }
+      }
+
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,
@@ -465,6 +490,34 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         logger.log(
           `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
         );
+      }
+    }
+
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
+    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
+    if (!options.dryRun && !options.skipInstall) {
+      for (const project of storybookProjects) {
+        const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
+        if (addonsToPostinstall?.length) {
+          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+          try {
+            await configureDeferredAddons(addonsToPostinstall, {
+              packageManager: project.packageManager.type,
+              configDir: project.configDir,
+              yes: options.yes,
+              logger,
+              prompt,
+            });
+          } catch (error) {
+            logger.warn(
+              `Configuring ${addonsToPostinstall.join(', ')} failed: ${String(
+                error
+              )}. Run "npx storybook add <addon>" manually for each addon to finish the setup.`
+            );
+            logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+          }
+        }
       }
     }
 

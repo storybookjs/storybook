@@ -22,6 +22,7 @@ describe('FinalizationCommand', () => {
       logfile: undefined,
       showAgentFollowUp: false,
       showAiInstructions: false,
+      aiSetupCommand: 'npx storybook ai setup',
     });
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
@@ -117,7 +118,8 @@ describe('FinalizationCommand', () => {
       const agentCommand = new FinalizationCommand({
         logfile: undefined,
         showAgentFollowUp: true,
-        showAiInstructions: false,
+        showAiInstructions: true,
+        aiSetupCommand: 'pnpm exec storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -126,7 +128,12 @@ describe('FinalizationCommand', () => {
       expect(logger.step).toHaveBeenCalledWith(
         expect.stringContaining('is not entirely set up yet')
       );
-      expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('npx storybook ai setup'));
+      expect(logger.step).toHaveBeenCalledWith(
+        expect.stringContaining('pnpm exec storybook ai setup')
+      );
+      const logCalls = vi.mocked(logger.log).mock.calls.map((c) => String(c[0]));
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/llms.txt'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://discord.gg/storybook/'))).toBe(false);
     });
 
     it('should show standard success message when showAgentFollowUp=false with AI instructions', async () => {
@@ -134,6 +141,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: true,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -152,6 +160,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: false,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -163,6 +172,10 @@ describe('FinalizationCommand', () => {
       // Ensure the agent message is NOT shown
       const stepCalls = vi.mocked(logger.step).mock.calls.map((c) => String(c[0]));
       expect(stepCalls.some((msg) => msg.includes('is not entirely set up yet'))).toBe(false);
+      const logCalls = vi.mocked(logger.log).mock.calls.map((c) => String(c[0]));
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://discord.gg/storybook/'))).toBe(true);
+      expect(logCalls.some((msg) => msg.includes('https://storybook.js.org/llms.txt'))).toBe(false);
     });
   });
 
@@ -172,6 +185,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: true,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -188,6 +202,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: false,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -202,6 +217,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: true,
         showAiInstructions: true,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -222,6 +238,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: false,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -236,6 +253,7 @@ describe('FinalizationCommand', () => {
         logfile: undefined,
         showAgentFollowUp: false,
         showAiInstructions: false,
+        aiSetupCommand: 'npx storybook ai setup',
       });
       vi.mocked(find.up).mockReturnValue(undefined);
 
@@ -254,6 +272,7 @@ describe('FinalizationCommand', () => {
         showAgentFollowUp: true,
         showAiInstructions: false,
         logfile: undefined,
+        aiSetupCommand: 'npx storybook ai setup',
       });
 
       // Agent mode should show agent-specific message
@@ -269,6 +288,7 @@ describe('FinalizationCommand', () => {
         showAgentFollowUp: false,
         showAiInstructions: true,
         logfile: undefined,
+        aiSetupCommand: 'npx storybook ai setup',
       });
 
       expect(logger.step).toHaveBeenCalledWith(
@@ -284,6 +304,7 @@ describe('FinalizationCommand', () => {
         showAiInstructions: false,
         logfile: undefined,
         storybookCommand: 'yarn storybook',
+        aiSetupCommand: 'npx storybook ai setup',
       });
 
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('yarn storybook'));

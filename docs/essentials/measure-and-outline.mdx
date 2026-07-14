@@ -28,6 +28,14 @@ Click the outline button in the toolbar to toggle the outlines associated with a
 
 ![Outline feature enabled on the component's story](../_assets/essentials/addon-outline.png)
 
+## Disable the features
+
+If you want to turn off measure or outline for a story, you can do so by configuring the `measure` or `outline` parameter, like so:
+
+<CodeSnippets path="addon-measure-and-outline-disabled.md" />
+
+To disable either feature across your entire Storybook instead, [do so in your main configuration file](./index.mdx#disabling-features).
+
 ## API
 
 ### Parameters
@@ -38,6 +46,6 @@ These features contribute the following [parameters](../writing-stories/paramete
 
 Type: `boolean`
 
-Disable the feature's behavior. If you wish to disable the feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
+Removes the tool from the toolbar and disables the feature's behavior. If you wish to disable the feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

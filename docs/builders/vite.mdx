@@ -4,7 +4,7 @@ sidebar:
   order: 1
 ---
 
-Storybook Vite builder bundles your components and stories with [Vite](https://vitejs.dev/), a fast ESM bundler.
+Storybook Vite builder bundles your components and stories with [Vite](https://vitejs.dev/), a fast ESM bundler. It is the default builder for Storybook and is recommended in most cases.
 
 - For applications built with Vite: it allows reusing the existing configuration in Storybook.
 - For applications built with Webpack: it provides faster startup and refresh times, with the disadvantage that your component's execution environment differs from your application.
@@ -48,6 +48,18 @@ By default, the Vite builder in Storybook searches for the Vite configuration fi
 If you do not want Storybook to load the Vite configuration file automatically, you can use the `viteConfigPath` option to point to a non-existent file.
 
 </Callout>
+
+### Set configLoader for vite config
+
+You can pass the `configLoader` argument to `vite` by setting it in builder options. This is equivalent to the `--configLoader` command line argument.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-builder-configLoader.md" />
+
+{/* prettier-ignore-end */}
+
+Check `vite`'s [documentation](https://vite.dev/config/) for valid `configLoader` options.
 
 ### TypeScript
 

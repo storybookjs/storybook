@@ -1,8 +1,10 @@
 import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { useLinkStatus as mockUseLinkStatus } from '@storybook/nextjs-vite/link.mock';
 
-import Link from 'next/link';
+import Link, { useLinkStatus } from 'next/link';
+import { expect, within } from 'storybook/test';
 
 import style from './Link.stories.module.css';
 
@@ -70,6 +72,10 @@ type Story = StoryObj<typeof Component>;
 
 export const Default: Story = {};
 
+export const TriggersLinkAction: Story = {
+  render: () => <Link href="/dashboard">Trigger link action</Link>,
+};
+
 export const InAppDir: Story = {
   parameters: {
     nextjs: {
@@ -85,4 +91,34 @@ export const LegacyLink: Story = {
     </Link>
   ),
   tags: ['!test'],
+};
+
+function LinkStatusComponent() {
+  const { pending } = useLinkStatus();
+  return <div>{pending ? 'Pending' : 'Idle'}</div>;
+}
+
+export const DefaultLinkStatus: Story = {
+  render: () => <LinkStatusComponent />,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Idle')).toBeInTheDocument();
+  },
+};
+
+export const PendingLinkStatus: Story = {
+  render: () => <LinkStatusComponent />,
+  parameters: {
+    nextjs: { appDirectory: true },
+  },
+  beforeEach() {
+    mockUseLinkStatus.mockReturnValue({ pending: true });
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Pending')).toBeInTheDocument();
+  },
 };

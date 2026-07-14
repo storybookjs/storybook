@@ -123,11 +123,13 @@ export type BooleanProps = ControlProps<BooleanValue> & BooleanConfig;
 export const BooleanControl: FC<BooleanProps> = ({
   name,
   storyId,
+  controlsId,
   value,
   onChange,
   onBlur,
   onFocus,
   argType,
+  required,
 }) => {
   const onSetFalse = useCallback(() => onChange(false), [onChange]);
   const readonly = !!argType?.table?.readonly;
@@ -137,7 +139,7 @@ export const BooleanControl: FC<BooleanProps> = ({
         ariaLabel={false}
         variant="outline"
         size="medium"
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onSetFalse}
         disabled={readonly}
       >
@@ -145,12 +147,13 @@ export const BooleanControl: FC<BooleanProps> = ({
       </Button>
     );
   }
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const parsedValue = typeof value === 'string' ? parse(value) : value;
 
   return (
     <Label aria-disabled={readonly} htmlFor={controlId} aria-label={name}>
+      {/* oxlint-disable jsx-a11y/role-has-required-aria-props -- the native `checked` attribute provides the switch state */}
       <input
         id={controlId}
         type="checkbox"
@@ -158,8 +161,10 @@ export const BooleanControl: FC<BooleanProps> = ({
         checked={parsedValue}
         role="switch"
         disabled={readonly}
+        aria-required={required || undefined}
         {...{ name, onBlur, onFocus }}
       />
+      {/* oxlint-enable jsx-a11y/role-has-required-aria-props */}
       <span aria-hidden="true">False</span>
       <span aria-hidden="true">True</span>
     </Label>

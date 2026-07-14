@@ -61,7 +61,7 @@ export class VitestManager {
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (
@@ -127,6 +127,7 @@ export class VitestManager {
     try {
       this.vitest = await createVitest('test', {
         root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
         project: [projectName],

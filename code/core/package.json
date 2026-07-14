@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.5.0-alpha.9",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -253,6 +253,7 @@
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
+    "jsonc-parser": "^3.3.1",
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "^11.19.1",
@@ -398,18 +399,19 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "^5.6.0",
     "type-plus": "^8.0.0-beta.8",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "valibot": "^1.4.0",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
+    "yaml": "^2.8.2",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
-    "vite-plus": "^0.1.15"
+    "vite-plus": "^0.1.15 || ^0.2.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {

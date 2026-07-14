@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { isNotNil } from 'es-toolkit/predicate';
@@ -17,8 +17,36 @@ const CORE_ROOT_DIR = join(CODE_DIR, 'core');
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {
-  await Promise.all([generateFrameworksFile(), generateVersionsFile(), generateExportsFile()]);
+  // generateExportsFile scans core source (including the two files written
+  // below) with rolldown; run the writers first so the scan never observes
+  // them mid-rewrite.
+  await Promise.all([generateFrameworksFile(), generateVersionsFile()]);
+  await generateExportsFile();
 };
+
+/**
+ * Generated sources are read concurrently by other build steps (the rolldown
+ * export scan below, and parallel package builds whose declaration emit
+ * type-checks core source), and `fs.writeFile` truncates before writing, so a
+ * plain overwrite exposes readers to an empty or partial file. Skip identical
+ * content (the steady state) and otherwise swap the new content in atomically
+ * via rename.
+ */
+async function writeGeneratedFile(destination: string, content: string): Promise<void> {
+  const existing = await readFile(destination, 'utf8').catch(() => null);
+  if (existing === content) {
+    return;
+  }
+  const temp = `${destination}.tmp-${process.pid}`;
+  await writeFile(temp, content);
+  try {
+    await rename(temp, destination);
+  } catch {
+    // Windows can refuse to replace a file that another process holds open
+    // without delete sharing; fall back to a plain overwrite there.
+    await writeFile(destination, content);
+  }
+}
 
 async function generateVersionsFile(): Promise<void> {
   const destination = join(CORE_ROOT_DIR, 'src', 'common', 'versions.ts');
@@ -45,7 +73,7 @@ async function generateVersionsFile(): Promise<void> {
     { singleQuote: true }
   );
 
-  await writeFile(destination, formatted);
+  await writeGeneratedFile(destination, formatted);
 }
 
 async function generateFrameworksFile(): Promise<void> {
@@ -87,7 +115,7 @@ async function generateFrameworksFile(): Promise<void> {
     { singleQuote: true }
   );
 
-  await writeFile(destination, formatted);
+  await writeGeneratedFile(destination, formatted);
 }
 
 const localAlias = {
@@ -105,12 +133,8 @@ async function generateExportsFile(): Promise<void> {
   const destination = join(CORE_ROOT_DIR, 'src', 'manager', 'globals', 'exports.ts');
   const require = createRequire(join(CORE_ROOT_DIR, 'package.json'));
 
-  // Get the module list from the globals reference map (the source of truth)
   const { globalPackages } = await import('../src/manager/globals/globals.ts');
 
-  // Extract named exports using a single rolldown build with virtual entry per module.
-  // Rolldown statically resolves exports without evaluating any code.
-  // For CJS modules (e.g. react) that don't expose ESM exports, fall back to require().
   const input: Record<string, string> = {};
   const virtualModules: Record<string, string> = {};
 
@@ -178,7 +202,7 @@ async function generateExportsFile(): Promise<void> {
     { singleQuote: true }
   );
 
-  await writeFile(destination, formatted);
+  await writeGeneratedFile(destination, formatted);
 }
 
 generateSourceFiles();

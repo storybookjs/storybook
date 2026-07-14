@@ -5,9 +5,9 @@ import { x as exec } from 'tinyexec';
 import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
-  // tsgo declaration emit is pathologically slow on this package (minutes to
-  // hours, likely choking on @typescript-eslint's recursive types); the tsc
-  // emitter finishes in seconds.
+  // The TS 7 native emitter orders properties of the huge inferred object
+  // types in `configs` non-deterministically across runs (byte-flapping
+  // d.ts); the TS 6 emitter is stable and fast enough for this package.
   dtsBundler: 'rolldown',
   prebuild: async (cwd) => {
     await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'update-all.ts')], {

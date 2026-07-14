@@ -24,10 +24,6 @@ const tsconfigPath = join(normalizedCwd, 'tsconfig.json');
 
 if (existsSync(tsconfigPath)) {
   const require = createRequire(import.meta.url);
-  // TS 7 ships no JS compiler API, so type checking is one `tsc -p` child
-  // process on the native compiler (the `typescript-native` npm alias). The
-  // package's `exports` map only exposes the new API entry points, so resolve
-  // the package root via package.json and spawn its tsc launcher.
   const tscPath = join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc');
 
   // Generous per-package ceiling: a wedged native compiler must fail this one

@@ -188,7 +188,7 @@ function getStoryExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function instructions(projectInfo: ProjectInfo): string {
+function instructions(projectInfo: ProjectInfo): string {
   const { configDir, language } = projectInfo;
   const tsx = ext(language, true);
   const hasVitestAddon = projectInfo.addons.some((addon) =>

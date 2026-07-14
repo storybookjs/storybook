@@ -15,8 +15,8 @@ import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
-import { aiSimpleSetup } from '../cli/ai/simple-setup.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { aiSimpleSetup } from '../cli/ai/simple-setup.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';

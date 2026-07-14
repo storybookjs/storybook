@@ -158,6 +158,10 @@ export const npm = {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
         'cache-only-lockfile': true,
+        // v2: the orb's v1 node_modules cache carries the same poisoned tree
+        // as the v6 CACHE_KEYS entries (see above); its restore overlays
+        // node_modules on top of the primary cache without overwriting.
+        'cache-version': 'v2',
       },
     };
   },
@@ -282,7 +286,7 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v6-${platform}-node_modules`,
+    `v7-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

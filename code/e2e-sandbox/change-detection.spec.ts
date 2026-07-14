@@ -115,8 +115,6 @@ test.describe('Change Detection', () => {
     );
     const newStoryPath = path.join(sandboxDir, 'src/stories/ChangeDetectionNew.stories.ts');
 
-    console.log({ newStoryPath });
-
     try {
       fs.writeFileSync(
         newStoryPath,
@@ -143,19 +141,18 @@ test.describe('Change Detection', () => {
     const storyPath = headerStoriesPath as string;
     const original = fs.readFileSync(storyPath, 'utf-8');
 
-    console.log({ storyPath });
-
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
 
       // Branch-level "Modified" change-detection icon is gated on the modified
-      // status filter being active. Activate it via the ReviewChangesButton CTA
-      // (which toggles new+modified filters together) so the badge renders.
-      const reviewCta = page.getByRole('switch', {
-        name: /^Review (new|modified|new and modified) stories$/,
-      });
-      await expect(reviewCta).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
-      await reviewCta.click();
+      // status filter being active. Activate it via the FilterPanel.
+      const filtersButton = page.getByRole('button', { name: 'Tag filters' });
+      await expect(filtersButton).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+      await filtersButton.click();
+
+      const modifiedFilter = page.getByRole('checkbox', { name: /modified/i });
+      await expect(modifiedFilter).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+      await modifiedFilter.check();
 
       await expect(
         page.locator('[data-item-id="example-header"] [aria-label="Change status: Modified"]')

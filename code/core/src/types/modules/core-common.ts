@@ -456,6 +456,187 @@ export type Manifests = { components?: ComponentsManifest } & Record<ManifestNam
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
+/**
+ * The feature flags configured under the `features` key in `.storybook/main.ts`.
+ *
+ * Addons can declare their own feature flags through TypeScript module augmentation:
+ *
+ * ```ts
+ * declare module 'storybook/internal/types' {
+ *   interface StorybookFeatures {
+ *     myAddonFeature?: boolean;
+ *   }
+ * }
+ * ```
+ */
+export interface StorybookFeatures {
+  /**
+   * Enable the integrated viewport addon
+   *
+   * @default true
+   */
+  viewport?: boolean;
+
+  /**
+   * Enable the integrated highlight addon
+   *
+   * @default true
+   */
+  highlight?: boolean;
+
+  /**
+   * Enable the integrated backgrounds addon
+   *
+   * @default true
+   */
+  backgrounds?: boolean;
+
+  /**
+   * Enable the integrated measure addon
+   *
+   * @default true
+   */
+  measure?: boolean;
+
+  /**
+   * Enable the integrated outline addon
+   *
+   * @default true
+   */
+  outline?: boolean;
+
+  /**
+   * Enable the integrated controls addon
+   *
+   * @default true
+   */
+  controls?: boolean;
+
+  /**
+   * Enable the integrated interactions addon
+   *
+   * @default true
+   */
+  interactions?: boolean;
+
+  /**
+   * Enable the integrated actions addon
+   *
+   * @default true
+   */
+  actions?: boolean;
+
+  /**
+   * Enable the onboarding checklist sidebar widget
+   *
+   * @default true
+   */
+  sidebarOnboardingChecklist?: boolean;
+
+  /**
+   * Enable the onboarding guide page in the menu
+   *
+   * @default true
+   */
+  menuOnboardingChecklist?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
+   */
+  argTypeTargetsV7?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Apply decorators from preview.js before decorators from addons or frameworks
+   */
+  legacyDecoratorFileOrder?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
+   *
+   * This will make sure that your story renders the same no matter if docgen is enabled or not.
+   */
+  disallowImplicitActionsInRenderV8?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Enable asynchronous component rendering in React renderer
+   */
+  experimentalRSC?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Set NODE_ENV to development in built Storybooks for better testability and debuggability
+   */
+  developmentModeForBuild?: boolean;
+  /** Only show input controls in Angular */
+  angularFilterNonInputControls?: boolean;
+
+  /**
+   * Enable component manifest generation for MCP and other tooling integrations.
+   *
+   * @default false
+   */
+  componentsManifest?: boolean;
+
+  /**
+   * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+   * instead of react-docgen / react-docgen-typescript.
+   *
+   * @default false
+   * @experimental
+   */
+  experimentalReactComponentMeta?: boolean;
+
+  /**
+   * Enables the new code example generation for React components. You can see those examples when
+   * clicking on the "Show code" button in the Storybook UI.
+   *
+   * We refactored the code examples by reading the actual source file. This should make the code
+   * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
+   * change if you change when using the control panel.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalCodeExamples?: boolean;
+
+  /**
+   * Enable the experimental docgen open service.
+   *
+   * When true, Storybook registers the `core/docgen` service in the open-service registry and
+   * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+   * providers contribute through the `experimental_docgenProvider` preset.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalDocgenServer?: boolean;
+
+  /**
+   * Enable change detection
+   * @default true
+   */
+  changeDetection?: boolean;
+
+  /**
+   * Enable the agentic review workflow: the review UI in the manager and the server-side review
+   * channel that MCP tooling (e.g. `@storybook/addon-mcp`) uses to push curated reviews of code
+   * changes. Builds on change detection, so `changeDetection` must also be enabled.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalReview?: boolean;
+}
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -475,163 +656,7 @@ export interface StorybookConfigRaw {
   experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
-  features?: {
-    /**
-     * Enable the integrated viewport addon
-     *
-     * @default true
-     */
-    viewport?: boolean;
-
-    /**
-     * Enable the integrated highlight addon
-     *
-     * @default true
-     */
-    highlight?: boolean;
-
-    /**
-     * Enable the integrated backgrounds addon
-     *
-     * @default true
-     */
-    backgrounds?: boolean;
-
-    /**
-     * Enable the integrated measure addon
-     *
-     * @default true
-     */
-    measure?: boolean;
-
-    /**
-     * Enable the integrated outline addon
-     *
-     * @default true
-     */
-    outline?: boolean;
-
-    /**
-     * Enable the integrated controls addon
-     *
-     * @default true
-     */
-    controls?: boolean;
-
-    /**
-     * Enable the integrated interactions addon
-     *
-     * @default true
-     */
-    interactions?: boolean;
-
-    /**
-     * Enable the integrated actions addon
-     *
-     * @default true
-     */
-    actions?: boolean;
-
-    /**
-     * Enable the onboarding checklist sidebar widget
-     *
-     * @default true
-     */
-    sidebarOnboardingChecklist?: boolean;
-
-    /**
-     * Enable the onboarding guide page in the menu
-     *
-     * @default true
-     */
-    menuOnboardingChecklist?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-     */
-    argTypeTargetsV7?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Apply decorators from preview.js before decorators from addons or frameworks
-     */
-    legacyDecoratorFileOrder?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-     *
-     * This will make sure that your story renders the same no matter if docgen is enabled or not.
-     */
-    disallowImplicitActionsInRenderV8?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Enable asynchronous component rendering in React renderer
-     */
-    experimentalRSC?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Set NODE_ENV to development in built Storybooks for better testability and debuggability
-     */
-    developmentModeForBuild?: boolean;
-    /** Only show input controls in Angular */
-    angularFilterNonInputControls?: boolean;
-
-    /**
-     * Enable component manifest generation for MCP and other tooling integrations.
-     *
-     * @default false
-     */
-    componentsManifest?: boolean;
-
-    /**
-     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
-     * instead of react-docgen / react-docgen-typescript.
-     *
-     * @default false
-     * @experimental
-     */
-    experimentalReactComponentMeta?: boolean;
-
-    /**
-     * Enables the new code example generation for React components. You can see those examples when
-     * clicking on the "Show code" button in the Storybook UI.
-     *
-     * We refactored the code examples by reading the actual source file. This should make the code
-     * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
-     * change if you change when using the control panel.
-     *
-     * @default false
-     * @experimental This feature is in early development and may change significantly in future releases.
-     */
-    experimentalCodeExamples?: boolean;
-
-    /**
-     * Enable the experimental docgen open service.
-     *
-     * When true, Storybook registers the `core/docgen` service in the open-service registry and
-     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
-     * providers contribute through the `experimental_docgenProvider` preset.
-     *
-     * @default false
-     * @experimental This feature is in early development and may change significantly in future releases.
-     */
-    experimentalDocgenServer?: boolean;
-
-    /**
-     * Enable change detection
-     * @default true
-     */
-    changeDetection?: boolean;
-  };
+  features?: StorybookFeatures;
 
   build?: TestBuildConfig;
 

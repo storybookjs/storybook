@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
-// @ts-expect-error (Converted from ts-ignore)
+// Importing the package root (for PrismLight) loads @types/react-syntax-highlighter's ambient
+// `declare module` blocks, which type most deep ESM entrypoints; only the two entrypoints the
+// @types package does not declare need suppression.
+// @ts-expect-error untyped deep ESM entrypoint
 import createElement from 'react-syntax-highlighter/dist/esm/create-element';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
-// @ts-expect-error (Converted from ts-ignore)
+// @ts-expect-error untyped deep ESM entrypoint
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';

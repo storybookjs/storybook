@@ -2,7 +2,6 @@
   "compileOnSave": false,
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "customConditions": ["code"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

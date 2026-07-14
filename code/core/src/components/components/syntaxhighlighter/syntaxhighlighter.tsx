@@ -1,34 +1,25 @@
 import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
-// react-syntax-highlighter ships no types for these deep ESM entrypoints, and TS 6.0 no
-// longer falls back to @types/react-syntax-highlighter for them, so each import is suppressed.
+// Importing the package root (for PrismLight) loads @types/react-syntax-highlighter's ambient
+// `declare module` blocks, which type most deep ESM entrypoints; only the two entrypoints the
+// @types package does not declare need suppression.
 // @ts-expect-error untyped deep ESM entrypoint
 import createElement from 'react-syntax-highlighter/dist/esm/create-element';
-// @ts-expect-error untyped deep ESM entrypoint
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
-// @ts-expect-error untyped deep ESM entrypoint
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
-// @ts-expect-error untyped deep ESM entrypoint
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
 // @ts-expect-error untyped deep ESM entrypoint
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
-// @ts-expect-error untyped deep ESM entrypoint
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
-// @ts-expect-error untyped deep ESM entrypoint
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
-// @ts-expect-error untyped deep ESM entrypoint
 import md from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
-// @ts-expect-error untyped deep ESM entrypoint
 import html from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
-// @ts-expect-error untyped deep ESM entrypoint
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
-// @ts-expect-error untyped deep ESM entrypoint
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
-// @ts-expect-error untyped deep ESM entrypoint
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
-// @ts-expect-error untyped deep ESM entrypoint
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import type { PrismLight } from 'react-syntax-highlighter';
+import ReactSyntaxHighlighterRuntime from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 
 import { ActionBar } from '../ActionBar/ActionBar.tsx';
@@ -40,6 +31,11 @@ import type {
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types.ts';
+
+// Type the deep runtime import via the package root: the deep path is only
+// typed through ambient `declare module` blocks in @types/react-syntax-highlighter,
+// which declaration emit and type bundlers cannot reference by specifier.
+const ReactSyntaxHighlighter: typeof PrismLight = ReactSyntaxHighlighterRuntime;
 
 export const supportedLanguages = {
   jsextra: jsExtras,

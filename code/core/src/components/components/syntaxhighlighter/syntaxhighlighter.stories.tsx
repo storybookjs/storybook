@@ -122,7 +122,6 @@ div.parent {
   },
   loaders: [
     async () => {
-      // @ts-expect-error untyped deep ESM entrypoint
       const scss = (await import('react-syntax-highlighter/dist/esm/languages/prism/scss')).default;
       SyntaxHighlighter.registerLanguage('scss', scss);
     },

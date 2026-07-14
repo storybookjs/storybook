@@ -17,6 +17,8 @@ test-results
 .next
 /.npmrc
 tsconfig.vitest-temp.json
+tsconfig.dts-tmp-*.json
+.dts-emit/
 
 .env.local
 

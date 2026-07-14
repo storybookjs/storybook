@@ -24,9 +24,18 @@ import { measure } from './utils/entry-utils';
 import { generateBundle } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
 import { generateTypesFiles } from './utils/generate-types';
+import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown';
 
 const {
-  values: { prod, production, optimized, watch, cwd },
+  values: {
+    prod,
+    production,
+    optimized,
+    watch,
+    cwd,
+    'dts-bundler': dtsBundler,
+    'dts-resolver': dtsResolver,
+  },
 } = parseArgs({
   options: {
     prod: { type: 'boolean', default: false },
@@ -34,9 +43,16 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
+    'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
+    'dts-resolver': { type: 'string', default: 'hybrid' },
   },
   allowNegative: true,
 });
+
+if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') {
+  throw new Error(`Invalid --dts-resolver: ${dtsResolver} (expected 'hybrid', 'tsc' or 'oxc')`);
+}
+const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
 
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
@@ -85,7 +101,24 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        await generateTypesFiles(DIR_CWD, entry);
+        switch (entry.dtsBundler ?? dtsBundler) {
+          case 'rolldown':
+            await generateTypesFilesRolldown(DIR_CWD, entry, {
+              tsgo: false,
+              resolver: resolvedDtsResolver,
+            });
+            break;
+          case 'rolldown-tsgo':
+            await generateTypesFilesRolldown(DIR_CWD, entry, {
+              tsgo: true,
+              resolver: resolvedDtsResolver,
+            });
+            break;
+          case 'rollup':
+          default:
+            await generateTypesFiles(DIR_CWD, entry);
+            break;
+        }
       }
     }),
   ]);

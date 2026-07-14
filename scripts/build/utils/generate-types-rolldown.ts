@@ -10,8 +10,8 @@ import { rolldown } from 'rolldown';
 import { dts } from 'rolldown-plugin-dts';
 import ts from 'typescript';
 
-import type { BuildEntries } from './entry-utils';
-import { getExternal } from './entry-utils';
+import type { BuildEntries } from './entry-utils.ts';
+import { getExternal } from './entry-utils.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');
@@ -138,12 +138,10 @@ function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
   const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
     ...ts.sys,
     onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
     },
   });
   if (!parsed) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(`Unable to parse ${wrapperTsconfig}`);
   }
   return parsed;
@@ -189,7 +187,6 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
   // `emitSkipped` is unreliable with `noCheck` (it reports true even though
   // every file was written), so gate on actual output instead.
   if (written === 0) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(`Declaration emit produced no output for ${wrapperTsconfig}`);
   }
 
@@ -229,7 +226,6 @@ function emitPackageDeclarationsNative(
   const emitted = ts.sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
   if (emitted.length === 0) {
     console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `Native declaration emit produced no output for ${emitTsconfig} (exit code ${result.status})`
     );

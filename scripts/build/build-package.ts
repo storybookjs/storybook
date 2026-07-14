@@ -9,7 +9,6 @@
  * The `process.cwd()` is the root of the current package to be built.
  */
 
-/* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -18,13 +17,12 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
-import { measure } from './utils/entry-utils';
-import { generateBundle } from './utils/generate-bundle';
-import { generatePackageJsonFile } from './utils/generate-package-json';
-import { generateTypesFiles } from './utils/generate-types';
-import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown';
+import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
+import { measure } from './utils/entry-utils.ts';
+import { generateBundle } from './utils/generate-bundle.ts';
+import { generatePackageJsonFile } from './utils/generate-package-json.ts';
+import { generateTypesFiles } from './utils/generate-types.ts';
+import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown.ts';
 
 const {
   values: {
@@ -56,7 +54,7 @@ const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
 
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
-  const DIR_CWD = cwd ? join(ROOT_DIRECTORY, cwd) : process.cwd();
+  const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
 

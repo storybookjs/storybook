@@ -1,5 +1,21 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
+
+/**
+ * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
+ * workspace layer single-threaded at roughly 20MB/s, so ~2.5GB of
+ * node_modules dominated the step regardless of file count (measured: packing
+ * the trees into a plain tar left persist at 140s). Pre-compressing makes
+ * CircleCI's own compression and every downstream download proportionally
+ * cheaper. No executor image ships a zstd CLI (cimg/node, playwright,
+ * machine - verified via step diagnostics), but stock Node >= 22.15 exposes
+ * zstd through node:zlib, so scripts/ci/zstd-stream.mjs runs it straight from
+ * the git checkout, before (and without) node_modules. zstd level 3 both
+ * compresses better and runs faster than `gzip -1`.
+ */
+export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
+
+const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -14,6 +30,38 @@ export const workspace = {
       persist_to_workspace: {
         paths,
         root,
+      },
+    };
+  },
+  pack: (requiredPaths: string[], optionalPaths: string[], root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Pack node_modules for workspace',
+        working_directory: root,
+        // Per-package node_modules only exist for packages with unhoistable
+        // dependencies, so they are filtered at runtime; the root trees are
+        // passed straight to tar so a missing one fails the job loudly.
+        command: [
+          'node --version',
+          'optional=""',
+          `for p in ${optionalPaths.join(' ')}; do`,
+          '  if [ -e "$p" ]; then optional="$optional $p"; fi',
+          'done',
+          `tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          `ls -la ${PACKED_NODE_MODULES_ARCHIVE}`,
+        ].join('\n'),
+      },
+    };
+  },
+  unpack: (root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Unpack node_modules from workspace',
+        working_directory: root,
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
+        ].join('\n'),
       },
     };
   },
@@ -186,6 +234,7 @@ export const workflow = {
     // Downstream jobs should consume precomputed outputs exclusively from the
     // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
+    workspace.unpack(),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),

@@ -6,6 +6,7 @@ import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants
 import {
   CACHE_KEYS,
   CACHE_PATHS,
+  PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
   git,
@@ -21,6 +22,11 @@ import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
+
+const packageDirs = glob.sync(['*/src', '*/*/src'], {
+  cwd: join(dirname, '../../code'),
+  onlyDirectories: true,
+});
 
 export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   executor: {
@@ -50,27 +56,25 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
+    workspace.pack(
+      [
+        // Workspace-root node_modules folders. Yarn hoists shared/singleton
+        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+        // jobs otherwise only receive these via the shared `save_cache`, which is
+        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+        // freshly-built `dist` but no root `node_modules`, producing errors like
+        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
+        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+        `${WORKING_DIR}/node_modules`,
+        `${WORKING_DIR}/code/node_modules`,
+        `${WORKING_DIR}/scripts/node_modules`,
+      ],
+      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
+    ),
     workspace.persist([
-      // Workspace-root node_modules folders. Yarn hoists shared/singleton
-      // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-      // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-      // jobs otherwise only receive these via the shared `save_cache`, which is
-      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-      // freshly-built `dist` but no root `node_modules`, producing errors like
-      // `Cannot find package 'oxc-parser'`. Persisting them to the (pipeline-
-      // scoped, un-gated) workspace makes downstream jobs correct for every PR.
-      `${WORKING_DIR}/node_modules`,
-      `${WORKING_DIR}/code/node_modules`,
-      `${WORKING_DIR}/scripts/node_modules`,
-      ...glob
-        .sync(['*/src', '*/*/src'], {
-          cwd: join(dirname, '../../code'),
-          onlyDirectories: true,
-        })
-        .flatMap((p) => [
-          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
-          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
-        ]),
+      PACKED_NODE_MODULES_ARCHIVE,
+      ...packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'dist')}`),
       `${WORKING_DIR}/.verdaccio-cache`,
       `${WORKING_DIR}/code/bench`,
     ]),
@@ -115,15 +119,10 @@ export const build_windows = defineJob('Build (windows)', () => ({
     verdaccio.start(),
     workspace.persist(
       [
-        ...glob
-          .sync(['*/src', '*/*/src'], {
-            cwd: join(dirname, '../../code'),
-            onlyDirectories: true,
-          })
-          .flatMap((p) => [
-            `code/${p.replace('src', 'dist')}`,
-            `code/${p.replace('src', 'node_modules')}`,
-          ]),
+        ...packageDirs.flatMap((p) => [
+          `code/${p.replace('src', 'dist')}`,
+          `code/${p.replace('src', 'node_modules')}`,
+        ]),
         `.verdaccio-cache`,
         `code/bench`,
       ],

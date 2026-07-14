@@ -68,7 +68,8 @@ export class PreflightCheckCommand {
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: options.packageManager,
     });
-    const nonInteractive = !!options.yes || !process.stdout.isTTY || !!isCI();
+    const nonInteractive =
+      !!options.yes || !process.stdout.isTTY || !process.stdin.isTTY || !!isCI();
 
     logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
 

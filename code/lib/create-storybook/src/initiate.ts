@@ -139,7 +139,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const dependencyInstallationResult = await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
-    nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+    nonInteractive: !!options.yes || !process.stdout.isTTY || !process.stdin.isTTY || !!isCI(),
     skipInstall: !!options.skipInstall,
     selectedFeatures,
   });

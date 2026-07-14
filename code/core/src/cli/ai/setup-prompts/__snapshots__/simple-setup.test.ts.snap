@@ -46,12 +46,10 @@ export default preview;
 
 ### Step 3 — Write the story file
 
-Write **one** colocated story file next to the chosen component: the default story, at most a couple of meaningful variants, and one \`StyleCheck\` story.
+Write **one** colocated story file next to the chosen component: the default story and at most a couple of meaningful variants.
 
 \`\`\`jsx
 // src/components/Button.stories.jsx
-import { expect } from 'storybook/test';
-
 import { Button } from './Button';
 
 const meta = {
@@ -67,18 +65,6 @@ export const Primary = {
 
 export const Disabled = {
   args: { children: 'Order now', disabled: true },
-};
-
-// Proves the app's global CSS actually loaded: read a real styling value
-// from the component's source (hex color, Tailwind class, CSS variable)
-// and assert the resolved computed style.
-export const StyleCheck = {
-  args: { children: 'Submit' },
-  play: async ({ canvas }) => {
-    const button = canvas.getByRole('button', { name: /submit/i });
-    // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-    await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-  },
 };
 \`\`\`
 
@@ -97,7 +83,7 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
 \`\`\`
 
 1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.jsx\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.jsx\` (missing CSS import, missing provider) over story-local workarounds.
 3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
 ### Step 5 — Wrap up
@@ -155,13 +141,12 @@ export default definePreview({
 
 ### Step 3 — Write the story file
 
-Write **one** colocated story file next to the chosen component: the default story, at most a couple of meaningful variants, and one \`StyleCheck\` story.
+Write **one** colocated story file next to the chosen component: the default story and at most a couple of meaningful variants.
 
 \`\`\`jsx
 // src/components/Button.stories.jsx
-import { expect } from 'storybook/test';
-
 import preview from '#.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({
@@ -175,18 +160,6 @@ export const Primary = meta.story({
 
 export const Disabled = meta.story({
   args: { children: 'Order now', disabled: true },
-});
-
-// Proves the app's global CSS actually loaded: read a real styling value
-// from the component's source (hex color, Tailwind class, CSS variable)
-// and assert the resolved computed style.
-export const StyleCheck = meta.story({
-  args: { children: 'Submit' },
-  play: async ({ canvas }) => {
-    const button = canvas.getByRole('button', { name: /submit/i });
-    // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-    await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-  },
 });
 \`\`\`
 
@@ -205,7 +178,7 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
 \`\`\`
 
 1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.jsx\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.jsx\` (missing CSS import, missing provider) over story-local workarounds.
 3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
 ### Step 5 — Wrap up
@@ -264,12 +237,11 @@ export default preview;
 
 ### Step 3 — Write the story file
 
-Write **one** colocated story file next to the chosen component: the default story, at most a couple of meaningful variants, and one \`StyleCheck\` story.
+Write **one** colocated story file next to the chosen component: the default story and at most a couple of meaningful variants.
 
 \`\`\`tsx
 // src/components/Button.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect } from 'storybook/test';
 
 import { Button } from './Button';
 
@@ -288,18 +260,6 @@ export const Primary: Story = {
 export const Disabled: Story = {
   args: { children: 'Order now', disabled: true },
 };
-
-// Proves the app's global CSS actually loaded: read a real styling value
-// from the component's source (hex color, Tailwind class, CSS variable)
-// and assert the resolved computed style.
-export const StyleCheck: Story = {
-  args: { children: 'Submit' },
-  play: async ({ canvas }) => {
-    const button = canvas.getByRole('button', { name: /submit/i });
-    // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-    await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-  },
-};
 \`\`\`
 
 - Tag the file with \`tags: ['ai-generated']\`.
@@ -317,7 +277,7 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
 \`\`\`
 
 1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.tsx\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.tsx\` (missing CSS import, missing provider) over story-local workarounds.
 3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
 ### Step 5 — Wrap up
@@ -375,13 +335,12 @@ export default definePreview({
 
 ### Step 3 — Write the story file
 
-Write **one** colocated story file next to the chosen component: the default story, at most a couple of meaningful variants, and one \`StyleCheck\` story.
+Write **one** colocated story file next to the chosen component: the default story and at most a couple of meaningful variants.
 
 \`\`\`tsx
 // src/components/Button.stories.tsx
-import { expect } from 'storybook/test';
-
 import preview from '#.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({
@@ -395,18 +354,6 @@ export const Primary = meta.story({
 
 export const Disabled = meta.story({
   args: { children: 'Order now', disabled: true },
-});
-
-// Proves the app's global CSS actually loaded: read a real styling value
-// from the component's source (hex color, Tailwind class, CSS variable)
-// and assert the resolved computed style.
-export const StyleCheck = meta.story({
-  args: { children: 'Submit' },
-  play: async ({ canvas }) => {
-    const button = canvas.getByRole('button', { name: /submit/i });
-    // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-    await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-  },
 });
 \`\`\`
 
@@ -425,7 +372,7 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests --help
 \`\`\`
 
 1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.tsx\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+2. If a test fails, read the error and fix the cause — prefer fixing \`.storybook/preview.tsx\` (missing CSS import, missing provider) over story-local workarounds.
 3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
 ### Step 5 — Wrap up

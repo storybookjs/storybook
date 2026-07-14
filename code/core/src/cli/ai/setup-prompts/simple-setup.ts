@@ -10,7 +10,8 @@
  * - the project has no user-written stories yet (only `storybook init` examples)
  *
  * The goal is the smallest possible first win: one story for one simple
- * component, verifiably styled, ending with an offer to build out more. The
+ * component, rendered with the app's real styling, ending with an offer to
+ * build out more. The
  * build-out itself is `npx storybook ai setup` territory.
  */
 import { dedent } from 'ts-dedent';
@@ -79,9 +80,8 @@ function getStoryExample(projectInfo: ProjectInfo): string {
     return dedent`
       \`\`\`${tsx}
       // src/components/Button.stories.${tsx}
-      import { expect } from 'storybook/test';
-
       import preview from '#.storybook/preview';
+
       import { Button } from './Button';
 
       const meta = preview.meta({
@@ -96,18 +96,6 @@ function getStoryExample(projectInfo: ProjectInfo): string {
       export const Disabled = meta.story({
         args: { children: 'Order now', disabled: true },
       });
-
-      // Proves the app's global CSS actually loaded: read a real styling value
-      // from the component's source (hex color, Tailwind class, CSS variable)
-      // and assert the resolved computed style.
-      export const StyleCheck = meta.story({
-        args: { children: 'Submit' },
-        play: async ({ canvas }) => {
-          const button = canvas.getByRole('button', { name: /submit/i });
-          // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-          await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-        },
-      });
       \`\`\`
     `;
   }
@@ -116,8 +104,6 @@ function getStoryExample(projectInfo: ProjectInfo): string {
     return dedent`
       \`\`\`${tsx}
       // src/components/Button.stories.${tsx}
-      import { expect } from 'storybook/test';
-
       import { Button } from './Button';
 
       const meta = {
@@ -134,18 +120,6 @@ function getStoryExample(projectInfo: ProjectInfo): string {
       export const Disabled = {
         args: { children: 'Order now', disabled: true },
       };
-
-      // Proves the app's global CSS actually loaded: read a real styling value
-      // from the component's source (hex color, Tailwind class, CSS variable)
-      // and assert the resolved computed style.
-      export const StyleCheck = {
-        args: { children: 'Submit' },
-        play: async ({ canvas }) => {
-          const button = canvas.getByRole('button', { name: /submit/i });
-          // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-          await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-        },
-      };
       \`\`\`
     `;
   }
@@ -154,7 +128,6 @@ function getStoryExample(projectInfo: ProjectInfo): string {
     \`\`\`${tsx}
     // src/components/Button.stories.${tsx}
     import type { Meta, StoryObj } from '${typeImport}';
-    import { expect } from 'storybook/test';
 
     import { Button } from './Button';
 
@@ -172,18 +145,6 @@ function getStoryExample(projectInfo: ProjectInfo): string {
 
     export const Disabled: Story = {
       args: { children: 'Order now', disabled: true },
-    };
-
-    // Proves the app's global CSS actually loaded: read a real styling value
-    // from the component's source (hex color, Tailwind class, CSS variable)
-    // and assert the resolved computed style.
-    export const StyleCheck: Story = {
-      args: { children: 'Submit' },
-      play: async ({ canvas }) => {
-        const button = canvas.getByRole('button', { name: /submit/i });
-        // Button uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-        await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-      },
     };
     \`\`\`
   `;
@@ -221,7 +182,7 @@ function renderSteps(projectInfo: ProjectInfo): string {
 
     ### Step 3 — Write the story file
 
-    Write **one** colocated story file next to the chosen component: the default story, at most a couple of meaningful variants, and one \`StyleCheck\` story.
+    Write **one** colocated story file next to the chosen component: the default story and at most a couple of meaningful variants.
 
     ${getStoryExample(projectInfo)}
 
@@ -240,7 +201,7 @@ function renderSteps(projectInfo: ProjectInfo): string {
     \`\`\`
 
     1. Run the tests for the new story file only (\`STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai run-story-tests ...\`).
-    2. If a test fails, read the error and fix the cause — prefer fixing \`${configDir}/preview.${tsx}\` (missing CSS import, missing provider) over story-local workarounds. If the \`StyleCheck\` assertion fails, the global CSS is not loading in the preview; fix that before anything else.
+    2. If a test fails, read the error and fix the cause — prefer fixing \`${configDir}/preview.${tsx}\` (missing CSS import, missing provider) over story-local workarounds.
     3. Re-run the tests and repeat. Cap this loop at ~5 attempts — if the tests still fail, stop and explain to the user what went wrong and what the possible next steps are.
 
     ### Step 5 — Wrap up

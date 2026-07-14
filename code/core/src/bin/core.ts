@@ -15,6 +15,7 @@ import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
+import { aiSimpleSetup } from '../cli/ai/simple-setup.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
@@ -261,6 +262,23 @@ aiCommand
     await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
       await aiSetup(mergedOptions);
     }).catch(handleAiCommandFailure(mergedOptions.logfile));
+  });
+
+// Experimental: used only by the Storybook agent plugins/skills as the default
+// first-story path; not referenced from docs or nudges and sends no telemetry.
+aiCommand
+  .command('simple-setup')
+  .description('Generate instructions to write a first story for one simple component')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
+  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
+  .action(async (options, cmd) => {
+    const parentOptions = cmd.parent?.opts() ?? {};
+    const mergedOptions = { ...parentOptions, ...options };
+    await aiSimpleSetup(mergedOptions).catch(handleAiCommandFailure(mergedOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments

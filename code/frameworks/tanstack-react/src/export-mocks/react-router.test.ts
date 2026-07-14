@@ -51,4 +51,12 @@ describe('createFileRoute', () => {
     expect(Route.options.path).toBe('/page');
     expect(Route.options.fullPath).toBe('/page');
   });
+
+  it('keeps a pathless layout route id-only so it stays a pathless wrapper', () => {
+    const Route = build('/_auth');
+
+    expect(Route.options.id).toBe('/_auth');
+    expect(Route.options.path).toBeUndefined();
+    expect(Route.options.fullPath).toBeUndefined();
+  });
 });

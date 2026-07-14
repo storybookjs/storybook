@@ -66,8 +66,10 @@ function cloneChild(
   // derived from the new parent + path, and its parent linked to the cloned
   // parent below. Keeping the original `id` would cause TanStack to register
   // two routes with the same generated id (e.g. `__root__/about`).
-  const { id: _id, getParentRoute: _g, ...rest } = options;
+  const { id: oldId, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
+
+  const isPathlessRoute = rest.path === undefined;
 
   // Use `createRoute` (not `createFileRoute`) for nested clones: `createFileRoute`
   // registers the route in TanStack's global file-route registry by path, so
@@ -76,6 +78,7 @@ function cloneChild(
   const cloned = createRoute({
     ...rest,
     ...override,
+    ...(isPathlessRoute ? { id: oldId } : {}),
     getParentRoute: () => parent as any,
   } as any);
 

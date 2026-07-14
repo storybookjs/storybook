@@ -7,12 +7,7 @@ import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
 import { useId } from '@react-aria/utils';
-import {
-  addons,
-  type API_KeyCollection,
-  useStorybookApi,
-  useStorybookState,
-} from 'storybook/manager-api';
+import { type API_KeyCollection, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../../hooks/useLandmark.ts';
@@ -160,7 +155,8 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const api = useStorybookApi();
   // The drawer's open state is the manager-api layout field, the single source of truth. On mobile
   // `api.toggleNav()` flips this field, so the sidebar keyboard shortcut opens the drawer too.
-  const { showMobileNavigation: isMobileMenuOpen } = useStorybookState();
+  const { layout, ui } = useStorybookState();
+  const isMobileMenuOpen = layout.showMobileNavigation;
   // Stable identity: the `showMenu` effect below lists this in its deps.
   const setMobileMenuOpen = useCallback((open: boolean) => api.setMobileNavigation(open), [api]);
 
@@ -171,7 +167,9 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   apiRef.current = api;
   useEffect(() => () => apiRef.current.setMobileNavigation(false), []);
 
-  const { enableShortcuts = true } = addons.getConfig();
+  // Read `enableShortcuts` from the store, the same source the shortcut handler checks, so the
+  // button never advertises a shortcut the handler would ignore.
+  const enableShortcuts = ui.enableShortcuts ?? true;
   const navShortcut = enableShortcuts ? api.getShortcutKeys().toggleNav : undefined;
 
   useLayoutEffect(() => {

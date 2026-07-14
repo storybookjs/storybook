@@ -94,6 +94,9 @@ const mockManagerStore: any = {
         renderLabel,
       },
     },
+    // MobileNavigation reads the drawer's open state from `layout` and `enableShortcuts` from `ui`.
+    layout: { showMobileNavigation: false },
+    ui: { enableShortcuts: true },
   },
   api: {
     getCurrentStoryData: fn(() => {

@@ -1,7 +1,6 @@
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
-import { logger as nodeLogger } from 'storybook/internal/node-logger';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import SemVer from 'semver';
@@ -92,6 +91,7 @@ export async function add(
     await getStorybookData({
       configDir: userSpecifiedConfigDir,
       packageManagerName: pkgMgr,
+      skipCache: true,
     });
 
   if (typeof configDir === 'undefined') {

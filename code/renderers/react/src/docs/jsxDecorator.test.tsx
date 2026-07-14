@@ -169,6 +169,7 @@ describe('renderJsx', () => {
     });
 
     it('with displayName coming from forwarded render function', () => {
+      // oxlint-disable-next-line react/display-name -- displayName is assigned via Object.assign below
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         Object.assign(
           function MyExoticComponent(props: any, _ref: any) {
@@ -299,7 +300,6 @@ describe('renderJsx', () => {
   });
 
   // arrow functions with an empty .name, so without help they rendered as <No Display Name>.
-  /* eslint-disable react/display-name */
   it('resolves subcomponents attached as properties of a parent component', () => {
     const Modal: any = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
     Modal.Title = ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>;
@@ -324,7 +324,6 @@ describe('renderJsx', () => {
       </Modal>
     `);
   });
-  /* eslint-enable react/display-name */
 
   // Regression for #27127: react-element-to-jsx-string used to omit boolean
   // props explicitly set to `false`. Patched via algolia/react-element-to-jsx-string#733
@@ -419,5 +418,23 @@ describe('jsxDecorator', () => {
       expect.stringContaining('Hello MDX'),
       context
     );
+  });
+
+  it('should skip JSX rendering for portable stories', () => {
+    const storyOutput = <div>Portable Story</div>;
+    mockStoryFn.mockReturnValue(storyOutput);
+
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+        __isPortableStory: true,
+      },
+      originalStoryFn: () => <div>Test Story</div>,
+    };
+
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+    expect(result).toEqual(storyOutput);
   });
 });

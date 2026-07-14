@@ -23,14 +23,10 @@ import {
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
-import {
-  REVIEW_COLLECTION_QUERY_PARAM,
-  buildReviewStoryHref,
-  isReviewSummaryPath,
-} from './review-navigation.ts';
+import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewStore } from './review-store.ts';
-import { ReviewSummaryPortal } from './screens/ReviewSummaryPortal.tsx';
+import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
 type EventListener = (payload?: unknown) => void;
 
@@ -89,6 +85,7 @@ const managerApi: API = {
   off: offMock,
   emit: emitMock,
   getIsNavShown: () => true,
+  getNavAvailability: () => 'unavailable',
   getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
   togglePanel: fn().mockName('api::togglePanel'),
@@ -140,7 +137,7 @@ const applyReviewState = () => {
 const ReviewHarness = () => (
   <ReviewProvider>
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -148,7 +145,7 @@ const ReviewOutsideHarness = () => (
   <ReviewProvider>
     <ReviewNotification />
     <ReviewToolbarHeader />
-    <ReviewSummaryPortal />
+    <ReviewSummaryHost />
   </ReviewProvider>
 );
 
@@ -181,7 +178,7 @@ const ReviewOutsideWithNotificationsHarness = () => {
         <ReviewProvider>
           <ReviewNotification />
           <ReviewToolbarHeader />
-          <ReviewSummaryPortal />
+          <ReviewSummaryHost />
         </ReviewProvider>
         <div
           style={{
@@ -203,11 +200,9 @@ const ReviewOutsideWithNotificationsHarness = () => {
 };
 
 const deriveViewMode = (path: string): State['viewMode'] => {
-  if (path.startsWith('/story/') || path.startsWith('/docs/')) {
-    return parsePath(path).viewMode as State['viewMode'];
-  }
-  if (isReviewSummaryPath(path)) {
-    return 'review';
+  const { viewMode } = parsePath(path);
+  if (viewMode) {
+    return viewMode as State['viewMode'];
   }
   return managerState.viewMode;
 };
@@ -254,7 +249,10 @@ const meta = preview.meta({
   parameters: {
     layout: 'fullscreen',
     chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+      // Ignore the entire thumbnail cell, not just the iframe: the loading overlay and the
+      // self-measuring iframe render nondeterministically (especially in Edge), and pixels
+      // outside the iframe but inside the cell kept flagging spurious changes on every build.
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
   decorators: [
@@ -263,7 +261,13 @@ const meta = preview.meta({
         <ManagerStateSync parameters={parameters}>
           <div
             id="main-content-wrapper"
-            style={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: 0 }}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100vh',
+              minHeight: 0,
+            }}
           >
             <Story />
           </div>
@@ -295,10 +299,8 @@ const meta = preview.meta({
         description: '',
       },
     ]);
-    document.getElementById('storybook-review-summary-portal')?.remove();
     return () => {
       internal_fullStatusStore.unset();
-      document.getElementById('storybook-review-summary-portal')?.remove();
     };
   },
 });
@@ -322,7 +324,7 @@ export const StoryLinksUseCollectionParam = meta.story({
     applyReviewState();
 
     const link = await canvas.findByRole('link', {
-      name: 'Review story manager-settings-guidepage--default',
+      name: 'Review story Guide Page – Default',
     });
     expect(link.getAttribute('href')).toBe(
       buildReviewStoryHref({
@@ -377,6 +379,11 @@ export const PendingUpdateAccept = meta.story({
 
 export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   parameters: {
+    // Clicking "Update" at the end of the play function swaps in a fresh review whose
+    // preview-thumbnail iframes are still loading and self-measuring at capture time, so the
+    // snapshot (in Edge especially) differs on nearly every build and had to be re-accepted
+    // over and over. The flow itself is still covered as an interaction test.
+    chromatic: { disableSnapshot: true },
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {
       path: '/story/manager-settings-guidepage--default',
@@ -389,7 +396,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
     applyReviewState();
-    await expect(await canvas.findByRole('button', { name: 'Open story list' })).toHaveTextContent(
+    await expect(await canvas.findByRole('button', { name: /Select story/ })).toHaveTextContent(
       '2/3'
     );
 
@@ -399,7 +406,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
     await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
 
     await expect(await canvas.findByText('Updated manager settings polish')).toBeInTheDocument();
-    expect(canvas.queryByRole('button', { name: 'Open story list' })).not.toBeInTheDocument();
+    expect(canvas.queryByRole('button', { name: /Select story/ })).not.toBeInTheDocument();
   },
 });
 

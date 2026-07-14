@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "10.5.0-alpha.9",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -131,7 +131,7 @@
     "@types/node": "^22.19.1",
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "webpack": "^5.65.0"
   },
   "peerDependencies": {

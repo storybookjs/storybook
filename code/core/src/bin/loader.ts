@@ -136,14 +136,19 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
 }
 
 export const load: LoadHookSync = (url, context, nextLoad) => {
+  // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
+  // skipCache) before checking the extension, otherwise a cache-busted URL like
+  // `file:///main.ts?123` no longer ends with `.ts` and silently skips the esbuild transform below.
+  const urlWithoutQuery = url.split('?')[0];
+
   /** Convert TS to ESM using esbuild */
   if (
-    url.endsWith('.ts') ||
-    url.endsWith('.tsx') ||
-    url.endsWith('.mts') ||
-    url.endsWith('.cts') ||
-    url.endsWith('.mtsx') ||
-    url.endsWith('.ctsx')
+    urlWithoutQuery.endsWith('.ts') ||
+    urlWithoutQuery.endsWith('.tsx') ||
+    urlWithoutQuery.endsWith('.mts') ||
+    urlWithoutQuery.endsWith('.cts') ||
+    urlWithoutQuery.endsWith('.mtsx') ||
+    urlWithoutQuery.endsWith('.ctsx')
   ) {
     const filePath = fileURLToPath(url);
     const rawSource = readFileSync(filePath, 'utf-8');

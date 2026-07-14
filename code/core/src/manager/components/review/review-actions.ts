@@ -1,10 +1,16 @@
 import type { NavigateFunction } from 'storybook/internal/router';
 import { type API } from 'storybook/manager-api';
 
-import { REVIEW_CHANGES_URL, REVIEW_EXITING_SESSION_KEY } from './constants.ts';
+import {
+  AUTO_ENTERED_SESSION_KEY,
+  EVENTS,
+  PRE_REVIEW_RETURN_KEY,
+  REVIEW_CHANGES_URL,
+} from './constants.ts';
 import { enterReviewMode, exitReviewMode, type ReviewModeFilters } from './review-mode.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
+  buildReviewChangesSummaryHref,
   buildReviewStoryTarget,
   isReviewReturnSearch,
   type ReviewNavEntry,
@@ -21,7 +27,8 @@ export interface NavigateOutOfReviewOptions {
 /**
  * Navigate to a curated story, entering review mode. Entering is idempotent, so
  * this is safe whether or not the user is already reviewing. The summary overlay
- * is suppressed synchronously to avoid a flash before the route changes.
+ * stays visible until the route leaves the summary; the main preview is unmounted
+ * while it does, so no stale story shows through.
  */
 export const navigateToReviewEntry = (
   api: API,
@@ -30,7 +37,6 @@ export const navigateToReviewEntry = (
   filters: ReviewModeFilters
 ): void => {
   void enterReviewMode(api, filters);
-  reviewStore.suppressSummaryOverlay();
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: String(entry.collectionIndex) });
   navigate(buildReviewStoryTarget(entry));
 };
@@ -60,9 +66,8 @@ export const navigateOutOfReview = async (
   const visitCreatedAt = recordVisit ? reviewStore.getState().state?.createdAt : undefined;
 
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
-  reviewStore.releaseSummaryOverlaySuppression();
 
-  sessionStore.write(REVIEW_EXITING_SESSION_KEY, '1');
+  reviewStore.setExiting(true);
   try {
     await exitReviewMode(api);
 
@@ -77,6 +82,32 @@ export const navigateOutOfReview = async (
 
     api.selectFirstStory();
   } finally {
-    sessionStore.remove(REVIEW_EXITING_SESSION_KEY);
+    reviewStore.setExiting(false);
   }
+};
+
+/** Clear the active review (if any) and return to the pre-review canvas. */
+export const dismissReview = (api: Pick<API, 'emit'>): void => {
+  api.emit(EVENTS.DISMISS_REVIEW, sessionStore.read(PRE_REVIEW_RETURN_KEY));
+};
+
+/**
+ * Swap in the deferred review payload, enter review mode and navigate to the
+ * summary screen. No-op when there is nothing pending.
+ */
+export const acceptPendingReview = (
+  api: API,
+  navigate: NavigateFunction,
+  filters: ReviewModeFilters
+): void => {
+  const accepted = reviewStore.getState().pendingReview;
+  if (!accepted) {
+    return;
+  }
+  acceptReviewNotification(api, accepted.createdAt);
+  // A fresh payload re-arms the one-time auto-enter.
+  sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+  reviewStore.displayReview(accepted);
+  void enterReviewMode(api, filters);
+  navigate(buildReviewChangesSummaryHref(), { plain: true });
 };

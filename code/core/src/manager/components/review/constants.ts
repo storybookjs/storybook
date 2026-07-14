@@ -18,10 +18,6 @@ export const PRE_REVIEW_RETURN_KEY = `${REVIEW_NAMESPACE}/pre-review-return`;
 // on the review summary. Reset on dismiss and when a new review payload arrives.
 export const AUTO_ENTERED_SESSION_KEY = `${REVIEW_NAMESPACE}/auto-entered`;
 
-// sessionStorage guard while navigateOutOfReview is in flight. Prevents the
-// summary auto-enter effect from re-arming review mode before navigation away.
-export const REVIEW_EXITING_SESSION_KEY = `${REVIEW_NAMESPACE}/exiting`;
-
 // sessionStorage marker for the server `createdAt` of the review the user has
 // opened. Non-review routes only surface a new-review notification while this
 // differs from the active review's `createdAt`.

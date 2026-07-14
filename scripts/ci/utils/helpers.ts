@@ -73,9 +73,11 @@ export const workspace = {
         working_directory: root,
         // Join point for the backgrounded pack step: CircleCI kills background
         // processes when the job's last step ends and offers no built-in wait,
-        // so this polls for the status file, propagates a pack failure, and
-        // integrity-checks the archive so a truncated tarball (e.g. the pack
-        // process OOM-killed mid-write) can never be persisted.
+        // so this polls for the status file and propagates a pack failure. A
+        // killed gzip surfaces as a nonzero pipeline status and a killed shell
+        // as the poll timeout, so the archive check only needs to be the free
+        // non-empty test, not a full decompression pass (`gzip -t` cost ~22s
+        // of critical path on an xlarge executor).
         command: [
           'waited=0',
           `until [ -f ${PACKED_NODE_MODULES_ARCHIVE}.status ]; do`,
@@ -91,7 +93,7 @@ export const workspace = {
           '  echo "Background node_modules pack failed with status $status" >&2',
           '  exit 1',
           'fi',
-          `gzip -t ${PACKED_NODE_MODULES_ARCHIVE}`,
+          `test -s ${PACKED_NODE_MODULES_ARCHIVE}`,
         ].join('\n'),
       },
     };

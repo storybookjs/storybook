@@ -3,8 +3,11 @@ import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
 import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 
 export default async function postinstall(options: PostinstallOptions) {
+  const useRemotePkg = options.useRemotePkg ?? !!options.skipInstall;
   const args = [
-    options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+    // A versioned spec only resolves through the ephemeral runner; the local
+    // binary is invoked by bare name.
+    useRemotePkg ? `storybook@${versions.storybook}` : `storybook`,
     'automigrate',
     'addon-a11y-addon-test',
   ];
@@ -29,5 +32,5 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  await jsPackageManager.runPackageCommand({ args, useRemotePkg: !!options.skipInstall });
+  await jsPackageManager.runPackageCommand({ args, useRemotePkg });
 }

@@ -39,17 +39,61 @@ export const workspace = {
   pack: (requiredPaths: string[], optionalPaths: string[], root = LINUX_ROOT_DIR) => {
     return {
       run: {
-        name: 'Pack node_modules for workspace',
+        name: 'Pack node_modules for workspace (background)',
         working_directory: root,
+        // Runs in the background so the ~50s tar/gzip overlaps with Compile:
+        // node_modules is final once install and the dedupe check pass, compile
+        // only writes per-package dist/, and tar archives the workspace symlinks
+        // under node_modules as symlink entries without reading through them.
+        // The exit code lands in a status file (a plain failure would be
+        // swallowed by the background shell); awaitPack() consumes it.
+        background: true,
         // Per-package node_modules only exist for packages with unhoistable
         // dependencies, so they are filtered at runtime; the root trees are
         // passed straight to tar so a missing one fails the job loudly.
         command: [
+          `rm -f ${PACKED_NODE_MODULES_ARCHIVE}.status`,
           'optional=""',
           `for p in ${optionalPaths.join(' ')}; do`,
           '  if [ -e "$p" ]; then optional="$optional $p"; fi',
           'done',
-          `tar --create ${requiredPaths.join(' ')} $optional | gzip -1 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          'status=1',
+          `if tar --create ${requiredPaths.join(' ')} $optional | gzip -1 > ${PACKED_NODE_MODULES_ARCHIVE}; then`,
+          '  status=0',
+          'fi',
+          `echo "$status" > ${PACKED_NODE_MODULES_ARCHIVE}.status`,
+        ].join('\n'),
+      },
+    };
+  },
+  awaitPack: (root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Wait for node_modules pack',
+        working_directory: root,
+        // Join point for the backgrounded pack step: CircleCI kills background
+        // processes when the job's last step ends and offers no built-in wait,
+        // so this polls for the status file and propagates a pack failure. A
+        // killed gzip surfaces as a nonzero pipeline status and a killed shell
+        // as the poll timeout, so the archive check only needs to be the free
+        // non-empty test, not a full decompression pass (`gzip -t` cost ~22s
+        // of critical path on an xlarge executor).
+        command: [
+          'waited=0',
+          `until [ -f ${PACKED_NODE_MODULES_ARCHIVE}.status ]; do`,
+          '  if [ "$waited" -ge 300 ]; then',
+          '    echo "Timed out waiting for the background node_modules pack" >&2',
+          '    exit 1',
+          '  fi',
+          '  sleep 2',
+          '  waited=$((waited + 2))',
+          'done',
+          `status=$(cat ${PACKED_NODE_MODULES_ARCHIVE}.status)`,
+          'if [ "$status" != "0" ]; then',
+          '  echo "Background node_modules pack failed with status $status" >&2',
+          '  exit 1',
+          'fi',
+          `test -s ${PACKED_NODE_MODULES_ARCHIVE}`,
         ].join('\n'),
       },
     };

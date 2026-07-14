@@ -40,6 +40,29 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Get the platform-aware Playwright install command.
+   *
+   * @returns Command arguments, display command, and whether `--with-deps` is included.
+   */
+  getPlaywrightInstallCommand(): {
+    args: string[];
+    command: string;
+    useWithDeps: boolean;
+  } {
+    const platform = os.platform();
+    const useWithDeps = !!process.env.CI || platform === 'darwin' || platform === 'win32';
+    const args = useWithDeps
+      ? ['playwright', 'install', 'chromium', '--with-deps']
+      : ['playwright', 'install', 'chromium'];
+
+    return {
+      args,
+      command: this.packageManager.getPackageCommand(args),
+      useWithDeps,
+    };
+  }
+
+  /**
    * Reduce a Vitest version specifier (exact or range) to a single concrete version for
    * `semver.satisfies` comparisons, so dependency collection and postinstall template selection make
    * the same major/minor decision. Uses the lower bound of a valid range, then coerces so a
@@ -139,12 +162,11 @@ export class AddonVitestService {
   ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
-    const platform = os.platform();
-    const useWithDeps = !!process.env.CI || platform === 'darwin' || platform === 'win32';
-    const playwrightCommand = useWithDeps
-      ? ['playwright', 'install', 'chromium', '--with-deps']
-      : ['playwright', 'install', 'chromium'];
-    const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
+    const {
+      args: playwrightCommand,
+      command: playwrightCommandString,
+      useWithDeps,
+    } = this.getPlaywrightInstallCommand();
 
     let result: 'installed' | 'skipped' | 'aborted' | 'failed';
 

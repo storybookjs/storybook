@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "10.5.0-alpha.5",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
     "storybook",
@@ -53,7 +53,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-joyride": "^2.8.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

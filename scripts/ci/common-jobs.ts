@@ -6,6 +6,7 @@ import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants
 import {
   CACHE_KEYS,
   CACHE_PATHS,
+  PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
   git,
@@ -18,9 +19,14 @@ import {
   workspace,
 } from './utils/helpers.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
-import { defineJob, defineNoOpJob } from './utils/types.ts';
+import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
+
+const packageDirs = glob.sync(['*/src', '*/*/src'], {
+  cwd: join(dirname, '../../code'),
+  onlyDirectories: true,
+});
 
 export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   executor: {
@@ -32,7 +38,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     cache.attach(CACHE_KEYS()),
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
-    git.check(),
     npm.check(),
     {
       run: {
@@ -48,29 +53,28 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
         command: 'yarn local-registry --publish',
       },
     },
+    git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
+    workspace.pack(
+      [
+        // Workspace-root node_modules folders. Yarn hoists shared/singleton
+        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+        // jobs otherwise only receive these via the shared `save_cache`, which is
+        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+        // freshly-built `dist` but no root `node_modules`, producing errors like
+        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
+        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+        `${WORKING_DIR}/node_modules`,
+        `${WORKING_DIR}/code/node_modules`,
+        `${WORKING_DIR}/scripts/node_modules`,
+      ],
+      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
+    ),
     workspace.persist([
-      // Workspace-root node_modules folders. Yarn hoists shared/singleton
-      // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-      // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-      // jobs otherwise only receive these via the shared `save_cache`, which is
-      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-      // freshly-built `dist` but no root `node_modules`, producing errors like
-      // `Cannot find package 'oxc-parser'`. Persisting them to the (pipeline-
-      // scoped, un-gated) workspace makes downstream jobs correct for every PR.
-      `${WORKING_DIR}/node_modules`,
-      `${WORKING_DIR}/code/node_modules`,
-      `${WORKING_DIR}/scripts/node_modules`,
-      ...glob
-        .sync(['*/src', '*/*/src'], {
-          cwd: join(dirname, '../../code'),
-          onlyDirectories: true,
-        })
-        .flatMap((p) => [
-          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
-          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
-        ]),
+      PACKED_NODE_MODULES_ARCHIVE,
+      ...packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'dist')}`),
       `${WORKING_DIR}/.verdaccio-cache`,
       `${WORKING_DIR}/code/bench`,
     ]),
@@ -111,18 +115,14 @@ export const build_windows = defineJob('Build (windows)', () => ({
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
+    git.check(),
     verdaccio.start(),
     workspace.persist(
       [
-        ...glob
-          .sync(['*/src', '*/*/src'], {
-            cwd: join(dirname, '../../code'),
-            onlyDirectories: true,
-          })
-          .flatMap((p) => [
-            `code/${p.replace('src', 'dist')}`,
-            `code/${p.replace('src', 'node_modules')}`,
-          ]),
+        ...packageDirs.flatMap((p) => [
+          `code/${p.replace('src', 'dist')}`,
+          `code/${p.replace('src', 'node_modules')}`,
+        ]),
         `.verdaccio-cache`,
         `code/bench`,
       ],
@@ -175,7 +175,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'yarn storybook:ui',
+          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -183,6 +183,50 @@ export const internalStorybookE2e = defineJob(
         run: {
           name: 'Run internal Storybook E2E tests',
           command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+        },
+      },
+      artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
+      artifact.persist(
+        join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
+        'playwright-results'
+      ),
+      testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
+      ...workflow.reportOnFailure(workflowName),
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
+export const internalStorybookBuildE2e = defineJob(
+  'Internal storybook build E2E',
+  (workflowName) => ({
+    executor: {
+      name: 'sb_playwright',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Build internal storybook',
+          working_directory: 'code',
+          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
+        },
+      },
+      {
+        run: {
+          name: 'Serve internal storybook static build',
+          working_directory: 'code',
+          background: true,
+          command: 'yarn http-server storybook-static --port 6006 -s',
+        },
+      },
+      server.wait(['6006']),
+      {
+        run: {
+          name: 'Run internal Storybook static E2E tests',
+          command:
+            'STORYBOOK_TYPE=static yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
@@ -359,6 +403,47 @@ export const testUnit_windows = defineJob(
     ],
   }),
   [build_windows]
+);
+
+export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
+  defineJob(
+    'CircleCI completion',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        {
+          run: {
+            name: 'Workflow completed',
+            command: 'echo "All required jobs completed successfully"',
+          },
+        },
+      ],
+    }),
+    requires
+  );
+
+export const docgenMemoryGate = defineJob(
+  'Docgen memory gate',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Docgen-server re-extraction memory gate',
+          working_directory: 'scripts',
+          command: 'yarn bench:docgen-memory',
+        },
+      },
+    ],
+  }),
+  [commonJobsNoOpJob]
 );
 
 export const benchmarkPackages = defineJob(

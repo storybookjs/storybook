@@ -24,6 +24,7 @@ export {
 
 /** Real open-service surface — not mocked; used by the internal sync-test demo. */
 export {
+  getService,
   registerService,
   useServiceCommand,
   useServiceQuery,

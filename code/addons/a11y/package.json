@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "10.5.0-alpha.5",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
@@ -69,7 +69,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest-axe": "^0.1.0"
   },
   "peerDependencies": {

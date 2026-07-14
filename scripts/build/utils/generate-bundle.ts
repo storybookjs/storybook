@@ -9,19 +9,19 @@ import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
+import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
   SUPPORTED_FEATURES,
-} from '../../../code/core/src/shared/constants/environments-support';
-import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
+} from '../../../code/core/src/shared/constants/environments-support.ts';
+import { resolvePackageDir } from '../../../code/core/src/shared/utils/module.ts';
 import {
   type BuildEntries,
   type EntryType,
   type EsbuildContextOptions,
   getExternal,
-} from './entry-utils';
+} from './entry-utils.ts';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -147,6 +147,7 @@ export async function generateBundle({
       'storybook/measure': './src/measure',
       'storybook/actions': './src/actions',
       'storybook/viewport': './src/viewport',
+      'storybook/open-service': './src/shared/open-service',
       // The following aliases ensures that the manager has a single version of React,
       // even if transitive dependencies would depend on other versions.
       react: resolvePackageDir('react'),

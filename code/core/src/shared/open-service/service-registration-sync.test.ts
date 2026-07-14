@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
@@ -66,7 +66,7 @@ describe('server: command push', () => {
         clientId: expect.any(String),
       })
     );
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
   it('advances the version on each subsequent command, keeping a stable clientId', async () => {
@@ -83,7 +83,7 @@ describe('server: command push', () => {
     expect((patches[1][1] as { clientId: string }).clientId).toBe(
       (patches[0][1] as { clientId: string }).clientId
     );
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: '2' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: '2' });
   });
 });
 
@@ -102,7 +102,7 @@ describe('server: sync-start initialization', () => {
       version: 1,
       clientId: 'peer-1',
     });
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
 
     // A different peer comes online and asks for current state; the server answers with the snapshot
     // it now holds, stamped with the version/clientId it adopted (not its own initial clientId).
@@ -154,7 +154,7 @@ describe('server: patch application', () => {
       clientId: 'peer',
     });
 
-    expect(service.queries.getRecordFields({ entryId: 'entry' })).toEqual({ marker: 'set' });
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
   });
 
   it('drops a stale (lower-version) patch arriving after a newer one', () => {
@@ -176,7 +176,7 @@ describe('server: patch application', () => {
       clientId: 'peer',
     });
 
-    expect(service.queries.getRecordFields({ entryId: 'entry' })).toEqual({ marker: 'new' });
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'new' });
   });
 
   it('ignores patches for a different service id', () => {
@@ -192,7 +192,7 @@ describe('server: patch application', () => {
       clientId: 'peer',
     });
 
-    expect(service.queries.getRecordFields({ entryId: 'entry' })).toBeNull();
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toBeNull();
   });
 
   it('drops malformed patches without throwing or mutating state', () => {
@@ -212,7 +212,7 @@ describe('server: patch application', () => {
       expect(() => channel.emitExternal(SERVICE_PATCHES, payload)).not.toThrow();
     }
 
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toBeNull();
   });
 });
 
@@ -229,7 +229,7 @@ describe('server: teardown via clearRegistry', () => {
       version: 1,
       clientId: 'peer',
     });
-    expect(service.queries.getRecordFields({ entryId: 'entry' })).toEqual({ marker: 'set' });
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
 
     clearRegistry();
 
@@ -244,7 +244,7 @@ describe('server: teardown via clearRegistry', () => {
       version: 2,
       clientId: 'peer',
     });
-    expect(service.queries.getRecordFields({ entryId: 'entry' })).toEqual({ marker: 'set' });
+    expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
   });
 });
 
@@ -275,7 +275,7 @@ describe('server: bootstrap on registration', () => {
       clientId: 'peer-1',
     });
 
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
   it('does not treat its own sync-start echo as incoming state', () => {
@@ -286,7 +286,7 @@ describe('server: bootstrap on registration', () => {
 
     // The bootstrap sync-start echoes back through the shared bus; it must not reply to itself
     // nor mutate state. With no peer to answer, state stays empty.
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toBeNull();
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toBeNull();
     const replyCalls = channel.emit.mock.calls.filter(
       ([event]) => event === SERVICE_SYNC_START_REPLY
     );

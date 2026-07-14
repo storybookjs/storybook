@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "10.5.0-alpha.5",
+  "version": "10.6.0-alpha.0",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -58,7 +58,7 @@
     "cross-spawn": "^7.0.6",
     "lit": "2.3.1",
     "tmp": "^0.2.3",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "web-component-analyzer": "^1.1.6"
   },
   "peerDependencies": {

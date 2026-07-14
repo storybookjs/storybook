@@ -34,11 +34,11 @@ const payload: StoryDocsPayload = {
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 
-/** Builds a minimal `core/story-docs` service mock whose `getStoryDocs.loaded` returns `loaded`. */
+/** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   mockedGetService.mockReturnValue({
     queries: {
-      getStoryDocs: Object.assign(() => payload, { loaded }),
+      storyDocs: Object.assign(() => payload, { loaded }),
     },
   } as unknown as StoryDocsService);
 }
@@ -108,6 +108,19 @@ describe('storyDocsSourceBeforeEach', () => {
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context);
     await cleanup?.();
+  });
+
+  it('does not emit for portable stories', async () => {
+    const context = {
+      id: storyId,
+      parameters: { __isArgsStory: true, __isPortableStory: true },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await cleanup?.();
+
+    expect(mockedGetService).not.toHaveBeenCalled();
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
   });
 
   it('does not emit when source code is provided', async () => {

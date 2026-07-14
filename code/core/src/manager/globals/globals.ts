@@ -7,10 +7,10 @@ export const globalsNameReferenceMap = {
 
   'storybook/manager-api': '__STORYBOOK_API__',
 
-  'storybook/test': '__STORYBOOK_TEST__',
-
   'storybook/theming': '__STORYBOOK_THEMING__',
   'storybook/theming/create': '__STORYBOOK_THEMING_CREATE__',
+
+  'storybook/test': '__STORYBOOK_TEST__',
 
   'storybook/internal/channels': '__STORYBOOK_CHANNELS__',
   'storybook/internal/client-logger': '__STORYBOOK_CLIENT_LOGGER__',

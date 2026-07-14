@@ -71,9 +71,11 @@ const meta = {
     [OPEN_SERVICE_DEMO_PARAM_KEY]: { enabled: true },
   },
   beforeEach: () => {
-    const initialValue = localCommandSyncService.queries.getValue();
+    const initialValue = localCommandSyncService.queries.value.get();
     store.set(initialValue);
-    const unsubscribe = localCommandSyncService.queries.getValue.subscribe(undefined, store.set);
+    const unsubscribe = localCommandSyncService.queries.value.subscribe(undefined, ({ data }) =>
+      store.set(data ?? '')
+    );
     return async () => {
       unsubscribe();
       store.set(initialValue);

@@ -356,7 +356,11 @@ const decorators = [
 ] satisfies Decorator[];
 
 const parameters = {
+  // Redundant but useful for testing lang parameter propagation in stories.
+  htmlLang: 'en-CA',
   docs: {
+    // Redundant but useful for testing lang parameter propagation in docs.
+    lang: 'en-US',
     theme: themes.light,
     codePanel: true,
     source: {

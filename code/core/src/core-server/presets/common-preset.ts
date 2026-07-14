@@ -3,17 +3,16 @@ import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
-  STORY_FILE_TEST_REGEXP,
-  normalizeStories,
-  optionalEnvToBoolean,
-} from 'storybook/internal/common';
-import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  STORY_FILE_TEST_REGEXP,
+  getBabelPresetEnvMajor,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
+  normalizeStories,
+  optionalEnvToBoolean,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
@@ -22,27 +21,32 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
-  DocgenProvider,
+  DocgenProviderDescriptor,
   Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
-  StorybookConfigRaw,
   StoryDocsProvider,
+  StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { registerDocgenServices } from '../../shared/open-service/services/docgen/server.ts';
+import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
-import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
+import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
+import { initReviewChannel } from '../server-channel/review-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -50,7 +54,6 @@ import { initializeSaveStory } from '../utils/save-story/save-story.ts';
 import { parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
-import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -119,6 +122,24 @@ export const babel = async (_: unknown, options: Options) => {
     string,
     any
   >;
+
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      // This is the same browser supports that we use to bundle our manager and preview code.
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  const shouldRemoveBugfixes =
+    options?.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
@@ -128,20 +149,7 @@ export const babel = async (_: unknown, options: Options) => {
       ...(babelDefault?.overrides ?? []),
       {
         include: /\.(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            '@babel/preset-env',
-            {
-              bugfixes: true,
-              targets: {
-                // This is the same browser supports that we use to bundle our manager and preview code.
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['@babel/preset-env', presetConfig]],
       },
     ],
   };
@@ -211,20 +219,28 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
+const babelPresetEnvMajor = getBabelPresetEnvMajor();
+
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
+  babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
   changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
+  // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
+  // explicitly sets `false`, so an explicit default would be indistinguishable from a user
+  // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
   legacyDecoratorFileOrder: false,
   measure: true,
   outline: true,
+  menuOnboardingChecklist: true,
   sidebarOnboardingChecklist: true,
   viewport: true,
 });
@@ -289,6 +305,9 @@ export const experimental_serverChannel = async (
   initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
+  if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    initReviewChannel(channel);
+  }
   initTelemetryChannel(channel);
 
   return channel;
@@ -348,17 +367,32 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const [docgenProvider, storyDocsProvider] = await Promise.all([
-      options.presets.apply<DocgenProvider>('experimental_docgenProvider', async () => undefined),
+    const [docgenDescriptors, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
       options.presets.apply<StoryDocsProvider>(
         'experimental_storyDocsProvider',
         async () => undefined
       ),
     ]);
 
-    registerDocgenServices({
+    // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
+    // the dev-server event loop. The worker composes the descriptor chain; here we forward one
+    // component to it. When the compiled worker script is unavailable (e.g. running from source
+    // without a build) the client is undefined and we skip docgen registration rather than
+    // extracting on the main thread.
+    const docgenWorker =
+      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
+
+    if (docgenWorker) {
+      registerDocgenService({
+        getIndex: () => storyIndexGenerator.getIndex(),
+        docgenProvider: (input) => docgenWorker.extract(input.entry),
+        workingDir: process.cwd(),
+      });
+    }
+
+    registerStoryDocsService({
       getIndex: () => storyIndexGenerator.getIndex(),
-      docgenProvider,
       storyDocsProvider,
       workingDir: process.cwd(),
     });

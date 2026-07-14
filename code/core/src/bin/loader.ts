@@ -4,7 +4,6 @@
  * cause the dist to get huge.
  */
 import { readFileSync, readdirSync } from 'node:fs';
-import type { LoadHookSync } from 'node:module';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,6 +13,8 @@ import { transformSync } from 'esbuild';
 import { dedent } from 'ts-dedent';
 
 import { NODE_TARGET } from '../shared/constants/environments-support.ts';
+
+type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
 
 export const supportedExtensions = [
   '.js',

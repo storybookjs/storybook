@@ -45,7 +45,12 @@ declare module 'ansi-to-html';
 declare module 'lazy-universal-dotenv';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
-declare module 'storybook/internal/bin/loader';
+// CLI-only entry with no "types" condition in package.json exports.
+declare module 'storybook/internal/bin/loader' {
+  type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
+  const load: LoadHookSync;
+  export { load };
+}
 
 declare var STORIES: any;
 

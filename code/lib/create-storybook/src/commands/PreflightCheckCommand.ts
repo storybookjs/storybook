@@ -68,12 +68,13 @@ export class PreflightCheckCommand {
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: options.packageManager,
     });
+    const nonInteractive = !!options.yes || !process.stdout.isTTY || !!isCI();
 
     logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
-      await packageManager.installDependencies();
+      await packageManager.installDependencies({ nonInteractive });
     }
 
     const pnp = await detectPnp();
@@ -90,7 +91,7 @@ export class PreflightCheckCommand {
     try {
       await packageManager.precheckStorybookPackageInstall({
         storybookVersion: this.versionService.getCurrentVersion(),
-        nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+        nonInteractive,
         installContext: 'create',
       });
     } catch (error) {

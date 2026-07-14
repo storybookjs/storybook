@@ -6,6 +6,7 @@ import {
   PackageManagerName,
   cache,
   executeCommand,
+  isCI,
   type JsPackageManager,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -138,6 +139,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const dependencyInstallationResult = await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
+    nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
     skipInstall: !!options.skipInstall,
     selectedFeatures,
   });
@@ -161,6 +163,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
+    dependencyInstallationStatus: dependencyInstallationResult.status,
     options,
   });
 

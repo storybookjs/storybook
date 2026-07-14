@@ -8,6 +8,7 @@ import { Feature } from 'storybook/internal/types';
 import type { DependencyCollector } from '../dependency-collector.ts';
 
 type DependencyInstallationCommandParams = {
+  nonInteractive?: boolean;
   skipInstall: boolean;
   selectedFeatures: Set<Feature>;
 };
@@ -29,6 +30,7 @@ export class DependencyInstallationCommand {
   ) {}
   /** Execute dependency installation */
   async execute({
+    nonInteractive = true,
     skipInstall = false,
     selectedFeatures,
   }: DependencyInstallationCommandParams): Promise<{ status: 'success' | 'failed' }> {
@@ -69,7 +71,7 @@ export class DependencyInstallationCommand {
 
     if (!skipInstall && this.dependencyCollector.hasPackages()) {
       try {
-        await this.packageManager.installDependencies();
+        await this.packageManager.installDependencies({ nonInteractive });
       } catch (err) {
         if (err instanceof MinimumReleaseAgeHandledError) {
           throw err;

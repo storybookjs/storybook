@@ -95,6 +95,12 @@ export type PackageJsonInfo = {
   packageJson: PackageJsonWithDepsAndDevDeps;
 };
 
+export type InstallDependenciesOptions = {
+  force?: boolean;
+  /** Package-manager recovery is non-interactive by default. */
+  nonInteractive?: boolean;
+};
+
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
 
@@ -177,7 +183,7 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: InstallDependenciesOptions) {
     await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',

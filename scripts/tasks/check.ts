@@ -9,11 +9,13 @@ import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 import { getCodeWorkspaces } from '../utils/workspace.ts';
 
-// The typescript-validation job runs on an xlarge (8 vCPU) executor. os.cpus()
-// inside Docker reports the host's cores rather than the cgroup limit, so use
-// an explicit value on CI instead of maxConcurrentTasks (same reasoning as
-// compile.ts).
-const CI_VCPUS = 8;
+// The typescript-validation job runs on an xlarge (8 vCPU) executor. The
+// native TS 7 compiler run by check-package.ts is itself multi-threaded
+// (~4 threads per process observed), so the pool stays narrower than the
+// vCPU count. os.cpus() inside Docker reports the host's cores rather than
+// the cgroup limit, so use an explicit value on CI instead of
+// maxConcurrentTasks (same reasoning as compile.ts).
+const CI_CONCURRENCY = 4;
 
 // Started first so the slowest checks don't begin last and stretch the tail of
 // the parallel run.
@@ -54,7 +56,10 @@ export const check: Task = {
       return rank(a.name) - rank(b.name);
     });
 
-    const limit = pLimit(process.env.CI ? CI_VCPUS : maxConcurrentTasks);
+    // Halved locally for the same multi-threading reason as CI_CONCURRENCY.
+    const limit = pLimit(
+      process.env.CI ? CI_CONCURRENCY : Math.max(2, Math.ceil(maxConcurrentTasks / 2))
+    );
 
     await Promise.all(
       workspaces.map((workspace) =>

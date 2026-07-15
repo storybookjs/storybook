@@ -64,15 +64,23 @@ export const Link = ({
   [key: string]: unknown;
 }) => {
   const location = useLocation();
+  // Derive the anchor's DOM props from the real router so the rendered
+  // element matches what the app produces: `href` gets path params
+  // interpolated and search serialized, and router-only props (`params`,
+  // `search`, `hash`, ...) are consumed instead of leaking onto the DOM.
+  // Only navigation itself is replaced with the `onNavigate` spy.
+  const { onClick: _navigate, ...linkProps } = _useLinkProps({ to, ...props } as any) as Record<
+    string,
+    unknown
+  >;
   return React.createElement(
     'a',
     {
-      href: to,
+      ...linkProps,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
         onNavigate({ to, from: location.href });
       },
-      ...props,
     },
     children
   );

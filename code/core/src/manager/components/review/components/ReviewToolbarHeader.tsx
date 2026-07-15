@@ -1,6 +1,6 @@
-import React, { type FC } from 'react';
+import React, { type FC, type ReactNode } from 'react';
 
-import { Badge, Button, Popover, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
@@ -8,7 +8,7 @@ import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storyboo
 import {
   buildReviewChangesSummaryHref,
   buildReviewStoryHref,
-  getAdjacentReviewEntries,
+  type ReviewNavEntry,
 } from '../review-navigation.ts';
 import { useReview } from '../review-store.ts';
 import { AttentionBanner } from './AttentionBanner.tsx';
@@ -61,11 +61,28 @@ const SubtitleText = styled.span(({ theme }) => ({
   color: theme.color.defaultText,
 }));
 
-const Counter = styled(Button)(({ theme }) => ({
+const Counter = styled.span(({ theme }) => ({
   fontVariantNumeric: 'tabular-nums',
   fontFamily: theme.typography.fonts.mono,
   fontWeight: theme.typography.weight.regular,
 }));
+
+// Links to a review story when the target exists, or renders a disabled control
+// at the ends of the sequence so prev/next stop at the boundaries (no wrap).
+const NavButton: FC<{ entry: ReviewNavEntry | null; ariaLabel: string; icon: ReactNode }> = ({
+  entry,
+  ariaLabel,
+  icon,
+}) =>
+  entry ? (
+    <Button variant="ghost" size="small" padding="small" ariaLabel={ariaLabel} asChild>
+      <a href={buildReviewStoryHref(entry)}>{icon}</a>
+    </Button>
+  ) : (
+    <Button variant="ghost" size="small" padding="small" ariaLabel={ariaLabel} disabled>
+      {icon}
+    </Button>
+  );
 
 const componentName = (componentTitle: string): string =>
   componentTitle
@@ -77,9 +94,7 @@ const componentName = (componentTitle: string): string =>
 export const ReviewToolbarHeader: FC = () => {
   const {
     state,
-    isStale,
-    hasPendingUpdate,
-    onAcceptPendingUpdate,
+    banner,
     storyInfo,
     flattenedEntries,
     newlyAddedStoryIds,
@@ -94,9 +109,11 @@ export const ReviewToolbarHeader: FC = () => {
   const collection = state.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
   const totalStories = flattenedEntries.length;
-  const neighbors = getAdjacentReviewEntries(flattenedEntries, activeIndex);
-  const previousEntry = neighbors?.previous ?? activeEntry;
-  const nextEntry = neighbors?.next ?? activeEntry;
+  // Prev/next are disabled (not wrapping) at the ends of the flattened sequence.
+  const hasPrevious = activeIndex > 0;
+  const hasNext = activeIndex < totalStories - 1;
+  const previousEntry = hasPrevious ? flattenedEntries[activeIndex - 1] : null;
+  const nextEntry = hasNext ? flattenedEntries[activeIndex + 1] : null;
   const progress = totalStories > 1 ? activeIndex / (totalStories - 1) : 0;
   const currentStoryInfo = storyInfo[activeEntry.storyId];
   const isNewlyAdded = newlyAddedStoryIds.has(activeEntry.storyId);
@@ -118,40 +135,9 @@ export const ReviewToolbarHeader: FC = () => {
       </>
     ) : undefined;
 
-  const counter =
-    totalStories > 0 ? (
-      <WithTooltip
-        trigger="click"
-        closeOnOutsideClick
-        placement="bottom"
-        tooltip={({ onHide }) => (
-          <Popover hasChrome padding={0}>
-            <ReviewCollectionPicker
-              entries={flattenedEntries}
-              storyInfo={storyInfo}
-              activeEntry={activeEntry}
-              onClose={onHide}
-            />
-          </Popover>
-        )}
-      >
-        <Counter variant="ghost" size="small" ariaLabel="Open story list">
-          {activeIndex + 1}/{totalStories}
-        </Counter>
-      </WithTooltip>
-    ) : (
-      <Counter variant="ghost" size="small" ariaLabel={false} readOnly>
-        {activeIndex + 1}/{totalStories}
-      </Counter>
-    );
-
   return (
     <Root data-testid="review-toolbar-header">
-      {hasPendingUpdate ? (
-        <AttentionBanner kind="pending-update" onAccept={onAcceptPendingUpdate} />
-      ) : isStale ? (
-        <AttentionBanner kind="stale" />
-      ) : null}
+      {banner && <AttentionBanner {...banner} />}
       <HeaderWrap>
         <ProgressBar
           role="progressbar"
@@ -180,23 +166,25 @@ export const ReviewToolbarHeader: FC = () => {
           subtitle={subtitle}
           actions={
             <>
-              {counter}
-              <Button
-                variant="ghost"
-                size="small"
-                padding="small"
-                ariaLabel="Previous story"
-                asChild
+              <ReviewCollectionPicker
+                entries={flattenedEntries}
+                activeEntry={activeEntry}
+                storyInfo={storyInfo}
               >
-                <a href={buildReviewStoryHref(previousEntry)}>
-                  <ChevronSmallLeftIcon />
-                </a>
-              </Button>
-              <Button variant="ghost" size="small" padding="small" ariaLabel="Next story" asChild>
-                <a href={buildReviewStoryHref(nextEntry)}>
-                  <ChevronSmallRightIcon />
-                </a>
-              </Button>
+                <Counter>
+                  {activeIndex + 1}/{totalStories}
+                </Counter>
+              </ReviewCollectionPicker>
+              <NavButton
+                entry={previousEntry}
+                ariaLabel="Previous story"
+                icon={<ChevronSmallLeftIcon />}
+              />
+              <NavButton
+                entry={nextEntry}
+                ariaLabel="Next story"
+                icon={<ChevronSmallRightIcon />}
+              />
             </>
           }
         />

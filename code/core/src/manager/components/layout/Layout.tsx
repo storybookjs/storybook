@@ -6,7 +6,7 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
+import { isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
 import { Notifications } from '../../container/Notifications.tsx';
@@ -20,6 +20,7 @@ import { useLandmarkIndicator } from './useLandmarkIndicator.ts';
 
 interface InternalLayoutState {
   isDragging: boolean;
+  dragCursor: string;
 }
 
 interface ManagerLayoutState extends Pick<
@@ -38,6 +39,11 @@ interface Props {
   slotSidebar?: React.ReactNode;
   slotPanel?: React.ReactNode;
   slotPages?: React.ReactNode;
+  /**
+   * Persistent overlay rendered on top of the main content cell. Always mounted, so overlays can
+   * keep state (e.g. loaded iframes) alive across route changes.
+   */
+  slotOverlay?: React.ReactNode;
   hasTab: boolean;
 }
 
@@ -71,6 +77,7 @@ const useLayoutSyncingState = ({
   const [internalDraggingSizeState, setInternalDraggingSizeState] = useState<LayoutState>({
     ...managerLayoutState,
     isDragging: false,
+    dragCursor: 'col-resize',
   });
 
   /** Sync FROM managerLayoutState to internalDraggingState if user is not dragging */
@@ -106,11 +113,7 @@ const useLayoutSyncingState = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
-  const isPagesShown =
-    managerLayoutState.viewMode !== undefined &&
-    managerLayoutState.viewMode !== 'story' &&
-    managerLayoutState.viewMode !== 'docs' &&
-    managerLayoutState.viewMode !== 'review';
+  const isPagesShown = isPagesViewMode(managerLayoutState.viewMode);
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
@@ -141,6 +144,7 @@ const useLayoutSyncingState = ({
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
+    dragCursor: internalDraggingSizeState.dragCursor,
   };
 };
 
@@ -151,9 +155,9 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
-  const { path, customQueryParams } = useStorybookState();
-  const showSidebar =
-    (api.getIsNavShown?.() ?? true) && !isReviewManagerRoute(path, customQueryParams);
+  // Subscribe to manager state so nav availability re-evaluates on route and layout changes.
+  useStorybookState();
+  const showSidebar = api.getNavAvailability() === 'shown';
 
   const {
     navSize,
@@ -166,6 +170,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelMaxSize,
     showPages,
     showPanel,
+    isDragging,
+    dragCursor,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.
@@ -209,6 +215,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotPages={slots.slotPages}
         />
 
+        {slots.slotOverlay && <ContentOverlayCell>{slots.slotOverlay}</ContentOverlayCell>}
+
         {isDesktop && showPanel && (
           <PanelContainer
             bottomPanelHeight={bottomPanelHeight}
@@ -222,15 +230,40 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
         )}
         {isMobile && !showPages && <Notifications />}
       </>
+      {isDragging && <DragShield style={{ cursor: dragCursor }} />}
     </LayoutContainer>
   );
 };
+/**
+ * Occupies the main content cell (the full container on mobile) without intercepting interaction;
+ * overlay content re-enables pointer events itself when visible. Kept below the toolbar (z-index 4)
+ * and the mobile navigation (z-index 10).
+ */
+const ContentOverlayCell = styled.div({
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
+  zIndex: 2,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    position: 'relative',
+    inset: 'auto',
+    gridArea: 'content',
+  },
+});
+
+const DragShield = styled.div({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 10,
+});
 
 const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
   showSidebar: boolean;
 }>(({ panelPosition, showPanel, showSidebar }) => ({
+  position: 'relative',
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',

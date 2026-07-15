@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 
 import { join } from 'pathe';
 import sortPackageJson from 'sort-package-json';
@@ -7,7 +7,8 @@ import type { BuildEntries } from './entry-utils.ts';
 
 export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
   const location = join(cwd, 'package.json');
-  const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
+  const raw = await readFile(location, { encoding: 'utf8' });
+  const pkgJson = JSON.parse(raw);
 
   const { entries } = data;
 
@@ -36,7 +37,21 @@ export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
 
   pkgJson.exports = sortObject(pkgJson.exports);
 
-  await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
+  const updated = `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`;
+  if (updated === raw) {
+    return;
+  }
+
+  // Package builds run concurrently, and every build's boot resolves modules
+  // under every other package's directory (entry-configs.ts imports each
+  // package's build-config.ts), which makes Node's ESM loader read these
+  // package.json files for package-scope detection. A plain writeFile briefly
+  // truncates the file, and a concurrent reader then crashes with
+  // ERR_INVALID_PACKAGE_CONFIG. Write-then-rename keeps the file valid at
+  // every instant.
+  const tempLocation = join(cwd, `.package.json.${process.pid}.tmp`);
+  await writeFile(tempLocation, updated);
+  await rename(tempLocation, location);
 }
 
 function sortObject(obj: Record<string, any>) {

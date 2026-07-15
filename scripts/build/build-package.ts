@@ -9,7 +9,6 @@
  * The `process.cwd()` is the root of the current package to be built.
  */
 
-/* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -42,12 +41,7 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
-    // 'rolldown' bundles tsc-emitted declarations: ~14x faster than the old
-    // rollup path and byte-deterministic. 'rolldown-tsgo' is ~2x faster still,
-    // but tsgo declaration emit is not yet deterministic (type aliases flap,
-    // chunk references can go stale) and hangs on some packages; keep it
-    // opt-in until it stabilizes.
-    'dts-bundler': { type: 'string', default: 'rolldown' },
+    'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
     'dts-resolver': { type: 'string', default: 'hybrid' },
   },
   allowNegative: true,

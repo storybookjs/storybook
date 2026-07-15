@@ -9,12 +9,10 @@ import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
 import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
-import { isReviewManagerRoute } from '../../../../shared/review/routes.ts';
 
 const menuMapper = ({ api, state }: Combo) => ({
-  isVisible: api.getIsNavShown(),
+  navAvailability: api.getNavAvailability(),
   singleStory: state.singleStory,
-  isReviewCollectionStory: isReviewManagerRoute(state.path, state.customQueryParams),
   showSidebar: async (forceFocus: boolean) => {
     api.toggleNav(true);
     api.focusOnUIElement(focusableUIElements.sidebarRegion, {
@@ -33,10 +31,9 @@ export const menuTool: Addon_BaseType = {
   render: () => {
     return (
       <Consumer filter={menuMapper}>
-        {({ isVisible, showSidebar, singleStory, isReviewCollectionStory }) =>
+        {({ navAvailability, showSidebar, singleStory }) =>
           !singleStory &&
-          !isVisible &&
-          !isReviewCollectionStory && (
+          navAvailability === 'hidden' && (
             <>
               <Button
                 padding="small"

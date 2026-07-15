@@ -22,7 +22,7 @@ export const ReviewNotification: FC = () => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { path, customQueryParams } = useStorybookState();
-  const { notificationKey, onAcceptPendingUpdate } = useReview();
+  const { state: displayed, pendingReview: deferred } = useReview();
   const filtersRef = useReviewFiltersRef();
   const collectionIndex = readCollectionIndex(customQueryParams);
 
@@ -32,20 +32,18 @@ export const ReviewNotification: FC = () => {
 
   const handleNotificationClick = useCallback(
     (createdAt: number) => {
-      const deferred = reviewStore.getPendingReview();
-      if (deferred?.createdAt === createdAt) {
-        onAcceptPendingUpdate();
+      const { pendingReview, banner } = reviewStore.getState();
+      if (pendingReview?.createdAt === createdAt && banner?.kind === 'pending-update') {
+        banner.onAccept();
         return;
       }
       acceptReviewNotification(api, createdAt);
       openReview();
     },
-    [api, onAcceptPendingUpdate, openReview]
+    [api, openReview]
   );
 
   useLayoutEffect(() => {
-    const displayed = reviewStore.getState().state;
-    const deferred = reviewStore.getPendingReview();
     const review = pickReviewToNotify(displayed, deferred);
     if (!review) {
       return;
@@ -80,7 +78,7 @@ export const ReviewNotification: FC = () => {
         onDismiss();
       },
     });
-  }, [api, collectionIndex, handleNotificationClick, notificationKey, path]);
+  }, [api, collectionIndex, handleNotificationClick, displayed, deferred, path]);
 
   return null;
 };

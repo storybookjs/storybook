@@ -7,7 +7,7 @@
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
     "build-package": "jiti ./build-package.ts",
-    "check": "jiti ./check/check-package.ts",
+    "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:check": "jiti ./docs/check-docs.ts",
     "docs:codemod": "jiti ./snippets/codemod.ts",

@@ -36,6 +36,7 @@
     "./client/config": "./dist/client/config.js",
     "./client/docs/config": "./dist/client/docs/config.js",
     "./client/preview-prod": "./dist/client/preview-prod.js",
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -64,6 +65,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/global": "^5.0.0",
+    "comment-parser": "^1.4.7",
     "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
     "vite": ">=8.0.0"

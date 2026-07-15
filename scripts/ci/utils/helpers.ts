@@ -22,7 +22,7 @@ const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
  * node_modules, so persisting them raw pays the same single-threaded workspace
  * compression cost on the create job and again on every downstream attach.
  */
-export const sandboxArchive = (id: string) => `workspace-sandbox-${id}.tar.gz`;
+export const sandboxArchive = (id: string) => `workspace-sandbox-${id}.tar.zst`;
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -82,7 +82,11 @@ export const workspace = {
         // truncates them to whole seconds, invalidating the cache and turning
         // the sandbox's dev-server start into a full cold compile. atime and
         // ctime headers are dropped as they only add archive size.
-        command: `tar --create --format=posix --pax-option=delete=atime,delete=ctime ${SANDBOX_DIR}/${id} | gzip -1 > ${sandboxArchive(id)}`,
+        command: [
+          'node --version',
+          `tar --create --format=posix --pax-option=delete=atime,delete=ctime ${SANDBOX_DIR}/${id} | node ${ZSTD_STREAM} compress 3 > ${sandboxArchive(id)}`,
+          `ls -la ${sandboxArchive(id)}`,
+        ].join('\n'),
       },
     };
   },
@@ -95,7 +99,10 @@ export const workspace = {
         // root (the Playwright image) must not preserve the create job's uid,
         // or git refuses to operate on the sandbox repo ("dubious ownership")
         // and the change-detection feature and its E2E tests break.
-        command: `tar --extract --gzip --no-same-owner --file ${sandboxArchive(id)}`,
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${sandboxArchive(id)} | tar --extract --no-same-owner`,
+        ].join('\n'),
       },
     };
   },

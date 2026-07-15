@@ -387,6 +387,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       : undefined,
   ].filter(Boolean);
   return {
+    id,
     name: key,
     path,
     jobs,
@@ -403,7 +404,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...getSandboxSetupSteps(sandbox.name),
-        ...workflow.restoreLinux({ sandboxId: toId(sandbox.name) }),
+        ...workflow.restoreLinux({ sandboxId: sandbox.id }),
         {
           run: {
             name: 'Running test-runner',
@@ -428,7 +429,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...workflow.restoreWindows(),
-        workspace.unpackSandbox(toId(sandbox.name), WINDOWS_ROOT_DIR),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -478,7 +479,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
       },
       steps: [
         ...workflow.restoreWindows(),
-        workspace.unpackSandbox(toId(sandbox.name), WINDOWS_ROOT_DIR),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

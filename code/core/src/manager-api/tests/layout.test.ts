@@ -700,6 +700,31 @@ describe('layout API', () => {
       expect(layoutApi.getIsNavShown()).toBe(true);
     });
 
+    it('should get nav availability with getNavAvailability', () => {
+      expect(layoutApi.getNavAvailability()).toBe('shown');
+
+      layoutApi.toggleNav();
+
+      expect(layoutApi.getNavAvailability()).toBe('hidden');
+
+      layoutApi.toggleNav();
+
+      Object.assign(currentState, { path: '/review/', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, {
+        path: '/story/foo--bar',
+        customQueryParams: { collection: '0' },
+      });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, { path: '/story/foo--bar', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('shown');
+    });
+
     it('should get panelShwon with getIsPanelShown', () => {
       expect(layoutApi.getIsPanelShown()).toBe(true);
 

@@ -165,7 +165,6 @@ export type SearchProps = {
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
-  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -176,7 +175,6 @@ export const Search = React.memo<SearchProps>(function Search({
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
-  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +248,10 @@ export const Search = React.memo<SearchProps>(function Search({
   );
 
   const onSelect = useCallback(
-    (selectedItem: DownshiftItem) => {
+    (selectedItem: DownshiftItem | null) => {
+      if (!selectedItem) {
+        return;
+      }
       if (isSearchResult(selectedItem)) {
         const { id, refId } = selectedItem.item;
         // @ts-expect-error (non strict)
@@ -280,7 +281,7 @@ export const Search = React.memo<SearchProps>(function Search({
             // Prevent clearing the input on blur
             inputValue: state.inputValue,
             // Return to the tree view after selecting an item
-            isOpen: state.inputValue && !state.selectedItem,
+            isOpen: !!state.inputValue && !state.selectedItem,
           };
         }
 
@@ -324,7 +325,6 @@ export const Search = React.memo<SearchProps>(function Search({
   const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
 
   return (
-    // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}
@@ -440,7 +440,6 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            {!isOpen && belowSearchContent}
             <FocusContainer tabIndex={0} id="storybook-explorer-menu">
               {children({
                 query: input,

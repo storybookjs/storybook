@@ -12,10 +12,6 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
-// Import via the package specifier (not the relative path) so this is the same
-// enum declaration that the mocked `storybook/internal/common` module is typed
-// against. The bundled d.ts renames chunk-level enum declarations, which breaks
-// TypeScript's name-based cross-declaration enum compatibility.
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import { searchFiles } from '../utils/search-files.ts';

@@ -305,6 +305,16 @@ describe('with the feature flag (passthrough registered)', () => {
     });
   });
 
+  it('accepts -p as a shorthand for --port', async () => {
+    const { program } = buildProgram({ withPassthrough: true });
+    await parse(program, ['ai', '-p', '6006', '--help']);
+    expect(buildStorybookCommandsHelp).toHaveBeenCalledWith({
+      cwd: undefined,
+      configDir: undefined,
+      port: '6006',
+    });
+  });
+
   it('passes --config-dir through to the tool commands section', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', '--config-dir', 'config/storybook', '--help']);

@@ -45,6 +45,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initReviewChannel } from '../server-channel/review-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
@@ -230,6 +231,10 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
+  // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
+  // explicitly sets `false`, so an explicit default would be indistinguishable from a user
+  // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
   legacyDecoratorFileOrder: false,
@@ -300,7 +305,9 @@ export const experimental_serverChannel = async (
   initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
-  initReviewChannel(channel);
+  if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    initReviewChannel(channel);
+  }
   initTelemetryChannel(channel);
 
   return channel;

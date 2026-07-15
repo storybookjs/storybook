@@ -1,17 +1,21 @@
-import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
  * workspace layer single-threaded at roughly 20MB/s, so ~2.5GB of
  * node_modules dominated the step regardless of file count (measured: packing
- * the trees into a plain tar left persist at 140s). Pre-compressing with
- * `gzip -1` (~3x smaller) makes CircleCI's own compression and every
- * downstream download proportionally cheaper. gzip is the only compressor
- * guaranteed on all executor images; zstd is not available on any of them
- * (cimg/node, playwright, machine), verified via step diagnostics.
+ * the trees into a plain tar left persist at 140s). Pre-compressing makes
+ * CircleCI's own compression and every downstream download proportionally
+ * cheaper. No executor image ships a zstd CLI (cimg/node, playwright,
+ * machine - verified via step diagnostics), but stock Node >= 22.15 exposes
+ * zstd through node:zlib, so scripts/ci/zstd-stream.mjs runs it straight from
+ * the git checkout, before (and without) node_modules. zstd level 3 both
+ * compresses better and runs faster than `gzip -1`.
  */
-export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.gz';
+export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
+
+const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
 
 /**
  * The generated sandboxes get the same treatment: they are mostly
@@ -45,11 +49,13 @@ export const workspace = {
         // dependencies, so they are filtered at runtime; the root trees are
         // passed straight to tar so a missing one fails the job loudly.
         command: [
+          'node --version',
           'optional=""',
           `for p in ${optionalPaths.join(' ')}; do`,
           '  if [ -e "$p" ]; then optional="$optional $p"; fi',
           'done',
-          `tar --create ${requiredPaths.join(' ')} $optional | gzip -1 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          `tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          `ls -la ${PACKED_NODE_MODULES_ARCHIVE}`,
         ].join('\n'),
       },
     };
@@ -59,7 +65,10 @@ export const workspace = {
       run: {
         name: 'Unpack node_modules from workspace',
         working_directory: root,
-        command: `tar --extract --gzip --file ${PACKED_NODE_MODULES_ARCHIVE}`,
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
+        ].join('\n'),
       },
     };
   },
@@ -192,6 +201,10 @@ export const npm = {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
         'cache-only-lockfile': true,
+        // v2: the orb's v1 node_modules cache carries the same poisoned tree
+        // as the v6 CACHE_KEYS entries (see above); its restore overlays
+        // node_modules on top of the primary cache without overwriting.
+        'cache-version': 'v2',
       },
     };
   },
@@ -320,7 +333,7 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v6-${platform}-node_modules`,
+    `v7-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

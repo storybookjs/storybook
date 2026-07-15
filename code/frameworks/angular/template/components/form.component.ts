@@ -7,15 +7,15 @@ import { FormsModule } from '@angular/forms';
   selector: 'storybook-form',
   template: `
     <form id="interaction-test-form" ngNativeValidate (submit)="handleSubmit($event)">
-  <label>
-    Enter Value
-    <input type="text" data-testid="value" name="value" [(ngModel)]="value" required />
-  </label>
-  <button type="submit">Submit</button>
-  @if (complete()) {
-    <p>Completed!!</p>
-  }
-</form>
+      <label>
+        Enter Value
+        <input type="text" data-testid="value" name="value" [(ngModel)]="value" required />
+      </label>
+      <button type="submit">Submit</button>
+      @if (complete()) {
+        <p>Completed!!</p>
+      }
+    </form>
   `,
 })
 export default class FormComponent {

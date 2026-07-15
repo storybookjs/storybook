@@ -84,6 +84,7 @@ Type:
     max?: number;
     min?: number;
     presetColors?: string[];
+    defaultEditor?: 'object' | 'json';
     step?: number;
   }
 | false
@@ -109,7 +110,7 @@ Specifies the type of control used to change the arg value with the [controls pa
 
 | Data type   | ControlType      | Description                                                                                                                                                                             |
 | ----------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **array**   | `'object'`       | Provides a JSON-based editor to handle the values of the array. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                          |
+| **array**   | `'object'`       | Provides a JSON-based editor to handle the values of the array. Also allows editing in the JSON editor by default.<br /> `{ control: 'object' }`                                        |
 | **boolean** | `'boolean'`      | Provides a toggle for switching between possible states.<br /> `{ control: 'boolean' }`                                                                                                 |
 | **enum**    | `'check'`        | Provides a set of stacked checkboxes for selecting multiple options.<br /> `{ control: 'check', options: ['email', 'phone', 'mail'] }`                                                  |
 |             | `'inline-check'` | Provides a set of inlined checkboxes for selecting multiple options.<br /> `{ control: 'inline-check', options: ['email', 'phone', 'mail'] }`                                           |
@@ -120,7 +121,7 @@ Specifies the type of control used to change the arg value with the [controls pa
 | **number**  | `'number'`       | Provides a numeric input to include the range of all possible values.<br /> `{ control: { type: 'number', min:1, max:30, step: 2 } }`                                                   |
 |             | `'range'`        | Provides a range slider to include all possible values.<br /> `{ control: { type: 'range', min: 1, max: 30, step: 3 } }`                                                                |
 | **object**  | `'file'`         | Provides a file input that returns an array of URLs. Can be further customized to accept specific file types.<br /> `{ control: { type: 'file', accept: '.png' } }`                     |
-|             | `'object'`       | Provides a JSON-based editor to handle the object's values. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                              |
+|             | `'object'`       | Provides a JSON-based editor to handle the object's values. Also allows editing in the JSON editor by default.<br /> `{ control: { type: 'object', defaultEditor: 'json' } }`           |
 | **string**  | `'color'`        | Provides a color picker to choose color values. Can be additionally configured to include a set of color presets.<br /> `{ control: { type: 'color', presetColors: ['red', 'green']} }` |
 |             | `'date'`         | Provides a datepicker to choose a date.<br /> `{ control: 'date' }`                                                                                                                     |
 |             | `'text'`         | Provides a freeform text input.<br /> `{ control: 'text' }`                                                                                                                             |
@@ -160,6 +161,12 @@ When `type` is `'number'` or `'range'`, sets the minimum allowed value.
 Type: `string[]`
 
 When `type` is `'color'`, defines the set of colors that are available in addition to the general color picker. The values in the array should be valid CSS color values.
+
+#### `control.defaultEditor`
+
+Type: `'object' | 'json'`
+
+When `type` is `'object'`, set to `'json'` to show the JSON editor by default.
 
 #### `control.step`
 

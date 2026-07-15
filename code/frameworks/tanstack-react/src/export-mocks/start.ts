@@ -593,11 +593,13 @@ function createMockServerFnBuilder(): any {
   };
 
   builder.handler = (handlerFn?: (...args: any[]) => any) => {
-    const mock = fn().mockName('@tanstack/start-client-core::createServerFn.handler()');
-
-    if (handlerFn) {
-      mock.mockImplementation(async (opts?: any) => handlerFn(opts));
-    }
+    // Pass the implementation to fn() itself: storybook/test resets all
+    // mocks before every story, and a reset erases implementations installed
+    // with mockImplementation() but restores the one given at creation.
+    // Server functions are defined at module scope, so they must survive.
+    const mock = (handlerFn ? fn(async (opts?: any) => handlerFn(opts)) : fn()).mockName(
+      '@tanstack/start-client-core::createServerFn.handler()'
+    );
 
     return mock;
   };

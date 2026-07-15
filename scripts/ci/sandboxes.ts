@@ -6,6 +6,7 @@ import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  sandboxArchive,
   server,
   testResults,
   toId,
@@ -53,7 +54,7 @@ function defineSandboxJob_build({
       },
       steps: [
         ...getSandboxSetupSteps(template),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: directory }),
         {
           run: {
             name: 'Build storybook',
@@ -67,11 +68,13 @@ function defineSandboxJob_build({
   );
 }
 function defineSandboxJob_dev({
+  directory,
   name,
   template,
   requires,
   options,
 }: {
+  directory: string;
   name: string;
   requires: JobOrNoOpJob[];
   template: string;
@@ -82,10 +85,12 @@ function defineSandboxJob_dev({
   return defineJob(
     name,
     () => ({
+      // large so the dev server and the parallel Playwright workers don't
+      // starve each other; the shorter runtime more than pays for the class.
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'medium+',
+            class: 'large',
           }
         : {
             name: 'sb_node_22_classic',
@@ -93,7 +98,7 @@ function defineSandboxJob_dev({
           },
       steps: [
         ...getSandboxSetupSteps(template),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: directory }),
         ...(options.e2e
           ? [
               {
@@ -108,6 +113,9 @@ function defineSandboxJob_dev({
               {
                 run: {
                   name: 'Running E2E Tests',
+                  environment: {
+                    PLAYWRIGHT_WORKERS: '3',
+                  },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
                     `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
@@ -217,7 +225,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ]
           : []),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
-        workspace.persist([`${SANDBOX_DIR}/${id}`]),
+        workspace.packSandbox(id),
+        workspace.persist([sandboxArchive(id)]),
       ],
     }),
     [sandboxesNoOpJob]
@@ -231,6 +240,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   const devJob = defineSandboxJob_dev({
     name: `${name} (dev)`,
     template: key,
+    directory: id,
     requires: [createJob],
     options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
   });
@@ -246,6 +256,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
         workspace.unpack(),
+        workspace.unpackSandbox(id),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {
@@ -275,7 +286,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Running Vitest',
@@ -302,7 +313,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Serve storybook',
@@ -314,6 +325,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running E2E Tests',
+            environment: {
+              PLAYWRIGHT_WORKERS: '3',
+            },
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
               `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
@@ -339,7 +353,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Running test-runner',
@@ -373,6 +387,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       : undefined,
   ].filter(Boolean);
   return {
+    id,
     name: key,
     path,
     jobs,
@@ -389,7 +404,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...getSandboxSetupSteps(sandbox.name),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: sandbox.id }),
         {
           run: {
             name: 'Running test-runner',
@@ -414,6 +429,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...workflow.restoreWindows(),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -463,6 +479,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
       },
       steps: [
         ...workflow.restoreWindows(),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

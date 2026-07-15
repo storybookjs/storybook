@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util.ts';
+import { SbPage } from '../e2e-sandbox/util.ts';
 
-const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
 test.describe('navigating', () => {
   test('a URL with a partial storyId will redirect to the first story', async ({ page }) => {

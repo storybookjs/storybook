@@ -128,6 +128,11 @@ const enhanceContext: LoaderFunction = async (context) => {
               currentFocus = newFocus;
             },
             get() {
+              // Focus managers may read and wrap the method directly from the prototype.
+              if (this === HTMLElement.prototype) {
+                return currentFocus;
+              }
+
               // A node inside a removed iframe has no live browsing context as `ownerDocument.defaultView`
               // is null. The instrumented focus dispatches events through user-event, whose getWindow()
               // then throws "Could not determine window of node"; thrown in React's commit phase that

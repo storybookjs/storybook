@@ -192,10 +192,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ]
           : []),
         {
-          // Built here rather than in a dedicated job: a separate build job
-          // paid ~55s of fixed setup plus a workspace round-trip, and it sat
-          // between create and the e2e/chromatic/vitest jobs on the critical
-          // path. The static build lands inside the sandbox tarball below.
           run: {
             name: 'Build storybook',
             command: `yarn task build --template ${key} --no-link -s build`,

@@ -219,15 +219,44 @@ export const Search = React.memo<SearchProps>(function Search({
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
+
+      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
+      });
+
+      const docsParentIds = new Set<string>();
+      allMatches.forEach(({ item }) => {
+        if (item.type === 'docs' && item.parent) {
+          docsParentIds.add(item.parent);
+        }
+      });
+
+      // Components suppressed in favor of a matching docs child that hasn't been rendered yet.
+      // The suppressed component still occupies its slot in `resultIds` so that sibling stories
+      // ranked between the component and its docs entry are deduplicated, as they were before.
+      const pendingDocsReplacements = new Set<string>();
+
+      const distinctResults = allMatches.filter(({ item }) => {
+        if (item.type === 'component' && docsParentIds.has(item.id)) {
+          if (!resultIds.has(item.id)) {
+            resultIds.add(item.id);
+            pendingDocsReplacements.add(item.id);
+          }
+          return false;
+        }
+        if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
+          pendingDocsReplacements.delete(item.parent);
+          resultIds.add(item.id);
+          return true;
+        }
+        // @ts-expect-error (non strict)
+        if (resultIds.has(item.parent)) {
           return false;
         }
         resultIds.add(item.id);
+        if (item.type === 'docs' && item.parent) {
+          resultIds.add(item.parent);
+        }
         return true;
       });
 

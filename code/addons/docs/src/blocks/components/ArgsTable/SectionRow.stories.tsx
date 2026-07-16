@@ -9,12 +9,14 @@ import { SectionRow } from './SectionRow';
 export default {
   component: SectionRow,
   decorators: [
-    (getStory: any) => (
-      <ResetWrapper>
-        <TableWrapper>
-          <tbody>{getStory()}</tbody>
-        </TableWrapper>
-      </ResetWrapper>
+    (getStory: any, context: any) => (
+      <div dir={context.parameters?.direction ?? 'ltr'}>
+        <ResetWrapper>
+          <TableWrapper>
+            <tbody>{getStory()}</tbody>
+          </TableWrapper>
+        </ResetWrapper>
+      </div>
     ),
   ],
 };
@@ -47,4 +49,12 @@ export const Nested = {
       </SectionRow>
     </SectionRow>
   ),
+};
+
+// Under `dir="rtl"` the expander icon's logical margins resolve to the opposite
+// physical sides so it keeps hugging the heading's inline-start; the old physical
+// `marginLeft`/`marginRight` stayed put and overlapped the label (#35481).
+export const SectionRtl = {
+  args: { ...Section.args },
+  parameters: { direction: 'rtl' },
 };

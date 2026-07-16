@@ -1,11 +1,10 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store/index.ts';
-import type { StatusTypeId } from './shared/status-store/index.ts';
+import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { formatIssues } from './shared/open-service/errors.ts';
 import type { ServiceId } from './shared/open-service/types.ts';
-import type { ValidationMeta } from './shared/open-service/errors.ts';
+import type { Status, StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
 export { StorybookError } from './storybook-error.ts';
@@ -283,6 +282,17 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 15,
       message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceOperationNameCollisionError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceOperationNameCollisionError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: `Service "${data.serviceId}" cannot register "${data.operationName}" as both a query and a command.`,
     });
   }
 }

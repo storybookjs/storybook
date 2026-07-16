@@ -5,12 +5,16 @@ import {
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import {
+  experimental_loadStorybook as loadStorybook,
+  withTelemetry,
+} from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { Option, program } from 'commander';
 import leven from 'leven';
+import { resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
@@ -20,6 +24,9 @@ import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { generateCLI } from '../cli/tools/generate-cli.ts';
+import { docgenServiceDef } from '../shared/open-service/services/docgen/definition.ts';
+import { storyDocsServiceDef } from '../shared/open-service/services/story-docs/definition.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
@@ -34,6 +41,7 @@ process.env.STORYBOOK = 'true';
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
  * - `ai`: AI agent helpers (always bundled so agent invocations never download an extra package)
+ * - `tools`: Run operations exposed by selected open services
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
@@ -273,6 +281,18 @@ aiCommand.action(() => {
 if (isAiCliFeatureEnabled()) {
   registerAiMcpPassthrough(program, aiCommand, handleAiCommandFailure);
 }
+
+const toolsCommand = command('tools')
+  .description('Run operations exposed by Storybook services')
+  .option('--cwd <path>', 'Project directory of the target Storybook')
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from');
+
+generateCLI(toolsCommand, [docgenServiceDef, storyDocsServiceDef], {
+  beforeRun: async () => {
+    const { cwd = process.cwd(), configDir = '.storybook' } = toolsCommand.opts();
+    await loadStorybook({ configDir: resolve(cwd, configDir) });
+  },
+});
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

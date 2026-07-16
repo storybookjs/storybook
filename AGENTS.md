@@ -87,6 +87,12 @@ Internal exports include:
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
+### Open services and CLI tools
+
+- Core may expose explicitly selected Open Service Architecture (OSA) definitions as `storybook tools <service> <operation>` commands.
+- Generated CLI operations use one namespace, so a service cannot register a query and command with the same name.
+- MCP tools remain hand-authored in `addon-mcp`; they are not generated from OSA definitions.
+
 ## Common Commands
 
 Run commands from the repository root unless stated otherwise.

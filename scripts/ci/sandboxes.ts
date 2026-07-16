@@ -52,12 +52,15 @@ function defineSandboxJob_dev({
   return defineJob(
     name,
     () => ({
-      // large so the dev server and the parallel Playwright workers don't
-      // starve each other; the shorter runtime more than pays for the class.
+      // xlarge (8 vCPUs) so the dev server and the parallel Playwright workers
+      // don't starve each other: ~2 cores serve the dev server, 6 run test
+      // workers - the same headroom ratio that made large/3 the sweet spot.
+      // These jobs are the workflow tail, so the shorter runtime buys wall
+      // clock directly.
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'large',
+            class: 'xlarge',
           }
         : {
             name: 'sb_node_22_classic',
@@ -81,7 +84,7 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Running E2E Tests',
                   environment: {
-                    PLAYWRIGHT_WORKERS: '3',
+                    PLAYWRIGHT_WORKERS: '6',
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',

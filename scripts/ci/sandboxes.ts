@@ -37,9 +37,9 @@ function getSandboxSetupSteps(template: string) {
 /**
  * The dev-mode e2e jobs are the workflow tail. xlarge (8 vCPUs) with 6
  * Playwright workers cuts their test phase ~38% vs large/3, but doubles the
- * per-minute cost - so only the templates whose dev chains define the wall
- * (the slowest measured on #35510) get the big class; the rest stay on
- * large/3, where the extra speed would not move the workflow wall at all.
+ * per-minute cost - so only the templates whose dev chains define the
+ * workflow wall (the slowest dev test phases) get the big class; the rest
+ * stay on large/3, where the extra speed would not move the wall at all.
  */
 const XLARGE_DEV_TEMPLATES = new Set<string>([
   'angular-cli/default-ts',
@@ -64,16 +64,16 @@ function defineSandboxJob_dev({
   template: string;
   options: {
     e2e: boolean;
+    resourceClass: 'large' | 'xlarge';
   };
 }) {
-  const xlarge = XLARGE_DEV_TEMPLATES.has(template);
   return defineJob(
     name,
     () => ({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: xlarge ? 'xlarge' : 'large',
+            class: options.resourceClass,
           }
         : {
             name: 'sb_node_22_classic',
@@ -97,7 +97,7 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Running E2E Tests',
                   environment: {
-                    PLAYWRIGHT_WORKERS: xlarge ? '6' : '3',
+                    PLAYWRIGHT_WORKERS: options.resourceClass === 'xlarge' ? '6' : '3',
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
@@ -225,7 +225,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     template: key,
     directory: id,
     requires: [createJob],
-    options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
+    options: {
+      e2e: !skipTasks?.includes('e2e-tests-dev'),
+      resourceClass: XLARGE_DEV_TEMPLATES.has(key) ? 'xlarge' : 'large',
+    },
   });
   const chromaticJob = defineJob(
     `${name} (chromatic)`,

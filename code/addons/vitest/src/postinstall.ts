@@ -447,8 +447,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
+      const useRemotePkg = options.useRemotePkg ?? !!options.skipInstall;
       const command = [
-        options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+        // A versioned spec only resolves through the ephemeral runner; the
+        // local binary is invoked by bare name.
+        useRemotePkg ? `storybook@${versions.storybook}` : `storybook`,
         'automigrate',
         'addon-a11y-addon-test',
         '--loglevel',
@@ -475,7 +478,7 @@ export default async function postInstall(options: PostinstallOptions) {
           packageManager.runPackageCommand({
             args: command,
             stdio: 'ignore',
-            useRemotePkg: !!options.skipInstall,
+            useRemotePkg,
           }),
         {
           intro: 'Setting up a11y addon for @storybook/addon-vitest',

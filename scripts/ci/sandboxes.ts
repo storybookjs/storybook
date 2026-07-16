@@ -34,6 +34,23 @@ function getSandboxSetupSteps(template: string) {
   return extraSteps;
 }
 
+/**
+ * The dev-mode e2e jobs are the workflow tail. xlarge (8 vCPUs) with 6
+ * Playwright workers cuts their test phase ~38% vs large/3, but doubles the
+ * per-minute cost - so only the templates whose dev chains define the
+ * workflow wall (the slowest dev test phases) get the big class; the rest
+ * stay on large/3, where the extra speed would not move the wall at all.
+ */
+const XLARGE_DEV_TEMPLATES = new Set<string>([
+  'angular-cli/default-ts',
+  'angular-vite/default-ts',
+  'nextjs/default-ts',
+  'nextjs-vite/default-ts',
+  'react-vite/default-ts',
+  'react-webpack/18-ts',
+  'vue3-vite/default-ts',
+]);
+
 function defineSandboxJob_dev({
   directory,
   name,
@@ -47,17 +64,16 @@ function defineSandboxJob_dev({
   template: string;
   options: {
     e2e: boolean;
+    resourceClass: 'large' | 'xlarge';
   };
 }) {
   return defineJob(
     name,
     () => ({
-      // large so the dev server and the parallel Playwright workers don't
-      // starve each other; the shorter runtime more than pays for the class.
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'large',
+            class: options.resourceClass,
           }
         : {
             name: 'sb_node_22_classic',
@@ -81,7 +97,7 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Running E2E Tests',
                   environment: {
-                    PLAYWRIGHT_WORKERS: '3',
+                    PLAYWRIGHT_WORKERS: options.resourceClass === 'xlarge' ? '6' : '3',
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
@@ -209,7 +225,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     template: key,
     directory: id,
     requires: [createJob],
-    options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
+    options: {
+      e2e: !skipTasks?.includes('e2e-tests-dev'),
+      resourceClass: XLARGE_DEV_TEMPLATES.has(key) ? 'xlarge' : 'large',
+    },
   });
   const chromaticJob = defineJob(
     `${name} (chromatic)`,

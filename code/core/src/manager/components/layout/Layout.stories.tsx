@@ -99,6 +99,7 @@ const mockManagerStore: any = {
     getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
     }),
+    getNavAvailability: fn(() => 'shown'),
   },
 };
 
@@ -527,7 +528,7 @@ export const MobileReview: Story = {
           },
           api: {
             ...mockManagerStore.api,
-            getIsNavShown: fn(() => true),
+            getNavAvailability: fn(() => 'unavailable'),
           },
         }}
       >

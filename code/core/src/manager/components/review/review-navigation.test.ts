@@ -4,6 +4,7 @@ import {
   REVIEW_COLLECTION_QUERY_PARAM,
   buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
+  buildReviewShortcutHrefs,
   buildReviewStoryHref,
   buildReviewStoryTarget,
   buildSummaryBackHref,
@@ -144,21 +145,38 @@ describe('getAdjacentReviewEntries', () => {
     });
   });
 
-  it('wraps from the last story to the first and back', () => {
-    expect(getAdjacentReviewEntries(sequence, sequence.length - 1)?.next).toEqual({
-      collectionIndex: 0,
-      storyId: 'story-a',
-    });
-    expect(getAdjacentReviewEntries(sequence, 0)?.previous).toEqual({
-      collectionIndex: 1,
-      storyId: 'story-c',
-    });
+  it('returns null at the sequence boundaries instead of wrapping', () => {
+    expect(getAdjacentReviewEntries(sequence, sequence.length - 1)?.next).toBeNull();
+    expect(getAdjacentReviewEntries(sequence, 0)?.previous).toBeNull();
   });
 
   it('returns null for an empty sequence or an out-of-range index', () => {
     expect(getAdjacentReviewEntries([], 0)).toBeNull();
     expect(getAdjacentReviewEntries(sequence, -1)).toBeNull();
     expect(getAdjacentReviewEntries(sequence, sequence.length)).toBeNull();
+  });
+});
+
+describe('buildReviewShortcutHrefs', () => {
+  const sequence = buildFlattenedNavEntries(reviewState);
+  const { collections } = reviewState;
+
+  it('omits the previous target at the first story so it does not wrap', () => {
+    const hrefs = buildReviewShortcutHrefs(collections, sequence, 0);
+    expect(hrefs?.previous).toBeNull();
+    expect(hrefs?.next).toBe(buildReviewStoryHref(sequence[1]));
+  });
+
+  it('omits the next target at the last story so it does not wrap', () => {
+    const hrefs = buildReviewShortcutHrefs(collections, sequence, sequence.length - 1);
+    expect(hrefs?.next).toBeNull();
+    expect(hrefs?.previous).toBe(buildReviewStoryHref(sequence[sequence.length - 2]));
+  });
+
+  it('points at both neighbors in the middle of the sequence', () => {
+    const hrefs = buildReviewShortcutHrefs(collections, sequence, 1);
+    expect(hrefs?.previous).toBe(buildReviewStoryHref(sequence[0]));
+    expect(hrefs?.next).toBe(buildReviewStoryHref(sequence[2]));
   });
 });
 

@@ -24,7 +24,7 @@ import { SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
-import { coerce, satisfies } from 'semver';
+import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
@@ -70,20 +70,15 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const allDeps = packageManager.getAllDependencies();
 
-  // Determine Vitest version/range from installed or declared dependency to avoid pulling
-  // incompatible majors by default.
-  let vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  if (!vitestVersionSpecifier && allDeps['vitest']) {
-    vitestVersionSpecifier = allDeps['vitest'];
-  }
+  const addonVitestService = new AddonVitestService(packageManager);
 
-  /**
-   * Coerce the version specifier to a version string
-   *
-   * This removed any version range specifiers like ^, ~, etc. which is needed to check with
-   * semver.satisfies.
-   */
-  vitestVersionSpecifier = coerce(vitestVersionSpecifier)?.version ?? null;
+  // Determine the Vitest version/range (the package manager resolves a pnpm `catalog:` reference to
+  // the real version) to avoid pulling incompatible majors and to select the right config template.
+  // Reduce to a plain comparable version via the same helper collectDependencies() uses, so template
+  // selection and dependency collection agree on the major.
+  const vitestVersionSpecifier = AddonVitestService.getComparableVersion(
+    await packageManager.getDeclaredVersionSpecifier('vitest')
+  );
 
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
@@ -99,8 +94,6 @@ export default async function postInstall(options: PostinstallOptions) {
   // framework/builder — causing the prerequisite check below to fail incorrectly.
   const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
-
-  const addonVitestService = new AddonVitestService(packageManager);
 
   // Use AddonVitestService for compatibility validation
   const compatibilityResult = await addonVitestService.validateCompatibility({

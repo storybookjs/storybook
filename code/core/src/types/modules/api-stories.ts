@@ -1,6 +1,6 @@
 import type { DocsOptions } from './core-common.ts';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf.ts';
-import type { IndexEntry } from './indexer.ts';
+import type { DocsAnchor, IndexEntry } from './indexer.ts';
 import type { StatusByTypeId } from './status.ts';
 
 export interface API_BaseEntry {
@@ -40,7 +40,7 @@ export interface API_DocsEntry extends API_BaseEntry {
   parameters?: {
     [parameterName: string]: any;
   };
-  headings?: string[];
+  anchors?: DocsAnchor[];
 }
 
 export interface API_StoryEntry extends API_BaseEntry {

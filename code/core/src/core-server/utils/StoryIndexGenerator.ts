@@ -32,6 +32,7 @@ import * as TsconfigPaths from 'tsconfig-paths';
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
 import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
 import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
+import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -64,6 +65,7 @@ export type StoryIndexGeneratorOptions = {
   indexers: Indexer[];
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
+  features?: StorybookConfigRaw['features'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -487,7 +489,6 @@ export class StoryIndexGenerator {
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
-      const headings = indexInputs.map((input) => input.name).filter(Boolean) as string[];
 
       const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
@@ -497,7 +498,11 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
-        headings,
+        ...(this.options.features?.experimentalSearchDocsHeadings && {
+          // Each story in an autodocs page is wrapped in an `Anchor` block whose DOM id is
+          // derived from the story id, so those are the reliable in-page navigation targets.
+          anchors: storyEntries.map((e) => ({ id: anchorBlockIdFromId(e.id), title: e.name })),
+        }),
       };
 
       return {
@@ -621,7 +626,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         tags,
-        headings: result.headings || [],
+        ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: result.anchors }),
       };
       return docsEntry;
     } catch (err) {

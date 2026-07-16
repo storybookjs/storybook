@@ -48,8 +48,11 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [
-            "hello",
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
           ],
           "id": undefined,
           "imports": [],
@@ -83,8 +86,11 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [
-            "hello",
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
           ],
           "id": undefined,
           "imports": [],
@@ -118,8 +124,11 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [
-            "hello",
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
           ],
           "id": "custom-id",
           "imports": [],
@@ -154,7 +163,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [
             "@storybook/blocks",
@@ -197,7 +206,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [
             "@storybook/blocks",
@@ -229,8 +238,11 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [
-            "Docs with of",
+          "anchors": [
+            {
+              "id": "docs-with-of",
+              "title": "Docs with of",
+            },
           ],
           "id": undefined,
           "imports": [
@@ -265,7 +277,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -294,7 +306,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [],
           "isTemplate": true,
@@ -312,7 +324,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [],
           "isTemplate": true,
@@ -330,7 +342,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [],
           "isTemplate": false,
@@ -371,7 +383,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -422,8 +434,11 @@ describe('analyzeMdx', () => {
     `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [
-            "hello",
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
           ],
           "id": undefined,
           "imports": [],
@@ -444,7 +459,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -490,7 +505,7 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
-          "headings": [],
+          "anchors": [],
           "id": undefined,
           "imports": [
             "./Button.stories",
@@ -506,7 +521,7 @@ describe('analyzeMdx', () => {
     });
   });
 
-  describe('headings', () => {
+  describe('anchors', () => {
     it('markdown', async () => {
       const input = dedent`
         # hello **world**
@@ -515,23 +530,38 @@ describe('analyzeMdx', () => {
 
         <Meta title="foobar" />
       `;
-      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
-        {
-          "headings": [
-            "hello world",
-            "Goodbye",
-            "Hi again",
-          ],
-          "id": undefined,
-          "imports": [],
-          "isTemplate": false,
-          "metaTags": undefined,
-          "name": undefined,
-          "of": undefined,
-          "summary": undefined,
-          "title": "foobar",
-        }
-      `);
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'hello-world', title: 'hello world' },
+        { id: 'goodbye', title: 'Goodbye' },
+        { id: 'hi-again', title: 'Hi again' },
+      ]);
+    });
+
+    it('slugs punctuation the same way as the docs renderer', async () => {
+      const input = dedent`
+        # Do more!
+        ## What's next?
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'do-more', title: 'Do more!' },
+        { id: 'whats-next', title: "What's next?" },
+      ]);
+    });
+
+    it('deduplicates repeated headings with numeric suffixes', async () => {
+      const input = dedent`
+        # Usage
+        ## Usage
+        ### Usage
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'usage', title: 'Usage' },
+        { id: 'usage-1', title: 'Usage' },
+        { id: 'usage-2', title: 'Usage' },
+      ]);
     });
   });
 });

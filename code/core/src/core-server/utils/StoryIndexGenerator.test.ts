@@ -7,7 +7,11 @@ import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf';
 import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
-import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
+import type {
+  DocsIndexEntry,
+  NormalizedStoriesSpecifier,
+  StoryIndexEntry,
+} from 'storybook/internal/types';
 
 import { Tag } from '../../shared/constants/tags.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
@@ -1529,6 +1533,56 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+      });
+    });
+
+    describe('anchors (experimentalSearchDocsHeadings)', () => {
+      const anchorsOptions = {
+        ...options,
+        docs: { ...options.docs, autodocs: 'tag' as const },
+        features: { experimentalSearchDocsHeadings: true },
+      };
+
+      it('adds story anchors to autodocs entries when the feature is enabled', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/B.stories.ts',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], anchorsOptions);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect((storyIndex.entries['b--docs'] as DocsIndexEntry).anchors).toEqual([
+          { id: 'anchor--b--story-one', title: 'Story One' },
+        ]);
+      });
+
+      it('adds slugged heading anchors to MDX docs entries when the feature is enabled', async () => {
+        const generator = new StoryIndexGenerator(
+          [storiesSpecifier, docsSpecifier],
+          anchorsOptions
+        );
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(
+          (storyIndex.entries['docs2-yabbadabbadooo--docs'] as DocsIndexEntry).anchors
+        ).toEqual([{ id: 'docs-with-title', title: 'Docs with title' }]);
+      });
+
+      it('omits anchors entirely when the feature is disabled', async () => {
+        const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const docsEntries = Object.values(storyIndex.entries).filter(
+          (entry) => entry.type === 'docs'
+        );
+        expect(docsEntries.length).toBeGreaterThan(0);
+        docsEntries.forEach((entry) => {
+          expect(entry).not.toHaveProperty('anchors');
+        });
       });
     });
 

@@ -11,7 +11,7 @@ The [MSW addon](https://storybook.js.org/addons/msw-storybook-addon/) brings thi
 
 ## Set up the MSW addon
 
-First, if necessary, run this command to install MSW and the MSW addon:
+First, if necessary, run these commands to install MSW and register the MSW addon:
 
 <CodeSnippets path="msw-addon-install.md" />
 
@@ -33,7 +33,7 @@ Then ensure the [`staticDirs`](../../api/main-config/main-config-static-dirs.mdx
 
 <CodeSnippets path="main-config-static-dirs.md" />
 
-Finally, initialize the addon and apply it to all stories with a [project-level loader](../loaders.mdx#global-loaders):
+Finally, apply the addon to all stories. In CSF 3, that is done with a [project-level loader](../loaders.mdx#global-loaders); with CSF Next, by registering the addon in your preview file:
 
 <CodeSnippets path="msw-addon-initialize.md" />
 
@@ -85,4 +85,4 @@ The MSW addon allows you to write stories that use MSW to mock the GraphQL reque
 
 ## Configuring MSW for stories
 
-In the examples above, note how each story is configured with `parameters.msw` to define the request handlers for the mock server. Because it uses parameters in this way, it can also be configured at the [component](../parameters.mdx#component-parameters) or even [project](../parameters.mdx#global-parameters) level, allowing you to share the same mock server configuration across multiple stories.
+In the examples above, note how each story defines its request handlers in a [`beforeEach` hook](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered), using the `msw` object available on the story context. Because it uses a hook in this way, it can also be configured at the [component](../../writing-tests/interaction-testing.mdx#run-code-before-each-story-in-a-file) or even [project](../../writing-tests/interaction-testing.mdx#set-up-or-reset-state-for-all-tests) level, allowing you to share the same mock server configuration across multiple stories. Handlers added with `msw.use()` are reset between stories automatically.

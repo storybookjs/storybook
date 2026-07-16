@@ -1,15 +1,13 @@
 ```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import { mswLoader } from 'msw-storybook-addon/csf3';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The loader starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default {
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  loaders: [mswLoader()], // 👈 Add the MSW loader to all stories
 };
 ```
 
@@ -17,17 +15,15 @@ export default {
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Preview } from '@storybook/your-framework';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import { mswLoader } from 'msw-storybook-addon/csf3';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The loader starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 const preview: Preview = {
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  loaders: [mswLoader()], // 👈 Add the MSW loader to all stories
 };
 
 export default preview;
@@ -37,17 +33,15 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
@@ -57,85 +51,75 @@ export default definePreview({
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/angular';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```
 
@@ -144,16 +128,14 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
-import { initialize, mswLoader } from 'msw-storybook-addon';
+import addonMsw from 'msw-storybook-addon';
 
 /*
- * Initializes MSW
- * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * The addon starts MSW for you.
+ * See https://github.com/mswjs/msw-storybook-addon#custom-worker-setup
  * to learn how to customize it
  */
-initialize();
-
 export default definePreview({
-  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+  addons: [addonMsw()], // 👈 Add the MSW addon to all stories
 });
 ```

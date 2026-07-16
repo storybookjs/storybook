@@ -1,11 +1,14 @@
 ```sh renderer="common" packageManager="npm"
-npm install msw msw-storybook-addon --save-dev
+npm install msw --save-dev
+npx storybook add msw-storybook-addon
 ```
 
 ```sh renderer="common" packageManager="pnpm"
-pnpm add msw msw-storybook-addon --save-dev
+pnpm add msw --save-dev
+pnpm exec storybook add msw-storybook-addon
 ```
 
 ```sh renderer="common" packageManager="yarn"
-yarn add msw msw-storybook-addon --save-dev
+yarn add msw --save-dev
+yarn exec storybook add msw-storybook-addon
 ```

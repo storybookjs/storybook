@@ -45,9 +45,10 @@ describe('buildDocgenPayload — happy path', () => {
     const payload = await buildDocgenPayload({
       entry: makeEntry('./src/button/button.stories.ts', 'Components/Button'),
     });
-    expect(payload?.selector).toBe('app-button');
-    expect(payload?.standalone).toBe(true);
-    expect(payload?.changeDetection).toBe('ChangeDetectionStrategy.OnPush');
+    const compodoc = payload?.compodoc as Record<string, unknown> | undefined;
+    expect(compodoc?.selector).toBe('app-button');
+    expect(compodoc?.standalone).toBe(true);
+    expect(compodoc?.changeDetection).toBe('ChangeDetectionStrategy.OnPush');
   });
 
   it('attaches the compodoc description', async () => {
@@ -61,7 +62,8 @@ describe('buildDocgenPayload — happy path', () => {
     const payload = await buildDocgenPayload({
       entry: makeEntry('./src/lib-btn/lib-btn.stories.ts', 'Directives/LibBtn'),
     });
-    expect(payload?.selector).toBe('button[lib-btn], a[lib-btn]');
+    const compodoc = payload?.compodoc as Record<string, unknown> | undefined;
+    expect(compodoc?.selector).toBe('button[lib-btn], a[lib-btn]');
   });
 });
 

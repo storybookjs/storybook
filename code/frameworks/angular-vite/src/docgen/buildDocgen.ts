@@ -3,7 +3,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import path from 'pathe';
 
-import { buildAngularComponentDocgen } from '../componentManifest/buildAngularComponentDocgen.ts';
+import { buildComponentDocgenFromResolved } from '../componentManifest/buildAngularComponentDocgen.ts';
 import { getCompodocDocumentation } from '../componentManifest/compodocExtractor.ts';
 import { resolveAngularStoryComponent } from '../componentManifest/resolveAngularComponents.ts';
 
@@ -19,7 +19,7 @@ export interface BuildDocgenContext {
  *
  * Resolves the story's primary component via {@link resolveAngularStoryComponent}, looks it up in
  * the project's Compodoc `documentation.json`, then shapes the result with
- * {@link buildAngularComponentDocgen}.
+ * {@link buildComponentDocgenFromResolved}.
  *
  * Returns `undefined` when the story file cannot be read or parsed — the docgen-service provider
  * chain treats undefined as "no docgen here, fall through to the next provider". Resolution errors
@@ -48,7 +48,7 @@ export async function buildDocgenPayload(
   const { csf, componentName, storyFile } = resolved;
   const compodocJson = getCompodocDocumentation({ cwd });
 
-  return buildAngularComponentDocgen({
+  return buildComponentDocgenFromResolved({
     entry: input.entry,
     storyFilePath,
     storyFile,

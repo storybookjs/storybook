@@ -1,6 +1,6 @@
 import { getComponentIdFromEntry } from 'storybook/internal/common';
 import { extractDescription } from 'storybook/internal/csf-tools';
-import type { DocgenPayload, IndexEntry } from 'storybook/internal/types';
+import type { ComponentManifest, IndexEntry } from 'storybook/internal/types';
 
 import { findComponentByName } from './compodoc.ts';
 import type { CompodocJson, Component, Directive } from './compodocTypes.ts';
@@ -46,16 +46,18 @@ export interface CompodocComponentSummary {
  * Angular docgen payload with Compodoc-specific data attached. Output shape for the Angular
  * `experimental_docgenProvider`.
  */
-export interface AngularComponentDocgen extends DocgenPayload {
+// Derive from the base `ComponentManifest` (which has no index signature) so `Omit` keeps the
+// named props (an index signature on the source type would collapse `Omit` to just that index
+// signature). We re-add the Compodoc-specific fields and the index signature explicitly, mirroring
+// `ComponentDocgenFromResolved` in the React renderer's `buildReactComponentDocgen.ts`.
+export type ComponentDocgenFromResolved = Omit<
+  ComponentManifest,
+  'stories' | 'import' | 'subcomponents'
+> & {
   /** Optimised Compodoc summary — only public API fields, no internal implementation details. */
   compodoc?: CompodocComponentSummary;
-  /** `true` for standalone components/directives/pipes (Compodoc 2.0). */
-  standalone?: boolean;
-  /** Change detection strategy, e.g. `"ChangeDetectionStrategy.OnPush"`. */
-  changeDetection?: string;
-  /** Raw Angular selector, e.g. `"button[lib-btn], a[lib-btn]"`. */
-  selector?: string;
-}
+  [key: string]: unknown;
+};
 
 /**
  * Build a lean {@link CompodocComponentSummary} from a raw Compodoc component/directive entry.
@@ -90,10 +92,10 @@ function buildCompodocSummary(data: Component | Directive): CompodocComponentSum
 }
 
 /**
- * Build an {@link AngularComponentDocgen} from a resolved story file entry and the Compodoc
+ * Build a {@link ComponentDocgenFromResolved} from a resolved story file entry and the Compodoc
  * documentation output. Used by the Angular `experimental_docgenProvider`.
  */
-export function buildAngularComponentDocgen({
+export function buildComponentDocgenFromResolved({
   entry,
   storyFilePath,
   storyFile,
@@ -107,7 +109,7 @@ export function buildAngularComponentDocgen({
   csf: ParsedCsf;
   componentName: string | undefined;
   compodocJson: CompodocJson | null;
-}): AngularComponentDocgen {
+}): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)?.replace(/\s+/g, '') ?? entry.title;
   const name = componentName ?? title;
@@ -120,7 +122,7 @@ export function buildAngularComponentDocgen({
     name,
     path: storyFilePath,
     jsDocTags: {},
-  } satisfies Partial<AngularComponentDocgen>;
+  } satisfies Partial<ComponentDocgenFromResolved>;
 
   if (!compodocData) {
     const error = !csf._meta?.component
@@ -146,16 +148,11 @@ export function buildAngularComponentDocgen({
     compodocDescription
   );
 
-  const dir = compodocData as Directive | undefined;
-
   return {
     ...base,
     description,
     summary,
     jsDocTags,
     compodoc: buildCompodocSummary(compodocData as Component | Directive),
-    standalone: dir?.standalone,
-    changeDetection: dir?.changeDetection,
-    selector: dir?.selector,
   };
 }

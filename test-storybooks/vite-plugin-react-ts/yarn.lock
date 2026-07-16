@@ -837,6 +837,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@playwright/test@npm:1.58.2":
+  version: 1.58.2
+  resolution: "@playwright/test@npm:1.58.2"
+  dependencies:
+    playwright: "npm:1.58.2"
+  bin:
+    playwright: cli.js
+  checksum: 10c0/2164c03ad97c3653ff02e8818a71f3b2bbc344ac07924c9d8e31cd57505d6d37596015a41f51396b3ed8de6840f59143eaa9c21bf65515963da20740119811da
+  languageName: node
+  linkType: hard
+
 "@polka/url@npm:^0.5.0":
   version: 0.5.0
   resolution: "@polka/url@npm:0.5.0"
@@ -1051,7 +1062,7 @@ __metadata:
 
 "@storybook/builder-vite@file:../../code/builders/builder-vite::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=a07c6c&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=34e08b&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     get-port-please: "npm:^3.2.0"
@@ -1064,13 +1075,13 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/2e54a38a5f5bc2045118a8be010e0cb91eb6752f26c4173c267e33be771379a63e883a5e10907dc5334e387733713f99c6afc03c7cb35b2829c858504a14dd1e
+  checksum: 10c0/3d6d7646e835e6c86aa59f7208403bc2c1afdef2a2f57435878bfc70d306d2b7ea29f4292a4cb2dc68cfbf12b97eed9161d64347b4cd6592072cd99130911d7d
   languageName: node
   linkType: hard
 
 "@storybook/csf-plugin@file:../../code/lib/csf-plugin::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "@storybook/csf-plugin@file:../../code/lib/csf-plugin#../../code/lib/csf-plugin::hash=0674b3&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "@storybook/csf-plugin@file:../../code/lib/csf-plugin#../../code/lib/csf-plugin::hash=7841e6&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     unplugin: "npm:^2.3.5"
   peerDependencies:
@@ -1088,7 +1099,7 @@ __metadata:
       optional: true
     webpack:
       optional: true
-  checksum: 10c0/c337fe04cd83f13333d028e0461811a0f2f1f8d0e526aedb1f36db859d814e87118715a5543b39db09849b69d13e74f6e10636baa72e813f67e076171f86637d
+  checksum: 10c0/bd18442fe41cd9a0c31ed8de2c86508b7c59b0ce9a7e58e1f8d80fcec4d39a5bd612c6a2bfc13ef0cc185012bbd9ecfcf66341d01c23703210c8694a4c9525f8
   languageName: node
   linkType: hard
 
@@ -1110,7 +1121,7 @@ __metadata:
 
 "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim#../../code/lib/react-dom-shim::hash=dabd25&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim#../../code/lib/react-dom-shim::hash=6f1222&locator=vite-plugin-react-ts%40workspace%3A."
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -1122,13 +1133,13 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10c0/cea4c2bfd9d5d900533458fdb1076e557b7e348fb06bff9c3909700d951bf0b32adfce0ecac60011d40dd7b5edd113db0190f3f39c63c8939b206bf0475711f6
+  checksum: 10c0/1164239a2563d2e31b44c7ef128d09941438fb3397ea3dc8bdf29d8e5725118251b48c32bd73bb0c6643e008b1159027416fbb1192dcd7a51c7768efa560e534
   languageName: node
   linkType: hard
 
 "@storybook/react-vite@file:../../code/frameworks/react-vite::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "@storybook/react-vite@file:../../code/frameworks/react-vite#../../code/frameworks/react-vite::hash=8be7f8&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "@storybook/react-vite@file:../../code/frameworks/react-vite#../../code/frameworks/react-vite::hash=76b439&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -1148,13 +1159,13 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/9fd07e50c6b8540f7de8167aad9f3898982e22da400f7ea800274ad28a8cedd29f29dc0f352bd97c37ec3f7ca18dfb463687200dcbac784184c0e6e80af11dfa
+  checksum: 10c0/c9286c85641fe9e2cae24d7795d4ec4290243f39bea8c089736b7a659fb92fd92e0f418a5b3c5c4a89f0d8ebdbd0d6fb5ae539b408b02e633383578d24c6fc66
   languageName: node
   linkType: hard
 
 "@storybook/react@file:../../code/renderers/react::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "@storybook/react@file:../../code/renderers/react#../../code/renderers/react::hash=13a4bc&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "@storybook/react@file:../../code/renderers/react#../../code/renderers/react::hash=c347e0&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
@@ -1174,7 +1185,7 @@ __metadata:
       optional: true
     typescript:
       optional: true
-  checksum: 10c0/ccf798f269f51b26324c1e47d7a41fd1c558fb4051fae0797b5c64d0d70c1ddd509311ae2fa653cc49aac87d3de63e8bbf326c7fff8019f7665d1851c0ed10b8
+  checksum: 10c0/f4fb70e69bf80b171df7407d7a1a62a5f4fc9aba5f58177f016981303654f28f24ed0c27e5b61810869d201ce2d3af021efe12a4c0d371a09bac03180317d1be
   languageName: node
   linkType: hard
 
@@ -1854,12 +1865,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fsevents@npm:2.3.2":
+  version: 2.3.2
+  resolution: "fsevents@npm:2.3.2"
+  dependencies:
+    node-gyp: "npm:latest"
+  checksum: 10c0/be78a3efa3e181cda3cf7a4637cb527bcebb0bd0ea0440105a3bb45b86f9245b307dc10a2507e8f4498a7d4ec349d1910f4d73e4d4495b16103106e07eee735b
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
 "fsevents@npm:~2.3.2, fsevents@npm:~2.3.3":
   version: 2.3.3
   resolution: "fsevents@npm:2.3.3"
   dependencies:
     node-gyp: "npm:latest"
   checksum: 10c0/a1f0c44595123ed717febbc478aa952e47adfc28e2092be66b8ab1635147254ca6cfe1df792a8997f22716d4cbafc73309899ff7bfac2ac3ad8cf2e4ecc3ec60
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+  version: 2.3.2
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  dependencies:
+    node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -2406,6 +2436,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright-core@npm:1.58.2":
+  version: 1.58.2
+  resolution: "playwright-core@npm:1.58.2"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/5aa15b2b764e6ffe738293a09081a6f7023847a0dbf4cd05fe10eed2e25450d321baf7482f938f2d2eb330291e197fa23e57b29a5b552b89927ceb791266225b
+  languageName: node
+  linkType: hard
+
+"playwright@npm:1.58.2":
+  version: 1.58.2
+  resolution: "playwright@npm:1.58.2"
+  dependencies:
+    fsevents: "npm:2.3.2"
+    playwright-core: "npm:1.58.2"
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    playwright: cli.js
+  checksum: 10c0/d060d9b7cc124bd8b5dffebaab5e84f6b34654a553758fe7b19cc598dfbee93f6ecfbdc1832b40a6380ae04eade86ef3285ba03aa0b136799e83402246dc0727
+  languageName: node
+  linkType: hard
+
 "polka@npm:^0.5.0":
   version: 0.5.2
   resolution: "polka@npm:0.5.2"
@@ -2711,7 +2765,7 @@ __metadata:
 
 "storybook@file:../../code/core::locator=vite-plugin-react-ts%40workspace%3A.":
   version: 10.5.0-alpha.9
-  resolution: "storybook@file:../../code/core#../../code/core::hash=db6507&locator=vite-plugin-react-ts%40workspace%3A."
+  resolution: "storybook@file:../../code/core#../../code/core::hash=739e79&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -2742,7 +2796,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/52ac53fe1ca00770c2c2331a4a29b417b3fb54a4709e78cf03159f3ab7a906e4f991442fb524369160916d27f107d046279f36d8f22954b3a366f1eeaad3313a
+  checksum: 10c0/1f9652f32b99d0a74c2e9a5863d2738bdcfe90441419dfd914f9d341a21324c733613c14fc20d6ca798396fe6fa1155d06fdd1b6c45eb020c9afbfa6deea8db6
   languageName: node
   linkType: hard
 
@@ -2950,6 +3004,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "vite-plugin-react-ts@workspace:."
   dependencies:
+    "@playwright/test": "npm:1.58.2"
     "@storybook/builder-vite": "npm:*"
     "@storybook/react-vite": "npm:*"
     "@types/react": "npm:^19.0.0"

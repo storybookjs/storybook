@@ -35,3 +35,13 @@ yarn storybook:build
 - `/__storybook/index.json` lists `example-button--primary`
 - Selecting a story renders it in the preview iframe
 - Editing `src/Button.tsx` hot-reloads the story without a full page reload
+
+## E2E tests
+
+Playwright tests in `e2e-tests/` boot `yarn dev` and verify the app at `/` plus Storybook at
+`/__storybook/` (manager, preview iframe, and `index.json`). They run in CI as the
+`test-storybooks-vite-plugin` job, which also smoke-tests `yarn storybook:build`.
+
+```bash
+yarn playwright-e2e
+```

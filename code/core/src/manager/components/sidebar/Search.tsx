@@ -46,7 +46,7 @@ const options = {
   keys: [
     { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
-    { name: 'headings', weight: 0.1 },
+    { name: 'anchors.title', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -211,7 +211,7 @@ export const Search = React.memo<SearchProps>(function Search({
           status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
         });
 
-        // Narrow down type to more specific API_DocsEntry with headings
+        // Narrow down type to more specific API_DocsEntry with anchors
         if (datasetValue.type !== 'docs') {
           continue;
         }
@@ -220,15 +220,14 @@ export const Search = React.memo<SearchProps>(function Search({
           continue;
         }
 
-        const headings = datasetValue.headings ?? [];
-        headings.forEach((heading: string) => {
+        datasetValue.anchors?.forEach((anchor) => {
           const searchItemRef = searchItem(datasetValue, dataset.hash[refId]);
-          const namePostfix = searchItemRef.path?.[0] === heading ? '' : ` / ${heading}`;
+          const namePostfix = searchItemRef.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
 
           list.push({
             ...searchItemRef,
-            // TODO add comment about why -> fuse breaks if id is not unique
-            id: `${datasetValue.id}#${heading.replaceAll(' ', '-').toLowerCase()}`,
+            // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
+            id: `${datasetValue.id}#${anchor.id}`,
             name: `${datasetValue.name}${namePostfix}`,
             status: mostCriticalStatusValue || groupStatus[datasetValue.id] || null,
           });
@@ -409,12 +408,12 @@ export const Search = React.memo<SearchProps>(function Search({
                 const baseItem = searchItem(item, dataset.hash[refId]);
                 let resultItem = baseItem;
                 if (anchor && item.type === 'docs') {
-                  const matchingHeading = item.headings?.find(
-                    (h: string) => h.replaceAll(' ', '-').toLowerCase() === anchor
-                  );
-                  if (matchingHeading) {
+                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
+                  if (matchingAnchor) {
                     const namePostfix =
-                      baseItem.path?.[0] === matchingHeading ? '' : ` / ${matchingHeading}`;
+                      baseItem.path?.[0] === matchingAnchor.title
+                        ? ''
+                        : ` / ${matchingAnchor.title}`;
                     resultItem = {
                       ...baseItem,
                       id: entryId,

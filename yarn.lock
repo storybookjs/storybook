@@ -31413,6 +31413,7 @@ __metadata:
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.1.0"
+    github-slugger: "npm:^2.0.0"
     glob: "npm:^10.5.0"
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"

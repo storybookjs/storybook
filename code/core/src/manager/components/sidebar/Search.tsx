@@ -163,7 +163,6 @@ export type SearchProps = {
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
-  updateLastViewed?: (story: { storyId: string; refId: string; anchor?: string }) => void;
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
@@ -174,7 +173,6 @@ export const Search = React.memo<SearchProps>(function Search({
   dataset,
   enableShortcuts = true,
   getLastViewed,
-  updateLastViewed,
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
@@ -284,14 +282,6 @@ export const Search = React.memo<SearchProps>(function Search({
       if (isSearchResult(selectedItem)) {
         const { id: rawId, refId } = selectedItem.item;
         const [storyId, anchor] = rawId.split('#');
-        const previousStoryId = api.getUrlState().storyId;
-
-        const isSamePage = previousStoryId === storyId;
-        if (isSamePage) {
-          // In docs mode, the effect that calls `updateLastViewed` is not triggered when
-          // selecting a story inside the current docs page.
-          updateLastViewed?.({ storyId, refId, anchor });
-        }
 
         api?.selectStory(storyId, undefined, {
           // @ts-expect-error (non strict)

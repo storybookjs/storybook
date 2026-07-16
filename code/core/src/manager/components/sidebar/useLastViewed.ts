@@ -19,7 +19,7 @@ export const useLastViewed = (selection: Selection) => {
       return [];
     }
     return items;
-  }, [store]);
+  }, []);
 
   const lastViewedRef = useRef(initialLastViewedStoryIds);
 
@@ -52,7 +52,6 @@ export const useLastViewed = (selection: Selection) => {
 
   return {
     getLastViewed: useCallback(() => lastViewedRef.current, [lastViewedRef]),
-    updateLastViewed,
     clearLastViewed: useCallback(() => {
       lastViewedRef.current = lastViewedRef.current.slice(0, 1);
       save(lastViewedRef.current);

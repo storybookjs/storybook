@@ -34,39 +34,6 @@ function getSandboxSetupSteps(template: string) {
   return extraSteps;
 }
 
-function defineSandboxJob_build({
-  directory,
-  name,
-  template,
-  requires,
-}: {
-  directory: string;
-  name: string;
-  requires: JobOrNoOpJob[];
-  template: string;
-}) {
-  return defineJob(
-    name,
-    () => ({
-      executor: {
-        name: 'sb_node_22_classic',
-        class: 'medium+',
-      },
-      steps: [
-        ...getSandboxSetupSteps(template),
-        ...workflow.restoreLinux({ sandboxId: directory }),
-        {
-          run: {
-            name: 'Build storybook',
-            command: `yarn task build --template ${template} --no-link -s build`,
-          },
-        },
-        workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
-      ],
-    }),
-    requires
-  );
-}
 function defineSandboxJob_dev({
   directory,
   name,
@@ -224,6 +191,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               },
             ]
           : []),
+        {
+          run: {
+            name: 'Build storybook',
+            command: `yarn task build --template ${key} --no-link -s build`,
+          },
+        },
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),
         workspace.persist([sandboxArchive(id)]),
@@ -231,12 +204,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     }),
     [sandboxesNoOpJob]
   );
-  const buildJob = defineSandboxJob_build({
-    name: `${name} (build)`,
-    template: key,
-    directory: id,
-    requires: [createJob],
-  });
   const devJob = defineSandboxJob_dev({
     name: `${name} (dev)`,
     template: key,
@@ -275,7 +242,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const vitestJob = defineJob(
     `${name} (vitest)`,
@@ -302,7 +269,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const e2eJob = defineJob(
     `${name} (e2e)`,
@@ -342,7 +309,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const testRunnerJob = defineJob(
     `${name} (test-runner)`,
@@ -363,12 +330,11 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
 
   const jobs = [
     createJob,
-    buildJob,
     devJob,
     !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
@@ -391,12 +357,14 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     name: key,
     path,
     jobs,
+    createJob,
+    devJob,
   };
 }
 
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[1].id}-test-runner`,
+    `${sandbox.id}--test-runner`,
     () => ({
       executor: {
         name: 'sb_playwright',
@@ -414,13 +382,13 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [sandbox.jobs[1]]
+    [sandbox.createJob]
   );
 }
 
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[2].id}-windows`,
+    `${sandbox.devJob.id}-windows`,
     () => ({
       executor: {
         name: 'win/default',
@@ -464,13 +432,13 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
       ],
     }),
-    [sandbox.jobs[0]]
+    [sandbox.createJob]
   );
 }
 
 export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[1].id}-windows`,
+    `${sandbox.id}--build-windows`,
     () => ({
       executor: {
         name: 'win/default',

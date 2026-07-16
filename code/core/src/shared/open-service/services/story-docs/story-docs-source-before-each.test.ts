@@ -110,6 +110,19 @@ describe('storyDocsSourceBeforeEach', () => {
     await cleanup?.();
   });
 
+  it('does not emit for portable stories', async () => {
+    const context = {
+      id: storyId,
+      parameters: { __isArgsStory: true, __isPortableStory: true },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await cleanup?.();
+
+    expect(mockedGetService).not.toHaveBeenCalled();
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+  });
+
   it('does not emit when source code is provided', async () => {
     const context = {
       id: storyId,

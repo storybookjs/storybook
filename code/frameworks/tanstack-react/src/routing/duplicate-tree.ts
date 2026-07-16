@@ -1,5 +1,10 @@
 import type { AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import { createRoute, RootRoute, createRootRouteWithContext } from '@tanstack/react-router';
+import {
+  createRoute,
+  RootRoute,
+  createRootRouteWithContext,
+  joinPaths,
+} from '@tanstack/react-router';
 
 import type { RouteTreeOverrides } from './types.ts';
 
@@ -66,16 +71,22 @@ function cloneChild(
   // derived from the new parent + path, and its parent linked to the cloned
   // parent below. Keeping the original `id` would cause TanStack to register
   // two routes with the same generated id (e.g. `__root__/about`).
-  const { id: _id, getParentRoute: _g, ...rest } = options;
+  const { id: originalId, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
+  const merged = { ...rest, ...override };
 
   // Use `createRoute` (not `createFileRoute`) for nested clones: `createFileRoute`
   // registers the route in TanStack's global file-route registry by path, so
   // re-running the duplication on every story re-render registers a duplicate
   // and TanStack throws `Duplicate routeIds found: __root__`.
+  // A pathless route (explicit `id`, no `path` — checked AFTER overrides, so
+  // an override that adds a `path` re-derives identity from the path instead
+  // of crashing on TanStack's id+path invariant) has no path to derive an
+  // identity from; its explicit id IS its identity, so preserve it. The falsy
+  // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...rest,
-    ...override,
+    ...(!merged.path && originalId != null ? { id: originalId } : {}),
+    ...merged,
     getParentRoute: () => parent as any,
   } as any);
 
@@ -134,6 +145,30 @@ export function duplicateRouteTree(
   }
 
   return { root: newRoot, byId };
+}
+
+/**
+ * URL contributed by a route's pathful ancestors (pathless segments contribute
+ * nothing). A bare `/` segment (an index route) likewise contributes nothing
+ * beyond its parent's own path — including it as a literal segment would
+ * leave a stray trailing slash once `joinPaths` collapses the rest.
+ *
+ * Cloned routes are not `init()`ed until `createRouter()` runs, so their
+ * `fullPath`/`id` getters are undefined at resolution time; this walk reads
+ * the cloned parent chain's options instead.
+ */
+export function mountPathFor(route: AnyRoute): string {
+  const segments: string[] = [];
+  let current: AnyRoute | undefined = route;
+  for (let i = 0; i < MAX_PARENT_WALK && current; i += 1) {
+    const routePath = (current as any).options?.path as string | undefined;
+    if (routePath && routePath !== '/') {
+      segments.unshift(routePath);
+    }
+    const getParent: (() => AnyRoute) | undefined = (current as any).options?.getParentRoute;
+    current = typeof getParent === 'function' ? getParent() : undefined;
+  }
+  return joinPaths(['/', ...segments]);
 }
 
 /**

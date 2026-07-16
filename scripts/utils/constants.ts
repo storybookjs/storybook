@@ -5,6 +5,9 @@ import { join } from 'path';
 export const AFTER_DIR_NAME = 'after-storybook';
 export const BEFORE_DIR_NAME = 'before-storybook';
 
+// __dirname on purpose: Playwright transpiles importers of this file (e.g.
+// code/e2e-sandbox/*.spec.ts) to CommonJS, where import.meta is a syntax
+// error. Keep this module free of ESM-only globals.
 export const ROOT_DIRECTORY = join(__dirname, '..', '..');
 export const CODE_DIRECTORY = join(ROOT_DIRECTORY, 'code');
 export const SNIPPETS_DIRECTORY = join(ROOT_DIRECTORY, 'docs', '_snippets');

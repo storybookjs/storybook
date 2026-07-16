@@ -128,6 +128,10 @@ export class AddonConfigurationCommand {
           configDir,
           yes: true,
           skipInstall: true,
+          // Dependencies were installed in the preceding init step (unless the
+          // user opted out), so nested `storybook` invocations can run the local
+          // binary instead of fetching an ephemeral copy via dlx/npx.
+          useRemotePkg: !!this.commandOptions.skipInstall,
           skipDependencyManagement: true,
           logger,
           prompt,
@@ -136,7 +140,16 @@ export class AddonConfigurationCommand {
         if (addon === '@storybook/addon-vitest') {
           await addonVitestPostinstall(options);
         } else if (addon === '@storybook/addon-a11y') {
-          await addonA11yPostinstall(options);
+          // When addon-vitest was configured in this same run, its postinstall
+          // already executed the addon-a11y-addon-test automigration; a11y's
+          // own postinstall consists of exactly that command, so running it
+          // again only spins up a second package-runner process to conclude
+          // there is nothing left to do. It still runs when vitest is absent
+          // or failed, matching the standalone `storybook add` behavior.
+          const vitestConfigured = addonResults.get('@storybook/addon-vitest') === null;
+          if (!vitestConfigured) {
+            await addonA11yPostinstall(options);
+          }
         } else {
           await postinstallAddon(addon, options);
         }

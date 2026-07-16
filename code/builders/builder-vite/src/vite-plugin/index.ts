@@ -2,6 +2,7 @@ import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
+import type { CoreConfig } from 'storybook/internal/types';
 
 import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -24,6 +25,7 @@ import { createServerChannel } from './middlewares/channel.ts';
 import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
 import { buildManager } from './middlewares/manager.ts';
 import { createStaticMiddlewares } from './middlewares/static.ts';
+import { emitDevTelemetry, reportTelemetryError } from './telemetry.ts';
 import type { UserOptions } from './types.ts';
 
 // use to guard against duplicate plugin activation
@@ -83,7 +85,10 @@ function main(options?: UserOptions): PluginOption {
     apply: applyToStorybookOnly,
 
     async config(config, { command, mode }) {
-      const { sb } = await loadStorybook();
+      const { sb } = await loadStorybook().catch(async (error) => {
+        await reportTelemetryError(error, command === 'build' ? 'build' : 'dev');
+        throw error;
+      });
 
       sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
       if (mode === 'storybook') {
@@ -97,12 +102,23 @@ function main(options?: UserOptions): PluginOption {
           ? {
               builder: {
                 buildApp: async (builder: ViteBuilder) => {
-                  await buildStaticStorybook({
-                    basePath,
-                    builder,
-                    options: sb,
-                    outputDir: resolve(builder.config.root ?? config.root, finalOptions.outputDir),
-                  });
+                  try {
+                    await buildStaticStorybook({
+                      basePath,
+                      builder,
+                      options: sb,
+                      outputDir: resolve(
+                        builder.config.root ?? config.root,
+                        finalOptions.outputDir
+                      ),
+                    });
+                  } catch (error) {
+                    const core = await sb.presets
+                      .apply<CoreConfig>('core', {})
+                      .catch(() => ({}) as CoreConfig);
+                    await reportTelemetryError(error, 'build', core.disableTelemetry);
+                    throw error;
+                  }
                 },
               },
             }
@@ -184,10 +200,9 @@ function main(options?: UserOptions): PluginOption {
       const storyIndexGenerator =
         await sb.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-      const coreOptions = await sb.presets.apply<{ channelOptions?: { wsToken?: string } }>(
-        'core',
-        {}
-      );
+      const coreOptions = await sb.presets.apply<
+        CoreConfig & { channelOptions?: { wsToken?: string } }
+      >('core', {});
       const wsToken = coreOptions.channelOptions?.wsToken ?? '';
 
       const staticHandlers = await createStaticMiddlewares(sb, '/');
@@ -290,6 +305,12 @@ function main(options?: UserOptions): PluginOption {
       storyIndexGenerator.onInvalidated(() => {
         const virtualStoriesId = '\0virtual:/@storybook/builder-vite/storybook-stories.js';
         server.watcher.emit('change', virtualStoriesId);
+      });
+
+      await emitDevTelemetry({
+        configDir: sb.configDir,
+        disableTelemetry: coreOptions.disableTelemetry,
+        storyIndexGenerator,
       });
     },
   };

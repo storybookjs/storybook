@@ -1061,8 +1061,8 @@ __metadata:
   linkType: hard
 
 "@storybook/builder-vite@file:../../code/builders/builder-vite::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=34e08b&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=b3acd7&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     get-port-please: "npm:^3.2.0"
@@ -1075,13 +1075,13 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/3d6d7646e835e6c86aa59f7208403bc2c1afdef2a2f57435878bfc70d306d2b7ea29f4292a4cb2dc68cfbf12b97eed9161d64347b4cd6592072cd99130911d7d
+  checksum: 10c0/7baf3a53f2b106bca3bf50390fba1c7dcd2d1157f369a1abb0989edbe6962cd807f5dd72dd5fa2f38c4f9199b621930bf5b0c07ab8b71bcb6ad23c4df103f3b1
   languageName: node
   linkType: hard
 
 "@storybook/csf-plugin@file:../../code/lib/csf-plugin::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "@storybook/csf-plugin@file:../../code/lib/csf-plugin#../../code/lib/csf-plugin::hash=7841e6&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "@storybook/csf-plugin@file:../../code/lib/csf-plugin#../../code/lib/csf-plugin::hash=3cf4f4&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     unplugin: "npm:^2.3.5"
   peerDependencies:
@@ -1099,7 +1099,7 @@ __metadata:
       optional: true
     webpack:
       optional: true
-  checksum: 10c0/bd18442fe41cd9a0c31ed8de2c86508b7c59b0ce9a7e58e1f8d80fcec4d39a5bd612c6a2bfc13ef0cc185012bbd9ecfcf66341d01c23703210c8694a4c9525f8
+  checksum: 10c0/99768e462ef4b8c7e188da69ff79346f8b03bdae7571a50fd822ea7aa7f3b68a2c1a4e0cf67028d2e66175484a63fef8dd14faf39e24f4e4ae8e5ce76e1e45c6
   languageName: node
   linkType: hard
 
@@ -1120,8 +1120,8 @@ __metadata:
   linkType: hard
 
 "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim#../../code/lib/react-dom-shim::hash=6f1222&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "@storybook/react-dom-shim@file:../../code/lib/react-dom-shim#../../code/lib/react-dom-shim::hash=ad852e&locator=vite-plugin-react-ts%40workspace%3A."
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -1133,13 +1133,13 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
-  checksum: 10c0/1164239a2563d2e31b44c7ef128d09941438fb3397ea3dc8bdf29d8e5725118251b48c32bd73bb0c6643e008b1159027416fbb1192dcd7a51c7768efa560e534
+  checksum: 10c0/dfd7efb6031a54585ec14123bdab03aba341111ad14f101eb7fa50bfd1096053b12fec7b96dca88ca3871725683d73456db6bbdb40093e4a87256b895aa7f735
   languageName: node
   linkType: hard
 
 "@storybook/react-vite@file:../../code/frameworks/react-vite::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "@storybook/react-vite@file:../../code/frameworks/react-vite#../../code/frameworks/react-vite::hash=76b439&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "@storybook/react-vite@file:../../code/frameworks/react-vite#../../code/frameworks/react-vite::hash=8918e2&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -1159,13 +1159,13 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/c9286c85641fe9e2cae24d7795d4ec4290243f39bea8c089736b7a659fb92fd92e0f418a5b3c5c4a89f0d8ebdbd0d6fb5ae539b408b02e633383578d24c6fc66
+  checksum: 10c0/86f19b36a14c89b3e4494afce7ac9561f42df41f8a0dc98db64aa11229651e6d6fd798173b442730929f3f3f65325bb06012e07a0ecf8d3a6b2c59e57b425aae
   languageName: node
   linkType: hard
 
 "@storybook/react@file:../../code/renderers/react::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "@storybook/react@file:../../code/renderers/react#../../code/renderers/react::hash=c347e0&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "@storybook/react@file:../../code/renderers/react#../../code/renderers/react::hash=cae4d5&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
@@ -1185,7 +1185,7 @@ __metadata:
       optional: true
     typescript:
       optional: true
-  checksum: 10c0/f4fb70e69bf80b171df7407d7a1a62a5f4fc9aba5f58177f016981303654f28f24ed0c27e5b61810869d201ce2d3af021efe12a4c0d371a09bac03180317d1be
+  checksum: 10c0/9c1ee6aa76ba5d279e9574d0ff923b5db0d5fb629ae358e91840b85f3d19a88712dfd4840f132d0f432bac087fa8de1660172db7928f1fdf077b2e654dae457b
   languageName: node
   linkType: hard
 
@@ -2083,6 +2083,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsonc-parser@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "jsonc-parser@npm:3.3.1"
+  checksum: 10c0/269c3ae0a0e4f907a914bf334306c384aabb9929bd8c99f909275ebd5c2d3bc70b9bcd119ad794f339dec9f24b6a4ee9cd5a8ab2e6435e730ad4075388fc2ab6
+  languageName: node
+  linkType: hard
+
 "loupe@npm:^3.1.0, loupe@npm:^3.1.4":
   version: 3.2.1
   resolution: "loupe@npm:3.2.1"
@@ -2764,8 +2771,8 @@ __metadata:
   linkType: hard
 
 "storybook@file:../../code/core::locator=vite-plugin-react-ts%40workspace%3A.":
-  version: 10.5.0-alpha.9
-  resolution: "storybook@file:../../code/core#../../code/core::hash=739e79&locator=vite-plugin-react-ts%40workspace%3A."
+  version: 10.6.0-alpha.0
+  resolution: "storybook@file:../../code/core#../../code/core::hash=f9675f&locator=vite-plugin-react-ts%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -2776,6 +2783,7 @@ __metadata:
     "@vitest/spy": "npm:3.2.4"
     "@webcontainer/env": "npm:^1.1.1"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
+    jsonc-parser: "npm:^3.3.1"
     open: "npm:^10.2.0"
     oxc-parser: "npm:^0.127.0"
     oxc-resolver: "npm:^11.19.1"
@@ -2786,7 +2794,7 @@ __metadata:
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3
-    vite-plus: ^0.1.15
+    vite-plus: ^0.1.15 || ^0.2.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -2796,7 +2804,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/1f9652f32b99d0a74c2e9a5863d2738bdcfe90441419dfd914f9d341a21324c733613c14fc20d6ca798396fe6fa1155d06fdd1b6c45eb020c9afbfa6deea8db6
+  checksum: 10c0/c208c0c2199fa8bac668e39b3f8f56f623bac6916ae22d4b7ae43c2da15302058c2688fdfa6506e864049f9cfb7ca0e8f6a67ae4d876690879d43d19cc958adb
   languageName: node
   linkType: hard
 

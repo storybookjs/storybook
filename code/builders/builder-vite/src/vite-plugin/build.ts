@@ -2,12 +2,13 @@ import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { mapStaticDir, type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
-import type { Options } from 'storybook/internal/types';
+import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { basename, join } from 'pathe';
 import type { ViteBuilder } from 'vite';
 
 import { buildManager, copyManagerAssets } from './middlewares/manager.ts';
+import { emitBuildTelemetry } from './telemetry.ts';
 
 type StaticBuildOptions = {
   basePath: string;
@@ -71,4 +72,11 @@ export async function buildStaticStorybook({
     await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
   const storyIndex = await storyIndexGenerator.getIndex();
   await writeFile(join(outputDir, 'index.json'), JSON.stringify(storyIndex));
+
+  const core = await options.presets.apply<CoreConfig>('core', {});
+  await emitBuildTelemetry({
+    configDir: options.configDir,
+    disableTelemetry: core.disableTelemetry,
+    storyIndex,
+  });
 }

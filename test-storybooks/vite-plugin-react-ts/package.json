@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "dev": "vite",
-    "storybook": "vite --mode storybook"
+    "storybook": "vite --mode storybook",
+    "storybook:build": "vite build --mode storybook"
   },
   "resolutions": {
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",

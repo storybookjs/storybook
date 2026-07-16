@@ -7,6 +7,13 @@ export type UserOptions = {
    */
   configDir?: string;
   /**
+   * The directory where a static Storybook is written by `vite build --mode storybook`, resolved
+   * against Vite's project root.
+   *
+   * @default './storybook-static'
+   */
+  outputDir?: string;
+  /**
    * The base URL path where Storybook is mounted inside the Vite dev server. Normalized to a
    * leading-slash, no-trailing-slash form (e.g. `'storybook/'` becomes `'/storybook'`).
    *

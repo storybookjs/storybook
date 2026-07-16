@@ -23,6 +23,12 @@ To serve Storybook at the root instead (no app), run Vite in the dedicated mode:
 yarn storybook
 ```
 
+To build a static Storybook in `storybook-static/`, run:
+
+```bash
+yarn storybook:build
+```
+
 ## What to check
 
 - `/__storybook/` renders the manager UI

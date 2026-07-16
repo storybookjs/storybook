@@ -1,9 +1,9 @@
-import { mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import type { Options } from 'storybook/internal/types';
 
-import { dirname, join } from 'pathe';
+import { dirname, join, parse } from 'pathe';
 import sirv from 'sirv';
 
 import {
@@ -43,7 +43,7 @@ async function compileManagerEntries(
 export async function buildManager(
   options: Options,
   basePath: string,
-  channelPath: string,
+  channelPath: string | undefined,
   addonsDir: string
 ): Promise<string> {
   const { getRefs } = await import('storybook/internal/common');
@@ -59,12 +59,16 @@ export async function buildManager(
   const template = readTemplate('template.ejs');
   const customHead = options.presets.apply<string>('managerHead');
 
-  const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
+  const globals: Record<string, unknown> & {
+    CHANNEL_OPTIONS?: { channelPath?: string };
+  } = await buildFrameworkGlobalsFromOptions(options);
 
-  if (globals.CHANNEL_OPTIONS) {
-    globals.CHANNEL_OPTIONS.channelPath = channelPath;
-  } else {
-    globals.CHANNEL_OPTIONS = { channelPath };
+  if (channelPath) {
+    if (globals.CHANNEL_OPTIONS) {
+      globals.CHANNEL_OPTIONS.channelPath = channelPath;
+    } else {
+      globals.CHANNEL_OPTIONS = { channelPath };
+    }
   }
 
   const { cssFiles, jsFiles } = await compileManagerEntries(options, addonsDir);
@@ -89,6 +93,16 @@ export async function buildManager(
   );
 
   return html;
+}
+
+export async function copyManagerAssets(outputDir: string): Promise<void> {
+  await cp(CORE_MANAGER_DIR, join(outputDir, 'sb-manager'), {
+    filter: (src) => {
+      const { ext } = parse(src);
+      return !ext || ext === '.js';
+    },
+    recursive: true,
+  });
 }
 
 /** Serves the prebuilt manager UI assets; expects req.url relative to the sb-manager mount. */

@@ -10,14 +10,16 @@ import polka from 'polka';
 import {
   BuildEnvironment,
   DevEnvironment,
+  resolveConfig,
   type InlineConfig,
   type PluginOption,
-  resolveConfig,
+  type ViteBuilder,
 } from 'vite';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
 import { pluginConfig } from '../vite-config.ts';
+import { buildStaticStorybook } from './build.ts';
 import { createServerChannel } from './middlewares/channel.ts';
 import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
 import { buildManager } from './middlewares/manager.ts';
@@ -44,6 +46,7 @@ function main(options?: UserOptions): PluginOption {
   const finalOptions = {
     base: normalizeBase(options?.base ?? '/__storybook'),
     configDir: resolve(options?.configDir ?? '.storybook'),
+    outputDir: options?.outputDir ?? './storybook-static',
   };
 
   let storybookPromise:
@@ -79,7 +82,7 @@ function main(options?: UserOptions): PluginOption {
     name: 'storybook-env',
     apply: applyToStorybookOnly,
 
-    async config(_, { command, mode }) {
+    async config(config, { command, mode }) {
       const { sb } = await loadStorybook();
 
       sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
@@ -90,6 +93,20 @@ function main(options?: UserOptions): PluginOption {
         envPrefix: ['VITE_', 'STORYBOOK_'],
         ...(mode === 'storybook' ? { server: { fs: { allow: [finalOptions.configDir] } } } : {}),
         environments: { storybook: { consumer: 'client' } },
+        ...(mode === 'storybook' && command === 'build'
+          ? {
+              builder: {
+                buildApp: async (builder: ViteBuilder) => {
+                  await buildStaticStorybook({
+                    basePath,
+                    builder,
+                    options: sb,
+                    outputDir: resolve(builder.config.root ?? config.root, finalOptions.outputDir),
+                  });
+                },
+              },
+            }
+          : {}),
       };
     },
 
@@ -107,7 +124,7 @@ function main(options?: UserOptions): PluginOption {
                 cacheDir: 'node_modules/.cache/storybook-vite-deps',
                 build: {
                   ...finalConfig.build,
-                  outDir: 'storybook-static',
+                  outDir: finalOptions.outputDir,
                   emptyOutDir: false,
                 },
               },

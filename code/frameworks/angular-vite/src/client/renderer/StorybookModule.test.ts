@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { NgModule } from '@angular/core';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
@@ -330,6 +330,57 @@ describe('StorybookModule', () => {
         fixture.detectChanges();
 
         expect(fixture.nativeElement.innerHTML).toContain('The content');
+      });
+    });
+
+    describe('with signal properties', () => {
+      @Component({
+        selector: 'signal-property',
+        template: `
+          <p id="optionCount">{{ options().length }}</p>
+          <p id="label">{{ label }}</p>
+        `,
+      })
+      class SignalPropertyComponent {
+        public options = signal(['preserved']).asReadonly();
+
+        public label = '';
+      }
+
+      it('should preserve signals while updating ordinary props', async () => {
+        const initialProps = {
+          options: [],
+          label: 'initial label',
+        };
+        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+
+        const analyzedMetadata = new PropertyExtractor({}, SignalPropertyComponent);
+        await analyzedMetadata.init();
+
+        const application = getApplication({
+          storyFnAngular: {
+            props: initialProps,
+            template: '<signal-property></signal-property>',
+          },
+          component: SignalPropertyComponent,
+          targetSelector: 'my-selector',
+          analyzedMetadata,
+        });
+
+        const { fixture } = await configureTestingModule({
+          imports: [application],
+          providers: [storyPropsProvider(storyProps$)],
+        });
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.querySelector('p#optionCount').innerHTML).toEqual('1');
+        expect(fixture.nativeElement.querySelector('p#label').innerHTML).toEqual('initial label');
+
+        storyProps$.next({ options: [], label: 'updated label' });
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.querySelector('p#optionCount').innerHTML).toEqual('1');
+        expect(fixture.nativeElement.querySelector('p#label').innerHTML).toEqual('updated label');
       });
     });
 

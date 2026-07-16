@@ -49,19 +49,19 @@ export const useNavigate = () => {
 
   return useCallback((to: R.To | number, { plain, ...options } = {} as NavigateOptions) => {
     if (typeof to === 'string' && to.startsWith('#')) {
-      if (to === '#') {
-        navigate(document.location.search);
-      } else {
-        document.location.hash = to;
-      }
-      return undefined;
+      // In-page navigation. Go through the router (instead of mutating document.location.hash)
+      // so the location change is observable by the manager state, e.g. for "last viewed"
+      // tracking in the sidebar.
+      return navigate(`${document.location.search}${to === '#' ? '' : to}`, options);
     }
     if (typeof to === 'string') {
       const target = plain ? to : `?path=${to}`;
       const [search, hash] = target.split('#');
 
-      // When navigating to an anchor on the same page, e.g. via searching a sub-headline, no scroll event is triggered.
-      // Emitting NAVIGATE_URL will trigger the scroll event and scroll to the anchor.
+      // When navigating to an anchor on the same page, e.g. via searching a sub-headline, the
+      // preview does not re-render, so nothing scrolls to the anchor. Emitting NAVIGATE_URL makes
+      // the preview scroll, and the manager's NAVIGATE_URL handler performs the actual `#hash`
+      // navigation through the in-page branch above.
       if (search === document.location.search && hash) {
         addons.getChannel().emit(NAVIGATE_URL, `#${hash}`);
 

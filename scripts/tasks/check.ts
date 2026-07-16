@@ -2,10 +2,40 @@ import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+import pLimit from 'p-limit';
 
 import type { Task } from '../task.ts';
 import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 import { getCodeWorkspaces } from '../utils/workspace.ts';
+
+// The typescript-validation job runs on an xlarge (8 vCPU) executor. The
+// native TS 7 compiler run by check-package.ts is itself multi-threaded
+// (~4 threads per process observed), so the pool stays narrower than the
+// vCPU count. os.cpus() inside Docker reports the host's cores rather than
+// the cgroup limit, so use an explicit value on CI instead of
+// maxConcurrentTasks (same reasoning as compile.ts).
+const CI_CONCURRENCY = 4;
+
+// Started first so the slowest checks don't begin last and stretch the tail of
+// the parallel run.
+const HEAVY_WORKSPACES = [
+  'storybook',
+  '@storybook/vue3',
+  '@storybook/svelte',
+  '@storybook/angular',
+];
+
+function getCheckCommand(name: string, cwd: string) {
+  if (name === '@storybook/vue3') {
+    return `npx vue-tsc --noEmit --project ${join(cwd, 'tsconfig.json')}`;
+  }
+  if (name === '@storybook/svelte') {
+    return `npx svelte-check`;
+  }
+  const script = join(ROOT_DIRECTORY, 'scripts', 'check', 'check-package.ts');
+  return `node ${script} --cwd ${cwd}`;
+}
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',
@@ -14,46 +44,46 @@ export const check: Task = {
   },
   async run(_, {}) {
     const failed: string[] = [];
-    // const command = link ? linkCommand : nolinkCommand;
-    const workspaces = await getCodeWorkspaces();
+    const workspaces = (await getCodeWorkspaces()).filter(
+      (workspace) => workspace.location !== '.'
+    );
 
-    for (const workspace of workspaces) {
-      if (workspace.location === '.') {
-        continue; // skip root directory
-      }
-      const cwd = join(CODE_DIRECTORY, workspace.location);
-      console.log('');
-      console.log('Checking ' + workspace.name + ' at ' + cwd);
+    workspaces.sort((a, b) => {
+      const rank = (name: string) => {
+        const index = HEAVY_WORKSPACES.indexOf(name);
+        return index === -1 ? HEAVY_WORKSPACES.length : index;
+      };
+      return rank(a.name) - rank(b.name);
+    });
 
-      let command = '';
-      if (workspace.name === '@storybook/vue3') {
-        command = `npx vue-tsc --noEmit --project ${join(cwd, 'tsconfig.json')}`;
-      } else if (workspace.name === '@storybook/svelte') {
-        command = `npx svelte-check`;
-      } else {
-        const script = join(ROOT_DIRECTORY, 'scripts', 'check', 'check-package.ts');
-        command = `yarn exec jiti ${script} --cwd ${cwd}`;
-        // command = `npx tsc --noEmit --project ${join(cwd, 'tsconfig.json')}`;
-      }
+    // Halved locally for the same multi-threading reason as CI_CONCURRENCY.
+    const limit = pLimit(
+      process.env.CI ? CI_CONCURRENCY : Math.max(2, Math.ceil(maxConcurrentTasks / 2))
+    );
 
-      const sub = execaCommand(`${command}`, {
-        cwd,
-        env: {
-          NODE_ENV: 'production',
-        },
-      });
+    await Promise.all(
+      workspaces.map((workspace) =>
+        limit(async () => {
+          const cwd = join(CODE_DIRECTORY, workspace.location);
+          const command = getCheckCommand(workspace.name, cwd);
 
-      sub.stdout?.on('data', (data) => {
-        process.stdout.write(data);
-      });
-      sub.stderr?.on('data', (data) => {
-        process.stderr.write(data);
-      });
-
-      await sub.catch(() => {
-        failed.push(workspace.name);
-      });
-    }
+          try {
+            await execaCommand(command, {
+              cwd,
+              env: { NODE_ENV: 'production' },
+              all: true,
+            });
+            console.log(`✅ ${workspace.name}`);
+          } catch (error) {
+            failed.push(workspace.name);
+            console.log(`❌ ${workspace.name}`);
+            // Output is buffered per package so parallel runs stay readable.
+            const output = (error as { all?: string }).all;
+            console.log(output || String(error));
+          }
+        })
+      )
+    );
 
     if (failed.length > 0) {
       throw new Error(`Failed to check ${failed.join(', ')}`);

@@ -1,3 +1,20 @@
+## 10.5.2
+
+- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
+- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
+- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
+- TanStack: Fix createServerFn validator mock - [#35185](https://github.com/storybookjs/storybook/pull/35185), thanks @sjh9714!
+- TanStack: Support pathless layout routes (id-only) in story routing - [#35465](https://github.com/storybookjs/storybook/pull/35465), thanks @unpunnyfuns!
+- Tanstack-react: Add missing Hydrate export - [#35111](https://github.com/storybookjs/storybook/pull/35111), thanks @arun-357!
+- Tanstack-react: Keep JSX-only component references during dead-code elimination - [#35206](https://github.com/storybookjs/storybook/pull/35206), thanks @yatishgoel!
+- Vitest: Fix coverage toggle crash on Vite 6 by clearing closed Vitest instance on restart - [#35461](https://github.com/storybookjs/storybook/pull/35461), thanks @yannbf!
+
+## 10.5.1
+
+- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
+- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
+- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
+
 ## 10.5.0
 
 > _Foundational changes for new AI workflows_
@@ -12,6 +29,7 @@ Storybook 10.5 contains hundreds of fixes and improvements:
 
 <details>
 <summary>List of all updates</summary>
+
 - A11y: Fix MDX heading anchors not keyboard accessible - [#34368](https://github.com/storybookjs/storybook/pull/34368), thanks @TheSeydiCharyyev!
 - A11y: Handle lang attribute throughout preview - [#35321](https://github.com/storybookjs/storybook/pull/35321), thanks @Sidnioulz!
 - A11y: Surface required args and keyboard-reachable Setup controls in ArgsTable - [#35306](https://github.com/storybookjs/storybook/pull/35306), thanks @Sidnioulz!
@@ -173,6 +191,7 @@ Storybook 10.5 contains hundreds of fixes and improvements:
 - Vue: Fix Unicode Default Values In Docs - [#34909](https://github.com/storybookjs/storybook/pull/34909), thanks @Arunsiva003!
 - Vue: Use AST to inject __docgenInfo correctly - [#35201](https://github.com/storybookjs/storybook/pull/35201), thanks @Sidnioulz!
 - Webpack: Gate lazy-compilation import pipeline on webpack version - [#34931](https://github.com/storybookjs/storybook/pull/34931), thanks @copilot-swe-agent!
+
 </details>
 
 ## 10.4.6

@@ -195,7 +195,54 @@ export default config;
 
 ### TypeScript paths
 
-Storybook reads your `tsconfig.json`'s `baseUrl` and `paths` settings and maps them into Vite's resolver, so TypeScript path aliases work without additional configuration.
+Unlike the Webpack-based `@storybook/angular`, this framework does not automatically map your `tsconfig.json` `paths` aliases into Vite's module resolver. Vite resolves modules on disk and does not read the `paths` compiler option, so imports such as `@app/shared` will fail unless you register them yourself.
+
+The simplest fix is the [`vite-tsconfig-paths`](https://github.com/aleclarson/vite-tsconfig-paths) plugin, which reads `baseUrl` and `paths` from your `tsconfig.json` and adds the matching aliases:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    const { default: tsconfigPaths } = await import('vite-tsconfig-paths');
+    return mergeConfig(config, {
+      plugins: [tsconfigPaths()],
+    });
+  },
+};
+
+export default config;
+```
+
+Install it as a dev dependency first: `npm install --save-dev vite-tsconfig-paths`. If you prefer not to add a plugin, you can instead declare the aliases explicitly under [`resolve.alias`](https://vite.dev/config/shared-options.html#resolve-alias) in the same `viteFinal` hook.
+
+### SCSS include paths
+
+Like `paths`, SCSS search paths from your application's `build` target in `angular.json` are not inherited. Configure them on the Storybook builder target instead, using `stylePreprocessorOptions`. Both the Angular-style `includePaths` and the dart-sass/Vite spelling `loadPaths` are accepted, and paths are resolved relative to the workspace root:
+
+```jsonc title="angular.json"
+"storybook": {
+  "builder": "@storybook/angular-vite:start-storybook",
+  "options": {
+    "stylePreprocessorOptions": {
+      "includePaths": ["src/styles"],
+    },
+  },
+},
+```
+
+When running through the Storybook CLI (`storybook dev` / `storybook build`) rather than the Angular builders, there is no `angular.json` builder context to read from. In that case set the search paths directly in `.storybook/main.ts`:
+
+```ts title=".storybook/main.ts"
+async viteFinal(config) {
+  const { mergeConfig } = await import('vite');
+  return mergeConfig(config, {
+    css: { preprocessorOptions: { scss: { loadPaths: ['src/styles'] } } },
+  });
+},
+```
 
 ## Migration from `@storybook/angular`
 

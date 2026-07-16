@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "10.6.0-alpha.0",
+  "version": "10.6.0-alpha.1",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -84,7 +84,7 @@
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "zone.js": "^0.16.2"
   },
   "peerDependencies": {

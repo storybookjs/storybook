@@ -1,9 +1,5 @@
 import { getChannel } from 'storybook/internal/channels';
-import {
-  MANAGER_INERT_ATTRIBUTE_CHANGED,
-  NAVIGATE_URL,
-  TELEMETRY_ERROR,
-} from 'storybook/internal/core-events';
+import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
@@ -74,10 +70,6 @@ export function setup() {
 
     channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
       setInert(freeze || isInert);
-    });
-
-    channel.on(NAVIGATE_URL, (hash: string) => {
-      document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' });
     });
   });
 

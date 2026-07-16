@@ -39,7 +39,7 @@ export function instructions(projectInfo: ProjectInfo): string {
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
   const mswInstall = packageManager.getInstallCommand(
-    ['msw', 'msw-storybook-addon', 'mockdate'],
+    ['msw', 'mockdate'],
     true
   );
 

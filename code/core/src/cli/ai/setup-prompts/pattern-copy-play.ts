@@ -143,19 +143,13 @@ function getMswPreviewExample(projectInfo: ProjectInfo): string {
       \`\`\`tsx
       // ${configDir}/preview.tsx
       import { definePreview } from 'storybook/preview';
-      import { initialize, mswLoader } from 'msw-storybook-addon';
+      import addonMsw from 'msw-storybook-addon';
       import { mswHandlers } from './msw-handlers';
 
-      initialize({
-        onUnhandledRequest: 'bypass',
-      });
-
       export default definePreview({
-        loaders: [mswLoader],
-        parameters: {
-          msw: {
-            handlers: mswHandlers,
-          },
+        addons: [addonMsw()],
+        async beforeEach({ msw }) {
+          msw.use(...mswHandlers);
         },
       });
       \`\`\`
@@ -166,19 +160,13 @@ function getMswPreviewExample(projectInfo: ProjectInfo): string {
     \`\`\`tsx
     // ${configDir}/preview.tsx
     import type { Preview } from '${typeImport}';
-    import { initialize, mswLoader } from 'msw-storybook-addon';
+    import { mswLoader } from 'msw-storybook-addon/csf3';
     import { mswHandlers } from './msw-handlers';
 
-    initialize({
-      onUnhandledRequest: 'bypass',
-    });
-
     const preview: Preview = {
-      loaders: [mswLoader],
-      parameters: {
-        msw: {
-          handlers: mswHandlers,
-        },
+      loaders: [mswLoader()],
+      async beforeEach({ msw }) {
+        msw.use(...mswHandlers);
       },
     };
 
@@ -453,6 +441,11 @@ export function instructions(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
   const typeImport = getTypeImportSource(projectInfo);
   const mswInit = getMswInitCommand(projectInfo.packageManager);
+  const mswAddonAdd = projectInfo.packageManager.getPackageCommand([
+    'storybook',
+    'add',
+    'msw-storybook-addon@3',
+  ]);
   const vitestRunFile = getVitestStorybookRunCommand(
     projectInfo.packageManager,
     '<path-to-story-file>'
@@ -609,7 +602,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     All network/data queries should be handled by the default Storybook environment.
 
     - Always use \`msw-storybook-addon\` for query mocking.
-    - If you introduce MSW, run \`${mswInit}\` to create the worker file.
+    - If you introduce MSW, register the addon with \`${mswAddonAdd}\` (which also adds it to the main config) and run \`${mswInit}\` to create the worker file.
     - Make sure Storybook serves \`./public\` as a static dir so \`mockServiceWorker.js\` is available.
     - Do not mock \`fetch\` directly.
     - Network/data queries should return deterministic mock data.
@@ -633,23 +626,21 @@ export function instructions(projectInfo: ProjectInfo): string {
     // ${configDir}/msw-handlers.ts
     import { http, HttpResponse } from "msw";
 
-    export const mswHandlers = {
-      products: [
-        http.get("https://api.example.com/products", () =>
-          HttpResponse.json({
-            items: [
-              {
-                id: "product-1",
-                name: "Example product",
-                description: "Mock product description",
-                imageUrl: "https://images.example.com/product.jpg",
-                price: 42,
-              },
-            ],
-          }),
-        ),
-      ],
-    };
+    export const mswHandlers = [
+      http.get("https://api.example.com/products", () =>
+        HttpResponse.json({
+          items: [
+            {
+              id: "product-1",
+              name: "Example product",
+              description: "Mock product description",
+              imageUrl: "https://images.example.com/product.jpg",
+              price: 42,
+            },
+          ],
+        }),
+      ),
+    ];
     \`\`\`
 
     ${getMswPreviewExample(projectInfo)}

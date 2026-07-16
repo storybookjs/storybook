@@ -37,12 +37,13 @@ test('addon parameters are inferred', () => {
     },
   });
   const MyStory2 = meta.story({
-    // @ts-expect-error can not assign numbers to strings
     parameters: {
       foo: {
+        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
       bar: {
+        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
     },

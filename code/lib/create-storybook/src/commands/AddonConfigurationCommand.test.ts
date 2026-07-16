@@ -101,6 +101,7 @@ describe('AddonConfigurationCommand', () => {
         configDir: '.storybook',
         yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -127,6 +128,7 @@ describe('AddonConfigurationCommand', () => {
         configDir: '.storybook',
         yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -149,6 +151,7 @@ describe('AddonConfigurationCommand', () => {
         configDir: '.storybook',
         yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -156,7 +159,7 @@ describe('AddonConfigurationCommand', () => {
       expect(mockTaskLog.success).toHaveBeenCalledWith('Addons configured successfully');
     });
 
-    it('should configure multiple addons', async () => {
+    it('should skip the a11y postinstall when vitest was configured in the same run', async () => {
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
 
       const result = await command.execute({
@@ -166,7 +169,9 @@ describe('AddonConfigurationCommand', () => {
 
       expect(result).toEqual({ status: 'success' });
       expect(addonVitestPostinstall).toHaveBeenCalled();
-      expect(addonA11yPostinstall).toHaveBeenCalled();
+      // vitest's postinstall already runs the addon-a11y-addon-test
+      // automigration when both addons are configured together
+      expect(addonA11yPostinstall).not.toHaveBeenCalled();
       expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-vitest...');
       expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-a11y...');
     });

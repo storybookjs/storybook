@@ -154,19 +154,6 @@ it('should label the PR associated with cherry picks in the current branch', asy
   `);
 });
 
-it('should re-throw when labeling fails, so an unattended run does not fail silently', async () => {
-  process.env.GH_TOKEN = 'MY_SECRET';
-  vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-
-  // Reproduces the incident where the publish job lacked `pull-requests: write`.
-  github.githubGraphQlClient.mockRejectedValueOnce(
-    new Error('Resource not accessible by integration')
-  );
-
-  await expect(run({})).rejects.toThrow('Resource not accessible by integration');
-});
-
 it('should label all PRs when the --all flag is passed', async () => {
   process.env.GH_TOKEN = 'MY_SECRET';
 

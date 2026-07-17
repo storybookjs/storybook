@@ -73,7 +73,12 @@ function cloneChild(
   // two routes with the same generated id (e.g. `__root__/about`).
   const { id: originalId, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
-  const merged = { ...rest, ...override };
+  // Pull any override-supplied `id` out of the merged options: it must never
+  // reach `createRoute` next to a `path` (TanStack rejects id+path together).
+  // It is re-applied via `.update()` below and wins over the route's own id.
+  const { id: overrideId, ...overrideRest } = override as { id?: string } & Record<string, unknown>;
+  const merged = { ...rest, ...overrideRest };
+  const explicitId = 'id' in override ? overrideId : originalId;
 
   // Use `createRoute` (not `createFileRoute`) for nested clones: `createFileRoute`
   // registers the route in TanStack's global file-route registry by path, so
@@ -85,7 +90,7 @@ function cloneChild(
   // identity from; its explicit id IS its identity, so preserve it. The falsy
   // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...(!merged.path && originalId != null ? { id: originalId } : {}),
+    ...(!merged.path && explicitId != null ? { id: explicitId } : {}),
     ...merged,
     getParentRoute: () => parent as any,
   } as any);
@@ -96,8 +101,8 @@ function cloneChild(
   // same mechanism routeTree.gen uses. Restoring the id keeps composed ids
   // identical to the source tree, which strict hooks (`Route.useLoaderData()`)
   // rely on to find their match.
-  if (merged.path && originalId != null && !('id' in override)) {
-    (cloned as any).update({ id: originalId });
+  if (merged.path && explicitId != null) {
+    (cloned as any).update({ id: explicitId });
   }
 
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);

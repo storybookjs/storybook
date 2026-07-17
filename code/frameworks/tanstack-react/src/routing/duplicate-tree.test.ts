@@ -138,6 +138,27 @@ describe('duplicateRouteTree with pathless layout routes', () => {
     expect(ids).toContain('/posts/_archive');
     expect(ids).toContain('/posts/_archive/archived');
   });
+
+  it('applies an override that sets its own id on a pathful route', async () => {
+    // An override may re-key a route by supplying `id`. That id must not reach
+    // `createRoute` alongside the route's `path` (TanStack rejects id+path);
+    // it is applied via `.update()` instead, and wins over the original id.
+    const root = createRootRoute();
+    const archive = (createRoute({ path: '/posts', getParentRoute: () => root }) as any).update({
+      id: '/posts/_archive',
+      path: '/posts',
+      getParentRoute: () => root,
+    });
+    root.addChildren([archive]);
+
+    const { root: cloned } = duplicateRouteTree(root as any, {
+      overrides: { '/posts/_archive': { id: '/custom' } } as any,
+    });
+    const ids = await matchedRouteIds(cloned, '/posts');
+
+    expect(ids).toContain('/custom');
+    expect(ids).not.toContain('/posts/_archive');
+  });
 });
 
 describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {

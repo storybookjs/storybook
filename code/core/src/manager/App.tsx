@@ -7,6 +7,9 @@ import type { Addon_PageType } from 'storybook/internal/types';
 import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
+import { global } from '@storybook/global';
+
+import { isReviewFeatureEnabled } from '../shared/review/features.ts';
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
@@ -80,7 +83,9 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
           hasTab={hasTab}
           managerLayoutState={managerLayoutState}
           setManagerLayoutState={setManagerLayoutState}
-          slotOverlay={<ReviewPersistentLayer />}
+          slotOverlay={
+            isReviewFeatureEnabled(global.FEATURES) ? <ReviewPersistentLayer /> : undefined
+          }
           slotMain={<MainPreview />}
           slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
           slotPanel={<Panel />}

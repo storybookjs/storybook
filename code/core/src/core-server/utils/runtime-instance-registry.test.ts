@@ -208,6 +208,27 @@ describe('createRuntimeInstanceRecord', () => {
     });
   });
 
+  it('stores the configDir resolved against the cwd when provided', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(record.configDir).toBe(resolve('/repo/packages/ui/.storybook'));
+  });
+
+  it('keeps an absolute configDir as-is', () => {
+    const configDir = join(tmpdir(), 'repo', 'packages', 'ui', '.storybook');
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere', configDir });
+
+    expect(record.configDir).toBe(resolve(configDir));
+  });
+
+  it('omits configDir when not provided', () => {
+    expect(createRuntimeInstanceRecord(baseOptions)).not.toHaveProperty('configDir');
+  });
+
   it('marks MCP as not-installed by default', () => {
     const record = createRuntimeInstanceRecord(baseOptions);
 

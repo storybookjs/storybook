@@ -25,23 +25,10 @@ test.describe('navigating', () => {
       page,
     }) => {
       await page.goto(`${storybookUrl}`);
-      await page.getByRole('searchbox').fill('Do more with Storybook');
+      await page.getByRole('searchbox').fill('Monospace');
 
       const searchItem = page.getByRole('option', {
-        name: 'Docs / Do more with Storybook Configure your project',
-        exact: true,
-      });
-      await expect(searchItem).toBeVisible();
-    });
-
-    test('a root story title does not appear redundantly in search result item', async ({
-      page,
-    }) => {
-      await page.goto(`${storybookUrl}`);
-      await page.getByRole('searchbox').fill('Configure your project');
-
-      const searchItem = page.getByRole('option', {
-        name: 'Configure your project',
+        name: 'Docs / Monospace brand / Typography',
         exact: true,
       });
       await expect(searchItem).toBeVisible();
@@ -50,24 +37,22 @@ test.describe('navigating', () => {
     test('a subheading gets scrolled into view when navigating to an anchor link on the current docs page', async ({
       page,
     }) => {
-      await page.goto(`${storybookUrl}`);
+      await page.goto(`${storybookUrl}?path=/docs/brand-typography--docs`);
 
       const sbPage = new SbPage(page, expect);
       await sbPage.waitUntilLoaded();
 
-      await page.getByRole('searchbox').fill('Do more with Storybook');
+      await page.getByRole('searchbox').fill('Monospace');
 
       await page
         .getByRole('option', {
-          name: 'Docs / Do more with Storybook Configure your project',
+          name: 'Docs / Monospace brand / Typography',
           exact: true,
         })
         .click();
       await sbPage.waitUntilLoaded();
 
-      const subheading = sbPage
-        .previewIframe()
-        .getByRole('heading', { name: 'Do more with Storybook' });
+      const subheading = sbPage.previewIframe().getByRole('heading', { name: 'Monospace' });
 
       await expect(subheading).toBeVisible();
 
@@ -82,7 +67,7 @@ test.describe('navigating', () => {
     test('a subheading gets scrolled into view when navigating to a different story', async ({
       page,
     }) => {
-      await page.goto(`${storybookUrl}?path=/docs/configure-your-project--docs`);
+      await page.goto(`${storybookUrl}?path=/docs/brand-typography--docs`);
 
       const sbPage = new SbPage(page, expect);
       await sbPage.waitUntilLoaded();

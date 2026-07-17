@@ -242,6 +242,9 @@ export const Search = React.memo<SearchProps>(function Search({
       const pendingDocsReplacements = new Set<string>();
 
       const distinctResults = allMatches.filter(({ item }) => {
+        // This always gets called before the corresponding docs item
+        // because of the sorting performed by the search index. So it's
+        // safe to use `pendingDocsReplacements` in a single-pass lookup.
         if (item.type === 'component' && docsParentIds.has(item.id)) {
           if (!resultIds.has(item.id)) {
             resultIds.add(item.id);
@@ -249,6 +252,7 @@ export const Search = React.memo<SearchProps>(function Search({
           }
           return false;
         }
+
         // When we reach this, we know we found an unattached MDX page with
         // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
         // and present the docs item to end users.

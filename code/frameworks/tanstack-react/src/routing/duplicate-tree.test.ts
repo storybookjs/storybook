@@ -197,6 +197,26 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
     expect((router.routesById['/lazy'] as any).options.component).toBe(marker);
   });
 
+  it('carries a lazy binding on the root route onto the clone', async () => {
+    // A lazily-loaded root layout (`__root__.lazy.tsx`) stores its loader as
+    // `lazyFn` too; the root is rebuilt separately from `cloneChild`, so it
+    // needs the same carry-over or the root component is dropped on the clone.
+    const marker = () => null;
+    const root = createRootRoute();
+    (root as any).lazy(() => Promise.resolve(createLazyRoute('__root__')({ component: marker })));
+    const child = createRoute({ path: '/child', getParentRoute: () => root });
+    root.addChildren([child]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const router = createRouter({
+      routeTree: cloned as any,
+      history: createMemoryHistory({ initialEntries: ['/child'] }),
+    });
+    await router.load();
+
+    expect((router.routesById['__root__'] as any).options.component).toBe(marker);
+  });
+
   it('applies routeOverrides to cloned pathless routes by original id', async () => {
     const original = fn();
     const override = fn();

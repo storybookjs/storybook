@@ -152,6 +152,13 @@ export function duplicateRouteTree(
     ...restRoot,
     ...rootOverride,
   } as any);
+  // A lazily-loaded root (`__root__.lazy.tsx`) carries its loader as `lazyFn`,
+  // like any other route; the root is rebuilt here rather than in `cloneChild`,
+  // so carry the binding over the same way.
+  const rootLazyFn = (rootRoute as any).lazyFn;
+  if (rootLazyFn) {
+    (newRoot as any).lazy(rootLazyFn);
+  }
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
   const children = (rootRoute as any).children as AnyRoute[] | undefined;

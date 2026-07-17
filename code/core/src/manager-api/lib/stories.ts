@@ -391,6 +391,35 @@ export const transformStoryIndexToStoriesHash = (
     return acc;
   }, {} as API_IndexHash);
 
+  // Hoist single-docs-child component nodes by removing the synthetic component wrapper
+  storiesHash = Object.values(storiesHash).reduce((acc, item) => {
+    if (
+      item.type === 'component' &&
+      item.children?.length === 1 &&
+      acc[item.children[0]]?.type === 'docs'
+    ) {
+      const docsChild = acc[item.children[0]] as API_DocsEntry;
+
+      if (item.parent && acc[item.parent] && 'children' in acc[item.parent]) {
+        const parentNode = acc[item.parent] as API_GroupEntry | API_RootEntry;
+        const indexInParent = parentNode.children.indexOf(item.id);
+        if (indexInParent !== -1) {
+          parentNode.children[indexInParent] = docsChild.id;
+        }
+      }
+
+      acc[docsChild.id] = {
+        ...docsChild,
+        name: item.name,
+        parent: item.parent,
+        depth: item.depth,
+      };
+
+      delete acc[item.id];
+    }
+    return acc;
+  }, storiesHash);
+
   return storiesHash;
 };
 
@@ -421,6 +450,11 @@ export const getComponentLookupList = memoize(1)((hash: API_IndexHash) => {
     const value = i[1];
     if (value.type === 'component') {
       acc.push([...value.children]);
+    } else if (
+      value.type === 'docs' &&
+      (!value.parent || hash[value.parent]?.type !== 'component')
+    ) {
+      acc.push([value.id]);
     }
     return acc;
   }, [] as StoryId[][]);

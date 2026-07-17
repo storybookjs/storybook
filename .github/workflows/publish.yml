@@ -127,12 +127,26 @@ jobs:
         if: github.ref_name == 'latest-release'
         run: git fetch --tags origin
 
-      # when this is a patch release from main, label any patch PRs included in the release
+      # When this is a patch release from main, label any patch PRs included in the release as
+      # "patch:done". This is bookkeeping for the *next* release's cherry-pick step, not part of
+      # publishing itself, so it runs continue-on-error to avoid aborting an already-published
+      # release. It must not fail silently though (a swallowed permission error previously caused
+      # released PRs to be re-picked into later patch changelogs), so failure is alerted below.
       - name: Label patch PRs as picked
+        id: label-patches
         if: github.ref_name == 'latest-release'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn release:label-patches
+
+      - name: Report patch labeling failure to Discord
+        if: github.ref_name == 'latest-release' && steps.label-patches.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but labeling patch PRs as "patch:done" failed. They must be labeled manually or they will reappear in the next patch changelog. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
       - name: Create GitHub Release
         if: steps.publish-needed.outputs.published == 'false'

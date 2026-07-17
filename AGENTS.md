@@ -89,7 +89,8 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Open services and CLI tools
 
-- Core may expose explicitly selected Open Service Architecture (OSA) definitions as `storybook tools <service> <operation>` commands.
+- `generateCLI` can expose explicitly selected Open Service Architecture (OSA) definitions as `storybook tools <service> <operation>` commands; it does not discover or register services automatically.
+- Only capability-level services intended as public CLI APIs should be selected, not implementation services such as `core/docgen` or `core/story-docs`.
 - Generated CLI operations use one namespace, so a service cannot register a query and command with the same name.
 - MCP tools remain hand-authored in `addon-mcp`; they are not generated from OSA definitions.
 

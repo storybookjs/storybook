@@ -22,6 +22,7 @@ Type:
   developmentModeForBuild?: boolean;
   experimentalCodeExamples?: boolean;
   experimentalDocgenServer?: boolean;
+  experimentalReview?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -215,6 +216,20 @@ Snippets are static: they won't update if you change values in the Controls tabl
 This feature is currently only supported for React projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC.
 
 <CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
+## `experimentalReview`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
+
+Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
+
+<CodeSnippets path="main-config-features-experimental-review.md" />
 
 ## `experimentalTestSyntax`
 

@@ -35,9 +35,9 @@ import {
 import { clearReviewNotificationsOnDismiss } from '../review-notification.ts';
 import type { ReviewState } from '../review-state.ts';
 import {
+  applyReviewStatuses,
   clearReviewStatuses,
   collectReviewStoryIds,
-  syncReviewStatuses,
 } from '../review-status.ts';
 import {
   reviewStore,
@@ -66,11 +66,10 @@ const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): bo
  * state; this component is its only React-side writer.
  */
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const previousReviewStoryIdsRef = useRef<Set<string>>(new Set());
-
   const api = useStorybookApi();
   const navigate = useNavigate();
-  const { index, path, viewMode, customQueryParams, location } = useStorybookState();
+  const { index, internal_index, path, viewMode, customQueryParams, location } =
+    useStorybookState();
   const { state, pendingReview, isStale, isInReviewMode } = useReview();
   // Last review page reported to telemetry; dedupes pageviews across re-renders.
   const lastPageviewKeyRef = useRef<string | null>(null);
@@ -79,6 +78,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Current sidebar filters, snapshotted by enterReviewMode and restored on exit.
   const filtersRef = useReviewFiltersRef();
+
+  const syncActiveReviewStatuses = useCallback((review: ReviewState) => {
+    applyReviewStatuses(reviewStatusStore, collectReviewStoryIds(review));
+  }, []);
 
   const emit = useChannel({
     [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
@@ -91,6 +94,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       // mounts; ignore identical reviews so summary UI state is not reset.
       if (isSameReviewPayload(current, next)) {
         reviewStore.setStale(!!next.stale);
+        syncActiveReviewStatuses(next);
         return;
       }
       // A fresh payload re-arms the one-time auto-enter.
@@ -102,7 +106,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     },
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
-      previousReviewStoryIdsRef.current = new Set();
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
       const { state: displayed, pendingReview: deferred } = reviewStore.getState();
       clearReviewNotificationsOnDismiss(api, displayed, deferred);
@@ -116,18 +119,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [emit]);
 
   // Tag every story in the active review so the sidebar shows reviewing status
-  // and the Quick review widget can count them. Filtering is owned by review mode.
+  // and the filter menu can count them. Filtering is owned by review mode.
   useEffect(() => {
     if (!state) {
       return;
     }
-    const storyIds = collectReviewStoryIds(state);
-    previousReviewStoryIdsRef.current = syncReviewStatuses(
-      reviewStatusStore,
-      storyIds,
-      previousReviewStoryIdsRef.current
-    );
-  }, [state]);
+    syncActiveReviewStatuses(state);
+  }, [state, syncActiveReviewStatuses]);
 
   const flattenedEntries = useMemo(() => (state ? buildFlattenedNavEntries(state) : []), [state]);
 
@@ -138,8 +136,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   const storyInfo = useMemo(
-    () => (state ? buildStoryInfo(state, index, api, allStatuses, newlyAddedStoryIds) : {}),
-    [allStatuses, api, index, newlyAddedStoryIds, state]
+    () =>
+      state
+        ? buildStoryInfo(state, index, internal_index, api, allStatuses, newlyAddedStoryIds)
+        : {},
+    [allStatuses, api, index, internal_index, newlyAddedStoryIds, state]
   );
 
   const collectionIndex = parseCollectionIndex(collectionParam);

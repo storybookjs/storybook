@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { expect, fn, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../../.storybook/preview.tsx';
 import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
@@ -457,7 +457,10 @@ const meta = preview.meta({
   parameters: {
     layout: 'fullscreen',
     chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+      // Ignore the entire thumbnail cell, not just the iframe: the loading overlay and the
+      // self-measuring iframe render nondeterministically (especially in Edge), and pixels
+      // outside the iframe but inside the cell kept flagging spurious changes on every build.
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
   args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: () => {} },
@@ -480,6 +483,14 @@ export const Minimal = meta.story({
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
     await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Exit review' })).toBeInTheDocument();
+
+    // The "Summary:" label is a real level-2 heading, not just bold text.
+    await expect(canvas.getByRole('heading', { level: 2, name: /Summary/ })).toBeInTheDocument();
+    // The collection title is a level-2 heading and names its region landmark.
+    await expect(canvas.getByRole('heading', { level: 2, name: 'Button' })).toBeInTheDocument();
+    await expect(canvas.getByRole('region', { name: 'Button' })).toBeInTheDocument();
+    // The story count exposes an accessible label describing what it counts.
+    await expect(canvas.getByLabelText('2 stories')).toBeInTheDocument();
   },
 });
 
@@ -503,6 +514,14 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+
+    // The "new stories" filter is a switch that flips its pressed state on click.
+    const filter = await canvas.findByRole('switch', { name: /new/i });
+    await expect(filter).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(filter);
+    await expect(filter).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(filter);
+    await expect(filter).toHaveAttribute('aria-checked', 'false');
   },
 });
 

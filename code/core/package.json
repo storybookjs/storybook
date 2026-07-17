@@ -344,6 +344,7 @@
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.1.0",
+    "github-slugger": "^2.0.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "hast-util-to-estree": "^3.0.0",

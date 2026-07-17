@@ -44,8 +44,9 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'anchors.title', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -183,29 +184,55 @@ export const Search = React.memo<SearchProps>(function Search({
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+    const list: SearchItem[] = [];
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(
-                  Object.values(storyStatuses)
-                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                    .map((status) => status.value)
-                )
-              : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
-            };
-          })
-        );
+    for (const [refId, { index, allStatuses }] of dataset.entries) {
+      if (!index) {
+        continue;
       }
-      return acc;
-    }, []);
+
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+      const datasetValues = Object.values(index);
+
+      for (const datasetValue of datasetValues) {
+        const storyStatuses = allStatuses?.[datasetValue.id];
+        const mostCriticalStatusValue = storyStatuses
+          ? getMostCriticalStatusValue(
+              Object.values(storyStatuses)
+                .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+                .map((status) => status.value)
+            )
+          : null;
+
+        list.push({
+          ...searchItem(datasetValue, dataset.hash[refId]),
+          status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
+        });
+
+        // Narrow down type to more specific API_DocsEntry with anchors
+        if (datasetValue.type !== 'docs') {
+          continue;
+        }
+
+        if (!globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          continue;
+        }
+
+        datasetValue.anchors?.forEach((anchor) => {
+          const searchItemRef = searchItem(datasetValue, dataset.hash[refId]);
+          const namePostfix = searchItemRef.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+
+          list.push({
+            ...searchItemRef,
+            // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
+            id: `${datasetValue.id}#${anchor.id}`,
+            name: `${datasetValue.name}${namePostfix}`,
+            status: mostCriticalStatusValue || groupStatus[datasetValue.id] || null,
+          });
+        });
+      }
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 
@@ -253,9 +280,15 @@ export const Search = React.memo<SearchProps>(function Search({
         return;
       }
       if (isSearchResult(selectedItem)) {
-        const { id, refId } = selectedItem.item;
-        // @ts-expect-error (non strict)
-        api?.selectStory(id, undefined, { ref: refId !== DEFAULT_REF_ID && refId });
+        const { id: rawId, refId } = selectedItem.item;
+        const [storyId, anchor] = rawId.split('#');
+
+        api?.selectStory(storyId, undefined, {
+          // @ts-expect-error (non strict)
+          ref: refId !== DEFAULT_REF_ID && refId,
+          scrollTo: anchor,
+        });
+
         // @ts-expect-error (non strict)
         inputRef.current.blur();
         showAllComponents(false);
@@ -353,16 +386,33 @@ export const Search = React.memo<SearchProps>(function Search({
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId }) => {
+          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];
               const item = story.type === 'story' ? data.index[story.parent] : story;
+              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
               // prevent duplicates
               // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === item.id)) {
+              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
+                const baseItem = searchItem(item, dataset.hash[refId]);
+                let resultItem = baseItem;
+                if (anchor && item.type === 'docs') {
+                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
+                  if (matchingAnchor) {
+                    const namePostfix =
+                      baseItem.path?.[0] === matchingAnchor.title
+                        ? ''
+                        : ` / ${matchingAnchor.title}`;
+                    resultItem = {
+                      ...baseItem,
+                      id: entryId,
+                      name: `${item.name}${namePostfix}`,
+                    };
+                  }
+                }
                 // @ts-expect-error (non strict)
-                acc.push({ item: searchItem(item, dataset.hash[refId]), matches: [], score: 0 });
+                acc.push({ item: resultItem, matches: [], score: 0 });
               }
             }
             return acc;

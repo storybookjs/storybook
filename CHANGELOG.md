@@ -1,3 +1,7 @@
+## 10.5.3
+
+- Vitest: Fix coverage toggle crash on Vite 6 by clearing closed Vitest instance on restart - [#35461](https://github.com/storybookjs/storybook/pull/35461), thanks @yannbf!
+
 ## 10.5.2
 
 - Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!

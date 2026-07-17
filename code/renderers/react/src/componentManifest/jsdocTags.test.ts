@@ -39,6 +39,43 @@ it('should extract @param tag with type', () => {
   `);
 });
 
+it('preserves line breaks in @example values with language-tagged code fences', () => {
+  const code = dedent`
+    Renders a button.
+
+    @example
+    \`\`\`tsx
+    <Button label="Click" />
+    \`\`\``;
+  const { tags } = extractJSDocInfo(code);
+
+  expect(tags.example).toEqual(['```tsx\n<Button label="Click" />\n```']);
+});
+
+it('preserves line breaks in @example values with untagged code fences', () => {
+  const code = dedent`
+    Renders a button.
+
+    @example
+    \`\`\`
+    <Button label="Click" />
+    \`\`\``;
+  const { tags } = extractJSDocInfo(code);
+
+  expect(tags.example).toEqual(['```\n<Button label="Click" />\n```']);
+});
+
+it('still collapses multi-line tag values without code fences onto a single line', () => {
+  const code = dedent`
+    Renders a button.
+
+    @deprecated Use the new Button
+    component instead.`;
+  const { tags } = extractJSDocInfo(code);
+
+  expect(tags.deprecated).toEqual(['Use the new Button component instead.']);
+});
+
 it('preserves blank lines and newlines in the description so Markdown survives', () => {
   const code = dedent`
     ## Example button component

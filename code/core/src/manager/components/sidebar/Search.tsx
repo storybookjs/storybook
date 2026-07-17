@@ -249,6 +249,9 @@ export const Search = React.memo<SearchProps>(function Search({
           }
           return false;
         }
+        // When we reach this, we know we found an unattached MDX page with
+        // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
+        // and present the docs item to end users.
         if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
           pendingDocsReplacements.delete(item.parent);
           resultIds.add(item.id);

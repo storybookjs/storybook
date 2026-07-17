@@ -78,6 +78,15 @@ export const Link = ({
     {
       ...linkProps,
       onClick: (e: React.MouseEvent) => {
+        // Run the story's own handler first and honor it: if it prevents
+        // default (the standard way to cancel a link), skip the navigation
+        // spy just as the real router would.
+        if (typeof props.onClick === 'function') {
+          (props.onClick as (event: React.MouseEvent) => void)(e);
+        }
+        if (e.defaultPrevented) {
+          return;
+        }
         e.preventDefault();
         onNavigate({ to, from: location.href });
       },

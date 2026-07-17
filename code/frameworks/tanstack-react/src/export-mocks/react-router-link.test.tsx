@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   RouterProvider,
   createMemoryHistory,
@@ -40,6 +40,16 @@ async function renderWithRouter(linkElement: React.ReactNode) {
 }
 
 describe('Link mock', () => {
+  beforeEach(() => {
+    onNavigate.mockClear();
+  });
+
+  afterEach(() => {
+    // globals are disabled in this repo, so testing-library's auto-cleanup
+    // never registers; unmount explicitly to keep each render isolated.
+    cleanup();
+  });
+
   it('interpolates path params into href and keeps params off the DOM', async () => {
     await renderWithRouter(
       <Link to="/users/$userId" params={{ userId: '42' }} data-testid="user-link">
@@ -74,5 +84,33 @@ describe('Link mock', () => {
 
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/users/$userId' }));
     expect(router.state.location.pathname).toBe('/');
+  });
+
+  it('runs a story-provided onClick handler before spying navigation', async () => {
+    const onClick = vi.fn();
+    await renderWithRouter(
+      <Link to="/users/$userId" params={{ userId: '42' }} onClick={onClick} data-testid="user-link">
+        Ada
+      </Link>
+    );
+
+    fireEvent.click(await screen.findByTestId('user-link'));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/users/$userId' }));
+  });
+
+  it('skips navigation when a story onClick prevents default', async () => {
+    const onClick = vi.fn((e: React.MouseEvent) => e.preventDefault());
+    await renderWithRouter(
+      <Link to="/users/$userId" params={{ userId: '42' }} onClick={onClick} data-testid="user-link">
+        Ada
+      </Link>
+    );
+
+    fireEvent.click(await screen.findByTestId('user-link'));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 });

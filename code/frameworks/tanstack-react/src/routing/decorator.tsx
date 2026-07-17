@@ -248,11 +248,19 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
+  // The other branches apply overrides through `duplicateRouteTree`; this
+  // branch builds the child directly, so merge the leaf's override in here too
+  // (otherwise a story-supplied `component`/`loader` override is dropped).
+  const leafOverrideKey = syntheticRouteId ?? (plainRoutePath as string | undefined);
+  const leafOverride = leafOverrideKey
+    ? ((routeOverrides as Record<string, any> | undefined)?.[leafOverrideKey] ?? {})
+    : {};
   const syntheticChild = createRoute({
     component: () => <Story />,
     id: syntheticRouteId,
     path: plainRoutePath as string | undefined,
     ...plainRouteRest,
+    ...leafOverride,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);

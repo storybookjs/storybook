@@ -120,4 +120,16 @@ describe('createStoryRouter with routeOverrides', () => {
     const clonedPage = (router as any).routesById['/page'];
     expect(clonedPage.options.component).toBe(Marker);
   });
+
+  it('respects a component override for a plain-options route', async () => {
+    const Marker = () => null;
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext({ path: '/foo' }, { routeOverrides: { '/foo': { component: Marker } } }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/foo'].options.component).toBe(Marker);
+  });
 });

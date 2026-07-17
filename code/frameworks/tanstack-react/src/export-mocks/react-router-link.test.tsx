@@ -30,7 +30,21 @@ async function renderWithRouter(linkElement: React.ReactNode) {
     getParentRoute: () => root,
     component: () => null,
   });
-  root.addChildren([index, user, files]);
+  const posts = createRoute({
+    path: '/posts',
+    getParentRoute: () => root,
+    validateSearch: (search: Record<string, unknown>) => ({
+      tag: (search.tag as string) ?? undefined,
+      page: (search.page as number) ?? undefined,
+    }),
+    component: () => null,
+  });
+  const about = createRoute({
+    path: '/about',
+    getParentRoute: () => root,
+    component: () => null,
+  });
+  root.addChildren([index, user, files, posts, about]);
   const router = createRouter({
     routeTree: root,
     history: createMemoryHistory({ initialEntries: ['/'] }),
@@ -60,6 +74,32 @@ describe('Link mock', () => {
     const link = await screen.findByTestId('user-link');
     expect(link.getAttribute('href')).toBe('/users/42');
     expect(link.hasAttribute('params')).toBe(false);
+  });
+
+  it('renders a static route href with no params', async () => {
+    await renderWithRouter(
+      <Link to="/about" data-testid="about-link">
+        About
+      </Link>
+    );
+
+    const link = await screen.findByTestId('about-link');
+    expect(link.getAttribute('href')).toBe('/about');
+  });
+
+  it('serializes search params into the href', async () => {
+    await renderWithRouter(
+      <Link to="/posts" search={{ tag: 'news', page: 2 }} data-testid="search-link">
+        News
+      </Link>
+    );
+
+    const link = await screen.findByTestId('search-link');
+    const href = link.getAttribute('href') ?? '';
+    expect(href.startsWith('/posts?')).toBe(true);
+    expect(href).toContain('tag=news');
+    expect(href).toContain('page=2');
+    expect(link.hasAttribute('search')).toBe(false);
   });
 
   it('interpolates splat params', async () => {
@@ -112,5 +152,36 @@ describe('Link mock', () => {
 
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it('passes the click event to the story onClick', async () => {
+    const onClick = vi.fn();
+    await renderWithRouter(
+      <Link to="/about" onClick={onClick} data-testid="about-link">
+        About
+      </Link>
+    );
+
+    fireEvent.click(await screen.findByTestId('about-link'));
+
+    const event = onClick.mock.calls[0]?.[0];
+    expect(event).toBeDefined();
+    expect(typeof event.preventDefault).toBe('function');
+  });
+
+  it('runs the story onClick on every click', async () => {
+    const onClick = vi.fn();
+    await renderWithRouter(
+      <Link to="/about" onClick={onClick} data-testid="about-link">
+        About
+      </Link>
+    );
+
+    const link = await screen.findByTestId('about-link');
+    fireEvent.click(link);
+    fireEvent.click(link);
+
+    expect(onClick).toHaveBeenCalledTimes(2);
+    expect(onNavigate).toHaveBeenCalledTimes(2);
   });
 });

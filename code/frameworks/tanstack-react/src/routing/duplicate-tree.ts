@@ -129,7 +129,17 @@ export function duplicateRouteTree(
   // one story is mounted in the same browser session (e.g. HMR, navigation).
   // We strip `id` from spread options so TanStack assigns the canonical
   // `__root__` id itself.
-  const { id: _rootId, getParentRoute: _rootGetParent, ...restRoot } = rootOptions;
+  // `shellComponent` is also stripped: it is TanStack Start's document shell
+  // (`html`/`head`/`body`), which React refuses to nest inside the story
+  // canvas and whose head content hoists into the page, hijacking the
+  // document title from inside a story. All other root behavior (component,
+  // notFoundComponent, errorComponent, beforeLoad context) is kept.
+  const {
+    id: _rootId,
+    getParentRoute: _rootGetParent,
+    shellComponent: _rootShell,
+    ...restRoot
+  } = rootOptions;
   const newRoot = createRootRouteWithContext()({
     ...restRoot,
     ...rootOverride,

@@ -4,13 +4,13 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
 import {
+  getInterpretedFile,
   getStorybookConfiguration,
   getStorybookInfo,
   isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
-import { getInterpretedFile } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
@@ -18,13 +18,13 @@ import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 import { getFrameworkInfo } from './get-framework-info.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
-import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
 import { getActualPackageVersion, getActualPackageVersions } from './package-json.ts';
@@ -291,6 +291,24 @@ async function getPackageJsonDetails() {
   };
 }
 
+// Guarded like SB_TELEMETRY_STATE: this module can load more than once in the same process, and a
+// second load must not reset a flag set through the first one.
+if (!('SB_TELEMETRY_VITE_PLUGIN' in globalThis)) {
+  globalThis.SB_TELEMETRY_VITE_PLUGIN = undefined;
+}
+
+/**
+ * Mark the current process as running Storybook through the Vite plugin, so the metadata of every
+ * telemetry event (dev, build, errors, ...) carries the origin.
+ */
+export function setTelemetryVitePlugin(value = true) {
+  globalThis.SB_TELEMETRY_VITE_PLUGIN = value;
+}
+
+// Applied outside the cache so the flag doesn't depend on when the metadata was computed.
+const withTelemetrySource = (metadata: StorybookMetadata): StorybookMetadata =>
+  globalThis.SB_TELEMETRY_VITE_PLUGIN ? { ...metadata, vitePlugin: true } : metadata;
+
 // Cache metadata keyed by a hash of the main config file to avoid caching
 // empty/incorrect values during init flows when the configDir is created/updated.
 const metadataCache = new Map<string, StorybookMetadata>();
@@ -329,7 +347,7 @@ export const getStorybookMetadata = async (_configDir?: string) => {
   const cached = metadataCache.get(cacheKey);
 
   if (cached) {
-    return cached;
+    return withTelemetrySource(cached);
   }
 
   const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
@@ -340,5 +358,5 @@ export const getStorybookMetadata = async (_configDir?: string) => {
     configDir,
   });
   metadataCache.set(cacheKey, computed);
-  return computed;
+  return withTelemetrySource(computed);
 };

@@ -1,7 +1,9 @@
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   experimental_loadStorybook,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
+import { setTelemetryVitePlugin } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
 import { getPort } from 'get-port-please';
@@ -32,7 +34,8 @@ import type { UserOptions } from './types.ts';
 const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
 
 export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
-  if (ViteAsyncLocalStorage.getStore()) {
+  // prevent nested activation and deactivate self when ran through CLI
+  if (ViteAsyncLocalStorage.getStore() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
     return Promise.resolve([]);
   }
   return Promise.resolve(main(options));
@@ -45,6 +48,8 @@ function normalizeBase(base: string): string {
 }
 
 function main(options?: UserOptions): PluginOption {
+  setTelemetryVitePlugin();
+
   const finalOptions = {
     base: normalizeBase(options?.base ?? '/__storybook'),
     configDir: resolve(options?.configDir ?? '.storybook'),

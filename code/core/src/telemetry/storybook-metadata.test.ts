@@ -3,7 +3,12 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookInfo, isCI } from 'storybook/internal/common';
+import {
+  getInterpretedFile,
+  getStorybookInfo,
+  isCI,
+  loadMainConfig,
+} from 'storybook/internal/common';
 import {
   type PackageJson,
   type StorybookConfig,
@@ -28,8 +33,10 @@ import {
 } from './package-json.ts';
 import {
   computeStorybookMetadata,
+  getStorybookMetadata,
   metaFrameworks,
   sanitizeAddonName,
+  setTelemetryVitePlugin,
 } from './storybook-metadata.ts';
 
 vi.mock(import('../cli/globalSettings.ts'), { spy: true });
@@ -645,6 +652,24 @@ describe('storybook-metadata', () => {
           },
         }
       `);
+    });
+  });
+
+  describe('setTelemetryVitePlugin', () => {
+    afterEach(() => {
+      setTelemetryVitePlugin(false);
+    });
+
+    it('marks metadata with vitePlugin: true, including previously cached metadata', async () => {
+      vi.mocked(loadMainConfig).mockResolvedValue(mainJsMock as any);
+      vi.mocked(getInterpretedFile).mockReturnValue(undefined);
+
+      expect((await getStorybookMetadata('.storybook')).vitePlugin).toBeUndefined();
+
+      setTelemetryVitePlugin();
+
+      // The second call is served from the metadata cache; the flag must still apply.
+      expect((await getStorybookMetadata('.storybook')).vitePlugin).toBe(true);
     });
   });
 });

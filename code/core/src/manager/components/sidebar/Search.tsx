@@ -223,7 +223,12 @@ export const Search = React.memo<SearchProps>(function Search({
       const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
         return item.type === 'component' || item.type === 'docs' || item.type === 'story';
       });
-
+      
+      // When the index is being created, we have a legacy piece of logic that
+      // wraps every docs page inside a component entry. This originates from
+      // Storybook 6 and has never been removed. Because of it, we must dedupe
+      // docs entries that are hidden under a fake component entry.
+      // See https://github.com/storybookjs/storybook/issues/35513 for details.
       const docsParentIds = new Set<string>();
       allMatches.forEach(({ item }) => {
         if (item.type === 'docs' && item.parent) {

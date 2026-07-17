@@ -153,4 +153,22 @@ describe('createStoryRouter leaf selection by path', () => {
     expect((router as any).routesById['/posts/$postId/'].options.component).toBeDefined();
     expect((router as any).routesById['/posts/$postId'].options.component).toBeUndefined();
   });
+
+  it('prefers an exact static route over a param route for the same concrete path', async () => {
+    const root = createRootRoute();
+    const me = createRoute({ path: '/users/me', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([me, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/me', params: { userId: 'me' } }),
+    });
+    await router.load();
+
+    // The static `/users/me` matches literally; `/users/$userId` matches only
+    // after interpolation. The literal (more specific) route must win.
+    expect((router as any).routesById['/users/me'].options.component).toBeDefined();
+    expect((router as any).routesById['/users/$userId'].options.component).toBeUndefined();
+  });
 });

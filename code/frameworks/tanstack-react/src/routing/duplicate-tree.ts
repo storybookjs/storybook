@@ -224,17 +224,27 @@ export function resolveStoryLeaf(
     }
 
     let bestMatch: AnyRoute | undefined;
+    let bestLiteral = false;
     let bestMatchLength = -1;
     for (const route of byId.values()) {
       if (route === (root as unknown as AnyRoute)) {
         continue;
       }
       const candidate = mountPathFor(route);
+      const isLiteral = candidate === path;
       const interpolated = params
         ? interpolatePath({ path: candidate, params }).interpolatedPath
         : candidate;
-      if ((candidate === path || interpolated === path) && candidate.length > bestMatchLength) {
+      if (!isLiteral && interpolated !== path) {
+        continue;
+      }
+      // A literal match (a static route) is more specific than one that only
+      // matched after interpolating params, so it wins regardless of length;
+      // within the same kind, the longer (more deeply nested) mount path wins.
+      const better = isLiteral === bestLiteral ? candidate.length > bestMatchLength : isLiteral;
+      if (better) {
         bestMatch = route;
+        bestLiteral = isLiteral;
         bestMatchLength = candidate.length;
       }
     }

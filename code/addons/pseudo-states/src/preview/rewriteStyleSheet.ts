@@ -1,7 +1,7 @@
 import {
-    EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
-    EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
-    PSEUDO_STATES,
+  EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
+  EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
+  PSEUDO_STATES,
 } from '../constants.ts';
 import { splitSelectors } from './splitSelectors.ts';
 

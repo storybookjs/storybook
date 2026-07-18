@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 import type { FC, PropsWithChildren } from 'react';
@@ -20,9 +20,13 @@ const Wrapper: FC<PropsWithChildren<{ context: MockDocsContext }>> = ({
 }) => <DocsContext.Provider value={context as DocsContextProps}>{children}</DocsContext.Provider>;
 
 describe('useGlobals', () => {
-  it('reads current globals and reacts to updates', () => {
-    let onGlobalsUpdated = (_changed: { globals: Globals }) => {};
-    const channel = {
+  let onGlobalsUpdated: (changed: { globals: Globals }) => void;
+  let channel: Pick<DocsContextProps['channel'], 'emit' | 'off' | 'on'>;
+  let context: MockDocsContext;
+
+  beforeEach(() => {
+    onGlobalsUpdated = () => {};
+    channel = {
       on: vi.fn((event: string, listener: typeof onGlobalsUpdated) => {
         if (event === GLOBALS_UPDATED) {
           onGlobalsUpdated = listener;
@@ -31,11 +35,13 @@ describe('useGlobals', () => {
       off: vi.fn(),
       emit: vi.fn(),
     };
-    const context = {
+    context = {
       channel,
       getGlobals: vi.fn(() => ({ theme: 'light' })),
     } as unknown as MockDocsContext;
+  });
 
+  it('reads current globals and reacts to updates', () => {
     const { result, unmount } = renderHook(() => useGlobals(), {
       wrapper: ({ children }) => <Wrapper context={context}>{children}</Wrapper>,
     });
@@ -52,16 +58,6 @@ describe('useGlobals', () => {
   });
 
   it('emits global updates', () => {
-    const channel = {
-      on: vi.fn(),
-      off: vi.fn(),
-      emit: vi.fn(),
-    };
-    const context = {
-      channel,
-      getGlobals: vi.fn(() => ({ theme: 'light' })),
-    } as unknown as MockDocsContext;
-
     const { result } = renderHook(() => useGlobals(), {
       wrapper: ({ children }) => <Wrapper context={context}>{children}</Wrapper>,
     });

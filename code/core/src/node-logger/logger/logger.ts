@@ -1,10 +1,10 @@
 import * as clack from '@clack/prompts';
 
-import { isClackEnabled } from '../prompts/prompt-config';
-import { getCurrentTaskLog } from '../prompts/prompt-provider-clack';
-import { wrapTextForClack } from '../wrap-utils';
-import { CLI_COLORS } from './colors';
-import { logTracker } from './log-tracker';
+import { isClackEnabled } from '../prompts/prompt-config.ts';
+import { getCurrentTaskLog } from '../prompts/prompt-provider-clack.ts';
+import { wrapTextForClack } from '../wrap-utils.ts';
+import { CLI_COLORS } from './colors.ts';
+import { logTracker } from './log-tracker.ts';
 
 const createLogFunction =
   <T extends (...args: any[]) => any>(
@@ -161,7 +161,7 @@ export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_
   LOG_FUNCTIONS.error()(...args)
 );
 
-type BoxOptions = {
+export type BoxOptions = {
   title?: string;
 } & clack.BoxOptions;
 

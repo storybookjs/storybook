@@ -9,13 +9,13 @@ import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module';
-import { getAnonymousProjectId, getProjectSince } from './anonymous-id';
-import { detectAgent } from './detect-agent';
-import { set as saveToCache } from './event-cache';
-import { fetch } from './fetch';
-import { getSessionId } from './session-id';
-import type { Options, TelemetryData } from './types';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
+import { detectAgent } from './detect-agent.ts';
+import { set as saveToCache } from './event-cache.ts';
+import { fetch } from './fetch.ts';
+import { getSessionId } from './session-id.ts';
+import type { Options, TelemetryData } from './types.ts';
 
 const retryingFetch = retry(fetch);
 
@@ -66,18 +66,28 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
   const sessionId = await getSessionId();
   const eventId = nanoid();
   const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
+  const signal = AbortSignal.timeout(30_000);
+  const maxRetries = 3;
 
   return retryingFetch(URL, {
     method: 'post',
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
-    retries: 3,
-    retryOn: [503, 504],
     retryDelay: (attempt: number) =>
       2 ** attempt *
       (typeof options?.retryDelay === 'number' && !Number.isNaN(options?.retryDelay)
         ? options.retryDelay
         : 1000),
+    retryOn: (attempt, error, response) => {
+      // If explicitly aborted (e.g. by the timeout above), or if we've exhausted our retries, give up.
+      if (signal.aborted || attempt >= maxRetries) {
+        return false;
+      }
+
+      // Retry transient network errors and server-overload responses.
+      return Boolean(error) || response?.status === 503 || response?.status === 504;
+    },
+    signal,
   });
 };
 

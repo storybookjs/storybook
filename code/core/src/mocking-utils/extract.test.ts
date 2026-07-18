@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parse } from '@babel/parser';
 import { readFileSync } from 'fs';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import * as extractModule from './extract';
-import * as resolveModule from './resolve';
+import * as extractModule from './extract.ts';
+import * as resolveModule from './resolve.ts';
 
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs');
@@ -35,6 +36,10 @@ vi.mock('./resolve', async () => {
     }),
   };
 });
+
+vi.mock('storybook/internal/telemetry', () => ({
+  telemetry: vi.fn(),
+}));
 
 const parser = (input: string) =>
   parse(input, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
@@ -99,6 +104,15 @@ describe('extractMockCalls', () => {
       previewConfigPath,
       findMockRedirect
     );
+    expect(telemetry).toHaveBeenCalledWith(
+      'mocking',
+      {
+        modulesMocked: 1,
+        modulesSpied: 1,
+        modulesManuallyMocked: 0,
+      },
+      { configDir }
+    );
   });
 
   it('handles no sb.mock calls in preview file', () => {
@@ -108,6 +122,7 @@ describe('extractMockCalls', () => {
     `;
     const result = extractMockCalls(previewContent);
     expect(result).toEqual([]);
+    expect(telemetry).not.toHaveBeenCalled();
   });
 
   it('handles missing spy option in preview file', () => {

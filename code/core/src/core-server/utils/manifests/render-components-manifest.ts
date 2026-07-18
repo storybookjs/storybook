@@ -6,17 +6,22 @@ import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
 // Type-only import to reuse the source-of-truth react-component-meta manifest shape
 // without creating a runtime dependency from core to the React renderer package.
-import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor';
-import type { ComponentManifest, ComponentsManifest } from '../../../types';
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentManifest,
+  ComponentsManifest,
+  ComponentSubcomponentManifest,
+} from '../../../types/index.ts';
 
 /** Minimal docs entry type for rendering in the manifest debugger */
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 
@@ -26,18 +31,37 @@ export interface DocsManifest {
   docs: Record<string, DocsManifestEntry>;
 }
 
-/** Extended component manifest that may include docs from the docs addon */
-interface ComponentManifestWithDocs extends ComponentManifest {
-  docs?: Record<string, DocsManifestEntry>;
+interface ComponentManifestLikeWithDocgen extends ComponentSubcomponentManifest {
   reactDocgen?: DocgenDoc;
   reactDocgenTypescript?: RdtComponentDoc;
   reactComponentMeta?: ReactComponentMetaDoc;
 }
 
+export type ComponentManifestStory = ComponentManifest['stories'][number];
+export type ComponentManifestStories =
+  | ComponentManifest['stories']
+  | Record<string, ComponentManifestStory>;
+
+/** Extended component manifest that may include docs from the docs addon */
+export interface ComponentManifestWithDocs
+  extends ComponentManifestLikeWithDocgen, Omit<ComponentManifest, 'stories' | 'subcomponents'> {
+  stories: ComponentManifestStories;
+  docs?: Record<string, DocsManifestEntry>;
+  subcomponents?: Record<string, ComponentManifestLikeWithDocgen>;
+}
+
+export interface ComponentsManifestForRenderer extends Omit<ComponentsManifest, 'components'> {
+  components: Record<string, ComponentManifestWithDocs>;
+}
+
+function storyEntries(stories?: ComponentManifestStories): ComponentManifestStory[] {
+  return Array.isArray(stories) ? stories : Object.values(stories ?? {});
+}
+
 // AI generated manifests/components.html page
 // Only HTML/CSS no JS
 export function renderComponentsManifest(
-  manifest: ComponentsManifest | undefined,
+  manifest: ComponentsManifestForRenderer | undefined,
   docsManifest?: DocsManifest
 ) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
@@ -375,6 +399,7 @@ export function renderComponentsManifest(
       .tg-info:checked + label.as-toggle,
       .tg-stories:checked + label.as-toggle,
       .tg-docs:checked + label.as-toggle,
+      .tg-subcomponents:checked + label.as-toggle,
       .tg-content:checked + label.as-toggle,
       .tg-props:checked + label.as-toggle {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
@@ -406,6 +431,11 @@ export function renderComponentsManifest(
       }
 
       .tg-docs:checked ~ .panels .panel-docs {
+          display: grid;
+          gap: 8px;
+      }
+
+      .tg-subcomponents:checked ~ .panels .panel-subcomponents {
           display: grid;
           gap: 8px;
       }
@@ -632,6 +662,10 @@ export function renderComponentsManifest(
           display: grid;
       }
 
+      .card > .tg-subcomponents:checked ~ .panels .panel-subcomponents {
+          display: grid;
+      }
+
       .card > .tg-content:checked ~ .panels .panel-content {
           display: grid;
       }
@@ -641,6 +675,7 @@ export function renderComponentsManifest(
       .card > .tg-info:checked ~ .panels,
       .card > .tg-stories:checked ~ .panels,
       .card > .tg-docs:checked ~ .panels,
+      .card > .tg-subcomponents:checked ~ .panels,
       .card > .tg-content:checked ~ .panels,
       .card > .tg-props:checked ~ .panels {
           margin: 10px 0;
@@ -652,6 +687,7 @@ export function renderComponentsManifest(
           .card:has(.tg-info:checked) label[for$='-info'],
           .card:has(.tg-stories:checked) label[for$='-stories'],
           .card:has(.tg-docs:checked) label[for$='-docs'],
+          .card:has(.tg-subcomponents:checked) label[for$='-subcomponents'],
           .card:has(.tg-content:checked) label[for$='-content'],
           .card:has(.tg-props:checked) label[for$='-props'] {
               box-shadow: 0 0 0 1px currentColor;
@@ -780,8 +816,9 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
     );
   }
 
-  const totalStories = c.stories?.length ?? 0;
-  const storyErrors = (c.stories ?? []).filter((e) => !!e?.error).length;
+  const allStories = storyEntries(c.stories);
+  const totalStories = allStories.length;
+  const storyErrors = allStories.filter((e) => !!e?.error).length;
   const storyOk = totalStories - storyErrors;
 
   // Analyze attached docs
@@ -850,7 +887,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -887,9 +924,10 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const allStories = c.stories ?? [];
+  const allStories = storyEntries(c.stories);
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
+  const subcomponentEntries = Object.entries(c.subcomponents ?? {});
 
   // Get attached docs entries
   const allDocs = c.docs ? Object.values(c.docs) : [];
@@ -919,12 +957,17 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
       : '';
 
+  const subcomponentsBadge =
+    subcomponentEntries.length > 0
+      ? `<label for="${slug}-subcomponents" class="badge ok as-toggle">${subcomponentEntries.length} ${plural(subcomponentEntries.length, 'subcomponent')}</label>`
+      : '';
+
   const {
     parsed: activeParsed,
     engine: cardEngine,
     filePath,
     exportName,
-  } = getDocgenRenderData(c, a.hasPropTypeError);
+  } = docgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -979,6 +1022,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         ${infosBadge}
         ${storiesBadge}
         ${docsBadge}
+        ${subcomponentsBadge}
       </div>
     </div>
     <div class="meta" title="${esc(c.path)}">${esc(c.id)} · ${esc(c.path)}</div>
@@ -992,6 +1036,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
   ${a.hasWarns ? `<input id="${slug}-info" class="tg tg-info" type="checkbox" hidden />` : ''}
   ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ''}
   ${a.totalDocs > 0 ? `<input id="${slug}-docs" class="tg tg-docs" type="checkbox" hidden />` : ''}
+  ${subcomponentEntries.length > 0 ? `<input id="${slug}-subcomponents" class="tg tg-subcomponents" type="checkbox" hidden />` : ''}
   ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
 
   <div class="panels">
@@ -1088,7 +1133,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1102,10 +1147,22 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`
+            )
+            .join('')}
+        </div>`
+        : ''
+    }
+    ${
+      subcomponentEntries.length > 0
+        ? `
+        <div class="panel panel-subcomponents">
+          ${subcomponentEntries
+            .map(([subcomponentName, subcomponent]) =>
+              renderSubcomponentNote(subcomponentName, subcomponent)
             )
             .join('')}
         </div>`
@@ -1134,8 +1191,8 @@ type DocgenRenderData = {
   exportName?: string;
 };
 
-const getDocgenRenderData = (
-  component: ComponentManifestWithDocs,
+const docgenRenderData = (
+  component: ComponentManifestLikeWithDocgen,
   hasPropTypeError: boolean
 ): DocgenRenderData => {
   if (hasPropTypeError) {
@@ -1171,6 +1228,77 @@ const getDocgenRenderData = (
 
   return {};
 };
+
+function renderSubcomponentNote(
+  subcomponentName: string,
+  subcomponent: ComponentManifestLikeWithDocgen
+) {
+  const hasPropTypeError = Boolean(subcomponent.error);
+  const { parsed, engine, filePath, exportName } = docgenRenderData(subcomponent, hasPropTypeError);
+  const propEntries = Object.entries(parsed?.props ?? {});
+  const tags =
+    subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'
+      ? Object.entries(subcomponent.jsDocTags)
+          .flatMap(([key, value]) =>
+            (Array.isArray(value) ? value : [value]).map(
+              (tagValue) => `<span class="chip">${esc(key)}: ${esc(tagValue)}</span>`
+            )
+          )
+          .join('')
+      : '';
+  const propsCode =
+    propEntries.length > 0
+      ? propEntries
+          .sort(([aName], [bName]) => aName.localeCompare(bName))
+          .map(([propName, info]) => {
+            const description = (info?.description ?? '').trim();
+            const type = (info?.type ?? 'any').trim();
+            const optional = info?.required ? '' : '?';
+            const defaultValue = (info?.defaultValue ?? '').trim();
+            const fallback = defaultValue ? ` = ${defaultValue}` : '';
+            const doc =
+              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
+              '\n';
+
+            return `${description ? doc : ''}${propName}${optional}: ${type}${fallback}`;
+          })
+          .join('\n\n')
+      : '';
+
+  return `
+    <div class="note ${hasPropTypeError ? 'err' : 'ok'}">
+      <div class="row">
+        <span class="ex-name">${esc(subcomponentName)}</span>
+        <span class="badge ${hasPropTypeError ? 'err' : 'ok'}">
+          ${
+            hasPropTypeError
+              ? 'prop type error'
+              : propEntries.length > 0
+                ? `${propEntries.length} ${plural(propEntries.length, 'prop type')}`
+                : 'no prop types'
+          }
+        </span>
+      </div>
+      <div class="hint">${esc(subcomponent.path)}</div>
+      ${subcomponent.summary ? `<div>${esc(subcomponent.summary)}</div>` : ''}
+      ${subcomponent.description ? `<div class="hint">${esc(subcomponent.description)}</div>` : ''}
+      ${tags ? `<div class="kv">${tags}</div>` : ''}
+      ${subcomponent.import ? `<pre><code>${esc(subcomponent.import)}</code></pre>` : ''}
+      ${
+        hasPropTypeError
+          ? `<pre><code>${esc(subcomponent.error?.message ?? 'Unknown error')}</code></pre>`
+          : ''
+      }
+      ${
+        !hasPropTypeError && propEntries.length > 0
+          ? `
+          <pre><code>Component: ${filePath ? esc(path.relative(process.cwd(), filePath)) : ''}${exportName ? '::' + esc(exportName) : ''}${engine ? ` (${esc(engine)})` : ''}</code></pre>
+          <pre><code>${esc(propsCode)}</code></pre>`
+          : ''
+      }
+    </div>
+  `;
+}
 
 const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
   const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
@@ -1218,7 +1346,10 @@ interface DocgenTsType {
   signature?: {
     arguments?: { name: string; type?: DocgenTsType }[];
     return?: DocgenTsType;
-    properties?: { key: string; value?: DocgenTsType & { required?: boolean } }[];
+    properties?: {
+      key: string;
+      value?: DocgenTsType & { required?: boolean };
+    }[];
   };
 }
 

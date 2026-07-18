@@ -4,12 +4,12 @@ import { Button, Toolbar } from 'storybook/internal/components';
 
 import { LinuxIcon } from '@storybook/icons';
 
-import type { StoryAnnotations } from 'core/src/types';
+import type { StoryAnnotations } from 'storybook/internal/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { Select } from './Select';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Select } from './Select.tsx';
 
 const meta = preview.meta({
   id: 'select-component',

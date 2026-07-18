@@ -1,5 +1,13 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   STORY_CHANGED,
@@ -24,12 +32,17 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
-import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
-import type { A11yParameters } from '../params';
-import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types';
-import { RuleType } from '../types';
-import type { TestDiscrepancy } from './TestDiscrepancyMessage';
+import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper.ts';
+import {
+  ADDON_ID,
+  EVENTS,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+} from '../constants.ts';
+import type { A11yParameters } from '../params.ts';
+import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types.ts';
+import { RuleType } from '../types.ts';
+import type { TestDiscrepancy } from './TestDiscrepancyMessage.tsx';
 
 // These elements should not be highlighted because they usually cover the whole page.
 // They may still appear in the results and be selectable though.
@@ -140,8 +153,21 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [setState, storyId]);
 
   const handleToggleHighlight = useCallback(() => {
-    setState((prev) => ({ ...prev, ui: { ...prev.ui, highlighted: !prev.ui.highlighted } }));
+    setState((prev) => ({
+      ...prev,
+      ui: { ...prev.ui, highlighted: !prev.ui.highlighted },
+    }));
   }, [setState]);
+
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current !== null) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
+  }, []);
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
@@ -202,7 +228,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       if (storyId === id) {
         setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
-        setTimeout(() => {
+        if (statusTimerRef.current !== null) {
+          clearTimeout(statusTimerRef.current);
+        }
+        statusTimerRef.current = setTimeout(() => {
+          statusTimerRef.current = null;
           setState((prev) => {
             if (prev.status === 'ran') {
               return { ...prev, status: 'ready' };

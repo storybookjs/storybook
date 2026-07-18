@@ -6,8 +6,8 @@ import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
-import { posix } from './posix';
+import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
+import { posix } from './posix.ts';
 
 interface StoryIdData {
   storyFilePath: string;

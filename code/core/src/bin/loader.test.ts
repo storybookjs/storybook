@@ -1,22 +1,81 @@
 import { readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
+import { transform } from 'esbuild';
+
 import {
   addExtensionsToRelativeImports,
   clearDirectoryCache,
+  load,
   resolveWithExtension,
-} from './loader';
+} from './loader.ts';
 
 // Mock dependencies
 vi.mock('node:fs');
+vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
+vi.mock('esbuild');
 
 describe('loader', () => {
   beforeEach(() => {
     clearDirectoryCache();
+  });
+
+  describe('load', () => {
+    const nextLoad = vi.fn();
+
+    beforeEach(() => {
+      nextLoad.mockReset();
+      vi.mocked(readFile).mockResolvedValue('const x: number = 1;');
+      vi.mocked(transform).mockResolvedValue({
+        code: 'const x = 1;',
+        map: '',
+        warnings: [],
+      } as any);
+    });
+
+    it('transforms a plain .ts URL with esbuild', async () => {
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
+
+      expect(transform).toHaveBeenCalled();
+      expect(nextLoad).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('still transforms a .ts URL with a cache-busting query string appended', async () => {
+      // Regression test: importModule appends `?<timestamp>` to bust the module cache when
+      // skipCache is set. That must not cause this loader to skip the file and fall through to
+      // Node's native handling, which does not elide type-only named imports the way esbuild does.
+      const path =
+        os.platform() === 'win32'
+          ? 'file:///C:/project/main.ts?1234567890'
+          : 'file:///project/main.ts?1234567890';
+      const expected = os.platform() === 'win32' ? 'C:\\project\\main.ts' : '/project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
+
+      expect(readFile).toHaveBeenCalledWith(expected, 'utf-8');
+      expect(transform).toHaveBeenCalled();
+      expect(nextLoad).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('delegates non-TS URLs to nextLoad', async () => {
+      nextLoad.mockResolvedValue({ format: 'module', shortCircuit: true, source: '' });
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.js' : 'file:///project/main.js';
+      await load(path, {} as any, nextLoad);
+
+      expect(transform).not.toHaveBeenCalled();
+      expect(nextLoad).toHaveBeenCalledWith(path, {});
+    });
   });
 
   describe('resolveWithExtension', () => {

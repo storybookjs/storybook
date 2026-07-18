@@ -3,7 +3,7 @@ import React, { Fragment } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { ScrollArea } from './ScrollArea';
+import { ScrollArea } from './ScrollArea.tsx';
 
 const Block = styled.span({
   display: 'inline-block',

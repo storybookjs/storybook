@@ -8,7 +8,7 @@ import { instrument } from 'storybook/internal/instrumenter';
 import { dedent } from 'ts-dedent';
 import type { Writable } from 'type-fest';
 
-import type { Promisify, PromisifyObject } from './utils';
+import type { Promisify, PromisifyObject } from './utils.ts';
 
 type TestingLibraryDom = typeof domTestingLibrary;
 

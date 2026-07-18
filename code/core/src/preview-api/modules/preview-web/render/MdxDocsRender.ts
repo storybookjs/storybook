@@ -5,13 +5,14 @@ import type { CSFFile, ModuleExports, PreparedStory } from 'storybook/internal/t
 import type { IndexEntry } from 'storybook/internal/types';
 import type { RenderContextCallbacks } from 'storybook/internal/types';
 
-import { Tag } from '../../../../shared/constants/tags';
-import type { StoryStore } from '../../store';
-import { DocsContext } from '../docs-context/DocsContext';
-import type { DocsContextProps } from '../docs-context/DocsContextProps';
-import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction';
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
+import { Tag } from '../../../../shared/constants/tags.ts';
+import { isMdxEntry } from '../../../../shared/utils/story-index-filters.ts';
+import type { StoryStore } from '../../store/index.ts';
+import { DocsContext } from '../docs-context/DocsContext.ts';
+import type { DocsContextProps } from '../docs-context/DocsContextProps.ts';
+import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction.ts';
+import type { Render, RenderType } from './Render.ts';
+import { PREPARE_ABORTED } from './Render.ts';
 
 /**
  * A MdxDocsRender is a render of a docs entry that comes from a true MDX file, that is a `.mdx`
@@ -116,6 +117,10 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
     if (this.attachedCsfFile) {
       docsContext.attachCSFFile(this.attachedCsfFile);
     }
+
+    // MDX pages let the author choose what `<Primary />` / `<Controls />` show, so don't filter
+    // the CSF file's stories down to `autodocs`-tagged ones.
+    docsContext.filterByAutodocs = !isMdxEntry(this.entry);
 
     return docsContext;
   }

@@ -2,11 +2,11 @@
  * @file Meta should have inline properties
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
-import { getMetaObjectExpression } from '../utils';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { getMetaObjectExpression } from '../utils/index.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 type TDynamicProperty = (TSESTree.MethodDefinition | TSESTree.Property) & {
   key: TSESTree.Identifier | TSESTree.PrivateIdentifier;

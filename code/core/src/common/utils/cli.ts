@@ -7,9 +7,9 @@ import { join } from 'node:path';
 import { type MergeExclusive } from 'type-fest';
 import uniqueString from 'unique-string';
 
-import type { JsPackageManager } from '../js-package-manager';
-import satelliteAddons from '../satellite-addons';
-import storybookPackagesVersions from '../versions';
+import type { JsPackageManager } from '../js-package-manager/index.ts';
+import satelliteAddons from '../satellite-addons.ts';
+import storybookPackagesVersions from '../versions.ts';
 
 const tempDir = () => realpath(os.tmpdir());
 

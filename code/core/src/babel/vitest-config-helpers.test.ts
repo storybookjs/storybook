@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from './vitest-config-helpers';
+import {
+  canUpdateVitestConfigFile,
+  canUpdateVitestWorkspaceFile,
+} from './vitest-config-helpers.ts';
 
 describe('canUpdateVitestConfigFile', () => {
   it('returns true for plain export default object literal', () => {
@@ -245,12 +248,32 @@ describe('canUpdateVitestConfigFile', () => {
     expect(canUpdateVitestConfigFile('const x = 1;')).toBe(false);
   });
 
-  it('returns false for arrow function pattern: defineConfig(() => ({}))', () => {
+  it('returns true for arrow function pattern: defineConfig(({ mode }) => ({}))', () => {
     expect(
       canUpdateVitestConfigFile(
         `
         import { defineConfig } from 'vitest/config';
-        export default defineConfig(() => ({ test: {} }))
+        export default defineConfig(({ mode }) => ({
+          test: {
+            globals: mode !== 'production',
+          },
+        }))
+        `
+      )
+    ).toBe(true);
+  });
+
+  it('returns false for callback pattern with dynamic control flow', () => {
+    expect(
+      canUpdateVitestConfigFile(
+        `
+        import { defineConfig } from 'vitest/config';
+        export default defineConfig(({ mode }) => {
+          if (mode === 'production') {
+            return { test: { name: 'prod' } };
+          }
+          return { test: { name: 'dev' } };
+        })
         `
       )
     ).toBe(false);

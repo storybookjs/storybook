@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { rewriteStyleSheet } from './rewriteStyleSheet';
-import { splitSelectors } from './splitSelectors';
+import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
+import { splitSelectors } from './splitSelectors.ts';
 
 function splitRules(cssText: string): string[] {
   let ruleStart: number | undefined;
@@ -387,6 +387,22 @@ describe('rewriteStyleSheet', () => {
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules[0].cssText).toEqual(
       ':has(:hover), :has(.pseudo-hover), .pseudo-hover-all :has(*) { color: red }'
+    );
+  });
+
+  it('keeps child-combinator pseudo-state selectors valid', () => {
+    const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.ds-card > :focus-visible, .ds-card > .pseudo-focus-visible, .pseudo-focus-visible-all .ds-card > * { outline: none }'
+    );
+  });
+
+  it('keeps pseudo-state selectors valid inside ":has" child combinators', () => {
+    const sheet = new Sheet('.ds-card:has(> :focus-visible) { outline: 4px solid blue }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.ds-card:has(> :focus-visible), .ds-card:has(> .pseudo-focus-visible), .pseudo-focus-visible-all .ds-card:has(> *) { outline: 4px solid blue }'
     );
   });
 

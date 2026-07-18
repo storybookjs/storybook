@@ -6,8 +6,8 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { storeOptions } from '../constants';
-import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal';
+import { storeOptions } from '../constants.ts';
+import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal.tsx';
 
 type Story = StoryObj<typeof meta>;
 
@@ -59,20 +59,20 @@ export const FatalError: Story = {
     storeState: {
       ...storeOptions.initialState,
       fatalError: {
-        message: 'Some fatal error message',
+        message: 'A wild hedgehog 🦔 wandered into the runtime',
         error: {
           message: dedent`
-        ReferenceError: FAIL is not defined
-          at Constraint.execute (the-best-file.js:525:2)
-          at Constraint.recalculate (the-best-file.js:424:21)
-          at Planner.addPropagate (the-best-file.js:701:6)
-          at Constraint.satisfy (the-best-file.js:184:15)
-          at Planner.incrementalAdd (the-best-file.js:591:21)
-          at Constraint.addConstraint (the-best-file.js:162:10)
-          at Constraint.BinaryConstraint (the-best-file.js:346:7)
-          at Constraint.EqualityConstraint (the-best-file.js:515:38)
-          at chainTest (the-best-file.js:807:6)
-          at deltaBlue (the-best-file.js:879:2)`,
+        FactoryError: Failed to create fresh balloon with adequate pressure
+          at Constraint.execute (balloon-factory.js:525:2)
+          at Constraint.recalculate (balloon-factory.js:424:21)
+          at Planner.addPropagate (balloon-factory.js:701:6)
+          at Constraint.satisfy (balloon-factory.js:184:15)
+          at Planner.incrementalAdd (balloon-factory.js:591:21)
+          at Constraint.addConstraint (balloon-factory.js:162:10)
+          at Constraint.BinaryConstraint (balloon-factory.js:346:7)
+          at Constraint.EqualityConstraint (balloon-factory.js:515:38)
+          at chainTest (balloon-factory.js:807:6)
+          at deltaBlue (balloon-factory.js:879:2)`,
         },
       },
     },

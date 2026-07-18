@@ -6,8 +6,8 @@
  */
 import type * as t from '@babel/types';
 
-import { babelParse } from './babelParse';
-import { resolveExpression } from './expression-resolver';
+import { babelParse } from './babelParse.ts';
+import { resolveExpression } from './expression-resolver.ts';
 
 type AST = t.File;
 
@@ -133,6 +133,36 @@ export const getTargetConfigObject = (
   ) {
     return resolved.arguments[0] as t.ObjectExpression;
   }
+
+  if (
+    resolved.type === 'CallExpression' &&
+    isDefineConfigLike(resolved, target) &&
+    (resolved.arguments[0]?.type === 'ArrowFunctionExpression' ||
+      resolved.arguments[0]?.type === 'FunctionExpression')
+  ) {
+    const callbackArg = resolved.arguments[0];
+
+    // Support simple callbacks that directly return an object literal, e.g.
+    // defineConfig(({ mode }) => ({ ... })) or defineConfig(function () { return { ... }; })
+    if (callbackArg.body.type === 'ObjectExpression') {
+      return callbackArg.body;
+    }
+
+    if (callbackArg.body.type === 'BlockStatement') {
+      // Keep this conservative: only support callbacks that are exactly
+      // `{ return { ... } }` with no additional control flow or statements.
+      if (
+        callbackArg.body.body.length === 1 &&
+        callbackArg.body.body[0]?.type === 'ReturnStatement'
+      ) {
+        const returnedExpr = resolveExpression(callbackArg.body.body[0].argument, target);
+        if (returnedExpr?.type === 'ObjectExpression') {
+          return returnedExpr;
+        }
+      }
+    }
+  }
+
   return null;
 };
 
@@ -152,7 +182,7 @@ export const getTargetConfigObject = (
  *
  * Unsupported patterns (returns `false`):
  *
- * - `export default defineConfig(() => ({ ... }))` (arrow function)
+ * - Callback-based defineConfig with non-literal/dynamic returns that cannot be safely resolved
  * - Completely unrecognizable export shapes
  * - No `export default` declaration at all
  */
@@ -168,17 +198,6 @@ export const canUpdateVitestConfigFile = (fileContent: string): boolean => {
     (n): n is t.ExportDefaultDeclaration => n.type === 'ExportDefaultDeclaration'
   );
   if (!exportDefault) {
-    return false;
-  }
-
-  // Reject arrow function pattern: defineConfig(() => ({...}))
-  const effectiveDecl = resolveExpression(exportDefault.declaration, parsedAst);
-  if (
-    effectiveDecl?.type === 'CallExpression' &&
-    isDefineConfigLike(effectiveDecl, parsedAst) &&
-    effectiveDecl.arguments.length > 0 &&
-    effectiveDecl.arguments[0].type === 'ArrowFunctionExpression'
-  ) {
     return false;
   }
 

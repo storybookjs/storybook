@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -40,6 +40,14 @@ const config: BuildEntries = {
       {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
+        dts: false,
+      },
+      {
+        // Worker-target docgen module imported by core's docgen worker. Exposed as an internal
+        // export so the preset resolves it via import.meta.resolve (package map) instead of a
+        // hard-coded dist path.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,
       },
     ],

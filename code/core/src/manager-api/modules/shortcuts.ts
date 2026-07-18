@@ -9,10 +9,10 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import type { KeyboardEventLike } from '../lib/shortcut';
-import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
-import type { ModuleFn } from '../lib/types';
-import { focusableUIElements } from './layout';
+import type { KeyboardEventLike } from '../lib/shortcut.ts';
+import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
 
@@ -257,13 +257,20 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // warning: event might not have a full prototype chain because it may originate from the channel
     handleShortcutFeature(feature, event) {
+      const state = store.getState();
       const {
         ui: { enableShortcuts },
         storyId,
         refId,
         viewMode,
-      } = store.getState();
+      } = state;
       if (!enableShortcuts) {
+        return;
+      }
+
+      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+      const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
+      if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
         return;
       }
 
@@ -380,6 +387,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasPanelShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
           break;
         }
 
@@ -402,6 +416,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasNavShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
+
           break;
         }
 

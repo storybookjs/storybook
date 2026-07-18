@@ -14,7 +14,7 @@ import { deprecate } from 'storybook/internal/node-logger';
 import { transform } from 'esbuild';
 import { dedent } from 'ts-dedent';
 
-import { NODE_TARGET } from '../shared/constants/environments-support';
+import { NODE_TARGET } from '../shared/constants/environments-support.ts';
 
 export const supportedExtensions = [
   '.js',
@@ -137,16 +137,21 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
 }
 
 export const load: LoadHook = async (url, context, nextLoad) => {
+  // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
+  // skipCache) before checking the extension, otherwise a cache-busted URL like
+  // `file:///main.ts?123` no longer ends with `.ts` and silently skips the esbuild transform below.
+  const urlWithoutQuery = url.split('?')[0];
+
   /** Convert TS to ESM using esbuild */
   if (
-    url.endsWith('.ts') ||
-    url.endsWith('.tsx') ||
-    url.endsWith('.mts') ||
-    url.endsWith('.cts') ||
-    url.endsWith('.mtsx') ||
-    url.endsWith('.ctsx')
+    urlWithoutQuery.endsWith('.ts') ||
+    urlWithoutQuery.endsWith('.tsx') ||
+    urlWithoutQuery.endsWith('.mts') ||
+    urlWithoutQuery.endsWith('.cts') ||
+    urlWithoutQuery.endsWith('.mtsx') ||
+    urlWithoutQuery.endsWith('.ctsx')
   ) {
-    const filePath = fileURLToPath(url);
+    const filePath = fileURLToPath(urlWithoutQuery);
     const rawSource = await readFile(filePath, 'utf-8');
     const transformedSource = await transform(rawSource, {
       loader: 'ts',

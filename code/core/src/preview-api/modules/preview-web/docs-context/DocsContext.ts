@@ -14,8 +14,8 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryStore } from '../../store';
-import type { DocsContextProps } from './DocsContextProps';
+import { type StoryStore } from '../../store/index.ts';
+import type { DocsContextProps } from './DocsContextProps.ts';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
   private componentStoriesValue: PreparedStory<TRenderer>[];
@@ -31,6 +31,10 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
   private attachedCSFFiles: Set<CSFFile<TRenderer>>;
 
   private primaryStory?: PreparedStory<TRenderer>;
+
+  // Set by the docs render (autodocs vs MDX) so `usePrimaryStory` knows whether to filter the
+  // CSF file's stories to `autodocs`-tagged ones. See `DocsContextProps.filterByAutodocs`.
+  public filterByAutodocs?: boolean;
 
   constructor(
     public channel: Channel,
@@ -57,8 +61,11 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
   referenceCSFFile(csfFile: CSFFile<TRenderer>) {
     this.exportsToCSFFile.set(csfFile.moduleExports, csfFile);
     // Also set the default export as the component's exports,
-    // to allow `import ButtonStories from './Button.stories'`
-    this.exportsToCSFFile.set(csfFile.moduleExports.default, csfFile);
+    // to allow `import ButtonStories from './Button.stories'`.
+    // CSF4 modules may not have a default export, so guard against it.
+    if ('default' in csfFile.moduleExports) {
+      this.exportsToCSFFile.set(csfFile.moduleExports.default, csfFile);
+    }
 
     const stories = this.store.componentStoriesFromCSFFile({ csfFile });
 
@@ -171,6 +178,40 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
       csfFile = this.exportsToCSFFile.get((moduleExportOrType as ModuleExports).default);
     }
 
+    // CSF4 modules don't have a default export, and when a bundler splits the
+    // story module into a separate chunk the namespace passed to <Meta of={...} />
+    // may differ by object identity from the one Storybook registered. Fall back
+    // to resolving the CSF file via any of its story exports.
+    // Skip individual story objects (handled by the story lookup below).
+    if (
+      !csfFile &&
+      moduleExportOrType &&
+      typeof moduleExportOrType === 'object' &&
+      !isStory(moduleExportOrType)
+    ) {
+      let matchedCSFFile: CSFFile<TRenderer> | undefined;
+      for (const exportValue of Object.values(moduleExportOrType as ModuleExports)) {
+        const story = this.exportToStory.get(
+          isStory(exportValue) ? exportValue.input : exportValue
+        );
+        if (!story) {
+          continue;
+        }
+        const storyCSFFile = this.storyIdToCSFFile.get(story.id);
+        if (!storyCSFFile) {
+          continue;
+        }
+        if (!matchedCSFFile) {
+          matchedCSFFile = storyCSFFile;
+        } else if (matchedCSFFile !== storyCSFFile) {
+          // Story exports span multiple CSF files — ambiguous, reject.
+          matchedCSFFile = undefined;
+          break;
+        }
+      }
+      csfFile = matchedCSFFile;
+    }
+
     if (csfFile) {
       return { type: 'meta', csfFile } as TResolvedExport;
     }
@@ -243,6 +284,15 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
   componentStories = () => {
     return this.componentStoriesValue;
+  };
+
+  getComponentId = (component: Renderer['component']) => {
+    for (const csfFile of new Set(this.exportsToCSFFile.values())) {
+      if (csfFile.meta.component === component) {
+        return csfFile.meta.id;
+      }
+    }
+    return undefined;
   };
 
   componentStoriesFromCSFFile = (csfFile: CSFFile<TRenderer>) => {

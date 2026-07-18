@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon } from '@storybook/icons';
@@ -11,12 +12,12 @@ import { CloseIcon } from '@storybook/icons';
 import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { menuTool } from '../components/preview/tools/menu';
-import { matchesKeyCode, matchesModifiers } from '../keybinding';
-import { AboutPage } from './AboutPage';
-import { GuidePage } from './GuidePage';
-import { ShortcutsPage } from './ShortcutsPage';
-import { WhatsNewPage } from './whats_new_page';
+import { menuTool } from '../components/preview/tools/menu.tsx';
+import { matchesKeyCode, matchesModifiers } from '../keybinding.ts';
+import { AboutPage } from './AboutPage.tsx';
+import { GuidePage } from './GuidePage.tsx';
+import { ShortcutsPage } from './ShortcutsPage.tsx';
+import { WhatsNewPage } from './whats_new_page.tsx';
 
 const { document } = global;
 
@@ -64,6 +65,9 @@ const Pages: FC<{
     return () => document.removeEventListener('keydown', handleEscape);
   }, [enableShortcuts, onClose]);
 
+  const api = useStorybookApi();
+  const toolsExtra = Object.values(api.getElements(Addon_TypesEnum.TOOLEXTRA));
+
   const tabs = useMemo(() => {
     const tabsToInclude = [
       {
@@ -77,7 +81,10 @@ const Pages: FC<{
       },
     ];
 
-    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+    if (
+      global.CONFIG_TYPE === 'DEVELOPMENT' &&
+      global.FEATURES?.menuOnboardingChecklist !== false
+    ) {
       tabsToInclude.push({
         id: 'guide',
         title: 'Guide',
@@ -124,6 +131,9 @@ const Pages: FC<{
             tools={
               <>
                 <SidebarToggle>{menuTool.render({})}</SidebarToggle>
+                {toolsExtra.map((item) => (
+                  <React.Fragment key={item.id}>{item.render({})}</React.Fragment>
+                ))}
                 <Button
                   padding="small"
                   variant="ghost"

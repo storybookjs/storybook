@@ -1,8 +1,9 @@
 import type { Channel } from 'storybook/internal/channels';
-
-import { global } from '@storybook/global';
-
-import { mockChannel } from './storybook-channel-mock';
+import {
+  getChannel as readInstalledChannel,
+  setChannel as installStorybookChannel,
+} from 'storybook/internal/channels';
+import { mockChannel } from '../../../channels/mock-channel.ts';
 
 export class AddonStore {
   constructor() {
@@ -18,22 +19,31 @@ export class AddonStore {
   private resolve: any;
 
   getChannel = (): Channel => {
-    // this.channel should get overwritten by setChannel. If it wasn't called (e.g. in non-browser environment), set a mock instead.
-    if (!this.channel) {
-      const channel = mockChannel();
-      this.setChannel(channel);
-      return channel;
+    if (this.channel) {
+      return this.channel;
     }
 
-    return this.channel;
+    const installed = readInstalledChannel();
+    if (installed) {
+      this.channel = installed as Channel;
+      this.resolve();
+      return this.channel;
+    }
+
+    // No channel has been installed in this runtime yet. Return a throwaway mock so callers do not
+    // crash, but do NOT cache it, mirror it to the shared channel slot, or resolve `ready()` with
+    // it. Otherwise a single early read would poison the whole runtime, and the real channel
+    // installed later (at the runtime entry point) would never take over.
+    return mockChannel() as unknown as Channel;
   };
 
   ready = (): Promise<Channel> => this.promise;
 
-  hasChannel = (): boolean => !!this.channel;
+  hasChannel = (): boolean => !!this.channel || !!readInstalledChannel();
 
   setChannel = (channel: Channel): void => {
     this.channel = channel;
+    installStorybookChannel(channel);
     this.resolve();
   };
 }
@@ -42,10 +52,10 @@ export class AddonStore {
 const KEY = '__STORYBOOK_ADDONS_PREVIEW';
 
 function getAddonsStore(): AddonStore {
-  if (!global[KEY]) {
-    global[KEY] = new AddonStore();
+  if (!globalThis[KEY]) {
+    globalThis[KEY] = new AddonStore();
   }
-  return global[KEY];
+  return globalThis[KEY];
 }
 
 export const addons = getAddonsStore();

@@ -1,12 +1,12 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { writeConfig } from 'storybook/internal/csf-tools';
 
-import { loadMainConfig } from './load-main-config';
-import { syncStorybookAddons } from './sync-main-preview-addons';
+import { loadMainConfig } from './load-main-config.ts';
+import { syncStorybookAddons } from './sync-main-preview-addons.ts';
 import {
   getAbsolutePathWrapperName,
   wrapValueWithGetAbsolutePathWrapper,
-} from './wrap-getAbsolutePath-utils';
+} from './wrap-getAbsolutePath-utils.ts';
 
 export interface SetupAddonInConfigOptions {
   addonName: string;

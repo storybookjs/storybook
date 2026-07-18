@@ -15,15 +15,17 @@
  * Plus our own file watching layer (fs.watch + debounce) since we're a standalone Node.js process,
  * not running inside an IDE.
  */
-import { logger } from 'storybook/internal/node-logger';
+import { logger, once } from 'storybook/internal/node-logger';
 
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
+import { dedent } from 'ts-dedent';
 import type ts from 'typescript';
+import * as v8 from 'v8';
 
-import type { StoryRef } from '../getComponentImports';
-import { groupByToMap } from '../utils';
-import { ComponentMetaProject } from './ComponentMetaProject';
+import type { StoryRef } from '../getComponentImports.ts';
+import { groupByToMap } from '../utils.ts';
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
 
 // Adapted from:
 // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18
@@ -35,6 +37,12 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   allowJs: true,
   skipLibCheck: true,
 };
+
+/**
+ * Recycle (dispose + lazily rebuild) the shared TS program(s) once heap usage crosses this fraction
+ * of the V8 heap limit.
+ */
+const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 
 export class ComponentMetaManager {
   // Adapted from:
@@ -56,7 +64,23 @@ export class ComponentMetaManager {
     [number | undefined, ts.IScriptSnapshot | undefined]
   >();
 
-  constructor(private typescript: typeof ts) {}
+  // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
+  private readonly heapRecycleThresholdBytes: number;
+
+  /**
+   * @param recycleHeapPressureRatio Fraction of the V8 heap limit at which the shared program(s) are
+   *   recycled (see {@link RECYCLE_HEAP_PRESSURE_RATIO}). Exposed for tuning and for the memory
+   *   regression gate, which passes `Infinity` to disable recycling and assert the OOM still happens
+   *   without the fix. Defaults to {@link RECYCLE_HEAP_PRESSURE_RATIO}.
+   */
+  constructor(
+    private typescript: typeof ts,
+    recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
+  ) {
+    this.heapRecycleThresholdBytes = Math.floor(
+      v8.getHeapStatistics().heap_size_limit * recycleHeapPressureRatio
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Adapted from:
@@ -95,6 +119,39 @@ export class ComponentMetaManager {
         logger.debug(`[reactComponentMeta] Batch extraction failed: ${err}`);
       }
     }
+
+    this.recycleProjectsIfHeapPressured();
+  }
+
+  /**
+   * Reclaim the shared program(s)' resident type-resolution cache when heap usage approaches the V8
+   * limit, preventing the next extraction's spike from OOMing the dev server.
+   */
+  private recycleProjectsIfHeapPressured(): void {
+    if (this.configProjects.size === 0 && !this.inferredProject) {
+      return;
+    }
+    if (process.memoryUsage().heapUsed < this.heapRecycleThresholdBytes) {
+      return;
+    }
+
+    // We crossed the heap-pressure threshold. Recycling reclaims the type cache and usually prevents
+    // the crash, but a single extraction can still exceed the cap — warn once so the user can raise
+    // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
+    const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
+    once.warn(dedent`
+      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
+
+      If this happens often, raise Node's memory limit before starting Storybook, for example:
+        NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
+    `);
+
+    for (const project of this.configProjects.values()) {
+      project.dispose();
+    }
+    this.inferredProject?.dispose();
+    this.configProjects.clear();
+    this.inferredProject = undefined;
   }
 
   // ---------------------------------------------------------------------------

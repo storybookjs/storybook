@@ -1,5 +1,10 @@
 import { PackageManagerName } from 'storybook/internal/common';
-import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManagerFactory,
+  isCI,
+  isCorePackage,
+} from 'storybook/internal/common';
 import {
   CLI_COLORS,
   createHyperlink,
@@ -9,6 +14,7 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
+  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -19,21 +25,22 @@ import picocolors from 'picocolors';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { processAutoblockerResults } from './autoblock/utils';
+import { processAutoblockerResults } from './autoblock/utils.ts';
 import {
   type AutomigrationCheckResult,
   type AutomigrationResult,
   runAutomigrations,
-} from './automigrate/multi-project';
-import { FixStatus } from './automigrate/types';
-import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
-import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
+} from './automigrate/multi-project.ts';
+import { FixStatus } from './automigrate/types.ts';
+import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
+import { configureDeferredAddons } from './postinstallAddon.ts';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
   type CollectProjectsSuccessResult,
   getProjects,
   shortenPath,
   upgradeStorybookDependencies,
-} from './util';
+} from './util.ts';
 
 type Package = {
   package: string;
@@ -116,6 +123,7 @@ export const checkVersionConsistency = () => {
 
 export type UpgradeOptions = {
   skipCheck: boolean;
+  skipAutomigrations?: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
@@ -384,6 +392,24 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
+      for (const project of storybookProjects) {
+        try {
+          await project.packageManager.precheckStorybookPackageInstall({
+            storybookVersion: project.currentCLIVersion,
+            nonInteractive: !!options.yes || !process.stdout.isTTY || !!isCI(),
+            installContext: 'upgrade',
+          });
+        } catch (error) {
+          if (error instanceof MinimumReleaseAgeHandledError) {
+            throw error;
+          }
+
+          logger.debug(
+            `Skipping minimum-release-age precheck for ${project.configDir} after an unexpected failure: ${error}`
+          );
+        }
+      }
+
       const task = prompt.taskLog({
         id: 'upgrade-dependencies',
         title: `Fetching versions to update package.json files..`,
@@ -413,11 +439,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Run automigrations for all projects
-    const { automigrationResults, detectedAutomigrations } = await runAutomigrations(
-      storybookProjects,
-      options
-    );
+    // Run automigrations for all projects (unless explicitly skipped)
+    let automigrationResults: Record<string, AutomigrationResult> = {};
+    let detectedAutomigrations: AutomigrationCheckResult[] = [];
+    if (options.skipAutomigrations) {
+      logger.log('Skipping automigrations (--skip-automigrations).');
+    } else {
+      ({ automigrationResults, detectedAutomigrations } = await runAutomigrations(
+        storybookProjects,
+        options
+      ));
+    }
 
     // Install dependencies
     const rootPackageManager =
@@ -461,6 +493,34 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
+    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
+    if (!options.dryRun && !options.skipInstall) {
+      for (const project of storybookProjects) {
+        const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
+        if (addonsToPostinstall?.length) {
+          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+          try {
+            await configureDeferredAddons(addonsToPostinstall, {
+              packageManager: project.packageManager.type,
+              configDir: project.configDir,
+              yes: options.yes,
+              logger,
+              prompt,
+            });
+          } catch (error) {
+            logger.warn(
+              `Configuring ${addonsToPostinstall.join(', ')} failed: ${String(
+                error
+              )}. Run "npx storybook add <addon>" manually for each addon to finish the setup.`
+            );
+            logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+          }
+        }
+      }
+    }
+
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
@@ -480,55 +540,53 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
     // TELEMETRY
-    if (!options.disableTelemetry) {
-      for (const project of storybookProjects) {
-        const resultData = automigrationResults[project.configDir] || {
-          automigrationStatuses: {},
-          automigrationErrors: {},
-        };
-        let doctorFailureCount = 0;
-        let doctorErrorCount = 0;
-        Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
-          if (status === 'has_issues') {
-            doctorFailureCount++;
-          }
+    for (const project of storybookProjects) {
+      const resultData = automigrationResults[project.configDir] || {
+        automigrationStatuses: {},
+        automigrationErrors: {},
+      };
+      let doctorFailureCount = 0;
+      let doctorErrorCount = 0;
+      Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
+        if (status === 'has_issues') {
+          doctorFailureCount++;
+        }
 
-          if (status === 'check_error') {
-            doctorErrorCount++;
-          }
-        });
-        const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
-        const automigrationPreCheckFailure =
-          project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
-            ? project.autoblockerCheckResults
-                ?.map((result) => {
-                  if (result.result !== null) {
-                    return result.blocker.id;
-                  }
-                  return null;
-                })
-                .filter(Boolean)
-            : null;
-        await telemetry('upgrade', {
-          beforeVersion: project.beforeVersion,
-          afterVersion: project.currentCLIVersion,
-          automigrationResults: resultData.automigrationStatuses,
-          automigrationErrors: resultData.automigrationErrors,
-          automigrationFailureCount,
-          automigrationPreCheckFailure,
-          doctorResults: doctorResults[project.configDir]?.diagnostics || {},
-          doctorFailureCount,
-          doctorErrorCount,
-        });
-      }
-
-      await sendMultiUpgradeTelemetry({
-        allProjects,
-        selectedProjects: storybookProjects,
-        projectResults: automigrationResults,
-        doctorResults,
+        if (status === 'check_error') {
+          doctorErrorCount++;
+        }
+      });
+      const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
+      const automigrationPreCheckFailure =
+        project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
+          ? project.autoblockerCheckResults
+              ?.map((result) => {
+                if (result.result !== null) {
+                  return result.blocker.id;
+                }
+                return null;
+              })
+              .filter(Boolean)
+          : null;
+      await telemetry('upgrade', {
+        beforeVersion: project.beforeVersion,
+        afterVersion: project.currentCLIVersion,
+        automigrationResults: resultData.automigrationStatuses,
+        automigrationErrors: resultData.automigrationErrors,
+        automigrationFailureCount,
+        automigrationPreCheckFailure,
+        doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+        doctorFailureCount,
+        doctorErrorCount,
       });
     }
+
+    await sendMultiUpgradeTelemetry({
+      allProjects,
+      selectedProjects: storybookProjects,
+      projectResults: automigrationResults,
+      doctorResults,
+    });
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);

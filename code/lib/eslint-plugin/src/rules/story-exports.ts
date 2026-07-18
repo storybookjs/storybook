@@ -4,17 +4,17 @@
  */
 import type { IncludeExcludeOptions } from 'storybook/internal/csf';
 
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   getAllNamedExports,
   getDescriptor,
   getMetaObjectExpression,
   isValidStoryExport,
-} from '../utils';
-import { isImportDeclaration } from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+} from '../utils/index.ts';
+import { isImportDeclaration } from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

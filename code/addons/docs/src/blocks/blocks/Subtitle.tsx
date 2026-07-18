@@ -2,6 +2,7 @@ import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Subtitle as PureSubtitle } from '../components';
 import type { Of } from './useOf';
@@ -24,7 +25,7 @@ const SubtitleImpl: FunctionComponent<SubtitleProps> = (props) => {
   const { of, children } = props;
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   let preparedMeta;

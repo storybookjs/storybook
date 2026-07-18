@@ -2,7 +2,7 @@
 title: Storybook for Vue with Vite
 hideRendererSelector: true
 sidebar:
-  order: 10
+  order: 12
   title: Vue (Vite)
 ---
 
@@ -18,15 +18,20 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 
 ### Requirements
 
-<GetStartedVersions versions={[{
-  name: 'Vue',
-  range: '≥ 3',
-  icon: '/images/logos/renderers/logo-vue.svg'
-}, {
-  name: 'Vite',
-  range: '≥ 5',
-  icon: '/images/logos/builders/vite.svg'
-}]} />
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Vue',
+      range: '≥ 3',
+      icon: '/images/logos/renderers/logo-vue.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
 
 ## Run Storybook
 
@@ -46,11 +51,11 @@ Storybook for Vue 3 with Vite is designed to work out of the box with minimal co
 
 ### Extending the Vue application
 
-Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
+Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.ts` file.
 
 Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
-```js title=".storybook/preview.js|ts"
+```js title=".storybook/preview.ts"
 import { setup } from '@storybook/vue3-vite';
 
 setup((app) => {
@@ -65,7 +70,9 @@ setup((app) => {
 ### Using `vue-component-meta`
 
 <Callout variant="info">
-  `vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
+
+`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
+
 </Callout>
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
@@ -105,10 +112,10 @@ To describe a prop, including tags, you can use JSDoc comments in your component
     /** The name of the user */
     name: string;
     /**
-      * The category of the component
-      *
-      * @since 8.0.0
-      */
+     * The category of the component
+     *
+     * @since 8.0.0
+     */
     category?: string;
   }
 
@@ -231,7 +238,9 @@ export default config;
 ```
 
 <Callout variant="info">
-  This is not a limitation of Storybook, but how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
+
+This is not a limitation of Storybook, but how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
+
 </Callout>
 
 Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
@@ -242,29 +251,17 @@ Otherwise, you might face missing component types/descriptions or unresolvable i
 
 First, install the framework:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="vue3-vite-install.md" />
-
-{/* prettier-ignore-end */}
 
 Then, update your `.storybook/main.js|ts` to change the framework property:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="vue3-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
 
 ### Storybook doesn't work with my Vue 2 project
 
 [Vue 2 entered End of Life](https://v2.vuejs.org/lts/) (EOL) on December 31st, 2023, and is no longer maintained by the Vue team. As a result, Storybook no longer supports Vue 2. We recommend you upgrade your project to Vue 3, which Storybook fully supports. If that's not an option, you can still use Storybook with Vue 2 by installing the latest version of Storybook 7 with the following command:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-init-v7.md" />
-
-{/* prettier-ignore-end */}
 
 ## API
 
@@ -272,11 +269,7 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 You can pass an options object for additional configuration if needed:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="vue-vite-framework-options.md" />
-
-{/* prettier-ignore-end */}
 
 #### `builder`
 

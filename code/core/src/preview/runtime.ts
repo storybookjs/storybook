@@ -1,11 +1,19 @@
+import { getChannel } from 'storybook/internal/channels';
 import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
+import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
+import { globalsNameValueMap } from './globals/runtime.ts';
+import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
+import { prepareForTelemetry } from './utils.ts';
 
-import { globalPackages, globalsNameReferenceMap } from './globals/globals';
-import { globalsNameValueMap } from './globals/runtime';
-import { maybeSetupPreviewNavigator } from './preview-navigator';
-import { prepareForTelemetry } from './utils';
+function setInert(inert: boolean) {
+  if (inert) {
+    document.body?.setAttribute('inert', 'true');
+  } else {
+    document.body?.removeAttribute('inert');
+  }
+}
 
 function errorListener(args: any) {
   const error = args.error || args;
@@ -27,9 +35,21 @@ export function setup() {
   });
 
   global.sendTelemetryError = (error: any) => {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    const channel = getChannel();
+    if (!channel) {
+      return;
+    }
+
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
+
+  // This gate only drives `inert` (interaction blocking) and keys on `freeze`
+  // alone. Whether the preview is actually frozen is gated separately (and more
+  // strictly, on viewMode=story) in setupStoryFreezer.shouldFreeze.
+  const freeze = new URLSearchParams(global.location?.search ?? '').get('freeze') === 'finished';
+  if (freeze) {
+    setInert(true);
+  }
 
   /**
    * Ensure we synchronise the preview runtime's inert state with the manager's. The inert attribute
@@ -39,13 +59,17 @@ export function setup() {
    * could reach a deadlock state and be unusable.
    */
   document.addEventListener('DOMContentLoaded', () => {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    if (freeze) {
+      setInert(true);
+    }
+
+    const channel = getChannel();
+    if (!channel) {
+      return;
+    }
+
     channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
-      if (isInert) {
-        document.body.setAttribute('inert', 'true');
-      } else {
-        document.body.removeAttribute('inert');
-      }
+      setInert(freeze || isInert);
     });
   });
 

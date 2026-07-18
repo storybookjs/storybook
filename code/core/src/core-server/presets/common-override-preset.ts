@@ -1,6 +1,6 @@
 import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
 
-import { removeMDXEntries } from '../utils/remove-mdx-entries';
+import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
 
 export const framework: PresetProperty<'framework'> = async (config) => {
   // This will get called with the values from the user's main config, but before

@@ -1,5 +1,5 @@
 // Object.groupBy polyfill
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 
 import { getProjectRoot, resolveImport } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -49,6 +49,13 @@ export function invariant(
 // Module-level cache stores: per-function caches keyed by derived string keys
 let memoStore: WeakMap<object, Map<string, unknown>> = new WeakMap();
 let asyncMemoStore: WeakMap<object, Map<string, Promise<unknown>>> = new WeakMap();
+
+// Per-path cache for text file reads. Unlike the generic `cached` store, entries are keyed by file
+// path and validated against the file's `mtimeMs`, so an edited file is re-read on the next access.
+// The dev open-service re-extracts story docs on every navigation and file change; without mtime
+// validation it would otherwise serve the source as it was the first time the file was read for the
+// whole server lifetime (stale snippets after editing or renaming a story).
+let textFileCache: Map<string, { mtimeMs: number; content: string }> = new Map();
 
 // Generic cache/memoization helper (synchronous only)
 // - Caches by a derived key from the function arguments (must be a string)
@@ -154,13 +161,40 @@ export const invalidateCache = () => {
   // Reinitialize the module-level store
   memoStore = new WeakMap();
   asyncMemoStore = new WeakMap();
+  textFileCache = new Map();
 };
 
 export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });
-export const cachedReadTextFileSync = cached(
-  (filePath: string) => readFileSync(filePath, 'utf-8'),
-  { name: 'cachedReadTextFile' }
-);
+
+/**
+ * Reads a UTF-8 text file, caching by path and invalidating when the file's `mtimeMs` changes.
+ *
+ * Repeated reads of an unchanged file (e.g. the manifest generator reading the same story file once
+ * per component, or one static build) stay cached, while an edited file is re-read so dev-server
+ * re-extraction observes fresh source. When the file's mtime cannot be read it is re-read every
+ * time rather than risking a stale cache hit.
+ */
+export const cachedReadTextFileSync = (filePath: string): string => {
+  let mtimeMs: number | undefined;
+  try {
+    mtimeMs = statSync(filePath).mtimeMs;
+  } catch {
+    mtimeMs = undefined;
+  }
+
+  if (mtimeMs !== undefined) {
+    const entry = textFileCache.get(filePath);
+    if (entry && entry.mtimeMs === mtimeMs) {
+      return entry.content;
+    }
+  }
+
+  const content = readFileSync(filePath, 'utf-8');
+  if (mtimeMs !== undefined) {
+    textFileCache.set(filePath, { mtimeMs, content });
+  }
+  return content;
+};
 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
 
@@ -169,9 +203,25 @@ export const cachedResolveImport: typeof resolveImport = cached(resolveImport, {
   name: 'resolveImport',
 }) as typeof resolveImport;
 
+/**
+ * Tsconfig filenames to try, in order. Monorepo setups (e.g. Nx) often keep only
+ * `tsconfig.base.json` at the repository root, so we fall back to common alternatives
+ * when `tsconfig.json` is not found.
+ */
+const TSCONFIG_CANDIDATES = ['tsconfig.json', 'tsconfig.base.json', 'tsconfig.app.json'] as const;
+
 export const findTsconfigPath = cached(
   (cwd: string): string | undefined => {
-    return find.up('tsconfig.json', { cwd, last: getProjectRoot() });
+    const projectRoot = getProjectRoot();
+
+    for (const candidate of TSCONFIG_CANDIDATES) {
+      const found = find.up(candidate, { cwd, last: projectRoot });
+      if (found) {
+        return found;
+      }
+    }
+
+    return undefined;
   },
   { name: 'findTsconfigPath' }
 );

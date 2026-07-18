@@ -1,2 +1,2 @@
 export * from '@storybook/preact';
-export * from './types';
+export * from './types.ts';

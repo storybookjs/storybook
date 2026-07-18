@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "10.4.0-alpha.3",
+  "version": "10.6.0-alpha.1",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -50,13 +50,13 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "type-fest": "~2.19",
-    "vue-component-type-helpers": "latest"
+    "type-fest": "^5.6.0",
+    "vue-component-type-helpers": "^3.2.9"
   },
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.6.2",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"
   },

@@ -1,9 +1,9 @@
 import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import { Badge, Form, ProgressSpinner } from '../..';
-import preview from '../../../../../.storybook/preview';
-import { Shortcut } from '../../../manager/components/Shortcut';
-import { ActionList } from './ActionList';
+import { Badge, Form, ProgressSpinner } from '../../index.ts';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Shortcut } from '../../../manager/components/Shortcut.tsx';
+import { ActionList } from './ActionList.tsx';
 
 const meta = preview.meta({
   component: ActionList,
@@ -109,7 +109,7 @@ export const Listbox = meta.story({
   render: () => (
     <>
       <ActionList role="listbox" aria-label="Sample listbox">
-        <ActionList.Item role="option">
+        <ActionList.Item role="option" aria-selected="false">
           <ActionList.Icon>
             <CheckIcon />
           </ActionList.Icon>
@@ -121,7 +121,7 @@ export const Listbox = meta.story({
           </ActionList.Icon>
           <ActionList.Text>Selected</ActionList.Text>
         </ActionList.Item>
-        <ActionList.Item role="option" aria-disabled="true">
+        <ActionList.Item role="option" aria-selected="false" aria-disabled="true">
           <ActionList.Icon>
             <CheckIcon />
           </ActionList.Icon>

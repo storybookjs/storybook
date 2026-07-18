@@ -12,25 +12,25 @@ import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import { PackageManagerName } from '../../code/core/src/common/js-package-manager';
-import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
-import storybookVersions from '../../code/core/src/common/versions';
+import { PackageManagerName } from '../../code/core/src/common/js-package-manager/index.ts';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
+import storybookVersions from '../../code/core/src/common/versions.ts';
 import {
   type Template,
   allTemplates as sandboxTemplates,
-} from '../../code/lib/cli-storybook/src/sandbox-templates';
+} from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
   LOCAL_REGISTRY_URL,
   REPROS_DIRECTORY,
   SCRIPT_TIMEOUT,
-} from '../utils/constants';
-import { esMain } from '../utils/esmain';
-import type { OptionValues } from '../utils/options';
-import { createOptions } from '../utils/options';
-import { getStackblitzUrl, renderTemplate } from './utils/template';
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
+} from '../utils/constants.ts';
+import { esMain } from '../utils/esmain.ts';
+import type { OptionValues } from '../utils/options.ts';
+import { createOptions } from '../utils/options.ts';
+import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
+import { localizeYarnConfigFiles, setupYarn } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
@@ -83,6 +83,20 @@ const emptyDir = async (dir: string): Promise<void> => {
 
   const names = await readdir(dir);
   await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+};
+
+const moveDir = async (from: string, to: string): Promise<void> => {
+  try {
+    await rename(from, to);
+  } catch (error) {
+    // On some platforms (notably Windows), rename doesn't work across different disks volumes
+    if ((error as NodeJS.ErrnoException).code !== 'EXDEV') {
+      throw error;
+    }
+
+    await cp(from, to, { recursive: true });
+    await rm(from, { recursive: true, force: true });
+  }
 };
 
 const addStorybook = async ({
@@ -223,7 +237,9 @@ const runGenerators = async (
                 console.error(message);
                 console.error(error);
               }
-              throw new Error(message);
+              throw new Error(message, {
+                cause: error,
+              });
             }
           }
 
@@ -266,7 +282,7 @@ const runGenerators = async (
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          await rename(createBeforeDir, beforeDir);
+          await moveDir(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
           await rm(join(beforeDir, '.git'), { recursive: true, force: true });
@@ -329,7 +345,14 @@ const runGenerators = async (
           .filter((result) => result.status === 'rejected')
           .map((_, index) => generators[index].name)
       );
-      throw new Error(`Some sandboxes failed to generate`);
+      throw new Error(`Some sandboxes failed to generate`, {
+        cause: generationResults
+          .filter((result) => result.status === 'rejected')
+          .map((result) => {
+            const generationError = (result as PromiseRejectedResult).reason as Error;
+            return generationError;
+          }),
+      });
     }
     return;
   }
@@ -369,7 +392,14 @@ const runGenerators = async (
     ])
     .write();
 
-  throw new Error(`Some sandboxes failed to generate`);
+  throw new Error(`Some sandboxes failed to generate`, {
+    cause: generationResults
+      .filter((result) => result.status === 'rejected')
+      .map((result) => {
+        const generationError = (result as PromiseRejectedResult).reason as Error;
+        return generationError;
+      }),
+  });
 };
 
 export const options = createOptions({

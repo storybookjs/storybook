@@ -1,17 +1,15 @@
-import type { MouseEvent } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
-
-import { logger } from 'storybook/internal/client-logger';
-
-import { global } from '@storybook/global';
+import React, { useEffect, useState } from 'react';
 
 import memoize from 'memoizerific';
-// @ts-expect-error (Converted from ts-ignore)
+// Importing the package root (for PrismLight) loads @types/react-syntax-highlighter's ambient
+// `declare module` blocks, which type most deep ESM entrypoints; only the two entrypoints the
+// @types package does not declare need suppression.
+// @ts-expect-error untyped deep ESM entrypoint
 import createElement from 'react-syntax-highlighter/dist/esm/create-element';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
-// @ts-expect-error (Converted from ts-ignore)
+// @ts-expect-error untyped deep ESM entrypoint
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
@@ -20,20 +18,24 @@ import html from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import type { PrismLight } from 'react-syntax-highlighter';
+import ReactSyntaxHighlighterRuntime from 'react-syntax-highlighter/dist/esm/prism-light';
 import { styled } from 'storybook/theming';
 
-import { ActionBar } from '../ActionBar/ActionBar';
-import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
-import { ScrollArea } from '../ScrollArea/ScrollArea';
-import { createCopyToClipboardFunction } from './clipboard';
+import { ActionBar } from '../ActionBar/ActionBar.tsx';
+import type { ScrollAreaProps } from '../ScrollArea/ScrollArea.tsx';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
   SyntaxHighlighterRendererProps,
-} from './syntaxhighlighter-types';
+} from './syntaxhighlighter-types.ts';
 
-const { window: globalWindow } = global;
+// Type the deep runtime import via the package root: the deep path is only
+// typed through ambient `declare module` blocks in @types/react-syntax-highlighter,
+// which declaration emit and type bundlers cannot reference by specifier.
+const ReactSyntaxHighlighter: typeof PrismLight = ReactSyntaxHighlighterRuntime;
 
 export const supportedLanguages = {
   jsextra: jsExtras,
@@ -56,8 +58,6 @@ Object.entries(supportedLanguages).forEach(([key, val]) => {
 const themedSyntax = memoize(2)((theme) =>
   Object.entries(theme.code || {}).reduce((acc, [key, val]) => ({ ...acc, [`* .${key}`]: val }), {})
 );
-
-const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export interface WrapperProps {
   bordered?: boolean;
@@ -179,10 +179,6 @@ const wrapRenderer = (
   return defaultRenderer;
 };
 
-export interface SyntaxHighlighterState {
-  copied: boolean;
-}
-
 // copied from @types/react-syntax-highlighter/index.d.ts
 
 export const SyntaxHighlighter = ({
@@ -211,20 +207,9 @@ export const SyntaxHighlighter = ({
     }
   }, [children, format, formatter]);
 
-  const [copied, setCopied] = useState(false);
-
-  const onClick = useCallback(
-    (e: MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      copyToClipboard(highlightableCode)
-        .then(() => {
-          setCopied(true);
-          globalWindow.setTimeout(() => setCopied(false), 1500);
-        })
-        .catch(logger.error);
-    },
-    [highlightableCode]
-  );
+  const { children: copyChildren, buttonProps: copyButtonProps } = useCopyButton<string>({
+    content: highlightableCode,
+  });
   const renderer = wrapRenderer(rest.renderer, showLineNumbers);
 
   return (
@@ -252,7 +237,15 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} flexLayout />
+        <ActionBar
+          actionItems={[
+            {
+              title: copyChildren,
+              onClick: copyButtonProps.onClick,
+            },
+          ]}
+          flexLayout
+        />
       ) : null}
     </Wrapper>
   );

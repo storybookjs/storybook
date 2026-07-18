@@ -16,13 +16,13 @@ import { normalize } from 'pathe';
 async function getTemplatePath(name: string) {
   switch (name) {
     case 'vitest.config.template':
-      return import('../templates/vitest.config.template?raw');
+      return import('../templates/vitest.config.template.ts?raw');
     case 'vitest.config.4.template':
-      return import('../templates/vitest.config.4.template?raw');
+      return import('../templates/vitest.config.4.template.ts?raw');
     case 'vitest.config.3.2.template':
-      return import('../templates/vitest.config.3.2.template?raw');
+      return import('../templates/vitest.config.3.2.template.ts?raw');
     case 'vitest.workspace.template':
-      return import('../templates/vitest.workspace.template?raw');
+      return import('../templates/vitest.workspace.template.ts?raw');
     default:
       throw new Error(`Unknown template: ${name}`);
   }
@@ -324,6 +324,51 @@ const mergeTemplateIntoConfigObject = (
 };
 
 /**
+ * Finds the writable target config object in `export default ...`, including
+ * callback-based defineConfig patterns like `defineConfig(({ mode }) => ({ ... }))`
+ * and `defineConfig(() => { return { ... }; })`.
+ */
+const getWritableTargetConfigObject = (
+  target: BabelFile['ast'],
+  exportDefault: t.ExportDefaultDeclaration
+): t.ObjectExpression | null => {
+  const directConfigObject = getTargetConfigObject(target, exportDefault);
+  if (directConfigObject) {
+    return directConfigObject;
+  }
+
+  const resolvedDecl = resolveExpression(exportDefault.declaration, target);
+  if (resolvedDecl?.type !== 'CallExpression' || !isDefineConfigLike(resolvedDecl, target)) {
+    return null;
+  }
+
+  const callbackArg = resolvedDecl.arguments[0];
+  if (
+    !callbackArg ||
+    (callbackArg.type !== 'ArrowFunctionExpression' && callbackArg.type !== 'FunctionExpression')
+  ) {
+    return null;
+  }
+
+  if (callbackArg.body.type === 'ObjectExpression') {
+    return callbackArg.body;
+  }
+
+  if (
+    callbackArg.body.type === 'BlockStatement' &&
+    callbackArg.body.body.length === 1 &&
+    callbackArg.body.body[0]?.type === 'ReturnStatement'
+  ) {
+    const returnedExpr = resolveExpression(callbackArg.body.body[0].argument, target);
+    if (returnedExpr?.type === 'ObjectExpression') {
+      return returnedExpr;
+    }
+  }
+
+  return null;
+};
+
+/**
  * Merges a source Vitest configuration AST into a target configuration AST.
  *
  * This function intelligently combines configuration elements from a source file (typically a
@@ -366,22 +411,10 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
     return false;
   }
 
-  // Check if this is a function notation that we don't support (defineConfig(() => ({})))
-  // Resolve through TS type wrappers and variable references before checking.
-  const effectiveDecl = resolveExpression(targetExportDefault.declaration, target);
-  if (
-    effectiveDecl?.type === 'CallExpression' &&
-    isDefineConfigLike(effectiveDecl, target) &&
-    effectiveDecl.arguments.length > 0 &&
-    effectiveDecl.arguments[0].type === 'ArrowFunctionExpression'
-  ) {
-    return false;
-  }
-
   // Check if we can handle the config pattern (direct object, defineConfig/defineProject,
   // mergeConfig, or any of these wrapped in TS type annotations / variable references)
   let canHandleConfig = false;
-  if (getTargetConfigObject(target, targetExportDefault) !== null) {
+  if (getWritableTargetConfigObject(target, targetExportDefault) !== null) {
     canHandleConfig = true;
   } else if (getEffectiveMergeConfigCall(targetExportDefault.declaration, target) !== null) {
     canHandleConfig = true;
@@ -431,7 +464,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
         sourceNode.declaration.arguments[0].type === 'ObjectExpression'
       ) {
         const { properties } = sourceNode.declaration.arguments[0];
-        const targetConfigObject = getTargetConfigObject(target, exportDefault);
+        const targetConfigObject = getWritableTargetConfigObject(target, exportDefault);
         if (targetConfigObject !== null) {
           mergeTemplateIntoConfigObject(targetConfigObject, properties, target);
           updated = true;

@@ -13,17 +13,17 @@ Starting with Storybook 5.2, the Component Story Format ([CSF](https://storybook
 Examples of **incorrect** code for this rule:
 
 ```js
-import { storiesOf } from "@storybook/react";
+import { storiesOf } from '@storybook/react';
 
-import Button from "../components/Button";
+import Button from '../components/Button';
 
-storiesOf("Button", module).add("primary", () => <Button primary />);
+storiesOf('Button', module).add('primary', () => <Button primary />);
 ```
 
 Examples of **correct** code for this rule:
 
 ```js
-import Button from '../components/Button';
+import Button from "../components/Button";
 
 export default = {
   component: Button
@@ -33,7 +33,7 @@ export const Primary = () => <Button primary />
 ```
 
 ```js
-import Button from '../components/Button';
+import Button from "../components/Button";
 
 export default = {
   component: Button

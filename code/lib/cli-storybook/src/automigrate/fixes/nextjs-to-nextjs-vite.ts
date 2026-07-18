@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { transformImportFiles } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
@@ -21,8 +21,12 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
       return false;
     }
 
-    // Replace @storybook/nextjs with @storybook/nextjs-vite in the content
-    const transformedContent = content.replace(/@storybook\/nextjs/g, '@storybook/nextjs-vite');
+    // Replace @storybook/nextjs with @storybook/nextjs-vite, using a negative lookahead
+    // to avoid corrupting references that are already @storybook/nextjs-vite
+    const transformedContent = content.replace(
+      /@storybook\/nextjs(?!-vite)/g,
+      '@storybook/nextjs-vite'
+    );
 
     if (transformedContent !== content && !dryRun) {
       await writeFile(mainConfigPath, transformedContent);

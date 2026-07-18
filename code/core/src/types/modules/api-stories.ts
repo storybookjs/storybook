@@ -1,7 +1,7 @@
-import type { DocsOptions } from './core-common';
-import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';
-import type { IndexEntry } from './indexer';
-import type { StatusByTypeId } from './status';
+import type { DocsOptions } from './core-common.ts';
+import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf.ts';
+import type { IndexEntry } from './indexer.ts';
+import type { StatusByTypeId } from './status.ts';
 
 export interface API_BaseEntry {
   id: StoryId;
@@ -64,6 +64,16 @@ export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'childre
 }
 
 export type API_LeafEntry = API_DocsEntry | API_StoryEntry | API_TestEntry;
+
+/**
+ * Runtime enrichment for a composed ref's stories/docs, keyed by entry id. These fields come from
+ * the ref preview's STORY_PREPARED / DOCS_PREPARED events and are not part of the ref's static story
+ * index, so they are cached per ref and re-applied whenever the ref index is (re)built.
+ */
+export type API_RefStoryRuntimeData = Record<
+  StoryId,
+  Partial<Pick<API_StoryEntry, 'prepared' | 'parameters' | 'args' | 'argTypes' | 'initialArgs'>>
+>;
 export type API_HashEntry =
   | API_RootEntry
   | API_GroupEntry

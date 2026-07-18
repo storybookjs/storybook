@@ -1,7 +1,7 @@
-import { createSummaryValue, isTooLongForDefaultValueSummary } from '../../utils';
-import type { PropDefaultValue } from '../PropDef';
-import type { DocgenPropDefaultValue, DocgenPropType } from '../types';
-import { isDefaultValueBlacklisted } from '../utils/defaultValue';
+import { createSummaryValue, isTooLongForDefaultValueSummary } from '../../utils.ts';
+import type { PropDefaultValue } from '../PropDef.ts';
+import type { DocgenPropDefaultValue, DocgenPropType } from '../types.ts';
+import { isDefaultValueBlacklisted } from '../utils/defaultValue.ts';
 
 export function createDefaultValue(
   defaultValue: DocgenPropDefaultValue | null,

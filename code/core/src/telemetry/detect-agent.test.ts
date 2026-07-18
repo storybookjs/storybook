@@ -1,10 +1,39 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { detectAgent } from './detect-agent';
+import { detectAgent } from './detect-agent.ts';
 
 describe('detectAgent', () => {
+  // Save any ambient agent env vars that might be set by the host environment
+  // (e.g. OPENCODE when running inside OpenCode CLI) so we can restore them.
+  const agentEnvVars = [
+    'OPENCODE',
+    'CLAUDECODE',
+    'CLAUDE_CODE',
+    'GEMINI_CLI',
+    'CODEX_SANDBOX',
+    'CODEX_THREAD_ID',
+    'CURSOR_AGENT',
+    'AI_AGENT',
+  ];
+  const savedEnv: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of agentEnvVars) {
+      savedEnv[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
+    // Restore ambient env vars
+    for (const key of agentEnvVars) {
+      if (savedEnv[key] !== undefined) {
+        process.env[key] = savedEnv[key];
+      } else {
+        delete process.env[key];
+      }
+    }
   });
 
   it('detects claude via CLAUDECODE', () => {

@@ -15,12 +15,12 @@ import {
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
-import { type ComponentRef } from './getComponentImports';
-import { extractJSDocInfo } from './jsdocTags';
-import actualNameHandler from './reactDocgen/actualNameHandler';
-import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
-import exportNameHandler from './reactDocgen/exportNameHandler';
-import { cached, cachedReadFileSync, cachedResolveImport, findTsconfigPath } from './utils';
+import { type ComponentRef } from './getComponentImports.ts';
+import { extractJSDocInfo } from './jsdocTags.ts';
+import actualNameHandler from './reactDocgen/actualNameHandler.ts';
+import { ReactDocgenResolveError } from './reactDocgen/docgenResolver.ts';
+import exportNameHandler from './reactDocgen/exportNameHandler.ts';
+import { cached, cachedReadFileSync, cachedResolveImport, findTsconfigPath } from './utils.ts';
 
 export type DocObj = Documentation & {
   actualName: string;

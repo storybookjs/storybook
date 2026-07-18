@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import { parseStaticDir } from './server-statics';
+import { parseStaticDir } from './server-statics.ts';
 
 export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDir: string) {
   if (staticDirs && staticDirs.length > 0) {
@@ -30,6 +30,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
             preserveTimestamps: true,
             filter: (_, dest) => !skipPaths.includes(dest),
             recursive: true,
+            force: true,
           });
         } catch (e) {
           if (e instanceof Error) {
@@ -73,6 +74,7 @@ export async function copyAllStaticFilesRelativeToMain(
       preserveTimestamps: true,
       filter: (_, dest) => !skipPaths.includes(dest),
       recursive: true,
+      force: true,
     });
   }, Promise.resolve());
 }

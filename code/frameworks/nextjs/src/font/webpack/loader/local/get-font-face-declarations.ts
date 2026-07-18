@@ -5,7 +5,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js';
 import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 
-import type { LoaderOptions } from '../types';
+import type { LoaderOptions } from '../types.ts';
 
 type LocalFontSrc = string | Array<{ path: string; weight?: string; style?: string }>;
 

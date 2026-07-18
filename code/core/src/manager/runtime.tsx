@@ -12,10 +12,10 @@ import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import { ToolbarManager } from '../toolbar/components/ToolbarManager';
-import { TOOLBAR_ID } from '../toolbar/constants';
-import { renderStorybookUI } from './index';
-import Provider from './provider';
+import { ToolbarManager } from '../toolbar/components/ToolbarManager.tsx';
+import { TOOLBAR_ID } from '../toolbar/constants.ts';
+import { renderStorybookUI } from './index.tsx';
+import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 
@@ -29,26 +29,19 @@ addons.register(TOOLBAR_ID, () =>
   })
 );
 
-class ReactProvider extends Provider {
-  addons: AddonStore;
+// Install the manager channel at module load, before the deferred render below and before any
+// manager entry can read it. This guarantees `addons.getChannel()` returns the real channel in the
+// manager runtime instead of falling back to a throwaway mock.
+const channel = createBrowserChannel({ page: 'manager' });
+addons.setChannel(channel);
+channel.emit(CHANNEL_CREATED);
 
-  channel: Channel;
+class ReactProvider extends Provider {
+  addons: AddonStore = addons;
+
+  channel: Channel = channel;
 
   wsDisconnected = false;
-
-  constructor() {
-    super();
-
-    const channel = createBrowserChannel({ page: 'manager' });
-
-    addons.setChannel(channel);
-
-    channel.emit(CHANNEL_CREATED);
-
-    this.addons = addons;
-    this.channel = channel;
-    global.__STORYBOOK_ADDONS_CHANNEL__ = channel;
-  }
 
   getElements(type: Addon_Types) {
     return this.addons.getElements(type);

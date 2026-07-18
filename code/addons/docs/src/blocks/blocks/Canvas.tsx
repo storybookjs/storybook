@@ -1,8 +1,9 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
@@ -67,7 +68,7 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
   const sourceContext = useContext(SourceContext);
   const { of, source } = props;
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   const { story } = useOf(of || 'story', ['story']);

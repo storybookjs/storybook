@@ -3,10 +3,10 @@ import { program } from 'commander';
 import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
-import { esMain } from '../utils/esmain';
-import { getPullInfoFromCommits, getRepo } from './utils/get-changes';
-import { getLatestTag, git } from './utils/git-client';
-import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client';
+import { esMain } from '../utils/esmain.ts';
+import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
+import { getLatestTag, git } from './utils/git-client.ts';
+import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
 
 program
   .name('label-patches')
@@ -93,6 +93,11 @@ export const run = async (options: unknown) => {
   } catch (e) {
     spinner3.fail(`Something went wrong when labelling the PRs.`);
     console.error(e);
+    // Re-throw so the process exits non-zero. This step also runs unattended in the publish
+    // workflow, where a swallowed error is invisible; the workflow marks the step
+    // continue-on-error and alerts on failure, so this does not abort an already-published
+    // release but is no longer silent.
+    throw e;
   }
 };
 

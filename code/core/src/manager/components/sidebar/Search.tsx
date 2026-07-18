@@ -1,6 +1,7 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -12,11 +13,11 @@ import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status';
-import { scrollIntoView, searchItem } from '../../utils/tree';
-import { useLayout } from '../layout/LayoutProvider';
-import { DEFAULT_REF_ID } from './Sidebar';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { scrollIntoView, searchItem } from '../../utils/tree.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
   CombinedDataset,
   DownshiftItem,
@@ -24,8 +25,8 @@ import type {
   SearchItem,
   SearchResult,
   Selection,
-} from './types';
-import { isExpandType, isSearchResult } from './types';
+} from './types.ts';
+import { isExpandType, isSearchResult } from './types.ts';
 
 const { document } = global;
 
@@ -190,7 +191,11 @@ export const Search = React.memo<SearchProps>(function Search({
           ...Object.values(index).map((item) => {
             const storyStatuses = allStatuses?.[item.id];
             const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+              ? getMostCriticalStatusValue(
+                  Object.values(storyStatuses)
+                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+                    .map((status) => status.value)
+                )
               : null;
             return {
               ...searchItem(item, dataset.hash[refId]),
@@ -214,15 +219,56 @@ export const Search = React.memo<SearchProps>(function Search({
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
+
+      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
+      });
+
+      // When the index is being created, we have a legacy piece of logic that
+      // wraps every docs page inside a component entry. This originates from
+      // Storybook 6 and has never been removed. Because of it, we must dedupe
+      // docs entries that are hidden under a fake component entry.
+      // See https://github.com/storybookjs/storybook/issues/35513 for details.
+      const docsParentIds = new Set<string>();
+      allMatches.forEach(({ item }) => {
+        if (item.type === 'docs' && item.parent) {
+          docsParentIds.add(item.parent);
+        }
+      });
+
+      // Components suppressed in favor of a matching docs child that hasn't been rendered yet.
+      // The suppressed component still occupies its slot in `resultIds` so that sibling stories
+      // ranked between the component and its docs entry are deduplicated, as they were before.
+      const pendingDocsReplacements = new Set<string>();
+
+      const distinctResults = allMatches.filter(({ item }) => {
+        // This always gets called before the corresponding docs item
+        // because of the sorting performed by the search index. So it's
+        // safe to use `pendingDocsReplacements` in a single-pass lookup.
+        if (item.type === 'component' && docsParentIds.has(item.id)) {
+          if (!resultIds.has(item.id)) {
+            resultIds.add(item.id);
+            pendingDocsReplacements.add(item.id);
+          }
+          return false;
+        }
+
+        // When we reach this, we know we found an unattached MDX page with
+        // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
+        // and present the docs item to end users.
+        if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
+          pendingDocsReplacements.delete(item.parent);
+          resultIds.add(item.id);
+          return true;
+        }
+        // @ts-expect-error (non strict)
+        if (resultIds.has(item.parent)) {
           return false;
         }
         resultIds.add(item.id);
+        if (item.type === 'docs' && item.parent) {
+          resultIds.add(item.parent);
+        }
         return true;
       });
 
@@ -243,7 +289,10 @@ export const Search = React.memo<SearchProps>(function Search({
   );
 
   const onSelect = useCallback(
-    (selectedItem: DownshiftItem) => {
+    (selectedItem: DownshiftItem | null) => {
+      if (!selectedItem) {
+        return;
+      }
       if (isSearchResult(selectedItem)) {
         const { id, refId } = selectedItem.item;
         // @ts-expect-error (non strict)
@@ -273,7 +322,7 @@ export const Search = React.memo<SearchProps>(function Search({
             // Prevent clearing the input on blur
             inputValue: state.inputValue,
             // Return to the tree view after selecting an item
-            isOpen: state.inputValue && !state.selectedItem,
+            isOpen: !!state.inputValue && !state.selectedItem,
           };
         }
 
@@ -317,7 +366,6 @@ export const Search = React.memo<SearchProps>(function Search({
   const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
 
   return (
-    // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}

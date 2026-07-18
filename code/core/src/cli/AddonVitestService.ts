@@ -12,8 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, type SupportedFramework } from '../types';
-import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
+import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
 
 type Result = {
   compatible: boolean;
@@ -40,6 +40,20 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Reduce a Vitest version specifier (exact or range) to a single concrete version for
+   * `semver.satisfies` comparisons, so dependency collection and postinstall template selection make
+   * the same major/minor decision. Uses the lower bound of a valid range, then coerces so a
+   * prerelease like `4.0.0-beta.1` is treated as `4.0.0` rather than failing `>=4.0.0`.
+   */
+  static getComparableVersion(specifier: string | null | undefined): string | undefined {
+    if (!specifier) {
+      return undefined;
+    }
+    const range = validRange(specifier);
+    return coerce(range ? minVersion(range)?.version : specifier)?.version;
+  }
+
+  /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
    * Returns versioned package strings ready for installation:
@@ -52,21 +66,12 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Determine Vitest version/range from installed or declared dependency to avoid pulling
-    // incompatible majors by default.
-    let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!vitestVersionSpecifier && allDeps['vitest']) {
-      vitestVersionSpecifier = allDeps['vitest'];
-    }
+    // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
+    // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
+    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
 
-    let isVitest4OrNewer = true;
-    if (vitestVersionSpecifier) {
-      const range = validRange(vitestVersionSpecifier);
-      const versionToCheck = range
-        ? minVersion(range)?.version
-        : coerce(vitestVersionSpecifier)?.version;
-      isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
-    }
+    const versionToCheck = AddonVitestService.getComparableVersion(vitestVersionSpecifier);
+    const isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
 
     // only install these dependencies if they are not already installed
     const basePackages = [
@@ -92,15 +97,23 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // Apply version specifiers to vitest-related packages
-    const versionedDependencies = dependencies.map((pkg) => {
-      if (pkg.includes('vitest') && vitestVersionSpecifier) {
-        return `${pkg}@${vitestVersionSpecifier}`;
-      }
-      return pkg;
-    });
+    if (!vitestVersionSpecifier) {
+      return dependencies;
+    }
 
-    return versionedDependencies;
+    // Pin the vitest-related packages to the resolved vitest version, letting the package manager
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
+    // independently, so it is left untouched.
+    const related = dependencies.filter((pkg) => pkg.includes('vitest'));
+    const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
+    return [
+      ...this.packageManager.applyVersionToRelatedPackages(
+        related,
+        vitestVersionSpecifier,
+        'vitest'
+      ),
+      ...rest,
+    ];
   }
 
   /**

@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
 
-import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff';
-import { loadTemplate, updateConfigFile } from './updateVitestFile';
+import { getDiff } from '../../../core/src/core-server/utils/save-story/getDiff.ts';
+import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -182,7 +182,121 @@ describe('updateConfigFile', () => {
     `);
   });
 
-  it('does not support function notation', async () => {
+  it('supports function notation when defineConfig callback returns an object literal', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      /// <reference types="vitest" />
+
+      import angular from '@analogjs/vite-plugin-angular';
+      import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+      import { defineConfig } from 'vite';
+
+      // https://vitejs.dev/config/
+      export default defineConfig(({ mode }) => {
+        return {
+          plugins: [angular(), nxViteTsPaths()],
+          test: {
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: ['src/test-setup.ts'],
+            include: ['**/*.spec.ts'],
+            reporters: ['default'],
+            hideSkippedTests: true,
+            passWithNoTests: true,
+          },
+          define: {
+            'import.meta.vitest': mode !== 'production',
+          },
+        };
+      });
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+    expect(after).not.toBe(before);
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        import { defineConfig } from 'vite';
+        
+        // https://vitejs.dev/config/
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default defineConfig(({
+          mode
+        }) => {
+          return {
+            plugins: [angular(), nxViteTsPaths()],
+        
+      -     test: {
+      -       globals: true,
+      -       environment: 'jsdom',
+      -       setupFiles: ['src/test-setup.ts'],
+      -       include: ['**/*.spec.ts'],
+      -       reporters: ['default'],
+      -       hideSkippedTests: true,
+      -       passWithNoTests: true
+      -     },
+      - 
+            define: {
+              'import.meta.vitest': mode !== 'production'
+        
+      +     },
+      +     test: {
+      +       reporters: ['default'],
+      +       passWithNoTests: true,
+      +       projects: [{
+      +         extends: true,
+      +         test: {
+      +           globals: true,
+      +           environment: 'jsdom',
+      +           setupFiles: ['src/test-setup.ts'],
+      +           include: ['**/*.spec.ts'],
+      +           hideSkippedTests: true
+      +         }
+      +       }, {
+      +         extends: true,
+      +         plugins: [
+      +         // The plugin will run tests for the stories defined in your Storybook config
+      +         // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +         storybookTest({
+      +           configDir: path.join(dirname, '.storybook')
+      +         })],
+      +         test: {
+      +           name: 'storybook',
+      +           browser: {
+      +             enabled: true,
+      +             headless: true,
+      +             provider: playwright({}),
+      +             instances: [{
+      +               browser: 'chromium'
+      +             }]
+      +           }
+      +         }
+      +       }]
+      + 
+            }
+          };
+        });"
+    `);
+  });
+
+  it('does not support complex function notation', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.4.template', {
         CONFIG_DIR: '.storybook',
@@ -195,13 +309,25 @@ describe('updateConfigFile', () => {
       import react from '@vitejs/plugin-react'
 
       // https://vite.dev/config/
-      export default defineConfig(() => ({
-        plugins: [react()],
-        test: {
-          globals: true,
-          projects: ['packages/*']
-        },
-      }))
+      export default defineConfig(({ mode }) => {
+        if (mode === 'production') {
+          return {
+            plugins: [react()],
+            test: {
+              globals: true,
+              projects: ['packages/*']
+            },
+          }
+        }
+
+        return {
+          plugins: [react()],
+          test: {
+            globals: false,
+            projects: ['packages/*']
+          },
+        }
+      })
     `);
 
     const before = babel.generate(target).code;

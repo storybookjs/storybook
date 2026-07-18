@@ -6,6 +6,8 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SET_CONFIG,
+  SET_FILTER,
   SET_INDEX,
   SET_STORIES,
   STORY_ARGS_UPDATED,
@@ -15,19 +17,25 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { type API_StoryEntry } from 'storybook/internal/types';
+import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { EventEmitter } from 'events';
 
-import { getEventMetadata as getEventMetadataOriginal } from '../lib/events';
-import type { ModuleArgs } from '../lib/types';
-import { init as initStories } from '../modules/stories';
-import type { API, State } from '../root';
-import type Store from '../store';
-import { fullStatusStore } from '../stores/status';
-import { docsEntries, mockEntries, navigationEntries, preparedEntries } from './mockStoriesEntries';
+import { getEventMetadata as getEventMetadataOriginal } from '../lib/events.ts';
+import type { ModuleArgs } from '../lib/types.tsx';
+import { init as initStories } from '../modules/stories.ts';
+import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
+import type { API, State } from '../root.tsx';
+import type Store from '../store.ts';
+import { fullStatusStore } from '../stores/status.ts';
+import {
+  docsEntries,
+  mockEntries,
+  navigationEntries,
+  preparedEntries,
+} from './mockStoriesEntries.ts';
 
 const mockGetEntries = vi.fn();
 const fetch = vi.mocked(global.fetch);
@@ -35,7 +43,7 @@ const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-vi.mock('../lib/events', () => ({
+vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
 vi.mock('@storybook/global', () => ({
@@ -50,8 +58,12 @@ function createMockStore(initialState: Partial<State> = {}) {
   let state = initialState;
   return {
     getState: vi.fn(() => state),
-    setState: vi.fn((s: typeof state) => {
-      state = { ...state, ...s };
+    setState: vi.fn((s: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+      if (typeof s === 'function') {
+        state = { ...state, ...s(state) };
+      } else {
+        state = { ...state, ...s };
+      }
       return Promise.resolve(state);
     }),
   } as any as Store;
@@ -713,7 +725,7 @@ describe('stories API', () => {
       const { navigate, provider } = moduleArgs;
 
       provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('DOES not navigate if the story was already selected', async () => {
       const moduleArgs = createMockModuleArgs({ initialState: { path: '/story/a--1', index: {} } });
@@ -815,6 +827,8 @@ describe('stories API', () => {
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
         filteredIndex: { 'a--1': { args: { foo: 'bar' } } },
         index: { 'a--1': { args: { foo: 'bar' } } },
+        // Runtime enrichment is also cached on the ref so it survives index rebuilds (#34553).
+        storyUpdates: { 'a--1': { args: { foo: 'bar' } } },
       });
     });
     it('updateStoryArgs emits UPDATE_STORY_ARGS to the local frame and does not change anything', () => {
@@ -914,7 +928,7 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(1);
 
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('works backwards', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
@@ -925,7 +939,7 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(-1);
 
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are at the last story and go forward', () => {
       const initialState = {
@@ -1021,7 +1035,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(1);
-      expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
+      expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('works backwards', () => {
       const initialState = {
@@ -1035,7 +1049,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(-1);
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are in the last component and go forward', () => {
       const initialState = {
@@ -1071,7 +1085,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('sets view mode to docs if doc-level component is selected', () => {
       const initialState = { path: '/docs/a--1', storyId: 'a--1', viewMode: 'docs' };
@@ -1094,7 +1108,7 @@ describe('stories API', () => {
         },
       });
       api.selectStory('intro');
-      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs');
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('updates lastTrackedStoryId', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1143,7 +1157,7 @@ describe('stories API', () => {
 
       // When selecting the component, it should select the first visible child (a--2)
       api.selectStory('a');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
@@ -1154,7 +1168,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('a', '2');
-        expect(navigate).toHaveBeenCalledWith('/story/a--2');
+        expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
       });
       it('allows navigating to a given name (in the current component)', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1164,7 +1178,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory(undefined, '2');
-        expect(navigate).toHaveBeenCalledWith('/story/a--2');
+        expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
       });
     });
     it('allows navigating away from the settings pages', () => {
@@ -1175,7 +1189,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
-      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
     it('allows navigating to first story in component on call by component id', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1185,7 +1199,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a');
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('allows navigating to first story in group on call by group id', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1195,7 +1209,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('b');
-      expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
+      expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('allows navigating to first story in component on call by title', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1205,7 +1219,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('A');
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('allows navigating to the first story of the current component if passed nothing', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1215,7 +1229,7 @@ describe('stories API', () => {
 
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory();
-      expect(navigate).toHaveBeenCalledWith('/story/a--1');
+      expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     describe('component permalinks', () => {
       it('allows navigating to kind/storyname (legacy api)', () => {
@@ -1226,7 +1240,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e', '1');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
       it('allows navigating to component permalink/storyname (legacy api)', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1236,7 +1250,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('custom-id', '1');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
       it('allows navigating to first story in kind on call by kind', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1246,7 +1260,7 @@ describe('stories API', () => {
 
         api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e');
-        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
+        expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
       });
     });
   });
@@ -1449,6 +1463,97 @@ describe('stories API', () => {
       );
     });
   });
+  describe('SET_CONFIG', () => {
+    it('applies config sidebar filters to an index that was already set', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          tagPresets: {},
+          includedTagFilters: [],
+          excludedTagFilters: [],
+          includedStatusFilters: [],
+          excludedStatusFilters: [],
+        } as Partial<State>,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+
+      const entries: StoryIndex['entries'] = {
+        'a--1': {
+          type: 'story',
+          subtype: 'story',
+          id: 'a--1',
+          title: 'a',
+          name: '1',
+          tags: ['dev'],
+          importPath: './a.ts',
+        },
+        'b--1': {
+          type: 'story',
+          subtype: 'story',
+          id: 'b--1',
+          title: 'b',
+          name: '1',
+          tags: ['dev'],
+          importPath: './b.ts',
+        },
+      };
+
+      // The index arrives before the addon config (e.g. slow-loading manager entry)
+      await api.setIndex({ v: 5, entries });
+
+      expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
+
+      // Now the addon config with sidebar filters lands
+      provider.getConfig.mockReturnValue({
+        sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
+      });
+      provider.channel.emit(SET_CONFIG);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const { filteredIndex } = store.getState();
+      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+    });
+  });
+  describe('experimental_setFilters', () => {
+    it('applies multiple filters in a single call', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({
+        one: (item: any) => !item.id.startsWith('b'),
+        two: (item: any) => !item.id.startsWith('custom'),
+      });
+
+      expect(store.getState().filters).toEqual(
+        expect.objectContaining({
+          one: expect.any(Function),
+          two: expect.any(Function),
+        })
+      );
+      expect(Object.keys(store.getState().filteredIndex!)).toEqual(['a', 'a--1', 'a--2']);
+    });
+
+    it('emits SET_FILTER for each filter once the index is set', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const listener = vi.fn();
+      provider.channel.on(SET_FILTER, listener);
+
+      // Without an index, nothing is emitted (the filters only take effect later)
+      await api.experimental_setFilters({ one: () => true });
+      expect(listener).not.toHaveBeenCalled();
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({ one: () => true, two: () => true });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenCalledWith({ id: 'one' });
+      expect(listener).toHaveBeenCalledWith({ id: 'two' });
+    });
+  });
   describe('experimental_setFilter', () => {
     it('is included in the initial state', async () => {
       const moduleArgs = createMockModuleArgs({});
@@ -1478,7 +1583,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      api.experimental_setFilter('myCustomFilter', () => true);
+      await api.experimental_setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1581,37 +1686,38 @@ describe('stories API', () => {
       ]);
 
       await vi.waitFor(() => {
-        expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
-          {
-            "a": {
-              "children": [
-                "a--1",
-              ],
-              "depth": 0,
-              "id": "a",
-              "importPath": "./a.ts",
-              "name": "a",
-              "parent": undefined,
-              "renderLabel": undefined,
-              "tags": [],
-              "type": "component",
-            },
-            "a--1": {
-              "depth": 1,
-              "id": "a--1",
-              "importPath": "./a.ts",
-              "name": "1",
-              "parent": "a",
-              "prepared": false,
-              "renderLabel": undefined,
-              "subtype": "story",
-              "tags": [],
-              "title": "a",
-              "type": "story",
-            },
-          }
-        `);
+        expect(Object.keys(store.getState().filteredIndex ?? {})).toHaveLength(2);
       });
+      expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
+        {
+          "a": {
+            "children": [
+              "a--1",
+            ],
+            "depth": 0,
+            "id": "a",
+            "importPath": "./a.ts",
+            "name": "a",
+            "parent": undefined,
+            "renderLabel": undefined,
+            "tags": [],
+            "type": "component",
+          },
+          "a--1": {
+            "depth": 1,
+            "id": "a--1",
+            "importPath": "./a.ts",
+            "name": "1",
+            "parent": "a",
+            "prepared": false,
+            "renderLabel": undefined,
+            "subtype": "story",
+            "tags": [],
+            "title": "a",
+            "type": "story",
+          },
+        }
+      `);
     });
 
     it('persists filter when index is updated', async () => {
@@ -1670,6 +1776,472 @@ describe('stories API', () => {
           },
         }
       `);
+    });
+  });
+
+  describe('parseStatusesParam', () => {
+    it('returns empty arrays for undefined input', () => {
+      expect(parseStatusesParam(undefined)).toEqual({ included: [], excluded: [] });
+    });
+
+    it('returns empty arrays for empty string', () => {
+      expect(parseStatusesParam('')).toEqual({ included: [], excluded: [] });
+    });
+
+    it('parses included status short names', () => {
+      const result = parseStatusesParam('new;modified;related');
+      expect(result.included).toEqual([
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+      ]);
+      expect(result.excluded).toEqual([]);
+    });
+
+    it('parses excluded status short names with ! prefix', () => {
+      const result = parseStatusesParam('!error;!warning');
+      expect(result.included).toEqual([]);
+      expect(result.excluded).toEqual(['status-value:error', 'status-value:warning']);
+    });
+
+    it('parses mixed included and excluded', () => {
+      const result = parseStatusesParam('new;!error;pending');
+      expect(result.included).toEqual(['status-value:new', 'status-value:pending']);
+      expect(result.excluded).toEqual(['status-value:error']);
+    });
+
+    it('silently ignores unknown short names', () => {
+      const result = parseStatusesParam('new;unknownstatus;modified');
+      expect(result.included).toEqual(['status-value:new', 'status-value:modified']);
+      expect(result.excluded).toEqual([]);
+    });
+
+    it('parses all known status values', () => {
+      const result = parseStatusesParam(
+        'new;modified;related;error;warning;success;pending;unknown'
+      );
+      expect(result.included).toEqual([
+        'status-value:new',
+        'status-value:modified',
+        'status-value:affected',
+        'status-value:error',
+        'status-value:warning',
+        'status-value:success',
+        'status-value:pending',
+        'status-value:unknown',
+      ]);
+    });
+
+    it('keeps backward compatibility for affected in URL params', () => {
+      const result = parseStatusesParam('affected');
+      expect(result.included).toEqual(['status-value:affected']);
+      expect(result.excluded).toEqual([]);
+    });
+  });
+
+  describe('serializeStatusesParam', () => {
+    it('returns undefined for empty arrays', () => {
+      expect(serializeStatusesParam([], [])).toBeUndefined();
+    });
+
+    it('serializes included status values', () => {
+      expect(serializeStatusesParam(['status-value:new', 'status-value:modified'], [])).toBe(
+        'modified;new'
+      );
+    });
+
+    it('serializes excluded status values with ! prefix', () => {
+      expect(serializeStatusesParam([], ['status-value:error', 'status-value:warning'])).toBe(
+        '!error;!warning'
+      );
+    });
+
+    it('serializes mixed included and excluded', () => {
+      expect(serializeStatusesParam(['status-value:new'], ['status-value:error'])).toBe(
+        'new;!error'
+      );
+    });
+
+    it('serializes affected as related for URL params', () => {
+      expect(serializeStatusesParam(['status-value:affected'], [])).toBe('related');
+      expect(serializeStatusesParam([], ['status-value:affected'])).toBe('!related');
+    });
+
+    it('round-trips with parseStatusesParam', () => {
+      const included = ['status-value:new', 'status-value:pending'] as const;
+      const excluded = ['status-value:error'] as const;
+      const serialized = serializeStatusesParam([...included], [...excluded]);
+      const parsed = parseStatusesParam(serialized);
+      expect(parsed.included).toEqual(included);
+      expect(parsed.excluded).toEqual(excluded);
+    });
+  });
+
+  describe('status filter state', () => {
+    it('initializes with empty status filters', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { state } = initStories(moduleArgs as unknown as ModuleArgs);
+      expect(state.includedStatusFilters).toEqual([]);
+      expect(state.excludedStatusFilters).toEqual([]);
+    });
+
+    it('initializes status filters from URL statuses param', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          location: { search: '?path=/story/a--1&statuses=new%3Bmodified' } as any,
+        } as any,
+      });
+      const { state } = initStories({
+        ...(moduleArgs as unknown as ModuleArgs),
+        state: {
+          location: { search: '?statuses=new;modified' } as any,
+        } as any,
+      });
+      // 'new' and 'modified' are both included statuses from the URL param
+      expect(state.includedStatusFilters).toEqual(['status-value:new', 'status-value:modified']);
+      expect(state.excludedStatusFilters).toEqual([]);
+    });
+
+    it('addStatusFilters adds to included list', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:new'], false);
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual(['status-value:new']);
+      expect(excludedStatusFilters).toEqual([]);
+    });
+
+    it('addStatusFilters adds to excluded list when excluded=true', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:error'], true);
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual([]);
+      expect(excludedStatusFilters).toEqual(['status-value:error']);
+    });
+
+    it('addStatusFilters moves a status from included to excluded', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:new'], true);
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual([]);
+      expect(excludedStatusFilters).toEqual(['status-value:new']);
+    });
+
+    it('removeStatusFilters removes from both included and excluded', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          includedStatusFilters: ['status-value:new', 'status-value:modified'],
+          excludedStatusFilters: ['status-value:error'],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.removeStatusFilters(['status-value:new', 'status-value:error']);
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual(['status-value:modified']);
+      expect(excludedStatusFilters).toEqual([]);
+    });
+
+    it('resetStatusFilters clears both included and excluded', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: ['status-value:error'],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.resetStatusFilters();
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual([]);
+      expect(excludedStatusFilters).toEqual([]);
+    });
+
+    it('setAllStatusFilters replaces both included and excluded lists', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: ['status-value:error'],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.setAllStatusFilters(
+        ['status-value:modified', 'status-value:affected'],
+        ['status-value:warning']
+      );
+
+      const { includedStatusFilters, excludedStatusFilters } = store.getState();
+      expect(includedStatusFilters).toEqual(['status-value:modified', 'status-value:affected']);
+      expect(excludedStatusFilters).toEqual(['status-value:warning']);
+    });
+  });
+
+  describe('computeStatusFilterFn (via experimental_setFilter)', () => {
+    it('passes through all stories when both included and excluded are empty', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      // no status filters set - all stories should pass
+      const { filteredIndex } = store.getState();
+      expect(Object.keys(filteredIndex!)).toContain('a--1');
+      expect(Object.keys(filteredIndex!)).toContain('a--2');
+    });
+
+    it('applies OR logic within included status filters', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:new',
+          title: 'title',
+          description: 'desc',
+        },
+        {
+          typeId: 'addon-id',
+          storyId: 'a--2',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+
+      // Include only 'new' - only a--1 should appear (has 'new'), a--2 has 'error' only
+      await api.addStatusFilters(['status-value:new'], false);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toContain('a--1');
+        expect(Object.keys(filteredIndex!)).not.toContain('a--2');
+      });
+    });
+
+    it('applies exclude logic: story with excluded status is hidden', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+        {
+          typeId: 'addon-id',
+          storyId: 'a--2',
+          value: 'status-value:success',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+
+      // Exclude 'error' - a--1 should be hidden, a--2 with 'success' should pass
+      await api.addStatusFilters(['status-value:error'], true);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).not.toContain('a--1');
+        expect(Object.keys(filteredIndex!)).toContain('a--2');
+      });
+    });
+
+    it('story with no statuses is hidden when included filters are active', async () => {
+      vi.mock('../stores/status');
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+
+      // Set status only for a--1, leave a--2 with no status
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:new',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+
+      // Include 'new' - only a--1 passes (a--2 has no status so fails include check)
+      await api.addStatusFilters(['status-value:new'], false);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toContain('a--1');
+        expect(Object.keys(filteredIndex!)).not.toContain('a--2');
+      });
+    });
+  });
+
+  describe('selectFirstStory with status filters', () => {
+    it('uses filteredIndex when status filters are active', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1', depth: 0 } as any,
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          filteredIndex: {
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.selectFirstStory();
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+
+    /**
+     * Whilst the two of the built-in filters (status and tag) have easy ways to determine
+     * whether or not they are active, no other filters do - in particular, user-provided filters
+     * from experimental_setFilter.
+     *
+     * As such, the filtered index is now used if it is present, regardless of the heuristics that
+     * could be used to determine if the status/tag filters are active.
+     */
+    it('uses filteredIndex when status filters are not active', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1', depth: 0 } as any,
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          filteredIndex: {
+            'a--2': { type: 'story', id: 'a--2', depth: 0 } as any,
+          },
+          includedStatusFilters: [],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.selectFirstStory();
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+
+    it('suppresses navigation when status filters active but filteredIndex is empty', () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1', depth: 0 } as any,
+          },
+          filteredIndex: {},
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.selectFirstStory();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('STORY_SPECIFIED handler with status filters', () => {
+    it('navigates to first filtered story when active status filters exclude the emitted story', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1' } as any,
+            'a--2': { type: 'story', id: 'a--2' } as any,
+          },
+          filteredIndex: {
+            'a--2': { type: 'story', id: 'a--2' } as any,
+          },
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, provider } = moduleArgs;
+
+      // a--1 is NOT in filteredIndex, so it should navigate to a--2 instead
+      provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
+      expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+
+    it('suppresses navigation when active status filters exclude the emitted story and filteredIndex is empty', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/',
+          index: {
+            'a--1': { type: 'story', id: 'a--1' } as any,
+          },
+          filteredIndex: {},
+          includedStatusFilters: ['status-value:new'],
+          excludedStatusFilters: [],
+          includedTagFilters: [],
+          excludedTagFilters: [],
+        } as any,
+      });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, provider } = moduleArgs;
+
+      provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 });

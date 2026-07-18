@@ -1,6 +1,30 @@
-import { expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { asyncCache, cached, groupBy, invalidateCache, invariant } from './utils';
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+// Spy-only mock: keep the real `node:fs` shape, then redirect the sync reads used by
+// `cachedReadTextFileSync` to `memfs` so the mtime-aware cache is exercised in-memory.
+vi.mock('node:fs', { spy: true });
+
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import * as find from 'empathic/find';
+
+import { readFileSync, statSync } from 'node:fs';
+
+import { fs as memfs, vol } from 'memfs';
+
+import {
+  asyncCache,
+  cached,
+  cachedReadTextFileSync,
+  findTsconfigPath,
+  groupBy,
+  invalidateCache,
+  invariant,
+} from './utils.ts';
 
 // Helpers
 const calls = () => {
@@ -176,4 +200,121 @@ test('invalidateCache clears async module-level memo store', async () => {
   invalidateCache();
   expect(await m(2)).toBe(4);
   expect(c.count()).toBe(2);
+});
+
+describe('cachedReadTextFileSync', () => {
+  beforeEach(() => {
+    vol.reset();
+    invalidateCache();
+    // `cachedReadTextFileSync` reads via sync `node:fs`; point those calls at the in-memory volume.
+    vi.mocked(readFileSync).mockImplementation(
+      memfs.readFileSync as unknown as typeof readFileSync
+    );
+    vi.mocked(statSync).mockImplementation(memfs.statSync as unknown as typeof statSync);
+  });
+
+  afterEach(() => {
+    vol.reset();
+  });
+
+  test('returns cached content while the file is unchanged', () => {
+    const file = '/a.txt';
+    const stamp = new Date('2020-01-01T00:00:00Z');
+    memfs.writeFileSync(file, 'first');
+    memfs.utimesSync(file, stamp, stamp);
+
+    // First read caches the content against the file's mtime.
+    expect(cachedReadTextFileSync(file)).toBe('first');
+
+    // Rewrite the bytes but restore the original mtime: an identical mtime must serve the cached
+    // content rather than re-reading the tampered bytes.
+    memfs.writeFileSync(file, 'tampered');
+    memfs.utimesSync(file, stamp, stamp);
+    expect(cachedReadTextFileSync(file)).toBe('first');
+  });
+
+  test('re-reads the file when its mtime changes', () => {
+    const file = '/b.txt';
+    memfs.writeFileSync(file, 'before');
+    expect(cachedReadTextFileSync(file)).toBe('before');
+
+    memfs.writeFileSync(file, 'after');
+    const future = new Date(Date.now() + 1000);
+    memfs.utimesSync(file, future, future);
+
+    expect(cachedReadTextFileSync(file)).toBe('after');
+  });
+});
+
+describe('findTsconfigPath', () => {
+  beforeEach(() => {
+    invalidateCache();
+    vi.mocked(getProjectRoot).mockReturnValue('/project-root');
+  });
+
+  test('returns tsconfig.json when found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('falls back to tsconfig.base.json when tsconfig.json is not found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.base.json');
+  });
+
+  test('falls back to tsconfig.app.json when neither tsconfig.json nor tsconfig.base.json is found', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.app.json') {
+        return '/project-root/tsconfig.app.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.app.json');
+  });
+
+  test('returns undefined when no tsconfig variant is found', () => {
+    vi.mocked(find.up).mockReturnValue(undefined);
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBeUndefined();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('prefers tsconfig.json over fallback variants', () => {
+    vi.mocked(find.up).mockImplementation((name) => {
+      if (name === 'tsconfig.json') {
+        return '/project-root/tsconfig.json';
+      }
+      if (name === 'tsconfig.base.json') {
+        return '/project-root/tsconfig.base.json';
+      }
+      return undefined;
+    });
+
+    const result = findTsconfigPath('/project-root');
+
+    expect(result).toBe('/project-root/tsconfig.json');
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

@@ -4,11 +4,13 @@ import { ToggleButton } from 'storybook/internal/components';
 
 import { OutlineIcon } from '@storybook/icons';
 
-import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, PARAM_KEY } from './constants';
+import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import type { OutlineParameters } from './types.ts';
 
 export const OutlineSelector = memo(function OutlineSelector() {
+  const isDisabled = useParameter<OutlineParameters['outline']>(PARAM_KEY)?.disable;
   const [globals, updateGlobals] = useGlobals();
   const api = useStorybookApi();
 
@@ -23,6 +25,9 @@ export const OutlineSelector = memo(function OutlineSelector() {
   );
 
   useEffect(() => {
+    if (isDisabled) {
+      return;
+    }
     api.setAddonShortcut(ADDON_ID, {
       label: 'Toggle Outline',
       defaultShortcut: ['alt', 'O'],
@@ -30,7 +35,11 @@ export const OutlineSelector = memo(function OutlineSelector() {
       showInMenu: false,
       action: toggleOutline,
     });
-  }, [toggleOutline, api]);
+  }, [toggleOutline, api, isDisabled]);
+
+  if (isDisabled) {
+    return null;
+  }
 
   return (
     <ToggleButton

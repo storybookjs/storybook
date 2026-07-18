@@ -1,7 +1,7 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { commonGlobOptions } from './common-glob-options';
-import { getProjectRoot } from './paths';
+import { commonGlobOptions } from './common-glob-options.ts';
+import { getProjectRoot } from './paths.ts';
 
 /**
  * Helper function to scan for files matching a glob pattern and transform them

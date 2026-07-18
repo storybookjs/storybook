@@ -77,8 +77,13 @@ function main(options?: UserOptions): PluginOption {
     }));
   let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
 
-  const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) =>
-    env.command === 'serve' || env.mode === 'storybook';
+  const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) => {
+    // don't activate the plugin if we're running Vitest, since that will load Storybook's Vite config and cause issues with Vitest's Vite config
+    if (process.env.VITEST) {
+      return false;
+    }
+    return env.command === 'serve' || env.mode === 'storybook';
+  };
 
   return {
     name: 'storybook-env',

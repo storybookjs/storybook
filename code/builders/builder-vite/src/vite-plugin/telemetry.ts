@@ -31,7 +31,7 @@ const resolveTelemetryState = async (disableTelemetry: boolean | undefined) => {
   onPayloadError((error, eventType) => reportTelemetryError(error, eventType, disableTelemetry));
 };
 
-/** Emit the same 'dev' event as the CLI's doTelemetry, marked with vitePlugin: true. */
+/** Emit the same 'dev' event as the CLI's doTelemetry, marked as vitePlugin in metadata. */
 export async function emitDevTelemetry({
   configDir,
   disableTelemetry,
@@ -59,7 +59,6 @@ export async function emitDevTelemetry({
         versionStatus: 'disabled',
         storyIndex: summarizeIndex(indexAndStats.storyIndex),
         storyStats: indexAndStats.stats,
-        vitePlugin: true,
       };
     },
     { configDir }
@@ -82,7 +81,6 @@ export async function emitBuildTelemetry({
       {
         precedingUpgrade: await getPrecedingUpgrade(),
         storyIndex: summarizeIndex(storyIndex),
-        vitePlugin: true,
       },
       { configDir }
     );

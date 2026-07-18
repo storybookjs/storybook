@@ -17,6 +17,14 @@ export interface PostinstallOptions {
   yes?: boolean;
   skipInstall?: boolean;
   /**
+   * Whether nested `storybook` CLI invocations must fetch the package into an ephemeral
+   * environment (dlx/npx) instead of running the locally installed binary. Defaults to
+   * `skipInstall`, since a skipped install is the one case where no local binary exists; the init
+   * command overrides it because it installs dependencies before postinstall scripts run while
+   * still passing `skipInstall: true` to keep dependency handling to itself.
+   */
+  useRemotePkg?: boolean;
+  /**
    * Skip all dependency management (collecting, adding to package.json, installing). Used when the
    * caller (e.g., init command) has already handled dependencies.
    */

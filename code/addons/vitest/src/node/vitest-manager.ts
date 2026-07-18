@@ -190,6 +190,11 @@ export class VitestManager {
       try {
         await this.runningPromise;
         await this.vitest?.close();
+        // Drop the closed instance before restarting. The coverage reporter options passed to
+        // createVitest reference this manager, and Vitest deep-clones its options — on Vite 6
+        // that traversal reaches the closed module runner's `import.meta.env` proxy (an own
+        // property of ModuleRunner there), whose get trap throws on any dynamic access.
+        this.vitest = null;
         await this.startVitest({ coverage });
         resolve();
       } catch (e) {

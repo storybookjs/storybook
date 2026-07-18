@@ -1,5 +1,28 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
+
+/**
+ * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
+ * workspace layer single-threaded at roughly 20MB/s, so ~2.5GB of
+ * node_modules dominated the step regardless of file count (measured: packing
+ * the trees into a plain tar left persist at 140s). Pre-compressing makes
+ * CircleCI's own compression and every downstream download proportionally
+ * cheaper. No executor image ships a zstd CLI (cimg/node, playwright,
+ * machine - verified via step diagnostics), but stock Node >= 22.15 exposes
+ * zstd through node:zlib, so scripts/ci/zstd-stream.mjs runs it straight from
+ * the git checkout, before (and without) node_modules. zstd level 3 both
+ * compresses better and runs faster than `gzip -1`.
+ */
+export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
+
+const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
+
+/**
+ * The generated sandboxes get the same treatment: they are mostly
+ * node_modules, so persisting them raw pays the same single-threaded workspace
+ * compression cost on the create job and again on every downstream attach.
+ */
+export const sandboxArchive = (id: string) => `workspace-sandbox-${id}.tar.zst`;
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -14,6 +37,72 @@ export const workspace = {
       persist_to_workspace: {
         paths,
         root,
+      },
+    };
+  },
+  pack: (requiredPaths: string[], optionalPaths: string[], root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Pack node_modules for workspace',
+        working_directory: root,
+        // Per-package node_modules only exist for packages with unhoistable
+        // dependencies, so they are filtered at runtime; the root trees are
+        // passed straight to tar so a missing one fails the job loudly.
+        command: [
+          'node --version',
+          'optional=""',
+          `for p in ${optionalPaths.join(' ')}; do`,
+          '  if [ -e "$p" ]; then optional="$optional $p"; fi',
+          'done',
+          `tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}`,
+          `ls -la ${PACKED_NODE_MODULES_ARCHIVE}`,
+        ].join('\n'),
+      },
+    };
+  },
+  unpack: (root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Unpack node_modules from workspace',
+        working_directory: root,
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
+        ].join('\n'),
+      },
+    };
+  },
+  packSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Pack sandbox for workspace',
+        working_directory: root,
+        // posix (pax) format keeps sub-second mtimes, which webpack's
+        // filesystem cache snapshots compare against: the default gnu format
+        // truncates them to whole seconds, invalidating the cache and turning
+        // the sandbox's dev-server start into a full cold compile. atime and
+        // ctime headers are dropped as they only add archive size.
+        command: [
+          'node --version',
+          `tar --create --format=posix --pax-option=delete=atime,delete=ctime ${SANDBOX_DIR}/${id} | node ${ZSTD_STREAM} compress 3 > ${sandboxArchive(id)}`,
+          `ls -la ${sandboxArchive(id)}`,
+        ].join('\n'),
+      },
+    };
+  },
+  unpackSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Unpack sandbox from workspace',
+        working_directory: root,
+        // --no-same-owner matches attach_workspace semantics: extraction as
+        // root (the Playwright image) must not preserve the create job's uid,
+        // or git refuses to operate on the sandbox repo ("dubious ownership")
+        // and the change-detection feature and its E2E tests break.
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${sandboxArchive(id)} | tar --extract --no-same-owner`,
+        ].join('\n'),
       },
     };
   },
@@ -181,11 +270,16 @@ export const verdaccio = {
 };
 
 export const workflow = {
-  restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
+  restoreLinux: ({
+    sandboxId,
+    ...checkoutOpts
+  }: { forceHttps?: boolean; shallow?: boolean; sandboxId?: string } = {}) => [
     git.checkout(checkoutOpts),
     // Downstream jobs should consume precomputed outputs exclusively from the
     // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
+    workspace.unpack(),
+    ...(sandboxId ? [workspace.unpackSandbox(sandboxId)] : []),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),

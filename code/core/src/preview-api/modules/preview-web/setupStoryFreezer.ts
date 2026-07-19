@@ -276,7 +276,15 @@ const createStoryFreezer = (windowRef: Window, documentRef: Document) => {
   return { freeze };
 };
 
-export const setupStoryFreezer = (channel: Pick<Channel, 'on'>) => {
+export type StoryFreezerOptions = {
+  /** Called once after the document has been frozen. */
+  onFrozen?: () => void;
+};
+
+export const setupStoryFreezer = (
+  channel: Pick<Channel, 'on'>,
+  options: StoryFreezerOptions = {}
+) => {
   const windowRef = global.window;
   const documentRef = global.document;
   if (!windowRef || !documentRef) {
@@ -289,12 +297,21 @@ export const setupStoryFreezer = (channel: Pick<Channel, 'on'>) => {
 
   addPreFreezeStyles(documentRef);
   const freezer = createStoryFreezer(windowRef, documentRef);
+  let notifiedFrozen = false;
   channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
     if (newPhase === 'finished') {
+      const runFreeze = () => {
+        if (notifiedFrozen) {
+          return;
+        }
+        freezer.freeze();
+        notifiedFrozen = true;
+        options.onFrozen?.();
+      };
       if (typeof windowRef.queueMicrotask === 'function') {
-        windowRef.queueMicrotask(freezer.freeze);
+        windowRef.queueMicrotask(runFreeze);
       } else {
-        windowRef.setTimeout(freezer.freeze, 0);
+        windowRef.setTimeout(runFreeze, 0);
       }
     }
   });

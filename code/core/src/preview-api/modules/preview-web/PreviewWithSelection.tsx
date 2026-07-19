@@ -42,10 +42,13 @@ import type { MaybePromise } from './Preview.tsx';
 import { Preview } from './Preview.tsx';
 import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
+import { shouldAutoplay } from './embedMode.ts';
+import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
+import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
@@ -102,7 +105,20 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
-    setupStoryFreezer(this.channel);
+    const { onContentFrozen } = setupContentResizeBroadcast({
+      getViewport: () => {
+        const render = this.currentRender;
+        if (!render || !isStoryRender(render)) {
+          return undefined;
+        }
+
+        return getEmbedResizeViewport(this.storyStoreValue, render, {
+          width: globalWindow.innerWidth,
+          height: globalWindow.innerHeight,
+        });
+      },
+    });
+    setupStoryFreezer(this.channel, { onFrozen: onContentFrozen });
 
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));
     this.channel.on(UPDATE_QUERY_PARAMS, this.onUpdateQueryParams.bind(this));
@@ -327,7 +343,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         renderToCanvas,
         this.mainStoryCallbacks(storyId),
         storyId,
-        'story'
+        'story',
+        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(

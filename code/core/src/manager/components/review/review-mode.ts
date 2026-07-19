@@ -3,16 +3,8 @@ import type { API } from 'storybook/manager-api';
 
 import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
 import { REVIEWING_STATUS_VALUE } from './review-status.ts';
+import { reviewStore } from './review-store.ts';
 import { sessionStore } from './session-store.ts';
-
-// Persisted flag marking the manager as being in review mode. Review mode is
-// interaction-driven (never inferred from the URL) and survives reloads via
-// this key.
-const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
-
-// Snapshot of the manager chrome (sidebar/addon panel visibility) taken when
-// review mode is entered, so the exact pre-review layout can be restored on exit.
-const CHROME_SNAPSHOT_SESSION_KEY = `${REVIEW_NAMESPACE}/chrome-snapshot`;
 
 // Snapshot of the sidebar filters taken when review mode is entered, so the
 // pre-review filters can be restored on exit.
@@ -26,18 +18,21 @@ export interface ReviewModeFilters {
   excludedTagFilters: string[];
 }
 
-type ReviewModeApi = Pick<
-  API,
-  | 'toggleNav'
-  | 'togglePanel'
-  | 'getIsNavShown'
-  | 'getIsPanelShown'
-  | 'setAllStatusFilters'
-  | 'setAllTagFilters'
->;
+type ReviewModeApi = Pick<API, 'setAllStatusFilters' | 'setAllTagFilters' | 'removeStatusFilters'>;
+
+/** Reviewing is owned by review mode and must never be restored after exit. */
+const stripReviewingStatusFilter = (filters: ReviewModeFilters): ReviewModeFilters => ({
+  ...filters,
+  includedStatusFilters: filters.includedStatusFilters.filter(
+    (value) => value !== REVIEWING_STATUS_VALUE
+  ),
+  excludedStatusFilters: filters.excludedStatusFilters.filter(
+    (value) => value !== REVIEWING_STATUS_VALUE
+  ),
+});
 
 /** Whether the manager is currently in review mode (persisted across reloads). */
-export const isReviewModeActive = (): boolean => sessionStore.read(REVIEW_MODE_SESSION_KEY) === '1';
+export const isReviewModeActive = (): boolean => reviewStore.getState().isInReviewMode;
 
 const readJson = <T>(key: string): T | null => {
   const raw = sessionStore.read(key);
@@ -52,53 +47,48 @@ const readJson = <T>(key: string): T | null => {
 };
 
 /**
- * Enter review mode: the single place chrome collapse and filter narrowing
- * happen. On the first entry it snapshots the current chrome and filters so
- * {@link exitReviewMode} can restore them. Idempotent: re-entering while already
- * in review mode re-applies the focused layout without overwriting the snapshot.
+ * Enter review mode: snapshot sidebar filters and narrow to reviewing stories.
+ * Idempotent — re-entering while already in review mode is a no-op.
  */
 export const enterReviewMode = async (
   api: ReviewModeApi,
   filters: ReviewModeFilters
 ): Promise<void> => {
-  if (!isReviewModeActive()) {
-    sessionStore.write(
-      CHROME_SNAPSHOT_SESSION_KEY,
-      JSON.stringify({
-        nav: api.getIsNavShown(),
-        panel: api.getIsPanelShown(),
-      })
-    );
-    sessionStore.write(FILTERS_SNAPSHOT_SESSION_KEY, JSON.stringify(filters));
-    sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
+  if (isReviewModeActive()) {
+    return;
   }
 
-  api.toggleNav(false);
-  api.togglePanel(false);
-  await api.setAllTagFilters([], []);
-  await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+  sessionStore.write(
+    FILTERS_SNAPSHOT_SESSION_KEY,
+    JSON.stringify(stripReviewingStatusFilter(filters))
+  );
+
+  // Enter optimistically so the UI flips before the async filter setters land.
+  reviewStore.setReviewMode(true);
+  try {
+    await api.setAllTagFilters([], []);
+    await api.setAllStatusFilters([REVIEWING_STATUS_VALUE], []);
+  } catch (error) {
+    reviewStore.setReviewMode(false);
+    sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);
+    throw error;
+  }
 };
 
 /**
- * Exit review mode: restore the chrome and filters captured on entry and clear
- * the persisted review-mode flag. Always restores the pre-review snapshot.
+ * Exit review mode: restore the filters captured on entry and clear the
+ * persisted review-mode flag.
  */
 export const exitReviewMode = async (api: ReviewModeApi): Promise<void> => {
-  const chrome = readJson<{ nav: boolean; panel: boolean }>(CHROME_SNAPSHOT_SESSION_KEY);
-  if (chrome?.nav) {
-    api.toggleNav(true);
-  }
-  if (chrome?.panel) {
-    api.togglePanel(true);
-  }
-
   const filters = readJson<ReviewModeFilters>(FILTERS_SNAPSHOT_SESSION_KEY);
   if (filters) {
-    await api.setAllTagFilters(filters.includedTagFilters, filters.excludedTagFilters);
-    await api.setAllStatusFilters(filters.includedStatusFilters, filters.excludedStatusFilters);
+    const restored = stripReviewingStatusFilter(filters);
+    await api.setAllTagFilters(restored.includedTagFilters, restored.excludedTagFilters);
+    await api.setAllStatusFilters(restored.includedStatusFilters, restored.excludedStatusFilters);
+  } else {
+    await api.removeStatusFilters([REVIEWING_STATUS_VALUE]);
   }
 
-  sessionStore.remove(CHROME_SNAPSHOT_SESSION_KEY);
   sessionStore.remove(FILTERS_SNAPSHOT_SESSION_KEY);
-  sessionStore.remove(REVIEW_MODE_SESSION_KEY);
+  reviewStore.setReviewMode(false);
 };

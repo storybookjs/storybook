@@ -389,6 +389,7 @@ export default {
     'keyframes',
     'lighten',
     'srOnlyStyles',
+    'srOnlyUnsetStyles',
     'styled',
     'themes',
     'tokens',

@@ -21,6 +21,8 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   experimentalCodeExamples?: boolean;
+  experimentalDocgenServer?: boolean;
+  experimentalReview?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -28,6 +30,7 @@ Type:
   measure?: boolean;
   outline?: boolean;
   sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -53,6 +56,7 @@ Type:
   measure?: boolean;
   outline?: boolean;
   sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -77,6 +81,7 @@ Type:
   measure?: boolean;
   outline?: boolean;
   sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
   toolbars?: boolean;
   viewport?: boolean;
 }
@@ -142,6 +147,8 @@ Default: `false`
 
 Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
 
+When combined with [`experimentalDocgenServer`](#experimentaldocgenserver), manifests use a ref-based format with per-component JSON snapshots for faster MCP loading.
+
 <CodeSnippets path="main-config-features-components-manifest.md" />
 
 </If>
@@ -184,11 +191,45 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 
 Type: `boolean`
 
+Prefer [`experimentalDocgenServer`](#experimentaldocgenserver) — it supersedes this flag and provides the same static snippet behavior along with faster, more accurate docgen.
+
 Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
 
 Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
 
 <CodeSnippets path="main-config-features-experimental-code-examples.md" />
+
+## `experimentalDocgenServer`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+
+When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) because snippet generation is handled by the server-side story-docs service.
+
+Snippets are static: they won't update if you change values in the Controls table.
+
+This feature is currently only supported for React projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC.
+
+<CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
+## `experimentalReview`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
+
+Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
+
+<CodeSnippets path="main-config-features-experimental-review.md" />
 
 ## `experimentalTestSyntax`
 
@@ -233,6 +274,14 @@ Type: `boolean`
 Default: `true`
 
 Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
+
+## `menuOnboardingChecklist`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable a link to the onboarding guide in the menu.
 
 ## `outline`
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.5.0-alpha.9",
+  "version": "10.6.0-alpha.1",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -35,6 +35,7 @@
       "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {

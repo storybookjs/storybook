@@ -1,15 +1,15 @@
 import React from 'react';
 
-import { expect, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import preview from '../../../../../../.storybook/preview.tsx';
-import type { StoryInfo } from '../components/CollectionGrid.tsx';
+import { IconSymbols } from '../../sidebar/IconSymbols.tsx';
 import type { ReviewState } from '../review-state.ts';
+import type { StoryInfo } from '../review-types.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
 const getStoryPreviewHref = (storyId: string) =>
-  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&freeze=finished`;
+  `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`;
 
 const minimal: ReviewState = {
   title: 'Button prop rename',
@@ -58,8 +58,6 @@ const largeCascade: ReviewState = {
         'Manager views consume shared typography, spacing, and theming tokens that can shift subtly.',
       storyIds: [
         'manager-main--default',
-        'manager-main--about-page',
-        'manager-main--guide-page',
         'manager-sidebar-sidebar--simple',
         'manager-sidebar-sidebar--with-refs',
         'manager-sidebar-sidebar--statuses-open',
@@ -123,7 +121,7 @@ const pagesAndBench: ReviewState = {
       storyIds: [
         'manager-settings-aboutscreen--default',
         'manager-settings-guidepage--default',
-        'manager-main--about-page',
+        'manager-main--default',
         'bench--es-build-analyzer',
       ],
     },
@@ -459,7 +457,10 @@ const meta = preview.meta({
   parameters: {
     layout: 'fullscreen',
     chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+      // Ignore the entire thumbnail cell, not just the iframe: the loading overlay and the
+      // self-measuring iframe render nondeterministically (especially in Edge), and pixels
+      // outside the iframe but inside the cell kept flagging spurious changes on every build.
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
   args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: () => {} },
@@ -482,6 +483,14 @@ export const Minimal = meta.story({
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
     await expect(await canvas.findByText('The directly changed component.')).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Exit review' })).toBeInTheDocument();
+
+    // The "Summary:" label is a real level-2 heading, not just bold text.
+    await expect(canvas.getByRole('heading', { level: 2, name: /Summary/ })).toBeInTheDocument();
+    // The collection title is a level-2 heading and names its region landmark.
+    await expect(canvas.getByRole('heading', { level: 2, name: 'Button' })).toBeInTheDocument();
+    await expect(canvas.getByRole('region', { name: 'Button' })).toBeInTheDocument();
+    // The story count exposes an accessible label describing what it counts.
+    await expect(canvas.getByLabelText('2 stories')).toBeInTheDocument();
   },
 });
 
@@ -505,6 +514,14 @@ export const Full = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+
+    // The "new stories" filter is a switch that flips its pressed state on click.
+    const filter = await canvas.findByRole('switch', { name: /new/i });
+    await expect(filter).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(filter);
+    await expect(filter).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(filter);
+    await expect(filter).toHaveAttribute('aria-checked', 'false');
   },
 });
 
@@ -538,12 +555,22 @@ export const RealAtomicChange = meta.story({
 });
 
 export const Stale = meta.story({
-  args: { state: full, isStale: true },
+  args: { state: full, banner: { kind: 'stale' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
     await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
+  },
+});
+
+export const PendingUpdate = meta.story({
+  args: { state: full, banner: { kind: 'pending-update', onAccept: fn() } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('A new review is available.')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
+    await expect(canvas.queryByText(/Code changes detected/)).not.toBeInTheDocument();
   },
 });
 

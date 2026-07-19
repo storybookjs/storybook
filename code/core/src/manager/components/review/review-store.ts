@@ -1,74 +1,154 @@
 import { useSyncExternalStore } from 'react';
 
-import type { StoryInfo } from './components/CollectionGrid.tsx';
+import { REVIEW_NAMESPACE } from '../../../shared/review/index.ts';
+
+import type { AttentionBannerProps } from './components/AttentionBanner.tsx';
 import type { ReviewNavEntry } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import type { StoryInfo } from './review-types.ts';
+import { sessionStore } from './session-store.ts';
 
-export interface ReviewStoreState {
-  state: ReviewState | null;
-  isStale: boolean;
-  hasPendingUpdate: boolean;
-  onAcceptPendingUpdate: () => void;
+// Persisted flag marking the manager as being in review mode. Review mode is
+// interaction-driven (never inferred from the URL) and survives reloads via
+// this key. Owned by the store so `isInReviewMode` has a single write path.
+const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
+
+/**
+ * The attention banner to render at the top of review surfaces, if any.
+ * Pending-update outranks stale: accepting the update supersedes the warning.
+ */
+export type ReviewBanner = AttentionBannerProps | null;
+
+/**
+ * Values the store cannot compute itself because they depend on React-land
+ * inputs (the Storybook index, statuses, and the current route). ReviewProvider
+ * recomputes them whenever their inputs change and pushes them via
+ * {@link reviewStore.setDerived}.
+ */
+export interface ReviewDerivedState {
   storyInfo: Record<string, StoryInfo>;
   flattenedEntries: ReviewNavEntry[];
   newlyAddedStoryIds: Set<string>;
   activeEntry: ReviewNavEntry | null;
   activeIndex: number;
-  isInReviewMode: boolean;
   isSummaryVisible: boolean;
-  getStoryPreviewHref: (storyId: string) => string;
-  dismissReview: () => void;
+  banner: ReviewBanner;
 }
 
-const emptyStore: ReviewStoreState = {
+export interface ReviewStoreState extends ReviewDerivedState {
+  /** The displayed review. */
+  state: ReviewState | null;
+  /** An updated payload held back until the user accepts it. */
+  pendingReview: ReviewState | null;
+  isStale: boolean;
+  isInReviewMode: boolean;
+  /** True while navigateOutOfReview is in flight; blocks the summary auto-enter. */
+  isExiting: boolean;
+}
+
+interface ReviewCoreState {
+  state: ReviewState | null;
+  pendingReview: ReviewState | null;
+  isStale: boolean;
+  isInReviewMode: boolean;
+  isExiting: boolean;
+}
+
+const emptyCore: ReviewCoreState = {
   state: null,
+  pendingReview: null,
   isStale: false,
-  hasPendingUpdate: false,
-  onAcceptPendingUpdate: () => {},
+  isInReviewMode: false,
+  isExiting: false,
+};
+
+const emptyDerived: ReviewDerivedState = {
   storyInfo: {},
   flattenedEntries: [],
   newlyAddedStoryIds: new Set(),
   activeEntry: null,
   activeIndex: -1,
-  isInReviewMode: false,
   isSummaryVisible: false,
-  getStoryPreviewHref: () => '',
-  dismissReview: () => {},
+  banner: null,
 };
 
-let currentStore: ReviewStoreState = emptyStore;
+let core: ReviewCoreState = {
+  ...emptyCore,
+  isInReviewMode: sessionStore.read(REVIEW_MODE_SESSION_KEY) === '1',
+};
+let derived: ReviewDerivedState = emptyDerived;
+
+const buildSnapshot = (): ReviewStoreState => ({
+  ...derived,
+  state: core.state,
+  pendingReview: core.pendingReview,
+  isStale: core.isStale,
+  isInReviewMode: core.isInReviewMode,
+  isExiting: core.isExiting,
+});
+
+let snapshot: ReviewStoreState = buildSnapshot();
+
 const listeners = new Set<() => void>();
 
-/** Synchronously hide the summary overlay before SPA navigation to a story. */
-let summaryOverlaySuppressed = false;
-
 const notify = () => {
+  snapshot = buildSnapshot();
   listeners.forEach((listener) => listener());
 };
 
+const commit = (patch: Partial<ReviewCoreState>) => {
+  core = { ...core, ...patch };
+  notify();
+};
+
+/**
+ * Single source of truth for review state. Channel handlers and actions write
+ * to it directly; React reads it via {@link useReview}.
+ */
 export const reviewStore = {
-  getState: () => currentStore,
-  setState: (next: ReviewStoreState) => {
-    currentStore = next;
-    notify();
-  },
+  getState: (): ReviewStoreState => snapshot,
   subscribe: (listener: () => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  suppressSummaryOverlay: () => {
-    if (!summaryOverlaySuppressed) {
-      summaryOverlaySuppressed = true;
-      notify();
-    }
+  /** Show a review, replacing any displayed or deferred one. */
+  displayReview: (next: ReviewState) => {
+    commit({ state: next, pendingReview: null, isStale: !!next.stale });
   },
-  releaseSummaryOverlaySuppression: () => {
-    if (summaryOverlaySuppressed) {
-      summaryOverlaySuppressed = false;
-      notify();
-    }
+  /** Hold an updated payload until the user accepts it. */
+  deferReview: (next: ReviewState) => {
+    commit({ pendingReview: next });
   },
-  isSummaryOverlayShown: () => currentStore.isSummaryVisible && !summaryOverlaySuppressed,
+  setStale: (isStale: boolean) => {
+    commit({ isStale });
+  },
+  /** Drop all review state (dismissal), including the persisted review-mode flag. */
+  clearReview: () => {
+    sessionStore.remove(REVIEW_MODE_SESSION_KEY);
+    commit({ state: null, pendingReview: null, isStale: false, isInReviewMode: false });
+  },
+  /** Toggle review mode, persisted so it survives reloads. */
+  setReviewMode: (active: boolean) => {
+    if (active) {
+      sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
+    } else {
+      sessionStore.remove(REVIEW_MODE_SESSION_KEY);
+    }
+    commit({ isInReviewMode: active });
+  },
+  setExiting: (isExiting: boolean) => {
+    commit({ isExiting });
+  },
+  /** Push values derived by ReviewProvider from index/status/route inputs. */
+  setDerived: (next: ReviewDerivedState) => {
+    derived = next;
+    notify();
+  },
+  reset: () => {
+    core = { ...emptyCore };
+    derived = emptyDerived;
+    notify();
+  },
 };
 
 export const useReview = (): ReviewStoreState =>

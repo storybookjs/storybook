@@ -1,5 +1,11 @@
+import {
+  REVIEW_COLLECTION_QUERY_PARAM,
+  isReviewSummaryPath,
+} from '../../../shared/review/routes.ts';
 import { REVIEW_CHANGES_URL } from './constants.ts';
 import type { ReviewState } from './review-state.ts';
+
+export { REVIEW_COLLECTION_QUERY_PARAM, isReviewSummaryPath };
 
 /** Fallback display name when the Storybook index has not resolved a title. */
 export const prettifyComponentId = (componentId: string) =>
@@ -14,8 +20,6 @@ export interface ReviewNavEntry {
   storyId: string;
   collectionIndex: number;
 }
-
-export const REVIEW_COLLECTION_QUERY_PARAM = 'collection';
 
 export const buildReviewChangesSummaryHref = () => `?path=${REVIEW_CHANGES_URL}`;
 
@@ -67,14 +71,15 @@ export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] =
   return entries;
 };
 
-export const isReviewSummaryPath = (path: string): boolean =>
-  path === REVIEW_CHANGES_URL || path === '/review';
-
 /** True when a manager search string points back at a review route (not a canvas). */
 export const isReviewReturnSearch = (search: string): boolean => {
-  const path =
-    new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('path') ?? '';
-  return isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL);
+  const normalized = search.startsWith('?') ? search.slice(1) : search;
+  const params = new URLSearchParams(normalized);
+  const path = params.get('path') ?? '';
+  if (isReviewSummaryPath(path) || path.startsWith(REVIEW_CHANGES_URL)) {
+    return true;
+  }
+  return path.startsWith('/story/') && params.has(REVIEW_COLLECTION_QUERY_PARAM);
 };
 
 export const parseStoryIdFromPath = (path: string): string | null => {
@@ -124,18 +129,18 @@ export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntr
     (entry) => entry.storyId === active.storyId && entry.collectionIndex === active.collectionIndex
   );
 
-/** Previous/next targets in the flattened review sequence, wrapping at the ends. */
+/** Previous/next targets in the flattened review sequence; null at the ends (no wrap). */
 export const getAdjacentReviewEntries = (
   entries: readonly ReviewNavEntry[],
   index: number
-): { previous: ReviewNavEntry; next: ReviewNavEntry } | null => {
+): { previous: ReviewNavEntry | null; next: ReviewNavEntry | null } | null => {
   const total = entries.length;
   if (total === 0 || index < 0 || index >= total) {
     return null;
   }
   return {
-    previous: entries[(index - 1 + total) % total],
-    next: entries[(index + 1) % total],
+    previous: index > 0 ? entries[index - 1] : null,
+    next: index < total - 1 ? entries[index + 1] : null,
   };
 };
 
@@ -162,8 +167,10 @@ export const getAdjacentCollectionFirstStory = (
 /** Keyboard shortcut targets for the active reviewed story, as ready-to-navigate hrefs. */
 export interface ReviewShortcutHrefs {
   back: string;
-  previous: string;
-  next: string;
+  /** Null at the first story so the shortcut does not wrap to the last one. */
+  previous: string | null;
+  /** Null at the last story so the shortcut does not wrap to the first one. */
+  next: string | null;
   previousCollection: string;
   nextCollection: string;
 }
@@ -186,8 +193,8 @@ export const buildReviewShortcutHrefs = (
 
   return {
     back: buildReviewChangesSummaryHref(),
-    previous: buildReviewStoryHref(neighbors?.previous ?? fallback),
-    next: buildReviewStoryHref(neighbors?.next ?? fallback),
+    previous: neighbors?.previous ? buildReviewStoryHref(neighbors.previous) : null,
+    next: neighbors?.next ? buildReviewStoryHref(neighbors.next) : null,
     previousCollection: buildReviewStoryHref(previousCollection),
     nextCollection: buildReviewStoryHref(nextCollection),
   };

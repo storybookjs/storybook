@@ -20,7 +20,8 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools/index.ts';
-import { SupportedLanguage } from '../../code/core/src/types/index.ts';
+import { SupportedLanguage } from 'storybook/internal/types';
+
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';

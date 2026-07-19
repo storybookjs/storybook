@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "10.5.0-alpha.9",
+  "version": "10.6.0-alpha.1",
   "description": "Storybook Server renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -47,7 +47,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

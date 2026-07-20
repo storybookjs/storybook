@@ -9939,6 +9939,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/docgen-harness@workspace:code/lib/docgen-harness":
+  version: 0.0.0-use.local
+  resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/ember@workspace:*, @storybook/ember@workspace:code/frameworks/ember":
   version: 0.0.0-use.local
   resolution: "@storybook/ember@workspace:code/frameworks/ember"

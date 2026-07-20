@@ -2,11 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { createFsFromVolume, Volume } from 'memfs';
 import webpack from 'webpack';
+import type { PathData } from 'webpack';
 
 import { createPreviewFilename } from './preview-filename.ts';
 
 const filenameFor = (name: string, isProd = false) =>
   createPreviewFilename(isProd)({ chunk: { id: name, name, hash: '' } });
+
+const filenameForChunk = (chunk: { id?: string | number; name?: string }) =>
+  createPreviewFilename(false)({
+    chunk: { ...chunk, hash: '' } as NonNullable<PathData['chunk']>,
+  });
 
 const compile = async (source: string, isProd: boolean) => {
   const longEntryName = `entry-${'deeply-nested-'.repeat(30)}stories`;
@@ -55,6 +61,20 @@ describe('createPreviewFilename', () => {
     expect(filenameFor('src-components-button-stories')).toBe(
       'src-components-button-stories.iframe.bundle.js'
     );
+  });
+
+  it('uses the chunk id when the chunk name is empty', () => {
+    expect(filenameForChunk({ id: '123', name: '' })).toBe('123.iframe.bundle.js');
+  });
+
+  it('uses a generic fallback when the chunk name and id are missing', () => {
+    expect(filenameForChunk({ name: '' })).toBe('chunk.iframe.bundle.js');
+    expect(filenameForChunk({})).toBe('chunk.iframe.bundle.js');
+    expect(createPreviewFilename(false)({})).toBe('chunk.iframe.bundle.js');
+  });
+
+  it('retains numeric chunk id zero', () => {
+    expect(filenameForChunk({ id: 0, name: '' })).toBe('0.iframe.bundle.js');
   });
 
   it('bounds long filename components', () => {

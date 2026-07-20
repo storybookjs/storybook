@@ -28,7 +28,8 @@ export function createPreviewFilename(isProd: boolean) {
   const suffix = isProd ? '.[contenthash:8].iframe.bundle.js' : '.iframe.bundle.js';
 
   return ({ chunk }: PathData) => {
-    const name = String(chunk?.name ?? chunk?.id ?? 'chunk');
+    const nameOrId = chunk?.name || chunk?.id;
+    const name = String(nameOrId === 0 ? 0 : nameOrId || 'chunk');
     const sanitizedName = name
       .replace(UNSAFE_FILENAME_CHARACTERS, '-')
       .replace(/[ .]+$/g, (characters) => '-'.repeat(characters.length));

@@ -1,3 +1,20 @@
+## 10.5.2
+
+- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
+- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
+- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
+- TanStack: Fix createServerFn validator mock - [#35185](https://github.com/storybookjs/storybook/pull/35185), thanks @sjh9714!
+- TanStack: Support pathless layout routes (id-only) in story routing - [#35465](https://github.com/storybookjs/storybook/pull/35465), thanks @unpunnyfuns!
+- Tanstack-react: Add missing Hydrate export - [#35111](https://github.com/storybookjs/storybook/pull/35111), thanks @arun-357!
+- Tanstack-react: Keep JSX-only component references during dead-code elimination - [#35206](https://github.com/storybookjs/storybook/pull/35206), thanks @yatishgoel!
+- Vitest: Fix coverage toggle crash on Vite 6 by clearing closed Vitest instance on restart - [#35461](https://github.com/storybookjs/storybook/pull/35461), thanks @yannbf!
+
+## 10.5.1
+
+- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
+- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
+- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
+
 ## 10.5.0
 
 > _Foundational changes for new AI workflows_

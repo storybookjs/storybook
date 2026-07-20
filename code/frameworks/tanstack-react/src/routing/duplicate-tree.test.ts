@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createMemoryHistory,
   createRootRoute,
@@ -33,6 +33,25 @@ function buildAuthedTree(layoutOptions: Record<string, unknown> = {}) {
   root.addChildren([layout]);
   return { root, layout, dashboard };
 }
+
+describe('duplicateRouteTree root options', () => {
+  it('copies root behavior but never the document shell', () => {
+    const RootComponent = () => null;
+    const rootBeforeLoad = vi.fn();
+    const Shell = ({ children }: { children: unknown }) => children;
+    const root = createRootRoute({
+      component: RootComponent,
+      beforeLoad: rootBeforeLoad,
+      shellComponent: Shell,
+    } as any);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+
+    expect((cloned as any).options.component).toBe(RootComponent);
+    expect((cloned as any).options.beforeLoad).toBe(rootBeforeLoad);
+    expect((cloned as any).options.shellComponent).toBeUndefined();
+  });
+});
 
 describe('duplicateRouteTree with pathless layout routes', () => {
   it('preserves a code-based pathless layout (explicit id, no path)', async () => {

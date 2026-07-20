@@ -211,7 +211,10 @@ export class PNPMProxy extends JsPackageManager {
     return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   }
 
-  protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
+  protected getResolutions(
+    packageJson: PackageJson,
+    versions: Record<string, string>
+  ): Record<string, any> {
     return {
       overrides: {
         ...packageJson.overrides,

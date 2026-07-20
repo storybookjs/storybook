@@ -38,29 +38,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -102,29 +98,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -169,32 +161,27 @@ export const MockedError = meta.story({
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   }}
-/>
 ```
 
 ```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
@@ -232,29 +219,25 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -294,29 +277,25 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -361,30 +340,26 @@ export const MockedError = {
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   }}
 />
 ```
@@ -430,29 +405,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -498,29 +469,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -558,29 +525,25 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -623,29 +586,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -685,29 +644,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -747,29 +702,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -811,29 +762,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -877,29 +824,25 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -941,29 +884,25 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -1005,29 +944,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```

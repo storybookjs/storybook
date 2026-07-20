@@ -30,16 +30,13 @@ export function createPreviewFilename(isProd: boolean) {
   return ({ chunk }: PathData) => {
     const nameOrId = chunk?.name || chunk?.id;
     const name = String(nameOrId === 0 ? 0 : nameOrId || 'chunk');
-    const sanitizedName = name
-      .replace(UNSAFE_FILENAME_CHARACTERS, '-')
-      .replace(/[ .]+$/g, (characters) => '-'.repeat(characters.length));
-    const needsHash =
-      sanitizedName !== name || Buffer.byteLength(sanitizedName + suffix) > MAX_FILENAME_LENGTH;
-
-    if (!needsHash) {
+    if (Buffer.byteLength(name + suffix) <= MAX_FILENAME_LENGTH) {
       return `${name}${suffix}`;
     }
 
+    const sanitizedName = name
+      .replace(UNSAFE_FILENAME_CHARACTERS, '-')
+      .replace(/[ .]+$/g, (characters) => '-'.repeat(characters.length));
     const hashSuffix = `-${hash(name)}`;
     const maxNameBytes = MAX_FILENAME_LENGTH - Buffer.byteLength(hashSuffix + suffix);
     const prefix = truncateToBytes(sanitizedName, maxNameBytes).replace(/[ .]+$/g, '') || 'chunk';

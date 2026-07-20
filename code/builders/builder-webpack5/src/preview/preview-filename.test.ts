@@ -15,7 +15,7 @@ const filenameForChunk = (chunk: { id?: string | number; name?: string }) =>
   });
 
 const compile = async (source: string, isProd: boolean) => {
-  const longEntryName = `entry-${'deeply-nested-'.repeat(30)}stories`;
+  const entryName = 'preview';
   const longChunkName = `chunk-${'deeply-nested-'.repeat(30)}component`;
   const volume = Volume.fromJSON({
     '/src/entry.js': `import(/* webpackChunkName: "${longChunkName}" */ './async.js');`,
@@ -26,10 +26,10 @@ const compile = async (source: string, isProd: boolean) => {
     context: '/',
     mode: isProd ? 'production' : 'development',
     devtool: false,
-    entry: { [longEntryName]: '/src/entry.js' },
+    entry: { [entryName]: '/src/entry.js' },
     output: {
       path: '/dist',
-      filename: createPreviewFilename(isProd),
+      filename: isProd ? '[name].[contenthash:8].iframe.bundle.js' : '[name].iframe.bundle.js',
       chunkFilename: createPreviewFilename(isProd),
     },
   });
@@ -97,27 +97,20 @@ describe('createPreviewFilename', () => {
     );
   });
 
-  it('sanitizes path separators and unsafe filename characters without collisions', () => {
-    const slashName = filenameFor('src/components:button?stories');
-    const backslashName = filenameFor('src\\components:button?stories');
-    const trailingDotName = filenameFor('preview.');
-
-    expect(slashName).toMatch(/^src-components-button-stories-[a-f0-9]{16}\.iframe\.bundle\.js$/);
-    expect(backslashName).toMatch(
-      /^src-components-button-stories-[a-f0-9]{16}\.iframe\.bundle\.js$/
+  it('does not change short path-like chunk names', () => {
+    expect(filenameFor('src/components/button-stories')).toBe(
+      'src/components/button-stories.iframe.bundle.js'
     );
-    expect(slashName).not.toBe(backslashName);
-    expect(trailingDotName).toMatch(/^preview--[a-f0-9]{16}\.iframe\.bundle\.js$/);
   });
 
-  it('emits bounded entry and async chunk filenames with production content hashes', async () => {
+  it('only bounds async chunk filenames and retains production content hashes', async () => {
     const firstBuild = await compile('export default "first";', true);
     const secondBuild = await compile('export default "second";', true);
 
     expect(firstBuild).toHaveLength(2);
     expect(firstBuild).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/^entry-.*-[a-f0-9]{16}\.[a-f0-9]{8}\.iframe\.bundle\.js$/),
+        expect.stringMatching(/^preview\.[a-f0-9]{8}\.iframe\.bundle\.js$/),
         expect.stringMatching(/^chunk-.*-[a-f0-9]{16}\.[a-f0-9]{8}\.iframe\.bundle\.js$/),
       ])
     );
@@ -125,13 +118,13 @@ describe('createPreviewFilename', () => {
     expect(secondBuild).not.toEqual(firstBuild);
   });
 
-  it('emits bounded entry and async chunk filenames in development', async () => {
+  it('only bounds async chunk filenames in development', async () => {
     const filenames = await compile('export default "development";', false);
 
     expect(filenames).toHaveLength(2);
     expect(filenames).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/^entry-.*-[a-f0-9]{16}\.iframe\.bundle\.js$/),
+        'preview.iframe.bundle.js',
         expect.stringMatching(/^chunk-.*-[a-f0-9]{16}\.iframe\.bundle\.js$/),
       ])
     );

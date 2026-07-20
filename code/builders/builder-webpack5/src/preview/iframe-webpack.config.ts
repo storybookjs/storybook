@@ -119,7 +119,7 @@ export default async (
     entry: [...(entries ?? []), ...dynamicEntries],
     output: {
       path: resolve(process.cwd(), outputDir),
-      filename: createPreviewFilename(isProd),
+      filename: isProd ? '[name].[contenthash:8].iframe.bundle.js' : '[name].iframe.bundle.js',
       chunkFilename: createPreviewFilename(isProd),
       publicPath: '',
     },

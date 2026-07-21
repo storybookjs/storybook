@@ -1,12 +1,19 @@
 import * as v from 'valibot';
 
 import { MDX_SERVICE_ID } from '../../../../core-server/utils/manifests/mdx-manifest.ts';
+import { OpenServiceDocsClassificationMissingError } from '../../../../server-errors.ts';
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { DocgenService } from '../docgen/definition.ts';
 import type { StoryDocsService } from '../story-docs/definition.ts';
 import { mapDocsList, mapDocsShow, mapDocsShowStory, type MdxPayload } from './map.ts';
-import { getDocsClassification, loadDocsClassification } from './runtime.ts';
+import {
+  classifyDocsIndex,
+  docsClassificationKey,
+  restoreClassification,
+  storeClassification,
+  type StoredIndexClassification,
+} from './runtime.ts';
 
 const manifestErrorSchema = v.object({
   name: v.string(),
@@ -113,6 +120,13 @@ const docsShowStoryOutputSchema = v.variant('kind', [
   }),
 ]);
 
+const storedClassificationSchema = v.object({
+  componentIds: v.array(v.string()),
+  storyBasedIds: v.array(v.string()),
+  attachedDocsByComponent: v.record(v.string(), v.array(v.any())),
+  unattachedDocs: v.record(v.string(), v.any()),
+});
+
 type MdxService = {
   queries: {
     mdxForComponent: {
@@ -134,7 +148,21 @@ function tryGetMdxService(getService: (id: string) => unknown): MdxService | und
   }
 }
 
-export type DocsServiceState = Record<string, never>;
+function readClassification(
+  state: DocsServiceState,
+  key: string
+): ReturnType<typeof restoreClassification> {
+  const stored = state.classifications[key];
+  if (!stored) {
+    throw new OpenServiceDocsClassificationMissingError({ key });
+  }
+  return restoreClassification(stored as StoredIndexClassification);
+}
+
+export type DocsServiceState = {
+  /** Per-request classifications keyed by {@link docsClassificationKey}. */
+  classifications: Record<string, StoredIndexClassification>;
+};
 
 /**
  * Transport-neutral documentation capability (`docs.list` / `docs.show` / `docs.showStory`).
@@ -145,7 +173,7 @@ export type DocsServiceState = Record<string, never>;
 export const docsServiceDef = defineService({
   id: 'core/docs',
   description: 'Storybook component and docs documentation.',
-  initialState: {} as DocsServiceState,
+  initialState: { classifications: {} } as DocsServiceState,
   queries: {
     list: {
       description:
@@ -158,7 +186,13 @@ export const docsServiceDef = defineService({
       }),
       output: docsListOutputSchema,
       load: async (input, ctx) => {
-        const classification = await loadDocsClassification();
+        const classification = await classifyDocsIndex();
+        const key = docsClassificationKey('list', input);
+        await ctx.self.commands._setClassification({
+          key,
+          classification: storeClassification(classification),
+        });
+
         const docgen = ctx.getService<DocgenService>('core/docgen');
         await docgen.queries.docgenForAllComponents.loaded();
 
@@ -177,7 +211,10 @@ export const docsServiceDef = defineService({
         }
       },
       handler: (input, ctx) => {
-        const classification = getDocsClassification();
+        const classification = readClassification(
+          ctx.self.state,
+          docsClassificationKey('list', input)
+        );
         const docgen = ctx.getService<DocgenService>('core/docgen');
         const allDocgen = docgen.queries.docgenForAllComponents.get();
         const allStoryDocs = input.withStoryIds
@@ -207,7 +244,12 @@ export const docsServiceDef = defineService({
       }),
       output: docsShowOutputSchema,
       load: async (input, ctx) => {
-        const classification = await loadDocsClassification();
+        const classification = await classifyDocsIndex();
+        const key = docsClassificationKey('show', input);
+        await ctx.self.commands._setClassification({
+          key,
+          classification: storeClassification(classification),
+        });
 
         if (classification.unattachedDocs.has(input.id)) {
           const mdx = tryGetMdxService(ctx.getService);
@@ -237,7 +279,10 @@ export const docsServiceDef = defineService({
         }
       },
       handler: (input, ctx) => {
-        const classification = getDocsClassification();
+        const classification = readClassification(
+          ctx.self.state,
+          docsClassificationKey('show', input)
+        );
         const docgen = ctx.getService<DocgenService>('core/docgen');
         const storyDocs = ctx.getService<StoryDocsService>('core/story-docs');
         const mdx = tryGetMdxService(ctx.getService);
@@ -271,7 +316,22 @@ export const docsServiceDef = defineService({
       },
     },
   },
-  commands: {},
+  commands: {
+    _setClassification: {
+      internal: true,
+      description: 'Stores a per-request index classification for a subsequent query handler read.',
+      input: v.object({
+        key: v.string(),
+        classification: storedClassificationSchema,
+      }),
+      output: v.void(),
+      handler: async (input, ctx) => {
+        ctx.self.setState((state) => {
+          state.classifications[input.key] = input.classification as StoredIndexClassification;
+        });
+      },
+    },
+  },
 });
 
 export type DocsService = ServiceInstanceOf<typeof docsServiceDef>;

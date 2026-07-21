@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TestResult } from 'vitest/node';
 
@@ -58,11 +60,16 @@ vi.mock('vitest/node', () => ({
   createVitest: mockCreateVitest,
 }));
 
+vi.mock('node:fs/promises', { spy: true });
+
 // Use the mock function directly
 const createVitest = mockCreateVitest;
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  const memfs = await import('memfs');
+  memfs.vol.reset();
+  vi.mocked(rm).mockImplementation(memfs.fs.promises.rm as unknown as typeof rm);
   mockStore.setState(() => ({
     ...storeOptions.initialState,
     index: mockIndex,
@@ -543,9 +550,37 @@ describe('TestManager', () => {
     expect(createVitest).toHaveBeenCalledWith(
       Tag.TEST,
       expect.objectContaining({
-        coverage: expect.objectContaining({ enabled: true }),
+        coverage: expect.objectContaining({ enabled: true, cleanOnRerun: false }),
       })
     );
+    // The fresh instance cleans the coverage directory itself; no manual clean needed.
+    expect(rm).not.toHaveBeenCalled();
+  });
+
+  it('should clean the coverage directory when reusing a coverage-enabled Vitest instance', async () => {
+    const testManager = await TestManager.start(options);
+    createVitest.mockClear();
+
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+    // Simulate an instance that already ran with coverage: no restart happens, so the previous
+    // run's results must be cleaned manually before the new run.
+    vitest.config.coverage.enabled = true;
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(createVitest).not.toHaveBeenCalled();
+    expect(rm).toHaveBeenCalledWith(expect.stringContaining('coverage'), {
+      recursive: true,
+      force: true,
+    });
   });
 
   it('should not restart with coverage enabled Vitest before a focused test run', async () => {

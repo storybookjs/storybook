@@ -9836,7 +9836,7 @@ __metadata:
     "@vitest/browser-playwright": "npm:^4.1.5"
     "@vitest/coverage-istanbul": "npm:^4.1.5"
     "@vitest/coverage-v8": "npm:^4.1.5"
-    chromatic: "npm:^13.3.4"
+    chromatic: "npm:^18.0.1"
     create-storybook: "workspace:*"
     danger: "npm:^13.0.4"
     es-toolkit: "npm:^1.43.0"
@@ -10412,7 +10412,7 @@ __metadata:
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^4.1.5"
     ansi-regex: "npm:^6.0.1"
-    chromatic: "npm:^13.3.4"
+    chromatic: "npm:^18.0.1"
     citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"
     commander: "npm:^14.0.2"
@@ -15726,6 +15726,30 @@ __metadata:
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
   checksum: 10c0/58b3d7984db000f8c7b605788569a24c3f3cd41bb6b2d3a94f18acc9ff11ce6c6881f795c8390a94ff721ccfcf8a2d7942e78a54a1f70294a7b3d35ccc382154
+  languageName: node
+  linkType: hard
+
+"chromatic@npm:^18.0.1":
+  version: 18.0.1
+  resolution: "chromatic@npm:18.0.1"
+  dependencies:
+    semver: "npm:^7.3.5"
+  peerDependencies:
+    "@chromatic-com/cypress": ^0.*.* || ^1.0.0
+    "@chromatic-com/playwright": ^0.*.* || ^1.0.0
+    "@chromatic-com/vitest": ^0.*.* || ^1.0.0
+  peerDependenciesMeta:
+    "@chromatic-com/cypress":
+      optional: true
+    "@chromatic-com/playwright":
+      optional: true
+    "@chromatic-com/vitest":
+      optional: true
+  bin:
+    chroma: dist/bin.cjs
+    chromatic: dist/bin.cjs
+    chromatic-cli: dist/bin.cjs
+  checksum: 10c0/0a6adc1ec8b94eda3b8b1a71598f763bb1fa63591de8fe835171fef6e72171071570724bc3f536b571315c43192daab65ea7d13df12007c7a5c4671070ea0811
   languageName: node
   linkType: hard
 

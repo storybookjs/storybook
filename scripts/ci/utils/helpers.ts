@@ -1,4 +1,4 @@
-import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
 /**
@@ -16,6 +16,13 @@ import { type JobOrNoOpJob, type Workflow } from './types.ts';
 export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
 
 const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
+
+/**
+ * The generated sandboxes get the same treatment: they are mostly
+ * node_modules, so persisting them raw pays the same single-threaded workspace
+ * compression cost on the create job and again on every downstream attach.
+ */
+export const sandboxArchive = (id: string) => `workspace-sandbox-${id}.tar.zst`;
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -61,6 +68,40 @@ export const workspace = {
         command: [
           'node --version',
           `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
+        ].join('\n'),
+      },
+    };
+  },
+  packSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Pack sandbox for workspace',
+        working_directory: root,
+        // posix (pax) format keeps sub-second mtimes, which webpack's
+        // filesystem cache snapshots compare against: the default gnu format
+        // truncates them to whole seconds, invalidating the cache and turning
+        // the sandbox's dev-server start into a full cold compile. atime and
+        // ctime headers are dropped as they only add archive size.
+        command: [
+          'node --version',
+          `tar --create --format=posix --pax-option=delete=atime,delete=ctime ${SANDBOX_DIR}/${id} | node ${ZSTD_STREAM} compress 3 > ${sandboxArchive(id)}`,
+          `ls -la ${sandboxArchive(id)}`,
+        ].join('\n'),
+      },
+    };
+  },
+  unpackSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    return {
+      run: {
+        name: 'Unpack sandbox from workspace',
+        working_directory: root,
+        // --no-same-owner matches attach_workspace semantics: extraction as
+        // root (the Playwright image) must not preserve the create job's uid,
+        // or git refuses to operate on the sandbox repo ("dubious ownership")
+        // and the change-detection feature and its E2E tests break.
+        command: [
+          'node --version',
+          `node ${ZSTD_STREAM} decompress < ${sandboxArchive(id)} | tar --extract --no-same-owner`,
         ].join('\n'),
       },
     };
@@ -229,12 +270,16 @@ export const verdaccio = {
 };
 
 export const workflow = {
-  restoreLinux: (checkoutOpts: { forceHttps?: boolean; shallow?: boolean } = {}) => [
+  restoreLinux: ({
+    sandboxId,
+    ...checkoutOpts
+  }: { forceHttps?: boolean; shallow?: boolean; sandboxId?: string } = {}) => [
     git.checkout(checkoutOpts),
     // Downstream jobs should consume precomputed outputs exclusively from the
     // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
     workspace.unpack(),
+    ...(sandboxId ? [workspace.unpackSandbox(sandboxId)] : []),
   ],
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),

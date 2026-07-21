@@ -244,9 +244,13 @@ export const internalStorybookBuildE2e = defineJob(
 export const check = defineJob(
   'TypeScript validation',
   (workflowName) => ({
+    // xlarge because each of the 4 concurrent native-tsc processes in the
+    // check task is itself multi-threaded (~4 threads), so throughput still
+    // wants the full 8 vCPUs; roughly cost-neutral vs the previous serial run
+    // on medium+ and much faster feedback for the cancel-on-failure gate.
     executor: {
       name: 'sb_node_22_classic',
-      class: 'medium+',
+      class: 'xlarge',
     },
     steps: [
       ...workflow.restoreLinux(),

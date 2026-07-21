@@ -713,8 +713,10 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Move this to latest or 22 once ng new creates v22 projects
-      extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
+      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // Also, Angular 22 needs TypeScript 6 or more recent.
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       resolutions: {
         webpack: '5.107.2',
       },

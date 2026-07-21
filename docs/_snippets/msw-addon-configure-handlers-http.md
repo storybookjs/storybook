@@ -182,6 +182,7 @@ export const MockedError = meta.story({
       }),
     );
   }}
+/>
 ```
 
 ```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"

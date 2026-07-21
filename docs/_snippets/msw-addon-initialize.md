@@ -3,11 +3,11 @@ import { mswLoader } from 'msw-storybook-addon/csf3';
 
 export default {
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-30
    * to learn how to customize it
    */
-  loaders: [mswLoader()], // 👈 Add the MSW loader to all stories
+  loaders: [mswLoader()],
 };
 ```
 
@@ -19,7 +19,7 @@ import { mswLoader } from 'msw-storybook-addon/csf3';
 
 const preview: Preview = {
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-30
    * to learn how to customize it
    */
@@ -37,7 +37,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -55,7 +55,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -70,7 +70,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -85,7 +85,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -100,7 +100,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -115,7 +115,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */
@@ -132,7 +132,7 @@ import addonMsw from 'msw-storybook-addon';
 
 export default definePreview({
   /*
-   * Add the MSW loader to all stories
+   * Register the MSW loader for all stories
    * See https://github.com/mswjs/msw-storybook-addon#csf-next
    * to learn how to customize it
    */

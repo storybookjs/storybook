@@ -10,19 +10,6 @@ import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
-// Records the legacy Vue docgen "before" baselines: the normalized StrictArgTypes produced by
-// extractArgTypes and the dynamic Source-block snippet produced by generateSourceCode, per fixture.
-// Both consume the same __docgenInfo object, attached exactly like the production Vite plugin
-// (code/frameworks/vue3-vite/src/plugins/vue-docgen.ts) does: parse() with zero options, then
-// Object.assign with a JSON roundtrip (production embeds the metadata via JSON.stringify, which
-// drops undefined-valued keys). Thin or empty output is the truthful "before" state - never
-// "fix" it by simplifying a fixture.
-// Note: snippet generation must stay on this legacy path; do not stub
-// FEATURES.experimentalDocgenServer, which would route snippets through the OSA story-docs
-// service instead of the per-renderer sourceDecorator.
-
-// Binds the recorder to the declared baseline path: re-pointing it at another engine must
-// flip BASELINE_PATH, which in turn hardens the red markers in vue3-legacy-gaps.test.ts.
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
     'vue3-baselines.test.ts records the legacy vue-docgen-api path; update the recorder or baseline-path.ts'

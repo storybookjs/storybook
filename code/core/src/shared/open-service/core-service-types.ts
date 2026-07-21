@@ -1,6 +1,10 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
+import { docsServiceDef } from './services/docs/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
+import { reviewServiceDef } from './services/review/definition.ts';
+import { storiesServiceDef } from './services/stories/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
+import { testServiceDef } from './services/test/definition.ts';
 import type {
   AnyServiceDefinition,
   RuntimeService,
@@ -21,11 +25,22 @@ import type {
  * Each list only references definitions already loaded in that runtime, and the runtime entrypoints
  * import the derived *types* (`import type`), so these value imports add no runtime cost to the
  * manager/preview/server bundles — only the membership test pulls them in as values.
+ *
+ * Capability services (`core/docs`, `core/stories`, `core/test`, `core/review`) are server-only —
+ * runtime handlers are supplied by dependency owners (addon-docs, core-server, addon-vitest,
+ * addon-mcp) via the colocated `register*Service` helpers.
  */
 export const managerCoreServiceDefs = [docgenServiceDef];
 export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
-export const serverCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef, moduleGraphServiceDef];
-
+export const serverCoreServiceDefs = [
+  docgenServiceDef,
+  storyDocsServiceDef,
+  moduleGraphServiceDef,
+  docsServiceDef,
+  storiesServiceDef,
+  testServiceDef,
+  reviewServiceDef,
+];
 /** Maps a list of service definitions to `{ [id]: instance }`, keyed by each definition's id. */
 type CoreServices<TDefs extends readonly AnyServiceDefinition[]> = {
   [Def in TDefs[number] as Def['id']]: ServiceInstanceOf<Def>;

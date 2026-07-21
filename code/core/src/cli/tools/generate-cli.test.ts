@@ -7,9 +7,10 @@ import { clearRegistry, getService, registerService } from '../../shared/open-se
 import { defineService } from '../../shared/open-service/service-definition.ts';
 import { generateCLI } from './generate-cli.ts';
 
-const docsServiceDef = defineService({
-  id: 'core/docs',
-  description: 'Documentation tools.',
+/** Fixture service — not the real `core/docs` capability contract. */
+const exampleServiceDef = defineService({
+  id: 'core/example',
+  description: 'Example tools for generateCLI tests.',
   initialState: {
     documents: {
       button: { id: 'button', title: 'Button' },
@@ -50,7 +51,7 @@ function buildProgram(options?: { beforeRun?: () => Promise<void> | void }) {
   program.configureOutput({ writeOut: () => {}, writeErr: () => {} });
 
   const toolsCommand = program.command('tools');
-  generateCLI(toolsCommand, [docsServiceDef], options);
+  generateCLI(toolsCommand, [exampleServiceDef], options);
 
   return { program, toolsCommand };
 }
@@ -62,7 +63,7 @@ afterEach(() => {
 
 describe('generateCLI', () => {
   it('generates service operations and invokes a query from CLI flags', async () => {
-    registerService(docsServiceDef);
+    registerService(exampleServiceDef);
     const { program, toolsCommand } = buildProgram();
     const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
@@ -70,13 +71,13 @@ describe('generateCLI', () => {
       'node',
       'storybook',
       'tools',
-      'docs',
+      'example',
       'get-documentation',
       '--id',
       'button',
     ]);
 
-    expect(toolsCommand.commands.map((command) => command.name())).toEqual(['docs']);
+    expect(toolsCommand.commands.map((command) => command.name())).toEqual(['example']);
     expect(toolsCommand.commands[0].commands.map((command) => command.name())).toEqual([
       'get-documentation',
       'clear-documentation',
@@ -85,17 +86,19 @@ describe('generateCLI', () => {
   });
 
   it('generates and invokes service commands', async () => {
-    registerService(docsServiceDef);
+    registerService(exampleServiceDef);
     const { program } = buildProgram();
 
-    await program.parseAsync(['node', 'storybook', 'tools', 'docs', 'clear-documentation']);
+    await program.parseAsync(['node', 'storybook', 'tools', 'example', 'clear-documentation']);
 
-    expect(getService('core/docs').queries.getDocumentation.get({ id: 'button' })).toBeUndefined();
+    expect(
+      getService('core/example').queries.getDocumentation.get({ id: 'button' })
+    ).toBeUndefined();
   });
 
   it('loads services before invoking an operation', async () => {
     const beforeRun = vi.fn(() => {
-      registerService(docsServiceDef);
+      registerService(exampleServiceDef);
     });
     const { program } = buildProgram({ beforeRun });
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -104,7 +107,7 @@ describe('generateCLI', () => {
       'node',
       'storybook',
       'tools',
-      'docs',
+      'example',
       'get-documentation',
       '--id',
       'button',
@@ -114,7 +117,7 @@ describe('generateCLI', () => {
   });
 
   it('accepts a JSON object as operation input', async () => {
-    registerService(docsServiceDef);
+    registerService(exampleServiceDef);
     const { program } = buildProgram();
     const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
@@ -122,7 +125,7 @@ describe('generateCLI', () => {
       'node',
       'storybook',
       'tools',
-      'docs',
+      'example',
       'get-documentation',
       '--json',
       '{"id":"button"}',

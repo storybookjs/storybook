@@ -20,7 +20,7 @@ import {
 } from '@vitest/expect';
 import * as chai from 'chai';
 
-import type { PromisifyObject } from './utils';
+import type { PromisifyObject } from './utils.ts';
 
 type Matchers<T> = PromisifyObject<JestAssertion<T>> &
   TestingLibraryMatchers<ReturnType<ExpectStatic['stringContaining']>, Promise<void>>;

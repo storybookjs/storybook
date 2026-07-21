@@ -1,9 +1,9 @@
 import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/internal/common';
 
-import { add } from '../../add';
-import { updateMainConfig } from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
-import { moveEssentialOptions } from './remove-essentials.utils';
+import { add } from '../../add.ts';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
+import { moveEssentialOptions } from './remove-essentials.utils.ts';
 
 interface AddonDocsOptions {
   hasEssentials: boolean;

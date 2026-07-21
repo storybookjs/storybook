@@ -2,7 +2,8 @@
  * @file Interactions should be awaited
  * @author Yann Braga
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
   isArrowFunctionExpression,
@@ -16,9 +17,9 @@ import {
   isProgram,
   isReturnStatement,
   isTSNonNullExpression,
-} from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+} from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

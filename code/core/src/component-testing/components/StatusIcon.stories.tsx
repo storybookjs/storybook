@@ -1,5 +1,5 @@
-import { CallStates } from '../../instrumenter/types';
-import { StatusIcon } from './StatusIcon';
+import { CallStates } from '../../instrumenter/types.ts';
+import { StatusIcon } from './StatusIcon.tsx';
 
 export default {
   title: 'StatusIcon',

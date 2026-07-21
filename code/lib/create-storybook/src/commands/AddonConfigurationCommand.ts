@@ -5,10 +5,10 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
-import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
-import type { CommandOptions } from '../generators/types';
-import { TelemetryService } from '../services';
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
+import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
+import type { CommandOptions } from '../generators/types.ts';
+import { TelemetryService } from '../services/index.ts';
 
 const ADDON_INSTALLATION_INSTRUCTIONS = {
   '@storybook/addon-vitest':
@@ -38,7 +38,7 @@ export class AddonConfigurationCommand {
     readonly packageManager: JsPackageManager,
     private readonly commandOptions: CommandOptions,
     private readonly addonVitestService = new AddonVitestService(packageManager),
-    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+    private readonly telemetryService = new TelemetryService()
   ) {}
 
   /** Execute addon configuration */
@@ -108,7 +108,7 @@ export class AddonConfigurationCommand {
   /** Configure test addons (a11y and vitest) */
   private async configureAddons(configDir: string, addons: string[]) {
     // Import postinstallAddon from cli-storybook package
-    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
+    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
 
     const task = prompt.taskLog({
       id: 'configure-addons',
@@ -126,8 +126,12 @@ export class AddonConfigurationCommand {
         const options = {
           packageManager: this.packageManager.type,
           configDir,
-          yes: this.commandOptions.yes,
+          yes: true,
           skipInstall: true,
+          // Dependencies were installed in the preceding init step (unless the
+          // user opted out), so nested `storybook` invocations can run the local
+          // binary instead of fetching an ephemeral copy via dlx/npx.
+          useRemotePkg: !!this.commandOptions.skipInstall,
           skipDependencyManagement: true,
           logger,
           prompt,
@@ -136,7 +140,16 @@ export class AddonConfigurationCommand {
         if (addon === '@storybook/addon-vitest') {
           await addonVitestPostinstall(options);
         } else if (addon === '@storybook/addon-a11y') {
-          await addonA11yPostinstall(options);
+          // When addon-vitest was configured in this same run, its postinstall
+          // already executed the addon-a11y-addon-test automigration; a11y's
+          // own postinstall consists of exactly that command, so running it
+          // again only spins up a second package-runner process to conclude
+          // there is nothing left to do. It still runs when vitest is absent
+          // or failed, matching the standalone `storybook add` behavior.
+          const vitestConfigured = addonResults.get('@storybook/addon-vitest') === null;
+          if (!vitestConfigured) {
+            await addonA11yPostinstall(options);
+          }
         } else {
           await postinstallAddon(addon, options);
         }

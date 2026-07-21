@@ -9,16 +9,19 @@ import {
 } from 'storybook/internal/core-server';
 import type { EventInfo, Options } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { normalize } from 'pathe';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module';
+import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
-} from '../constants';
-import { log } from '../logger';
-import type { Store } from '../types';
+} from '../constants.ts';
+import { log } from '../logger.ts';
+import { errorToErrorLike } from '../utils.ts';
+import type { Store } from '../types.ts';
 
 const MAX_START_TIME = 30000;
 
@@ -48,10 +51,12 @@ const bootTestRunner = async ({
   channel,
   store,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   let stderr: string[] = [];
   const killChild = () => {
@@ -85,6 +90,7 @@ const bootTestRunner = async ({
             VITEST_CHILD_PROCESS: 'true',
             NODE_ENV: process.env.NODE_ENV ?? 'test',
             STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+            STORYBOOK_CONFIG_LOADER: configLoader,
           },
           extendEnv: true,
         },
@@ -144,12 +150,7 @@ const bootTestRunner = async ({
       type: 'FATAL_ERROR',
       payload: {
         message: 'Failed to start test runner process',
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause,
-        },
+        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
       },
     });
     eventQueue.length = 0;
@@ -163,19 +164,21 @@ export const runTestRunner = async ({
   initEvent,
   initArgs,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   initEvent?: string;
   initArgs?: any[];
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner({ channel, store, options });
+    await bootTestRunner({ channel, store, options, configLoader });
     ready = true;
   }
 };

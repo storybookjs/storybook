@@ -1,7 +1,8 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
@@ -10,6 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useServiceStorySnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -42,6 +44,8 @@ export type SourceProps = SourceParameters & {
   __forceInitialArgs?: boolean;
 };
 
+const EMPTY_SOURCE_CONTEXT: SourceContextProps = { sources: {} };
+
 const getStorySource = (
   storyId: StoryId,
   args: Args,
@@ -62,11 +66,13 @@ const getStorySource = (
 
 const useCode = ({
   snippet,
+  serviceSnippet,
   storyContext,
   typeFromProps,
   transformFromProps,
 }: {
   snippet: string;
+  serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
@@ -77,13 +83,14 @@ const useCode = ({
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
+  const staticSnippet = serviceSnippet || snippet;
   const useSnippet =
     // if user has explicitly set this as dynamic, use snippet
     type === SourceType.DYNAMIC ||
     // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && snippet && isArgsStory);
+    (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? snippet : sourceParameters.originalSource || '';
+  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
   const transformer = transformFromProps ?? sourceParameters.transform;
 
   const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
@@ -100,8 +107,9 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 
 export const useSourceProps = (
   props: SourceProps,
-  docsContext: DocsContextProps<any>,
-  sourceContext: SourceContextProps
+  docsContext: DocsContextProps,
+  sourceContext: SourceContextProps,
+  serviceSnippet = ''
 ): PureSourceProps => {
   const { of } = props;
 
@@ -129,13 +137,14 @@ export const useSourceProps = (
 
   const transformedCode = useCode({
     snippet: source ? source.code : '',
+    serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
     typeFromProps: props.type as SourceType,
     transformFromProps: props.transform,
   });
 
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
@@ -144,11 +153,11 @@ export const useSourceProps = (
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
-  if (!props.code && !story) {
+  if (props.code === undefined && !story) {
     return { error: SourceError.SOURCE_UNAVAILABLE };
   }
 
-  if (props.code) {
+  if (props.code !== undefined) {
     return {
       code: props.code,
       format,
@@ -167,15 +176,64 @@ export const useSourceProps = (
   };
 };
 
+const SourceWithStoryDocsSnippet: FC<
+  SourceProps & {
+    docsContext: DocsContextProps;
+    sourceContext: SourceContextProps;
+    storyId: string;
+  }
+> = ({ storyId, docsContext, sourceContext, ...props }) => {
+  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  return <PureSource {...sourceProps} />;
+};
+
 /**
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
-const SourceImpl = (props: SourceProps) => {
+const SourceWithStorySnippet = (props: SourceProps) => {
+  const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
+
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+    }
+  }, [docsContext, of]);
+
+  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+    return (
+      <SourceWithStoryDocsSnippet
+        {...props}
+        docsContext={docsContext}
+        sourceContext={sourceContext}
+        storyId={story.id}
+      />
+    );
+  }
+
   const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
+};
+
+const SourceWithCode = (props: SourceProps) => {
+  const docsContext = useContext(DocsContext);
+  const sourceProps = useSourceProps(props, docsContext, EMPTY_SOURCE_CONTEXT);
+
+  return <PureSource {...sourceProps} />;
+};
+
+const SourceImpl = (props: SourceProps) => {
+  const hasCodeProp = props.code !== undefined;
+  return hasCodeProp ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
 };
 
 export const Source = withMdxComponentOverride('Source', SourceImpl);

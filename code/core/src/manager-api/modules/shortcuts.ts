@@ -9,12 +9,16 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import type { KeyboardEventLike } from '../lib/shortcut';
-import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
-import type { ModuleFn } from '../lib/types';
-import { focusableUIElements } from './layout';
+import type { KeyboardEventLike } from '../lib/shortcut.ts';
+import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
+import type { ModuleFn } from '../lib/types.tsx';
+import { focusableUIElements } from './layout.ts';
 
 const { navigator, document } = global;
+
+function wasFocusInElement(element: HTMLElement | null) {
+  return document.activeElement && element?.contains(document.activeElement);
+}
 
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
@@ -253,13 +257,20 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // warning: event might not have a full prototype chain because it may originate from the channel
     handleShortcutFeature(feature, event) {
+      const state = store.getState();
       const {
         ui: { enableShortcuts },
         storyId,
         refId,
         viewMode,
-      } = store.getState();
+      } = state;
       if (!enableShortcuts) {
+        return;
+      }
+
+      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+      const isSidebarShortcutFeature = ['focusNav', 'search', 'toggleNav'].includes(feature);
+      if (isSidebarShortcutBlocked && isSidebarShortcutFeature) {
         return;
       }
 
@@ -359,13 +370,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
         case 'togglePanel': {
           const wasPanelShown = fullAPI.getIsPanelShown();
-          const panelElement = document.getElementById(focusableUIElements.storyPanelRoot);
-          const wasFocusInPanel =
-            panelElement && document.activeElement && panelElement.contains(document.activeElement);
+          const panelElement = document.getElementById(focusableUIElements.addonPanel);
 
           fullAPI.togglePanel();
 
-          if (wasPanelShown && wasFocusInPanel) {
+          if (wasPanelShown && wasFocusInElement(panelElement)) {
             // poll: true always returns a Promise.
             (
               fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
@@ -378,17 +387,23 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasPanelShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
           break;
         }
 
         case 'toggleNav': {
           const wasNavShown = fullAPI.getIsNavShown();
           const sidebarElement = document.getElementById(focusableUIElements.sidebarRegion);
-          const wasFocusInSidebar = sidebarElement?.contains(document?.activeElement);
 
           fullAPI.toggleNav();
 
-          if (wasNavShown && wasFocusInSidebar) {
+          if (wasNavShown && wasFocusInElement(sidebarElement)) {
             // poll: true always returns a Promise.
             (
               fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
@@ -401,6 +416,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               }
             });
           }
+
+          if (!wasNavShown) {
+            fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
+              forceFocus: true,
+              poll: true,
+            });
+          }
+
           break;
         }
 

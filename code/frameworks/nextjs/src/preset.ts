@@ -11,11 +11,11 @@ import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
 import semver from 'semver';
 
-import nextBabelPreset from './babel/preset';
-import { configureConfig } from './config/webpack';
-import TransformFontImports from './font/babel';
-import type { FrameworkOptions, StorybookConfig } from './types';
-import { isNextVersionGte } from './utils';
+import nextBabelPreset from './babel/preset.ts';
+import { configureConfig } from './config/webpack.ts';
+import TransformFontImports from './font/babel/index.ts';
+import type { FrameworkOptions, StorybookConfig } from './types.ts';
+import { isNextVersionGte } from './utils.ts';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
@@ -108,6 +108,26 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
   const plugins = [...(options?.plugins ?? []), TransformFontImports];
 
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  // We need to re-apply the default storybook babel override from:
+  // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
+  // Because it get lost in the loadPartialConfig call above.
+  // See https://github.com/storybookjs/storybook/issues/28467
+  const shouldRemoveBugfixes =
+    globalThis?.FEATURES &&
+    'babelRemoveBugfixes' in globalThis.FEATURES &&
+    globalThis.FEATURES.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...options,
     plugins,
@@ -116,25 +136,9 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
     configFile: false,
     overrides: [
       ...(options?.overrides ?? []),
-      // We need to re-apply the default storybook babel override from:
-      // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
-      // Because it get lost in the loadPartialConfig call above.
-      // See https://github.com/storybookjs/storybook/issues/28467
       {
         include: /(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            'next/dist/compiled/babel/preset-env',
-            {
-              bugfixes: true,
-              targets: {
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['next/dist/compiled/babel/preset-env', presetConfig]],
       },
     ],
   };
@@ -150,18 +154,18 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   // Use dynamic imports to ensure these modules that use webpack load after
   // Next.js has been configured (above), and has replaced webpack with its precompiled
   // version.
-  const { configureNextFont } = await import('./font/webpack/configureNextFont');
-  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils');
-  const { configureImports } = await import('./imports/webpack');
-  const { configureCss } = await import('./css/webpack');
-  const { configureImages } = await import('./images/webpack');
-  const { configureStyledJsx } = await import('./styledJsx/webpack');
-  const { configureNodePolyfills } = await import('./nodePolyfills/webpack');
-  const { configureAliases } = await import('./aliases/webpack');
-  const { configureFastRefresh } = await import('./fastRefresh/webpack');
-  const { configureRSC } = await import('./rsc/webpack');
-  const { configureSWCLoader } = await import('./swc/loader');
-  const { configureBabelLoader } = await import('./babel/loader');
+  const { configureNextFont } = await import('./font/webpack/configureNextFont.ts');
+  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils.ts');
+  const { configureImports } = await import('./imports/webpack.ts');
+  const { configureCss } = await import('./css/webpack.ts');
+  const { configureImages } = await import('./images/webpack.ts');
+  const { configureStyledJsx } = await import('./styledJsx/webpack.ts');
+  const { configureNodePolyfills } = await import('./nodePolyfills/webpack.ts');
+  const { configureAliases } = await import('./aliases/webpack.ts');
+  const { configureFastRefresh } = await import('./fastRefresh/webpack.ts');
+  const { configureRSC } = await import('./rsc/webpack.ts');
+  const { configureSWCLoader } = await import('./swc/loader.ts');
+  const { configureBabelLoader } = await import('./babel/loader.ts');
 
   const babelRCPath = join(getProjectRoot(), '.babelrc');
   const babelConfigPath = join(getProjectRoot(), 'babel.config.js');

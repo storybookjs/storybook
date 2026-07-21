@@ -3,14 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as sbcc from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import { getStorybookVersion } from './upgrade';
-import { generateUpgradeSpecs } from './util';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
+import type { UpgradeOptions } from './upgrade.ts';
+import { getStorybookVersion } from './upgrade.ts';
+import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();
 const getInstalledVersionMock = vi.fn<(arg: string) => Promise<string | undefined>>();
 
 vi.mock('storybook/internal/telemetry');
+vi.mock('./automigrate/helpers/mainConfigFile.ts', () => ({
+  getStorybookData: vi.fn(),
+}));
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const originalModule = (await importOriginal()) as typeof sbcc;
   return {
@@ -240,5 +245,43 @@ describe('toUpgradedDependencies', () => {
       }
     );
     expect(result).toEqual([]);
+  });
+});
+
+describe('collectProjects', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('still collects the project (does not throw) when the latest version cannot be fetched', async () => {
+    const packageManager = {
+      latestVersion: vi.fn().mockResolvedValue(null),
+    } as unknown as JsPackageManager;
+
+    vi.mocked(getStorybookData).mockResolvedValue({
+      configDir: '/fake/.storybook',
+      mainConfig: { stories: [] },
+      mainConfigPath: '/fake/.storybook/main.ts',
+      previewConfigPath: undefined,
+      packageManager,
+      storiesPaths: [],
+      versionInstalled: '8.0.0',
+      hasCsfFactoryPreview: false,
+    } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
+
+    const results = await collectProjects(
+      { force: true } as UpgradeOptions,
+      ['/fake/.storybook'],
+      () => {}
+    );
+
+    expect(results).toHaveLength(1);
+    const [result] = results;
+    expect(isSuccessResult(result)).toBe(true);
+    if (isSuccessResult(result)) {
+      expect(result.isCLIOutdated).toBe(false);
+      expect(result.isCLIExactLatest).toBe(false);
+      expect(result.latestCLIVersionOnNPM).toBeNull();
+    }
   });
 });

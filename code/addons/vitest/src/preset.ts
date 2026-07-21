@@ -21,6 +21,8 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -35,11 +37,11 @@ import {
   type TriggerTestRunRequestPayload,
   type TriggerTestRunResponsePayload,
   storeOptions,
-} from './constants';
-import { log } from './logger';
-import { runTestRunner } from './node/boot-test-runner';
-import type { CachedState, ErrorLike, StoreState } from './types';
-import type { StoreEvent } from './types';
+} from './constants.ts';
+import { log } from './logger.ts';
+import { runTestRunner } from './node/boot-test-runner.ts';
+import type { CachedState, ErrorLike, StoreState } from './types.ts';
+import type { StoreEvent } from './types.ts';
 
 type Event =
   | {
@@ -81,6 +83,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
     return channel;
   }
+
+  const configLoader =
+    typeof core.builder !== 'string' &&
+    (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
 
   const storyIndexGenerator =
     await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
@@ -136,6 +142,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       initEvent: STORE_CHANNEL_EVENT_NAME,
       initArgs: [{ event, eventInfo }],
       options,
+      configLoader: configLoader || undefined,
     });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
@@ -157,6 +164,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         initEvent: STORE_CHANNEL_EVENT_NAME,
         initArgs: [{ event, eventInfo }],
         options,
+        configLoader: configLoader || undefined,
       });
     }
   });
@@ -225,17 +233,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       return;
     }
 
-    store.send({
-      type: 'TRIGGER_RUN',
-      payload: {
-        storyIds,
-        triggeredBy: `external:${actor}`,
-        ...(configOverride && {
-          configOverride: { ...config, ...configOverride },
-        }),
-      },
-    });
-
     const unsubscribe = store.subscribe((event) => {
       switch (event.type) {
         case 'TEST_RUN_COMPLETED': {
@@ -255,51 +252,60 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         }
       }
     });
+
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds,
+        triggeredBy: `external:${actor}`,
+        ...(configOverride && {
+          configOverride: { ...config, ...configOverride },
+        }),
+      },
+    });
   });
 
-  if (!core.disableTelemetry) {
-    const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
+  const enableCrashReports = core?.enableCrashReports || options.enableCrashReports;
 
-    channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      if (event.type !== 'test-run-completed') {
-        telemetry('addon-test', {
-          ...event,
-          payload: {
-            ...event.payload,
-            storyId: oneWayHash(event.payload.storyId),
-          },
-        });
-      }
-    });
-
-    store.subscribe('TOGGLE_WATCHING', async (event) => {
-      await telemetry('addon-test', {
-        watchMode: event.payload.to,
-      });
-    });
-    store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
-      await telemetry('addon-test', {
-        ...currentRun,
-        duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        unhandledErrorCount: unhandledErrors.length,
-        ...(enableCrashReports &&
-          unhandledErrors.length > 0 && {
-            unhandledErrors: unhandledErrors.map((error) => {
-              const { stacks, ...errorWithoutStacks } = error;
-              return sanitizeError(errorWithoutStacks);
-            }),
-          }),
-      });
-    });
-
-    if (enableCrashReports) {
-      store.subscribe('FATAL_ERROR', async (event) => {
-        await telemetry('addon-test', {
-          fatalError: cleanPaths(event.payload.error.message),
-        });
-      });
+  channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
+    if (event.type !== 'test-run-completed') {
+      telemetry('addon-test', () => ({
+        ...event,
+        payload: {
+          ...event.payload,
+          storyId: oneWayHash(event.payload.storyId),
+        },
+      }));
     }
+  });
+
+  store.subscribe('TOGGLE_WATCHING', async (event) => {
+    await telemetry('addon-test', () => ({
+      watchMode: event.payload.to,
+    }));
+  });
+  store.subscribe('TEST_RUN_COMPLETED', async (event) => {
+    const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
+    await telemetry('addon-test', () => ({
+      ...currentRun,
+      duration: (finishedAt ?? 0) - (startedAt ?? 0),
+      unhandledErrorCount: unhandledErrors.length,
+      ...(enableCrashReports &&
+        unhandledErrors.length > 0 && {
+          unhandledErrors: unhandledErrors.map((error) => {
+            const { stacks, ...errorWithoutStacks } = error;
+            return sanitizeError(errorWithoutStacks);
+          }),
+        }),
+    }));
+  });
+
+  if (enableCrashReports) {
+    store.subscribe('FATAL_ERROR', async (event) => {
+      await telemetry('addon-test', () => ({
+        fatalError: cleanPaths(event.payload.error.message),
+      }));
+    });
   }
 
   return channel;

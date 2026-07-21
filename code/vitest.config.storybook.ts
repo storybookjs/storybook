@@ -21,18 +21,25 @@ if (process.env.INSPECT === 'true') {
 export default defineProject({
   plugins: [
     storybookTest({
+      configDir: import.meta.dirname + '/.storybook',
       tags: {
         include: ['vitest'],
       },
+      // Pinned for the InitialGlobals story, which asserts this reaches the run (see
+      // addons/vitest/src/components/InitialGlobals.stories.tsx).
+      initialGlobals: { initialGlobalsWork: true },
     }),
     ...extraPlugins,
   ],
   test: {
     name: 'storybook-ui',
+    // Playwright occasionally misses the vitest-iframe frame within 1s under full-suite load.
+    retry: process.env.CI ? 2 : 1,
     exclude: [
       ...defaultExclude,
       'node_modules/**',
       '**/__mockdata__/**',
+      '**/*.bench.ts', // benchmark files are Node-only; never run in the browser project
       '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
       './addons/docs/src/blocks/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
     ],

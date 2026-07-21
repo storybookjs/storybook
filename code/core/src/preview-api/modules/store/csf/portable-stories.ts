@@ -1,5 +1,4 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -23,26 +22,25 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { HooksContext } from '../../../addons';
+import { HooksContext } from '../../../addons.ts';
 import {
   isTestEnvironment,
   pauseAnimations,
   waitForAnimations,
-} from '../../preview-web/render/animation-utils';
-import { ReporterAPI } from '../reporter-api';
-import { composeConfigs } from './composeConfigs';
-import { getCsfFactoryAnnotations } from './csf-factory-utils';
-import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { normalizeStory } from './normalizeStory';
-import { prepareContext, prepareStory } from './prepareStory';
+} from '../../preview-web/render/animation-utils.ts';
+import { ReporterAPI } from '../reporter-api.ts';
+import { composeConfigs } from './composeConfigs.ts';
+import { composeProjectAnnotationsWithCore } from './composeProjectAnnotationsWithCore.ts';
+import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
+import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
+import { normalizeStory } from './normalizeStory.ts';
+import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
-  // eslint-disable-next-line no-var
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
-  // eslint-disable-next-line no-var
   var defaultProjectAnnotations: ProjectAnnotations<any>;
 }
 
@@ -56,30 +54,19 @@ export function setDefaultProjectAnnotations<TRenderer extends Renderer = Render
 const DEFAULT_STORY_TITLE = 'ComposedStory';
 const DEFAULT_STORY_NAME = 'Unnamed Story';
 
-function extractAnnotation<TRenderer extends Renderer = Renderer>(
-  annotation: NamedOrDefaultProjectAnnotations<TRenderer>
-) {
-  if (!annotation) {
-    return {};
-  }
-  // support imports such as
-  // import * as annotations from '.storybook/preview'
-  // import annotations from '.storybook/preview'
-  // in both cases: 1 - the file has a default export; 2 - named exports only
-  // also support when the file has both annotations coming from default and named exports
-  return composeConfigs([annotation]);
-}
-
 export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalThis.globalProjectAnnotations = composeConfigs([
-    ...getCoreAnnotations(),
+  // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
+  // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
+  // those, and `composeProjectAnnotationsWithCore` detects the CSF4 marker (set by `definePreview`,
+  // which is what e.g. addon-vitest passes here) so core annotations are never applied twice.
+  globalThis.globalProjectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
     globalThis.defaultProjectAnnotations ?? {},
-    composeConfigs(annotations.map(extractAnnotation)),
+    ...annotations,
   ]);
 
   return globalThis.globalProjectAnnotations ?? {};
@@ -194,6 +181,21 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         if (unmount) {
           cleanups.push(unmount);
         }
+        // `hooks` is loosely typed (`unknown`) on the portable story context.
+        const hooks = context.hooks as HooksContext<TRenderer>;
+        // Register the hook teardown BEFORE flushing so a throwing effect can't skip it: `clean()`
+        // runs the effect destroy fns on the next run/explicit cleanup (mirroring
+        // `StoryStore.cleanupStory`), so the applied effects survive through play + the a11y
+        // `afterEach` of this run.
+        cleanups.push(() => hooks.clean());
+        // In the browser (PreviewWeb) path, preview-api `useEffect` callbacks registered during
+        // render are flushed when `StoryRender` emits `STORY_RENDERED`, whose listener also detaches
+        // the hooks context. The portable path never emits that event, so invoke the same listener
+        // directly here (after the render resolves, before play + the a11y `afterEach` observe the
+        // DOM): it triggers the effects (e.g. `@storybook/addon-themes` setting `data-theme` on
+        // `<html>`), clears the current context, and removes the now-stale render listener. (Effect-
+        // only decorators; preview-api state updates that re-render are a separate, unsupported case.)
+        hooks.renderListener(context.id);
       };
     }
 

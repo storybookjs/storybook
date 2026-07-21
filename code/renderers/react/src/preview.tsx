@@ -13,13 +13,13 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as reactAnnotations from './entry-preview';
-import * as reactArgTypesAnnotations from './entry-preview-argtypes';
-import * as reactDocsAnnotations from './entry-preview-docs';
-import type { AddMocks } from './public-types';
-import type { ReactTypes } from './types';
+import * as reactAnnotations from './entry-preview.tsx';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
+import * as reactDocsAnnotations from './entry-preview-docs.ts';
+import type { AddMocks } from './public-types.ts';
+import type { ReactTypes } from './types.ts';
 
 /** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
@@ -27,7 +27,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 >;
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
 >;
 
 type InferReactTypes<T, TArgs, Decorators> = ReactTypes &

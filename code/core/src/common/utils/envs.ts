@@ -1,6 +1,8 @@
+export { isWebContainer } from '@webcontainer/env';
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Needed for Angular sandbox running without --no-link option. Do NOT convert to @ts-expect-error!
-import { nodePathsToArray } from './paths';
+import { nodePathsToArray } from './paths.ts';
 
 // Load environment variables starts with STORYBOOK_ to the client side.
 
@@ -12,8 +14,7 @@ export async function loadEnvs(options: { production?: boolean } = {}): Promise<
   const defaultNodeEnv = options.production ? 'production' : 'development';
 
   const baseEnv: Record<string, string> = {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    NODE_ENV: process.env['NODE_ENV'] || defaultNodeEnv,
+    NODE_ENV: process.env.NODE_ENV || defaultNodeEnv,
     NODE_PATH: process.env['NODE_PATH'] || '',
     STORYBOOK: process.env['STORYBOOK'] || 'true',
     // This is to support CRA's public folder feature.

@@ -16,12 +16,12 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as angularAnnotations from './config';
-import * as angularDocsAnnotations from './docs/config';
-import type { TransformComponentType } from './public-types';
-import { type AngularRenderer } from './types';
+import * as angularAnnotations from './config.ts';
+import * as angularDocsAnnotations from './docs/config.ts';
+import type { TransformComponentType } from './public-types.ts';
+import { type AngularRenderer } from './types.ts';
 
 /**
  * Creates an Angular-specific preview configuration with CSF factories support.
@@ -54,7 +54,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
 >;
 
 type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<

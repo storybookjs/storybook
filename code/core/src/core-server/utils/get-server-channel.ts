@@ -1,19 +1,20 @@
 import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
-import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
+import { Channel, HEARTBEAT_INTERVAL, setChannel } from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
-import { logger } from '../../node-logger';
-import { UniversalStore } from '../../shared/universal-store';
-import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
-import { isValidToken } from './validate-token';
+import { logger } from '../../node-logger/index.ts';
+import { UniversalStore } from '../../shared/universal-store/index.ts';
+import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
+import { isValidToken } from './validate-token.ts';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
 type ServerChannelTransportOptions = HostValidationOptions & {
+  skipValidation?: boolean;
   token: string;
 };
 
@@ -38,14 +39,16 @@ export class ServerChannelTransport {
           return;
         }
 
-        const originHost = request.headers.origin && new URL(request.headers.origin).host;
-        if (!isValidHost(originHost, options)) {
-          throw new Error('Invalid websocket origin');
-        }
+        if (!options.skipValidation) {
+          const originHost = request.headers.origin && new URL(request.headers.origin).host;
+          if (!isValidHost(originHost, options)) {
+            throw new Error('Invalid websocket origin');
+          }
 
-        const requestToken = url.searchParams.get('token');
-        if (!isValidToken(requestToken, options.token)) {
-          throw new Error('Invalid websocket token');
+          const requestToken = url.searchParams.get('token');
+          if (!isValidToken(requestToken, options.token)) {
+            throw new Error('Invalid websocket token');
+          }
         }
 
         this.socket.handleUpgrade(request, socket, head, (ws) => {
@@ -101,6 +104,8 @@ export function getServerChannel(server: Server, options: ServerChannelTransport
   const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });
+
+  setChannel(channel);
 
   UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 

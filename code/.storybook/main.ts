@@ -2,8 +2,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';
+import type { Options } from 'storybook/internal/types';
 
 import react from '@vitejs/plugin-react';
+import type { InlineConfig } from 'vite';
 
 import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
@@ -12,6 +14,7 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
 const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
@@ -36,6 +39,10 @@ const config = defineMain({
       titlePrefix: 'preview',
     },
     {
+      directory: '../core/src/shared',
+      titlePrefix: 'core/shared',
+    },
+    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },
@@ -54,6 +61,10 @@ const config = defineMain({
     {
       directory: '../core/src/highlight',
       titlePrefix: 'highlight',
+    },
+    {
+      directory: '../core/src/actions/containers',
+      titlePrefix: 'actions',
     },
     {
       directory: '../addons/a11y/src',
@@ -111,8 +122,10 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    '@storybook/addon-mcp',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
+    './services-preset.ts',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
@@ -139,30 +152,38 @@ const config = defineMain({
   },
   core: {
     disableTelemetry: true,
+    changeDetection: true,
   },
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
+    // Disabled by default for production builds; the internal dev server enables it via
+    // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
+    experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
+    experimentalReactComponentMeta: true,
+    changeDetection: true,
+    experimentalReview: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
-  viteFinal: async (viteConfig, { configType }) => {
+  viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
     const { mergeConfig } = await import('vite');
 
     return mergeConfig(viteConfig, {
       resolve: {
-        alias: {
-          ...(configType === 'DEVELOPMENT'
+        alias:
+          configType === 'DEVELOPMENT'
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/preview-api': previewApiPath,
                 'storybook/theming/create': themingCreatePath,
                 'storybook/theming': themingPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {
                 'storybook/manager-api': managerApiPath,
-              }),
-        },
+                'storybook/preview-api': previewApiPath,
+              },
       },
       plugins: [react()],
       build: {
@@ -173,12 +194,17 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            // Internal e2e writes traces under code/playwright-results while the dev server is running.
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);
   },
-  // logLevel: 'debug',
 });
 
 export default config;

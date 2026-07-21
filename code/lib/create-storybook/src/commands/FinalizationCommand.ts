@@ -7,6 +7,16 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
+export type FinalizationCommandOptions = {
+  logfile: string | boolean | undefined;
+  /** When true, show the agent follow-up message instead of the normal success message */
+  showAgentFollowUp: boolean;
+  /** When true, show the "paste this prompt to your AI agent" instructions */
+  showAiInstructions: boolean;
+  /** Package-manager-aware `storybook ai setup` command shown to agents */
+  aiSetupCommand: string;
+};
+
 type ExecuteFinalizationParams = {
   storybookCommand?: string | null;
 };
@@ -22,7 +32,8 @@ type ExecuteFinalizationParams = {
  * - Show next steps
  */
 export class FinalizationCommand {
-  constructor(private logfile: string | boolean | undefined) {}
+  constructor(private options: FinalizationCommandOptions) {}
+
   /** Execute finalization steps */
   async execute({ storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
@@ -69,33 +80,66 @@ export class FinalizationCommand {
     this.printNextSteps(storybookCommand);
 
     try {
-      const logFile = await logTracker.writeToFile(this.logfile);
+      const logFile = await logTracker.writeToFile(this.options.logfile);
       logger.warn(`Debug logs are written to: ${logFile}`);
     } catch {}
   }
 
-  /** Print success message with feature summary */
+  private getAiSetupPromptText(): string {
+    return `Run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`;
+  }
+
   private printSuccessMessage(storybookCommand?: string | null): void {
-    logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    if (this.options.showAgentFollowUp) {
+      logger.step(
+        CLI_COLORS.storybook(
+          dedent`Storybook is installed but is not entirely set up yet.
+          To finish setting up, now run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`
+        )
+      );
+    } else {
+      logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    }
     this.printNextSteps(storybookCommand);
   }
 
   private printNextSteps(storybookCommand?: string | null): void {
     if (storybookCommand) {
-      logger.log(
-        `To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
-      );
+      logger.log(`To run Storybook, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`);
     }
 
-    logger.log(dedent`
-      Wanna know more about Storybook? Check out ${CLI_COLORS.cta('https://storybook.js.org/')}
-      Having trouble or want to chat? Join us at ${CLI_COLORS.cta('https://discord.gg/storybook/')}
+    // We don't want to tell agents about Discord, and we want to customise their docs URL.
+    if (this.options.showAiInstructions) {
+      logger.log(dedent`
+      Official documentation reference: ${CLI_COLORS.cta('https://storybook.js.org/llms.txt')}
     `);
+    } else {
+      logger.log(dedent`
+      Want to learn more about Storybook? ${CLI_COLORS.cta('https://storybook.js.org/')}
+      Having trouble or want to chat? ${CLI_COLORS.cta('https://discord.gg/storybook/')}
+    `);
+    }
+
+    if (this.options.showAiInstructions) {
+      logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
+
+        ${CLI_COLORS.storybook(this.getAiSetupPromptText())}
+      `);
+    }
   }
 }
+
 export const executeFinalization = ({
   logfile,
+  showAgentFollowUp,
+  showAiInstructions,
+  aiSetupCommand,
   ...params
-}: ExecuteFinalizationParams & { logfile: string | boolean | undefined }) => {
-  return new FinalizationCommand(logfile).execute(params);
+}: ExecuteFinalizationParams & FinalizationCommandOptions) => {
+  return new FinalizationCommand({
+    logfile,
+    showAgentFollowUp,
+    showAiInstructions,
+    aiSetupCommand,
+  }).execute(params);
 };

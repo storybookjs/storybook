@@ -8,22 +8,17 @@ import { MenuIcon } from '@storybook/icons';
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
-import { focusableUIElements } from '../../../../manager-api/modules/layout';
-import { useRegionFocusAnimation } from '../../layout/useLandmarkIndicator';
+import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
 
 const menuMapper = ({ api, state }: Combo) => ({
-  isVisible: api.getIsNavShown(),
+  navAvailability: api.getNavAvailability(),
   singleStory: state.singleStory,
-  viewMode: state.viewMode,
-  showSidebar: async (animateLandmark?: (e: HTMLElement | null) => void) => {
+  showSidebar: async (forceFocus: boolean) => {
     api.toggleNav(true);
-    const success = await api.focusOnUIElement(focusableUIElements.sidebarRegion, {
-      forceFocus: true,
+    api.focusOnUIElement(focusableUIElements.sidebarRegion, {
+      forceFocus,
       poll: true,
     });
-    if (success) {
-      animateLandmark?.(document.getElementById(focusableUIElements.sidebarRegion));
-    }
   },
 });
 
@@ -34,13 +29,11 @@ export const menuTool: Addon_BaseType = {
   // @ts-expect-error (non strict)
   match: ({ viewMode }) => ['story', 'docs'].includes(viewMode),
   render: () => {
-    const animateLandmark = useRegionFocusAnimation();
-
     return (
       <Consumer filter={menuMapper}>
-        {({ isVisible, showSidebar, singleStory }) =>
+        {({ navAvailability, showSidebar, singleStory }) =>
           !singleStory &&
-          !isVisible && (
+          navAvailability === 'hidden' && (
             <>
               <Button
                 padding="small"
@@ -48,11 +41,11 @@ export const menuTool: Addon_BaseType = {
                 ariaLabel="Show sidebar"
                 id={focusableUIElements.showSidebar}
                 key="menu"
-                onClick={() => showSidebar()}
+                onClick={() => showSidebar(false)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    showSidebar(animateLandmark);
+                    showSidebar(true);
                   }
                 }}
               >

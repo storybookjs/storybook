@@ -2,6 +2,7 @@ import type {
   API_ComposedRef,
   API_ComposedRefUpdate,
   API_IndexHash,
+  API_RefStoryRuntimeData,
   API_Refs,
   API_SetRefData,
   API_StoryMapper,
@@ -16,8 +17,8 @@ import { dedent } from 'ts-dedent';
 import {
   transformSetStoriesStoryDataToPreparedStoryIndex,
   transformStoryIndexToStoriesHash,
-} from '../lib/stories';
-import type { ModuleFn } from '../lib/types';
+} from '../lib/stories.ts';
+import type { ModuleFn } from '../lib/types.tsx';
 
 const { location, fetch } = global;
 
@@ -101,6 +102,27 @@ const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash =>
   return Object.entries(input).reduce((acc, [id, item]) => {
     return { ...acc, [id]: { ...item!, refId: ref.id } };
   }, {} as API_IndexHash);
+};
+
+// A composed ref's story/docs entries are enriched at runtime from the preview's STORY_PREPARED /
+// DOCS_PREPARED events (args, argTypes, parameters, prepared) — data that is NOT in the ref's static
+// story index. That enrichment is cached per ref (`ref.storyUpdates`) and re-applied here whenever
+// `setRef` rebuilds the hash from the static index, so it is not wiped by re-composition and is
+// applied even when it arrives before the index is first composed (the deep-link race in #34553).
+const applyRefStoryUpdates = (
+  index: API_IndexHash,
+  storyUpdates: API_RefStoryRuntimeData | undefined
+): API_IndexHash => {
+  if (!storyUpdates) {
+    return index;
+  }
+  Object.entries(storyUpdates).forEach(([id, update]) => {
+    const entry = index[id];
+    if (entry && (entry.type === 'story' || entry.type === 'docs')) {
+      index[id] = { ...entry, ...update } as API_IndexHash[string];
+    }
+  });
+  return index;
 };
 
 async function handleRequest(
@@ -339,9 +361,11 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       if (index) {
         index = addRefIds(index, ref);
+        index = applyRefStoryUpdates(index, ref?.storyUpdates);
       }
       if (filteredIndex) {
         filteredIndex = addRefIds(filteredIndex, ref);
+        filteredIndex = applyRefStoryUpdates(filteredIndex, ref?.storyUpdates);
       }
       await api.updateRef(id, { ...ref, ...rest, index, filteredIndex, internal_index });
     },

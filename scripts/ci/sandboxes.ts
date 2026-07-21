@@ -1,22 +1,21 @@
 import { join } from 'path';
 
-import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { build_linux } from './common-jobs';
-import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
+import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { build_linux } from './common-jobs.ts';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  CACHE_KEYS,
   artifact,
-  cache,
+  sandboxArchive,
   server,
   testResults,
   toId,
   verdaccio,
   workflow,
   workspace,
-} from './utils/helpers';
-import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
-import type { JobOrNoOpJob, Workflow } from './utils/types';
+} from './utils/helpers.ts';
+import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -26,8 +25,8 @@ function getSandboxSetupSteps(template: string) {
     extraSteps.push({
       'node/install': {
         'install-yarn': true,
-        // Currently using Node 22.22.1 as minimum supported version for Angular sandboxes
-        'node-version': '22.22.1',
+        // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
+        'node-version': '22.22.3',
       },
     });
   }
@@ -35,50 +34,37 @@ function getSandboxSetupSteps(template: string) {
   return extraSteps;
 }
 
-function defineSandboxJob_build({
-  directory,
-  name,
-  template,
-  requires,
-}: {
-  directory: string;
-  name: string;
-  requires: JobOrNoOpJob[];
-  template: string;
-}) {
-  return defineJob(
-    name,
-    () => ({
-      executor: {
-        name: 'sb_node_22_classic',
-        class: 'medium+',
-      },
-      steps: [
-        ...getSandboxSetupSteps(template),
-        ...workflow.restoreLinux(),
-        {
-          run: {
-            name: 'Build storybook',
-            command: `yarn task build --template ${template} --no-link -s build`,
-          },
-        },
-        workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
-      ],
-    }),
-    requires
-  );
-}
+/**
+ * The dev-mode e2e jobs are the workflow tail. xlarge (8 vCPUs) with 6
+ * Playwright workers cuts their test phase ~38% vs large/3, but doubles the
+ * per-minute cost - so only the templates whose dev chains define the
+ * workflow wall (the slowest dev test phases) get the big class; the rest
+ * stay on large/3, where the extra speed would not move the wall at all.
+ */
+const XLARGE_DEV_TEMPLATES = new Set<string>([
+  'angular-cli/default-ts',
+  'angular-vite/default-ts',
+  'nextjs/default-ts',
+  'nextjs-vite/default-ts',
+  'react-vite/default-ts',
+  'react-webpack/18-ts',
+  'vue3-vite/default-ts',
+]);
+
 function defineSandboxJob_dev({
+  directory,
   name,
   template,
   requires,
   options,
 }: {
+  directory: string;
   name: string;
   requires: JobOrNoOpJob[];
   template: string;
   options: {
     e2e: boolean;
+    resourceClass: 'large' | 'xlarge';
   };
 }) {
   return defineJob(
@@ -87,7 +73,7 @@ function defineSandboxJob_dev({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
-            class: 'medium+',
+            class: options.resourceClass,
           }
         : {
             name: 'sb_node_22_classic',
@@ -95,7 +81,7 @@ function defineSandboxJob_dev({
           },
       steps: [
         ...getSandboxSetupSteps(template),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: directory }),
         ...(options.e2e
           ? [
               {
@@ -110,8 +96,11 @@ function defineSandboxJob_dev({
               {
                 run: {
                   name: 'Running E2E Tests',
+                  environment: {
+                    PLAYWRIGHT_WORKERS: options.resourceClass === 'xlarge' ? '6' : '3',
+                  },
                   command: [
-                    'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                    'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
                     `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
@@ -218,23 +207,28 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               },
             ]
           : []),
+        {
+          run: {
+            name: 'Build storybook',
+            command: `yarn task build --template ${key} --no-link -s build`,
+          },
+        },
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
-        workspace.persist([`${SANDBOX_DIR}/${id}`]),
+        workspace.packSandbox(id),
+        workspace.persist([sandboxArchive(id)]),
       ],
     }),
     [sandboxesNoOpJob]
   );
-  const buildJob = defineSandboxJob_build({
-    name: `${name} (build)`,
-    template: key,
-    directory: id,
-    requires: [createJob],
-  });
   const devJob = defineSandboxJob_dev({
     name: `${name} (dev)`,
     template: key,
+    directory: id,
     requires: [createJob],
-    options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
+    options: {
+      e2e: !skipTasks?.includes('e2e-tests-dev'),
+      resourceClass: XLARGE_DEV_TEMPLATES.has(key) ? 'xlarge' : 'large',
+    },
   });
   const chromaticJob = defineJob(
     `${name} (chromatic)`,
@@ -247,7 +241,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        cache.attach(CACHE_KEYS()),
+        workspace.unpack(),
+        workspace.unpackSandbox(id),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {
@@ -266,28 +261,34 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const vitestJob = defineJob(
     `${name} (vitest)`,
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Running Vitest',
             command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
+        // Diagnostics for browser-mode crashes ("Browser connection was closed"). `store_artifacts`
+        // has an implicit `when: always`, so these upload even when the Vitest step above fails.
+        artifact.persist(
+          join(LINUX_ROOT_DIR, SANDBOX_DIR, path, 'vitest-artifacts'),
+          'vitest-artifacts'
+        ),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const e2eJob = defineJob(
     `${name} (e2e)`,
@@ -298,7 +299,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Serve storybook',
@@ -310,8 +311,11 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running E2E Tests',
+            environment: {
+              PLAYWRIGHT_WORKERS: '3',
+            },
             command: [
-              `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+              `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
               `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
             ].join('\n'),
           },
@@ -324,7 +328,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
   const testRunnerJob = defineJob(
     `${name} (test-runner)`,
@@ -335,7 +339,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       },
       steps: [
         ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: id }),
         {
           run: {
             name: 'Running test-runner',
@@ -345,12 +349,11 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [buildJob]
+    [createJob]
   );
 
   const jobs = [
     createJob,
-    buildJob,
     devJob,
     !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
@@ -369,15 +372,18 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
       : undefined,
   ].filter(Boolean);
   return {
+    id,
     name: key,
     path,
     jobs,
+    createJob,
+    devJob,
   };
 }
 
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[1].id}-test-runner`,
+    `${sandbox.id}--test-runner`,
     () => ({
       executor: {
         name: 'sb_playwright',
@@ -385,7 +391,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...getSandboxSetupSteps(sandbox.name),
-        ...workflow.restoreLinux(),
+        ...workflow.restoreLinux({ sandboxId: sandbox.id }),
         {
           run: {
             name: 'Running test-runner',
@@ -395,13 +401,13 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     }),
-    [sandbox.jobs[1]]
+    [sandbox.createJob]
   );
 }
 
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[2].id}-windows`,
+    `${sandbox.devJob.id}-windows`,
     () => ({
       executor: {
         name: 'win/default',
@@ -410,6 +416,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
       },
       steps: [
         ...workflow.restoreWindows(),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -444,13 +451,13 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
       ],
     }),
-    [sandbox.jobs[0]]
+    [sandbox.createJob]
   );
 }
 
 export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
-    `${sandbox.jobs[1].id}-windows`,
+    `${sandbox.id}--build-windows`,
     () => ({
       executor: {
         name: 'win/default',
@@ -459,6 +466,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
       },
       steps: [
         ...workflow.restoreWindows(),
+        workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

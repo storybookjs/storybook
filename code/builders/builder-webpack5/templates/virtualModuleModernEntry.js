@@ -30,19 +30,20 @@ const preview = new PreviewWeb(importFn, getProjectAnnotations);
 
 window.__STORYBOOK_PREVIEW__ = preview;
 window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
-window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
 
 if (import.meta.webpackHot) {
+  import.meta.webpackHot.addStatusHandler((status) => {
+    if (status === 'idle') {
+      preview.channel.emit(STORY_HOT_UPDATED);
+    }
+  });
+
   import.meta.webpackHot.accept('{{storiesFilename}}', () => {
-    // Cancel any running play function before patching in the new importFn
-    preview.channel.emit(STORY_HOT_UPDATED);
     // importFn has changed so we need to patch the new one in
     preview.onStoriesChanged({ importFn });
   });
 
   import.meta.webpackHot.accept(['{{previewAnnotations}}'], () => {
-    // Cancel any running play function before patching in the new getProjectAnnotations
-    preview.channel.emit(STORY_HOT_UPDATED);
     // getProjectAnnotations has changed so we need to patch the new one in
     preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
   });

@@ -4,20 +4,16 @@ This script updates `lib/configs/*.js` files from rule's meta data.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import type { Options } from 'prettier';
-import { format } from 'prettier';
-
-// @ts-expect-error this file has no types
-import prettierConfig from '../../../../prettier.config.mjs';
-import type { TCategory } from './utils/categories';
-import { categories } from './utils/categories';
+import { format } from 'oxfmt';
+import type { TCategory } from './utils/categories.ts';
+import { categories } from './utils/categories.ts';
 import {
   MAIN_JS_FILE,
   STORIES_GLOBS,
   extendsCategories,
   formatRules,
   formatSingleRule,
-} from './utils/updates';
+} from './utils/updates.ts';
 
 function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
@@ -68,10 +64,11 @@ export async function update() {
   await Promise.all(
     categories.map(async (category) => {
       const filePath = path.join(CONFIG_DIR, `${category.categoryId}.ts`);
-      const content = await format(formatCategory(category), {
-        parser: 'typescript',
-        ...(prettierConfig as Options),
-      });
+      const { code: content } = await format(
+        `${category.categoryId}.ts`,
+        formatCategory(category),
+        { singleQuote: true }
+      );
 
       await fs.writeFile(filePath, content);
     })

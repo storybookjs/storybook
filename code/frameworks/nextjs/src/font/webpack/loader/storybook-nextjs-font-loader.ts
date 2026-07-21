@@ -1,10 +1,10 @@
 import { sep } from 'node:path';
 
-import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations';
-import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations';
-import type { LoaderOptions } from './types';
-import { getCSSMeta } from './utils/get-css-meta';
-import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head';
+import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations.ts';
+import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations.ts';
+import type { LoaderOptions } from './types.ts';
+import { getCSSMeta } from './utils/get-css-meta.ts';
+import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head.ts';
 
 type FontFaceDeclaration = {
   id: string;

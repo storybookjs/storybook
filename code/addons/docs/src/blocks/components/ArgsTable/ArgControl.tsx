@@ -20,7 +20,9 @@ export interface ArgControlProps {
   row: ArgType;
   arg: any;
   updateArgs: (args: Args) => void;
-  isHovered: boolean;
+  isRequired: boolean;
+  storyId?: string;
+  controlsId?: string;
 }
 
 const Controls: Record<string, FC<any>> = {
@@ -43,7 +45,14 @@ const Controls: Record<string, FC<any>> = {
 
 const NoControl = () => <>-</>;
 
-export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovered }) => {
+export const ArgControl: FC<ArgControlProps> = ({
+  row,
+  arg,
+  updateArgs,
+  isRequired,
+  storyId,
+  controlsId,
+}) => {
   const { key, control } = row;
 
   const [isFocused, setFocused] = useState(false);
@@ -70,21 +79,41 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
 
   if (!control || control.disable) {
     const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
-    return isHovered && canBeSetup ? (
-      <Link
-        href="https://storybook.js.org/docs/essentials/controls?ref=ui"
-        target="_blank"
-        withArrow
-      >
-        Setup controls
-      </Link>
-    ) : (
-      <NoControl />
+    if (!canBeSetup) {
+      return <NoControl />;
+    }
+    // Both nodes are always rendered; the parent row toggles their visibility with CSS on
+    // :hover and :focus-within, so the link stays reachable for keyboard users.
+    return (
+      <>
+        <span className="sbdocs sbdocs-argcontrol-setup">
+          <Link
+            href="https://storybook.js.org/docs/essentials/controls?ref=ui"
+            target="_blank"
+            withArrow
+          >
+            Setup controls
+          </Link>
+        </span>
+        <span className="sbdocs sbdocs-argcontrol-placeholder">
+          <NoControl />
+        </span>
+      </>
     );
   }
   // row.name is a display name and not a suitable DOM input id or name - i might contain whitespace etc.
   // row.key is a hash key and therefore a much safer choice
-  const props = { name: key, argType: row, value: boxedValue.value, onChange, onBlur, onFocus };
+  const props = {
+    name: key,
+    storyId,
+    controlsId,
+    argType: row,
+    value: boxedValue.value,
+    required: isRequired,
+    onChange,
+    onBlur,
+    onFocus,
+  };
   const Control = Controls[control.type] || NoControl;
   return <Control {...props} {...control} controlType={control.type} />;
 };

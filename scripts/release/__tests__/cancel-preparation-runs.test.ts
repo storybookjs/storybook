@@ -4,8 +4,8 @@ import {
   PREPARE_NON_PATCH_WORKFLOW_PATH,
   PREPARE_PATCH_WORKFLOW_PATH,
   run as cancelPreparationWorkflows,
-} from '../cancel-preparation-runs';
-import * as github_ from '../utils/github-client';
+} from '../cancel-preparation-runs.ts';
+import * as github_ from '../utils/github-client.ts';
 
 vi.mock('../utils/github-client');
 

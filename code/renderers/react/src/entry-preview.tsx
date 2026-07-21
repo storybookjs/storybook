@@ -6,13 +6,13 @@ import { global } from '@storybook/global';
 
 import { configure } from 'storybook/test';
 
-import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
-import type { Decorator } from './public-types';
+import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
+import type { Decorator } from './public-types.ts';
 
-export { render } from './render';
-export { renderToCanvas } from './renderToCanvas';
-export { mount } from './mount';
-export { applyDecorators } from './applyDecorators';
+export { render } from './render.tsx';
+export { renderToCanvas } from './renderToCanvas.tsx';
+export { mount } from './mount.ts';
+export { applyDecorators } from './applyDecorators.ts';
 
 export const decorators: Decorator[] = [
   (story, context) => {
@@ -72,8 +72,9 @@ export const beforeAll = async () => {
               resolve();
             }, 0);
 
-            if (jestFakeTimersAreEnabled()) {
-              jest.advanceTimersByTime(0);
+            const jestFakeTimers = getActiveJestFakeTimers(globalThis);
+            if (jestFakeTimers) {
+              jestFakeTimers.advanceTimersByTime(0);
             }
           });
 
@@ -97,16 +98,20 @@ export const beforeAll = async () => {
   }
 };
 
-/** The function is used to configure jest's fake timers in environments where React's act is enabled */
-function jestFakeTimersAreEnabled() {
-  if (typeof jest !== 'undefined' && jest !== null) {
-    return (
-      // legacy timers
-
-      (setTimeout as any)._isMockFunction === true || // modern timers
-      Object.prototype.hasOwnProperty.call(setTimeout, 'clock')
-    );
+/** Returns jest's fake-timer API when it's active, so callers can advance fake timers safely. */
+function getActiveJestFakeTimers(
+  g: typeof globalThis
+): { advanceTimersByTime: (ms: number) => void } | undefined {
+  const jest = Reflect.get(g, 'jest');
+  if (jest === undefined || jest === null) {
+    return undefined;
   }
 
-  return false;
+  const fakeTimersEnabled =
+    // legacy timers
+
+    (setTimeout as any)._isMockFunction === true || // modern timers
+    Object.prototype.hasOwnProperty.call(setTimeout, 'clock');
+
+  return fakeTimersEnabled ? jest : undefined;
 }

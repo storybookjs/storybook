@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { Options } from 'storybook/internal/types';
 
 import { createFilter } from '@rollup/pluginutils';
@@ -26,31 +28,36 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
   return {
     name: 'storybook:mdx-plugin',
     enforce: 'pre',
-    async transform(src, id) {
-      if (!filter(id)) {
-        return undefined;
-      }
+    transform: {
+      filter: { id: include },
+      async handler(src, id) {
+        if (!filter(id)) {
+          return undefined;
+        }
 
-      const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
-        ...mdxPluginOptions,
-        mdxCompileOptions: {
-          providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
-          ...mdxPluginOptions?.mdxCompileOptions,
-          rehypePlugins: [
-            ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
-            rehypeSlug,
-            rehypeExternalLinks,
-          ],
-        },
-      });
+        const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
+          ...mdxPluginOptions,
+          mdxCompileOptions: {
+            providerImportSource: fileURLToPath(
+              import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
+            ),
+            ...mdxPluginOptions?.mdxCompileOptions,
+            rehypePlugins: [
+              ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
+              rehypeSlug,
+              rehypeExternalLinks,
+            ],
+          },
+        });
 
-      const code = String(await compile(src, mdxLoaderOptions));
+        const code = String(await compile(src, mdxLoaderOptions));
 
-      return {
-        code,
-        // TODO: support source maps
-        map: null,
-      };
+        return {
+          code,
+          // TODO: support source maps
+          map: null,
+        };
+      },
     },
   };
 }

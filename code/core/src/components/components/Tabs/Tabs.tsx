@@ -1,4 +1,4 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, forwardRef, memo, useMemo } from 'react';
 
@@ -8,11 +8,11 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import { FlexBar } from '../Bar/Bar';
-import { TabButton } from './Button';
-import { EmptyTabContent } from './EmptyTabContent';
-import { VisuallyHidden, childrenToList } from './Tabs.helpers';
-import { useList } from './Tabs.hooks';
+import { FlexBar } from '../Bar/Bar.tsx';
+import { TabButton } from './Button.tsx';
+import { EmptyTabContent } from './EmptyTabContent.tsx';
+import { VisuallyHidden, childrenToList } from './Tabs.helpers.tsx';
+import { useList } from './Tabs.hooks.tsx';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
@@ -228,6 +228,7 @@ export const Tabs: FC<TabsProps> = memo(
               const indexId = `index-${index}`;
 
               return (
+                // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- deprecated code, no need to maintain it
                 <TabButton
                   id={`tabbutton-${sanitize(id) ?? indexId}`}
                   ref={(ref: HTMLButtonElement) => {

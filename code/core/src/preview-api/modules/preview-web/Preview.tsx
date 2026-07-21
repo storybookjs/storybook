@@ -45,11 +45,11 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { StoryStore } from '../../store';
-import { addons } from '../addons';
-import type { CsfDocsRender } from './render/CsfDocsRender';
-import type { MdxDocsRender } from './render/MdxDocsRender';
-import { StoryRender } from './render/StoryRender';
+import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
+import { addons } from '../addons/index.ts';
+import type { CsfDocsRender } from './render/CsfDocsRender.ts';
+import type { MdxDocsRender } from './render/MdxDocsRender.ts';
+import { StoryRender } from './render/StoryRender.ts';
 
 const { fetch } = global;
 
@@ -154,7 +154,14 @@ export class Preview<TRenderer extends Renderer> {
 
   async getProjectAnnotationsOrRenderError(): Promise<ProjectAnnotations<TRenderer>> {
     try {
-      const projectAnnotations = await this.getProjectAnnotations();
+      // Compose the core annotations in here (the same way the store and portable stories do) so the
+      // `beforeAll` hooks they contribute — e.g. registering the `core/docgen` and `core/story-docs`
+      // services in the preview — run at init. Plain (CSF1-3) previews don't fold core annotations
+      // into `getProjectAnnotations()`, and core annotations would otherwise only be prepended later,
+      // inside the store, which is too late for the `beforeAll` we run below.
+      const projectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
+        await this.getProjectAnnotations(),
+      ]);
 
       this.renderToCanvas = projectAnnotations.renderToCanvas;
 
@@ -206,7 +213,6 @@ export class Preview<TRenderer extends Renderer> {
   protected initializeWithStoryIndex(storyIndex: StoryIndex): void {
     if (!this.projectAnnotationsBeforeInitialization) {
       // This is a protected method and so shouldn't be called out of order by users
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('Cannot call initializeWithStoryIndex until project annotations resolve');
     }
 

@@ -1,20 +1,19 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 
-import * as babel from 'storybook/internal/babel';
+import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, type SupportedFramework } from '../types';
-import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
+import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
 
 type Result = {
   compatible: boolean;
@@ -41,6 +40,20 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Reduce a Vitest version specifier (exact or range) to a single concrete version for
+   * `semver.satisfies` comparisons, so dependency collection and postinstall template selection make
+   * the same major/minor decision. Uses the lower bound of a valid range, then coerces so a
+   * prerelease like `4.0.0-beta.1` is treated as `4.0.0` rather than failing `>=4.0.0`.
+   */
+  static getComparableVersion(specifier: string | null | undefined): string | undefined {
+    if (!specifier) {
+      return undefined;
+    }
+    const range = validRange(specifier);
+    return coerce(range ? minVersion(range)?.version : specifier)?.version;
+  }
+
+  /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
    * Returns versioned package strings ready for installation:
@@ -53,21 +66,12 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Determine Vitest version/range from installed or declared dependency to avoid pulling
-    // incompatible majors by default.
-    let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!vitestVersionSpecifier && allDeps['vitest']) {
-      vitestVersionSpecifier = allDeps['vitest'];
-    }
+    // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
+    // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
+    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
 
-    let isVitest4OrNewer = true;
-    if (vitestVersionSpecifier) {
-      const range = validRange(vitestVersionSpecifier);
-      const versionToCheck = range
-        ? minVersion(range)?.version
-        : coerce(vitestVersionSpecifier)?.version;
-      isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
-    }
+    const versionToCheck = AddonVitestService.getComparableVersion(vitestVersionSpecifier);
+    const isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
 
     // only install these dependencies if they are not already installed
     const basePackages = [
@@ -93,15 +97,23 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // Apply version specifiers to vitest-related packages
-    const versionedDependencies = dependencies.map((pkg) => {
-      if (pkg.includes('vitest') && vitestVersionSpecifier) {
-        return `${pkg}@${vitestVersionSpecifier}`;
-      }
-      return pkg;
-    });
+    if (!vitestVersionSpecifier) {
+      return dependencies;
+    }
 
-    return versionedDependencies;
+    // Pin the vitest-related packages to the resolved vitest version, letting the package manager
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
+    // independently, so it is left untouched.
+    const related = dependencies.filter((pkg) => pkg.includes('vitest'));
+    const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
+    return [
+      ...this.packageManager.applyVersionToRelatedPackages(
+        related,
+        vitestVersionSpecifier,
+        'vitest'
+      ),
+      ...rest,
+    ];
   }
 
   /**
@@ -299,7 +311,7 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
     } else if (vitestWorkspaceFile) {
       const fileContents = await fs.readFile(vitestWorkspaceFile, 'utf8');
-      if (!this.isValidWorkspaceConfigFile(fileContents)) {
+      if (!canUpdateVitestWorkspaceFile(fileContents)) {
         reasons.push(`Found an invalid workspace config file: ${vitestWorkspaceFile}`);
       }
     }
@@ -314,112 +326,11 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
     } else if (vitestConfigFile) {
       const configContent = await fs.readFile(vitestConfigFile, 'utf8');
-      if (!this.isValidVitestConfig(configContent)) {
+      if (!canUpdateVitestConfigFile(configContent)) {
         reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
       }
     }
 
     return reasons.length > 0 ? { compatible: false, reasons } : { compatible: true };
-  }
-
-  // Private helper methods for Vitest config validation
-
-  /** Validate workspace config file structure */
-  private isValidWorkspaceConfigFile(fileContents: string): boolean {
-    let isValid = false;
-    const parsedFile = babel.babelParse(fileContents);
-
-    babel.traverse(parsedFile, {
-      ExportDefaultDeclaration: (path: any) => {
-        const declaration = path.node.declaration;
-        isValid =
-          this.isWorkspaceConfigArray(declaration) || this.isDefineWorkspaceExpression(declaration);
-      },
-    });
-
-    return isValid;
-  }
-
-  /** Validate Vitest config file structure */
-  private isValidVitestConfig(configContent: string): boolean {
-    const parsedConfig = babel.babelParse(configContent);
-    let isValidVitestConfig = false;
-
-    babel.traverse(parsedConfig, {
-      ExportDefaultDeclaration: (path: any) => {
-        if (this.isDefineConfigExpression(path.node.declaration)) {
-          isValidVitestConfig = this.isSafeToExtendWorkspace(path.node.declaration);
-        } else if (this.isMergeConfigExpression(path.node.declaration)) {
-          // the config could be anywhere in the mergeConfig call, so we need to check each argument
-          const mergeCall = path.node.declaration as CallExpression;
-          isValidVitestConfig = mergeCall.arguments.some((arg) =>
-            this.isSafeToExtendWorkspace(arg as CallExpression)
-          );
-        }
-      },
-    });
-
-    return isValidVitestConfig;
-  }
-
-  private isWorkspaceConfigArray(node: any): boolean {
-    return (
-      babel.types.isArrayExpression(node) &&
-      node?.elements.every(
-        (el: any) => babel.types.isStringLiteral(el) || babel.types.isObjectExpression(el)
-      )
-    );
-  }
-
-  private isDefineWorkspaceExpression(node: any): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      node.callee &&
-      (node.callee as any)?.name === 'defineWorkspace' &&
-      this.isWorkspaceConfigArray(node.arguments?.[0])
-    );
-  }
-
-  private isDefineConfigExpression(node: any): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      (node.callee as any)?.name === 'defineConfig' &&
-      babel.types.isObjectExpression(node.arguments?.[0])
-    );
-  }
-
-  private isMergeConfigExpression(path: babel.types.Node): boolean {
-    return babel.types.isCallExpression(path) && (path.callee as any)?.name === 'mergeConfig';
-  }
-
-  private isSafeToExtendWorkspace(node: babel.types.Node): boolean {
-    // Extract the object expression to validate
-    let objectToValidate: babel.types.ObjectExpression | null = null;
-
-    if (babel.types.isCallExpression(node)) {
-      // Handle function calls like defineConfig({...})
-      if (node.arguments.length > 0 && babel.types.isObjectExpression(node.arguments[0])) {
-        objectToValidate = node.arguments[0];
-      }
-    } else if (babel.types.isObjectExpression(node)) {
-      // Handle plain object literals like {...}
-      objectToValidate = node;
-    }
-
-    // If we couldn't extract a valid object, it's not safe
-    if (!objectToValidate) {
-      return false;
-    }
-
-    // Check that the object doesn't have problematic test.workspace properties
-    return objectToValidate.properties.every(
-      (p: any) =>
-        p.key?.name !== 'test' ||
-        (babel.types.isObjectExpression(p.value) &&
-          p.value.properties.every(
-            ({ key, value }: any) =>
-              key?.name !== 'workspace' || babel.types.isArrayExpression(value)
-          ))
-    );
   }
 }

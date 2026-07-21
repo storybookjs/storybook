@@ -5,11 +5,11 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
-import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
+import { shortcutToAriaKeyshortcuts, type API_KeyCollection } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
-import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
-import { useAriaDescription } from './helpers/useAriaDescription';
+import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';
+import { useAriaDescription } from './helpers/useAriaDescription.tsx';
 
 export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, 'as'> {
   as?: ComponentProps<typeof StyledButton>['as'] | typeof Slot;
@@ -57,6 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       asChild = false,
       animation = 'none',
       size = 'small',
+      appearance = 'default',
       variant = 'outline',
       padding = 'medium',
       disabled = false,
@@ -135,15 +136,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             data-deprecated={deprecated}
             as={Comp}
             ref={ref}
+            appearance={appearance}
             variant={variant}
             size={size}
             padding={padding}
-            disabled={disabled || readOnly}
+            $disabled={disabled || readOnly}
+            aria-disabled={disabled || readOnly ? 'true' : undefined}
             readOnly={readOnly}
             active={active}
             animating={isAnimating}
             animation={animation}
-            onClick={handleClick}
+            onClick={disabled || readOnly ? undefined : handleClick}
             aria-label={!readOnly && ariaLabel !== false ? ariaLabel : undefined}
             aria-keyshortcuts={readOnly ? undefined : shortcutAttribute}
             {...(readOnly ? {} : ariaDescriptionAttrs)}
@@ -163,26 +166,41 @@ const StyledButton = styled('button', {
 })<{
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
+  appearance?: 'default' | 'agentic';
   variant?: 'outline' | 'solid' | 'ghost';
   active?: boolean;
-  disabled?: boolean;
+  $disabled?: boolean;
   readOnly?: boolean;
   animating?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
-}>(
-  ({
-    theme,
-    variant,
-    size,
-    disabled,
-    readOnly,
-    active,
-    animating,
-    animation = 'none',
-    padding,
-  }) => ({
+}>(({
+  theme,
+  appearance,
+  variant,
+  size,
+  $disabled,
+  readOnly,
+  active,
+  animating,
+  animation = 'none',
+  padding,
+}) => {
+  const colors =
+    appearance === 'agentic'
+      ? {
+          foreground: theme.fgColor.agentic,
+          background: theme.bgColor.agentic,
+          outline: theme.borderColor.agentic,
+        }
+      : {
+          foreground: theme.color.secondary,
+          background: theme.button.background,
+          outline: theme.button.border,
+        };
+
+  return {
     border: 0,
-    cursor: readOnly ? 'inherit' : disabled ? 'not-allowed' : 'pointer',
+    cursor: readOnly ? 'inherit' : $disabled ? 'not-allowed' : 'pointer',
     display: 'inline-flex',
     gap: '6px',
     alignItems: 'center',
@@ -216,22 +234,25 @@ const StyledButton = styled('button', {
     verticalAlign: 'top',
     whiteSpace: 'nowrap',
     userSelect: 'none',
-    opacity: disabled && !readOnly ? 0.5 : 1,
+    opacity: $disabled && !readOnly ? 0.5 : 1,
     margin: 0,
     fontSize: `${theme.typography.size.s1}px`,
     fontWeight: theme.typography.weight.bold,
     lineHeight: '1',
     background: (() => {
       if (variant === 'solid') {
-        return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+        return theme.base === 'light' ? colors.foreground : darken(0.18, colors.foreground);
       }
 
       if (variant === 'outline') {
-        return theme.button.background;
+        return colors.background;
       }
 
       if (variant === 'ghost' && active) {
-        return transparentize(0.93, theme.barSelectedColor);
+        return transparentize(
+          0.93,
+          appearance === 'agentic' ? theme.bgColor.agentic : theme.barSelectedColor
+        );
       }
 
       return 'transparent';
@@ -242,11 +263,11 @@ const StyledButton = styled('button', {
       }
 
       if (variant === 'outline') {
-        return theme.input.color;
+        return appearance === 'agentic' ? theme.fgColor.agentic : theme.input.color;
       }
 
       if (variant === 'ghost' && active) {
-        return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
+        return theme.base === 'light' ? darken(0.1, colors.foreground) : colors.foreground;
       }
 
       if (variant === 'ghost') {
@@ -254,57 +275,59 @@ const StyledButton = styled('button', {
       }
       return theme.input.color;
     })(),
-    boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
+    boxShadow: variant === 'outline' ? `${colors.outline} 0 0 0 1px inset` : 'none',
     borderRadius: theme.input.borderRadius,
     // Making sure that the button never shrinks below its minimum size
     flexShrink: 0,
 
     ...(!readOnly && {
       '&:hover': {
-        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        color: variant === 'ghost' ? colors.foreground : undefined,
         background: (() => {
-          let bgColor = theme.color.secondary;
+          let bgColor = colors.foreground;
 
           if (variant === 'solid') {
             bgColor =
               theme.base === 'light'
-                ? lighten(0.1, theme.color.secondary)
-                : darken(0.3, theme.color.secondary);
+                ? lighten(0.1, colors.foreground)
+                : darken(0.3, colors.foreground);
           }
 
           if (variant === 'outline') {
-            bgColor = theme.button.background;
+            bgColor = colors.background;
           }
 
           if (variant === 'ghost') {
-            return transparentize(0.86, theme.color.secondary);
+            return transparentize(0.86, colors.foreground);
           }
+
           return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
         })(),
       },
 
       '&:active': {
-        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        color: variant === 'ghost' ? colors.foreground : undefined,
         background: (() => {
-          let bgColor = theme.color.secondary;
+          let bgColor = colors.foreground;
 
           if (variant === 'solid') {
-            bgColor = theme.color.secondary;
+            bgColor = colors.foreground;
           }
 
           if (variant === 'outline') {
-            bgColor = theme.button.background;
+            bgColor = colors.background;
           }
 
           if (variant === 'ghost') {
-            return theme.background.hoverable;
+            return appearance === 'agentic' ? theme.bgColor.agentic : theme.background.hoverable;
           }
+
           return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
         })(),
       },
 
       '&:focus-visible': {
-        outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
+        outline: `2px solid ${rgba(colors.foreground, 1)}`,
         outlineOffset: 2,
         // Should ensure focus outline gets drawn above next sibling
         zIndex: '1',
@@ -320,8 +343,8 @@ const StyledButton = styled('button', {
       animation:
         animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
     },
-  })
-);
+  };
+});
 
 export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
   deprecate(

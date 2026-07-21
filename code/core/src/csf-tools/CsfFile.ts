@@ -23,9 +23,9 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { Tag } from '../shared/constants/tags';
-import type { PrintResultType } from './PrintResultType';
-import { findVarInitialization } from './findVarInitialization';
+import { Tag } from '../shared/constants/tags.ts';
+import type { PrintResultType } from './PrintResultType.ts';
+import { findVarInitialization } from './findVarInitialization.ts';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -682,8 +682,13 @@ export class CsfFile {
           } else if (node.specifiers.length > 0) {
             // export { X as Y }
             node.specifiers.forEach((specifier) => {
-              if (t.isExportSpecifier(specifier) && t.isIdentifier(specifier.exported)) {
-                const { name: exportName } = specifier.exported;
+              if (
+                t.isExportSpecifier(specifier) &&
+                (t.isIdentifier(specifier.exported) || t.isStringLiteral(specifier.exported))
+              ) {
+                const exportName = t.isIdentifier(specifier.exported)
+                  ? specifier.exported.name
+                  : specifier.exported.value;
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
                   ? findVarInitialization(localName, parent)

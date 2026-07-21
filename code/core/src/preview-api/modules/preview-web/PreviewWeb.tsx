@@ -3,10 +3,10 @@ import type { Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import type { MaybePromise } from './Preview';
-import { PreviewWithSelection } from './PreviewWithSelection';
-import { UrlStore } from './UrlStore';
-import { WebView } from './WebView';
+import type { MaybePromise } from './Preview.tsx';
+import { PreviewWithSelection } from './PreviewWithSelection.tsx';
+import { UrlStore } from './UrlStore.ts';
+import { WebView } from './WebView.ts';
 
 export class PreviewWeb<TRenderer extends Renderer> extends PreviewWithSelection<TRenderer> {
   constructor(

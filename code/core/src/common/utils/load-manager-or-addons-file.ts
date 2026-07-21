@@ -4,7 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import { getInterpretedFile } from './interpret-files';
+import { getInterpretedFile } from './interpret-files.ts';
 
 export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
   const storybookCustomAddonsPath = getInterpretedFile(resolve(configDir, 'addons'));

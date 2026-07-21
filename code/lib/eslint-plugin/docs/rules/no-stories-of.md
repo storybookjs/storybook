@@ -23,7 +23,7 @@ storiesOf('Button', module).add('primary', () => <Button primary />);
 Examples of **correct** code for this rule:
 
 ```js
-import Button from '../components/Button';
+import Button from "../components/Button";
 
 export default = {
   component: Button
@@ -33,7 +33,7 @@ export const Primary = () => <Button primary />
 ```
 
 ```js
-import Button from '../components/Button';
+import Button from "../components/Button";
 
 export default = {
   component: Button

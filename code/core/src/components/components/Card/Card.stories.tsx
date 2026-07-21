@@ -1,5 +1,5 @@
-import preview from '../../../../../.storybook/preview';
-import { Card } from './Card';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Card } from './Card.tsx';
 
 const meta = preview.meta({
   component: Card,
@@ -27,19 +27,58 @@ export const Spinning = meta.story(() => (
   </Card>
 ));
 
+export const SpinningAgentic = meta.story(() => (
+  <Card outlineAnimation="spin" outlineColor="agentic">
+    <Contents>Spinning agentic</Contents>
+  </Card>
+));
+
+// Filled agentic card with a spinning outline (as used by ReviewWidget). The
+// `agentic` content background is translucent in dark mode, so this guards
+// against the spinning gradient bleeding through the content instead of the ring.
+export const SpinningAgenticFilled = meta.story(() => (
+  <Card outlineAnimation="spin" color="agentic">
+    <Contents>Spinning agentic filled</Contents>
+  </Card>
+));
+
+export const Agentic = meta.story(() => (
+  <Card color="agentic">
+    <Contents>Agentic</Contents>
+  </Card>
+));
+
 export const Positive = meta.story(() => (
-  <Card outlineColor="positive">
+  <Card color="positive">
     <Contents>Positive</Contents>
   </Card>
 ));
 
 export const Warning = meta.story(() => (
-  <Card outlineColor="warning">
+  <Card color="warning">
     <Contents>Warning</Contents>
   </Card>
 ));
 
 export const Negative = meta.story(() => (
+  <Card color="negative">
+    <Contents>Negative</Contents>
+  </Card>
+));
+
+export const PositiveOutline = meta.story(() => (
+  <Card outlineColor="positive">
+    <Contents>Positive</Contents>
+  </Card>
+));
+
+export const WarningOutline = meta.story(() => (
+  <Card outlineColor="warning">
+    <Contents>Warning</Contents>
+  </Card>
+));
+
+export const NegativeOutline = meta.story(() => (
   <Card outlineColor="negative">
     <Contents>Negative</Contents>
   </Card>

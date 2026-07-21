@@ -2,11 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
 
-import { StoryStore } from './StoryStore';
-import { composeConfigs } from './csf/composeConfigs';
-import { prepareStory } from './csf/prepareStory';
-import { processCSFFile } from './csf/processCSFFile';
-import type { HooksContext } from './hooks';
+import { definePreview } from '../../../csf/csf-factories.ts';
+import { getCoreAnnotations } from '../../../csf/core-annotations.ts';
+import { StoryStore } from './StoryStore.ts';
+import { composeConfigs } from './csf/composeConfigs.ts';
+import { normalizeProjectAnnotations } from './csf/normalizeProjectAnnotations.ts';
+import { prepareStory } from './csf/prepareStory.ts';
+import { processCSFFile } from './csf/processCSFFile.ts';
+import type { HooksContext } from './hooks.ts';
 
 // Spy on prepareStory/processCSFFile
 vi.mock('./csf/prepareStory', async (importOriginal) => {
@@ -31,8 +34,8 @@ vi.mock('@storybook/global', async (importOriginal) => ({
 vi.mock('storybook/internal/client-logger');
 
 const componentOneExports = {
-  default: { title: 'Component One' },
-  a: { args: { foo: 'a' } },
+  default: { title: 'Component One', argTypes: { foo: { description: 'from meta' } } },
+  a: { args: { foo: 'a' }, argTypes: { foo: { control: 'text' } } },
   b: { args: { foo: 'b' } },
 };
 const componentTwoExports = {
@@ -105,6 +108,53 @@ describe('StoryStore', () => {
       expect(store.projectAnnotations!.argTypes).toEqual({
         a: { name: 'a', type: { name: 'string' } },
       });
+    });
+
+    // The number of loaders contributed by the core annotations (actions + test addons).
+    // We use loaders as a deterministic, FEATURES-independent signal for "core was injected".
+    const coreLoaderCount = normalizeProjectAnnotations(composeConfigs(getCoreAnnotations()))
+      .loaders!.length;
+
+    it('injects the core annotations exactly once for a plain (CSF1/2/3) preview', () => {
+      // `projectAnnotations` here is what the Vite/Webpack codegen produces for a CSF3 preview:
+      // a `composeConfigs(rawModules)` WITHOUT the core annotations.
+      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
+
+      expect(coreLoaderCount).toBeGreaterThan(0);
+      expect(store.projectAnnotations.loaders).toHaveLength(coreLoaderCount);
+    });
+
+    it('does NOT double the core annotations for a CSF4 (definePreview) composed preview', () => {
+      // `definePreview().composed` is what the codegen returns for a CSF4 preview. It already
+      // contains the core annotations and is flagged as such.
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
+      const store = new StoryStore(storyIndex, importFn, composed);
+
+      // Core is present exactly once, matching the already-composed preview.
+      expect(store.projectAnnotations.loaders).toEqual(composed.loaders);
+      expect(store.projectAnnotations.loaders).toHaveLength(coreLoaderCount);
+    });
+
+    it('regression guard: an un-flagged composed preview would double the core annotations', () => {
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
+      // Strip the (non-enumerable) marker to simulate the pre-fix behavior.
+      const unflagged = { ...composed };
+      const store = new StoryStore(storyIndex, importFn, unflagged);
+
+      // Without the marker, the store prepends core again -> loaders are doubled.
+      expect(store.projectAnnotations.loaders!.length).toBe(coreLoaderCount * 2);
+    });
+
+    it('does NOT double the core annotations via setProjectAnnotations for a CSF4 preview (HMR)', () => {
+      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
+      const composed = definePreview({ renderToCanvas: () => {} }).composed;
+
+      // The HMR path (setProjectAnnotations) only re-normalizes the incoming project annotations,
+      // it never prepends core, so an already-core-composed CSF4 preview stays at core x1.
+      store.setProjectAnnotations(composed as unknown as ProjectAnnotations<any>);
+
+      expect(store.projectAnnotations.loaders).toEqual(composed.loaders);
+      expect(store.projectAnnotations.loaders).toHaveLength(coreLoaderCount);
     });
   });
 
@@ -296,6 +346,11 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "control": {
+                  "disable": false,
+                  "type": "text",
+                },
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",
@@ -489,6 +544,11 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "control": {
+                  "disable": false,
+                  "type": "text",
+                },
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",
@@ -555,6 +615,7 @@ describe('StoryStore', () => {
                 },
               },
               "foo": {
+                "description": "from meta",
                 "name": "foo",
                 "type": {
                   "name": "string",

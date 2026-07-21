@@ -10,8 +10,8 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import { STORYBOOK_FN_PLACEHOLDER } from './get-dummy-args-from-argtypes';
-import { getNewStoryFile } from './get-new-story-file';
+import { STORYBOOK_FN_PLACEHOLDER } from './get-dummy-args-from-argtypes.ts';
+import { getNewStoryFile } from './get-new-story-file.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/csf-tools', { spy: true });
@@ -50,9 +50,9 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/nextjs';
+      "import type { Meta, StoryObj } from "@storybook/nextjs";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = {
         component: Page,
@@ -89,9 +89,9 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/react-vite';
+      "import type { Meta, StoryObj } from "@storybook/react-vite";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = {
         component: Page,
@@ -128,7 +128,7 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import Page from './Page';
+      "import Page from "./Page";
 
       const meta = {
         component: Page,
@@ -166,7 +166,7 @@ describe('get-new-story-file', () => {
       } as unknown as Options
     );
 
-    expect(storyFileContent).toContain("import { fn } from 'storybook/test';");
+    expect(storyFileContent).toContain('import { fn } from "storybook/test";');
     expect(storyFileContent).toContain('fn()');
     expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
   });
@@ -258,10 +258,10 @@ describe('get-new-story-file', () => {
 
     expect(exportedStoryName).toBe('Default');
     expect(storyFileContent).toMatchInlineSnapshot(`
-      "import preview from '#.storybook/preview';
-      import { fn } from 'storybook/test';
+      "import { fn } from "storybook/test";
+      import preview from "#.storybook/preview";
 
-      import { Page } from './Page';
+      import { Page } from "./Page";
 
       const meta = preview.meta({
         component: Page,
@@ -269,7 +269,7 @@ describe('get-new-story-file', () => {
 
       export const Default = meta.story({
         args: {
-          label: 'label',
+          label: "label",
           answer: 0,
           onClick: fn(),
         },

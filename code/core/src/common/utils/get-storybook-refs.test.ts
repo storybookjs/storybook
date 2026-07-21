@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { checkRef } from './get-storybook-refs';
+import { checkRef } from './get-storybook-refs.ts';
 
 describe('checkRef', () => {
   afterEach(() => vi.restoreAllMocks());

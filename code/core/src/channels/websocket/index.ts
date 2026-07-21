@@ -1,14 +1,10 @@
 /// <reference path="../../typings.d.ts" />
 import * as EVENTS from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
-import type { ChannelHandler, ChannelTransport, Config } from '../types';
-
-const { WebSocket } = global;
+import type { ChannelHandler, ChannelTransport, Config } from '../types.ts';
 
 type OnError = (message: Event) => void;
 
@@ -19,6 +15,8 @@ interface WebsocketTransportArgs extends Partial<Config> {
 
 export const HEARTBEAT_INTERVAL = 15000;
 export const HEARTBEAT_MAX_LATENCY = 5000;
+
+const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
 
 export class WebsocketTransport implements ChannelTransport {
   private buffer: string[] = [];
@@ -42,6 +40,7 @@ export class WebsocketTransport implements ChannelTransport {
   }
 
   constructor({ url, onError, page }: WebsocketTransportArgs) {
+    // eslint-disable-next-line compat/compat
     this.socket = new WebSocket(url);
     this.socket.onopen = () => {
       this.isReady = true;
@@ -51,11 +50,16 @@ export class WebsocketTransport implements ChannelTransport {
     this.socket.onmessage = ({ data }) => {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
-      this.handler(event);
+
+      this.heartbeat();
+
       if (event.type === 'ping') {
-        this.heartbeat();
+        // Pings are internal to the transport and have no channel listeners.
         this.send({ type: 'pong' });
+        return;
       }
+
+      this.handler(event);
     };
     this.socket.onerror = (e) => {
       if (onError) {
@@ -95,7 +99,7 @@ export class WebsocketTransport implements ChannelTransport {
   private sendNow(event: any) {
     const data = stringify(event, {
       maxDepth: 15,
-      ...global.CHANNEL_OPTIONS,
+      ...CHANNEL_OPTIONS,
     });
     this.socket.send(data);
   }

@@ -1,15 +1,18 @@
 import { readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import type { Task } from '../task';
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
+import type { Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 
-// The amount of VCPUs for the check task on CI is 4 (large resource)
-const amountOfVCPUs = 2;
+// The compile task only actually runs in the build--linux / build--windows
+// jobs, both on xlarge executors (8 vCPUs). os.cpus() reports the Docker
+// host's cores rather than the cgroup limit, so use an explicit value on CI
+// instead of maxConcurrentTasks.
+const CI_VCPUS = 8;
 
-const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
+const parallel = `--parallel=${process.env.CI ? CI_VCPUS : maxConcurrentTasks}`;
 
 const linkCommand = `yarn nx run-many -t compile ${parallel}`;
 const noLinkCommand = `yarn nx run-many -t compile -c production ${parallel}`;
@@ -33,7 +36,10 @@ export const compile: Task = {
     const command = link && !prod ? linkCommand : noLinkCommand;
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
-      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
+      // NX cache is disabled in Circle CI during the NX Cloud experiment so we can
+      // measure the true cost of NX Cloud agents without local cache hits.
+      // This will be reverted once the experiment concludes.
+      `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Bootstrapping',

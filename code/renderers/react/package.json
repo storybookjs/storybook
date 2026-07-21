@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.3.0-alpha.17",
+  "version": "10.6.0-alpha.2",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -35,6 +35,7 @@
       "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
@@ -62,6 +63,8 @@
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.19.1",
+    "@volar/language-core": "~2.4.28",
+    "@volar/typescript": "~2.4.28",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
@@ -72,19 +75,28 @@
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
+    "memfs": "^4.11.1",
     "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
+    "react-element-to-jsx-string": "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "type-fest": "^5.6.0"
   },
   "peerDependencies": {
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "@types/react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "typescript": ">= 4.9.x"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

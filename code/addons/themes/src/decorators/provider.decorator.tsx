@@ -4,8 +4,8 @@ import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
 import { useMemo } from 'storybook/preview-api';
 
-import { PARAM_KEY } from '../constants';
-import { initializeThemeState, pluckThemeFromContext } from './helpers';
+import { PARAM_KEY } from '../constants.ts';
+import { initializeThemeState, pluckThemeFromContext } from './helpers.ts';
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;
@@ -20,6 +20,7 @@ export interface ProviderStrategyConfiguration {
 const pluckThemeFromKeyPairTuple = ([_, themeConfig]: [string, Theme]): Theme => themeConfig;
 
 // TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
+// oxlint-disable-next-line react/display-name -- not a component, returns a decorator function
 export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
   Provider,
   GlobalStyles,
@@ -31,9 +32,8 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
 
   initializeThemeState(themeNames, initialTheme);
 
-  // eslint-disable-next-line react/display-name
   return (storyFn, context) => {
-    // eslint-disable-next-line react/destructuring-assignment
+    // oxlint-disable-next-line react-classic/destructuring-assignment
     const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 

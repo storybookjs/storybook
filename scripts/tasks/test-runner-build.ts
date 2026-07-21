@@ -1,9 +1,10 @@
 import waitOn from 'wait-on';
 
-import { getPort } from '../sandbox/utils/getPort';
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
-import { PORT } from './serve';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { PORT } from './serve.ts';
 
 export const testRunnerBuild: Task & { port: number } = {
   description: 'Run the test runner against a built sandbox',
@@ -14,16 +15,15 @@ export const testRunnerBuild: Task & { port: number } = {
     return false;
   },
   async run({ sandboxDir, junitFilename, key, selectedTask }, { dryRun, debug }) {
-    const port =
-      process.env.NX_CLI_SET === 'true'
-        ? getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' })
-        : this.port;
+    const port = isNxTaskExecution()
+      ? getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' })
+      : this.port;
 
     const execOptions = { cwd: sandboxDir };
     const flags = [
       `--url http://localhost:${port}`,
       '--junit',
-      '--maxWorkers=2',
+      '--maxWorkers=1',
       '--failOnConsole',
       '--index-json',
     ];

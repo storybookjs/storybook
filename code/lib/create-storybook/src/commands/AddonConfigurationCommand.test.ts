@@ -5,10 +5,13 @@ import { type JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall';
-import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall';
-import type { TelemetryService } from '../services';
-import { AddonConfigurationCommand, executeAddonConfiguration } from './AddonConfigurationCommand';
+import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
+import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
+import type { TelemetryService } from '../services/index.ts';
+import {
+  AddonConfigurationCommand,
+  executeAddonConfiguration,
+} from './AddonConfigurationCommand.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -96,8 +99,9 @@ describe('AddonConfigurationCommand', () => {
       expect(addonVitestPostinstall).toHaveBeenCalledWith({
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -122,8 +126,9 @@ describe('AddonConfigurationCommand', () => {
       expect(addonA11yPostinstall).toHaveBeenCalledWith({
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -132,7 +137,7 @@ describe('AddonConfigurationCommand', () => {
     });
 
     it('should configure generic addon via postinstallAddon', async () => {
-      const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
+      const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
 
       const result = await command.execute({
@@ -144,8 +149,9 @@ describe('AddonConfigurationCommand', () => {
       expect(postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
         packageManager: 'npm',
         configDir: '.storybook',
-        yes: false,
+        yes: true,
         skipInstall: true,
+        useRemotePkg: false,
         skipDependencyManagement: true,
         logger,
         prompt,
@@ -153,7 +159,7 @@ describe('AddonConfigurationCommand', () => {
       expect(mockTaskLog.success).toHaveBeenCalledWith('Addons configured successfully');
     });
 
-    it('should configure multiple addons', async () => {
+    it('should skip the a11y postinstall when vitest was configured in the same run', async () => {
       vi.mocked(prompt.taskLog).mockReturnValue(mockTaskLog);
 
       const result = await command.execute({
@@ -163,7 +169,9 @@ describe('AddonConfigurationCommand', () => {
 
       expect(result).toEqual({ status: 'success' });
       expect(addonVitestPostinstall).toHaveBeenCalled();
-      expect(addonA11yPostinstall).toHaveBeenCalled();
+      // vitest's postinstall already runs the addon-a11y-addon-test
+      // automigration when both addons are configured together
+      expect(addonA11yPostinstall).not.toHaveBeenCalled();
       expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-vitest...');
       expect(mockTaskLog.message).toHaveBeenCalledWith('Configuring @storybook/addon-a11y...');
     });
@@ -324,7 +332,7 @@ describe('executeAddonConfiguration', () => {
   it('should create command and execute with provided parameters', async () => {
     const result = await executeAddonConfiguration({
       packageManager: mockPackageManager,
-      options: { packageManager: PackageManagerName.NPM, yes: false, disableTelemetry: true },
+      options: { packageManager: PackageManagerName.NPM, disableTelemetry: true },
       addons: [],
       configDir: '.storybook',
     });
@@ -335,7 +343,7 @@ describe('executeAddonConfiguration', () => {
   it('should execute addon configuration through helper function', async () => {
     const result = await executeAddonConfiguration({
       packageManager: mockPackageManager,
-      options: { packageManager: PackageManagerName.NPM, yes: true, disableTelemetry: false },
+      options: { packageManager: PackageManagerName.NPM, disableTelemetry: false },
       addons: ['@storybook/addon-a11y'],
       configDir: '.storybook',
     });

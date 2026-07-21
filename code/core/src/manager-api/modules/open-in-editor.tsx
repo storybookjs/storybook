@@ -9,7 +9,7 @@ import type { API_Notification } from 'storybook/internal/types';
 
 import { FailedIcon } from '@storybook/icons';
 
-import type { ModuleFn } from '../lib/types';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export interface SubState {
   notifications: API_Notification[];
@@ -55,7 +55,7 @@ export const init: ModuleFn = ({ provider, fullAPI }) => {
     api,
     state,
     init: async () => {
-      const { color } = await import('../../theming');
+      const { color } = await import('../../theming/index.ts');
       provider.channel?.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
         if (payload.error !== null) {
           fullAPI.addNotification({

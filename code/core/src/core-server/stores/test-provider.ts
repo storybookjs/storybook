@@ -1,7 +1,7 @@
-import { optionalEnvToBoolean } from '../../common/utils/envs';
-import { createTestProviderStore } from '../../shared/test-provider-store';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../shared/test-provider-store';
-import { UniversalStore } from '../../shared/universal-store';
+import { optionalEnvToBoolean } from '../../common/utils/envs.ts';
+import { createTestProviderStore } from '../../shared/test-provider-store/index.ts';
+import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../shared/test-provider-store/index.ts';
+import { UniversalStore } from '../../shared/universal-store/index.ts';
 
 const testProviderStore = createTestProviderStore({
   universalTestProviderStore: UniversalStore.create({

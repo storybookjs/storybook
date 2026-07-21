@@ -15,17 +15,17 @@ export {
   useStoryContext,
   applyHooks,
   HooksContext,
-} from './addons';
+} from './addons.ts';
 
 /** DECORATORS API */
-export { makeDecorator } from './addons';
+export { makeDecorator } from './addons.ts';
 
 /**
  * ADDON API
  *
  * @deprecated
  */
-export { addons, mockChannel } from './addons';
+export { addons, mockChannel } from './addons.ts';
 
 // TODO: Universal Stores are disabled in the preview, until we get automatic leader negotiation in place
 // export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
@@ -38,10 +38,10 @@ export { addons, mockChannel } from './addons';
 // } from './stores/status';
 
 /** DOCS API */
-export { DocsContext } from './preview-web';
+export { DocsContext } from './preview-web.ts';
 
 /** SIMULATION API */
-export { simulatePageLoad, simulateDOMContentLoaded } from './preview-web';
+export { simulatePageLoad, simulateDOMContentLoaded } from './preview-web.ts';
 
 export {
   combineArgs,
@@ -65,17 +65,17 @@ export {
   userOrAutoTitle,
   sortStoriesV7,
   normalizeProjectAnnotations,
-} from './store';
+} from './store.ts';
 
 /** CSF API */
-export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf';
+export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
 
-export type { PropDescriptor } from './store';
+export type { PropDescriptor } from './store.ts';
 
-export { Tag } from '../shared/constants/tags';
+export { Tag } from '../shared/constants/tags.ts';
 
 /** STORIES API */
-export { StoryStore, type Report, ReporterAPI } from './store';
+export { StoryStore, type Report, ReporterAPI } from './store.ts';
 export {
   Preview,
   PreviewWeb,
@@ -85,5 +85,15 @@ export {
   emitTransformCode,
   pauseAnimations,
   waitForAnimations,
-} from './preview-web';
-export type { SelectionStore, View } from './preview-web';
+} from './preview-web.ts';
+export type { SelectionStore, View } from './preview-web.ts';
+
+/** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
+export { getService, registerService } from '../shared/open-service/preview.ts';
+export {
+  clearChannel,
+  ensureChannel,
+  getChannel,
+  installNoopChannel,
+  setChannel,
+} from '../channels/channel-slot.ts';

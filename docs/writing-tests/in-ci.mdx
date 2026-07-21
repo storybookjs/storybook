@@ -18,7 +18,7 @@ If you cannot use the Vitest addon in your project, you can still run your stori
 
 ## Set up Storybook tests in CI
 
-Running Storybook tests in CI is very similar to running them via CLI on your local machine: you run the same command, just in a different place.
+Running Storybook tests in CI is very similar to running them via CLI on your local machine: you run the same command in a different environment.
 
 Let’s go step-by-step to set things up.
 
@@ -27,7 +27,7 @@ Let’s go step-by-step to set things up.
 For convenience, define a script in your `package.json` to run the Storybook tests. This is the same command you would run locally, but it’s useful to have it in your CI workflow.
 
 ```json title="package.json"
-{ 
+{
   "scripts": {
     "test-storybook": "vitest --project=storybook"
   }
@@ -44,7 +44,7 @@ Here are some example configurations for popular CI providers:
 
 <details>
 <summary>GitHub Actions</summary>
-    
+
 Create a file in the root of your repo, `.github/workflow/test-ui.yml`:
 
 ```yaml title=".github/workflows/test-ui.yml"
@@ -61,18 +61,19 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22.12.0
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run tests
         run: npm run test-storybook
 ```
+
 </details>
 
 <details>
@@ -80,7 +81,7 @@ jobs:
 
 Create a file in the root of your repo, `.gitlab-ci.yml`:
 
-```yaml title=".gitlab-ci.yml"    
+```yaml title=".gitlab-ci.yml"
 image: node:jod
 
 stages:
@@ -102,6 +103,7 @@ Test:
   script:
     - npm run test-storybook
 ```
+
 </details>
 
 <details>
@@ -119,10 +121,10 @@ definitions:
 pipelines:
   default:
     - stage:
-        name: "UI Tests"
+        name: 'UI Tests'
         steps:
           - step:
-              name: "Run Tests"
+              name: 'Run Tests'
               # Make sure to grab the latest version of the Playwright image
               # https://playwright.dev/docs/docker#pull-the-image
               image: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -134,6 +136,7 @@ pipelines:
                 - npm ci
                 - npm run test-storybook
 ```
+
 </details>
 
 <details>
@@ -143,7 +146,7 @@ Create a file in the root of your repo, `.circleci/config.yml`:
 
 ```yaml title=".circleci/config.yml"
 version: 2.1
-    
+
 executors:
   ui-testing:
     docker:
@@ -175,6 +178,7 @@ workflows:
     jobs:
       - Test
 ```
+
 </details>
 
 <details>
@@ -198,10 +202,11 @@ cache: npm
 
 jobs:
   include:
-    - stage: "UI Tests"
-      name: "Run tests"
+    - stage: 'UI Tests'
+      name: 'Run tests'
       script: npm run test-storybook
 ```
+
 </details>
 
 <details>
@@ -235,6 +240,7 @@ pipeline {
   }
 }
 ```
+
 </details>
 
 <details>
@@ -247,14 +253,14 @@ trigger:
   - main
 
 pool:
-  vmImage: "ubuntu-latest"
+  vmImage: 'ubuntu-latest'
 
 stages:
   - stage: UI_Tests
-    displayName: "UI Tests"
+    displayName: 'UI Tests'
     jobs:
       - job: Test
-        displayName: "Storybook tests"
+        displayName: 'Storybook tests'
         # Make sure to grab the latest version of the Playwright image
         # https://playwright.dev/docs/docker#pull-the-image
         container: mcr.microsoft.com/playwright:v1.58.2-noble
@@ -262,11 +268,11 @@ stages:
           npm_config_cache: $(Pipeline.Workspace)/.npm
         steps:
           - task: UseNode@1
-            displayName: "Install Node.js"
+            displayName: 'Install Node.js'
             inputs:
-              version: "22.12.0"
+              version: '22.12.0'
           - task: Cache@2
-            displayName: "Install and cache dependencies"
+            displayName: 'Install and cache dependencies'
             inputs:
               key: 'npm | "$(Agent.OS)" | package-lock.json'
               restoreKeys: |
@@ -275,11 +281,12 @@ stages:
           - script: npm ci
             condition: ne(variables.CACHE_RESTORED, 'true')
           - task: CmdLine@2
-            displayName: "Run tests"
+            displayName: 'Run tests'
             inputs:
               script: npm run test-storybook
 ```
-</details> 
+
+</details>
 
 <Callout variant="info">
 
@@ -318,7 +325,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.12.0
-          
+
       - name: Install dependencies
         run: npm ci
 
@@ -331,11 +338,7 @@ jobs:
 
 Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon/index.mdx#storybookurl).
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="vitest-plugin-vitest-debug-option-ci.md" />
-
-{/* prettier-ignore-end */}
 
 Now, when a test fails in CI, the printed story URL will point to the published Storybook, making debugging that failure a breeze!
 
@@ -354,7 +357,7 @@ You can either adjust the command in your `package.json` scripts:
 **For all tests:**
 
 ```diff title="package.json"
-{ 
+{
   "scripts": {
 +   "test": "vitest --coverage"
 -   "test": "vitest"
@@ -365,7 +368,7 @@ You can either adjust the command in your `package.json` scripts:
 **For only Storybook tests:**
 
 ```diff title="package.json"
-{ 
+{
   "scripts": {
 +   "test-storybook": "vitest --project=storybook --coverage"
 -   "test-storybook": "vitest --project=storybook"
@@ -410,7 +413,7 @@ Some projects have other tests run via Vitest, e.g. unit tests, in addition to t
 You can run these tests independently by specifying the project filter in a separate script. For example, for a Vitest project called “unit”:
 
 ```json title="package.json"
-{ 
+{
   "scripts": {
     "test-storybook": "vitest --project=storybook",
     "test-unit": "vitest --project=unit"
@@ -427,10 +430,10 @@ Then, in your workflow, call this script alongside the Storybook one:
     npm run test-storybook
 ```
 
-You may also choose to run all tests together by simply omitting the `--project=storybook` filter from the `package.json` script:
+You may also choose to run all tests together by omitting the `--project=storybook` filter from the `package.json` script:
 
 ```json title="package.json"
-{ 
+{
   "scripts": {
     "test": "vitest"
   }
@@ -447,12 +450,12 @@ The workflow would then look like:
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
-* [Interaction testing](./interaction-testing.mdx) for user behavior simulation
-* [Accessibility testing](./accessibility-testing.mdx) for accessibility
-* [Visual testing](./visual-testing.mdx) for appearance
-* [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
-* [Test coverage](./test-coverage.mdx) for measuring code coverage
-* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
-* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-* [Test runner](./integrations/test-runner.mdx) to automate test execution
+- [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+- [Interaction testing](./interaction-testing.mdx) for user behavior simulation
+- [Accessibility testing](./accessibility-testing.mdx) for accessibility
+- [Visual testing](./visual-testing.mdx) for appearance
+- [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
+- [Test coverage](./test-coverage.mdx) for measuring code coverage
+- [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+- [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+- [Test runner](./integrations/test-runner.mdx) to automate test execution

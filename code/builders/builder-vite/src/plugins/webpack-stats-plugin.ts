@@ -11,7 +11,7 @@ import {
   SB_VIRTUAL_FILES,
   getOriginalVirtualModuleId,
   getResolvedVirtualModuleId,
-} from '../virtual-file-names';
+} from '../virtual-file-names.ts';
 
 /*
  * Reason, Module are copied from chromatic types
@@ -39,7 +39,7 @@ function stripQueryParams(filePath: string): string {
   return filePath.split('?')[0];
 }
 
-/** We only care about user code, not node_modules, vite files, or (most) virtual files. */
+/** We only care about user code and the node_modules it depends on. Not vite files, or (most) virtual files. */
 function isUserCode(moduleName: string) {
   if (!moduleName) {
     return false;

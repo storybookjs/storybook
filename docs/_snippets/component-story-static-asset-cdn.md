@@ -196,7 +196,7 @@ export default {
 export const WithAnImage = {
   render: () => ({
     template:
-      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder"/>',
+      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
 };
 ```
@@ -216,7 +216,7 @@ type Story = StoryObj<typeof meta>;
 export const WithAnImage: Story = {
   render: () => ({
     template:
-      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder"/>',
+      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
 };
 ```
@@ -233,7 +233,7 @@ const meta = preview.meta({
 export const WithAnImage = meta.story({
   render: () => ({
     template:
-      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder"/>',
+      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
 });
 ```
@@ -252,7 +252,7 @@ const meta = preview.meta({
 export const WithAnImage = meta.story({
   render: () => ({
     template:
-      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder"/>',
+      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
 });
 ```

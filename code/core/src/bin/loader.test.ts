@@ -1,17 +1,83 @@
-import { existsSync } from 'node:fs';
-import * as path from 'node:path';
+import { readdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { addExtensionsToRelativeImports, resolveWithExtension } from './loader';
+import { transform } from 'esbuild';
+
+import {
+  addExtensionsToRelativeImports,
+  clearDirectoryCache,
+  load,
+  resolveWithExtension,
+} from './loader.ts';
 
 // Mock dependencies
 vi.mock('node:fs');
+vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
+vi.mock('esbuild');
 
 describe('loader', () => {
+  beforeEach(() => {
+    clearDirectoryCache();
+  });
+
+  describe('load', () => {
+    const nextLoad = vi.fn();
+
+    beforeEach(() => {
+      nextLoad.mockReset();
+      vi.mocked(readFile).mockResolvedValue('const x: number = 1;');
+      vi.mocked(transform).mockResolvedValue({
+        code: 'const x = 1;',
+        map: '',
+        warnings: [],
+      } as any);
+    });
+
+    it('transforms a plain .ts URL with esbuild', async () => {
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.ts' : 'file:///project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
+
+      expect(transform).toHaveBeenCalled();
+      expect(nextLoad).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('still transforms a .ts URL with a cache-busting query string appended', async () => {
+      // Regression test: importModule appends `?<timestamp>` to bust the module cache when
+      // skipCache is set. That must not cause this loader to skip the file and fall through to
+      // Node's native handling, which does not elide type-only named imports the way esbuild does.
+      const path =
+        os.platform() === 'win32'
+          ? 'file:///C:/project/main.ts?1234567890'
+          : 'file:///project/main.ts?1234567890';
+      const expected = os.platform() === 'win32' ? 'C:\\project\\main.ts' : '/project/main.ts';
+      const result = await load(path, {} as any, nextLoad);
+
+      expect(readFile).toHaveBeenCalledWith(expected, 'utf-8');
+      expect(transform).toHaveBeenCalled();
+      expect(nextLoad).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ format: 'module', shortCircuit: true });
+    });
+
+    it('delegates non-TS URLs to nextLoad', async () => {
+      nextLoad.mockResolvedValue({ format: 'module', shortCircuit: true, source: '' });
+
+      const path =
+        os.platform() === 'win32' ? 'file:///C:/project/main.js' : 'file:///project/main.js';
+      await load(path, {} as any, nextLoad);
+
+      expect(transform).not.toHaveBeenCalled();
+      expect(nextLoad).toHaveBeenCalledWith(path, {});
+    });
+  });
+
   describe('resolveWithExtension', () => {
     it('should return the path as-is if it already has an extension', () => {
       const result = resolveWithExtension('./test.js', '/project/src/file.ts');
@@ -21,14 +87,9 @@ describe('loader', () => {
     });
 
     it('should resolve extensionless import to .ts extension when file exists', () => {
-      const currentFile = '/project/src/file.ts';
-      const expectedPath = path.resolve(path.dirname(currentFile), './utils.ts');
+      vi.mocked(readdirSync).mockReturnValue(['utils.ts'] as any);
 
-      vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === expectedPath;
-      });
-
-      const result = resolveWithExtension('./utils', currentFile);
+      const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.ts');
       expect(deprecate).toHaveBeenCalledWith(
@@ -37,14 +98,9 @@ describe('loader', () => {
     });
 
     it('should resolve extensionless import to .js extension when file exists', () => {
-      const currentFile = '/project/src/file.ts';
-      const expectedPath = path.resolve(path.dirname(currentFile), './utils.js');
+      vi.mocked(readdirSync).mockReturnValue(['utils.js'] as any);
 
-      vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === expectedPath;
-      });
-
-      const result = resolveWithExtension('./utils', currentFile);
+      const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.js');
       expect(deprecate).toHaveBeenCalledWith(
@@ -53,7 +109,7 @@ describe('loader', () => {
     });
 
     it('should show deprecation message when encountering an extensionless import', () => {
-      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readdirSync).mockReturnValue(['utils.js'] as any);
 
       resolveWithExtension('./utils', '/project/src/file.ts');
 
@@ -66,7 +122,7 @@ describe('loader', () => {
     });
 
     it('should return original path when file cannot be resolved', () => {
-      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(readdirSync).mockReturnValue([] as any);
 
       const result = resolveWithExtension('./missing', '/project/src/file.ts');
 
@@ -77,14 +133,9 @@ describe('loader', () => {
     });
 
     it('should resolve relative to parent directory', () => {
-      const currentFile = '/project/src/file.ts';
-      const expectedPath = path.resolve(path.dirname(currentFile), '../utils.ts');
+      vi.mocked(readdirSync).mockReturnValue(['utils.ts'] as any);
 
-      vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === expectedPath;
-      });
-
-      const result = resolveWithExtension('../utils', currentFile);
+      const result = resolveWithExtension('../utils', '/project/src/file.ts');
 
       expect(result).toBe('../utils.ts');
       expect(deprecate).toHaveBeenCalledWith(
@@ -95,15 +146,20 @@ describe('loader', () => {
 
   describe('addExtensionsToRelativeImports', () => {
     beforeEach(() => {
-      // Default: all files exist with .ts extension
-      vi.mocked(existsSync).mockImplementation((filePath) => {
-        return (filePath as string).endsWith('.ts');
-      });
+      // Default: directory listings contain .ts versions of common test filenames
+      vi.mocked(readdirSync).mockReturnValue([
+        'utils.ts',
+        'foo.ts',
+        'bar.ts',
+        'baz.ts',
+        'module.ts',
+        'styles.ts',
+        'test.ts',
+      ] as any);
     });
 
-    it('should not modify imports that already have extensions', () => {
+    it('should not modify imports that already have non-mapped extensions', () => {
       const testCases = [
-        { input: `import foo from './test.js';`, expected: `import foo from './test.js';` },
         { input: `import foo from './test.ts';`, expected: `import foo from './test.ts';` },
         { input: `import foo from '../utils.mjs';`, expected: `import foo from '../utils.mjs';` },
         {
@@ -117,6 +173,16 @@ describe('loader', () => {
         expect(result).toBe(expected);
         expect(deprecate).not.toHaveBeenCalled();
       });
+    });
+
+    it('should resolve .js imports to .ts when TypeScript alternative exists', () => {
+      const result = addExtensionsToRelativeImports(
+        `import foo from './test.js';`,
+        '/project/src/file.ts'
+      );
+
+      expect(result).toBe(`import foo from './test.ts';`);
+      expect(deprecate).not.toHaveBeenCalled();
     });
 
     it('should add extension to static import statements', () => {

@@ -66,7 +66,17 @@ const FlexSpaced = styled.fieldset({
 });
 
 export type DateProps = ControlProps<DateValue> & DateConfig;
-export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur, argType }) => {
+export const DateControl: FC<DateProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  argType,
+  required,
+}) => {
   const [valid, setValid] = useState(true);
   const dateRef = useRef<HTMLInputElement>();
   const timeRef = useRef<HTMLInputElement>();
@@ -114,7 +124,7 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
     setValid(!!time);
   };
 
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <FlexSpaced>
@@ -129,6 +139,7 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
         id={`${controlId}-date`}
         name={`${controlId}-date`}
         readOnly={readonly}
+        aria-required={required || undefined}
         onChange={onDateChange}
         {...{ onFocus, onBlur }}
       />
@@ -142,6 +153,7 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
         ref={timeRef as RefObject<HTMLInputElement>}
         onChange={onTimeChange}
         readOnly={readonly}
+        aria-required={required || undefined}
         {...{ onFocus, onBlur }}
       />
       {!valid ? <div>invalid</div> : null}

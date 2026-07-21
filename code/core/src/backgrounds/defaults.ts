@@ -1,4 +1,4 @@
-import type { BackgroundMap } from './types';
+import type { BackgroundMap } from './types.ts';
 
 export const DEFAULT_BACKGROUNDS: BackgroundMap = {
   light: { name: 'light', value: '#F8F8F8' },

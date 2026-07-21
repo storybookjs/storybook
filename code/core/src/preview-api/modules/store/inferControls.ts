@@ -1,20 +1,27 @@
 import { logger } from 'storybook/internal/client-logger';
 import type {
-  ArgTypesEnhancer,
   Renderer,
   SBEnumType,
+  StoryContextForEnhancers,
+  StrictArgTypes,
   StrictInputType,
 } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 
-import { filterArgTypes } from './filterArgTypes';
-import { combineParameters } from './parameters';
+import { filterArgTypes } from './filterArgTypes.ts';
+import { combineParameters } from './parameters.ts';
 
 export type ControlsMatchers = {
   date: RegExp;
   color: RegExp;
 };
+
+/** The fields {@link inferControls} reads; the full enhancer context is structurally assignable. */
+export type InferControlsContext<TRenderer extends Renderer = Renderer> = Pick<
+  StoryContextForEnhancers<TRenderer>,
+  'argTypes' | 'parameters'
+>;
 
 const inferControl = (argType: StrictInputType, name: string, matchers: ControlsMatchers): any => {
   const { type, options } = argType;
@@ -63,7 +70,12 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
   }
 };
 
-export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
+// Narrower param than `ArgTypesEnhancer` so it stays directly callable with a minimal context
+// (e.g. `mergeServiceArgTypes`), while a full enhancer context remains structurally assignable —
+// so it can still be registered in the `argTypesEnhancers` array.
+export const inferControls: ((context: InferControlsContext) => StrictArgTypes) & {
+  secondPass?: boolean;
+} = (context) => {
   const {
     argTypes,
     parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
@@ -78,7 +90,7 @@ export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
     return argType?.type && inferControl(argType, name.toString(), matchers);
   });
 
-  return combineParameters(withControls, filteredArgTypes);
+  return combineParameters(withControls, filteredArgTypes) as StrictArgTypes;
 };
 
 inferControls.secondPass = true;

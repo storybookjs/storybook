@@ -5,9 +5,9 @@ import type { TestProviderState } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { StoreState } from '../types';
-import { GlobalErrorContext } from './GlobalErrorModal';
-import { RelativeTime } from './RelativeTime';
+import type { StoreState } from '../types.ts';
+import { GlobalErrorContext } from './GlobalErrorModal.tsx';
+import { RelativeTime } from './RelativeTime.tsx';
 
 export const Wrapper = styled.div(({ theme }) => ({
   overflow: 'hidden',
@@ -50,18 +50,14 @@ export function Description({
         : `Testing... ${finishedTestCount}/${totalTestCount}`;
   } else if (!entryId && testProviderState === 'test-provider-state:crashed') {
     description = setModalOpen ? (
-      <LinkComponent isButton onClick={() => setModalOpen(true)}>
-        View full error
-      </LinkComponent>
+      <LinkComponent onClick={() => setModalOpen(true)}>View full error</LinkComponent>
     ) : (
       'Crashed'
     );
   } else if (!entryId && unhandledErrors.length > 0) {
     const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
     description = setModalOpen ? (
-      <LinkComponent isButton onClick={() => setModalOpen(true)}>
-        {unhandledErrorDescription}
-      </LinkComponent>
+      <LinkComponent onClick={() => setModalOpen(true)}>{unhandledErrorDescription}</LinkComponent>
     ) : (
       unhandledErrorDescription
     );

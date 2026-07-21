@@ -36,12 +36,17 @@ const Versions = {
 };
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
+const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 
 const { labels } = danger.github.issue;
 
 const prLogConfig = pkg['pr-log'];
 
 const branchVersion = Versions.MINOR;
+const targetBranch = danger.github.pr.base.ref;
+const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
+const author = danger.github.pr.user;
+const authorAssociation = danger.github.pr.author_association;
 
 /** @param {string[]} labels */
 const checkRequiredLabels = (labels) => {
@@ -66,18 +71,36 @@ const checkRequiredLabels = (labels) => {
     );
   }
 
-  const foundRequiredLabels = intersection(requiredLabels, labels);
-  if (foundRequiredLabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
-  } else if (foundRequiredLabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
-  }
+  if (isReleasePr) {
+    // Release PRs only need `ci:daily`.
+    if (!labels.includes('ci:daily')) {
+      fail(
+        'Release PRs targeting latest-release or next-release must include the "ci:daily" label.'
+      );
+    }
+    return;
+  } else {
+    // All other PRs to `next` to a qualifying change type and one of several applicable CI labels.
+    const foundRequiredLabels = intersection(requiredLabels, labels);
+    if (foundRequiredLabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
+    } else if (foundRequiredLabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
+    }
 
-  const foundCILabels = intersection(ciLabels, labels);
-  if (foundCILabels.length === 0) {
-    fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
-  } else if (foundCILabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    const foundCILabels = intersection(ciLabels, labels);
+    if (foundCILabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
+    } else if (foundCILabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
+    }
+
+    const foundQALabels = intersection(qaLabels, labels);
+    if (foundQALabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(qaLabels)}`);
+    } else if (foundQALabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundQALabels)}`);
+    }
   }
 };
 
@@ -148,11 +171,28 @@ const checkManualTestingSection = (body) => {
   }
 };
 
-const checkTargetBranch = () => {
-  const targetBranch = danger.github.pr.base.ref;
-  const author = danger.github.pr.user;
-  const authorAssociation = danger.github.pr.author_association;
+/**
+ * Checks that all tasks in the release PR body have been checked. Checkboxes include:
+ * - Adding the freeze label
+ * - Renaming freeform commits that are missing a changelog category
+ * - Cherry-picking PRs with conflicts
+ * - Any other task you choose to add during the release process!
+ * @param {string} body
+ */
+const checkReleaseChecklist = (body) => {
+  if (!isReleasePr) {
+    return;
+  }
 
+  // Match unchecked task list items (`- [ ]` or `* [ ]`) anywhere in the body.
+  if (/^\s*[-*]\s+\[ \]/m.test(body)) {
+    fail(
+      'This release PR still has unchecked tasks in its description. The release manager must complete all checklist items before merging.'
+    );
+  }
+};
+
+const checkTargetBranch = () => {
   // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
   if (
     ['OWNER', 'MEMBER'].includes(authorAssociation) ||
@@ -173,6 +213,7 @@ const checkTargetBranch = () => {
 };
 
 checkTargetBranch();
+checkReleaseChecklist(danger.github.pr.body);
 
 if (prLogConfig) {
   checkRequiredLabels(labels.map((l) => l.name));

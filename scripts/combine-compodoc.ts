@@ -1,6 +1,7 @@
 // Compodoc does not follow symlinks (it ignores them and their contents entirely)
 // So, we need to run a separate compodoc process on every symlink inside the project,
 // then combine the results into one large documentation.json
+import { existsSync } from 'node:fs';
 import { lstat, readFile, realpath, writeFile } from 'node:fs/promises';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -9,8 +10,8 @@ import { execaCommand } from 'execa';
 import { globSync } from 'glob';
 import { join, resolve } from 'path';
 
-import { temporaryDirectory } from '../code/core/src/common/utils/cli';
-import { esMain } from './utils/esmain';
+import { temporaryDirectory } from '../code/core/src/common/utils/cli.ts';
+import { esMain } from './utils/esmain.ts';
 
 const logger = console;
 
@@ -30,6 +31,17 @@ async function findSymlinks(dir: string) {
 }
 
 async function run(cwd: string) {
+  const combinedDocsPath = join(cwd, 'documentation.json');
+
+  // On CI the sandbox tree is immutable once the create job has packed it, so a
+  // documentation.json travelling in the sandbox archive is current by
+  // construction. Regenerating it would stall every dev-server start behind a
+  // full Compodoc pass for identical output.
+  if (process.env.CI && existsSync(combinedDocsPath)) {
+    logger.log(`Skipping Compodoc: ${combinedDocsPath} already exists on CI`);
+    return;
+  }
+
   const dirs = [
     cwd,
     ...(await findSymlinks(resolve(cwd, './src'))),

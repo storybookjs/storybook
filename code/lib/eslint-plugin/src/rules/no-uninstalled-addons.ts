@@ -3,12 +3,12 @@
  *   installed or contain a typo in their name.
  * @author Andre "andrelas1" Santos
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 import { readFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { dedent } from 'ts-dedent';
 
-import { getMetaObjectExpression } from '../utils';
+import { getMetaObjectExpression } from '../utils/index.ts';
 import {
   isArrayExpression,
   isIdentifier,
@@ -17,9 +17,9 @@ import {
   isProperty,
   isVariableDeclaration,
   isVariableDeclarator,
-} from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+} from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

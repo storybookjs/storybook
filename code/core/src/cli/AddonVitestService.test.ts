@@ -11,8 +11,8 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
-import { AddonVitestService } from './AddonVitestService';
+import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
+import { AddonVitestService } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:os', { spy: true });
@@ -31,6 +31,11 @@ describe('AddonVitestService', () => {
       getInstalledVersion: vi.fn(),
       runPackageCommand: vi.fn(),
       getPackageCommand: vi.fn(),
+      getDeclaredVersionSpecifier: vi.fn().mockResolvedValue(null),
+      // Default to the base-class behavior (pin each package directly).
+      applyVersionToRelatedPackages: vi.fn((packages: string[], version: string) =>
+        packages.map((pkg) => `${pkg}@${version}`)
+      ),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     service = new AddonVitestService(mockPackageManager);
@@ -48,16 +53,12 @@ describe('AddonVitestService', () => {
   describe('collectDeps', () => {
     beforeEach(() => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+      // getInstalledVersion is only used here for the coverage reporters (v8 / istanbul).
       vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
     });
 
     it('should collect base packages when not installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       expect(deps).toContain('vitest');
@@ -73,8 +74,8 @@ describe('AddonVitestService', () => {
         '@vitest/browser': '3.0.0',
         playwright: '1.0.0',
       });
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.0.0');
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest version
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
@@ -88,12 +89,6 @@ describe('AddonVitestService', () => {
     // Note: collectDependencies doesn't add framework-specific packages
     // It only collects base vitest packages
     it('should collect base packages without framework-specific additions', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       // Should only contain base packages, not framework-specific ones
@@ -106,21 +101,13 @@ describe('AddonVitestService', () => {
     });
 
     it('should not add @storybook/nextjs-vite for non-Next.js frameworks', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
-
       const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
     });
 
     it('should not add coverage reporter if v8 already installed', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce(null) // vitest version
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
@@ -130,31 +117,63 @@ describe('AddonVitestService', () => {
     });
 
     it('skips coverage if istanbul', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce('3.0.0') // @vitest/coverage-istanbul
-        .mockResolvedValueOnce(null); // vitest version
+        .mockResolvedValueOnce('3.0.0'); // @vitest/coverage-istanbul
 
       const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
     });
 
-    it('applies version', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
-      vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.2.0') // vitest version check
-        .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+    it('pins vitest-related packages to the resolved version via the package manager', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.2.0');
 
       const deps = await service.collectDependencies();
 
-      expect(deps).toContain('vitest@3.2.0');
       // Version 3.2.0 < 4.0.0, so uses @vitest/browser
+      expect(deps).toContain('vitest@3.2.0');
       expect(deps).toContain('@vitest/browser@3.2.0');
       expect(deps).toContain('@vitest/coverage-v8@3.2.0');
-      expect(deps).toContain('playwright'); // no version for playwright
+      expect(deps).toContain('playwright'); // playwright is versioned independently
+      // Only the vitest-related packages are handed to the package manager for version pinning.
+      expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
+        ['vitest', '@vitest/browser', '@vitest/coverage-v8'],
+        '3.2.0',
+        'vitest'
+      );
+    });
+
+    it('does not pin anything when the vitest version cannot be resolved', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@3.'))).toBe(true);
+      expect(mockPackageManager.applyVersionToRelatedPackages).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getComparableVersion', () => {
+    it('returns undefined for empty input', () => {
+      expect(AddonVitestService.getComparableVersion(null)).toBeUndefined();
+      expect(AddonVitestService.getComparableVersion(undefined)).toBeUndefined();
+    });
+
+    it('passes through an exact version', () => {
+      expect(AddonVitestService.getComparableVersion('3.2.1')).toBe('3.2.1');
+    });
+
+    it('reduces a range to its lower bound', () => {
+      expect(AddonVitestService.getComparableVersion('^3.2.0')).toBe('3.2.0');
+      expect(AddonVitestService.getComparableVersion('>=4.1.0 <5.0.0')).toBe('4.1.0');
+    });
+
+    it('strips the prerelease tag so a beta compares by its release major', () => {
+      // minVersion() alone keeps `4.0.0-beta.1`, which fails `>=4.0.0`; coercing to `4.0.0` fixes the
+      // major check and keeps it consistent with the postinstall template selection.
+      expect(AddonVitestService.getComparableVersion('4.0.0-beta.1')).toBe('4.0.0');
     });
   });
 
@@ -672,11 +691,32 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject invalid vitest config', async () => {
+    it('should accept plain export default {}', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default {}');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject arrow function vitest config with dynamic control flow (unsupported)', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      // A callback config that returns object literals directly is supported; one with branching
+      // control flow in a block body is not, and must be rejected.
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `import { defineConfig } from 'vitest/config';
+export default defineConfig(({ mode }) => {
+  if (mode === 'production') {
+    return { test: { name: 'prod' } };
+  }
+  return { test: { name: 'dev' } };
+})`
+      );
 
       const result = await service.validateConfigFiles('.storybook');
 
@@ -761,14 +801,121 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject mergeConfig with invalid object (non-object argument)', async () => {
+    it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
       vi.mocked(find.any)
         .mockReturnValueOnce(undefined) // workspace
         .mockReturnValueOnce('vitest.config.ts'); // config
-      vi.mocked(fs.readFile).mockResolvedValue('export default mergeConfig(viteConfig, "string")');
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node', environment: 'happy-dom' },
+          })
+        )`
+      );
       const result = await service.validateConfigFiles('.storybook');
-      expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node' },
+          }) satisfies ViteUserConfig
+        )`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default mergeConfig(viteConfig, {
+          test: { name: 'node' },
+        }) as ViteUserConfig`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with shorthand test variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const test = { name: 'node', environment: 'happy-dom' };
+        export default mergeConfig(viteConfig, { test })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with external vitestConfig variable', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const vitestConfig = { test: { name: 'node' } };
+        export default mergeConfig(viteConfig, vitestConfig)`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept const config = mergeConfig(...); export default config pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const config = mergeConfig(
+          viteConfig,
+          defineConfig({ test: { name: 'node' } })
+        );
+        export default config`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineProject({}) pattern', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineProject } from 'vitest/config';
+        export default defineProject({
+          test: { name: 'node', environment: 'happy-dom' },
+        })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
     });
   });
 });

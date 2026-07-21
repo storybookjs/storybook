@@ -3,7 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as pkg from 'empathic/package';
 import type { PackageJson } from 'type-fest';
 
-import type { Dependency } from './types';
+import type { Dependency } from './types.ts';
 
 export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
   const packageNames = Object.keys(packages);

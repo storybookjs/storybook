@@ -56,24 +56,30 @@ type RadioConfig = NormalizedOptionsConfig & { isInline: boolean };
 type RadioProps = ControlProps<OptionsSingleSelection> & RadioConfig;
 export const RadioControl: FC<RadioProps> = ({
   name,
+  storyId,
+  controlsId,
   options,
   value,
   onChange,
   isInline,
   argType,
+  required,
 }) => {
   if (!options) {
     logger.warn(`Radio with no options: ${name}`);
     return <>-</>;
   }
   const selection = selectedKey(value, options);
-  const controlId = getControlId(name);
+  const controlId = getControlId(name, storyId, controlsId);
 
   const readonly = !!argType?.table?.readonly;
 
   return (
     <Wrapper isInline={isInline}>
-      <legend className="sb-sr-only">{name}</legend>
+      <legend className="sb-sr-only">
+        {name}
+        {required ? ' (required)' : ''}
+      </legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (

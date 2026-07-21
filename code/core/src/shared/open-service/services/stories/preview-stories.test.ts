@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { previewStories } from './preview.ts';
+import { previewStories } from './preview-stories.ts';
 import type { StoryInput } from './story-input.ts';
 
 const index: StoryIndex = {

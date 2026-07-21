@@ -6,7 +6,7 @@ import { registerService } from '../../server.ts';
 import { getChangedStories } from './changed.ts';
 import type { FindByComponentOutput } from './definition.ts';
 import { storiesServiceDef } from './definition.ts';
-import { previewStories } from './preview.ts';
+import { previewStories } from './preview-stories.ts';
 
 /**
  * Dependencies for `core/stories` command handlers.

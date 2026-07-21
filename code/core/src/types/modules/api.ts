@@ -15,6 +15,7 @@ import type {
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
 import type { StoryIndex } from './indexer.ts';
+import type { StatusByTypeId } from './status.ts';
 
 type OrString<T extends string> = T | (string & {});
 
@@ -107,7 +108,11 @@ export interface API_SidebarOptions<API = any> {
   showRoots?: boolean;
   filters?: Record<string, API_FilterFunction>;
   collapsedRoots?: string[];
-  renderLabel?: (item: API_HashEntry, api: API) => any;
+  /**
+   * Sidebar rows for stories, docs and tests receive the entry's statuses, each annotated with a
+   * `visible` flag telling whether the sidebar currently renders a pill for it.
+   */
+  renderLabel?: (item: API_HashEntry & { statuses?: StatusByTypeId }, api: API) => any;
 }
 
 interface OnClearOptions {

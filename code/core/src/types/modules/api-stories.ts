@@ -9,7 +9,11 @@ export interface API_BaseEntry {
   name: string;
   tags: Tag[];
   refId?: string;
-  renderLabel?: (item: API_HashEntry, api: any) => any;
+  /**
+   * Sidebar rows for stories, docs and tests receive the entry's statuses, each annotated with a
+   * `visible` flag telling whether the sidebar currently renders a pill for it.
+   */
+  renderLabel?: (item: API_HashEntry & { statuses?: StatusByTypeId }, api: any) => any;
 }
 
 export interface API_RootEntry extends API_BaseEntry {

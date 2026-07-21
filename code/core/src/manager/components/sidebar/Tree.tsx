@@ -37,6 +37,7 @@ import {
   getMostCriticalStatusValue,
   getSidebarVisibleStatus,
   getStatus,
+  getStatusesWithVisibility,
   shouldShowChangeStatus,
   statusPriority,
 } from '../../utils/status.tsx';
@@ -288,8 +289,12 @@ const Node = React.memo<NodeProps>(function Node(props) {
           }}
           {...(item.type === 'docs' && { docsMode })}
         >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
+          {(
+            item.renderLabel as (
+              i: typeof item & { statuses: StatusByTypeId },
+              api: API
+            ) => React.ReactNode
+          )?.({ ...item, statuses }, api) || item.name}
         </LeafNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
@@ -460,8 +465,12 @@ const Node = React.memo<NodeProps>(function Node(props) {
             }
           }}
         >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
+          {(
+            item.renderLabel as (
+              i: typeof item & { statuses: StatusByTypeId },
+              api: API
+            ) => React.ReactNode
+          )?.({ ...item, statuses }, api) || item.name}
         </BranchNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
@@ -568,8 +577,12 @@ const Node = React.memo<NodeProps>(function Node(props) {
           }
         }}
       >
-        {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-          item.name}
+        {(
+          item.renderLabel as (
+            i: typeof item & { statuses: StatusByTypeId },
+            api: API
+          ) => React.ReactNode
+        )?.({ ...item, statuses }, api) || item.name}
       </LeafNode>
       {isSelected && (
         <SkipToContentLink ariaLabel={false} asChild>
@@ -749,6 +762,11 @@ export const Tree = React.memo<{
     onSelectStoryId,
   });
 
+  const statusesWithVisibility = useMemo(
+    () => getStatusesWithVisibility(allStatuses ?? {}, collapsedData, isModifiedFilterActive),
+    [allStatuses, collapsedData, isModifiedFilterActive]
+  );
+
   const groupStatus = useMemo(
     () => getGroupStatus(collapsedData, allStatuses ?? {}),
     [collapsedData, allStatuses]
@@ -800,7 +818,7 @@ export const Tree = React.memo<{
           collapsedData={collapsedData}
           key={id}
           item={item}
-          statuses={allStatuses?.[itemId] ?? {}}
+          statuses={statusesWithVisibility[itemId] ?? {}}
           groupDualStatus={groupDualStatus}
           refId={refId}
           docsMode={docsMode}
@@ -829,10 +847,12 @@ export const Tree = React.memo<{
     refId,
     selectedStoryId,
     setExpanded,
-    allStatuses,
+    statusesWithVisibility,
   ]);
   return (
-    <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
+    <StatusContext.Provider
+      value={{ data, allStatuses: allStatuses && statusesWithVisibility, groupStatus }}
+    >
       <div ref={containerRef}>{treeItems}</div>
     </StatusContext.Provider>
   );

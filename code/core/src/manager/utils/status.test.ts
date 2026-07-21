@@ -1,10 +1,15 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
 import { mockDataset } from '../components/sidebar/mockdata.ts';
-import { getChangeDetectionStatus, getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
+import {
+  getChangeDetectionStatus,
+  getGroupStatus,
+  getMostCriticalStatusValue,
+  getStatusesWithVisibility,
+} from './status.tsx';
 
 describe('getHighestStatus', () => {
   it('default value', () => {
@@ -260,5 +265,121 @@ describe('dual-slot status splitting', () => {
     expect(getMostCriticalStatusValue(['status-value:new', 'status-value:error'])).toBe(
       'status-value:error'
     );
+  });
+});
+
+describe('getStatusesWithVisibility', () => {
+  const storyId = 'group-1--child-b1';
+  const testId = 'root-1-child-a2--grandchild-a1-1:test1';
+  const makeStatus = (id: string, typeId: string, value: StatusValue) => ({
+    storyId: id,
+    typeId,
+    value,
+    title: '',
+    description: '',
+  });
+  const annotate = (allStatuses: Parameters<typeof getStatusesWithVisibility>[0], filter = false) =>
+    getStatusesWithVisibility(allStatuses, mockDataset.withRoot, filter);
+
+  it('always shows "new" and never shows "affected" or "unknown" change-detection statuses', () => {
+    const allStatuses = {
+      [storyId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: makeStatus(
+          storyId,
+          CHANGE_DETECTION_STATUS_TYPE_ID,
+          'status-value:new'
+        ),
+      },
+      'group-1--child-b2': {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: makeStatus(
+          'group-1--child-b2',
+          CHANGE_DETECTION_STATUS_TYPE_ID,
+          'status-value:affected'
+        ),
+      },
+    };
+    const result = annotate(allStatuses);
+    expect(result[storyId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(true);
+    expect(result['group-1--child-b2'][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(false);
+
+    const withFilter = annotate(allStatuses, true);
+    expect(withFilter[storyId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(true);
+    expect(withFilter['group-1--child-b2'][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(false);
+  });
+
+  it('only shows "modified" while the modified filter is active', () => {
+    const allStatuses = {
+      [storyId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: makeStatus(
+          storyId,
+          CHANGE_DETECTION_STATUS_TYPE_ID,
+          'status-value:modified'
+        ),
+      },
+    };
+    expect(annotate(allStatuses)[storyId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(false);
+    expect(annotate(allStatuses, true)[storyId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(
+      true
+    );
+  });
+
+  it('only keeps "new" change-detection statuses on test entries', () => {
+    const allStatuses = {
+      [testId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: makeStatus(
+          testId,
+          CHANGE_DETECTION_STATUS_TYPE_ID,
+          'status-value:modified'
+        ),
+      },
+    };
+    expect(annotate(allStatuses, true)[testId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(
+      false
+    );
+
+    const newStatus = {
+      [testId]: {
+        [CHANGE_DETECTION_STATUS_TYPE_ID]: makeStatus(
+          testId,
+          CHANGE_DETECTION_STATUS_TYPE_ID,
+          'status-value:new'
+        ),
+      },
+    };
+    expect(annotate(newStatus)[testId][CHANGE_DETECTION_STATUS_TYPE_ID].visible).toBe(true);
+  });
+
+  it('hides review statuses on story rows but keeps them on test rows', () => {
+    const allStatuses = {
+      [storyId]: {
+        [REVIEW_STATUS_TYPE_ID]: makeStatus(
+          storyId,
+          REVIEW_STATUS_TYPE_ID,
+          'status-value:reviewing'
+        ),
+      },
+      [testId]: {
+        [REVIEW_STATUS_TYPE_ID]: makeStatus(
+          testId,
+          REVIEW_STATUS_TYPE_ID,
+          'status-value:reviewing'
+        ),
+      },
+    };
+    const result = annotate(allStatuses);
+    expect(result[storyId][REVIEW_STATUS_TYPE_ID].visible).toBe(false);
+    expect(result[testId][REVIEW_STATUS_TYPE_ID].visible).toBe(true);
+  });
+
+  it('shows test statuses with a known value and hides unknown ones', () => {
+    const allStatuses = {
+      [storyId]: {
+        'storybook/vitest': makeStatus(storyId, 'storybook/vitest', 'status-value:error'),
+        'storybook/other': makeStatus(storyId, 'storybook/other', 'status-value:unknown'),
+      },
+    };
+    const result = annotate(allStatuses);
+    expect(result[storyId]['storybook/vitest'].visible).toBe(true);
+    expect(result[storyId]['storybook/other'].visible).toBe(false);
   });
 });

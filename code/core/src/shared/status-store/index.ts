@@ -69,6 +69,14 @@ export interface Status {
   description: string;
   data?: any;
   sidebarContextMenu?: boolean;
+  /**
+   * Whether the sidebar currently renders a status pill for this status. Computed by the manager
+   * sidebar from the status value, the entry type and the active status filters (e.g.
+   * `status-value:modified` only surfaces while the "modified" filter is applied), so sidebar
+   * consumers such as a custom `sidebar.renderLabel` can accommodate spacing. Producers must not
+   * set it; it is undefined outside the sidebar (e.g. in the status store or filter functions).
+   */
+  visible?: boolean;
 }
 
 export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';

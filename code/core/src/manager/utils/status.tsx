@@ -7,6 +7,7 @@ import {
   NON_AGGREGATED_STATUS_TYPE_IDS,
   REVIEW_STATUS_TYPE_ID,
   type API_HashEntry,
+  type Status,
   type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
   type StoryId,
@@ -154,6 +155,52 @@ export const shouldShowChangeStatus = (
 /** A status that contributes to the aggregated test status (i.e. not a quality/meta status). */
 const isAggregatedTestStatus = (status: { typeId: string }): boolean =>
   !NON_AGGREGATED_STATUS_TYPE_IDS.includes(status.typeId);
+
+/** Whether the sidebar currently renders a pill for this status, mirroring the Tree row rules. */
+const isStatusVisible = (
+  status: Status,
+  isTestEntry: boolean,
+  isModifiedFilterActive: boolean
+): boolean => {
+  if (status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID) {
+    // Test rows only keep "new" change-detection statuses; other rows follow the shared rule.
+    return isTestEntry
+      ? status.value === 'status-value:new'
+      : shouldShowChangeStatus(status.value, isModifiedFilterActive);
+  }
+  // Review statuses don't get their own pill on story rows, but do aggregate into test rows.
+  if (status.typeId === REVIEW_STATUS_TYPE_ID && !isTestEntry) {
+    return false;
+  }
+  return status.value !== 'status-value:unknown';
+};
+
+/**
+ * Annotates every status with a `visible` flag telling whether the sidebar currently surfaces it
+ * as a status pill, so sidebar consumers (e.g. a custom `sidebar.renderLabel`) can accommodate
+ * spacing without duplicating the pill rules.
+ */
+export function getStatusesWithVisibility(
+  allStatuses: StatusesByStoryIdAndTypeId,
+  entries: Record<string, Partial<API_HashEntry>>,
+  isModifiedFilterActive: boolean
+): StatusesByStoryIdAndTypeId {
+  return Object.fromEntries(
+    Object.entries(allStatuses).map(([storyId, statuses]) => {
+      const entry = entries[storyId];
+      const isTestEntry = entry?.type === 'story' && entry.subtype === 'test';
+      return [
+        storyId,
+        Object.fromEntries(
+          Object.entries(statuses).map(([typeId, status]) => [
+            typeId,
+            { ...status, visible: isStatusVisible(status, isTestEntry, isModifiedFilterActive) },
+          ])
+        ),
+      ];
+    })
+  );
+}
 
 /** Matches the status icon shown on a sidebar row before hover. */
 export function getSidebarVisibleStatus({

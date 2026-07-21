@@ -208,10 +208,10 @@ export const npm = {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
         'cache-only-lockfile': true,
-        // v2: the orb's v1 node_modules cache carries the same poisoned tree
-        // as the v6 CACHE_KEYS entries (see above); its restore overlays
+        // v3: the orb's v2 node_modules cache carries the same poisoned tree
+        // as the v7 CACHE_KEYS entries (see above); its restore overlays
         // node_modules on top of the primary cache without overwriting.
-        'cache-version': 'v2',
+        'cache-version': 'v3',
       },
     };
   },
@@ -338,9 +338,12 @@ export const workflow = {
   },
 };
 
+// v8: v7 caches carry a stale nested alien-signals copy under
+// @vue/language-core that crashes vue-tsc; incremental installs never remove
+// unknown nested directories, so only an epoch bump evicts the debris.
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v7-${platform}-node_modules`,
+    `v8-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

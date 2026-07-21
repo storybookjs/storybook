@@ -1,3 +1,21 @@
+## 10.6.0-alpha.2
+
+- Search: Show docs stories as docs search result item instead of a story-group search result item - [#35495](https://github.com/storybookjs/storybook/pull/35495), thanks @kroeder!
+- TanStack: Keep Start's document shell out of stories - [#35504](https://github.com/storybookjs/storybook/pull/35504), thanks @unpunnyfuns!
+
+## 10.6.0-alpha.1
+
+- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
+- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
+- Dependencies: Upgrade TypeScript to 6.0.3 - [#34971](https://github.com/storybookjs/storybook/pull/34971), thanks @valentinpalkovic!
+- Init: Detect TanStack packages in peerdependencies - [#34969](https://github.com/storybookjs/storybook/pull/34969), thanks @huang-julien!
+- Manager API: Add experimental_setFilters batch API - [#35413](https://github.com/storybookjs/storybook/pull/35413), thanks @valentinpalkovic!
+- TanStack: Fix createServerFn validator mock - [#35185](https://github.com/storybookjs/storybook/pull/35185), thanks @sjh9714!
+- TanStack: Support pathless layout routes (id-only) in story routing - [#35465](https://github.com/storybookjs/storybook/pull/35465), thanks @unpunnyfuns!
+- Tanstack-react: Add missing Hydrate export - [#35111](https://github.com/storybookjs/storybook/pull/35111), thanks @arun-357!
+- Tanstack-react: Keep JSX-only component references during dead-code elimination - [#35206](https://github.com/storybookjs/storybook/pull/35206), thanks @yatishgoel!
+- Vitest: Fix coverage toggle crash on Vite 6 by clearing closed Vitest instance on restart - [#35461](https://github.com/storybookjs/storybook/pull/35461), thanks @yannbf!
+
 ## 10.6.0-alpha.0
 
 

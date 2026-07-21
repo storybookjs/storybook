@@ -4,10 +4,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import type { TestRunResult } from './definition.ts';
 import {
-  createAsyncQueue,
-  runStoryTests,
   TRIGGER_TEST_RUN_REQUEST,
   TRIGGER_TEST_RUN_RESPONSE,
+  createAsyncQueue,
+  runStoryTests,
   type TestChannel,
   type TriggerTestRunResponse,
 } from './run.ts';
@@ -195,5 +195,31 @@ describe('runStoryTests', () => {
     });
 
     expect(result).toEqual({ status: 'completed', result: sampleResult });
+  });
+
+  it('returns an error when the channel response never arrives', async () => {
+    vi.useFakeTimers();
+    const channel = createMockChannel();
+    channel.emit = () => {};
+
+    const pending = runStoryTests({
+      channel,
+      getIndex: async () => index,
+      timeoutMs: 1000,
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await pending;
+
+    expect(result.status).toBe('error');
+    expect(result).toMatchObject({
+      status: 'error',
+      error: {
+        message: expect.stringContaining('Timed out after 1000ms'),
+      },
+    });
+    expect(channel.handlers.get(TRIGGER_TEST_RUN_RESPONSE) ?? []).toHaveLength(0);
+
+    vi.useRealTimers();
   });
 });

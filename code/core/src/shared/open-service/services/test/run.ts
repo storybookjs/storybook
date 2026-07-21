@@ -1,6 +1,7 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { OpenServiceTestRunTimeoutError } from '../../../../server-errors.ts';
 import { findStoryIds, type FoundStory } from '../stories/find-story-ids.ts';
 import type { StoryInput } from '../stories/story-input.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
@@ -11,6 +12,9 @@ import type { TestRunOutput, TestRunResult } from './definition.ts';
  */
 export const TRIGGER_TEST_RUN_REQUEST = 'storybook/test/trigger-test-run-request';
 export const TRIGGER_TEST_RUN_RESPONSE = 'storybook/test/trigger-test-run-response';
+
+/** Default wait for a matching channel response before failing the queued run. */
+export const DEFAULT_TEST_RUN_TIMEOUT_MS = 30 * 60 * 1000;
 
 export type TestChannel = Pick<ChannelLike, 'on' | 'off' | 'emit'>;
 
@@ -58,11 +62,14 @@ export type TriggerTestRunParams = {
   storyIds?: string[];
   config?: Record<string, unknown>;
   actor: string;
+  /** Max wait for a matching response. Defaults to {@link DEFAULT_TEST_RUN_TIMEOUT_MS}. */
+  timeoutMs?: number;
 };
 
 /**
  * Triggers a test run over the Storybook channel and resolves with the matching response.
  * Terminal statuses (`completed` / `error` / `cancelled`) all resolve — callers map them.
+ * Rejects on emit failure, unexpected status, or timeout so the serial run queue can unblock.
  */
 export function triggerTestRun({
   channel,
@@ -71,12 +78,18 @@ export function triggerTestRun({
   storyIds,
   config,
   actor,
+  timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: TriggerTestRunParams): Promise<TriggerTestRunResponse> {
   return new Promise((resolve, reject) => {
     const requestId = `osa-test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const cleanup = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
       channel.off(responseEvent, handleResponse);
     };
 
@@ -107,6 +120,10 @@ export function triggerTestRun({
 
     channel.on(responseEvent, handleResponse);
 
+    timeoutId = setTimeout(() => {
+      settle(() => reject(new OpenServiceTestRunTimeoutError({ timeoutMs, requestId })));
+    }, timeoutMs);
+
     try {
       channel.emit(requestEvent, {
         requestId,
@@ -128,6 +145,8 @@ export type RunStoryTestsParams = {
   actor?: string;
   requestEvent?: string;
   responseEvent?: string;
+  /** Max wait for a matching channel response. Defaults to {@link DEFAULT_TEST_RUN_TIMEOUT_MS}. */
+  timeoutMs?: number;
 };
 
 /**
@@ -142,6 +161,7 @@ export async function runStoryTests({
   actor = 'core/test',
   requestEvent = TRIGGER_TEST_RUN_REQUEST,
   responseEvent = TRIGGER_TEST_RUN_RESPONSE,
+  timeoutMs = DEFAULT_TEST_RUN_TIMEOUT_MS,
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
 
@@ -155,14 +175,25 @@ export async function runStoryTests({
     }
   }
 
-  const response = await triggerTestRun({
-    channel,
-    requestEvent,
-    responseEvent,
-    storyIds,
-    config: { a11y },
-    actor,
-  });
+  let response: TriggerTestRunResponse;
+  try {
+    response = await triggerTestRun({
+      channel,
+      requestEvent,
+      responseEvent,
+      storyIds,
+      config: { a11y },
+      actor,
+      timeoutMs,
+    });
+  } catch (error) {
+    return {
+      status: 'error',
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
 
   switch (response.status) {
     case 'completed':

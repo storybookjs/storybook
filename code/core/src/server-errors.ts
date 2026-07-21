@@ -344,6 +344,17 @@ export class OpenServiceDocsClassificationMissingError extends StorybookError {
   }
 }
 
+export class OpenServiceTestRunTimeoutError extends StorybookError {
+  constructor(public data: { timeoutMs: number; requestId: string }) {
+    super({
+      name: 'OpenServiceTestRunTimeoutError',
+      category: Category.CORE_COMMON,
+      code: 21,
+      message: `Timed out after ${data.timeoutMs}ms waiting for addon-vitest response to test run "${data.requestId}". Ensure @storybook/addon-vitest is installed and responding.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

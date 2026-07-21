@@ -76,6 +76,7 @@ const Wrapper = styled.div<WrapperProps>(
     flexWrap: 'wrap',
     overflow: 'hidden',
     color: theme.color.defaultText,
+    colorScheme: theme.base,
   }),
   ({ theme, bordered }) =>
     bordered

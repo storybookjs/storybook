@@ -19,11 +19,15 @@ const previewOutputSchema = v.object({
   stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
 });
 
+export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
+
 const changeStatusSchema = v.union([
   v.literal('status-value:new'),
   v.literal('status-value:modified'),
   v.literal('status-value:affected'),
 ]);
+
+export type ChangeStatusValue = v.InferOutput<typeof changeStatusSchema>;
 
 const changedStorySchema = v.object({
   storyId: v.string(),
@@ -42,6 +46,8 @@ const changedOutputSchema = v.object({
   }),
   unreachableFiles: v.array(v.string()),
 });
+
+export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
 
 const storyMatchSchema = v.object({
   storyId: v.string(),
@@ -71,6 +77,8 @@ const findByComponentOutputSchema = v.object({
     })
   ),
 });
+
+export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
 
 export type StoriesServiceState = Record<string, never>;
 

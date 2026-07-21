@@ -297,6 +297,30 @@ export class OpenServiceOperationNameCollisionError extends StorybookError {
   }
 }
 
+export class OpenServiceMissingOriginError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceMissingOriginError',
+      category: Category.CORE_COMMON,
+      code: 17,
+      message: `Operation "${data.serviceId}.${data.operationName}" requires a Storybook server origin. Ensure registration provides a non-empty getOrigin().`,
+    });
+  }
+}
+
+export class OpenServiceUnknownStoryIdsError extends StorybookError {
+  constructor(public data: { unknownIds: string[] }) {
+    const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
+    const plural = data.unknownIds.length === 1 ? 'ID is' : 'IDs are';
+    super({
+      name: 'OpenServiceUnknownStoryIdsError',
+      category: Category.CORE_COMMON,
+      code: 18,
+      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not in the live Storybook index:\n${list}`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

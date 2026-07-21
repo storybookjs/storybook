@@ -77,6 +77,9 @@ const testRunOutputSchema = v.variant('status', [
   }),
 ]);
 
+export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
+export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
+
 export type TestServiceState = Record<string, never>;
 
 /**

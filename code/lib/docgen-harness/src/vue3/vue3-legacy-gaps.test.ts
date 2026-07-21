@@ -50,14 +50,19 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   gapTest('array-typed props are recorded with a structured array sbType', () => {
-    // Legacy: the shared convert() helper stringifies to `Array([object Object])`.
+    // Legacy: the shared convert() helper stringifies to `Array([object Object])`. The
+    // negative assertions keep a fixed discriminator from passing over the same
+    // stringified value.
     expect(baseline('basicTypesArgTypes')).toContain('"name": "array"');
+    expect(baseline('basicTypesArgTypes')).not.toContain('Array([object Object])');
     expect(baseline('genericArgTypes')).toContain('"name": "array"');
+    expect(baseline('genericArgTypes')).not.toContain('Array([object Object])');
   });
 
   gapTest('intersection-typed props are recorded with a structured intersection sbType', () => {
     // Legacy: `intersection([object Object],[object Object])` from the same convert() bug.
     expect(baseline('intersectionArgTypes')).toContain('"name": "intersection"');
+    expect(baseline('intersectionArgTypes')).not.toContain('intersection([object Object]');
   });
 
   gapTest('reactive-props-destructure defaults are recorded', () => {
@@ -69,7 +74,12 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   gapTest('prop JSDoc tags are recorded in table.jsDocTags', () => {
     // Legacy: vue-docgen-api splits tags into a separate `tags` object that the
     // description-parsing pipeline never reads, so jsDocTags stays undefined.
+    // Both props must carry their own tags: `label` declares @deprecated/@since and
+    // `title` declares @default, on different parse paths, so a per-prop partial fix
+    // must not close this marker.
     expect(baseline('jsdocArgTypes')).toMatch(/"jsDocTags": [[{]/);
+    expect(baseline('jsdocArgTypes')).toContain('deprecated');
+    expect(baseline('jsdocArgTypes')).toContain('since');
   });
 
   gapTest('Pick-composed props are resolved', () => {
@@ -96,24 +106,33 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   gapTest('multi-constructor runtime types are recorded as a structured union', () => {
-    // #19394 - legacy: flat "string|number" display string with sbType "other".
+    // #19394 - legacy: flat "string|number" display string with sbType "other". The
+    // structured SBUnionType carries its members in an array-valued `value`.
     expect(baseline('multiConstructorArgTypes')).toContain('"name": "union"');
+    expect(baseline('multiConstructorArgTypes')).toMatch(/"value": \[/);
   });
 
   gapTest('literal unions behind PropType casts keep their options', () => {
     // #20593 - legacy: `String as PropType<'primary' | 'secondary'>` collapses to "string".
+    // The options must reach the sbType Controls reads (an enum), not just summary text.
     expect(baseline('propTypeCastArgTypes')).toContain('secondary');
+    expect(baseline('propTypeCastArgTypes')).toContain('"name": "enum"');
   });
 
   gapTest('defineSlots literal binding types are extracted', () => {
-    // #24270 - legacy: bindings record `unknown` instead of the literal types.
+    // #24270 - legacy: bindings record `unknown` instead of the literal types. Both
+    // binding params must resolve; a partial fix on one alone must not close this marker.
     expect(baseline('slotLiteralBindingsArgTypes')).toContain('currentColor');
+    expect(baseline('slotLiteralBindingsArgTypes')).toMatch(/size: (?!unknown)/);
+    expect(baseline('slotLiteralBindingsArgTypes')).toMatch(/fill: (?!unknown)/);
   });
 
   gapTest('scoped-slot binding types are extracted', () => {
     // #26465 - legacy: `{ entry: unknown; index: unknown }` despite a typed defineSlots.
-    expect(baseline('scopedSlotBindingsArgTypes')).toContain('entry');
-    expect(baseline('scopedSlotBindingsArgTypes')).not.toContain('entry: unknown');
+    // A bare toContain('entry') would already match the slot description prose; the
+    // lookaheads require each binding to be present AND resolved to a non-unknown type.
+    expect(baseline('scopedSlotBindingsArgTypes')).toMatch(/entry: (?!unknown)/);
+    expect(baseline('scopedSlotBindingsArgTypes')).toMatch(/index: (?!unknown)/);
   });
 
   gapTest('an intersection as the whole props type argument is resolved', () => {
@@ -123,8 +142,10 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   gapTest('imported literal-union aliases are unfolded to their options', () => {
-    // #29354 - legacy: name-only "ButtonVariant" with sbType "other".
+    // #29354 - legacy: name-only "ButtonVariant" with sbType "other". The options must
+    // reach the sbType Controls reads (an enum), not just summary text.
     expect(baseline('unionAliasArgTypes')).toContain('danger');
+    expect(baseline('unionAliasArgTypes')).toContain('"name": "enum"');
   });
 });
 

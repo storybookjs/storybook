@@ -60,5 +60,16 @@ describe('vue3 legacy baselines', () => {
         join(testDir, `snippet-${exportName}.snapshot`)
       );
     }
+
+    // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a
+    // renamed or removed story export would silently leave its old snapshot on disk
+    // (and any red marker reading it would assert on stale content).
+    const snippetFilesOnDisk = readdirSync(testDir)
+      .filter((file) => file.startsWith('snippet-') && file.endsWith('.snapshot'))
+      .sort();
+    const expectedSnippetFiles = Object.keys(stories)
+      .map((exportName) => `snippet-${exportName}.snapshot`)
+      .sort();
+    expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
   });
 });

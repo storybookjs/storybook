@@ -20,9 +20,9 @@ code/lib/docgen-harness/src/
 │           ├── *.ts                      # supporting sources some cases need
 │           ├── argtypes.snapshot         # normalized StrictArgTypes from the legacy extractArgTypes path
 │           └── snippet-<story>.snapshot  # legacy Source-block snippet per named story export
-├── angular/            (same shape)
-├── svelte/             (same shape)
-└── web-components/     (same shape)
+├── angular/            (planned, same shape - not created yet)
+├── svelte/             (planned, same shape - not created yet)
+└── web-components/     (planned, same shape - not created yet)
 ```
 
 ## Conventions
@@ -37,7 +37,8 @@ code/lib/docgen-harness/src/
 ## Known legacy gaps (vue3)
 
 Thin or empty output is recorded as-is - never "fix" a fixture to make legacy output richer.
-The closeable gaps below are pinned as `test.fails` red markers in `src/vue3/vue3-legacy-gaps.test.ts`, asserted against the committed snapshots.
+Most closeable gaps below are pinned as `test.fails` red markers in `src/vue3/vue3-legacy-gaps.test.ts`, asserted against the committed snapshots.
+Not every bullet has a marker: component-level docblocks, the recursive-type stub, and the runtime-array `type: undefined` baseline are documented here only.
 `src/vue3/baseline-path.ts` declares which path produced the baselines: flipping `BASELINE_PATH` from `'legacy'` to `'osa'` on re-record hardens every marker into a plain requirement.
 
 - Accepted delta: OSA snippets are static, so live Controls updates do not re-render them.
@@ -65,8 +66,10 @@ Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
 - #12850, #23470 -> `prop-slot-name-collision/`: a prop arg must render as a prop attribute even when a slot shares its name (legacy drops the slot argType and reroutes the prop value into slot content).
 - #19394 -> `runtime-multi-constructor/`: `type: [String, Number]` must become a structured union sbType (legacy records `other` with `"string|number"`).
 - #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options (legacy collapses them to plain `string`).
-- #24270 -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted (legacy records `unknown`).
-- #26465 -> `slots/` (existing case): scoped-slot binding types must be extracted (legacy records `{ entry: unknown; index: unknown }`).
+- #24270 (partial) -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted (legacy records `unknown`).
+  The issue's primary report - a generated snippet binding the child to the parent's whole args object - is not reproduced here; this fixture's snippet already renders the destructured binding correctly, so closing the marker does not verify #24270 itself.
+- #26465 (partial) -> `slots/` (existing case): scoped-slot binding types must be extracted (legacy records `{ entry: unknown; index: unknown }`).
+  The issue reports the `vue-component-meta` engine losing slot doc comments, defaults, and HMR; these baselines record the `vue-docgen-api` path, so the marker covers only the binding-type symptom, not the issue's own repro.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options (legacy records the alias name only).
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` type argument must resolve its props (legacy extracts none).
 

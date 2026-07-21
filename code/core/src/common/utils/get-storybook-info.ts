@@ -1,13 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { CoreWebpackCompiler, SupportedFramework } from 'storybook/internal/types';
 import type {
   CoreCommon_StorybookInfo,
   PackageJson,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import {
+  CoreWebpackCompiler,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
@@ -38,6 +42,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
 
 export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/angular': SupportedFramework.ANGULAR,
+  '@storybook/angular-vite': SupportedFramework.ANGULAR_VITE,
   '@storybook/ember': SupportedFramework.EMBER,
   '@storybook/html-vite': SupportedFramework.HTML_VITE,
   '@storybook/nextjs': SupportedFramework.NEXTJS,
@@ -139,12 +144,17 @@ export const getConfigInfo = (configDir?: string) => {
 
 export const getStorybookInfo = async (
   configDir = '.storybook',
-  cwd?: string
+  cwd?: string,
+  { skipCache }: { skipCache?: boolean } = {}
 ): Promise<CoreCommon_StorybookInfo> => {
   const configInfo = getConfigInfo(configDir);
   const mainConfig = (await loadMainConfig({
     configDir: configInfo.configDir,
     cwd,
+    // When the main config may have been rewritten earlier in the same process (e.g. an
+    // automigration switching frameworks), callers must skip the module cache to read the
+    // current on-disk config instead of a stale, previously-evaluated version.
+    skipCache,
   })) as StorybookConfigRaw;
 
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);

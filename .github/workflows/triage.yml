@@ -18,14 +18,14 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
-      - uses: balazsorban44/nissuer@1.10.0
+      - uses: balazsorban44/nissuer@92ef22afd6a75e5e588f5d689a1fd3433f596f82 # v1.10.0
         with:
           label-comments: |
             {
               "good first issue": ".github/comments/good-first-issue.md"
             }
-          reproduction-comment: ".github/comments/invalid-link.md"
-          reproduction-hosts: "github.com,codesandbox.io,stackblitz.com"
-          reproduction-link-section: "### Reproduction link(.*)### Reproduction steps"
-          reproduction-invalid-label: "needs reproduction"
-          reproduction-issue-labels: "bug,needs triage"
+          reproduction-comment: '.github/comments/invalid-link.md'
+          reproduction-hosts: 'github.com,codesandbox.io,stackblitz.com'
+          reproduction-link-section: '### Reproduction link(.*)### Reproduction steps'
+          reproduction-invalid-label: 'needs reproduction'
+          reproduction-issue-labels: 'bug,needs triage'

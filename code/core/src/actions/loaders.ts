@@ -37,6 +37,7 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
           'next/router::useRouter()',
           'next/navigation::useRouter()',
           'next/navigation::redirect',
+          'next/link::Link',
           'next/cache::',
           'next/headers::cookies().set',
           'next/headers::cookies().delete',

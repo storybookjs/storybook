@@ -4,6 +4,7 @@ import type {
   API_LayoutCustomisations,
   API_PanelPositions,
   API_UI,
+  API_ViewMode,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -11,8 +12,10 @@ import { global } from '@storybook/global';
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
+import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
@@ -34,6 +37,16 @@ export interface SubState {
   selectedPanel: string | undefined;
   theme: ThemeVars;
 }
+
+/**
+ * Availability of the sidebar/nav: 'unavailable' means the current route suppresses the nav
+ * entirely (review routes), otherwise it is 'shown' or 'hidden' based on the layout state.
+ */
+export type NavAvailability = 'shown' | 'hidden' | 'unavailable';
+
+/** True when the route renders a full-screen page (e.g. settings) instead of the preview canvas. */
+export const isPagesViewMode = (viewMode: API_ViewMode): boolean =>
+  viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs' && viewMode !== 'review';
 
 export interface SubAPI {
   /**
@@ -88,6 +101,11 @@ export interface SubAPI {
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
   /**
+   * GetNavAvailability - Returns whether the sidebar/nav is shown, hidden (but can be shown by the
+   * user), or unavailable because the current route suppresses it entirely (review routes).
+   */
+  getNavAvailability: () => NavAvailability;
+  /**
    * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
    */
@@ -132,7 +150,6 @@ export const getDefaultLayoutState: () => SubState = () => {
     },
     layout: {
       initialActive: ActiveTabs.CANVAS,
-      showToolbar: true,
       navSize: DEFAULT_NAV_SIZE,
       bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
       rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
@@ -142,9 +159,13 @@ export const getDefaultLayoutState: () => SubState = () => {
         rightPanelWidth: DEFAULT_RIGHT_PANEL_WIDTH,
       },
       panelPosition: 'bottom',
+      showNav: true,
+      showPanel: true,
       showTabs: true,
+      showToolbar: true,
     },
     layoutCustomisations: {
+      showPanel: undefined,
       showSidebar: undefined,
       showToolbar: undefined,
     },
@@ -190,6 +211,81 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
         ? layoutState.rightPanelWidth
         : layoutState.recentVisibleSizes.rightPanelWidth,
   };
+};
+
+/**
+ * Merges layout options into the existing layout state and translates
+ * `showNav` / `showPanel` booleans into the underlying size fields.
+ *
+ * Layout keys can be provided either at the top level (deprecated) or under
+ * `options.layout` (preferred). Nested layout keys take precedence.
+ *
+ * Numeric sizes are merged in before applying show/hide flags, so
+ * `recentVisibleSizes` is captured from the latest size values.
+ */
+const applyLayoutOptions = (
+  layoutState: API_Layout,
+  options: { layout?: Partial<API_Layout>; [key: string]: any },
+  singleStory: boolean
+) => {
+  const layoutKeys = Object.keys(layoutState);
+  const layoutAtTopLevel = pick(options, layoutKeys);
+
+  for (const key of Object.keys(layoutAtTopLevel)) {
+    deprecate(
+      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ layout: { ${key}: ... } })\` instead.`
+    );
+  }
+
+  const mergedLayoutOptions = toMerged(layoutAtTopLevel, options.layout || {});
+  const { showPanel, showNav } = mergedLayoutOptions;
+
+  // Safety net: drop any unknown keys that aren't part of API_Layout.
+  const typedLayoutKeys = layoutKeys as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(mergedLayoutOptions, typedLayoutKeys));
+
+  // singleStory always hides the sidebar; otherwise honor showSidebar.
+  if (showNav === false || singleStory) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.navSize = 0;
+  } else if (showNav === true) {
+    nextLayoutState.navSize = nextLayoutState.recentVisibleSizes.navSize;
+  }
+
+  if (showPanel === false) {
+    nextLayoutState.recentVisibleSizes = getRecentVisibleSizes(nextLayoutState);
+    nextLayoutState.bottomPanelHeight = 0;
+    nextLayoutState.rightPanelWidth = 0;
+  } else if (showPanel === true) {
+    nextLayoutState.bottomPanelHeight = nextLayoutState.recentVisibleSizes.bottomPanelHeight;
+    nextLayoutState.rightPanelWidth = nextLayoutState.recentVisibleSizes.rightPanelWidth;
+  }
+
+  return nextLayoutState;
+};
+
+/**
+ * Merges ui options into the existing ui state.
+ *
+ * Ui keys can be provided either at the top level (deprecated) or under
+ * `options.ui` (preferred). Nested ui keys take precedence.
+ *
+ * Numeric sizes are merged in before applying show/hide flags, so
+ * `recentVisibleSizes` is captured from the latest size values.
+ */
+const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: string]: any }) => {
+  const uiKeys = Object.keys(uiState);
+  const uiAtTopLevel = pick(options, uiKeys);
+
+  for (const key of Object.keys(uiAtTopLevel)) {
+    deprecate(
+      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ ui: { ${key}: ... } })\` instead.`
+    );
+  }
+
+  // Safety net: drop any unknown keys that aren't part of API_UI.
+  const typedUiKeys = uiKeys as (keyof API_UI)[];
+  return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
 };
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
@@ -439,23 +535,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     getInitialOptions() {
-      const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
+      const userConfig = provider.getConfig();
       const defaultLayoutState = getDefaultLayoutState();
+
+      const { theme, selectedPanel, layoutCustomisations } = userConfig;
 
       return {
         ...defaultLayoutState,
-        layout: {
-          ...toMerged(
-            defaultLayoutState.layout,
-            pick(options, Object.keys(defaultLayoutState.layout))
-          ),
-          ...(singleStory && { navSize: 0 }),
-        },
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -469,6 +561,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
     getIsNavShown() {
       return getIsNavShown(store.getState());
+    },
+    getNavAvailability(): NavAvailability {
+      const state = store.getState();
+      if (isReviewManagerRoute(state.path, state.customQueryParams)) {
+        return 'unavailable';
+      }
+      return getIsNavShown(state) ? 'shown' : 'hidden';
     },
 
     getShowToolbarWithCustomisations(showToolbar: boolean) {
@@ -513,18 +612,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = {
-        ...layout,
-        ...(options.layout || {}),
-        ...pick(options, Object.keys(layout)),
-        ...(singleStory && { navSize: 0 }),
-      };
+      const updatedLayout = applyLayoutOptions(layout, options, !!singleStory);
 
-      const updatedUi = {
-        ...ui,
-        ...options.ui,
-        ...toMerged(options.ui || {}, pick(options, Object.keys(ui))),
-      };
+      const updatedUi = applyUiOptions(ui, options);
 
       const updatedTheme = {
         ...theme,

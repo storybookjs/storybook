@@ -1,7 +1,7 @@
 // Integration tests for parseReExports — exercises the real oxc-parser binary.
 import { describe, expect, it } from 'vitest';
 
-import { parseReExports } from './index.ts';
+import { parseLocalBindings, parseReExports } from './index.ts';
 
 describe('parseReExports', () => {
   it('maps a named re-export to its source specifier and imported name', async () => {
@@ -61,5 +61,53 @@ describe('parseReExports', () => {
     const map = await parseReExports('/tmp/a.ts', '');
 
     expect(map).toBeInstanceOf(Map);
+  });
+});
+
+describe('parseLocalBindings', () => {
+  it('collects top-level variable, function and class declarations', async () => {
+    const names = await parseLocalBindings(
+      '/tmp/a.ts',
+      `const a = 1, b = 2;\nlet c;\nfunction d() {}\nclass e {}`
+    );
+
+    expect([...names].sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('collects names introduced via `export <declaration>`', async () => {
+    const names = await parseLocalBindings(
+      '/tmp/a.ts',
+      `export const Tab = {};\nexport function Foo() {}\nexport class Bar {}`
+    );
+
+    expect([...names].sort()).toEqual(['Bar', 'Foo', 'Tab']);
+  });
+
+  it('excludes imports and re-exports whose binding lives in another module', async () => {
+    const names = await parseLocalBindings(
+      '/tmp/barrel.ts',
+      `import { x } from './x';\nexport { Tab } from './Tabs';\nexport * from './Other';`
+    );
+
+    expect(names.size).toBe(0);
+  });
+
+  it('includes a local binding that is also separately re-exported by name', async () => {
+    const names = await parseLocalBindings('/tmp/a.ts', `const Tab = {};\nexport { Tab };`);
+
+    expect([...names]).toEqual(['Tab']);
+  });
+
+  it('skips destructuring patterns that are not referenceable by a single name', async () => {
+    const names = await parseLocalBindings('/tmp/a.ts', `const { a } = obj;\nconst plain = 1;`);
+
+    expect([...names]).toEqual(['plain']);
+  });
+
+  it('returns an empty set on parse failure', async () => {
+    const names = await parseLocalBindings('/tmp/a.ts', `const = ;`);
+
+    expect(names).toBeInstanceOf(Set);
+    expect(names.size).toBe(0);
   });
 });

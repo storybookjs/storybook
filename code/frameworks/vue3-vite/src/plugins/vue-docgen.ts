@@ -11,6 +11,7 @@ export async function vueDocgen(): Promise<Plugin> {
   return {
     name: 'storybook:vue-docgen-plugin',
     transform: {
+      order: 'post',
       filter: { id: include },
       async handler(src, id) {
         if (!filter(id)) {

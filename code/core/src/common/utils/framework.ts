@@ -6,6 +6,7 @@ export const frameworkToRenderer: Record<
 > = {
   // frameworks
   [SupportedFramework.ANGULAR]: SupportedRenderer.ANGULAR,
+  [SupportedFramework.ANGULAR_VITE]: SupportedRenderer.ANGULAR,
   [SupportedFramework.EMBER]: SupportedRenderer.EMBER,
   [SupportedFramework.HTML_VITE]: SupportedRenderer.HTML,
   [SupportedFramework.NEXTJS]: SupportedRenderer.REACT,
@@ -42,6 +43,7 @@ export const frameworkToRenderer: Record<
 export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = {
   // frameworks
   [SupportedFramework.ANGULAR]: SupportedBuilder.WEBPACK5,
+  [SupportedFramework.ANGULAR_VITE]: SupportedBuilder.VITE,
   [SupportedFramework.EMBER]: SupportedBuilder.WEBPACK5,
   [SupportedFramework.HTML_VITE]: SupportedBuilder.VITE,
   [SupportedFramework.NEXTJS]: SupportedBuilder.WEBPACK5,

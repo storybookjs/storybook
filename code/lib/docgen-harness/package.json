@@ -26,6 +26,12 @@
     "./package.json": "./package.json"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "@storybook/vue3": "workspace:*",
+    "@testing-library/vue": "^8.0.0",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "typescript": "^6.0.3",
+    "vue": "^3.2.47",
+    "vue-docgen-api": "^4.75.1",
+    "vue-tsc": "latest"
   }
 }

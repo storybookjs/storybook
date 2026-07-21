@@ -9943,7 +9943,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"
   dependencies:
+    "@storybook/vue3": "workspace:*"
+    "@testing-library/vue": "npm:^8.0.0"
+    "@vitejs/plugin-vue": "npm:^4.6.2"
     typescript: "npm:^6.0.3"
+    vue: "npm:^3.2.47"
+    vue-docgen-api: "npm:^4.75.1"
+    vue-tsc: "npm:latest"
   languageName: unknown
   linkType: soft
 

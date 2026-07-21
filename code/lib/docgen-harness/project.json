@@ -4,7 +4,10 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
+    }
   },
   "tags": ["library"]
 }

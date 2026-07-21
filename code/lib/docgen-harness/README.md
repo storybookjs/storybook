@@ -53,6 +53,22 @@ The closeable gaps below are pinned as `test.fails` red markers in `src/vue3/vue
 - Bigints beyond `Number.MAX_SAFE_INTEGER` lose precision in snippets (`BigInt(<bare digits>)`).
 - Thin baselines by design: `Pick`-composed props record `{}`, recursive types a name-only stub, runtime array props `type: undefined`.
 - `defineProps<ReturnType<typeof useComposable>>()` does not even build in the legacy toolchain, so no baseline can exist for it.
+- A statement-block event expression in the template (`@click="{ (a = true), (b = false); }"`) crashes `parse()` outright (#23851), so no baseline can exist for it either.
+
+## Issue-linked cases (vue3)
+
+Fixture cases reproducing open GitHub issues, to verify and close them when the OSA Vue engine lands.
+Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
+
+- #11774, #12331 -> `cross-file-runtime-props/`: an imported runtime props object must resolve to real prop argTypes (legacy records `{}`).
+- #12331, #22187 -> `cross-file-props-spread/`: props spread from an imported function call must be extracted (legacy sees only the inline prop).
+- #12850, #23470 -> `prop-slot-name-collision/`: a prop arg must render as a prop attribute even when a slot shares its name (legacy drops the slot argType and reroutes the prop value into slot content).
+- #19394 -> `runtime-multi-constructor/`: `type: [String, Number]` must become a structured union sbType (legacy records `other` with `"string|number"`).
+- #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options (legacy collapses them to plain `string`).
+- #24270 -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted (legacy records `unknown`).
+- #26465 -> `slots/` (existing case): scoped-slot binding types must be extracted (legacy records `{ entry: unknown; index: unknown }`).
+- #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options (legacy records the alias name only).
+- #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` type argument must resolve its props (legacy extracts none).
 
 ## What does not live here
 

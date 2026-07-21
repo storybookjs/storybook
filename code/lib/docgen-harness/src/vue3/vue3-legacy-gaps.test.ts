@@ -6,12 +6,6 @@ import { describe, expect, test } from 'vitest';
 
 import { BASELINE_PATH } from './baseline-path.ts';
 
-// Red markers for the closeable legacy docgen gaps listed in the README, asserted directly
-// against the committed baseline snapshot text (the pretty-format embeds unescaped quotes
-// and cannot be parsed). While BASELINE_PATH is 'legacy' each marker is an expected
-// failure; flipping it hardens every marker into a plain requirement on the re-recorded
-// baselines. Accepted deltas (static snippets drop event handlers and function args) and
-// type-level friction (the props-generic @ts-expect-error) have no markers.
 const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');

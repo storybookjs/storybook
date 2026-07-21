@@ -94,12 +94,19 @@ const mockManagerStore: any = {
         renderLabel,
       },
     },
+    // MobileNavigation reads the drawer's open state from `layout` and `enableShortcuts` from `ui`.
+    layout: { showMobileNavigation: false },
+    ui: { enableShortcuts: true },
   },
   api: {
     getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
     }),
     getNavAvailability: fn(() => 'shown'),
+    // MobileNavigation reads the nav shortcut and resets the drawer on unmount; stub both so the
+    // mobile stories render and tear down cleanly.
+    getShortcutKeys: fn(() => ({ toggleNav: ['alt', 'S'] })),
+    setMobileNavigation: fn(),
   },
 };
 

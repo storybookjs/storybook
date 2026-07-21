@@ -9,6 +9,7 @@ import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { CompileOptions } from './compiler';
+import { registerDocsService } from './docs-service/server.ts';
 import { registerMdxService } from './mdx-service/server.ts';
 
 /**
@@ -225,9 +226,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   ) {
     const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    registerMdxService({
-      getIndex: () => generator.getIndex(),
-    });
+    const getIndex = () => generator.getIndex();
+    registerMdxService({ getIndex });
+    // MDX must register first so `core/docs` can compose it.
+    registerDocsService({ getIndex });
   }
 };
 
@@ -241,5 +243,5 @@ const optimizeViteDeps = [
   'react',
 ];
 
-export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
+export { docsX as docs, optimizeViteDeps, webpackX as webpack };

@@ -1,72 +1,16 @@
-import React, { useEffect, useRef, type FC } from 'react';
+import React, { useEffect, type FC, type ReactNode } from 'react';
 
-import { styled } from 'storybook/theming';
+import { Select } from 'storybook/internal/components';
 
-import {
-  buildReviewStoryHref,
-  prettifyComponentId,
-  type ReviewNavEntry,
-} from '../review-navigation.ts';
+import { useNavigate } from 'storybook/internal/router';
+import { useStorybookApi } from 'storybook/manager-api';
+
+import { navigateToReviewEntry } from '../review-actions.ts';
+import { prettifyComponentId, resolveNavIndex, type ReviewNavEntry } from '../review-navigation.ts';
 import { type StoryInfo } from '../review-types.ts';
+import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
 
-const PopoverList = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '4px 0',
-  minWidth: 280,
-  maxHeight: '60vh',
-  overflowY: 'auto',
-  fontFamily: theme.typography.fonts.base,
-}));
-
-const PopoverItem = styled.a<{ $active: boolean }>(({ theme, $active }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  padding: '6px 10px',
-  background: $active ? theme.background.hoverable : 'transparent',
-  textDecoration: 'none',
-  color: theme.color.defaultText,
-  '&:hover': { background: theme.background.hoverable },
-  '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: -2,
-  },
-}));
-
-const PopoverItemText = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-  flex: 1,
-  minWidth: 0,
-  overflow: 'hidden',
-});
-
-const PopoverItemComponent = styled.span(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  flexShrink: 0,
-  maxWidth: '55%',
-}));
-
-const PopoverItemSep = styled.span(({ theme }) => ({
-  color: theme.textMutedColor,
-  flexShrink: 0,
-}));
-
-const PopoverItemStoryName = styled.span(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
-  color: theme.textMutedColor,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-}));
-
-const derivePopoverLabel = (
+const derivePickerLabel = (
   storyId: string,
   info?: StoryInfo
 ): { component: string; story: string } => {
@@ -81,48 +25,68 @@ const derivePopoverLabel = (
 };
 
 export interface ReviewCollectionPickerProps {
+  /** Every reviewable story, in navigation order. */
   entries: ReviewNavEntry[];
-  storyInfo: Record<string, StoryInfo>;
+  /** The story currently open in the review. */
   activeEntry: ReviewNavEntry;
-  onClose: () => void;
+  /** Story id → resolved component title + name, for the option labels. */
+  storyInfo: Record<string, StoryInfo>;
+  /** Trigger content, e.g. the "current / total" counter. */
+  children: ReactNode;
 }
 
+/**
+ * Story navigator for the review toolbar. A thin wrapper around the design-system
+ * {@link Select}: the trigger renders the caller-provided counter, and the listbox
+ * lets the user jump to any story in the review. Choosing an option navigates to
+ * that story.
+ */
 export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
   entries,
-  storyInfo,
   activeEntry,
-  onClose,
+  storyInfo,
+  children,
 }) => {
-  const activeRef = useRef<HTMLAnchorElement>(null);
+  const api = useStorybookApi();
+  const navigate = useNavigate();
+  const filtersRef = useReviewFiltersRef();
+
+  // Each option carries the entry's index in `entries` as its value. A story can
+  // appear under several collections, so its storyId is not unique — the index is,
+  // which lets us resolve the exact selected slot (not just the first duplicate).
+  const options = entries.map((entry, index) => {
+    const { component, story } = derivePickerLabel(entry.storyId, storyInfo[entry.storyId]);
+    return { value: index, title: component, description: story };
+  });
+
+  // Preselect the active slot without driving navigation: `resolveNavIndex` matches
+  // both storyId and collectionIndex, so the picker highlights the correct duplicate.
+  const activeValue = resolveNavIndex(entries, activeEntry);
+
+  // Creates a buffer that helps batch useEffects on quick switch and limit performance issues in the listbox.
+  // Starts undefined so the navigation effect only fires after an explicit user selection, never on mount.
+  const [nextStory, setNextStory] = React.useState<ReviewNavEntry | undefined>(undefined);
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [activeEntry.storyId, activeEntry.collectionIndex]);
+    if (nextStory) {
+      navigateToReviewEntry(api, navigate, nextStory, filtersRef.current);
+    }
+  }, [nextStory, api, navigate, filtersRef]);
 
   return (
-    <PopoverList role="list" aria-label="Stories in this review">
-      {entries.map((entry, index) => {
-        const { component, story } = derivePopoverLabel(entry.storyId, storyInfo[entry.storyId]);
-        const href = buildReviewStoryHref(entry);
-        const isActive =
-          entry.storyId === activeEntry.storyId &&
-          entry.collectionIndex === activeEntry.collectionIndex;
-        return (
-          <PopoverItem
-            key={`${entry.collectionIndex}-${entry.storyId}-${index}`}
-            $active={isActive}
-            ref={isActive ? activeRef : undefined}
-            href={href}
-            onClick={onClose}
-          >
-            <PopoverItemText>
-              <PopoverItemComponent>{component}</PopoverItemComponent>
-              <PopoverItemSep>/</PopoverItemSep>
-              <PopoverItemStoryName>{story}</PopoverItemStoryName>
-            </PopoverItemText>
-          </PopoverItem>
-        );
-      })}
-    </PopoverList>
+    <Select
+      ariaLabel="Select story"
+      size="small"
+      padding="small"
+      options={options}
+      defaultOptions={activeValue >= 0 ? activeValue : undefined}
+      showSelectedOptionTitle={false}
+      onSelect={(value) => {
+        const entry = typeof value === 'number' ? entries[value] : undefined;
+        setNextStory(entry);
+      }}
+    >
+      {children}
+    </Select>
   );
 };

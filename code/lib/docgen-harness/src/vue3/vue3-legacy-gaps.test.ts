@@ -29,6 +29,7 @@ const BASELINES = {
   scopedSlotBindingsArgTypes: 'slots/argtypes.snapshot',
   wholeIntersectionArgTypes: 'type-intersection-whole/argtypes.snapshot',
   unionAliasArgTypes: 'cross-file-union-alias/argtypes.snapshot',
+  tsEnumArgTypes: 'props-ts-enum/argtypes.snapshot',
   collisionSnippet: 'prop-slot-name-collision/snippet-IconPropAsWritten.snapshot',
 } as const;
 
@@ -146,6 +147,14 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     // reach the sbType Controls reads (an enum), not just summary text.
     expect(baseline('unionAliasArgTypes')).toContain('danger');
     expect(baseline('unionAliasArgTypes')).toContain('"name": "enum"');
+  });
+
+  gapTest('TypeScript enum props are unfolded to their members', () => {
+    // Review feedback on #35545 - legacy: name-only "Severity"/"Level" with sbType
+    // "other"; the members must reach the sbType Controls reads (an enum). The match
+    // accepts member refs ("Severity.Warning") as well as literal values ("warning").
+    expect(baseline('tsEnumArgTypes')).toContain('"name": "enum"');
+    expect(baseline('tsEnumArgTypes')).toMatch(/[Ww]arning/);
   });
 });
 

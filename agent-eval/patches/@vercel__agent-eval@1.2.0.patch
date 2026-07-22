@@ -1,0 +1,214 @@
+diff --git a/dist/cli.js b/dist/cli.js
+index 62513a2..5a50e3f 100644
+--- a/dist/cli.js
++++ b/dist/cli.js
+@@ -230,8 +230,13 @@ program
+     if (options.watch) {
+         playgroundArgs.push('--watch');
+     }
+-    // Try to run the playground package directly, fall back to npx
+-    const result = spawnSync('npx', ['@vercel/agent-eval-playground', ...playgroundArgs], { stdio: 'inherit', cwd: process.cwd() });
++    // Pin both the playground and its Next.js to a matched pair. The playground
++    // ships a prebuilt .next built with next@16.1.6 but floats `next: ^16.0.0`, so
++    // an unpinned `npx @vercel/agent-eval-playground` resolves a newer Next (e.g.
++    // 16.2.x) that cannot run the 16.1.6 build — it crashes on boot in setupFsCheck
++    // (`reading 'map'` on the missing routesManifest.onMatchHeaders) and 500s on
++    // every render (`reading 'forceStatic'`). Pinning keeps build and runtime in sync.
++    const result = spawnSync('npx', ['-y', '-p', '@vercel/agent-eval-playground@0.1.2', '-p', 'next@16.1.6', 'agent-eval-playground', ...playgroundArgs], { stdio: 'inherit', cwd: process.cwd() });
+     process.exit(result.status ?? 1);
+ });
+ /**
+@@ -373,10 +378,10 @@ async function runAllCommand(experimentArgs, options) {
+         }
+         // Warn if classifier is disabled
+         if (!isClassifierEnabled()) {
+-            console.log(chalk.yellow('\n⚠️  Classifier disabled: Neither AI_GATEWAY_API_KEY nor VERCEL_OIDC_TOKEN is set.\n' +
++            console.log(chalk.yellow('\n⚠️  Classifier disabled: None of ANTHROPIC_API_KEY, AI_GATEWAY_API_KEY, or VERCEL_OIDC_TOKEN is set.\n' +
+                 '  The classifier automatically identifies why evals failed (model error, infrastructure issue, or timeout).\n' +
+                 '  Without it, all failed results are kept as-is and housekeeping will not remove non-model failures.\n' +
+-                '  Set AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to enable classifier for cleaner result management.\n'));
++                '  Set ANTHROPIC_API_KEY, AI_GATEWAY_API_KEY, or VERCEL_OIDC_TOKEN to enable classifier for cleaner result management.\n'));
+         }
+         // Rate-limit sandbox starts across all experiments to avoid 429s (20 starts per 2 seconds)
+         const rateLimiter = new StartRateLimiter(20, 2_000);
+diff --git a/dist/lib/agents/codex/run.mjs b/dist/lib/agents/codex/run.mjs
+index 12ff2d6..a6a3c5e 100644
+--- a/dist/lib/agents/codex/run.mjs
++++ b/dist/lib/agents/codex/run.mjs
+@@ -287,12 +287,14 @@ export async function runAgent(input) {
+   const agentExitCode = res.status == null ? -1 : res.status;
+ 
+   // Capture transcript + observed model regardless of success (the old adapter did
+-  // this even on the non-zero-exit path). The inline --json on stdout is the
+-  // transcript; observedModel comes from the saved session file under ~/.codex.
+-  const transcript = extractTranscriptFromOutput(output) ?? null;
++  // this even on the non-zero-exit path). Prefer the inline --json stdout, but
++  // fall back to the saved session file under ~/.codex; newer Codex builds may
++  // write the session transcript there without echoing the full JSONL to stdout.
++  const stdoutTranscript = extractTranscriptFromOutput(output);
+   const threadId = extractCodexThreadId(output);
+   const sessionTranscript = captureCodexSessionTranscript(threadId);
+-  const observedModel = extractObservedModelFromCodexSession(sessionTranscript) ?? null;
++  const transcript = stdoutTranscript ?? sessionTranscript ?? null;
++  const observedModel = extractObservedModelFromCodexSession(sessionTranscript ?? stdoutTranscript) ?? null;
+ 
+   if (res.error || agentExitCode !== 0) {
+     // Mirror the old error string: last 5 lines of output, else a coded fallback.
+diff --git a/dist/lib/classifier.js b/dist/lib/classifier.js
+index 5a6cf9b..df8b19f 100644
+--- a/dist/lib/classifier.js
++++ b/dist/lib/classifier.js
+@@ -6,7 +6,8 @@
+  * - "infra" — infrastructure broke (API errors, rate limits, crashes)
+  * - "timeout" — the run hit its time limit
+  *
+- * Uses AI classification via the Vercel AI Gateway. Requires AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN.
++ * Uses AI classification via the Anthropic API (ANTHROPIC_API_KEY) or the
++ * Vercel AI Gateway (AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN).
+  */
+ import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
+ import { join, resolve } from 'path';
+@@ -14,11 +15,13 @@ import { tool } from 'ai';
+ import { z } from 'zod';
+ /**
+  * Check if the classifier feature is enabled.
+- * The classifier requires either AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN to be set.
+- * If neither is available, classification is disabled and housekeeping won't clean up non-model failures.
++ * The classifier requires ANTHROPIC_API_KEY, AI_GATEWAY_API_KEY, or VERCEL_OIDC_TOKEN to be set.
++ * If none is available, classification is disabled and housekeeping won't clean up non-model failures.
+  */
+ export function isClassifierEnabled() {
+-    return !!(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
++    return !!(process.env.ANTHROPIC_API_KEY ||
++        process.env.AI_GATEWAY_API_KEY ||
++        process.env.VERCEL_OIDC_TOKEN);
+ }
+ const CLASSIFIER_SYSTEM_PROMPT = `You are a failure classifier for an AI coding agent benchmark.
+ 
+@@ -193,8 +196,8 @@ export function createClassifierTools(evalResultDir) {
+     };
+ }
+ /**
+- * Classify a failure using AI via the Vercel AI Gateway.
+- * Requires AI_GATEWAY_API_KEY in the environment.
++ * Classify a failure using AI via the Anthropic API or the Vercel AI Gateway.
++ * Requires ANTHROPIC_API_KEY or AI_GATEWAY_API_KEY in the environment.
+  *
+  * Throws on AI gateway / network errors so the caller can surface them.
+  * Returns null only when the model itself failed to call classify() within
+@@ -202,7 +205,23 @@ export function createClassifierTools(evalResultDir) {
+  */
+ export async function classifyWithAI(evalResultDir, evalName, experimentName) {
+     const { generateText, hasToolCall, createGateway } = await import('ai');
+-    const gateway = createGateway({ apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? '' });
++    // Prefer a direct Anthropic API key so classification doesn't consume
++    // Vercel AI Gateway credits; fall back to the gateway when only
++    // AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN is available.
++    let model;
++    if (process.env.ANTHROPIC_API_KEY) {
++        const { createAnthropic } = await import('@ai-sdk/anthropic');
++        // ANTHROPIC_BASE_URL is commonly set host-only (Claude Code convention),
++        // but @ai-sdk/anthropic expects it to include the /v1 suffix — normalize.
++        const rawBaseURL = process.env.ANTHROPIC_BASE_URL?.replace(/\/+$/, '');
++        const baseURL = rawBaseURL && !rawBaseURL.endsWith('/v1') ? `${rawBaseURL}/v1` : rawBaseURL;
++        const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY, baseURL });
++        model = anthropic('claude-haiku-4-5-20251001');
++    }
++    else {
++        const gateway = createGateway({ apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? '' });
++        model = gateway('anthropic/claude-haiku-4-5-20251001');
++    }
+     let classification = null;
+     const explorationTools = createClassifierTools(evalResultDir);
+     const allTools = {
+@@ -224,7 +243,7 @@ export async function classifyWithAI(evalResultDir, evalName, experimentName) {
+         }),
+     };
+     await generateText({
+-        model: gateway('anthropic/claude-haiku-4-5-20251001'),
++        model,
+         system: CLASSIFIER_SYSTEM_PROMPT,
+         prompt: `Classify the failure for eval "${evalName}" (experiment: ${experimentName}). Use the exploration tools to investigate, then call classify() with your verdict.`,
+         tools: allTools,
+@@ -234,7 +253,7 @@ export async function classifyWithAI(evalResultDir, evalName, experimentName) {
+ }
+ /**
+  * Classify a failed eval result using AI.
+- * Requires AI_GATEWAY_API_KEY in the environment.
++ * Requires ANTHROPIC_API_KEY or AI_GATEWAY_API_KEY in the environment.
+  *
+  * Caches results in classification.json within the eval result directory.
+  * Throws if the AI gateway call itself fails — callers must handle.
+diff --git a/dist/lib/docker-sandbox.js b/dist/lib/docker-sandbox.js
+index 99df8fb..369c403 100644
+--- a/dist/lib/docker-sandbox.js
++++ b/dist/lib/docker-sandbox.js
+@@ -3,6 +3,7 @@
+  * Uses dockerode to manage Docker containers as sandboxes.
+  */
+ import Docker from 'dockerode';
++import { PassThrough } from 'node:stream';
+ import * as tar from 'tar-stream';
+ /**
+  * Docker images for each Node.js runtime.
+@@ -184,47 +185,22 @@ export class DockerSandboxManager {
+         });
+         const stream = await exec.start({ hijack: true, stdin: false });
+         return new Promise((resolve, reject) => {
+-            let stdout = '';
+-            let stderr = '';
+-            // Docker multiplexes stdout/stderr in the stream
+-            // We need to demux it
++            // Docker multiplexes stdout/stderr into a single stream; let dockerode's
++            // modem demux it. demuxStream reassembles frames split across chunk
++            // boundaries — the hand-rolled parser dropped bytes there, corrupting
++            // large reads (e.g. transcript `cat`s).
+             const stdoutChunks = [];
+             const stderrChunks = [];
+-            stream.on('data', (chunk) => {
+-                // Docker stream format: 8-byte header + payload
+-                // Header: [stream_type (1 byte), 0, 0, 0, size (4 bytes)]
+-                // stream_type: 1 = stdout, 2 = stderr
+-                let offset = 0;
+-                while (offset < chunk.length) {
+-                    if (offset + 8 > chunk.length) {
+-                        // Incomplete header, treat rest as stdout
+-                        stdoutChunks.push(chunk.slice(offset));
+-                        break;
+-                    }
+-                    const streamType = chunk[offset];
+-                    const size = chunk.readUInt32BE(offset + 4);
+-                    if (offset + 8 + size > chunk.length) {
+-                        // Incomplete payload, treat rest as stdout
+-                        stdoutChunks.push(chunk.slice(offset + 8));
+-                        break;
+-                    }
+-                    const payload = chunk.slice(offset + 8, offset + 8 + size);
+-                    if (streamType === 1) {
+-                        stdoutChunks.push(payload);
+-                    }
+-                    else if (streamType === 2) {
+-                        stderrChunks.push(payload);
+-                    }
+-                    else {
+-                        // Unknown type, assume stdout
+-                        stdoutChunks.push(payload);
+-                    }
+-                    offset += 8 + size;
+-                }
+-            });
++            const stdoutStream = new PassThrough();
++            const stderrStream = new PassThrough();
++            stdoutStream.on('data', (chunk) => stdoutChunks.push(chunk));
++            stderrStream.on('data', (chunk) => stderrChunks.push(chunk));
++            this.docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+             stream.on('end', async () => {
+-                stdout = Buffer.concat(stdoutChunks).toString('utf-8');
+-                stderr = Buffer.concat(stderrChunks).toString('utf-8');
++                stdoutStream.end();
++                stderrStream.end();
++                const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
++                const stderr = Buffer.concat(stderrChunks).toString('utf-8');
+                 try {
+                     const inspection = await exec.inspect();
+                     resolve({

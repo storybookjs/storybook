@@ -1,0 +1,1 @@
+Create stories for the existing `AlertBanner` in `src/components/AlertBanner.tsx`. Place them in `stories/AlertBanner.stories.tsx`. Cover `info`, `success`, `warning`, `error`, and a dismissible example that calls `onClose`. Use CSF args/controls for `message`, `variant`, and `dismissible`. Only adjust the component if needed for storyability.

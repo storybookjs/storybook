@@ -1,0 +1,77 @@
+{
+	"name": "@storybook/addon-mcp",
+	"version": "0.7.0",
+	"description": "Help agents automatically write and test stories for your UI components",
+	"keywords": [
+		"ai",
+		"mcp",
+		"storybook-addon"
+	],
+	"license": "MIT",
+	"author": "Storybook Core Team",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/storybookjs/mcp.git",
+		"directory": "packages/addon-mcp"
+	},
+	"files": [
+		"dist/**/*",
+		"README.md",
+		"*.js",
+		"*.d.ts"
+	],
+	"type": "module",
+	"exports": {
+		"./preset": "./dist/preset.js",
+		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
+		"./package.json": "./package.json"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
+		"build": "tsdown",
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
+		"publint": "publint",
+		"test": "cd ../.. && pnpm vitest --project=@storybook/addon-mcp",
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@storybook/mcp": "workspace:*",
+		"@tmcp/adapter-valibot": "catalog:",
+		"@tmcp/transport-http": "catalog:",
+		"picoquery": "^2.5.0",
+		"tmcp": "catalog:",
+		"valibot": "catalog:"
+	},
+	"devDependencies": {
+		"@storybook/addon-a11y": "catalog:",
+		"@storybook/addon-vitest": "catalog:",
+		"storybook": "catalog:"
+	},
+	"peerDependencies": {
+		"@storybook/addon-vitest": "^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0",
+		"storybook": "^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0"
+	},
+	"peerDependenciesMeta": {
+		"@storybook/addon-vitest": {
+			"optional": true
+		}
+	},
+	"mcpName": "io.github.storybookjs/addon-mcp",
+	"storybook": {
+		"displayName": "Addon MCP",
+		"supportedFrameworks": [
+			"react",
+			"vue3",
+			"angular",
+			"web-components",
+			"html",
+			"svelte",
+			"preact",
+			"react-native"
+		],
+		"icon": "https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png"
+	}
+}

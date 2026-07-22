@@ -127,11 +127,6 @@ describe('useSourceProps – transformCode', () => {
       const { format } = getProps({ code: 'const x = 1;', format: 'dedent' });
       expect(format).toBe('dedent');
     });
-
-    it('falls back to parameters.docs.source.format for parameter code', () => {
-      const { format } = getProps({}, { code: 'const y = 2;', format: 'dedent' });
-      expect(format).toBe('dedent');
-    });
   });
 
   it('returns a SOURCE_UNAVAILABLE error when there is no code and no story', () => {

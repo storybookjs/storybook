@@ -178,14 +178,10 @@ export const useSourceProps = (
     return { error: SourceError.SOURCE_UNAVAILABLE };
   }
 
-  // When code is passed through the `code` prop the author is being fully explicit, so we
-  // honor the `format` prop as-is (matching pre-existing behavior). Otherwise (parameter
-  // code or a story snippet) we fall back through parameter/story formats, mirroring how
-  // `language` and `dark` resolve above.
-  const format =
-    props.code !== undefined
-      ? props.format
-      : (props.format ?? sourceParameters.format ?? source?.format ?? true);
+  // `format` resolution is intentionally unchanged from upstream (orthogonal to
+  // transformCode): honor the explicit `format` prop when `code` is provided directly,
+  // otherwise use the story/source format.
+  const format = props.code !== undefined ? props.format : (source?.format ?? true);
 
   return { code, format, language, dark };
 };

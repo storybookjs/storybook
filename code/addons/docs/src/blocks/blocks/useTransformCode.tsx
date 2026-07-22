@@ -12,24 +12,34 @@ export function useTransformCode(
   transform: (code: string, storyContext: ReducedStoryContext) => string | Promise<string>,
   storyContext: ReducedStoryContext
 ) {
-  const [transformedCode, setTransformedCode] = useState('Transforming...');
-
   const transformed = transform ? transform?.(source, storyContext) : source;
+  const isPromise =
+    typeof transformed === 'object' && typeof (transformed as Promise<string>)?.then === 'function';
+
+  // Synchronous transforms (including the identity transform used when there is nothing to
+  // transform) are rendered directly, avoiding a needless "Transforming..." -> value state
+  // update and the extra re-render that comes with it. Only asynchronous transforms stage
+  // their result through state.
+  const [transformedCode, setTransformedCode] = useState(
+    isPromise ? 'Transforming...' : (transformed as string)
+  );
 
   useEffect(() => {
-    async function getTransformedCode() {
-      const transformResult = await transformed;
-      if (transformResult !== transformedCode) {
-        setTransformedCode(transformResult);
-      }
+    if (!isPromise) {
+      return;
     }
 
-    getTransformedCode();
+    let cancelled = false;
+    Promise.resolve(transformed).then((transformResult) => {
+      if (!cancelled) {
+        setTransformedCode((current) => (current !== transformResult ? transformResult : current));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   });
 
-  if (typeof transformed === 'object' && typeof transformed.then === 'function') {
-    return transformedCode;
-  }
-
-  return transformed as string;
+  return isPromise ? transformedCode : (transformed as string);
 }

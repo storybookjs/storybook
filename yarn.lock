@@ -9563,10 +9563,11 @@ __metadata:
     picoquery: "npm:^2.5.0"
     storybook: "workspace:*"
     tmcp: "npm:^1.19.4"
+    typescript: "npm:^6.0.3"
     valibot: "npm:^1.4.0"
   peerDependencies:
-    "@storybook/addon-vitest": ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0
-    storybook: ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0
+    "@storybook/addon-vitest": "workspace:^"
+    storybook: "workspace:^"
   peerDependenciesMeta:
     "@storybook/addon-vitest":
       optional: true

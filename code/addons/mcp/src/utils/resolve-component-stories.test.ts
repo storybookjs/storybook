@@ -19,7 +19,8 @@ const { existingPaths, missingPaths, ioErrorPaths } = vi.hoisted(() => ({
   ioErrorPaths: new Set<string>(),
 }));
 
-vi.mock('node:fs', () => {
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
   const realpathSync: any = (p: string) => {
     if (ioErrorPaths.has(p)) {
       throw Object.assign(new Error(`EACCES: ${p}`), { code: 'EACCES' });
@@ -30,7 +31,7 @@ vi.mock('node:fs', () => {
     return p;
   };
   realpathSync.native = realpathSync;
-  const fs = { realpathSync, existsSync: (p: string) => existingPaths.has(p) };
+  const fs = { ...actual, realpathSync, existsSync: (p: string) => existingPaths.has(p) };
   return { ...fs, default: fs };
 });
 

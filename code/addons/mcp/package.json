@@ -7,33 +7,34 @@
     "mcp",
     "storybook-addon"
   ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/mcp",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/storybookjs/mcp.git",
-    "directory": "packages/addon-mcp"
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/mcp"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
   "author": "Storybook Core Team",
   "type": "module",
   "exports": {
-    "./preset": "./dist/preset.js",
-    "./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
-    "./package.json": "./package.json"
+    "./internal/preview-stories-app-script": "./dist/tools/preview-stories/preview-stories-app-script.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
   "files": [
     "dist/**/*",
     "README.md",
     "*.js",
-    "*.d.ts"
+    "*.d.ts",
+    "!src/**/*"
   ],
-  "scripts": {
-    "prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-    "build": "tsdown",
-    "inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
-    "publint": "publint",
-    "test": "cd ../.. && pnpm vitest --project=@storybook/addon-mcp",
-    "typecheck": "tsc"
-  },
   "dependencies": {
     "@storybook/mcp": "workspace:*",
     "@tmcp/adapter-valibot": "^0.1.5",
@@ -45,11 +46,12 @@
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
-    "storybook": "workspace:*"
+    "storybook": "workspace:*",
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@storybook/addon-vitest": "^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0",
-    "storybook": "^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0"
+    "@storybook/addon-vitest": "workspace:^",
+    "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@storybook/addon-vitest": {

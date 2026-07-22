@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { McpServer } from 'tmcp';
-import type { AddonContext } from './types';
+import type { AddonContext } from './types.ts';
 
 export async function collectTelemetry({
   event,

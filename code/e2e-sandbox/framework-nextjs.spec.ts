@@ -27,7 +27,6 @@ test.describe('Next.js', () => {
       sbPage = new SbPage(page, expect);
     });
 
-    // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
     test.skip('should lazy load images by default', async () => {
       await sbPage.navigateToStory('stories/frameworks/nextjs/Image', 'lazy');
 
@@ -36,7 +35,6 @@ test.describe('Next.js', () => {
       expect(await img.evaluate<boolean, HTMLImageElement>((image) => image.complete)).toBeFalsy();
     });
 
-    // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
     test.skip('should eager load images when loading parameter is set to eager', async () => {
       await sbPage.navigateToStory('stories/frameworks/nextjs/Image', 'eager');
 

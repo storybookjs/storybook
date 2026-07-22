@@ -159,45 +159,6 @@
       "rules": {
         "storybook/no-uninstalled-addons": "error"
       }
-    },
-    {
-      "files": ["**/e2e-sandbox/**", "**/e2e-internal/**"],
-      "rules": {
-        "playwright/expect-expect": "warn",
-        "playwright/max-nested-describe": "warn",
-        "playwright/missing-playwright-await": "error",
-        "playwright/no-conditional-expect": "warn",
-        "playwright/no-conditional-in-test": "warn",
-        "playwright/no-element-handle": "warn",
-        "playwright/no-eval": "warn",
-        "playwright/no-focused-test": "error",
-        "playwright/no-force-option": "warn",
-        "playwright/no-nested-step": "warn",
-        "playwright/no-networkidle": "error",
-        "playwright/no-page-pause": "warn",
-        "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
-        "playwright/no-standalone-expect": "error",
-        "playwright/no-unsafe-references": "error",
-        "playwright/no-useless-await": "warn",
-        "playwright/no-useless-not": "warn",
-        "playwright/no-wait-for-selector": "warn",
-        "playwright/no-wait-for-timeout": "warn",
-        "playwright/prefer-comparison-matcher": "error",
-        "playwright/prefer-equality-matcher": "error",
-        "playwright/prefer-hooks-on-top": "error",
-        "playwright/prefer-strict-equal": "error",
-        "playwright/prefer-to-be": "error",
-        "playwright/prefer-to-contain": "error",
-        "playwright/prefer-to-have-count": "error",
-        "playwright/prefer-to-have-length": "error",
-        "playwright/prefer-web-first-assertions": "error",
-        "playwright/require-to-throw-message": "error",
-        "playwright/require-top-level-describe": "error",
-        "playwright/valid-describe-callback": "error",
-        "playwright/valid-expect": "error",
-        "playwright/valid-expect-in-promise": "error",
-        "playwright/valid-title": "error"
-      }
     }
   ]
 }

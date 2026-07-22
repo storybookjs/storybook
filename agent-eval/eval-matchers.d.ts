@@ -4,11 +4,11 @@
 import 'vitest';
 
 declare module 'vitest' {
-	// biome-ignore lint/suspicious/noExplicitAny: must match vitest's `Assertion<T = any>` to merge.
-	interface Assertion<T = any> {
-		/** LLM-judge: re-invokes the agent to judge `criterion` against the subject. */
-		toSatisfyCriterion(criterion: string): Promise<void>;
-		/** LLM-judge: scores the subject against `criterion`, asserts >= `threshold` (0–1). */
-		toScoreAtLeast(criterion: string, threshold: number): Promise<void>;
-	}
+  // biome-ignore lint/suspicious/noExplicitAny: must match vitest's `Assertion<T = any>` to merge.
+  interface Assertion<T = any> {
+    /** LLM-judge: re-invokes the agent to judge `criterion` against the subject. */
+    toSatisfyCriterion(criterion: string): Promise<void>;
+    /** LLM-judge: scores the subject against `criterion`, asserts >= `threshold` (0–1). */
+    toScoreAtLeast(criterion: string, threshold: number): Promise<void>;
+  }
 }

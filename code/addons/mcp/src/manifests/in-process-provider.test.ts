@@ -3,9 +3,9 @@ import type { Options, StoryIndex } from 'storybook/internal/types';
 
 vi.mock('../utils/get-story-index.ts', () => ({ getStoryIndex: vi.fn() }));
 vi.mock('./service-access.ts', () => ({
-	getDocgenService: vi.fn(),
-	getStoryDocsService: vi.fn(),
-	getMdxService: vi.fn(),
+  getDocgenService: vi.fn(),
+  getStoryDocsService: vi.fn(),
+  getMdxService: vi.fn(),
 }));
 
 import { createDocgenServerManifestAccess } from './in-process-provider.ts';
@@ -16,27 +16,27 @@ const options = {} as Options;
 
 /** Story index with one manifest component (`button`) and one unattached doc (`intro--docs`). */
 const index: StoryIndex = {
-	v: 5,
-	entries: {
-		'button--primary': {
-			type: 'story',
-			subtype: 'story',
-			id: 'button--primary',
-			name: 'Primary',
-			title: 'Button',
-			importPath: './Button.stories.tsx',
-			tags: ['manifest'],
-		},
-		'intro--docs': {
-			type: 'docs',
-			id: 'intro--docs',
-			name: 'Intro',
-			title: 'Intro',
-			importPath: './Intro.mdx',
-			storiesImports: [],
-			tags: ['manifest', 'unattached-mdx'],
-		},
-	},
+  v: 5,
+  entries: {
+    'button--primary': {
+      type: 'story',
+      subtype: 'story',
+      id: 'button--primary',
+      name: 'Primary',
+      title: 'Button',
+      importPath: './Button.stories.tsx',
+      tags: ['manifest'],
+    },
+    'intro--docs': {
+      type: 'docs',
+      id: 'intro--docs',
+      name: 'Intro',
+      title: 'Intro',
+      importPath: './Intro.mdx',
+      storiesImports: [],
+      tags: ['manifest', 'unattached-mdx'],
+    },
+  },
 } as unknown as StoryIndex;
 
 const docgen = vi.fn();
@@ -46,168 +46,168 @@ const mdxForComponent = vi.fn();
 const mdxForAllComponents = vi.fn();
 
 function query<T extends (...args: any[]) => any>(loaded: T) {
-	return { loaded, get: vi.fn() };
+  return { loaded, get: vi.fn() };
 }
 
 beforeEach(() => {
-	vi.clearAllMocks();
+  vi.clearAllMocks();
 
-	vi.mocked(getStoryIndex).mockResolvedValue(index);
+  vi.mocked(getStoryIndex).mockResolvedValue(index);
 
-	docgenForAllComponents.mockResolvedValue({
-		button: { id: 'button', name: 'Button', description: 'A button' },
-	});
-	docgen.mockResolvedValue({
-		id: 'button',
-		name: 'Button',
-		description: 'A button',
-		reactComponentMeta: { props: {} },
-	});
-	storyDocs.mockResolvedValue({
-		id: 'button',
-		name: 'Button',
-		path: 'src/Button.tsx',
-		import: "import { Button } from './Button'",
-		stories: {
-			'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-		},
-	});
-	mdxForComponent.mockResolvedValue({
-		id: 'intro--docs',
-		name: 'Intro',
-		docs: {
-			'intro--docs': { id: 'intro--docs', name: 'Intro', title: 'Intro', content: '# Welcome' },
-		},
-	});
-	mdxForAllComponents.mockResolvedValue({
-		'intro--docs': {
-			id: 'intro--docs',
-			name: 'Intro',
-			docs: { 'intro--docs': { id: 'intro--docs', name: 'Intro' } },
-		},
-	});
+  docgenForAllComponents.mockResolvedValue({
+    button: { id: 'button', name: 'Button', description: 'A button' },
+  });
+  docgen.mockResolvedValue({
+    id: 'button',
+    name: 'Button',
+    description: 'A button',
+    reactComponentMeta: { props: {} },
+  });
+  storyDocs.mockResolvedValue({
+    id: 'button',
+    name: 'Button',
+    path: 'src/Button.tsx',
+    import: "import { Button } from './Button'",
+    stories: {
+      'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+    },
+  });
+  mdxForComponent.mockResolvedValue({
+    id: 'intro--docs',
+    name: 'Intro',
+    docs: {
+      'intro--docs': { id: 'intro--docs', name: 'Intro', title: 'Intro', content: '# Welcome' },
+    },
+  });
+  mdxForAllComponents.mockResolvedValue({
+    'intro--docs': {
+      id: 'intro--docs',
+      name: 'Intro',
+      docs: { 'intro--docs': { id: 'intro--docs', name: 'Intro' } },
+    },
+  });
 
-	vi.mocked(getDocgenService).mockResolvedValue({
-		queries: {
-			docgen: query(docgen),
-			docgenForAllComponents: query(docgenForAllComponents),
-		},
-	} as any);
-	vi.mocked(getStoryDocsService).mockResolvedValue({
-		queries: { storyDocs: query(storyDocs) },
-	} as any);
-	vi.mocked(getMdxService).mockResolvedValue({
-		queries: {
-			mdxForComponent: query(mdxForComponent),
-			mdxForAllComponents: query(mdxForAllComponents),
-		},
-	} as any);
+  vi.mocked(getDocgenService).mockResolvedValue({
+    queries: {
+      docgen: query(docgen),
+      docgenForAllComponents: query(docgenForAllComponents),
+    },
+  } as any);
+  vi.mocked(getStoryDocsService).mockResolvedValue({
+    queries: { storyDocs: query(storyDocs) },
+  } as any);
+  vi.mocked(getMdxService).mockResolvedValue({
+    queries: {
+      mdxForComponent: query(mdxForComponent),
+      mdxForAllComponents: query(mdxForAllComponents),
+    },
+  } as any);
 });
 
 describe('createDocgenServerManifestAccess - manifestProvider', () => {
-	it('builds the shallow components.json list surface from the live services', async () => {
-		const { manifestProvider } = createDocgenServerManifestAccess(options);
-		const json = JSON.parse(await manifestProvider(undefined, './manifests/components.json'));
+  it('builds the shallow components.json list surface from the live services', async () => {
+    const { manifestProvider } = createDocgenServerManifestAccess(options);
+    const json = JSON.parse(await manifestProvider(undefined, './manifests/components.json'));
 
-		expect(json.v).toBe(1);
-		expect(json.components.button).toEqual({
-			id: 'button',
-			name: 'Button',
-			description: 'A button',
-			stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
-		});
-	});
+    expect(json.v).toBe(1);
+    expect(json.components.button).toEqual({
+      id: 'button',
+      name: 'Button',
+      description: 'A button',
+      stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+    });
+  });
 
-	it('builds the shallow docs.json list surface for unattached docs', async () => {
-		const { manifestProvider } = createDocgenServerManifestAccess(options);
-		const json = JSON.parse(await manifestProvider(undefined, './manifests/docs.json'));
+  it('builds the shallow docs.json list surface for unattached docs', async () => {
+    const { manifestProvider } = createDocgenServerManifestAccess(options);
+    const json = JSON.parse(await manifestProvider(undefined, './manifests/docs.json'));
 
-		expect(json.docs['intro--docs']).toEqual({
-			id: 'intro--docs',
-			name: 'Intro',
-		});
-	});
+    expect(json.docs['intro--docs']).toEqual({
+      id: 'intro--docs',
+      name: 'Intro',
+    });
+  });
 
-	it('serves a single story-docs service file wrapped under { components: { [id] } }', async () => {
-		const { manifestProvider } = createDocgenServerManifestAccess(options);
-		const json = JSON.parse(
-			await manifestProvider(undefined, './services/core/story-docs/button.json'),
-		);
+  it('serves a single story-docs service file wrapped under { components: { [id] } }', async () => {
+    const { manifestProvider } = createDocgenServerManifestAccess(options);
+    const json = JSON.parse(
+      await manifestProvider(undefined, './services/core/story-docs/button.json')
+    );
 
-		expect(storyDocs).toHaveBeenCalledWith({ id: 'button' });
-		expect(json.components.button.stories['button--primary'].name).toBe('Primary');
-	});
+    expect(storyDocs).toHaveBeenCalledWith({ id: 'button' });
+    expect(json.components.button.stories['button--primary'].name).toBe('Primary');
+  });
 
-	it('does not expose docgen or mdx service files in dev', async () => {
-		const { manifestProvider } = createDocgenServerManifestAccess(options);
+  it('does not expose docgen or mdx service files in dev', async () => {
+    const { manifestProvider } = createDocgenServerManifestAccess(options);
 
-		await expect(manifestProvider(undefined, './services/core/docgen/button.json')).rejects.toThrow(
-			/Unsupported in-process manifest path/,
-		);
-		await expect(
-			manifestProvider(undefined, './services/addon-docs/mdx/intro--docs.json'),
-		).rejects.toThrow(/Unsupported in-process manifest path/);
-	});
+    await expect(manifestProvider(undefined, './services/core/docgen/button.json')).rejects.toThrow(
+      /Unsupported in-process manifest path/
+    );
+    await expect(
+      manifestProvider(undefined, './services/addon-docs/mdx/intro--docs.json')
+    ).rejects.toThrow(/Unsupported in-process manifest path/);
+  });
 
-	it('throws for unsupported in-process paths', async () => {
-		const { manifestProvider } = createDocgenServerManifestAccess(options);
-		await expect(manifestProvider(undefined, './manifests/unknown.json')).rejects.toThrow(
-			/Unsupported in-process manifest path/,
-		);
-	});
+  it('throws for unsupported in-process paths', async () => {
+    const { manifestProvider } = createDocgenServerManifestAccess(options);
+    await expect(manifestProvider(undefined, './manifests/unknown.json')).rejects.toThrow(
+      /Unsupported in-process manifest path/
+    );
+  });
 });
 
 describe('createDocgenServerManifestAccess - resolveEntry', () => {
-	it('resolves one component without triggering all-component docgen', async () => {
-		const { resolveEntry } = createDocgenServerManifestAccess(options);
-		const resolved = await resolveEntry('button');
+  it('resolves one component without triggering all-component docgen', async () => {
+    const { resolveEntry } = createDocgenServerManifestAccess(options);
+    const resolved = await resolveEntry('button');
 
-		expect(resolved?.kind).toBe('component');
-		expect(docgen).toHaveBeenCalledWith({ id: 'button' });
-		// Crucially, the all-component extraction is never invoked for a single lookup.
-		expect(docgenForAllComponents).not.toHaveBeenCalled();
-		if (resolved?.kind === 'component') {
-			expect(resolved.component.id).toBe('button');
-			expect(resolved.component.stories).toEqual([
-				{ id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-			]);
-		}
-	});
+    expect(resolved?.kind).toBe('component');
+    expect(docgen).toHaveBeenCalledWith({ id: 'button' });
+    // Crucially, the all-component extraction is never invoked for a single lookup.
+    expect(docgenForAllComponents).not.toHaveBeenCalled();
+    if (resolved?.kind === 'component') {
+      expect(resolved.component.id).toBe('button');
+      expect(resolved.component.stories).toEqual([
+        { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+      ]);
+    }
+  });
 
-	it('resolves an unattached doc as a doc entry', async () => {
-		const { resolveEntry } = createDocgenServerManifestAccess(options);
-		const resolved = await resolveEntry('intro--docs');
+  it('resolves an unattached doc as a doc entry', async () => {
+    const { resolveEntry } = createDocgenServerManifestAccess(options);
+    const resolved = await resolveEntry('intro--docs');
 
-		expect(resolved?.kind).toBe('doc');
-		if (resolved?.kind === 'doc') {
-			expect(resolved.doc).toMatchObject({ id: 'intro--docs', content: '# Welcome' });
-		}
-	});
+    expect(resolved?.kind).toBe('doc');
+    if (resolved?.kind === 'doc') {
+      expect(resolved.doc).toMatchObject({ id: 'intro--docs', content: '# Welcome' });
+    }
+  });
 
-	it('returns undefined for ids not present in the index', async () => {
-		const { resolveEntry } = createDocgenServerManifestAccess(options);
-		await expect(resolveEntry('missing')).resolves.toBeUndefined();
-	});
+  it('returns undefined for ids not present in the index', async () => {
+    const { resolveEntry } = createDocgenServerManifestAccess(options);
+    await expect(resolveEntry('missing')).resolves.toBeUndefined();
+  });
 });
 
 describe('createDocgenServerManifestAccess - graceful fallback', () => {
-	it('still lists components (name = id, no $refs) when services are unavailable', async () => {
-		vi.mocked(getDocgenService).mockResolvedValue(undefined);
-		vi.mocked(getStoryDocsService).mockResolvedValue(undefined);
-		vi.mocked(getMdxService).mockResolvedValue(undefined);
+  it('still lists components (name = id, no $refs) when services are unavailable', async () => {
+    vi.mocked(getDocgenService).mockResolvedValue(undefined);
+    vi.mocked(getStoryDocsService).mockResolvedValue(undefined);
+    vi.mocked(getMdxService).mockResolvedValue(undefined);
 
-		const { manifestProvider, resolveEntry } = createDocgenServerManifestAccess(options);
-		const json = JSON.parse(await manifestProvider(undefined, './manifests/components.json'));
+    const { manifestProvider, resolveEntry } = createDocgenServerManifestAccess(options);
+    const json = JSON.parse(await manifestProvider(undefined, './manifests/components.json'));
 
-		// Without a docgen payload the index entry falls back to id-as-name and omits docgen $ref.
-		expect(json.components.button).toMatchObject({ id: 'button', name: 'button' });
-		expect(json.components.button.docgen).toBeUndefined();
-		// stories ref still present because the entry is story-backed.
-		expect(json.components.button.stories).toEqual({
-			$ref: '../services/core/story-docs/button.json#/components/button',
-		});
+    // Without a docgen payload the index entry falls back to id-as-name and omits docgen $ref.
+    expect(json.components.button).toMatchObject({ id: 'button', name: 'button' });
+    expect(json.components.button.docgen).toBeUndefined();
+    // stories ref still present because the entry is story-backed.
+    expect(json.components.button.stories).toEqual({
+      $ref: '../services/core/story-docs/button.json#/components/button',
+    });
 
-		const resolved = await resolveEntry('button');
-		expect(resolved?.kind).toBe('component');
-	});
+    const resolved = await resolveEntry('button');
+    expect(resolved?.kind).toBe('component');
+  });
 });

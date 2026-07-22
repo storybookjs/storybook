@@ -1,7 +1,7 @@
 {
-	"name": "910-run-tests-without-a11y-concise",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "910-run-tests-without-a11y-concise",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

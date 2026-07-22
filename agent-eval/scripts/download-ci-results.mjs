@@ -23,75 +23,75 @@ const resultsDir = path.join(agentEvalDir, 'results');
 
 const count = Number(process.argv[2] ?? '20');
 if (!Number.isInteger(count) || count < 1 || count > 100) {
-	console.error(`Expected count between 1 and 100, got: ${process.argv[2]}`);
-	process.exit(1);
+  console.error(`Expected count between 1 and 100, got: ${process.argv[2]}`);
+  process.exit(1);
 }
 
 function gh(args, options = {}) {
-	try {
-		// cwd pins gh's repo resolution to this checkout, so the script also
-		// works when invoked from outside the repository.
-		return execFileSync('gh', args, { cwd: agentEvalDir, ...options });
-	} catch (error) {
-		if (error.code === 'ENOENT') {
-			console.error('The GitHub CLI (gh) is required. Install it and run: gh auth login');
-			process.exit(1);
-		}
-		throw error;
-	}
+  try {
+    // cwd pins gh's repo resolution to this checkout, so the script also
+    // works when invoked from outside the repository.
+    return execFileSync('gh', args, { cwd: agentEvalDir, ...options });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error('The GitHub CLI (gh) is required. Install it and run: gh auth login');
+      process.exit(1);
+    }
+    throw error;
+  }
 }
 
 const artifacts = JSON.parse(
-	gh(
-		[
-			'api',
-			`repos/{owner}/{repo}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=100`,
-			'--jq',
-			'.artifacts | map(select(.expired | not))',
-		],
-		{ encoding: 'utf8' },
-	),
+  gh(
+    [
+      'api',
+      `repos/{owner}/{repo}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=100`,
+      '--jq',
+      '.artifacts | map(select(.expired | not))',
+    ],
+    { encoding: 'utf8' }
+  )
 )
-	.sort((a, b) => b.created_at.localeCompare(a.created_at))
-	.slice(0, count);
+  .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  .slice(0, count);
 
 if (artifacts.length === 0) {
-	console.error(`No unexpired ${ARTIFACT_NAME} artifacts found.`);
-	process.exit(1);
+  console.error(`No unexpired ${ARTIFACT_NAME} artifacts found.`);
+  process.exit(1);
 }
 
 console.log(`Downloading ${artifacts.length} ${ARTIFACT_NAME} artifact(s) into ${resultsDir}`);
 
 for (const artifact of artifacts) {
-	const run = artifact.workflow_run;
-	if (!run?.id) {
-		console.warn(`- skipping artifact ${artifact.id}: no workflow run recorded`);
-		continue;
-	}
-	console.log(
-		`- artifact ${artifact.id} (${artifact.created_at}, branch ${run.head_branch ?? 'unknown'}, run ${run.id})`,
-	);
+  const run = artifact.workflow_run;
+  if (!run?.id) {
+    console.warn(`- skipping artifact ${artifact.id}: no workflow run recorded`);
+    continue;
+  }
+  console.log(
+    `- artifact ${artifact.id} (${artifact.created_at}, branch ${run.head_branch ?? 'unknown'}, run ${run.id})`
+  );
 
-	const workDir = mkdtempSync(path.join(tmpdir(), 'agent-eval-artifact-'));
-	try {
-		// gh streams the artifact zip to disk and unpacks it, leaving the
-		// tarball produced by the "Archive eval results" step in
-		// .github/workflows/agent-eval.yml.
-		gh(['run', 'download', String(run.id), '--name', ARTIFACT_NAME, '--dir', workDir]);
-		// Extract inside the temp directory and only the results/ subtree, so
-		// an artifact tarball can never write outside it; then merge that
-		// subtree into agent-eval/results.
-		execFileSync('tar', [
-			'-xzf',
-			path.join(workDir, `${ARTIFACT_NAME}.tgz`),
-			'-C',
-			workDir,
-			'results',
-		]);
-		cpSync(path.join(workDir, 'results'), resultsDir, { recursive: true });
-	} finally {
-		rmSync(workDir, { recursive: true, force: true });
-	}
+  const workDir = mkdtempSync(path.join(tmpdir(), 'agent-eval-artifact-'));
+  try {
+    // gh streams the artifact zip to disk and unpacks it, leaving the
+    // tarball produced by the "Archive eval results" step in
+    // .github/workflows/agent-eval.yml.
+    gh(['run', 'download', String(run.id), '--name', ARTIFACT_NAME, '--dir', workDir]);
+    // Extract inside the temp directory and only the results/ subtree, so
+    // an artifact tarball can never write outside it; then merge that
+    // subtree into agent-eval/results.
+    execFileSync('tar', [
+      '-xzf',
+      path.join(workDir, `${ARTIFACT_NAME}.tgz`),
+      '-C',
+      workDir,
+      'results',
+    ]);
+    cpSync(path.join(workDir, 'results'), resultsDir, { recursive: true });
+  } finally {
+    rmSync(workDir, { recursive: true, force: true });
+  }
 }
 
 console.log('Done. Browse the results with: pnpm playground');

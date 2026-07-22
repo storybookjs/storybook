@@ -1,21 +1,21 @@
 {
-	"extends": "./tsconfig.json",
-	"compilerOptions": {
-		// The vendored playground sources are pulled into this build through the
-		// @ alias and currently do not satisfy the stricter workspace setting.
-		"noUncheckedIndexedAccess": false,
-		"paths": {
-			"#test-utils": ["./lib/test-utils.ts"],
-			"@/*": ["./node_modules/@vercel/agent-eval-playground/*"],
-			"@storybook/mcp": ["../packages/mcp/src/index.ts"]
-		}
-	},
-	"include": [
-		"next-env.d.ts",
-		"next.config.ts",
-		"app/**/*.ts",
-		"app/**/*.tsx",
-		".next/types/**/*.ts"
-	],
-	"exclude": ["results/**", "templates/**"]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The vendored playground sources are pulled into this build through the
+    // @ alias and currently do not satisfy the stricter workspace setting.
+    "noUncheckedIndexedAccess": false,
+    "paths": {
+      "#test-utils": ["./lib/test-utils.ts"],
+      "@/*": ["./node_modules/@vercel/agent-eval-playground/*"],
+      "@storybook/mcp": ["../packages/mcp/src/index.ts"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["results/**", "templates/**"]
 }

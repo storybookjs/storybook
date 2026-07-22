@@ -18,61 +18,61 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 // can introspect them. The structural compatibility with the spec is what
 // matters at the boundary — see {@link withFriendlyErrors}' generic constraint.
 interface StandardSchemaIssue extends StandardSchemaV1.Issue {
-	readonly kind?: string;
-	readonly type?: string;
-	readonly expected?: string;
-	readonly received?: string;
-	readonly [k: string]: unknown;
+  readonly kind?: string;
+  readonly type?: string;
+  readonly expected?: string;
+  readonly received?: string;
+  readonly [k: string]: unknown;
 }
 
 interface FriendlyIssue {
-	path: string;
-	message: string;
+  path: string;
+  message: string;
 }
 
 function formatPath(path: StandardSchemaIssue['path']): string {
-	if (!path || path.length === 0) return '';
-	let out = '';
-	for (const segment of path) {
-		// Standard-Schema allows two segment shapes — a raw `PropertyKey`
-		// (string / number / symbol) or a `PathSegment` object with `.key`.
-		// Valibot emits the object form; other validators may emit primitives.
-		// We coerce both.
-		const key =
-			typeof segment === 'object' && segment !== null && 'key' in segment ? segment.key : segment;
-		if (typeof key === 'number') out += `[${key}]`;
-		else if (key !== undefined && key !== null) out += out === '' ? String(key) : `.${String(key)}`;
-	}
-	return out;
+  if (!path || path.length === 0) return '';
+  let out = '';
+  for (const segment of path) {
+    // Standard-Schema allows two segment shapes — a raw `PropertyKey`
+    // (string / number / symbol) or a `PathSegment` object with `.key`.
+    // Valibot emits the object form; other validators may emit primitives.
+    // We coerce both.
+    const key =
+      typeof segment === 'object' && segment !== null && 'key' in segment ? segment.key : segment;
+    if (typeof key === 'number') out += `[${key}]`;
+    else if (key !== undefined && key !== null) out += out === '' ? String(key) : `.${String(key)}`;
+  }
+  return out;
 }
 
 function summarizeIssue(issue: StandardSchemaIssue): FriendlyIssue {
-	const path = formatPath(issue.path);
+  const path = formatPath(issue.path);
 
-	// Common valibot shape for a missing required object key:
-	//   { kind: 'schema', type: 'object'|'strict_object',
-	//     expected: '"fieldName"', received: 'undefined', message: 'Invalid key: …' }
-	const isMissingKey =
-		issue.kind === 'schema' &&
-		(issue.type === 'object' || issue.type === 'strict_object' || issue.type === 'loose_object') &&
-		typeof issue.expected === 'string' &&
-		issue.expected.length >= 2 &&
-		issue.expected.startsWith('"') &&
-		issue.expected.endsWith('"') &&
-		issue.received === 'undefined';
+  // Common valibot shape for a missing required object key:
+  //   { kind: 'schema', type: 'object'|'strict_object',
+  //     expected: '"fieldName"', received: 'undefined', message: 'Invalid key: …' }
+  const isMissingKey =
+    issue.kind === 'schema' &&
+    (issue.type === 'object' || issue.type === 'strict_object' || issue.type === 'loose_object') &&
+    typeof issue.expected === 'string' &&
+    issue.expected.length >= 2 &&
+    issue.expected.startsWith('"') &&
+    issue.expected.endsWith('"') &&
+    issue.received === 'undefined';
 
-	if (isMissingKey) {
-		const field = issue.expected!.slice(1, -1);
-		// valibot's path points to where the missing field WOULD live; the
-		// terminal segment is the field name itself, so the "at" suffix in the
-		// message should refer to the parent container (or be omitted at the
-		// top level).
-		const parentPathStr = formatPath((issue.path ?? []).slice(0, -1));
-		const where = parentPathStr ? ` at \`${parentPathStr}\`` : '';
-		return { path, message: `Missing required field \`${field}\`${where}.` };
-	}
+  if (isMissingKey) {
+    const field = issue.expected!.slice(1, -1);
+    // valibot's path points to where the missing field WOULD live; the
+    // terminal segment is the field name itself, so the "at" suffix in the
+    // message should refer to the parent container (or be omitted at the
+    // top level).
+    const parentPathStr = formatPath((issue.path ?? []).slice(0, -1));
+    const where = parentPathStr ? ` at \`${parentPathStr}\`` : '';
+    return { path, message: `Missing required field \`${field}\`${where}.` };
+  }
 
-	return { path, message: issue.message };
+  return { path, message: issue.message };
 }
 
 /**
@@ -86,24 +86,24 @@ function summarizeIssue(issue: StandardSchemaIssue): FriendlyIssue {
  * — no Proxy required.
  */
 export function withFriendlyErrors<TSchema extends StandardSchemaV1>(schema: TSchema): TSchema {
-	const original = schema['~standard'];
-	return {
-		...schema,
-		'~standard': {
-			...original,
-			validate(input: unknown) {
-				const result = original.validate(input);
-				const trim = (r: Awaited<ReturnType<typeof original.validate>>) =>
-					// Cast: the spec issue type is the base shape; validators
-					// (notably valibot) augment with `kind`, `type`, `expected`,
-					// `received` — see {@link StandardSchemaIssue}.
-					r.issues
-						? { issues: (r.issues as readonly StandardSchemaIssue[]).map(summarizeIssue) }
-						: r;
-				return (result instanceof Promise ? result.then(trim) : trim(result)) as ReturnType<
-					typeof original.validate
-				>;
-			},
-		},
-	};
+  const original = schema['~standard'];
+  return {
+    ...schema,
+    '~standard': {
+      ...original,
+      validate(input: unknown) {
+        const result = original.validate(input);
+        const trim = (r: Awaited<ReturnType<typeof original.validate>>) =>
+          // Cast: the spec issue type is the base shape; validators
+          // (notably valibot) augment with `kind`, `type`, `expected`,
+          // `received` — see {@link StandardSchemaIssue}.
+          r.issues
+            ? { issues: (r.issues as readonly StandardSchemaIssue[]).map(summarizeIssue) }
+            : r;
+        return (result instanceof Promise ? result.then(trim) : trim(result)) as ReturnType<
+          typeof original.validate
+        >;
+      },
+    },
+  };
 }

@@ -1,36 +1,36 @@
 {
-	"name": "@storybook/codex-plugin",
-	"version": "0.0.0",
-	"private": true,
-	"description": "Build, preview, and test UI components from Codex",
-	"keywords": [
-		"codex",
-		"mcp",
-		"plugin",
-		"storybook"
-	],
-	"homepage": "https://github.com/storybookjs/mcp/tree/main/packages/codex-plugin#readme",
-	"license": "MIT",
-	"author": "Storybook Core Team",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/storybookjs/mcp.git",
-		"directory": "packages/codex-plugin"
-	},
-	"files": [
-		".agents",
-		"plugins",
-		"README.md"
-	],
-	"type": "module",
-	"scripts": {
-		"validate:marketplace": "node ./scripts/validate-marketplace.ts",
-		"test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
-		"marketplace:add": "codex plugin marketplace add ./",
-		"marketplace:remove": "codex plugin marketplace remove storybook",
-		"remove": "node ./scripts/remove-plugin.ts"
-	},
-	"devDependencies": {
-		"tinyexec": "^1.0.2"
-	}
+  "name": "@storybook/codex-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Build, preview, and test UI components from Codex",
+  "keywords": [
+    "codex",
+    "mcp",
+    "plugin",
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/mcp/tree/main/packages/codex-plugin#readme",
+  "license": "MIT",
+  "author": "Storybook Core Team",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storybookjs/mcp.git",
+    "directory": "packages/codex-plugin"
+  },
+  "files": [
+    ".agents",
+    "plugins",
+    "README.md"
+  ],
+  "type": "module",
+  "scripts": {
+    "validate:marketplace": "node ./scripts/validate-marketplace.ts",
+    "test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
+    "marketplace:add": "codex plugin marketplace add ./",
+    "marketplace:remove": "codex plugin marketplace remove storybook",
+    "remove": "node ./scripts/remove-plugin.ts"
+  },
+  "devDependencies": {
+    "tinyexec": "^1.0.2"
+  }
 }

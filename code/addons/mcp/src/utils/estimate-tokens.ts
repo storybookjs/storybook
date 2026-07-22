@@ -4,7 +4,7 @@
  * Checking char codes is slightly faster than using regex or string methods.
  */
 function isWhitespace(code: number): boolean {
-	return code === 32 || code === 9 || code === 10 || code === 13;
+  return code === 32 || code === 9 || code === 10 || code === 13;
 }
 
 /**
@@ -14,12 +14,12 @@ function isWhitespace(code: number): boolean {
  * Checking char codes is slightly faster than using regex or string methods.
  */
 function isAlphanumeric(code: number): boolean {
-	return (
-		(code >= 48 && code <= 57) ||
-		(code >= 65 && code <= 90) ||
-		(code >= 97 && code <= 122) ||
-		code === 95
-	);
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 95
+  );
 }
 
 /**
@@ -35,32 +35,32 @@ function isAlphanumeric(code: number): boolean {
  * @returns Estimated token count
  */
 export function estimateTokens(text: string): number {
-	if (!text) return 0;
+  if (!text) return 0;
 
-	let tokenCount = 0;
-	let i = 0;
-	const len = text.length;
+  let tokenCount = 0;
+  let i = 0;
+  const len = text.length;
 
-	while (i < len) {
-		const code = text.charCodeAt(i);
+  while (i < len) {
+    const code = text.charCodeAt(i);
 
-		if (isWhitespace(code)) {
-			tokenCount++;
-			i++;
-			while (i < len && isWhitespace(text.charCodeAt(i))) {
-				i++;
-			}
-		} else if (isAlphanumeric(code)) {
-			tokenCount++;
-			i++;
-			while (i < len && isAlphanumeric(text.charCodeAt(i))) {
-				i++;
-			}
-		} else {
-			tokenCount++;
-			i++;
-		}
-	}
+    if (isWhitespace(code)) {
+      tokenCount++;
+      i++;
+      while (i < len && isWhitespace(text.charCodeAt(i))) {
+        i++;
+      }
+    } else if (isAlphanumeric(code)) {
+      tokenCount++;
+      i++;
+      while (i < len && isAlphanumeric(text.charCodeAt(i))) {
+        i++;
+      }
+    } else {
+      tokenCount++;
+      i++;
+    }
+  }
 
-	return tokenCount;
+  return tokenCount;
 }

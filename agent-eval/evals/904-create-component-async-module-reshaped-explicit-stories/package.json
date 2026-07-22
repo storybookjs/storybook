@@ -1,7 +1,7 @@
 {
-	"name": "904-create-component-async-module-reshaped-explicit-stories",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "904-create-component-async-module-reshaped-explicit-stories",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

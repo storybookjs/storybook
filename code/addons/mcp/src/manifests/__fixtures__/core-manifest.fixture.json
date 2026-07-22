@@ -1,49 +1,49 @@
 {
-	"_provenance": "Trimmed verbatim from a real Storybook core build (storybook-static/manifests/{components,docs}.json) produced with experimentalDocgenServer. Used by core-format-contract.test.ts to guard the vendored ref-path helpers against drift. Regenerate from a fresh core build if the manifest format changes.",
-	"components": {
-		"v": 1,
-		"components": {
-			"bench": {
-				"id": "bench",
-				"name": "Bench",
-				"description": "docs enabled",
-				"docgen": { "$ref": "../services/core/docgen/bench.json#/components/bench" },
-				"stories": { "$ref": "../services/core/story-docs/bench.json#/components/bench" }
-			},
-			"button-component": {
-				"id": "button-component",
-				"name": "Button",
-				"description": "docs enabled",
-				"docgen": {
-					"$ref": "../services/core/docgen/button-component.json#/components/button-component"
-				},
-				"stories": {
-					"$ref": "../services/core/story-docs/button-component.json#/components/button-component"
-				},
-				"docs": {
-					"button-component--docs": {
-						"id": "button-component--docs",
-						"name": "Docs",
-						"mdx": {
-							"$ref": "../services/addon-docs/mdx/button-component.json#/components/button-component/docs/button-component--docs"
-						},
-						"summary": "# Button Button component is used to trigger an action or event."
-					}
-				}
-			}
-		}
-	},
-	"docs": {
-		"v": 1,
-		"docs": {
-			"brand-colorpalette--docs": {
-				"id": "brand-colorpalette--docs",
-				"name": "Docs",
-				"mdx": {
-					"$ref": "../services/addon-docs/mdx/brand-colorpalette--docs.json#/components/brand-colorpalette--docs/docs/brand-colorpalette--docs"
-				},
-				"summary": "Dark theme Colors Dark theme Backgrounds Light theme Colors Light theme Backgrounds"
-			}
-		}
-	}
+  "_provenance": "Trimmed verbatim from a real Storybook core build (storybook-static/manifests/{components,docs}.json) produced with experimentalDocgenServer. Used by core-format-contract.test.ts to guard the vendored ref-path helpers against drift. Regenerate from a fresh core build if the manifest format changes.",
+  "components": {
+    "v": 1,
+    "components": {
+      "bench": {
+        "id": "bench",
+        "name": "Bench",
+        "description": "docs enabled",
+        "docgen": { "$ref": "../services/core/docgen/bench.json#/components/bench" },
+        "stories": { "$ref": "../services/core/story-docs/bench.json#/components/bench" }
+      },
+      "button-component": {
+        "id": "button-component",
+        "name": "Button",
+        "description": "docs enabled",
+        "docgen": {
+          "$ref": "../services/core/docgen/button-component.json#/components/button-component"
+        },
+        "stories": {
+          "$ref": "../services/core/story-docs/button-component.json#/components/button-component"
+        },
+        "docs": {
+          "button-component--docs": {
+            "id": "button-component--docs",
+            "name": "Docs",
+            "mdx": {
+              "$ref": "../services/addon-docs/mdx/button-component.json#/components/button-component/docs/button-component--docs"
+            },
+            "summary": "# Button Button component is used to trigger an action or event."
+          }
+        }
+      }
+    }
+  },
+  "docs": {
+    "v": 1,
+    "docs": {
+      "brand-colorpalette--docs": {
+        "id": "brand-colorpalette--docs",
+        "name": "Docs",
+        "mdx": {
+          "$ref": "../services/addon-docs/mdx/brand-colorpalette--docs.json#/components/brand-colorpalette--docs/docs/brand-colorpalette--docs"
+        },
+        "summary": "Dark theme Colors Dark theme Backgrounds Light theme Colors Light theme Backgrounds"
+      }
+    }
+  }
 }

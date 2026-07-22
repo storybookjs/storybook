@@ -6,103 +6,103 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 describe('collectTelemetry', () => {
-	let mockServer: McpServer<any, AddonContext>;
+  let mockServer: McpServer<any, AddonContext>;
 
-	beforeEach(() => {
-		mockServer = {
-			ctx: {
-				sessionId: 'test-session-123',
-				sessionInfo: {
-					clientInfo: {
-						name: 'test-client',
-						version: '1.0.0',
-					},
-					clientCapabilities: {
-						experimental: {},
-						roots: { listChanged: true },
-					},
-				},
-			},
-		} as any;
-	});
+  beforeEach(() => {
+    mockServer = {
+      ctx: {
+        sessionId: 'test-session-123',
+        sessionInfo: {
+          clientInfo: {
+            name: 'test-client',
+            version: '1.0.0',
+          },
+          clientCapabilities: {
+            experimental: {},
+            roots: { listChanged: true },
+          },
+        },
+      },
+    } as any;
+  });
 
-	it('should call telemetry with correct parameters', async () => {
-		vi.mocked(telemetry).mockResolvedValue(undefined);
+  it('should call telemetry with correct parameters', async () => {
+    vi.mocked(telemetry).mockResolvedValue(undefined);
 
-		await collectTelemetry({
-			event: 'test-event',
-			server: mockServer,
-			customField: 'custom-value',
-		});
+    await collectTelemetry({
+      event: 'test-event',
+      server: mockServer,
+      customField: 'custom-value',
+    });
 
-		expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
-			event: 'test-event',
-			mcpSessionId: 'test-session-123',
-			clientInfo: {
-				name: 'test-client',
-				version: '1.0.0',
-			},
-			clientCapabilities: {
-				experimental: {},
-				roots: { listChanged: true },
-			},
-			customField: 'custom-value',
-		});
-	});
+    expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
+      event: 'test-event',
+      mcpSessionId: 'test-session-123',
+      clientInfo: {
+        name: 'test-client',
+        version: '1.0.0',
+      },
+      clientCapabilities: {
+        experimental: {},
+        roots: { listChanged: true },
+      },
+      customField: 'custom-value',
+    });
+  });
 
-	it('should pass through additional payload fields', async () => {
-		vi.mocked(telemetry).mockResolvedValue(undefined);
+  it('should pass through additional payload fields', async () => {
+    vi.mocked(telemetry).mockResolvedValue(undefined);
 
-		await collectTelemetry({
-			event: 'tool-called',
-			server: mockServer,
-			toolName: 'list-all-documentation',
-			duration: 123,
-			success: true,
-		});
+    await collectTelemetry({
+      event: 'tool-called',
+      server: mockServer,
+      toolName: 'list-all-documentation',
+      duration: 123,
+      success: true,
+    });
 
-		expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
-			event: 'tool-called',
-			mcpSessionId: 'test-session-123',
-			clientInfo: expect.any(Object),
-			clientCapabilities: expect.any(Object),
-			toolName: 'list-all-documentation',
-			duration: 123,
-			success: true,
-		});
-	});
+    expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
+      event: 'tool-called',
+      mcpSessionId: 'test-session-123',
+      clientInfo: expect.any(Object),
+      clientCapabilities: expect.any(Object),
+      toolName: 'list-all-documentation',
+      duration: 123,
+      success: true,
+    });
+  });
 
-	it('should catch and log errors from telemetry', async () => {
-		const error = new Error('Telemetry failed');
-		vi.mocked(telemetry).mockRejectedValue(error);
+  it('should catch and log errors from telemetry', async () => {
+    const error = new Error('Telemetry failed');
+    vi.mocked(telemetry).mockRejectedValue(error);
 
-		await expect(
-			collectTelemetry({
-				event: 'test-event',
-				server: mockServer,
-			}),
-		).resolves.not.toThrow();
+    await expect(
+      collectTelemetry({
+        event: 'test-event',
+        server: mockServer,
+      })
+    ).resolves.not.toThrow();
 
-		expect(logger.debug).toHaveBeenCalledWith(`Error collecting telemetry: ${error}`);
-	});
+    expect(logger.debug).toHaveBeenCalledWith(`Error collecting telemetry: ${error}`);
+  });
 
-	it('should handle missing session ID gracefully', async () => {
-		vi.mocked(telemetry).mockResolvedValue(undefined);
+  it('should handle missing session ID gracefully', async () => {
+    vi.mocked(telemetry).mockResolvedValue(undefined);
 
-		const serverWithoutSession = Object.assign(Object.create(mockServer), {
-			ctx: {},
-		}) as any;
+    const serverWithoutSession = Object.assign(Object.create(mockServer), {
+      ctx: {},
+    }) as any;
 
-		await collectTelemetry({
-			event: 'test-event',
-			server: serverWithoutSession,
-		});
+    await collectTelemetry({
+      event: 'test-event',
+      server: serverWithoutSession,
+    });
 
-		expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
-			event: 'test-event',
-			mcpSessionId: undefined,
-			clientInfo: undefined,
-			clientCapabilities: undefined,
-		});
-	});
+    expect(telemetry).toHaveBeenCalledWith('addon-mcp', {
+      event: 'test-event',
+      mcpSessionId: undefined,
+      clientInfo: undefined,
+      clientCapabilities: undefined,
+    });
+  });
 });

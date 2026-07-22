@@ -3,9 +3,9 @@
  */
 
 export {
-	CompositionAuth,
-	AuthenticationError,
-	extractBearerToken,
-	type ComposedRef,
-	type ManifestProvider,
+  CompositionAuth,
+  AuthenticationError,
+  extractBearerToken,
+  type ComposedRef,
+  type ManifestProvider,
 } from './composition-auth.ts';

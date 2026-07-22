@@ -1,7 +1,7 @@
 {
-	"name": "909-run-tests-after-component-creation",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "909-run-tests-after-component-creation",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

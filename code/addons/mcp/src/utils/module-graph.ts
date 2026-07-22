@@ -20,24 +20,24 @@ const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
 
 /** Serializable error shape carried by the module-graph status (mirrors the service's `ErrorLike`). */
 export interface ModuleGraphErrorLike {
-	message: string;
-	name?: string;
-	stack?: string;
+  message: string;
+  name?: string;
+  stack?: string;
 }
 
 /** Lifecycle status of the module graph; mirrors the service's `status` query output. */
 export type ModuleGraphStatus =
-	| { value: 'booting' }
-	| { value: 'ready' }
-	| { value: 'error'; error: ModuleGraphErrorLike }
-	| { value: 'unavailable'; reason: string; error?: ModuleGraphErrorLike };
+  | { value: 'booting' }
+  | { value: 'ready' }
+  | { value: 'error'; error: ModuleGraphErrorLike }
+  | { value: 'unavailable'; reason: string; error?: ModuleGraphErrorLike };
 
 /** One reverse-index hit: a story file (story-index-relative path) and its BFS import depth. */
 export interface ModuleGraphStoryHit {
-	/** Story-index-style relative path such as `./src/Button.stories.tsx`. */
-	storyFile: string;
-	/** Breadth-first-search depth: shortest number of import edges to the story file. */
-	depth: number;
+  /** Story-index-style relative path such as `./src/Button.stories.tsx`. */
+  storyFile: string;
+  /** Breadth-first-search depth: shortest number of import edges to the story file. */
+  depth: number;
 }
 
 type ModuleGraphStatusQuery = Query<undefined, ModuleGraphStatus>;
@@ -45,11 +45,11 @@ type ModuleGraphStoriesForFilesQuery = Query<{ files: string[] }, ModuleGraphSto
 
 /** The subset of the `core/module-graph` runtime service surface addon-mcp consumes. */
 export interface ModuleGraphService {
-	queries: {
-		status: ModuleGraphStatusQuery;
-		/** Positional: result `i` corresponds to input `files[i]`. */
-		storiesForFiles: ModuleGraphStoriesForFilesQuery;
-	};
+  queries: {
+    status: ModuleGraphStatusQuery;
+    /** Positional: result `i` corresponds to input `files[i]`. */
+    storiesForFiles: ModuleGraphStoriesForFilesQuery;
+  };
 }
 
 type GetServiceFn = (serviceId: string) => unknown;
@@ -57,15 +57,15 @@ type GetServiceFn = (serviceId: string) => unknown;
 let probed: GetServiceFn | null | undefined;
 
 async function probe(): Promise<GetServiceFn | null> {
-	if (probed !== undefined) return probed;
-	try {
-		const mod = (await import('storybook/internal/core-server')) as Record<string, unknown>;
-		const fn = mod.getService;
-		probed = typeof fn === 'function' ? (fn as GetServiceFn) : null;
-	} catch {
-		probed = null;
-	}
-	return probed;
+  if (probed !== undefined) return probed;
+  try {
+    const mod = (await import('storybook/internal/core-server')) as Record<string, unknown>;
+    const fn = mod.getService;
+    probed = typeof fn === 'function' ? (fn as GetServiceFn) : null;
+  } catch {
+    probed = null;
+  }
+  return probed;
 }
 
 /**
@@ -75,25 +75,25 @@ async function probe(): Promise<GetServiceFn | null> {
  * (a builder may ship the runtime but not register the service, e.g. without change detection).
  */
 export async function isModuleGraphSupported(): Promise<boolean> {
-	return (await getModuleGraphService()) !== undefined;
+  return (await getModuleGraphService()) !== undefined;
 }
 
 export async function isModuleGraphSupportedByBuilder(
-	options: Pick<Options, 'presets'>,
+  options: Pick<Options, 'presets'>
 ): Promise<boolean> {
-	const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
-	const builder = core?.builder;
-	const builderName = typeof builder === 'string' ? builder : builder?.name;
-	if (!builderName) {
-		return false;
-	}
+  const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
+  const builder = core?.builder;
+  const builderName = typeof builder === 'string' ? builder : builder?.name;
+  if (!builderName) {
+    return false;
+  }
 
-	try {
-		const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
-		return typeof previewBuilder.changeDetectionAdapter === 'function';
-	} catch {
-		return false;
-	}
+  try {
+    const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
+    return typeof previewBuilder.changeDetectionAdapter === 'function';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -103,12 +103,12 @@ export async function isModuleGraphSupportedByBuilder(
  * `queries.status.loaded(undefined)` and check for the `ready` status.
  */
 export async function getModuleGraphService(): Promise<ModuleGraphService | undefined> {
-	const getService = await probe();
-	if (!getService) return undefined;
-	try {
-		return getService(MODULE_GRAPH_SERVICE_ID) as ModuleGraphService | undefined;
-	} catch {
-		// `getService` throws when the service isn't registered in this process.
-		return undefined;
-	}
+  const getService = await probe();
+  if (!getService) return undefined;
+  try {
+    return getService(MODULE_GRAPH_SERVICE_ID) as ModuleGraphService | undefined;
+  } catch {
+    // `getService` throws when the service isn't registered in this process.
+    return undefined;
+  }
 }

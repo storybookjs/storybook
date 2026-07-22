@@ -13,11 +13,11 @@ const { agent, integration } = getEvalContext();
 const claudeCodeMcp = agent === 'claude-code' && integration === 'mcp';
 
 test.skipIf(claudeCodeMcp)('uses the documentation tooling to resolve props and usage', () => {
-	expectWorkflowCalls(['list-all-documentation', 'get-documentation']);
+  expectWorkflowCalls(['list-all-documentation', 'get-documentation']);
 });
 
 // The fixture component has exactly these three props; a grounded answer
 // names all of them.
 test('the answer covers every ReviewCard prop', () => {
-	expectFinalResponseContains(['author', 'rating', 'comment']);
+  expectFinalResponseContains(['author', 'rating', 'comment']);
 });

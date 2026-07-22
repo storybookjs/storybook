@@ -2,8 +2,8 @@
  * MCP tool result type for error responses
  */
 type MCPErrorResult = {
-	content: Array<{ type: 'text'; text: string }>;
-	isError: true;
+  content: Array<{ type: 'text'; text: string }>;
+  isError: true;
 };
 
 /**
@@ -13,15 +13,15 @@ type MCPErrorResult = {
  * @returns A tool result with error content and isError flag
  */
 export const errorToMCPContent = (error: unknown): MCPErrorResult => {
-	const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
 
-	return {
-		content: [
-			{
-				type: 'text',
-				text: `Error: ${errorMessage}`,
-			},
-		],
-		isError: true,
-	};
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Error: ${errorMessage}`,
+      },
+    ],
+    isError: true,
+  };
 };

@@ -13,7 +13,7 @@ await x('codex', ['plugin', 'marketplace', 'remove', 'storybook'], { throwOnErro
 const config = readFileSync(configPath, 'utf8');
 const next = removeTomlSection(config, pluginSection);
 if (next !== config) {
-	writeFileSync(configPath, next, 'utf8');
+  writeFileSync(configPath, next, 'utf8');
 }
 
 rmSync(resolve(homedir(), '.codex/plugins/cache/storybook'), { recursive: true, force: true });

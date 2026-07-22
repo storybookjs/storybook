@@ -18,10 +18,10 @@ import {
 import { BehaviorSubject } from 'rxjs';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { ICollection } from '../../../../frameworks/angular-vite/src/client/types.ts';
 import { getApplication } from '../../../../frameworks/angular-vite/src/client/renderer/StorybookModule.ts';
 import { storyPropsProvider } from '../../../../frameworks/angular-vite/src/client/renderer/StorybookProvider.ts';
 import { PropertyExtractor } from '../../../../frameworks/angular-vite/src/client/renderer/utils/PropertyExtractor.ts';
+import type { ICollection } from '../../../../frameworks/angular-vite/src/client/types.ts';
 
 getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
 
@@ -33,8 +33,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 
 // Signal fixtures cannot render under JIT: their ɵcmp input/output maps stay empty, so
 // bindings are dropped and required signals throw NG0950 at change detection; the OSA
-// path they feed is static and never mounts components either. Their compile evidence
-// is the vue-tsc check; runtime exercise arrives once sandbox stories cover signals.
+// path they feed is static and never mounts components either.
 const SIGNAL_FIXTURES = new Set(['signal-io', 'signal-model']);
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })

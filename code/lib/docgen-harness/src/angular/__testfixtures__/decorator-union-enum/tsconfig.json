@@ -6,7 +6,8 @@
     "moduleResolution": "bundler",
     "target": "ES2022",
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["./*.ts"]
 }

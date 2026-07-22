@@ -10,23 +10,23 @@ import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import {
-	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-	GET_CHANGED_STORIES_TOOL_NAME,
-	PREVIEW_STORIES_TOOL_NAME,
-	RUN_STORY_TESTS_TOOL_NAME,
+  GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+  GET_CHANGED_STORIES_TOOL_NAME,
+  PREVIEW_STORIES_TOOL_NAME,
+  RUN_STORY_TESTS_TOOL_NAME,
 } from './tool-names.ts';
 
 type BuildStorybookStoryInstructionsOptions = {
-	toolsets?: AddonContext['toolsets'];
-	a11yEnabled?: boolean;
-	addonVitestAvailable?: boolean;
-	/** Whether the documentation tools (list-all-documentation etc.) are registered. */
-	docsAvailable?: boolean;
-	/**
-	 * Per-channel review gate override (per-request context on the MCP path, the
-	 * CLI default on the metadata path). Defaults to the explicit feature-flag gate.
-	 */
-	reviewEnabled?: boolean;
+  toolsets?: AddonContext['toolsets'];
+  a11yEnabled?: boolean;
+  addonVitestAvailable?: boolean;
+  /** Whether the documentation tools (list-all-documentation etc.) are registered. */
+  docsAvailable?: boolean;
+  /**
+   * Per-channel review gate override (per-request context on the MCP path, the
+   * CLI default on the metadata path). Defaults to the explicit feature-flag gate.
+   */
+  reviewEnabled?: boolean;
 };
 
 /**
@@ -44,84 +44,84 @@ const docsWorkflowGuidance = `
 This Storybook exposes component documentation tools. Before creating or changing any UI, call **list-all-documentation** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **get-documentation** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **list-all-documentation** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Never assume or invent props.`;
 
 export async function addGetUIBuildingInstructionsTool(
-	server: McpServer<any, AddonContext>,
-	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
-		server.ctx.custom?.toolsets?.dev ?? true,
-	{ docsAvailable = false }: { docsAvailable?: boolean } = {},
+  server: McpServer<any, AddonContext>,
+  enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+    server.ctx.custom?.toolsets?.dev ?? true,
+  { docsAvailable = false }: { docsAvailable?: boolean } = {}
 ) {
-	const addonVitestAvailable = !!(await getAddonVitestConstants());
+  const addonVitestAvailable = !!(await getAddonVitestConstants());
 
-	server.tool(
-		{
-			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-			title: 'Storybook Story Development Instructions',
-			get description() {
-				const testToolsetAvailable =
-					(server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
-				const a11yAvailable = testToolsetAvailable && (server.ctx.custom?.a11yEnabled ?? false);
+  server.tool(
+    {
+      name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+      title: 'Storybook Story Development Instructions',
+      get description() {
+        const testToolsetAvailable =
+          (server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
+        const a11yAvailable = testToolsetAvailable && (server.ctx.custom?.a11yEnabled ?? false);
 
-				return getStorybookStoryInstructionsDescription({
-					testToolsetAvailable,
-					a11yAvailable,
-				});
-			},
-			enabled,
-		},
-		async () => {
-			try {
-				const { options, disableTelemetry } = server.ctx.custom ?? {};
-				if (!options) {
-					throw new Error('Options are required in addon context');
-				}
+        return getStorybookStoryInstructionsDescription({
+          testToolsetAvailable,
+          a11yAvailable,
+        });
+      },
+      enabled,
+    },
+    async () => {
+      try {
+        const { options, disableTelemetry } = server.ctx.custom ?? {};
+        if (!options) {
+          throw new Error('Options are required in addon context');
+        }
 
-				if (!disableTelemetry) {
-					await collectTelemetry({
-						event: 'tool:getUIBuildingInstructions',
-						server,
-						toolset: 'dev',
-					});
-				}
+        if (!disableTelemetry) {
+          await collectTelemetry({
+            event: 'tool:getUIBuildingInstructions',
+            server,
+            toolset: 'dev',
+          });
+        }
 
-				const uiInstructions = await buildStorybookStoryInstructions(options, {
-					toolsets: server.ctx.custom?.toolsets,
-					a11yEnabled: server.ctx.custom?.a11yEnabled,
-					addonVitestAvailable,
-					docsAvailable,
-					reviewEnabled: server.ctx.custom?.reviewEnabled,
-				});
+        const uiInstructions = await buildStorybookStoryInstructions(options, {
+          toolsets: server.ctx.custom?.toolsets,
+          a11yEnabled: server.ctx.custom?.a11yEnabled,
+          addonVitestAvailable,
+          docsAvailable,
+          reviewEnabled: server.ctx.custom?.reviewEnabled,
+        });
 
-				return {
-					content: [{ type: 'text' as const, text: uiInstructions }],
-				};
-			} catch (error) {
-				return errorToMCPContent(error);
-			}
-		},
-	);
+        return {
+          content: [{ type: 'text' as const, text: uiInstructions }],
+        };
+      } catch (error) {
+        return errorToMCPContent(error);
+      }
+    }
+  );
 }
 
 export function getStorybookStoryInstructionsDescription({
-	testToolsetAvailable,
-	a11yAvailable,
+  testToolsetAvailable,
+  a11yAvailable,
 }: {
-	testToolsetAvailable: boolean;
-	a11yAvailable: boolean;
+  testToolsetAvailable: boolean;
+  a11yAvailable: boolean;
 }) {
-	const criticalTestBullets = testToolsetAvailable
-		? `
+  const criticalTestBullets = testToolsetAvailable
+    ? `
 - Running story tests or fixing test failures`
-		: '';
-	const criticalA11yBullets = a11yAvailable
-		? `
+    : '';
+  const criticalA11yBullets = a11yAvailable
+    ? `
 - Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)`
-		: '';
+    : '';
 
-	const testAndA11yGuidance = testToolsetAvailable
-		? `
+  const testAndA11yGuidance = testToolsetAvailable
+    ? `
 - How to handle test failures${a11yAvailable ? ' and accessibility violations' : ''}`
-		: '';
+    : '';
 
-	return `Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+  return `Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
 CRITICAL: You MUST call this tool before:
 - Creating new Storybook stories or story files
@@ -144,98 +144,98 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 }
 
 export function getStorybookStoryInstructionsToolMetadata(options: {
-	testToolsetAvailable: boolean;
-	a11yAvailable: boolean;
+  testToolsetAvailable: boolean;
+  a11yAvailable: boolean;
 }) {
-	return {
-		name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-		title: 'Storybook Story Development Instructions',
-		description: getStorybookStoryInstructionsDescription(options),
-	};
+  return {
+    name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+    title: 'Storybook Story Development Instructions',
+    description: getStorybookStoryInstructionsDescription(options),
+  };
 }
 
 export async function buildStorybookStoryInstructions(
-	options: Options,
-	{
-		toolsets,
-		a11yEnabled = false,
-		addonVitestAvailable,
-		docsAvailable = false,
-		reviewEnabled: reviewEnabledOverride,
-	}: BuildStorybookStoryInstructionsOptions = {},
+  options: Options,
+  {
+    toolsets,
+    a11yEnabled = false,
+    addonVitestAvailable,
+    docsAvailable = false,
+    reviewEnabled: reviewEnabledOverride,
+  }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
-	const frameworkPreset = await options.presets.apply('framework');
-	const featuresPreset = await options.presets.apply('features', {});
-	const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
-	const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
-	const reviewEnabled = reviewEnabledOverride ?? reviewStatus.available;
-	const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
-	const renderer = frameworkToRendererMap[framework!];
-	// Mirrors the review-aware rewrite in build-server-instructions.ts:
-	// discovery feeds the review, not the preview list. Plugin-path agents do
-	// see those server instructions (`storybook ai --help` embeds them as its
-	// "# Storybook workflow instructions" section), but this tool is billed as
-	// the source of truth for story work and this line still routed discovery
-	// into previews — a contradiction agents resolved by constructing story
-	// IDs from file names and publishing reviews with zero discovery calls.
-	// The two channels must state the same workflow.
-	const storyLinkingWorkflow = changeDetectionEnabled
-		? reviewEnabled
-			? `After changing any component or story, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as get-stories-by-component for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **display-review** when the change is visually observable; use \`${PREVIEW_STORIES_TOOL_NAME}\` only while iterating on a specific story.`
-			: `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
-		: `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
-	const changedStoryFallbackLinkGuidance = changeDetectionEnabled
-		? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
-		: `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
+  const frameworkPreset = await options.presets.apply('framework');
+  const featuresPreset = await options.presets.apply('features', {});
+  const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
+  const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
+  const reviewEnabled = reviewEnabledOverride ?? reviewStatus.available;
+  const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
+  const renderer = frameworkToRendererMap[framework!];
+  // Mirrors the review-aware rewrite in build-server-instructions.ts:
+  // discovery feeds the review, not the preview list. Plugin-path agents do
+  // see those server instructions (`storybook ai --help` embeds them as its
+  // "# Storybook workflow instructions" section), but this tool is billed as
+  // the source of truth for story work and this line still routed discovery
+  // into previews — a contradiction agents resolved by constructing story
+  // IDs from file names and publishing reviews with zero discovery calls.
+  // The two channels must state the same workflow.
+  const storyLinkingWorkflow = changeDetectionEnabled
+    ? reviewEnabled
+      ? `After changing any component or story, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as get-stories-by-component for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **display-review** when the change is visually observable; use \`${PREVIEW_STORIES_TOOL_NAME}\` only while iterating on a specific story.`
+      : `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
+    : `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
+  const changedStoryFallbackLinkGuidance = changeDetectionEnabled
+    ? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
+    : `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
 
-	const docsToolsAvailable = (toolsets?.docs ?? true) && docsAvailable;
+  const docsToolsAvailable = (toolsets?.docs ?? true) && docsAvailable;
 
-	let uiInstructions = storyInstructionsTemplate
-		.replace('{{FRAMEWORK}}', framework)
-		.replace('{{RENDERER}}', renderer ?? framework)
-		.replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsToolsAvailable ? docsWorkflowGuidance : '')
-		.replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
-		.replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
-		.replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
+  let uiInstructions = storyInstructionsTemplate
+    .replace('{{FRAMEWORK}}', framework)
+    .replace('{{RENDERER}}', renderer ?? framework)
+    .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsToolsAvailable ? docsWorkflowGuidance : '')
+    .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
+    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
+    .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 
-	const resolvedAddonVitestAvailable = addonVitestAvailable ?? !!(await getAddonVitestConstants());
-	const testToolsetAvailable = (toolsets?.test ?? true) && resolvedAddonVitestAvailable;
+  const resolvedAddonVitestAvailable = addonVitestAvailable ?? !!(await getAddonVitestConstants());
+  const testToolsetAvailable = (toolsets?.test ?? true) && resolvedAddonVitestAvailable;
 
-	if (testToolsetAvailable) {
-		const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
+  if (testToolsetAvailable) {
+    const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
 
-		const storyTestingInstructions = storyTestingInstructionsTemplate
-			.replaceAll('{{RUN_STORY_TESTS_TOOL_NAME}}', RUN_STORY_TESTS_TOOL_NAME)
-			.replace('{{A11Y_FIX_SUFFIX}}', a11yFixSuffix);
+    const storyTestingInstructions = storyTestingInstructionsTemplate
+      .replaceAll('{{RUN_STORY_TESTS_TOOL_NAME}}', RUN_STORY_TESTS_TOOL_NAME)
+      .replace('{{A11Y_FIX_SUFFIX}}', a11yFixSuffix);
 
-		uiInstructions += `\n\n${storyTestingInstructions}`;
-		if (a11yEnabled) {
-			uiInstructions += `\n${a11yInstructionsTemplate}`;
-		}
-	}
+    uiInstructions += `\n\n${storyTestingInstructions}`;
+    if (a11yEnabled) {
+      uiInstructions += `\n${a11yInstructionsTemplate}`;
+    }
+  }
 
-	return uiInstructions;
+  return uiInstructions;
 }
 
 // TODO: this is a stupid map to maintain and it's not complete, but we can't easily get the current renderer name
 const frameworkToRendererMap: Record<string, string> = {
-	'@storybook/react-vite': '@storybook/react',
-	'@storybook/react-webpack5': '@storybook/react',
-	'@storybook/nextjs': '@storybook/react',
-	'@storybook/nextjs-vite': '@storybook/react',
-	'@storybook/react-native-web-vite': '@storybook/react',
+  '@storybook/react-vite': '@storybook/react',
+  '@storybook/react-webpack5': '@storybook/react',
+  '@storybook/nextjs': '@storybook/react',
+  '@storybook/nextjs-vite': '@storybook/react',
+  '@storybook/react-native-web-vite': '@storybook/react',
 
-	'@storybook/vue3-vite': '@storybook/vue3',
-	'@nuxtjs/storybook': '@storybook/vue3',
+  '@storybook/vue3-vite': '@storybook/vue3',
+  '@nuxtjs/storybook': '@storybook/vue3',
 
-	'@storybook/angular': '@storybook/angular',
+  '@storybook/angular': '@storybook/angular',
 
-	'@storybook/svelte-vite': '@storybook/svelte',
-	'@storybook/sveltekit': '@storybook/svelte',
+  '@storybook/svelte-vite': '@storybook/svelte',
+  '@storybook/sveltekit': '@storybook/svelte',
 
-	'@storybook/preact-vite': '@storybook/preact',
+  '@storybook/preact-vite': '@storybook/preact',
 
-	'@storybook/web-components-vite': '@storybook/web-components',
+  '@storybook/web-components-vite': '@storybook/web-components',
 
-	'@storybook/html-vite': '@storybook/html',
+  '@storybook/html-vite': '@storybook/html',
 };

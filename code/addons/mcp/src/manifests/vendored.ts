@@ -20,9 +20,9 @@ import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 
 /** System tags used by Storybook for categorizing stories and docs entries. */
 export const Tag = {
-	ATTACHED_MDX: 'attached-mdx',
-	UNATTACHED_MDX: 'unattached-mdx',
-	MANIFEST: 'manifest',
+  ATTACHED_MDX: 'attached-mdx',
+  UNATTACHED_MDX: 'unattached-mdx',
+  MANIFEST: 'manifest',
 } as const;
 
 /** Open-service ids (also the on-disk directory names under `services/`). */
@@ -36,21 +36,21 @@ export const MDX_SERVICE_ID = 'addon-docs/mdx';
  * stable component identifier.
  */
 export function getComponentIdFromEntry(entry: Pick<IndexEntry, 'id'>): string {
-	return entry.id.split('--')[0] ?? entry.id;
+  return entry.id.split('--')[0] ?? entry.id;
 }
 
 function isAttachedDocsEntry(
-	entry: IndexEntry,
+  entry: IndexEntry
 ): entry is DocsIndexEntry & { storiesImports: [string, ...string[]] } {
-	return (
-		entry.type === 'docs' &&
-		entry.tags?.includes(Tag.ATTACHED_MDX) === true &&
-		(entry as DocsIndexEntry).storiesImports.length > 0
-	);
+  return (
+    entry.type === 'docs' &&
+    entry.tags?.includes(Tag.ATTACHED_MDX) === true &&
+    (entry as DocsIndexEntry).storiesImports.length > 0
+  );
 }
 
 function isEligibleStoryEntry(entry: IndexEntry): boolean {
-	return entry.type === 'story' && entry.subtype === 'story';
+  return entry.type === 'story' && entry.subtype === 'story';
 }
 
 /**
@@ -58,41 +58,41 @@ function isEligibleStoryEntry(entry: IndexEntry): boolean {
  * only where no story exists for that componentId.
  */
 export function selectComponentEntriesByComponentId(
-	indexEntries: IndexEntry[],
+  indexEntries: IndexEntry[]
 ): Map<string, IndexEntry> {
-	const entriesByComponentId = new Map<string, IndexEntry>();
+  const entriesByComponentId = new Map<string, IndexEntry>();
 
-	for (const entry of indexEntries) {
-		if (!isEligibleStoryEntry(entry)) {
-			continue;
-		}
-		entriesByComponentId.set(getComponentIdFromEntry(entry), entry);
-	}
+  for (const entry of indexEntries) {
+    if (!isEligibleStoryEntry(entry)) {
+      continue;
+    }
+    entriesByComponentId.set(getComponentIdFromEntry(entry), entry);
+  }
 
-	for (const entry of indexEntries) {
-		if (!isAttachedDocsEntry(entry)) {
-			continue;
-		}
-		const componentId = getComponentIdFromEntry(entry);
-		if (!entriesByComponentId.has(componentId)) {
-			entriesByComponentId.set(componentId, entry);
-		}
-	}
+  for (const entry of indexEntries) {
+    if (!isAttachedDocsEntry(entry)) {
+      continue;
+    }
+    const componentId = getComponentIdFromEntry(entry);
+    if (!entriesByComponentId.has(componentId)) {
+      entriesByComponentId.set(componentId, entry);
+    }
+  }
 
-	return entriesByComponentId;
+  return entriesByComponentId;
 }
 
 /** `$ref` target for one component's docgen payload, relative to `manifests/`. */
 export function docgenManifestRef(id: string): string {
-	return `../services/${DOCGEN_SERVICE_ID}/${id}.json#/components/${id}`;
+  return `../services/${DOCGEN_SERVICE_ID}/${id}.json#/components/${id}`;
 }
 
 /** `$ref` target for one component's story-docs payload, relative to `manifests/`. */
 export function storyDocsManifestRef(id: string): string {
-	return `../services/${STORY_DOCS_SERVICE_ID}/${id}.json#/components/${id}`;
+  return `../services/${STORY_DOCS_SERVICE_ID}/${id}.json#/components/${id}`;
 }
 
 /** `$ref` target for one MDX doc, relative to `manifests/`. */
 export function mdxManifestRef(componentId: string, docId: string): string {
-	return `../services/${MDX_SERVICE_ID}/${componentId}.json#/components/${componentId}/docs/${docId}`;
+  return `../services/${MDX_SERVICE_ID}/${componentId}.json#/components/${componentId}/docs/${docId}`;
 }

@@ -38,108 +38,108 @@ Exactly what the user asked for — **no more, no less**. Group logically or fol
  * validates the agent's input and forwards it over the channel.
  */
 export const ReviewCollectionSchema = v.object({
-	title: v.pipe(
-		v.string(),
-		v.description(
-			'Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.',
-		),
-	),
-	rationale: v.pipe(
-		v.string(),
-		v.description(
-			'Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.',
-		),
-	),
-	storyIds: v.pipe(
-		v.array(v.string()),
-		v.description(
-			'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.',
-		),
-	),
+  title: v.pipe(
+    v.string(),
+    v.description(
+      'Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.'
+    )
+  ),
+  rationale: v.pipe(
+    v.string(),
+    v.description(
+      'Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.'
+    )
+  ),
+  storyIds: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.'
+    )
+  ),
 });
 
 export const ReviewStateSchema = v.object({
-	title: v.pipe(
-		v.string(),
-		v.description(
-			'Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.',
-		),
-	),
-	description: v.pipe(
-		v.string(),
-		v.description(
-			"Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names.",
-		),
-	),
-	collections: v.pipe(
-		v.array(ReviewCollectionSchema),
-		v.description(
-			'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups.',
-		),
-	),
-	changedFiles: v.pipe(
-		v.array(v.string()),
-		v.description(
-			'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests, Trigger 2).',
-		),
-	),
+  title: v.pipe(
+    v.string(),
+    v.description(
+      'Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.'
+    )
+  ),
+  description: v.pipe(
+    v.string(),
+    v.description(
+      "Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names."
+    )
+  ),
+  collections: v.pipe(
+    v.array(ReviewCollectionSchema),
+    v.description(
+      'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups.'
+    )
+  ),
+  changedFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests, Trigger 2).'
+    )
+  ),
 });
 
 export type ReviewCollection = v.InferOutput<typeof ReviewCollectionSchema>;
 export type ReviewState = v.InferOutput<typeof ReviewStateSchema>;
 
 export const DisplayReviewOutput = v.object({
-	reviewUrl: v.pipe(
-		v.string(),
-		v.description(
-			'URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.',
-		),
-	),
+  reviewUrl: v.pipe(
+    v.string(),
+    v.description(
+      'URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.'
+    )
+  ),
 });
 
 function storybookRootFromRequest(
-	request: Request | undefined,
-	trustedOrigin: string,
-	endpoint: string,
+  request: Request | undefined,
+  trustedOrigin: string,
+  endpoint: string
 ): string | undefined {
-	if (!request?.url) return undefined;
-	try {
-		const url = new URL(request.url);
-		const normalizedEndpoint = endpoint.replace(/\/$/, '');
-		const normalizedPathname = url.pathname.replace(/\/$/, '');
-		const rootPath = normalizedPathname.endsWith(normalizedEndpoint)
-			? normalizedPathname.slice(0, -normalizedEndpoint.length)
-			: normalizedPathname.replace(/\/[^/]+$/, '');
-		return `${trustedOrigin.replace(/\/$/, '')}${rootPath}`;
-	} catch {
-		return undefined;
-	}
+  if (!request?.url) return undefined;
+  try {
+    const url = new URL(request.url);
+    const normalizedEndpoint = endpoint.replace(/\/$/, '');
+    const normalizedPathname = url.pathname.replace(/\/$/, '');
+    const rootPath = normalizedPathname.endsWith(normalizedEndpoint)
+      ? normalizedPathname.slice(0, -normalizedEndpoint.length)
+      : normalizedPathname.replace(/\/[^/]+$/, '');
+    return `${trustedOrigin.replace(/\/$/, '')}${rootPath}`;
+  } catch {
+    return undefined;
+  }
 }
 
 export function buildReviewUrl(ctx: {
-	origin: string;
-	request?: Request;
-	endpoint?: string;
+  origin: string;
+  request?: Request;
+  endpoint?: string;
 }): string {
-	const trustedOrigin = ctx.origin;
-	if (!trustedOrigin) {
-		throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
-	}
-	const root = ctx.request
-		? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? DEFAULT_MCP_ENDPOINT) ??
-			trustedOrigin)
-		: trustedOrigin;
-	return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
+  const trustedOrigin = ctx.origin;
+  if (!trustedOrigin) {
+    throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
+  }
+  const root = ctx.request
+    ? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? DEFAULT_MCP_ENDPOINT) ??
+      trustedOrigin)
+    : trustedOrigin;
+  return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
 }
 
 export function getDisplayReviewToolMetadata() {
-	return {
-		name: DISPLAY_REVIEW_TOOL_NAME,
-		title: 'Display Storybook review',
-		description: DISPLAY_REVIEW_TOOL_DESCRIPTION,
-		schema: withFriendlyErrors(ReviewStateSchema),
-		outputSchema: DisplayReviewOutput,
-	};
+  return {
+    name: DISPLAY_REVIEW_TOOL_NAME,
+    title: 'Display Storybook review',
+    description: DISPLAY_REVIEW_TOOL_DESCRIPTION,
+    schema: withFriendlyErrors(ReviewStateSchema),
+    outputSchema: DisplayReviewOutput,
+  };
 }
 
 /**
@@ -148,103 +148,103 @@ export function getDisplayReviewToolMetadata() {
  * lists each fabricated ID once, in the order the agent provided them.
  */
 async function collectUnknownStoryIds(
-	collections: ReadonlyArray<{ readonly storyIds: ReadonlyArray<string> }>,
-	options: Options,
+  collections: ReadonlyArray<{ readonly storyIds: ReadonlyArray<string> }>,
+  options: Options
 ): Promise<string[]> {
-	const requested = new Set<string>();
-	const inOrder: string[] = [];
-	for (const collection of collections) {
-		for (const id of collection.storyIds) {
-			if (!requested.has(id)) {
-				requested.add(id);
-				inOrder.push(id);
-			}
-		}
-	}
-	if (inOrder.length === 0) return [];
+  const requested = new Set<string>();
+  const inOrder: string[] = [];
+  for (const collection of collections) {
+    for (const id of collection.storyIds) {
+      if (!requested.has(id)) {
+        requested.add(id);
+        inOrder.push(id);
+      }
+    }
+  }
+  if (inOrder.length === 0) return [];
 
-	const index = await getStoryIndex(options);
-	return inOrder.filter((id) => !index.entries[id]);
+  const index = await getStoryIndex(options);
+  return inOrder.filter((id) => !index.entries[id]);
 }
 
 function formatUnknownStoryIdsError(unknownIds: string[]): string {
-	const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
-	const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
-	return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
+  const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
+  const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
 export async function addDisplayReviewTool(
-	server: McpServer<any, AddonContext>,
-	enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
-		server.ctx.custom?.toolsets?.dev ?? true,
+  server: McpServer<any, AddonContext>,
+  enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
+    server.ctx.custom?.toolsets?.dev ?? true
 ) {
-	server.tool(
-		{
-			...getDisplayReviewToolMetadata(),
-			enabled,
-		},
-		async (input: ReviewState) => {
-			try {
-				const customContext = server.ctx.custom;
-				if (!customContext?.origin) {
-					throw new Error(
-						'Cannot resolve the Storybook URL: missing trusted origin in addon context.',
-					);
-				}
-				if (!customContext.options) {
-					throw new Error('Storybook options are required in addon context.');
-				}
+  server.tool(
+    {
+      ...getDisplayReviewToolMetadata(),
+      enabled,
+    },
+    async (input: ReviewState) => {
+      try {
+        const customContext = server.ctx.custom;
+        if (!customContext?.origin) {
+          throw new Error(
+            'Cannot resolve the Storybook URL: missing trusted origin in addon context.'
+          );
+        }
+        if (!customContext.options) {
+          throw new Error('Storybook options are required in addon context.');
+        }
 
-				// Validate every storyId against the live index before publishing.
-				// Without this gate, fabricated IDs (e.g. derived from filenames or
-				// naming conventions) make it into the review unchallenged — the
-				// agent gets a reviewUrl back, assumes success, and the user opens
-				// a broken page. Hard-failing here forces the agent to resolve
-				// real IDs via get-stories-by-component before retrying.
-				const unknownIds = await collectUnknownStoryIds(input.collections, customContext.options);
-				if (unknownIds.length > 0) {
-					throw new Error(formatUnknownStoryIdsError(unknownIds));
-				}
+        // Validate every storyId against the live index before publishing.
+        // Without this gate, fabricated IDs (e.g. derived from filenames or
+        // naming conventions) make it into the review unchallenged — the
+        // agent gets a reviewUrl back, assumes success, and the user opens
+        // a broken page. Hard-failing here forces the agent to resolve
+        // real IDs via get-stories-by-component before retrying.
+        const unknownIds = await collectUnknownStoryIds(input.collections, customContext.options);
+        if (unknownIds.length > 0) {
+          throw new Error(formatUnknownStoryIdsError(unknownIds));
+        }
 
-				const reviewUrl = buildReviewUrl({
-					origin: customContext.origin,
-					request: customContext.request,
-					endpoint: customContext.endpoint,
-				});
+        const reviewUrl = buildReviewUrl({
+          origin: customContext.origin,
+          request: customContext.request,
+          endpoint: customContext.endpoint,
+        });
 
-				// Hand the payload off to core-server's review channel
-				server.ctx.custom?.options?.channel?.emit(PUSH_REVIEW_EVENT, input);
+        // Hand the payload off to core-server's review channel
+        server.ctx.custom?.options?.channel?.emit(PUSH_REVIEW_EVENT, input);
 
-				const collectionCount = input.collections.length;
-				const storyCount = input.collections.reduce((n, c) => n + c.storyIds.length, 0);
+        const collectionCount = input.collections.length;
+        const storyCount = input.collections.reduce((n, c) => n + c.storyIds.length, 0);
 
-				if (!customContext.disableTelemetry) {
-					await collectTelemetry({
-						event: 'tool:displayReview',
-						server,
-						toolset: 'dev',
-						collectionCount,
-						storyCount,
-						changedFileCount: input.changedFiles.length,
-					});
-				}
+        if (!customContext.disableTelemetry) {
+          await collectTelemetry({
+            event: 'tool:displayReview',
+            server,
+            toolset: 'dev',
+            collectionCount,
+            storyCount,
+            changedFileCount: input.changedFiles.length,
+          });
+        }
 
-				return {
-					content: [
-						{
-							type: 'text' as const,
-							text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
 2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`,
-						},
-					],
-					structuredContent: { reviewUrl },
-				};
-			} catch (error) {
-				return errorToMCPContent(error);
-			}
-		},
-	);
+            },
+          ],
+          structuredContent: { reviewUrl },
+        };
+      } catch (error) {
+        return errorToMCPContent(error);
+      }
+    }
+  );
 }

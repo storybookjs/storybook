@@ -9,8 +9,8 @@ const END_MARKER = '<!-- agent-eval-results:end -->';
 const summary = process.env.SUMMARY;
 
 if (!summary) {
-	console.error('SUMMARY env var is required');
-	process.exit(1);
+  console.error('SUMMARY env var is required');
+  process.exit(1);
 }
 
 // trimEnd only: a full trim would rewrite the user-authored body prefix (e.g.
@@ -22,8 +22,8 @@ const startIndex = body.indexOf(START_MARKER);
 const endIndex = body.indexOf(END_MARKER);
 
 const updated =
-	startIndex !== -1 && endIndex !== -1 && endIndex > startIndex
-		? `${body.slice(0, startIndex)}${section}${body.slice(endIndex + END_MARKER.length)}`
-		: `${body}${body ? '\n\n' : ''}${section}`;
+  startIndex !== -1 && endIndex !== -1 && endIndex > startIndex
+    ? `${body.slice(0, startIndex)}${section}${body.slice(endIndex + END_MARKER.length)}`
+    : `${body}${body ? '\n\n' : ''}${section}`;
 
 process.stdout.write(`${updated}\n`);

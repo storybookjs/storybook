@@ -7,21 +7,21 @@ import 'reshaped/themes/slate/theme.css';
 initialize();
 
 const preview: Preview = {
-	decorators: [
-		(Story) => (
-			<Reshaped theme="slate">
-				<Story />
-			</Reshaped>
-		),
-	],
-	loaders: [mswLoader],
-	parameters: {
-		options: {
-			storySort: {
-				order: ['Summary', 'Conversation', 'Build', 'Typecheck', 'Lint', 'Source'],
-			},
-		},
-	},
+  decorators: [
+    (Story) => (
+      <Reshaped theme="slate">
+        <Story />
+      </Reshaped>
+    ),
+  ],
+  loaders: [mswLoader],
+  parameters: {
+    options: {
+      storySort: {
+        order: ['Summary', 'Conversation', 'Build', 'Typecheck', 'Lint', 'Source'],
+      },
+    },
+  },
 };
 
 export default preview;

@@ -3,5 +3,5 @@
  * Storybook import paths always use forward slashes
  */
 export function slash(path: string) {
-	return path.replace(/\\/g, '/');
+  return path.replace(/\\/g, '/');
 }

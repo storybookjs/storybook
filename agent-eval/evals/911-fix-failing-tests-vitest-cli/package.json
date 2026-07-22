@@ -1,7 +1,7 @@
 {
-	"name": "911-fix-failing-tests-vitest-cli",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "911-fix-failing-tests-vitest-cli",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

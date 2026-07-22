@@ -8,39 +8,39 @@ import { expectNoDisplayReview } from '#test-utils';
 // renames the helper, not the file, so a module path like
 // '../utils/formatRating' inside a string literal may legitimately stay.
 test('performs the rename across the source tree', () => {
-	const sourceFiles = readSourceFiles('src').map((file) => ({
-		path: file.path,
-		identifiers: stripStringLiterals(file.source),
-	}));
-	const filesKeepingOldName = sourceFiles
-		.filter((file) => /\bformatRating\b/.test(file.identifiers))
-		.map((file) => file.path);
+  const sourceFiles = readSourceFiles('src').map((file) => ({
+    path: file.path,
+    identifiers: stripStringLiterals(file.source),
+  }));
+  const filesKeepingOldName = sourceFiles
+    .filter((file) => /\bformatRating\b/.test(file.identifiers))
+    .map((file) => file.path);
 
-	expect(filesKeepingOldName, 'Expected formatRating to be fully renamed to formatStars').toEqual(
-		[],
-	);
-	expect(
-		sourceFiles.some((file) => /\bformatStars\b/.test(file.identifiers)),
-		'Expected the renamed formatStars helper to exist under src/',
-	).toBe(true);
+  expect(filesKeepingOldName, 'Expected formatRating to be fully renamed to formatStars').toEqual(
+    []
+  );
+  expect(
+    sourceFiles.some((file) => /\bformatStars\b/.test(file.identifiers)),
+    'Expected the renamed formatStars helper to exist under src/'
+  ).toBe(true);
 });
 
 test('does not publish a display review for a non-visual refactor', () => {
-	expectNoDisplayReview();
+  expectNoDisplayReview();
 });
 
 function stripStringLiterals(source: string): string {
-	return source.replace(/'[^'\n]*'|"[^"\n]*"|`[^`]*`/g, "''");
+  return source.replace(/'[^'\n]*'|"[^"\n]*"|`[^`]*`/g, "''");
 }
 
 function readSourceFiles(dir: string): Array<{ path: string; source: string }> {
-	return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-		const entryPath = join(dir, entry.name);
-		if (entry.isDirectory()) {
-			return readSourceFiles(entryPath);
-		}
-		return /\.[jt]sx?$/.test(entry.name)
-			? [{ path: entryPath, source: readFileSync(entryPath, 'utf8') }]
-			: [];
-	});
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return readSourceFiles(entryPath);
+    }
+    return /\.[jt]sx?$/.test(entry.name)
+      ? [{ path: entryPath, source: readFileSync(entryPath, 'utf8') }]
+      : [];
+  });
 }

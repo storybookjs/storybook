@@ -11,8 +11,8 @@
 // lives in eval-matchers.d.ts; agent-eval/tsconfig.json includes both files.
 
 declare module '@vercel/agent-eval/eval' {
-	/** Opaque sentinels passed to `expect(...)`; the matcher routes by which one it is. */
-	type JudgeSubject = { readonly __judgeSubject: 'environment' | 'transcript' };
-	export const environment: JudgeSubject;
-	export const transcript: JudgeSubject;
+  /** Opaque sentinels passed to `expect(...)`; the matcher routes by which one it is. */
+  type JudgeSubject = { readonly __judgeSubject: 'environment' | 'transcript' };
+  export const environment: JudgeSubject;
+  export const transcript: JudgeSubject;
 }

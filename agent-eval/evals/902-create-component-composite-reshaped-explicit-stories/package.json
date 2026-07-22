@@ -1,7 +1,7 @@
 {
-	"name": "902-create-component-composite-reshaped-explicit-stories",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "902-create-component-composite-reshaped-explicit-stories",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

@@ -1,7 +1,7 @@
 {
-	"name": "901-create-component-atom-reshaped-explicit-stories",
-	"type": "module",
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "name": "901-create-component-atom-reshaped-explicit-stories",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }

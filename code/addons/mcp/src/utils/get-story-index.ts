@@ -16,19 +16,19 @@ import { logger } from 'storybook/internal/node-logger';
  * @throws If the generator preset is unavailable (e.g. not running inside a dev server).
  */
 export async function getStoryIndex(options: Options): Promise<StoryIndex> {
-	const generator = await options.presets.apply<StoryIndexGenerator | undefined>(
-		'storyIndexGenerator',
-	);
+  const generator = await options.presets.apply<StoryIndexGenerator | undefined>(
+    'storyIndexGenerator'
+  );
 
-	if (!generator) {
-		throw new Error(
-			'Storybook story index generator is unavailable. These MCP tools require a running Storybook dev server with a builder that exposes the story index.',
-		);
-	}
+  if (!generator) {
+    throw new Error(
+      'Storybook story index generator is unavailable. These MCP tools require a running Storybook dev server with a builder that exposes the story index.'
+    );
+  }
 
-	const index = await generator.getIndex();
+  const index = await generator.getIndex();
 
-	logger.debug(`Story index entries found: ${Object.keys(index.entries).length}`);
+  logger.debug(`Story index entries found: ${Object.keys(index.entries).length}`);
 
-	return index;
+  return index;
 }

@@ -1,52 +1,52 @@
 {
-	"name": "@storybook/mcp-eval-template-reshaped-storybook",
-	"version": "0.0.0",
-	"private": true,
-	"type": "module",
-	"imports": {
-		"#test-utils": "./__agent_eval__/test-utils.ts"
-	},
-	"scripts": {
-		"build": "vite build",
-		"typecheck": "tsc --noEmit --project ./tsconfig.app.json",
-		"lint": "eslint .",
-		"test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
-		"test:stories:coverage": "vitest run --config ./vitest.storybook.config.ts --project storybook --coverage",
-		"postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
-		"storybook": "storybook dev",
-		"build-storybook": "storybook build"
-	},
-	"dependencies": {
-		"react": "19.2.0",
-		"react-dom": "19.2.0",
-		"reshaped": "4.0.3"
-	},
-	"devDependencies": {
-		"@eslint/js": "9.39.1",
-		"@storybook/addon-a11y": "next",
-		"@storybook/addon-docs": "next",
-		"@storybook/addon-mcp": "file:./local-packages/addon-mcp",
-		"@storybook/addon-vitest": "next",
-		"@storybook/mcp": "file:./local-packages/mcp",
-		"@storybook/react": "next",
-		"@storybook/react-vite": "next",
-		"@types/node": "24.10.1",
-		"@types/react": "19.2.6",
-		"@types/react-dom": "19.2.3",
-		"@vercel/agent-eval": "1.2.0",
-		"@vitejs/plugin-react-swc": "4.2.2",
-		"@vitest/browser-playwright": "4.0.6",
-		"eslint": "9.39.1",
-		"eslint-plugin-react-hooks": "7.0.1",
-		"eslint-plugin-react-refresh": "0.4.24",
-		"globals": "16.5.0",
-		"msw": "2.14.6",
-		"msw-storybook-addon": "2.0.7",
-		"playwright": "1.56.1",
-		"storybook": "next",
-		"typescript": "5.9.3",
-		"typescript-eslint": "8.47.0",
-		"vite": "7.2.2",
-		"vitest": "4.0.6"
-	}
+  "name": "@storybook/mcp-eval-template-reshaped-storybook",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#test-utils": "./__agent_eval__/test-utils.ts"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit --project ./tsconfig.app.json",
+    "lint": "eslint .",
+    "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
+    "test:stories:coverage": "vitest run --config ./vitest.storybook.config.ts --project storybook --coverage",
+    "postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
+    "storybook": "storybook dev",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "reshaped": "4.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "@storybook/addon-a11y": "next",
+    "@storybook/addon-docs": "next",
+    "@storybook/addon-mcp": "file:./local-packages/addon-mcp",
+    "@storybook/addon-vitest": "next",
+    "@storybook/mcp": "file:./local-packages/mcp",
+    "@storybook/react": "next",
+    "@storybook/react-vite": "next",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3",
+    "@vercel/agent-eval": "1.2.0",
+    "@vitejs/plugin-react-swc": "4.2.2",
+    "@vitest/browser-playwright": "4.0.6",
+    "eslint": "9.39.1",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "eslint-plugin-react-refresh": "0.4.24",
+    "globals": "16.5.0",
+    "msw": "2.14.6",
+    "msw-storybook-addon": "2.0.7",
+    "playwright": "1.56.1",
+    "storybook": "next",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.47.0",
+    "vite": "7.2.2",
+    "vitest": "4.0.6"
+  }
 }

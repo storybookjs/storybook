@@ -15,35 +15,35 @@ const ARG_TYPES_KEY = 'argTypes';
 
 /** Converts the story-docs `stories` record (or an already-resolved array) into `Story[]`. */
 export function adaptCoreStories(stories: CoreDocgenComponent['stories']): Story[] | undefined {
-	if (!stories) {
-		return undefined;
-	}
-	if (Array.isArray(stories)) {
-		return stories;
-	}
-	return Object.values(stories);
+  if (!stories) {
+    return undefined;
+  }
+  if (Array.isArray(stories)) {
+    return stories;
+  }
+  return Object.values(stories);
 }
 
 /** Adapts one MDX service payload into a {@link Doc}. */
 export function adaptCoreDoc(doc: CoreMdxDoc): Doc {
-	return { ...doc };
+  return { ...doc };
 }
 
 /** Adapts a core-format component (docgen + story-docs + attached MDX) into a {@link ComponentManifest}. */
 export function adaptCoreComponent(core: CoreDocgenComponent): ComponentManifest {
-	const { stories, docs, [ARG_TYPES_KEY]: _argTypes, ...rest } = core;
-	const component = { ...rest } as ComponentManifest;
+  const { stories, docs, [ARG_TYPES_KEY]: _argTypes, ...rest } = core;
+  const component = { ...rest } as ComponentManifest;
 
-	const adaptedStories = adaptCoreStories(stories);
-	if (adaptedStories) {
-		component.stories = adaptedStories;
-	}
+  const adaptedStories = adaptCoreStories(stories);
+  if (adaptedStories) {
+    component.stories = adaptedStories;
+  }
 
-	if (docs) {
-		component.docs = Object.fromEntries(
-			Object.entries(docs).map(([id, doc]) => [id, adaptCoreDoc(doc)]),
-		);
-	}
+  if (docs) {
+    component.docs = Object.fromEntries(
+      Object.entries(docs).map(([id, doc]) => [id, adaptCoreDoc(doc)])
+    );
+  }
 
-	return component;
+  return component;
 }

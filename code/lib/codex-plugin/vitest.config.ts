@@ -1,13 +1,12 @@
-import { mergeConfig } from 'vite';
-import { defineProject } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
 
-import vitestConfig from '../../vitest.config.ts';
+import { vitestCommonConfig } from '../../vitest.shared.ts';
 
 export default mergeConfig(
-	vitestConfig,
-	defineProject({
-		test: {
-			include: ['toml.test.ts'],
-		},
-	}),
+  vitestCommonConfig,
+  defineConfig({
+    test: {
+      include: ['toml.test.ts'],
+    },
+  })
 );

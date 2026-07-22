@@ -5,44 +5,44 @@ import { parseArgs } from 'node:util';
 import { basename } from 'node:path';
 
 async function serveMcp(port: number, manifestsDir: string) {
-	const storybookMcpHandler = await createStorybookMcpHandler({
-		// Use the local fixture file via manifestProvider
-		manifestProvider: async (_request, path) => {
-			if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
-				const res = await fetch(`${manifestsDir}/${basename(path)}`);
-				return await res.text();
-			}
-			return await fs.readFile(`${manifestsDir}/${basename(path)}`, 'utf-8');
-		},
-	});
+  const storybookMcpHandler = await createStorybookMcpHandler({
+    // Use the local fixture file via manifestProvider
+    manifestProvider: async (_request, path) => {
+      if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
+        const res = await fetch(`${manifestsDir}/${basename(path)}`);
+        return await res.text();
+      }
+      return await fs.readFile(`${manifestsDir}/${basename(path)}`, 'utf-8');
+    },
+  });
 
-	serve({
-		async fetch(req) {
-			const pathname = new URL(req.url).pathname;
+  serve({
+    async fetch(req) {
+      const pathname = new URL(req.url).pathname;
 
-			if (pathname === '/mcp') {
-				return await storybookMcpHandler(req);
-			}
+      if (pathname === '/mcp') {
+        return await storybookMcpHandler(req);
+      }
 
-			return new Response('Not found', { status: 404 });
-		},
-		port,
-	});
+      return new Response('Not found', { status: 404 });
+    },
+    port,
+  });
 }
 
-// @ts-ignore
+// @ts-expect-error
 if (import.meta.main) {
-	const args = parseArgs({
-		options: {
-			port: {
-				type: 'string',
-				default: '13316',
-			},
-			manifestsDir: {
-				type: 'string',
-				default: './fixtures/default',
-			},
-		},
-	});
-	await serveMcp(Number(args.values.port), args.values.manifestsDir);
+  const args = parseArgs({
+    options: {
+      port: {
+        type: 'string',
+        default: '13316',
+      },
+      manifestsDir: {
+        type: 'string',
+        default: './fixtures/default',
+      },
+    },
+  });
+  await serveMcp(Number(args.values.port), args.values.manifestsDir);
 }

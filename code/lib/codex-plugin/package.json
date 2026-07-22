@@ -9,26 +9,25 @@
     "plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/mcp/tree/main/packages/codex-plugin#readme",
-  "license": "MIT",
-  "author": "Storybook Core Team",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/storybookjs/mcp.git",
-    "directory": "packages/codex-plugin"
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/codex-plugin"
   },
+  "license": "MIT",
+  "author": "Storybook Core Team",
+  "type": "module",
   "files": [
     ".agents",
     "plugins",
     "README.md"
   ],
-  "type": "module",
   "scripts": {
-    "validate:marketplace": "node ./scripts/validate-marketplace.ts",
-    "test": "cd ../.. && pnpm vitest --project=@storybook/codex-plugin",
     "marketplace:add": "codex plugin marketplace add ./",
     "marketplace:remove": "codex plugin marketplace remove storybook",
-    "remove": "node ./scripts/remove-plugin.ts"
+    "remove": "node ./scripts/remove-plugin.ts",
+    "validate:marketplace": "node ./scripts/validate-marketplace.ts"
   },
   "devDependencies": {
     "tinyexec": "^1.0.2"

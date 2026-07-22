@@ -7,7 +7,7 @@ import { x } from 'tinyexec';
 import { describe, expect, it } from 'vitest';
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(packageRoot, '../..');
+const repoRoot = resolve(packageRoot, '../../..');
 
 type ClaudeMarketplaceJson = {
   plugins?: Array<{
@@ -60,7 +60,7 @@ function readSkillDescription(skillPath: string) {
 describe('stories skill description', () => {
   it.each([
     resolve(packageRoot, 'skills/stories/SKILL.md'),
-    resolve(repoRoot, 'packages/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
+    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
   ])('stays under the silent-drop listing budget: %s', (skillPath) => {
     const description = readSkillDescription(skillPath);
     expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(MAX_SKILL_DESCRIPTION_BYTES);
@@ -69,7 +69,7 @@ describe('stories skill description', () => {
   it('keeps the claude and codex plugin descriptions identical', () => {
     expect(readSkillDescription(resolve(packageRoot, 'skills/stories/SKILL.md'))).toBe(
       readSkillDescription(
-        resolve(repoRoot, 'packages/codex-plugin/plugins/storybook/skills/stories/SKILL.md')
+        resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md')
       )
     );
   });
@@ -97,7 +97,7 @@ describe('Storybook Claude plugin CLI validation', () => {
     const rootMarketplace = readMarketplace(resolve(repoRoot, '.claude-plugin/marketplace.json'));
 
     expect(packageMarketplace.plugins?.[0]?.source).toBe('./');
-    expect(rootMarketplace.plugins?.[0]?.source).toBe('./packages/claude-plugin');
+    expect(rootMarketplace.plugins?.[0]?.source).toBe('./code/lib/claude-plugin');
     expect(normalizeMarketplace(rootMarketplace)).toEqual(normalizeMarketplace(packageMarketplace));
   });
 

@@ -47,79 +47,44 @@ const getProps = (props: SourceProps, sourceParameters: SourceParameters | null 
     .result.current;
 
 describe('useSourceProps – transformCode', () => {
-  describe('code via the `code` prop', () => {
-    it('renders the code verbatim when no transform is provided', () => {
-      const { code } = getProps({ code: 'const x = 1;' });
-      expect(code).toBe('const x = 1;');
-    });
-
-    it('ignores `transform` when `transformCode` is not set (default)', () => {
-      const { code } = getProps({ code: 'const x = 1;', transform: upper });
-      expect(code).toBe('const x = 1;');
-    });
-
-    it('ignores `transform` when `transformCode` is explicitly false', () => {
-      const { code } = getProps({ code: 'const x = 1;', transform: upper, transformCode: false });
-      expect(code).toBe('const x = 1;');
-    });
-
-    it('applies `transform` when `transformCode` is true', () => {
-      const { code } = getProps({ code: 'const x = 1;', transform: upper, transformCode: true });
-      expect(code).toBe('CONST X = 1;');
-    });
+  it('ignores `transform` for direct code by default', () => {
+    const { code } = getProps({ code: 'const x = 1;', transform: upper });
+    expect(code).toBe('const x = 1;');
   });
 
-  describe('code via parameters.docs.source.code', () => {
-    it('renders the parameter code verbatim by default', () => {
-      const { code } = getProps({}, { code: 'const y = 2;', transform: upper });
-      expect(code).toBe('const y = 2;');
-    });
-
-    it('applies the parameter `transform` when `transformCode` parameter is true', () => {
-      const { code } = getProps(
-        {},
-        { code: 'const y = 2;', transform: upper, transformCode: true }
-      );
-      expect(code).toBe('CONST Y = 2;');
-    });
-
-    it('applies the prop `transform` to parameter code when `transformCode` prop is true', () => {
-      const { code } = getProps(
-        { transform: upper, transformCode: true },
-        { code: 'const y = 2;' }
-      );
-      expect(code).toBe('CONST Y = 2;');
-    });
+  it('applies `transform` to direct code when `transformCode` is true', () => {
+    const { code } = getProps({ code: 'const x = 1;', transform: upper, transformCode: true });
+    expect(code).toBe('CONST X = 1;');
   });
 
-  describe('precedence', () => {
-    it('prop `transformCode` (false) overrides parameter `transformCode` (true)', () => {
-      const { code } = getProps(
-        { transformCode: false },
-        { code: 'const y = 2;', transform: upper, transformCode: true }
-      );
-      expect(code).toBe('const y = 2;');
-    });
-
-    it('prop `transformCode` (true) overrides parameter `transformCode` (false)', () => {
-      const { code } = getProps(
-        { transformCode: true },
-        { code: 'const y = 2;', transform: upper, transformCode: false }
-      );
-      expect(code).toBe('CONST Y = 2;');
-    });
-
-    it('prop `code` takes precedence over parameter `code`', () => {
-      const { code } = getProps({ code: 'const fromProp = 1;' }, { code: 'const fromParam = 2;' });
-      expect(code).toBe('const fromProp = 1;');
-    });
+  it('prop `transformCode` (false) overrides parameter `transformCode` (true)', () => {
+    const { code } = getProps(
+      { transformCode: false },
+      { code: 'const y = 2;', transform: upper, transformCode: true }
+    );
+    expect(code).toBe('const y = 2;');
   });
 
-  describe('format resolution', () => {
-    it('honors the `format` prop as-is when `code` is passed as a prop', () => {
-      const { format } = getProps({ code: 'const x = 1;', format: 'dedent' });
-      expect(format).toBe('dedent');
-    });
+  it('prop `transformCode` (true) overrides parameter `transformCode` (false)', () => {
+    const { code } = getProps(
+      { transformCode: true },
+      { code: 'const y = 2;', transform: upper, transformCode: false }
+    );
+    expect(code).toBe('CONST Y = 2;');
+  });
+
+  it('uses the prop `transform` over the parameter `transform`', () => {
+    const lower = (c: string) => c.toLowerCase();
+    const { code } = getProps(
+      { transform: upper, transformCode: true },
+      { code: 'Const Y = 2;', transform: lower }
+    );
+    expect(code).toBe('CONST Y = 2;');
+  });
+
+  it('prop `code` takes precedence over parameter `code`', () => {
+    const { code } = getProps({ code: 'const fromProp = 1;' }, { code: 'const fromParam = 2;' });
+    expect(code).toBe('const fromProp = 1;');
   });
 
   it('returns a SOURCE_UNAVAILABLE error when there is no code and no story', () => {

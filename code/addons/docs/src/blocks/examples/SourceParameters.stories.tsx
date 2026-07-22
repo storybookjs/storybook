@@ -55,6 +55,17 @@ export const Code = {
   parameters: { docs: { source: { code } } },
 };
 
+const commentTransform = (src: string) =>
+  `// this comment has been added via parameters.docs.source.transform!\n${src}`;
+
+export const CodeTransform = {
+  parameters: { docs: { source: { code, transform: commentTransform } } },
+};
+
+export const CodeTransformCode = {
+  parameters: { docs: { source: { code, transform: commentTransform, transformCode: true } } },
+};
+
 export const CodeFormat = {
   parameters: { docs: { source: { code, format: true } } },
 };

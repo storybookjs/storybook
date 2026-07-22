@@ -4,8 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { PreparedStory } from 'storybook/internal/types';
 
-// The service-snippet path talks to the dev server; it is irrelevant to the
-// code-resolution logic under test, so we stub it out here.
 vi.mock('./use-service-story-docs.ts', () => ({
   useServiceStorySnippet: () => ({ data: '' }),
 }));
@@ -19,11 +17,6 @@ const EMPTY_SOURCE_CONTEXT: SourceContextProps = { sources: {} };
 
 const upper = (code: string) => code.toUpperCase();
 
-/**
- * Builds a minimal `DocsContext` that always resolves to a single story with the given
- * `docs.source` parameters. When `story` is `null` the context is "unattached": `resolveOf`
- * returns no story and `storyById` throws, mirroring `<Source code="..." />` outside a story.
- */
 const createDocsContext = (sourceParameters: SourceParameters | null): DocsContextProps => {
   const story =
     sourceParameters === null

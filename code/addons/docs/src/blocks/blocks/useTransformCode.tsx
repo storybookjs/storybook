@@ -16,10 +16,6 @@ export function useTransformCode(
   const isPromise =
     typeof transformed === 'object' && typeof (transformed as Promise<string>)?.then === 'function';
 
-  // Synchronous transforms (including the identity transform used when there is nothing to
-  // transform) are rendered directly, avoiding a needless "Transforming..." -> value state
-  // update and the extra re-render that comes with it. Only asynchronous transforms stage
-  // their result through state.
   const [transformedCode, setTransformedCode] = useState(
     isPromise ? 'Transforming...' : (transformed as string)
   );

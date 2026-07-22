@@ -11,9 +11,22 @@ import { Heading } from './Heading';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 import type { DocsParameters } from '../../types.ts';
 
-interface StoriesProps {
+export interface StoriesProps {
   title?: ReactElement | string;
   includePrimary?: boolean;
+  /**
+   * Whether stories in the list are forced to always display their initial args,
+   * making them non-interactive in autodocs.
+   *
+   * Set to `false` if your stories use `useArgs` to manage state (controlled components),
+   * to make them interactive in autodocs
+   *
+   * Note: when disabled, changing Controls will affect ALL instances of the story
+   * on the page, including the primary story shown above the Controls table.
+   *
+   * @default true
+   */
+  forceInitialArgs?: boolean;
 }
 
 const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
@@ -32,7 +45,11 @@ const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
   },
 }));
 
-const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
+const StoriesImpl: FC<StoriesProps> = ({
+  title = 'Stories',
+  includePrimary = true,
+  forceInitialArgs = true,
+}) => {
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
 
   let stories = componentStories();
@@ -67,7 +84,14 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
       {typeof title === 'string' ? <StyledHeading>{title}</StyledHeading> : title}
       {stories.map(
         (story) =>
-          story && <DocsStory key={story.id} of={story.moduleExport} expanded __forceInitialArgs />
+          story && (
+            <DocsStory
+              key={story.id}
+              of={story.moduleExport}
+              expanded
+              __forceInitialArgs={forceInitialArgs}
+            />
+          )
       )}
     </>
   );

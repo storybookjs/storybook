@@ -45,6 +45,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     reviewEnabledForCli: availability.reviewEnabledForCli,
   };
 
+  // oxlint-disable-next-line prefer-const -- the instructions getter below may run before this is assigned
   let server: McpServer<any, AddonContext>;
 
   const serverOptions = {
@@ -219,7 +220,6 @@ export async function incomingMessageToWebRequest(req: IncomingMessage): Promise
   return new Request(url, {
     method: req.method,
     headers: req.headers as HeadersInit,
-    // oxlint-disable-next-line no-invalid-fetch-options -- We know req.method is always 'POST', linter doesn't
     body: bodyBuffer.length > 0 ? new Uint8Array(bodyBuffer) : undefined,
   });
 }

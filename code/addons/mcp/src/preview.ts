@@ -8,7 +8,7 @@
  * which is set by the MCP Apps preview.html wrapper.
  */
 
-import { MCP_APP_PARAM, MCP_APP_SIZE_CHANGED_EVENT } from './constants';
+import { MCP_APP_PARAM, MCP_APP_SIZE_CHANGED_EVENT } from './constants.ts';
 // Only run if we're in the special MCP App iframe context
 const isMcpApp = new URLSearchParams(window.location.search).has(MCP_APP_PARAM);
 

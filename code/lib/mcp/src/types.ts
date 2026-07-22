@@ -5,30 +5,30 @@ import * as v from 'valibot';
  * Represents a single Storybook source (local or remote).
  */
 export type Source = {
-	/** Unique identifier for this source (e.g., 'local', 'tetra') */
-	id: string;
-	/** Human-readable title (e.g., 'Local', 'Tetra Design System') */
-	title: string;
-	/** Remote URL, undefined for local source */
-	url?: string;
+  /** Unique identifier for this source (e.g., 'local', 'tetra') */
+  id: string;
+  /** Human-readable title (e.g., 'Local', 'Tetra Design System') */
+  title: string;
+  /** Remote URL, undefined for local source */
+  url?: string;
 };
 
 export type RequiresOwnMcpNotice = {
-	kind: 'requires-own-mcp';
-	endpoint: string;
+  kind: 'requires-own-mcp';
+  endpoint: string;
 };
 
 /**
  * All manifests for a single source.
  */
 export type SourceManifests = {
-	source: Source;
-	componentManifest: ComponentManifestMap;
-	docsManifest?: DocsManifestMap;
-	/** Error message if fetching this source failed */
-	error?: string;
-	/** Non-error guidance for sources that must be accessed through their own MCP endpoint */
-	notice?: RequiresOwnMcpNotice;
+  source: Source;
+  componentManifest: ComponentManifestMap;
+  docsManifest?: DocsManifestMap;
+  /** Error message if fetching this source failed */
+  error?: string;
+  /** Non-error guidance for sources that must be accessed through their own MCP endpoint */
+  notice?: RequiresOwnMcpNotice;
 };
 
 /**
@@ -36,65 +36,65 @@ export type SourceManifests = {
  * Contains the request object and optional manifest provider.
  */
 export type StorybookContext = {
-	/**
-	 * The incoming HTTP request being processed.
-	 */
-	request?: Request;
-	/**
-	 * Optional function to provide custom manifest retrieval logic.
-	 * If provided, this function will be called instead of the default fetch-based provider.
-	 * The function receives the request object, a path to the manifest file, and optionally
-	 * a source (in multi-source mode).
-	 * The default provider requires a request object and constructs the manifest URL from the request origin,
-	 * using the top-level manifest path such as /manifests/components.json.
-	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
-	 */
-	manifestProvider?: (
-		request: Request | undefined,
-		path: string,
-		source?: Source,
-	) => Promise<string>;
-	/**
-	 * Sources configuration for multi-source mode.
-	 * When provided, tools will fetch and display manifests grouped by source.
-	 */
-	sources?: Source[];
-	/**
-	 * Optional handler called when list-all-documentation tool is invoked.
-	 * Receives the context and the component manifest.
-	 */
-	onListAllDocumentation?: (params: {
-		context: StorybookContext;
-		manifests: AllManifests;
-		resultText: string;
-		/** Present in multi-source mode — all source manifests including errors */
-		sources?: SourceManifests[];
-	}) => void | Promise<void>;
-	/**
-	 * Optional handler called when get-documentation tool is invoked.
-	 * Receives the context, input parameters, and the found component (if any).
-	 */
-	onGetDocumentation?: (
-		params: {
-			context: StorybookContext;
-			input: { id: string; storybookId?: string };
-		} & (
-			| { foundDocumentation: ComponentManifest | Doc; resultText: string }
-			| { foundDocumentation?: never; resultText?: never }
-		),
-	) => void | Promise<void>;
-	/**
-	 * Optional in-process resolver for a single component or docs entry, used in
-	 * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
-	 * single-entry tools (`get-documentation`, `get-documentation-for-story`) call
-	 * this instead of fetching the (potentially all-component) manifest index, so a
-	 * single lookup never triggers docgen extraction for every component.
-	 *
-	 * Returns the fully-resolved component or doc in `@storybook/mcp`'s internal
-	 * shape (already adapted from the open-service payloads), or `undefined` when the
-	 * id is unknown.
-	 */
-	resolveEntry?: (id: string, source?: Source) => Promise<ResolvedEntry | undefined>;
+  /**
+   * The incoming HTTP request being processed.
+   */
+  request?: Request;
+  /**
+   * Optional function to provide custom manifest retrieval logic.
+   * If provided, this function will be called instead of the default fetch-based provider.
+   * The function receives the request object, a path to the manifest file, and optionally
+   * a source (in multi-source mode).
+   * The default provider requires a request object and constructs the manifest URL from the request origin,
+   * using the top-level manifest path such as /manifests/components.json.
+   * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
+   */
+  manifestProvider?: (
+    request: Request | undefined,
+    path: string,
+    source?: Source
+  ) => Promise<string>;
+  /**
+   * Sources configuration for multi-source mode.
+   * When provided, tools will fetch and display manifests grouped by source.
+   */
+  sources?: Source[];
+  /**
+   * Optional handler called when list-all-documentation tool is invoked.
+   * Receives the context and the component manifest.
+   */
+  onListAllDocumentation?: (params: {
+    context: StorybookContext;
+    manifests: AllManifests;
+    resultText: string;
+    /** Present in multi-source mode — all source manifests including errors */
+    sources?: SourceManifests[];
+  }) => void | Promise<void>;
+  /**
+   * Optional handler called when get-documentation tool is invoked.
+   * Receives the context, input parameters, and the found component (if any).
+   */
+  onGetDocumentation?: (
+    params: {
+      context: StorybookContext;
+      input: { id: string; storybookId?: string };
+    } & (
+      | { foundDocumentation: ComponentManifest | Doc; resultText: string }
+      | { foundDocumentation?: never; resultText?: never }
+    )
+  ) => void | Promise<void>;
+  /**
+   * Optional in-process resolver for a single component or docs entry, used in
+   * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
+   * single-entry tools (`get-documentation`, `get-documentation-for-story`) call
+   * this instead of fetching the (potentially all-component) manifest index, so a
+   * single lookup never triggers docgen extraction for every component.
+   *
+   * Returns the fully-resolved component or doc in `@storybook/mcp`'s internal
+   * shape (already adapted from the open-service payloads), or `undefined` when the
+   * id is unknown.
+   */
+  resolveEntry?: (id: string, source?: Source) => Promise<ResolvedEntry | undefined>;
 };
 
 /**
@@ -102,28 +102,28 @@ export type StorybookContext = {
  * fully-resolved component manifest or a standalone docs entry.
  */
 export type ResolvedEntry =
-	| { kind: 'component'; component: ComponentManifest }
-	| { kind: 'doc'; doc: Doc };
+  | { kind: 'component'; component: ComponentManifest }
+  | { kind: 'doc'; doc: Doc };
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));
 
 const ManifestError = v.object({
-	name: v.string(),
-	message: v.string(),
+  name: v.string(),
+  message: v.string(),
 });
 
 const BaseManifest = v.object({
-	name: v.string(),
-	description: v.optional(v.string()),
-	jsDocTags: v.optional(JSDocTag),
-	error: v.optional(ManifestError),
+  name: v.string(),
+  description: v.optional(v.string()),
+  jsDocTags: v.optional(JSDocTag),
+  error: v.optional(ManifestError),
 });
 
 const Story = v.object({
-	...BaseManifest.entries,
-	id: v.optional(v.string()),
-	snippet: v.optional(v.string()),
-	summary: v.optional(v.string()),
+  ...BaseManifest.entries,
+  id: v.optional(v.string()),
+  snippet: v.optional(v.string()),
+  summary: v.optional(v.string()),
 });
 export type Story = v.InferOutput<typeof Story>;
 
@@ -132,7 +132,7 @@ export type Story = v.InferOutput<typeof Story>;
  * Used by the v1 (split/ref) manifest format for docgen, story-docs and MDX payloads.
  */
 export const JsonRef = v.object({
-	$ref: v.string(),
+  $ref: v.string(),
 });
 export type JsonRef = v.InferOutput<typeof JsonRef>;
 
@@ -168,50 +168,50 @@ export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /** Inline (v0) docs entry: the full MDX `content` is embedded. */
 export const DocV0 = v.object({
-	id: v.string(),
-	name: v.string(),
-	title: v.optional(v.string()),
-	path: v.optional(v.string()),
-	content: v.optional(v.string()),
-	summary: v.optional(v.string()),
-	error: v.optional(ManifestError),
+  id: v.string(),
+  name: v.string(),
+  title: v.optional(v.string()),
+  path: v.optional(v.string()),
+  content: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  error: v.optional(ManifestError),
 });
 export type DocV0 = v.InferOutput<typeof DocV0>;
 
 const BaseInlineComponentProperties = v.object({
-	...BaseManifest.entries,
-	path: v.optional(v.string()),
-	summary: v.optional(v.string()),
-	import: v.optional(v.string()),
-	reactDocgen: v.optional(v.any()),
-	reactDocgenTypescript: v.optional(v.any()),
-	reactComponentMeta: v.optional(v.any()),
+  ...BaseManifest.entries,
+  path: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  import: v.optional(v.string()),
+  reactDocgen: v.optional(v.any()),
+  reactDocgenTypescript: v.optional(v.any()),
+  reactComponentMeta: v.optional(v.any()),
 });
 
 export const SubcomponentManifest = v.object({
-	...BaseInlineComponentProperties.entries,
+  ...BaseInlineComponentProperties.entries,
 });
 export type SubcomponentManifest = v.InferOutput<typeof SubcomponentManifest>;
 
 /** Inline (v0) component: docgen, stories and attached docs are all embedded. */
 export const ComponentManifestV0 = v.object({
-	...BaseInlineComponentProperties.entries,
-	id: v.string(),
-	stories: v.optional(v.array(Story)),
-	subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
-	docs: v.optional(v.record(v.string(), DocV0)),
+  ...BaseInlineComponentProperties.entries,
+  id: v.string(),
+  stories: v.optional(v.array(Story)),
+  subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
+  docs: v.optional(v.record(v.string(), DocV0)),
 });
 export type ComponentManifestV0 = v.InferOutput<typeof ComponentManifestV0>;
 
 export const ComponentManifestMapV0 = v.object({
-	v: v.literal(0),
-	components: v.record(v.string(), ComponentManifestV0),
+  v: v.literal(0),
+  components: v.record(v.string(), ComponentManifestV0),
 });
 export type ComponentManifestMapV0 = v.InferOutput<typeof ComponentManifestMapV0>;
 
 export const DocsManifestMapV0 = v.object({
-	v: v.literal(0),
-	docs: v.record(v.string(), DocV0),
+  v: v.literal(0),
+  docs: v.record(v.string(), DocV0),
 });
 export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
 
@@ -223,11 +223,11 @@ export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
  * (those entries are resolved in-process via {@link StorybookContext.resolveEntry}).
  */
 export const DocV1 = v.object({
-	id: v.string(),
-	name: v.string(),
-	summary: v.optional(v.string()),
-	mdx: v.optional(JsonRef),
-	error: v.optional(ManifestError),
+  id: v.string(),
+  name: v.string(),
+  summary: v.optional(v.string()),
+  mdx: v.optional(JsonRef),
+  error: v.optional(ManifestError),
 });
 export type DocV1 = v.InferOutput<typeof DocV1>;
 
@@ -238,26 +238,26 @@ export type DocV1 = v.InferOutput<typeof DocV1>;
  * `docgen`, and docs-only components have neither).
  */
 export const ComponentManifestV1 = v.object({
-	id: v.string(),
-	name: v.string(),
-	description: v.optional(v.string()),
-	summary: v.optional(v.string()),
-	error: v.optional(ManifestError),
-	docgen: v.optional(JsonRef),
-	stories: v.optional(JsonRef),
-	docs: v.optional(v.record(v.string(), DocV1)),
+  id: v.string(),
+  name: v.string(),
+  description: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  error: v.optional(ManifestError),
+  docgen: v.optional(JsonRef),
+  stories: v.optional(JsonRef),
+  docs: v.optional(v.record(v.string(), DocV1)),
 });
 export type ComponentManifestV1 = v.InferOutput<typeof ComponentManifestV1>;
 
 export const ComponentManifestMapV1 = v.object({
-	v: v.literal(1),
-	components: v.record(v.string(), ComponentManifestV1),
+  v: v.literal(1),
+  components: v.record(v.string(), ComponentManifestV1),
 });
 export type ComponentManifestMapV1 = v.InferOutput<typeof ComponentManifestMapV1>;
 
 export const DocsManifestMapV1 = v.object({
-	v: v.literal(1),
-	docs: v.record(v.string(), DocV1),
+  v: v.literal(1),
+  docs: v.record(v.string(), DocV1),
 });
 export type DocsManifestMapV1 = v.InferOutput<typeof DocsManifestMapV1>;
 
@@ -265,8 +265,8 @@ export type DocsManifestMapV1 = v.InferOutput<typeof DocsManifestMapV1>;
 
 /** `components.json`, discriminated on `v` (0 = inline, 1 = split/ref). */
 export const ComponentManifestMap = v.variant('v', [
-	ComponentManifestMapV0,
-	ComponentManifestMapV1,
+  ComponentManifestMapV0,
+  ComponentManifestMapV1,
 ]);
 export type ComponentManifestMap = v.InferOutput<typeof ComponentManifestMap>;
 
@@ -301,8 +301,8 @@ export type ComponentManifest = ComponentManifestV0;
 export type Doc = DocV0;
 
 export type AllManifests = {
-	componentManifest: ComponentManifestMap;
-	docsManifest?: DocsManifestMap;
+  componentManifest: ComponentManifestMap;
+  docsManifest?: DocsManifestMap;
 };
 
 /**
@@ -315,23 +315,23 @@ export type AllManifests = {
 
 /** One story snippet from the `core/story-docs` service. */
 export type CoreStoryDoc = {
-	id: string;
-	name: string;
-	snippet?: string;
-	description?: string;
-	summary?: string;
-	error?: { name: string; message: string };
+  id: string;
+  name: string;
+  snippet?: string;
+  description?: string;
+  summary?: string;
+  error?: { name: string; message: string };
 };
 
 /** One MDX doc from the `addon-docs/mdx` service. */
 export type CoreMdxDoc = {
-	id: string;
-	name: string;
-	path?: string;
-	title?: string;
-	content?: string;
-	summary?: string;
-	error?: { name: string; message: string };
+  id: string;
+  name: string;
+  path?: string;
+  title?: string;
+  content?: string;
+  summary?: string;
+  error?: { name: string; message: string };
 };
 
 /**
@@ -339,19 +339,19 @@ export type CoreMdxDoc = {
  * docs entry.
  */
 export type CoreMdxPayload = {
-	id: string;
-	name: string;
-	docs: Record<string, CoreMdxDoc>;
+  id: string;
+  name: string;
+  docs: Record<string, CoreMdxDoc>;
 };
 
 /** Payload returned by the `core/story-docs` service for one component. */
 export type CoreStoryDocsPayload = {
-	id: string;
-	name: string;
-	path: string;
-	import?: string;
-	stories: Record<string, CoreStoryDoc>;
-	error?: { name: string; message: string };
+  id: string;
+  name: string;
+  path: string;
+  import?: string;
+  stories: Record<string, CoreStoryDoc>;
+  error?: { name: string; message: string };
 };
 
 /**
@@ -360,19 +360,19 @@ export type CoreStoryDocsPayload = {
  * from `reactComponentMeta`/`react*` fields.
  */
 export type CoreDocgenPayload = {
-	id: string;
-	name: string;
-	path?: string;
-	description?: string;
-	summary?: string;
-	jsDocTags?: Record<string, string[]>;
-	import?: string;
-	reactComponentMeta?: unknown;
-	reactDocgen?: unknown;
-	reactDocgenTypescript?: unknown;
-	subcomponents?: Record<string, unknown>;
-	error?: { name: string; message: string };
-	[key: string]: unknown;
+  id: string;
+  name: string;
+  path?: string;
+  description?: string;
+  summary?: string;
+  jsDocTags?: Record<string, string[]>;
+  import?: string;
+  reactComponentMeta?: unknown;
+  reactDocgen?: unknown;
+  reactDocgenTypescript?: unknown;
+  subcomponents?: Record<string, unknown>;
+  error?: { name: string; message: string };
+  [key: string]: unknown;
 };
 
 /**
@@ -380,11 +380,11 @@ export type CoreDocgenPayload = {
  * stories and resolved attached MDX docs.
  */
 export type CoreDocgenComponent = CoreDocgenPayload & {
-	import?: string;
-	/** Story snippets, either as a story-docs record or an already-resolved array. */
-	stories?: Record<string, CoreStoryDoc> | Story[];
-	/** Attached docs keyed by doc id (resolved MDX payloads). */
-	docs?: Record<string, CoreMdxDoc>;
+  import?: string;
+  /** Story snippets, either as a story-docs record or an already-resolved array. */
+  stories?: Record<string, CoreStoryDoc> | Story[];
+  /** Attached docs keyed by doc id (resolved MDX payloads). */
+  docs?: Record<string, CoreMdxDoc>;
 };
 
 /**
@@ -392,10 +392,10 @@ export type CoreDocgenComponent = CoreDocgenPayload & {
  * Reused across tools that support source selection.
  */
 export const StorybookIdField = {
-	storybookId: v.pipe(
-		v.string(),
-		v.description(
-			'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.',
-		),
-	),
+  storybookId: v.pipe(
+    v.string(),
+    v.description(
+      'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.'
+    )
+  ),
 };

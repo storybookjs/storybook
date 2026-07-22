@@ -2,26 +2,26 @@ import { describe, expect, test } from 'vitest';
 import { parseReactDocgen, parseReactDocgenTypescript } from './parse-react-docgen.ts';
 
 describe('parseReactDocgen', () => {
-	test('prefers raw over computed for unions (and copies default/required)', () => {
-		const result = parseReactDocgen({
-			props: {
-				size: {
-					description: 'Visual size',
-					required: false,
-					defaultValue: { value: '"md"', computed: false },
-					tsType: {
-						name: 'union',
-						raw: '"sm" | "md" | "lg"',
-						elements: [
-							{ name: 'literal', value: '"sm"' },
-							{ name: 'literal', value: '"md"' },
-							{ name: 'literal', value: '"lg"' },
-						],
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('prefers raw over computed for unions (and copies default/required)', () => {
+    const result = parseReactDocgen({
+      props: {
+        size: {
+          description: 'Visual size',
+          required: false,
+          defaultValue: { value: '"md"', computed: false },
+          tsType: {
+            name: 'union',
+            raw: '"sm" | "md" | "lg"',
+            elements: [
+              { name: 'literal', value: '"sm"' },
+              { name: 'literal', value: '"md"' },
+              { name: 'literal', value: '"lg"' },
+            ],
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "size": {
@@ -33,25 +33,25 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes union when raw is missing', () => {
-		const result = parseReactDocgen({
-			props: {
-				tone: {
-					description: 'Semantic tone',
-					required: false,
-					tsType: {
-						name: 'union',
-						elements: [
-							{ name: 'literal', value: '"primary"' },
-							{ name: 'literal', value: '"secondary"' },
-						],
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes union when raw is missing', () => {
+    const result = parseReactDocgen({
+      props: {
+        tone: {
+          description: 'Semantic tone',
+          required: false,
+          tsType: {
+            name: 'union',
+            elements: [
+              { name: 'literal', value: '"primary"' },
+              { name: 'literal', value: '"secondary"' },
+            ],
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "tone": {
@@ -63,32 +63,32 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes intersection', () => {
-		const result = parseReactDocgen({
-			props: {
-				options: {
-					tsType: {
-						name: 'intersection',
-						elements: [
-							{
-								name: 'Record',
-								elements: [{ name: 'string' }, { name: 'number' }],
-							},
-							{
-								name: 'signature',
-								type: 'object',
-								signature: {
-									properties: [{ key: 'a', value: { name: 'string', required: true } }],
-								},
-							},
-						],
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes intersection', () => {
+    const result = parseReactDocgen({
+      props: {
+        options: {
+          tsType: {
+            name: 'intersection',
+            elements: [
+              {
+                name: 'Record',
+                elements: [{ name: 'string' }, { name: 'number' }],
+              },
+              {
+                name: 'signature',
+                type: 'object',
+                signature: {
+                  properties: [{ key: 'a', value: { name: 'string', required: true } }],
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "options": {
@@ -100,18 +100,18 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes Array fallback as T[]', () => {
-		const result = parseReactDocgen({
-			props: {
-				tags: {
-					tsType: { name: 'Array', elements: [{ name: 'string' }] },
-					defaultValue: { value: '[]', computed: false },
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes Array fallback as T[]', () => {
+    const result = parseReactDocgen({
+      props: {
+        tags: {
+          tsType: { name: 'Array', elements: [{ name: 'string' }] },
+          defaultValue: { value: '[]', computed: false },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "tags": {
@@ -123,20 +123,20 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes tuple', () => {
-		const result = parseReactDocgen({
-			props: {
-				anchor: {
-					tsType: {
-						name: 'tuple',
-						elements: [{ name: 'literal', value: '"x"' }, { name: 'number' }],
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes tuple', () => {
+    const result = parseReactDocgen({
+      props: {
+        anchor: {
+          tsType: {
+            name: 'tuple',
+            elements: [{ name: 'literal', value: '"x"' }, { name: 'number' }],
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "anchor": {
@@ -148,17 +148,17 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes literal', () => {
-		const result = parseReactDocgen({
-			props: {
-				variant: {
-					tsType: { name: 'literal', value: '"solid"' },
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes literal', () => {
+    const result = parseReactDocgen({
+      props: {
+        variant: {
+          tsType: { name: 'literal', value: '"solid"' },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "variant": {
@@ -170,25 +170,25 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes function signature', () => {
-		const result = parseReactDocgen({
-			props: {
-				onClick: {
-					description: 'Click handler',
-					tsType: {
-						name: 'signature',
-						type: 'function',
-						signature: {
-							arguments: [{ name: 'ev', type: { name: 'MouseEvent' } }],
-							return: { name: 'void' },
-						},
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes function signature', () => {
+    const result = parseReactDocgen({
+      props: {
+        onClick: {
+          description: 'Click handler',
+          tsType: {
+            name: 'signature',
+            type: 'function',
+            signature: {
+              arguments: [{ name: 'ev', type: { name: 'MouseEvent' } }],
+              return: { name: 'void' },
+            },
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "onClick": {
@@ -200,40 +200,40 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('serializes object signature with required and optional properties', () => {
-		const result = parseReactDocgen({
-			props: {
-				asKind: {
-					tsType: {
-						name: 'signature',
-						type: 'object',
-						signature: {
-							properties: [
-								{
-									key: 'kind',
-									value: { name: 'literal', value: '"button"', required: true },
-								},
-								{
-									key: 'type',
-									value: {
-										name: 'union',
-										raw: '"button" | "submit" | "reset"',
-										required: false,
-									},
-								},
-							],
-						},
-					},
-					defaultValue: {
-						value: '{ kind: "button", type: "button" }',
-						computed: false,
-					},
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('serializes object signature with required and optional properties', () => {
+    const result = parseReactDocgen({
+      props: {
+        asKind: {
+          tsType: {
+            name: 'signature',
+            type: 'object',
+            signature: {
+              properties: [
+                {
+                  key: 'kind',
+                  value: { name: 'literal', value: '"button"', required: true },
+                },
+                {
+                  key: 'type',
+                  value: {
+                    name: 'union',
+                    raw: '"button" | "submit" | "reset"',
+                    required: false,
+                  },
+                },
+              ],
+            },
+          },
+          defaultValue: {
+            value: '{ kind: "button", type: "button" }',
+            computed: false,
+          },
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "asKind": {
@@ -245,21 +245,21 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('generic type serialization and bare names', () => {
-		const result = parseReactDocgen({
-			props: {
-				items: {
-					tsType: {
-						name: 'Array',
-						elements: [{ name: 'Item', elements: [{ name: 'TMeta' }] }],
-					},
-				},
-				children: { tsType: { name: 'ReactNode' } },
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('generic type serialization and bare names', () => {
+    const result = parseReactDocgen({
+      props: {
+        items: {
+          tsType: {
+            name: 'Array',
+            elements: [{ name: 'Item', elements: [{ name: 'TMeta' }] }],
+          },
+        },
+        children: { tsType: { name: 'ReactNode' } },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "children": {
@@ -277,19 +277,19 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 
-	test('handles undefined tsType and defaultValue null', () => {
-		const result = parseReactDocgen({
-			props: {
-				icon: {
-					tsType: undefined,
-					defaultValue: { value: null, computed: false },
-					required: true,
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('handles undefined tsType and defaultValue null', () => {
+    const result = parseReactDocgen({
+      props: {
+        icon: {
+          tsType: undefined,
+          defaultValue: { value: null, computed: false },
+          required: true,
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
       {
         "props": {
           "icon": {
@@ -301,34 +301,34 @@ describe('parseReactDocgen', () => {
         },
       }
     `);
-	});
+  });
 });
 
 describe('parseReactDocgenTypescript', () => {
-	test('parses basic props with type.name', () => {
-		const result = parseReactDocgenTypescript({
-			displayName: 'Button',
-			filePath: 'src/Button.tsx',
-			description: 'A button component',
-			methods: [],
-			props: {
-				label: {
-					name: 'label',
-					description: 'The button label',
-					type: { name: 'string' },
-					defaultValue: null,
-					required: true,
-				},
-				disabled: {
-					name: 'disabled',
-					description: 'Whether the button is disabled',
-					type: { name: 'boolean' },
-					defaultValue: { value: 'false' },
-					required: false,
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('parses basic props with type.name', () => {
+    const result = parseReactDocgenTypescript({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: 'A button component',
+      methods: [],
+      props: {
+        label: {
+          name: 'label',
+          description: 'The button label',
+          type: { name: 'string' },
+          defaultValue: null,
+          required: true,
+        },
+        disabled: {
+          name: 'disabled',
+          description: 'Whether the button is disabled',
+          type: { name: 'boolean' },
+          defaultValue: { value: 'false' },
+          required: false,
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
 			{
 			  "props": {
 			    "disabled": {
@@ -346,29 +346,29 @@ describe('parseReactDocgenTypescript', () => {
 			  },
 			}
 		`);
-	});
+  });
 
-	test('prefers type.raw over type.name for enums', () => {
-		const result = parseReactDocgenTypescript({
-			displayName: 'Button',
-			filePath: 'src/Button.tsx',
-			description: '',
-			methods: [],
-			props: {
-				variant: {
-					name: 'variant',
-					description: 'The variant',
-					type: {
-						name: 'enum',
-						raw: '"primary" | "secondary" | "danger"',
-						value: [{ value: '"primary"' }, { value: '"secondary"' }, { value: '"danger"' }],
-					},
-					defaultValue: { value: 'primary' },
-					required: false,
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('prefers type.raw over type.name for enums', () => {
+    const result = parseReactDocgenTypescript({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        variant: {
+          name: 'variant',
+          description: 'The variant',
+          type: {
+            name: 'enum',
+            raw: '"primary" | "secondary" | "danger"',
+            value: [{ value: '"primary"' }, { value: '"secondary"' }, { value: '"danger"' }],
+          },
+          defaultValue: { value: 'primary' },
+          required: false,
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
 			{
 			  "props": {
 			    "variant": {
@@ -380,25 +380,25 @@ describe('parseReactDocgenTypescript', () => {
 			  },
 			}
 		`);
-	});
+  });
 
-	test('falls back to type.name when type.raw is not present', () => {
-		const result = parseReactDocgenTypescript({
-			displayName: 'Callback',
-			filePath: 'src/Callback.tsx',
-			description: '',
-			methods: [],
-			props: {
-				onClick: {
-					name: 'onClick',
-					description: 'Click handler',
-					type: { name: '(event: MouseEvent) => void' },
-					defaultValue: null,
-					required: true,
-				},
-			},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('falls back to type.name when type.raw is not present', () => {
+    const result = parseReactDocgenTypescript({
+      displayName: 'Callback',
+      filePath: 'src/Callback.tsx',
+      description: '',
+      methods: [],
+      props: {
+        onClick: {
+          name: 'onClick',
+          description: 'Click handler',
+          type: { name: '(event: MouseEvent) => void' },
+          defaultValue: null,
+          required: true,
+        },
+      },
+    });
+    expect(result).toMatchInlineSnapshot(`
 			{
 			  "props": {
 			    "onClick": {
@@ -410,39 +410,39 @@ describe('parseReactDocgenTypescript', () => {
 			  },
 			}
 		`);
-	});
+  });
 
-	test('handles empty description as undefined', () => {
-		const result = parseReactDocgenTypescript({
-			displayName: 'Box',
-			filePath: 'src/Box.tsx',
-			description: '',
-			methods: [],
-			props: {
-				children: {
-					name: 'children',
-					description: '',
-					type: { name: 'ReactNode' },
-					defaultValue: null,
-					required: false,
-				},
-			},
-		});
-		expect(result.props.children!.description).toBeUndefined();
-	});
+  test('handles empty description as undefined', () => {
+    const result = parseReactDocgenTypescript({
+      displayName: 'Box',
+      filePath: 'src/Box.tsx',
+      description: '',
+      methods: [],
+      props: {
+        children: {
+          name: 'children',
+          description: '',
+          type: { name: 'ReactNode' },
+          defaultValue: null,
+          required: false,
+        },
+      },
+    });
+    expect(result.props.children!.description).toBeUndefined();
+  });
 
-	test('handles empty props object', () => {
-		const result = parseReactDocgenTypescript({
-			displayName: 'Empty',
-			filePath: 'src/Empty.tsx',
-			description: '',
-			methods: [],
-			props: {},
-		});
-		expect(result).toMatchInlineSnapshot(`
+  test('handles empty props object', () => {
+    const result = parseReactDocgenTypescript({
+      displayName: 'Empty',
+      filePath: 'src/Empty.tsx',
+      description: '',
+      methods: [],
+      props: {},
+    });
+    expect(result).toMatchInlineSnapshot(`
 			{
 			  "props": {},
 			}
 		`);
-	});
+  });
 });

@@ -1,48 +1,58 @@
 {
-	"name": "@storybook/mcp",
-	"version": "0.8.0",
-	"description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
-	"keywords": [
-		"mcp",
-		"storybook"
-	],
-	"homepage": "https://github.com/storybookjs/mcp/blob/main/packages/mcp/README.md",
-	"license": "MIT",
-	"author": "Storybook Core Team",
-	"repository": {
-		"url": "git+https://github.com/storybookjs/mcp.git",
-		"directory": "packages/mcp"
-	},
-	"files": [
-		"dist"
-	],
-	"type": "module",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"default": "./dist/index.js"
-		},
-		"./package.json": "./package.json"
-	},
-	"scripts": {
-		"build": "tsdown",
-		"dev": "node --watch ./serve.ts",
-		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp",
-		"publint": "publint",
-		"test": "cd ../.. && pnpm vitest --project=@storybook/mcp",
-		"typecheck": "tsc"
-	},
-	"dependencies": {
-		"@tmcp/adapter-valibot": "catalog:",
-		"@tmcp/transport-http": "catalog:",
-		"tmcp": "catalog:",
-		"valibot": "catalog:"
-	},
-	"devDependencies": {
-		"@tmcp/transport-stdio": "catalog:",
-		"react-docgen": "^8.0.2",
-		"react-docgen-typescript": "^2.4.0",
-		"srvx": "^0.8.16",
-		"tinyexec": "^1.0.2"
-	}
+  "name": "@storybook/mcp",
+  "version": "10.6.0-alpha.2",
+  "description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
+  "keywords": [
+    "mcp",
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/mcp",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/mcp"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "author": "Storybook Core Team",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@tmcp/adapter-valibot": "^0.1.5",
+    "@tmcp/transport-http": "^0.8.5",
+    "tmcp": "^1.19.4",
+    "valibot": "^1.4.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "@tmcp/transport-stdio": "^0.4.3",
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.4.0",
+    "srvx": "^0.8.16",
+    "tinyexec": "^1.0.2",
+    "typescript": "^6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

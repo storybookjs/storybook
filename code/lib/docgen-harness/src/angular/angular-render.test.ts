@@ -34,7 +34,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 // Signal fixtures cannot render under JIT: their ɵcmp input/output maps stay empty, so
 // bindings are dropped and required signals throw NG0950 at change detection; the OSA
 // path they feed is static and never mounts components either. Their compile evidence
-// is the vue-tsc check; runtime exercise arrives with Epic 4's sandbox stories.
+// is the vue-tsc check; runtime exercise arrives once sandbox stories cover signals.
 const SIGNAL_FIXTURES = new Set(['signal-io', 'signal-model']);
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
@@ -47,6 +47,8 @@ describe('angular fixtures render (JIT TestBed smoke)', () => {
     const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
     const { default: meta, ...stories } = storiesModule;
     const component = meta.component;
+
+    expect(Object.keys(stories).length).toBeGreaterThan(0);
 
     for (const [storyName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
       const props: ICollection = { ...meta.args, ...story.args };

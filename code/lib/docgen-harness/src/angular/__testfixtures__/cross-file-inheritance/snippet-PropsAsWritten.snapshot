@@ -1,1 +1,1 @@
-<sb-cross-file-inheritance [dismissible]="true" [heading]="'Storage almost full'"></sb-cross-file-inheritance>
+<sb-cross-file-inheritance [dismissible]="true" [heading]="'Storage almost full'" (dismissed)="dismissed($event)"></sb-cross-file-inheritance>

@@ -49,9 +49,9 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   gapTest('prop JSDoc tags are recorded in table.jsDocTags', () => {
-    // #28506 - legacy: tag names and values never reach argTypes as structured data
-    // (`@deprecated` vanishes entirely; `@see`/custom tag text leaks into the
-    // description prose instead).
+    // Legacy: tag names and values never reach argTypes as structured data
+    // (`@deprecated` vanishes entirely - #9721 tracks displaying it; `@see`/custom
+    // tag text leaks into the description prose instead).
     expect(baseline('jsdocArgTypes')).toContain('"jsDocTags"');
     expect(baseline('jsdocArgTypes')).toContain('deprecated');
   });
@@ -70,5 +70,5 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
 });
 
 // Snippet-side deltas (bindings-only templates, no ng-content, no banana-in-a-box for
-// model(), raw interpolation of functions and undefined) are Story 4.6's documented v1
-// scope, not closeable gaps - they deliberately carry no markers.
+// model(), raw interpolation of functions and undefined) are the documented v1 scope
+// of the OSA snippet work, not closeable gaps - they deliberately carry no markers.

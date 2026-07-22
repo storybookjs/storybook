@@ -47,7 +47,7 @@ code/lib/docgen-harness/src/
   The filename becomes `displayName` and therefore the component tag in every snippet - never share a filename like `input.vue`.
 - Both baseline layers come from one production-faithful `parse()` call per fixture: zero options, plugin-exact `__docgenInfo` attach.
 - angular: one kebab-case `<case-name>.component.ts` per case; the PascalCase class name must byte-match the captured compodoc entry (`findComponentByName` is name-only).
-  The recorder drives the full production entry: `setCompodocJson(compodoc-input.json)` then `extractArgTypes(class)`, recorded with `angularFilterNonInputControls` OFF and ON; snippets come from `computesTemplateSourceFromComponent` with `{ ...meta.args, ...story.args }`.
+  The recorder drives the full production entry: `setCompodocJson(compodoc-input.json)` then `extractArgTypes(class)`, recorded with `angularFilterNonInputControls` OFF and ON; snippets come from `computesTemplateSourceFromComponent` with `{ ...meta.args, ...story.args }` plus a stub arg per unset output argType, mirroring the actions addon's args enhancer that production always runs.
 - angular: signal members (`input()`/`output()`/`model()`) are invisible to JIT - `ɵcmp.inputs`/`ɵcmp.outputs` stay empty without AOT.
   Signal fixtures therefore commit an `aot-cmp.ts`: the runtime `ɵcmp` maps captured from real `ngc` output (@angular/compiler-cli 21.2.17, compiled and loaded once to read the processed maps).
   The recorder attaches it wholesale before snippet generation and asserts the production reader sees its members, so a broken attach fails loudly.
@@ -66,6 +66,12 @@ Compodoc scans every `.ts` under the nearest `package.json` ancestor and ignores
 4. Run `cd code && yarn fmt:write` - captures are committed in the repo formatter's shape (the `doc-model` precedent), not compodoc's raw indentation.
 
 The result has case-relative `file` fields and no absolute paths; capture plus format is byte-reproducible.
+
+Nothing in the tests detects drift between a fixture's `.ts` sources and its committed `compodoc-input.json`.
+Editing a fixture component or its supporting sources therefore always requires a re-capture in the same change.
+
+The signal fixtures' `aot-cmp.ts` maps follow the same rule: they are captured once from real `ngc` output (`@angular/compiler-cli` 21.2.17) by compiling the staged component and reading the emitted class's `ɵcmp.inputs`/`ɵcmp.outputs`, and re-capturing with another Angular version is a reviewed baseline change.
+The production reader consumes only each input tuple's first slot and the plain output strings; the remaining tuple slots are carried for shape fidelity only.
 
 ## Known legacy gaps (vue3)
 
@@ -110,11 +116,11 @@ Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
 
 Same rules as vue3: thin or wrong output is recorded as-is, closeable gaps carry `test.fails` markers in `src/angular/angular-legacy-gaps.test.ts`, and `src/angular/baseline-path.ts` hardens them on the `'osa'` flip.
 
-- Accepted deltas (Story 4.6's v1 scope, no markers): snippets are bindings-only - no ng-content children, no banana-in-a-box for `model()`, functions and explicit `undefined` interpolate raw, outputs always render `(name)="name($event)"`.
+- Accepted deltas (the documented v1 scope of the OSA snippet work, no markers): snippets are bindings-only - no ng-content children, no banana-in-a-box for `model()`, functions and explicit `undefined` interpolate raw, outputs always render `(name)="name($event)"`.
 - Every decorator input records `required: true` - compodoc never emits `optional`, not even for TS-`?` members (#28706).
 - Number-typed inputs without a literal default record an invented `NaN` default (`Number(undefined)`); numeric expression defaults like `5 * 60 * 1000` also collapse to `NaN`, losing the source text.
 - Non-numeric expression defaults record raw source strings (`Math.max(1, 3)`).
-- JSDoc tags never reach argTypes structurally: `@deprecated` vanishes entirely, `@see`/custom tag text leaks into the description prose, and `@default` values keep their quotes and a trailing newline (#28506).
+- JSDoc tags never reach argTypes structurally: `@deprecated` vanishes entirely (#9721 tracks displaying it), `@see`/custom tag text leaks into the description prose, and `@default` values keep their quotes and a trailing newline.
 - `function`, `any`, and generic (`T`, `T[]`) type strings collapse to `{ name: 'other', value: 'empty-enum' }`.
 - Literal unions, alias unions, and TS enums all RESOLVE to enum sbTypes at compodoc 2.0.0 (it double-quotes union type strings, which makes them JSON-parseable) - the #33779 collapse does not reproduce at this version.
 - Cross-file inheritance is fully resolved: inherited `@Input`/`@Output` members land in the component's own capture entries (a regression baseline, not a gap).
@@ -125,7 +131,7 @@ Same rules as vue3: thin or wrong output is recorded as-is, closeable gaps carry
 ## Issue-linked cases (angular)
 
 - #28706 -> `decorator-io-basics/`: TS-optional decorator inputs must record `required: false` (legacy: `required: true` everywhere, plus the invented `NaN` default). Red markers in `angular-legacy-gaps.test.ts`.
-- #28506 -> `jsdoc-tags/`: member JSDoc tags must reach `table.jsDocTags` structurally (legacy: nothing structured; `@deprecated` is lost). Red marker.
+- #9721 -> `jsdoc-tags/`: `@deprecated` props must surface in docs, which needs member JSDoc tags to reach `table.jsDocTags` structurally (legacy: nothing structured; `@deprecated` is lost). Red marker.
 - #33779 (not reproduced) -> `decorator-union-enum/`: the reported union-controls collapse does not occur at the pinned compodoc 2.0.0 - all three union/enum inputs resolve to enum sbTypes, recorded as an engine-swap regression baseline; no marker.
 - #29697 (not reproduced) -> `signal-io/`: the aliased `input(_, { alias })` records under its alias at 2.0.0, so the reported alias blindness does not occur; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case; both flag states are recorded, and this is the fixture where they meaningfully differ.

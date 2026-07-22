@@ -93,8 +93,20 @@ describe('angular legacy baselines', () => {
     );
     flags.angularFilterNonInputControls = false;
 
+    expect(Object.keys(stories).length).toBeGreaterThan(0);
+
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
-      const props = { ...meta.args, ...story.args };
+      // Production runs the actions addon's addActionsFromArgTypes args enhancer before
+      // the source decorator: every output argType carries `action`, so outputs a story
+      // does not set still receive an auto-injected handler arg and the legacy snippet
+      // binds every declared output. Only key presence reaches the snippet text, so a
+      // plain stub stands in for the injected action.
+      const props: Record<string, unknown> = { ...meta.args, ...story.args };
+      for (const [name, argType] of Object.entries(argTypes ?? {})) {
+        if (argType.action && !(name in props)) {
+          props[name] = () => {};
+        }
+      }
       await expect(
         computesTemplateSourceFromComponent(component, props, argTypes)
       ).toMatchFileSnapshot(join(testDir, `snippet-${exportName}.snapshot`));

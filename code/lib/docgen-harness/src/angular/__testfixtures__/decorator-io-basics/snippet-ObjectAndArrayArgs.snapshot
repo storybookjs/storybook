@@ -1,1 +1,1 @@
-<sb-decorator-io-basics [label]="'Save'" [data]="{id: 7, tags: ['a', 'b'], nested: {deep: true}}"></sb-decorator-io-basics>
+<sb-decorator-io-basics [label]="'Save'" [data]="{id: 7, tags: ['a', 'b'], nested: {deep: true}}" (clicked)="clicked($event)"></sb-decorator-io-basics>

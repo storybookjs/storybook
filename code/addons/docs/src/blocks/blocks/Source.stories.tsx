@@ -378,6 +378,20 @@ export const CodeTransformCodeParameter: Story = {
   },
 };
 
+export const PropDisablesParameterTransformCode: Story = {
+  args: {
+    of: ParametersStories.CodeTransformCode,
+    transformCode: false,
+  },
+};
+
+export const PropEnablesParameterTransformCode: Story = {
+  args: {
+    of: ParametersStories.CodeTransformCodeDisabled,
+    transformCode: true,
+  },
+};
+
 export const OfUnattached: Story = {
   args: {
     of: ParametersStories.NoParameters,

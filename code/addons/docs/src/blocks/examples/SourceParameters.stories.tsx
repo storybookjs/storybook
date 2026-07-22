@@ -66,6 +66,10 @@ export const CodeTransformCode = {
   parameters: { docs: { source: { code, transform: commentTransform, transformCode: true } } },
 };
 
+export const CodeTransformCodeDisabled = {
+  parameters: { docs: { source: { code, transform: commentTransform, transformCode: false } } },
+};
+
 export const CodeFormat = {
   parameters: { docs: { source: { code, format: true } } },
 };

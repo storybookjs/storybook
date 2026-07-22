@@ -21,9 +21,9 @@ import type { ToolAvailability } from '../src/utils/get-tool-availability.ts';
 
 const execFileAsync = promisify(execFile);
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const outputPath = path.resolve(repoRoot, process.argv[2] ?? 'tools-api.md');
-const internalStorybookDir = path.join(repoRoot, 'apps/internal-storybook');
+const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
@@ -289,7 +289,6 @@ async function renderSkills(): Promise<string> {
 }
 
 function stripAnsi(text: string): string {
-  // oxlint-disable-next-line no-control-regex
   return text.replace(/\[[0-9;]*m/g, '');
 }
 

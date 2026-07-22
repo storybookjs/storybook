@@ -70,7 +70,7 @@ export async function killPort(port: number): Promise<void> {
 }
 
 export function startStorybook(configDir: string, port: number): ReturnType<typeof x> {
-	return x('pnpm', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+	return x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
 		},

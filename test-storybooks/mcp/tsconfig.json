@@ -1,17 +1,30 @@
 {
-	"extends": "../../tsconfig.json",
-	"compilerOptions": {
-		"jsx": "react",
-		"lib": [
-			"es2024",
-			"ESNext.Array",
-			"ESNext.Collection",
-			"ESNext.Iterator",
-			"ESNext.Promise",
-			"DOM",
-			"DOM.AsyncIterable",
-			"DOM.Iterable"
-		]
-	},
-	"include": ["stories/**/*", "**/*.ts"]
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "module": "preserve",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "jsx": "react",
+    "lib": [
+      "es2024",
+      "ESNext.Array",
+      "ESNext.Collection",
+      "ESNext.Iterator",
+      "ESNext.Promise",
+      "DOM",
+      "DOM.AsyncIterable",
+      "DOM.Iterable"
+    ]
+  },
+  "include": ["stories/**/*", "**/*.ts"]
 }

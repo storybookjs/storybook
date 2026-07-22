@@ -1,0 +1,1 @@
+<sb-decorator-io-basics [label]="'Save'" [count]="3"></sb-decorator-io-basics>

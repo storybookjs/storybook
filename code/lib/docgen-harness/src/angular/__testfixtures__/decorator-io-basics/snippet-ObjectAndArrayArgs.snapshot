@@ -1,0 +1,1 @@
+<sb-decorator-io-basics [label]="'Save'" [data]="{id: 7, tags: ['a', 'b'], nested: {deep: true}}"></sb-decorator-io-basics>

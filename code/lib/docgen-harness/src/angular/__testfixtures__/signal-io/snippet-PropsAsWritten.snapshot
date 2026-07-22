@@ -1,0 +1,1 @@
+<sb-signal-io [label]="'Quantity'" [count]="2" [increment]="5" [disabled]="true"></sb-signal-io>

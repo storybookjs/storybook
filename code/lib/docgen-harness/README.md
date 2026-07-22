@@ -20,7 +20,22 @@ code/lib/docgen-harness/src/
 │           ├── *.ts                      # supporting sources some cases need
 │           ├── argtypes.snapshot         # normalized StrictArgTypes from the legacy extractArgTypes path
 │           └── snippet-<story>.snapshot  # legacy Source-block snippet per named story export
-├── angular/            (planned, same shape - not created yet)
+├── angular/
+│   ├── angular-baselines.test.ts    # legacy baseline recorder (argTypes both flag states + snippets)
+│   ├── angular-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
+│   ├── angular-render.test.ts       # JIT TestBed render smoke test (happy-dom, decorator fixtures)
+│   ├── csf-types.ts                 # type-only CSF re-export the fixture stories import
+│   └── __testfixtures__/
+│       └── <fixture-case>/
+│           ├── <case-name>.component.ts    # the component under test; its class name IS the recorded identity
+│           ├── input.stories.ts            # real CSF stories driving the snippet baselines
+│           ├── *.ts                        # supporting sources some cases need
+│           ├── tsconfig.json               # capture-scoped tsconfig for the compodoc run
+│           ├── compodoc-input.json         # captured compodoc output the recorder feeds to setCompodocJson
+│           ├── aot-cmp.ts                  # signal fixtures only: captured AOT ɵcmp input/output maps
+│           ├── argtypes.snapshot           # normalized argTypes, angularFilterNonInputControls OFF
+│           ├── argtypes-filtered.snapshot  # same with the filter flag ON
+│           └── snippet-<story>.snapshot    # legacy Source-block snippet per named story export
 ├── svelte/             (planned, same shape - not created yet)
 └── web-components/     (planned, same shape - not created yet)
 ```
@@ -31,8 +46,26 @@ code/lib/docgen-harness/src/
 - vue3: exactly one PascalCase SFC per case.
   The filename becomes `displayName` and therefore the component tag in every snippet - never share a filename like `input.vue`.
 - Both baseline layers come from one production-faithful `parse()` call per fixture: zero options, plugin-exact `__docgenInfo` attach.
+- angular: one kebab-case `<case-name>.component.ts` per case; the PascalCase class name must byte-match the captured compodoc entry (`findComponentByName` is name-only).
+  The recorder drives the full production entry: `setCompodocJson(compodoc-input.json)` then `extractArgTypes(class)`, recorded with `angularFilterNonInputControls` OFF and ON; snippets come from `computesTemplateSourceFromComponent` with `{ ...meta.args, ...story.args }`.
+- angular: signal members (`input()`/`output()`/`model()`) are invisible to JIT - `ɵcmp.inputs`/`ɵcmp.outputs` stay empty without AOT.
+  Signal fixtures therefore commit an `aot-cmp.ts`: the runtime `ɵcmp` maps captured from real `ngc` output (@angular/compiler-cli 21.2.17, compiled and loaded once to read the processed maps).
+  The recorder attaches it wholesale before snippet generation and asserts the production reader sees its members, so a broken attach fails loudly.
+- angular: fixture stories import their CSF types from `src/angular/csf-types.ts`, and `angular-baselines.test.ts` / `angular-render.test.ts` are excluded from the package's vue-tsc program - angular-vite client source is authored under `strict: false` and cannot join this strict program; vitest is those two files' check.
 - Snapshots must be deterministic: no timestamps, no absolute paths.
-  OS-sensitive engines use OS-suffixed snapshot files (see `compodoc-*.snapshot` in `code/frameworks/angular-vite`).
+  Committed compodoc captures make OS-suffixed snapshots unnecessary here: no path-sensitive layer is ever snapshotted.
+
+### Compodoc capture procedure (angular)
+
+Captures are pinned to `@compodoc/compodoc@2.0.0`; re-capturing with any other version (signal parsing drifts hard across versions) is a reviewed baseline change, never a silent one.
+Compodoc scans every `.ts` under the nearest `package.json` ancestor and ignores tsconfig `include`, so captures run from a staging directory outside any Node package:
+
+1. Copy the case's component and supporting sources (never `input.stories.ts`) plus its `tsconfig.json` into an empty directory outside the repo, e.g. `$(mktemp -d)`.
+2. In that directory, run `npx -y @compodoc/compodoc@2.0.0 -p tsconfig.json -e json -d .`.
+3. Move the emitted `documentation.json` back into the case directory as `compodoc-input.json`.
+4. Run `cd code && yarn fmt:write` - captures are committed in the repo formatter's shape (the `doc-model` precedent), not compodoc's raw indentation.
+
+The result has case-relative `file` fields and no absolute paths; capture plus format is byte-reproducible.
 
 ## Known legacy gaps (vue3)
 
@@ -72,6 +105,30 @@ Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
   The issue reports the `vue-component-meta` engine losing slot doc comments, defaults, and HMR; these baselines record the `vue-docgen-api` path, so the marker covers only the binding-type symptom, not the issue's own repro.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options (legacy records the alias name only).
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` type argument must resolve its props (legacy extracts none).
+
+## Known legacy gaps (angular)
+
+Same rules as vue3: thin or wrong output is recorded as-is, closeable gaps carry `test.fails` markers in `src/angular/angular-legacy-gaps.test.ts`, and `src/angular/baseline-path.ts` hardens them on the `'osa'` flip.
+
+- Accepted deltas (Story 4.6's v1 scope, no markers): snippets are bindings-only - no ng-content children, no banana-in-a-box for `model()`, functions and explicit `undefined` interpolate raw, outputs always render `(name)="name($event)"`.
+- Every decorator input records `required: true` - compodoc never emits `optional`, not even for TS-`?` members (#28706).
+- Number-typed inputs without a literal default record an invented `NaN` default (`Number(undefined)`); numeric expression defaults like `5 * 60 * 1000` also collapse to `NaN`, losing the source text.
+- Non-numeric expression defaults record raw source strings (`Math.max(1, 3)`).
+- JSDoc tags never reach argTypes structurally: `@deprecated` vanishes entirely, `@see`/custom tag text leaks into the description prose, and `@default` values keep their quotes and a trailing newline (#28506).
+- `function`, `any`, and generic (`T`, `T[]`) type strings collapse to `{ name: 'other', value: 'empty-enum' }`.
+- Literal unions, alias unions, and TS enums all RESOLVE to enum sbTypes at compodoc 2.0.0 (it double-quotes union type strings, which makes them JSON-parseable) - the #33779 collapse does not reproduce at this version.
+- Cross-file inheritance is fully resolved: inherited `@Input`/`@Output` members land in the component's own capture entries (a regression baseline, not a gap).
+- With `angularFilterNonInputControls` OFF, `properties`/`methods`/`view child` sections surface as argTypes - including private fields - which is why the flag exists (#22007); ON restricts to inputs, and the model() `${name}Change` synthesis survives it by design.
+- `model()` records the patched shape: one input entry plus a synthesized `${name}Change` output with no `table.defaultValue`; boolean-typed entries without defaults record `defaultValue.summary: false` from the cast quirk.
+- Snippets use only the first comma-separated selector, and attribute selectors are mangled to bare attributes (`button[x]` -> `<button x>`).
+
+## Issue-linked cases (angular)
+
+- #28706 -> `decorator-io-basics/`: TS-optional decorator inputs must record `required: false` (legacy: `required: true` everywhere, plus the invented `NaN` default). Red markers in `angular-legacy-gaps.test.ts`.
+- #28506 -> `jsdoc-tags/`: member JSDoc tags must reach `table.jsDocTags` structurally (legacy: nothing structured; `@deprecated` is lost). Red marker.
+- #33779 (not reproduced) -> `decorator-union-enum/`: the reported union-controls collapse does not occur at the pinned compodoc 2.0.0 - all three union/enum inputs resolve to enum sbTypes, recorded as an engine-swap regression baseline; no marker.
+- #29697 (not reproduced) -> `signal-io/`: the aliased `input(_, { alias })` records under its alias at 2.0.0, so the reported alias blindness does not occur; regression baseline, no marker.
+- #22007 -> `properties-methods-noise/`: the filter flag's origin case; both flag states are recorded, and this is the fixture where they meaningfully differ.
 
 ## What does not live here
 

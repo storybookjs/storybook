@@ -1,0 +1,1 @@
+<sb-expression-defaults [rows]="8" [timeoutMs]="1000"></sb-expression-defaults>

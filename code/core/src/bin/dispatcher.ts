@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { pathToFileURL } from 'node:url';
 
-import { executeCommand, executeNodeCommand } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  executeNodeCommand,
+  getRemotePackageRunnerArgs,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
@@ -16,10 +20,11 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  *
  * This function serves as the main entry point for Storybook CLI operations.
  *
- * - Core Storybook commands (dev, build, index) are routed to the core binary at
- *   storybook/dist/bin/core.js
- * - Init is routed to the create-storybook package via npx
- * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli via npx
+ * - Core Storybook commands (dev, build, index, ai) are routed to the core binary at
+ *   storybook/dist/bin/core.js — `ai` is bundled because agent skills invoke it repeatedly and
+ *   must never wait on an npx download
+ * - Init is routed to the create-storybook package via the detected package manager
+ * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli the same way
  */
 const [major, minor, patch] = process.versions.node.split('.').map(Number);
 if (!isNodeVersionSupported(major, minor, patch)) {
@@ -33,7 +38,7 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 async function run() {
   const args = process.argv.slice(2);
 
-  if (['dev', 'build', 'index'].includes(args[0])) {
+  if (['dev', 'build', 'index', 'ai'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;
@@ -68,12 +73,18 @@ async function run() {
       return;
     }
   } catch {
-    // the package couldn't be imported, use npx to install and run it instead
+    // the package couldn't be imported, download and run it with the detected package manager
   }
 
-  const child = executeCommand({
-    command: 'npx',
-    args: ['--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args],
+  const packageManager = JsPackageManagerFactory.getPackageManager();
+  const child = packageManager.runPackageCommand({
+    args: getRemotePackageRunnerArgs(
+      packageManager.type,
+      targetCli.pkg,
+      versions[targetCli.pkg],
+      targetCli.args
+    ),
+    useRemotePkg: true,
     stdio: 'inherit',
   });
   child.on('exit', (code) => {

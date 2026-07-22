@@ -209,7 +209,7 @@ export const useMenu = ({
         id: actionName,
         title: label,
         onClick: () => action(),
-        right: enableShortcuts ? <Shortcut keys={keys[actionName]} /> : null,
+        right: enableShortcuts && keys[actionName] ? <Shortcut keys={keys[actionName]} /> : null,
       }));
   }, [api, enableShortcuts, shortcutKeys]);
 
@@ -218,7 +218,10 @@ export const useMenu = ({
       [
         [
           about,
-          ...(global.CONFIG_TYPE === 'DEVELOPMENT' ? [guide] : []),
+          ...(global.CONFIG_TYPE === 'DEVELOPMENT' &&
+          global.FEATURES?.menuOnboardingChecklist !== false
+            ? [guide]
+            : []),
           ...(enableShortcuts ? [shortcuts] : []),
         ],
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],

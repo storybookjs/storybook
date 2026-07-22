@@ -74,20 +74,29 @@ export class WebView implements View<HTMLElement> {
     document.documentElement.scrollTop = 0;
     document.documentElement.scrollLeft = 0;
 
-    return this.storyRoot();
+    const storyRoot = this.storyRoot();
+    this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
+
+    return storyRoot;
   }
 
   storyRoot(): HTMLElement {
     return document.getElementById('storybook-root')!;
   }
 
-  prepareForDocs() {
+  prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
     this.showMain();
     this.showDocs();
     this.applyLayout('fullscreen');
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    // Only reset scroll when navigating to a new docs page, not on HMR re-renders.
+    // Without this guard, hot-reloading a story file while scrolled down on a docs page
+    // causes the page to jump back to the top.
+
+    if (scrollReset) {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    }
 
     return this.docsRoot();
   }
@@ -110,6 +119,17 @@ export class WebView implements View<HTMLElement> {
     document.body.classList.remove(this.currentLayoutClass!);
     document.body.classList.add(layoutClass);
     this.currentLayoutClass = layoutClass;
+  }
+
+  /**
+   * Injects a BCP-47 lang attribute to the story root, or removes it if `lang` is null.
+   */
+  applyHtmlLang(element: HTMLElement, lang?: string) {
+    if (lang) {
+      element.setAttribute('lang', lang);
+    } else {
+      element.removeAttribute('lang');
+    }
   }
 
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {

@@ -2,9 +2,9 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import type { AgentInfo } from './detect-agent.ts';
 import type { KnownPackagesList } from './get-known-packages.ts';
-import type { MonorepoType } from './get-monorepo-type.ts';
 
 export type EventType =
   | 'boot'
@@ -43,8 +43,16 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
+  | 'review'
   | 'share'
-  | 'ghost-stories';
+  | 'ghost-stories'
+  | 'sidebar-filter'
+  | 'ai-command'
+  | 'ai-init-opt-in'
+  | 'ai-prompt-nudge'
+  | 'ai-setup'
+  | 'ai-setup-final-scoring'
+  | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -138,7 +146,7 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean; ai: boolean };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

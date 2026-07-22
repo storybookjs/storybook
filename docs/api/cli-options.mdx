@@ -37,34 +37,34 @@ storybook dev [options]
 
 Options include:
 
-| Option                          | Description                                                                                                                                                                                                                                         |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--help`                        | Output usage information.<br />`storybook dev --help`                                                                                                                                                                                               |
-| `-V`, `--version`               | Output the version number.<br />`storybook dev -V`                                                                                                                                                                                                  |
-| `-p`, `--port [number]`         | Port to run Storybook.<br />`storybook dev -p 9009`                                                                                                                                                                                                 |
-| `--exact-port`                  | Attempts to run Storybook on the exact port number specified.<br />If the port is already in use, Storybook will exit with an error message.<br />`storybook dev -p 9009 --exact-port`                                                              |
-| `-h`, `--host [string]`         | Host to run Storybook.<br />`storybook dev -h my-host.com`                                                                                                                                                                                          |
-| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook dev -c .storybook`                                                                                                                                                                               |
-| `--loglevel [level]`            | Controls level of logging during build.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook dev --loglevel warn`                                                                                  |
-| `--https`                       | Serve Storybook over HTTPS. Note: You must provide your own certificate information.<br />`storybook dev --https`                                                                                                                                   |
-| `--ssl-ca`                      | Provide an SSL certificate authority. (Optional with --https, required if using a self-signed certificate)<br />`storybook dev --ssl-ca my-certificate`                                                                                             |
-| `--ssl-cert`                    | Provide an SSL certificate. (Required with --https)<br />`storybook dev --ssl-cert my-ssl-certificate`                                                                                                                                              |
-| `--ssl-key`                     | Provide an SSL key. (Required with --https)<br />`storybook dev --ssl-key my-ssl-key`                                                                                                                                                               |
-| `--smoke-test`                  | Exit after successful start.<br />`storybook dev --smoke-test`                                                                                                                                                                                      |
-| `--ci`                          | CI mode (skip interactive prompts, don't open browser).<br />`storybook dev --ci`                                                                                                                                                                   |
-| `--no-open`                     | Do not open Storybook automatically in the browser.<br />`storybook dev --no-open`                                                                                                                                                                  |
-| `--quiet`                       | Suppress verbose build output.<br />`storybook dev --quiet`                                                                                                                                                                                         |
-| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook dev --debug`                                                                                                                                                                      |
-| `--debug-webpack`               | Display final webpack configurations for debugging purposes.<br />`storybook dev --debug-webpack`                                                                                                                                                   |
-| `--stats-json [dir-name]`       | Write stats JSON to disk.<br />Requires Webpack<br />`storybook dev --stats-json /tmp/stats`                                                                                                                                                        |
-| `--no-version-updates`          | Skips Storybook's update check.<br />`storybook dev --no-version-updates`                                                                                                                                                                           |
-| `--docs`                        | Starts Storybook in documentation mode. Learn more about it in [here](../writing-docs/build-documentation.mdx#preview-storybooks-documentation).<br />`storybook dev --docs`                                                                        |
-| `--initial-path [path]`         | Configures the URL Storybook should open when it opens the browser for the first time.<br />`storybook dev --initial-path=/docs/getting-started--docs`                                                                                              |
-| `--preview-url [path]`          | Overrides the default Storybook preview with a custom built preview URL.<br />`storybook dev --preview-url=http://localhost:1337/external-iframe.html`                                                                                              |
-| `--force-build-preview`         | Forcefully builds Storybook's preview iframe.<br />Useful if you're experiencing issues, or combined with `--preview-url` to ensure the preview is up-to-date.<br />`storybook dev --force-build-preview`                                           |
-| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook dev --disable-telemetry`                                                                                                     |
-| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook dev --enable-crash-reports`                                                       |
-| `--preview-only`                | Skips Storybook's manager from building and opens the app in "preview only" mode, which is designed to be used in [unsupported browsers](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). <br />`storybook dev --preview-only` |
+| Option                          | Description                                                                                                                                                                                                                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--help`                        | Output usage information.<br />`storybook dev --help`                                                                                                                                                                                                                        |
+| `-V`, `--version`               | Output the version number.<br />`storybook dev -V`                                                                                                                                                                                                                           |
+| `-p`, `--port [number]`         | Port to run Storybook.<br />`storybook dev -p 9009`                                                                                                                                                                                                                          |
+| `--exact-port`                  | Attempts to run Storybook on the exact port number specified.<br />If the port is already in use, Storybook will exit with an error message.<br />`storybook dev -p 9009 --exact-port`                                                                                       |
+| `-h`, `--host [string]`         | Host to run Storybook. Setting this to `0.0.0.0` binds to all network interfaces. <br/>Extend it with [`core.allowedHosts`](./main-config/main-config-core.mdx#allowedhosts) to restrict which hosts can access your Storybook instance.<br />`storybook dev -h my-host.com` |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook dev -c .storybook`                                                                                                                                                                                                        |
+| `--loglevel [level]`            | Controls level of logging during build.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook dev --loglevel warn`                                                                                                           |
+| `--https`                       | Serve Storybook over HTTPS. Note: You must provide your own certificate information.<br />`storybook dev --https`                                                                                                                                                            |
+| `--ssl-ca`                      | Provide an SSL certificate authority. (Optional with --https, required if using a self-signed certificate)<br />`storybook dev --ssl-ca my-certificate`                                                                                                                      |
+| `--ssl-cert`                    | Provide an SSL certificate. (Required with --https)<br />`storybook dev --ssl-cert my-ssl-certificate`                                                                                                                                                                       |
+| `--ssl-key`                     | Provide an SSL key. (Required with --https)<br />`storybook dev --ssl-key my-ssl-key`                                                                                                                                                                                        |
+| `--smoke-test`                  | Exit after successful start.<br />`storybook dev --smoke-test`                                                                                                                                                                                                               |
+| `--ci`                          | CI mode (skip interactive prompts, don't open browser).<br />`storybook dev --ci`                                                                                                                                                                                            |
+| `--no-open`                     | Do not open Storybook automatically in the browser.<br />`storybook dev --no-open`                                                                                                                                                                                           |
+| `--quiet`                       | Suppress verbose build output.<br />`storybook dev --quiet`                                                                                                                                                                                                                  |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook dev --debug`                                                                                                                                                                                               |
+| `--debug-webpack`               | Display final webpack configurations for debugging purposes.<br />`storybook dev --debug-webpack`                                                                                                                                                                            |
+| `--stats-json [dir-name]`       | Write stats JSON to disk.<br />Requires Webpack<br />`storybook dev --stats-json /tmp/stats`                                                                                                                                                                                 |
+| `--no-version-updates`          | Skips Storybook's update check.<br />`storybook dev --no-version-updates`                                                                                                                                                                                                    |
+| `--docs`                        | Starts Storybook in documentation mode. Learn more about it in [here](../writing-docs/build-documentation.mdx#preview-storybooks-documentation).<br />`storybook dev --docs`                                                                                                 |
+| `--initial-path [path]`         | Configures the URL Storybook should open when it opens the browser for the first time.<br />`storybook dev --initial-path=/docs/getting-started--docs`                                                                                                                       |
+| `--preview-url [path]`          | Overrides the default Storybook preview with a custom built preview URL.<br />`storybook dev --preview-url=http://localhost:1337/external-iframe.html`                                                                                                                       |
+| `--force-build-preview`         | Forcefully builds Storybook's preview iframe.<br />Useful if you're experiencing issues, or combined with `--preview-url` to ensure the preview is up-to-date.<br />`storybook dev --force-build-preview`                                                                    |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook dev --disable-telemetry`                                                                                                                              |
+| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook dev --enable-crash-reports`                                                                                |
+| `--preview-only`                | Skips Storybook's manager from building and opens the app in "preview only" mode, which is designed to be used in [unsupported browsers](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). <br />`storybook dev --preview-only`                          |
 
 <Callout variant="warning" id="static-dir-deprecation">
 
@@ -174,7 +174,7 @@ Options include:
 | Option                   | Description                                                                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `-h`, `--help`           | Output usage information.<br />`storybook remove --help`                                                                                                                                         |
-| `--package-manager`      | Sets the package manager to use when removing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook remove [addon]--package-manager pnpm`                |
+| `--package-manager`      | Sets the package manager to use when removing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook remove [addon] --package-manager pnpm`               |
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`storybook remove --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook remove --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook remove --enable-crash-reports` |
@@ -279,6 +279,49 @@ Options include:
 | `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook doctor --config-dir .storybook`                                                                                               |
 | `--package-manager`             | Sets the package manager to use when running the health check.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook doctor --package-manager pnpm` |
 | `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook doctor --debug`                                                                                                |
+
+### `ai`
+
+Helpers for AI agents. The `ai` command exposes subcommands that generate AI-friendly instructions for automating Storybook tasks. See the [agentic setup docs](../ai/setup.mdx) for a full walkthrough.
+
+```shell
+storybook ai [options] [command]
+```
+
+Options include:
+
+| Option                  | Description                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`          | Output usage information.<br />`storybook ai --help`                                                                      |
+| `-o`, `--output <path>` | Write the prompt output to a file instead of printing it to stdout.<br />`storybook ai setup --output storybook-setup.md` |
+
+#### `ai setup`
+
+Generates a detailed, project-aware Markdown prompt that instructs an AI agent to configure Storybook in your project and write initial stories for real components. The prompt is built from your detected Storybook configuration (framework, renderer, builder, language, addons) and covers analyzing the codebase, configuring the preview, mocking side effects, writing stories, and verifying them with Vitest.
+
+<Callout variant="info">
+
+`storybook ai setup` is currently only available for projects using the React renderer with the Vite builder.
+
+</Callout>
+
+```shell
+storybook ai setup [options]
+```
+
+Options include:
+
+| Option                          | Description                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-h`, `--help`                  | Output usage information.<br />`storybook ai setup --help`                                                                                                                           |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook ai setup -c .storybook`                                                                                                           |
+| `--package-manager <type>`      | Force package manager to use when detecting project information.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook ai setup --package-manager pnpm` |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook ai setup --disable-telemetry`                                 |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook ai setup --debug`                                                                                                  |
+| `--loglevel [level]`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook ai setup --loglevel warn`                          |
+| `--logfile [path]`              | Write debug logs to a file.<br />`storybook ai setup --logfile ./sb.log`                                                                                                             |
+
+When run without `--output`, the generated prompt is printed to stdout. This is how AI agents typically consume it, by running the command directly and reading the result. When run with `--output`, the prompt is written to the given file path so you can paste or attach it to an agent that doesn't have shell access.
 
 ### `info`
 

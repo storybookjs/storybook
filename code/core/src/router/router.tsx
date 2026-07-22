@@ -80,7 +80,7 @@ Link.displayName = 'QueryLink';
  */
 export const Location = ({ children }: LocationProps) => {
   const location = R.useLocation();
-  const { path, singleStory } = queryFromLocation(location);
+  const { path = '', singleStory } = queryFromLocation(location);
   const { viewMode, storyId, refId } = parsePath(path);
 
   return (

@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
@@ -11,6 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useServiceStorySnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -75,11 +76,13 @@ const useCode = ({
   props,
   sourceParameters,
   snippet,
+  serviceSnippet,
   storyContext,
 }: {
   props: SourceProps;
   sourceParameters: SourceParameters;
   snippet: string;
+  serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
 }): { code: string; hasDirectCode: boolean } => {
   // "Direct code" is code supplied explicitly, either via the `code` prop or
@@ -100,13 +103,14 @@ const useCode = ({
     // Story-snippet path: always apply the transformer when present (unchanged behavior).
     const { __isArgsStory: isArgsStory } = storyContext.parameters ?? {};
     const type = props.type || sourceParameters.type || SourceType.AUTO;
+    const staticSnippet = serviceSnippet || snippet;
     const useSnippet =
       // if user has explicitly set this as dynamic, use snippet
       type === SourceType.DYNAMIC ||
       // if this is an args story and there's a snippet
-      (type === SourceType.AUTO && snippet && isArgsStory);
+      (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-    codeToTransform = useSnippet ? snippet : sourceParameters.originalSource || '';
+    codeToTransform = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
     transformer = props.transform ?? sourceParameters.transform;
   }
 
@@ -127,7 +131,8 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
-  sourceContext: SourceContextProps
+  sourceContext: SourceContextProps,
+  serviceSnippet = ''
 ): PureSourceProps => {
   const { of } = props;
 
@@ -158,6 +163,7 @@ export const useSourceProps = (
     props,
     sourceParameters,
     snippet: source ? source.code : '',
+    serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
   });
 
@@ -184,15 +190,51 @@ export const useSourceProps = (
   return { code, format, language, dark };
 };
 
+const SourceWithStoryDocsSnippet: FC<
+  SourceProps & {
+    docsContext: DocsContextProps;
+    sourceContext: SourceContextProps;
+    storyId: string;
+  }
+> = ({ storyId, docsContext, sourceContext, ...props }) => {
+  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  return <PureSource {...sourceProps} />;
+};
+
 /**
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
 const SourceWithStorySnippet = (props: SourceProps) => {
+  const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
 
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+    }
+  }, [docsContext, of]);
+
+  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+    return (
+      <SourceWithStoryDocsSnippet
+        {...props}
+        docsContext={docsContext}
+        sourceContext={sourceContext}
+        storyId={story.id}
+      />
+    );
+  }
+
+  const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 

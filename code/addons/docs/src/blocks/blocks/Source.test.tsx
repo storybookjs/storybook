@@ -1,8 +1,14 @@
 // @vitest-environment happy-dom
 import { renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { PreparedStory } from 'storybook/internal/types';
+
+// The service-snippet path talks to the dev server; it is irrelevant to the
+// code-resolution logic under test, so we stub it out here.
+vi.mock('./use-service-story-docs.ts', () => ({
+  useServiceStorySnippet: () => ({ data: '' }),
+}));
 
 import type { SourceContextProps } from './SourceContainer';
 import type { DocsContextProps } from './DocsContext';

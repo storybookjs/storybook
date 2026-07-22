@@ -15,8 +15,10 @@ import { color } from 'storybook/theming';
 import {
   BUILT_IN_TAGS,
   STATUS_DISPLAY_ORDER,
+  countStatusesByValue,
   getFilterFunction,
   statusValueShortName,
+  statusValueDescription,
 } from './FilterPanel.utils.ts';
 
 export interface TagFilterEntry {
@@ -31,6 +33,7 @@ export interface StatusFilterEntry {
   statusValue: StatusValue;
   shortName: string;
   count: number;
+  description?: string;
 }
 
 const BUILT_IN_FILTER_DEFS: Array<{
@@ -82,21 +85,25 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
 
 export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) {
   return useMemo(() => {
-    if (!globalThis?.FEATURES?.changeDetection) {
+    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
+    const counts = countStatusesByValue(allStatuses);
+    const reviewingCount = counts['status-value:reviewing'] ?? 0;
+
+    if (!changeDetectionEnabled && reviewingCount === 0) {
       return [];
     }
 
-    const counts = {} as Record<StatusValue, number>;
-    Object.values(allStatuses).forEach((statusByTypeId) => {
-      Object.values(statusByTypeId).forEach((status) => {
-        counts[status.value] = (counts[status.value] ?? 0) + 1;
-      });
-    });
+    const displayOrder = changeDetectionEnabled
+      ? STATUS_DISPLAY_ORDER
+      : (['status-value:reviewing'] as StatusValue[]);
 
-    return STATUS_DISPLAY_ORDER.map((statusValue) => ({
-      statusValue,
-      shortName: statusValueShortName(statusValue),
-      count: counts[statusValue] ?? 0,
-    }));
+    return displayOrder
+      .map((statusValue) => ({
+        statusValue,
+        shortName: statusValueShortName(statusValue),
+        description: statusValueDescription(statusValue),
+        count: counts[statusValue] ?? 0,
+      }))
+      .filter((entry) => entry.statusValue !== 'status-value:reviewing' || entry.count > 0);
   }, [allStatuses]);
 }

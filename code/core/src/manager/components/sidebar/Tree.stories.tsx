@@ -13,6 +13,7 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
@@ -31,7 +32,7 @@ const managerContext: any = {
     off: fn().mockName('api::off'),
     once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
-    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
@@ -342,7 +343,10 @@ const dualSlotData: IndexHash = {
   [dualSlotStoryId]: index[dualSlotStoryId],
 };
 
-function makeDualSlotStory(allStatuses: StatusesByStoryIdAndTypeId): Story {
+function makeDualSlotStory(
+  allStatuses: StatusesByStoryIdAndTypeId,
+  contextOverride?: { state?: Record<string, unknown> }
+): Story {
   return {
     args: {
       docsMode: false,
@@ -352,6 +356,21 @@ function makeDualSlotStory(allStatuses: StatusesByStoryIdAndTypeId): Story {
       setHighlightedItemId: action('setHighlightedItemId'),
       allStatuses,
     },
+    decorators: contextOverride
+      ? [
+          (storyFn) => (
+            <ManagerContext.Provider
+              value={{
+                ...managerContext,
+                state: { ...managerContext.state, ...contextOverride.state },
+              }}
+            >
+              <IconSymbols />
+              {storyFn()}
+            </ManagerContext.Provider>
+          ),
+        ]
+      : undefined,
     render: (args) => {
       const [selectedId, setSelectedId] = useState(dualSlotStoryId);
       return (
@@ -380,25 +399,30 @@ export const WithChangeDetectionOnly: Story = makeDualSlotStory({
   },
 });
 
-export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory({
-  [dualSlotStoryId]: {
-    'storybook/change-detection': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/change-detection',
-      value: 'status-value:modified',
-      title: 'Change Detection',
-      description: 'Story is modified',
-      sidebarContextMenu: false,
-    },
-    'storybook/vitest': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/vitest',
-      value: 'status-value:error',
-      title: 'Vitest',
-      description: 'Test failed',
+export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
+  {
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
+        sidebarContextMenu: false,
+      },
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
     },
   },
-});
+  // Modified branch icon only renders when the modified status filter is
+  // active; activate it so the dual-slot design (change + test) is visible.
+  { state: { includedStatusFilters: ['status-value:modified'] } }
+);
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
@@ -412,18 +436,25 @@ export const WithTestStatusOnly: Story = makeDualSlotStory({
   },
 });
 
-export const WithAffectedStatus: Story = makeDualSlotStory({
-  [dualSlotStoryId]: {
-    'storybook/change-detection': {
-      storyId: dualSlotStoryId,
-      typeId: 'storybook/change-detection',
-      value: 'status-value:affected',
-      title: 'Change Detection',
-      description: 'Story is affected',
-      sidebarContextMenu: false,
+export const WithRelatedStatus: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:affected',
+        title: 'Change Detection',
+        description: 'Story is related',
+        sidebarContextMenu: false,
+      },
     },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // affected status is always hidden — no change-status icon should render
+    await expect(canvas.queryByTestId('tree-change-status-button')).toBeNull();
   },
-});
+};
 
 export const BranchWithChangeDetectionPriority: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
@@ -456,4 +487,57 @@ BranchWithChangeDetectionPriority.render = (args) => {
       highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
     />
   );
+};
+
+/**
+ * A modified story with the modified filter active.
+ * The change-status icon should be visible.
+ */
+export const WithModified: Story = {
+  ...makeDualSlotStory(
+    {
+      [dualSlotStoryId]: {
+        'storybook/change-detection': {
+          storyId: dualSlotStoryId,
+          typeId: 'storybook/change-detection',
+          value: 'status-value:modified',
+          title: 'Change Detection',
+          description: 'Story is modified',
+          sidebarContextMenu: false,
+        },
+      },
+    },
+    { state: { includedStatusFilters: ['status-value:modified'] } }
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // modified filter is active — icon should be visible at story leaf and parent branch
+    const buttons = await canvas.findAllByTestId('tree-change-status-button');
+    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+  },
+};
+
+/**
+ * A new story with no filters set.
+ * The new status icon is always visible (not gated on a filter).
+ */
+export const WithNew: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:new',
+        title: 'Change Detection',
+        description: 'Story is new',
+        sidebarContextMenu: false,
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // new status is always shown at both leaf and branch levels
+    const buttons = await canvas.findAllByTestId('tree-change-status-button');
+    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+  },
 };

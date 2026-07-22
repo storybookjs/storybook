@@ -146,3 +146,15 @@ Specifies how the source code is rendered.
 Note that dynamic snippets will only work if the story uses [`args`](../../writing-stories/args.mdx) and the [`Story` block](./doc-block-story.mdx) for that story is rendered along with the `Source` block.
 
 </Callout>
+
+<If renderer="react">
+
+#### Overriding the default prop sorting behavior
+
+For React-based frameworks, dynamic snippets are automatically sorted alphabetically by default. To override this behavior, set the `sortProps` option to `false` to preserve the original order of the props in which they were defined in the story.
+
+<CodeSnippets path="api-doc-block-source-sort-props.md" />
+
+Similar to other parameters, you can define it at the project level in the `.storybook/preview.*` file, component level in the meta definition (or default export), or in the story itself.
+
+</If>

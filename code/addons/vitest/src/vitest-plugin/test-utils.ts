@@ -1,20 +1,18 @@
-import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
+import { inject, type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
 import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
-import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
+import {
+  STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
+  STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
+  STORYBOOK_TEST_PROVIDE_KEY,
+} from '../constants.ts';
+import { composeInitialGlobals } from './compose-initial-globals.ts';
 import { setViewport } from './viewports.ts';
-
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    getInitialGlobals: () => Promise<Record<string, any>>;
-  }
-}
-
-const { getInitialGlobals } = server.commands;
 
 /**
  * Converts a file URL to a file path, handling URL encoding
@@ -60,10 +58,50 @@ export const testStory = ({
 
     const storyAnnotations = test ? test.input : annotations.story;
 
+    let runConfig: Record<string, unknown> = { a11y: true };
+    try {
+      runConfig = inject(STORYBOOK_TEST_PROVIDE_KEY) ?? { a11y: true };
+    } catch {
+      // Standalone Vitest runs might not provide Storybook run config.
+    }
+
+    let ghostStoriesEnabled = false;
+    try {
+      ghostStoriesEnabled = inject(STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY) ?? false;
+    } catch {
+      // Standalone Vitest runs might not provide Storybook ghost stories config.
+    }
+
+    let renderAnalysisEnabled = false;
+    try {
+      renderAnalysisEnabled = inject(STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY) ?? false;
+    } catch {
+      // Standalone Vitest runs might not provide Storybook render analysis config.
+    }
+
+    // Globals the consumer pinned on this project via `storybookTest({ initialGlobals })`, e.g.
+    // `{ theme: 'dark' }` to run the suite under a specific theme. Spread first so Storybook's own
+    // run-control globals below always win.
+    let userInitialGlobals: Record<string, unknown> = {};
+    try {
+      userInitialGlobals = inject(STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY) ?? {};
+    } catch {
+      // Standalone Vitest runs might not provide project initial globals.
+    }
+
+    const shouldRunA11yTests = !!runConfig.a11y;
+    const initialGlobals = composeInitialGlobals({
+      userInitialGlobals,
+      runConfig,
+      ghostStoriesEnabled,
+      renderAnalysisEnabled,
+      shouldRunA11yTests,
+    });
+
     const composedStory = composeStory(
       storyAnnotations,
       annotations.meta!,
-      { initialGlobals: (await getInitialGlobals?.()) ?? {} },
+      { initialGlobals },
       annotations.preview ?? globalThis.globalProjectAnnotations,
       exportName
     );

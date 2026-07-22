@@ -6,10 +6,19 @@ import type {
   StatusValue,
 } from 'storybook/internal/types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, within } from 'storybook/test';
 import type { API } from '../../../manager-api/index.ts';
+import { REVIEW_STATUS_TYPE_ID } from '../../../shared/status-store/index.ts';
 
 import { IconSymbolsDecorator, MockAPIDecorator } from './Filter.story-helpers.tsx';
 import { FilterPanel } from './FilterPanel.tsx';
+
+const getStatusFilterTitles = (canvas: ReturnType<typeof within>) =>
+  canvas
+    .getAllByRole('checkbox')
+    .map((checkbox: HTMLElement) => checkbox.getAttribute('aria-label') ?? '')
+    .filter((label: string) => label.startsWith('status filter:'))
+    .map((label: string) => label.replace(/^status filter: (?:exclude )?/, ''));
 
 const getEntries = (includeUserTags: boolean) => {
   const entries = {
@@ -155,7 +164,7 @@ export const BuiltInOnly: Story = {
         storyId: 'c2-story1',
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
       }
     ),
   },
@@ -247,9 +256,66 @@ export const WithStatuses: Story = {
         storyId: 'c2-story1',
         typeId: 'change-detection',
         statusValue: 'status-value:affected',
-        title: 'Affected',
+        title: 'Related',
       }
     ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(getStatusFilterTitles(canvas)).toEqual(['New', 'Modified', 'Related']);
+    expect(canvas.queryByRole('checkbox', { name: /Reviewing/i })).not.toBeInTheDocument();
+  },
+};
+
+export const WithAllStatuses: Story = {
+  args: {
+    allStatuses: makeStatuses(
+      {
+        storyId: 'c1-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:new',
+        title: 'New',
+      },
+      {
+        storyId: 'c1-story2',
+        typeId: 'change-detection',
+        statusValue: 'status-value:modified',
+        title: 'Modified',
+      },
+      {
+        storyId: 'c2-story1',
+        typeId: 'change-detection',
+        statusValue: 'status-value:affected',
+        title: 'Related',
+      },
+      {
+        storyId: 'c2-story2',
+        typeId: REVIEW_STATUS_TYPE_ID,
+        statusValue: 'status-value:reviewing',
+        title: 'Reviewing',
+      }
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(getStatusFilterTitles(canvas)).toEqual([
+      'Reviewing',
+      'New',
+      'Modified',
+      'Related',
+    ]);
+
+    const labels = canvas
+      .getAllByRole('checkbox')
+      .map((checkbox) => checkbox.getAttribute('aria-label'));
+    const reviewingIndex = labels.findIndex((label) => label?.includes('Reviewing'));
+    const docsIndex = labels.findIndex((label) => label?.includes('Documentation'));
+
+    expect(reviewingIndex).toBeGreaterThanOrEqual(0);
+    expect(docsIndex).toBeGreaterThanOrEqual(0);
+    expect(reviewingIndex).toBeLessThan(docsIndex);
   },
 };
 
@@ -289,13 +355,34 @@ export const OnlyModifiedStatus: Story = {
   },
 };
 
-export const OnlyAffectedStatus: Story = {
+export const OnlyRelatedStatus: Story = {
   args: {
     allStatuses: makeStatuses({
       storyId: 'c2-story1',
       typeId: 'change-detection',
       statusValue: 'status-value:affected',
-      title: 'Affected',
+      title: 'Related',
     }),
+  },
+};
+
+export const OnlyReviewingStatus: Story = {
+  args: {
+    allStatuses: makeStatuses({
+      storyId: 'c2-story2',
+      typeId: REVIEW_STATUS_TYPE_ID,
+      statusValue: 'status-value:reviewing',
+      title: 'Reviewing',
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(getStatusFilterTitles(canvas)).toEqual([
+      'Reviewing',
+      'New',
+      'Modified',
+      'Related',
+    ]);
   },
 };

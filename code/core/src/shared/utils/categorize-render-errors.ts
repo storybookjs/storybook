@@ -109,8 +109,12 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     priority: 90,
     match: (ctx) =>
       ctx.normalizedMessage.includes('invalid hook call') ||
-      ctx.normalizedMessage.includes('rendered more hooks than') ||
-      ctx.normalizedMessage.includes('hooks can only be called'),
+      ctx.normalizedMessage.includes('rendered more hooks') ||
+      ctx.normalizedMessage.includes('hooks can only be called') ||
+      ctx.normalizedMessage.includes('too many re-renders') ||
+      ctx.normalizedMessage.includes('maximum update depth exceeded') ||
+      (ctx.normalizedMessage.includes('hook') &&
+        ctx.normalizedMessage.includes('function component')),
   },
 
   {
@@ -166,9 +170,9 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_PORTAL_ROOT,
     priority: 70,
     match: (ctx) =>
-      ctx.normalizedMessage.includes('portal') &&
-      (ctx.normalizedMessage.includes('container') || ctx.normalizedMessage.includes('root')) &&
-      (ctx.normalizedMessage.includes('null') || ctx.normalizedMessage.includes('not found')),
+      ctx.normalizedMessage.includes('target container is not a dom element') ||
+      (ctx.normalizedMessage.includes('portal') &&
+        (ctx.normalizedMessage.includes('container') || ctx.normalizedMessage.includes('root'))),
   },
 
   {
@@ -177,10 +181,13 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     match: (ctx) =>
       (ctx.normalizedMessage.includes('use') && ctx.normalizedMessage.includes('provider')) ||
       ctx.normalizedMessage.includes('<provider>') ||
+      ctx.normalizedMessage.includes('no provider') ||
+      ctx.normalizedMessage.includes('without a provider') ||
       ((ctx.normalizedMessage.includes('could not find') ||
-        ctx.normalizedMessage.includes('missing')) &&
+        ctx.normalizedMessage.includes('missing') ||
+        ctx.normalizedMessage.includes('not found')) &&
         ctx.normalizedMessage.includes('context')) ||
-      (ctx.normalizedMessage.includes('usecontext') &&
+      (ctx.normalizedMessage.includes('context') &&
         (ctx.normalizedMessage.includes('null') || ctx.normalizedMessage.includes('undefined'))),
   },
 
@@ -189,7 +196,12 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     priority: 10,
     match: (ctx) =>
       ctx.normalizedMessage.includes('cannot read') ||
-      ctx.normalizedMessage.includes('undefined is not a function') ||
+      ctx.normalizedMessage.includes('is not a function') ||
+      ctx.normalizedMessage.includes('is not an object') ||
+      ctx.normalizedMessage.includes('is not defined') ||
+      ctx.normalizedMessage.includes('element type is invalid') ||
+      ctx.normalizedMessage.includes('objects are not valid as a react child') ||
+      ctx.normalizedMessage.includes('maximum call stack') ||
       ctx.normalizedMessage.includes('render'),
   },
 ];

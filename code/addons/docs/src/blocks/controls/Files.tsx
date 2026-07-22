@@ -41,9 +41,11 @@ export const FilesControl: FC<FilesControlProps> = ({
   onChange,
   name,
   storyId,
+  controlsId,
   accept = 'image/*',
   value,
   argType,
+  required,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
   const readonly = argType?.control?.readOnly;
@@ -64,7 +66,7 @@ export const FilesControl: FC<FilesControlProps> = ({
     }
   }, [value, name]);
 
-  const controlId = getControlId(name, storyId);
+  const controlId = getControlId(name, storyId, controlsId);
 
   return (
     <>
@@ -80,6 +82,7 @@ export const FilesControl: FC<FilesControlProps> = ({
         disabled={readonly}
         onChange={handleFileChange}
         accept={accept}
+        aria-required={required || undefined}
         size="flex"
       />
     </>

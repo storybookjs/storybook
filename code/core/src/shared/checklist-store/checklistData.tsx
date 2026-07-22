@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
+  AI_PROMPT_NUDGE,
   PREVIEW_INITIALIZED,
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -10,6 +11,7 @@ import {
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
 import {
+  Addon_TypesEnum,
   type API_IndexHash,
   type API_PreparedIndexEntry,
   type API_StoryEntry,
@@ -17,6 +19,8 @@ import {
 
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+
+import { WandIcon } from '@storybook/icons';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants.ts';
 import {
@@ -32,6 +36,7 @@ import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared.ts';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide.tsx';
 import { LocationMonitor } from '../../manager/hooks/useLocation.ts';
 import type { initialState } from './checklistData.state.ts';
+import { getAiSetupPrompt } from '../utils/ai-prompts.ts';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -66,6 +71,9 @@ export interface ChecklistData {
       /** Display name. Keep it short and actionable (with a verb). */
       label: string;
 
+      /** Optional custom icon component to display instead of the default status icon. */
+      icon?: React.ComponentType;
+
       /** Description of the criteria that must be met to complete the item. */
       criteria: string;
 
@@ -75,6 +83,9 @@ export interface ChecklistData {
       /** What to do after the item is completed (prevent undo or hide the item). */
       afterCompletion?: 'immutable' | 'unavailable';
 
+      /** Whether to show the item in the GuidePage. Only set to `false` if the GuidePage has another tailored way to display the item.*/
+      showOnGuidePage?: boolean;
+
       /**
        * Function to check if the item should be available (displayed in the checklist). Called any
        * time the index is updated.
@@ -83,6 +94,7 @@ export interface ChecklistData {
         api: API;
         index: API_IndexHash | undefined;
         item: ChecklistData['sections'][number]['items'][number];
+        storeState: import('./index.ts').StoreState;
       }) => boolean;
 
       /** Function returning content to display in the checklist item's collapsible area. */
@@ -91,6 +103,8 @@ export interface ChecklistData {
       /** Action button to be displayed when item is not completed. */
       action?: {
         label: string;
+        /** If set, clicking the button copies this text to the clipboard via useCopyButton. */
+        copyContent?: string;
         onClick: (args: { api: API; accept: () => void }) => void;
       };
 
@@ -144,12 +158,31 @@ const subscribeToIndex: (
     }
   };
 
-export const checklistData = {
+export const checklistData: ChecklistData = {
   sections: [
     {
       id: 'basics',
       title: 'Storybook basics',
       items: [
+        {
+          id: 'aiSetup',
+          label: 'Set up with AI',
+          icon: WandIcon,
+          available: ({ storeState }) => {
+            // Show only if the user opted into AI during `storybook init` and has not run
+            // `storybook ai setup` yet. Both flags are populated server-side from the event cache.
+            return !!storeState.aiOptIn && storeState.items.aiSetup?.status !== 'done';
+          },
+          criteria: 'ai setup command has not been run yet',
+          showOnGuidePage: false,
+          action: {
+            label: 'Copy prompt',
+            copyContent: getAiSetupPrompt(),
+            onClick: ({ api }) => {
+              api.emit(AI_PROMPT_NUDGE, { id: 'setup', origin: 'onboarding-checklist-side' });
+            },
+          },
+        },
         {
           id: 'guidedTour',
           label: 'Take the guided tour',
@@ -515,6 +548,97 @@ export default {
                 <li>The full hierarchy available</li>
                 <li>How to configure the sorting of your stories</li>
               </ul>
+            </>
+          ),
+        },
+      ],
+    },
+
+    {
+      id: 'share',
+      title: 'Share',
+      items: [
+        {
+          id: 'shareStorybook',
+          label: 'Share your Storybook for feedback',
+          available: () =>
+            addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has shared their Storybook',
+          subscribe: ({ api, done }) => {
+            const SHARE_PROGRESS_KEY = 'chromaui/addon-visual-tests/shareProgress';
+            const SET_VALUE = 'experimental_useSharedState_setValue';
+            return api.on(SET_VALUE, (key: string, value: { status: string } | undefined) => {
+              if (key === SHARE_PROGRESS_KEY && value?.status === 'complete') {
+                done();
+              }
+            });
+          },
+          action: {
+            label: 'Share',
+            onClick: () => document.getElementById('chromatic-share-button')?.click(),
+          },
+          content: () => (
+            <>
+              <p>
+                Share your Storybook with your team in one click using Chromatic. Click the{' '}
+                <strong>Share</strong> button in the toolbar to publish and get a shareable link.
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link href="https://www.chromatic.com/docs/sharing" target="_blank" withArrow>
+                  sharing documentation
+                </Link>
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'publishStorybook',
+          label: 'Publish your Storybook for feedback',
+          available: () =>
+            !addons
+              .experimental_getRegisteredAddons(Addon_TypesEnum.TOOLEXTRA)
+              .includes('chromaui/addon-visual-tests/share-tool'),
+          criteria: 'User has published their Storybook',
+          content: ({ api }) => (
+            <>
+              <p>
+                Publishing your Storybook is easy and unlocks super clear review cycles and other
+                collaborative workflows.
+              </p>
+              <p>
+                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
+                <Link href="https://chromatic.com" target="_blank">
+                  Chromatic
+                </Link>
+                ,{' '}
+                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+                  Vercel
+                </Link>
+                , or{' '}
+                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+                  Netlify
+                </Link>
+                .
+              </p>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'sharing/publish-storybook',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  publishing documentation
+                </Link>
+              </p>
             </>
           ),
         },
@@ -1210,60 +1334,6 @@ npm install @my/awesome-project
               <ul>
                 <li>How to reference stories in your content</li>
                 <li>How to import and display markdown files, such as READMEs</li>
-              </ul>
-            </>
-          ),
-        },
-        {
-          id: 'publishStorybook',
-          label: 'Publish your Storybook to share',
-          criteria: "Have some form of `storybook build` in the project's CI config",
-          content: ({ api }) => (
-            <>
-              <p>
-                Publishing your Storybook is easy and unlocks super clear review cycles and other
-                collaborative workflows.
-              </p>
-              <p>
-                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
-                <Link href="https://chromatic.com" target="_blank">
-                  Chromatic
-                </Link>
-                ,{' '}
-                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
-                  Vercel
-                </Link>
-                , or{' '}
-                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
-                  Netlify
-                </Link>
-                .
-              </p>
-              <img
-                src={api.getDocsUrl({
-                  asset: 'sharing/prbadge-publish.png',
-                  ref: 'guide',
-                })}
-                alt="PR check for publish action"
-              />
-              <strong>Take it further</strong>
-              <p>
-                Read the{' '}
-                <Link
-                  href={api.getDocsUrl({
-                    subpath: 'sharing/publish-storybook',
-                    renderer: true,
-                    ref: 'guide',
-                  })}
-                  target="_blank"
-                >
-                  publishing documentation
-                </Link>{' '}
-                to learn:
-              </p>
-              <ul>
-                <li>How to configure the built Storybook (e.g. performance optimizations)</li>
-                <li>How to use your published Storybook to collaborate with colleagues</li>
               </ul>
             </>
           ),

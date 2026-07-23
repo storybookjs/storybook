@@ -1,8 +1,11 @@
 import * as v from 'valibot';
 
-import { defineService } from '../../service-definition.ts';
-import type { ServiceInstanceOf } from '../../types.ts';
+import type { StoryIndex } from 'storybook/internal/types';
+
+import { defineApi } from '../../../public-api/index.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
+import { formatTestRun } from './format.ts';
+import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
   message: v.string(),
@@ -80,40 +83,64 @@ const testRunOutputSchema = v.variant('status', [
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 
-export type TestServiceState = Record<string, never>;
+export type CreateTestApiOptions = {
+  channel: TestChannel;
+  getIndex: () => Promise<StoryIndex>;
+};
 
 /**
- * Story test execution (`test.run`).
- *
- * A command because it drives addon-vitest over the live channel and must serialize concurrent runs.
+ * Creates the public test API. Each registration owns a queue because addon-vitest supports one
+ * live test run at a time.
  */
-export const testServiceDef = defineService({
-  id: 'core/test',
-  description: 'Run Storybook story tests via addon-vitest.',
-  initialState: {} as TestServiceState,
-  queries: {},
-  commands: {
-    run: {
-      description:
-        'Runs story tests for the given selectors, or all stories when stories is omitted.',
-      input: v.object({
-        stories: v.optional(
-          v.pipe(
-            storyInputArraySchema,
-            v.description('Stories to test. Omit to run all available stories.')
-          )
-        ),
-        a11y: v.optional(
-          v.pipe(
-            v.boolean(),
-            v.description('Whether to include accessibility tests. Defaults to true.')
-          ),
-          true
-        ),
-      }),
-      output: testRunOutputSchema,
-    },
-  },
-});
+export function createTestApi({ channel, getIndex }: CreateTestApiOptions) {
+  const queue = createAsyncQueue();
 
-export type TestService = ServiceInstanceOf<typeof testServiceDef>;
+  return defineApi({
+    id: 'test',
+    description: 'Run Storybook story tests via addon-vitest.',
+    methods: {
+      run: {
+        schema: v.object({
+          stories: v.optional(
+            v.pipe(
+              storyInputArraySchema,
+              v.description('Stories to test. Omit to run all available stories.')
+            )
+          ),
+          a11y: v.optional(
+            v.pipe(
+              v.boolean(),
+              v.description('Whether to include accessibility tests. Defaults to true.')
+            ),
+            true
+          ),
+          json: v.optional(
+            v.pipe(
+              v.boolean(),
+              v.description('When true, return structured JSON instead of Markdown.')
+            ),
+            false
+          ),
+        }),
+        description:
+          'Runs story tests for the given selectors, or all stories when stories is omitted.',
+        handler: async (input) => {
+          const done = await queue.wait();
+          try {
+            const result = await runStoryTests({
+              channel,
+              getIndex,
+              stories: input.stories,
+              a11y: input.a11y,
+            });
+            return input.json ? result : formatTestRun(result);
+          } finally {
+            done();
+          }
+        },
+      },
+    },
+  });
+}
+
+export type TestApi = ReturnType<typeof createTestApi>;

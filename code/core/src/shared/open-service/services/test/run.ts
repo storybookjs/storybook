@@ -7,7 +7,7 @@ import type { StoryInput } from '../stories/story-input.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
 
 /**
- * Channel events owned by addon-vitest. Duplicated here so core/test does not depend on the addon
+ * Channel events owned by addon-vitest. Duplicated here so the test API does not depend on the addon
  * package; keep in sync with `@storybook/addon-vitest` constants.
  */
 export const TRIGGER_TEST_RUN_REQUEST = 'storybook/test/trigger-test-run-request';

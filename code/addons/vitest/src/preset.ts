@@ -27,7 +27,7 @@ import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { registerTestService } from '../../../core/src/shared/open-service/services/test/server.ts';
+import { registerTestApi } from '../../../core/src/shared/open-service/services/test/api.ts';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
@@ -266,8 +266,8 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     });
   });
 
-  // OSA `core/test` capability — registered after the channel listener so runs can complete.
-  registerTestService({
+  // Register after the channel listener so test runs can complete.
+  registerTestApi({
     channel,
     getIndex: () => storyIndexGenerator.getIndex(),
   });

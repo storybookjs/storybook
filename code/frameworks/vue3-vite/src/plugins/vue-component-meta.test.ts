@@ -153,6 +153,7 @@ describe('vue-component-meta plugin', () => {
 
       const result = await transform(src, id);
 
+      expect(result).toBeDefined();
       expect(result?.code ?? '').not.toContain('__docgenInfo');
     });
 
@@ -166,6 +167,7 @@ describe('vue-component-meta plugin', () => {
 
       const result = await transform(src, id);
 
+      expect(result).toBeDefined();
       expect(result?.code ?? '').not.toContain('__docgenInfo');
     });
 

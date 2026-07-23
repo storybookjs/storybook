@@ -32,6 +32,7 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@storybook/angular-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
     "@storybook/vue3": "workspace:*",
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.6.2",

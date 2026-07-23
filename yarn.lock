@@ -9949,6 +9949,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@storybook/angular-vite": "workspace:*"
+    "@storybook/react": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"

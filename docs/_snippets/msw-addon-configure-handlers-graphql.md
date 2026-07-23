@@ -51,39 +51,35 @@ const TestData = {
 type Story = StoryObj<DocumentScreen>;
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -139,39 +135,35 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 });
 ```
@@ -274,39 +266,35 @@ export default {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -375,39 +363,35 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -454,40 +438,36 @@ export const MockedError: Story = {
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              AllInfoQuery: {
-                ...TestData,
-              },
+  beforeEach={({ msw }) => {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            AllInfoQuery: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   }}
 />
 ```
@@ -529,39 +509,35 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -632,40 +608,36 @@ export const MockedError = {
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              AllInfoQuery: {
-                ...TestData,
-              },
+  beforeEach={({ msw }) => {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            AllInfoQuery: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   }}
 />
 ```
@@ -713,39 +685,35 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -818,39 +786,35 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -940,39 +904,35 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 };
 ```
@@ -1077,39 +1037,35 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 });
 ```
@@ -1177,39 +1133,35 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 });
 ```
@@ -1256,39 +1208,35 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 });
 ```
@@ -1337,39 +1285,35 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
             },
-          });
-        }),
-      ],
-    },
+          },
+        });
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
+  async beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
   },
 });
 ```

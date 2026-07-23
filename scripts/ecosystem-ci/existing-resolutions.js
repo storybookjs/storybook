@@ -7,10 +7,13 @@
  * before-test.test.ts to verify they match.
  */
 export const EXISTING_RESOLUTIONS = new Set([
+  '@ai-sdk/anthropic',
   '@babel/runtime',
   '@babel/traverse',
   '@babel/types',
   '@playwright/test',
+  '@vercel/agent-eval@npm:1.2.0',
+  'agent-eval/typescript',
   '@testing-library/user-event@npm:^14.4.0',
   '@testing-library/user-event@npm:^14.6.1',
   '@types/babel__traverse@npm:*',

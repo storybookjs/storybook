@@ -32,6 +32,17 @@ describe('public API registry', () => {
     expect(publicApi(exampleApi)).toBe(exampleApi);
   });
 
+  it('rejects an unregistered definition that reuses a registered id', () => {
+    registerPublicApi([exampleApi]);
+    const unregisteredApi = defineApi({
+      id: 'example',
+      description: 'Different API definition',
+      methods: {},
+    });
+
+    expect(() => publicApi(unregisteredApi)).toThrow();
+  });
+
   it('allows registering the same definition more than once', () => {
     registerPublicApi([exampleApi]);
 
@@ -72,21 +83,21 @@ describe('public API registry', () => {
   });
 
   it('passes the invoking consumer to method handlers', async () => {
-    const api = defineApi({
-      id: 'consumer',
-      description: 'Consumer API',
+    const reviewApi = defineApi({
+      id: 'review',
+      description: 'Review API',
       methods: {
-        greet: {
-          description: 'Greets a person.',
-          schema: v.object({ name: v.string() }),
+        create: {
+          description: 'Creates a review.',
+          schema: v.object({ storyIds: v.array(v.string()) }),
           handler: async (_input, { consumer }) => consumer,
         },
       },
     });
 
-    await expect(invokeApi(api, 'greet', { name: 'Ada' }, { consumer: 'cli' })).resolves.toBe(
-      'cli'
-    );
+    await expect(
+      invokeApi(reviewApi, 'create', { storyIds: ['example--story'] }, { consumer: 'cli' })
+    ).resolves.toBe('cli');
   });
 
   it('propagates method handler errors', async () => {

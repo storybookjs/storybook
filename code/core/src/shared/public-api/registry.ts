@@ -21,11 +21,13 @@ export function publicApi<TDefinition extends AnyApiDefinition>(
 ): TDefinition {
   const registeredDefinition = registry.get(definition.id);
 
-  if (!registeredDefinition) {
-    throw new TypeError(`No public API with id "${definition.id}" is registered.`);
+  if (registeredDefinition !== definition) {
+    throw new TypeError(
+      `The supplied public API definition for "${definition.id}" is not registered.`
+    );
   }
 
-  return registeredDefinition as TDefinition;
+  return definition;
 }
 
 export async function invokeApi<

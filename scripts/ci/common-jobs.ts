@@ -81,22 +81,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   ],
 }));
 
-export const fmt = defineJob('Format check', () => ({
-  executor: {
-    name: 'sb_node_22_classic',
-    class: 'xlarge',
-  },
-  steps: [
-    git.checkout(),
-    npm.install('.'),
-    {
-      run: {
-        name: 'Format check',
-        command: 'yarn fmt:check',
-      },
-    },
-  ],
-}));
 
 export const build_windows = defineJob('Build (windows)', () => ({
   executor: {
@@ -132,6 +116,30 @@ export const build_windows = defineJob('Build (windows)', () => ({
 }));
 
 export const commonJobsNoOpJob = defineNoOpJob('Common Jobs', [build_linux]);
+
+// Reuses the build workspace instead of an independent orb-cached install:
+// the orb cache flow corrupts very large cached zip entries (EINVAL while
+// persisting @openai/codex's ~310MB vendor binary), and the build's install
+// is already validated.
+export const fmt = defineJob(
+  'Format check',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Format check',
+          command: 'yarn fmt:check',
+        },
+      },
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
 
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',

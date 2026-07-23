@@ -14,40 +14,40 @@ export function isTestEnvironment() {
   }
 }
 
-// Pause all animations and transitions by overriding the CSS properties
+// Snap running animations to a deterministic state via the Web Animations API.
+// The previous CSS-injection approach (`animation: none !important` + reflow) did not
+// reliably resolve opacity keyframes to their end value before axe-core ran, producing
+// false-positive color-contrast violations.
 export function pauseAnimations(atEnd = true): CleanupCallback {
-  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
+  if (
+    !(
+      'document' in globalThis &&
+      'getAnimations' in globalThis.document &&
+      'querySelectorAll' in globalThis.document
+    )
+  ) {
     // Don't run in React Native
     return () => {};
   }
 
-  // Remove all animations
-  const disableStyle = document.createElement('style');
-  disableStyle.textContent = `*, *:before, *:after {
-    animation: none !important;
-  }`;
-  document.head.appendChild(disableStyle);
+  const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
+  const animations = animationRoots
+    .flatMap((root) => root?.getAnimations?.() || [])
+    .filter((a) => a.playState === 'running');
 
-  // Pause any new animations
-  const pauseStyle = document.createElement('style');
-  pauseStyle.textContent = `*, *:before, *:after {
-    animation-delay: 0s !important;
-    animation-direction: ${atEnd ? 'reverse' : 'normal'} !important;
-    animation-play-state: paused !important;
-    transition: none !important;
-  }`;
-  document.head.appendChild(pauseStyle);
+  for (const animation of animations) {
+    try {
+      if (atEnd) {
+        animation.finish();
+      } else {
+        animation.cancel();
+      }
+    } catch {
+      // `finish()` throws on infinite animations; ignore and leave them running.
+    }
+  }
 
-  // Force a reflow
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  document.body.clientHeight;
-
-  // Now recreate all animations, getting paused in their initial state
-  document.head.removeChild(disableStyle);
-
-  return () => {
-    pauseStyle.parentNode?.removeChild(pauseStyle);
-  };
+  return () => {};
 }
 
 // Use the Web Animations API to wait for any animations and transitions to finish

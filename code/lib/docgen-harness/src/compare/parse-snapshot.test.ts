@@ -241,6 +241,36 @@ describe('parseArgTypesSnapshot', () => {
     ).toThrow(/broken\.snapshot.*offset \d+/s);
   });
 
+  it('fails loudly when prose mimics an entry boundary instead of fabricating keys', () => {
+    // A multi-line description whose first line ends `"a",` satisfies the value-close rule
+    // early; the leftover prose then reads as a plausible sibling key. The round-trip
+    // verification must reject the parse instead of returning the fabricated object.
+    const text = [
+      '{',
+      '  "arg": {',
+      '    "description": "Options: "a",',
+      '"default": "a"",',
+      '    "name": "arg",',
+      '  },',
+      '}',
+    ].join('\n');
+    expect(() => parseArgTypesSnapshot(text, 'broken.snapshot')).toThrow(
+      /broken\.snapshot.*round-trip/s
+    );
+  });
+
+  it('resolves hand-edited trailing whitespace to the canonical reading', () => {
+    // A stray space between `",` and the newline (hand-edit only; pretty-format never emits
+    // trailing whitespace) is not a value terminator, so the next entry is absorbed into the
+    // string. That absorbed object's canonical serialization IS this input, so the round-trip
+    // check accepts it - the grammar is genuinely ambiguous here. The recorders' parsed-vs-live
+    // toEqual rejects the hand-edit loudly on every normal and CI run.
+    const text = '{\n  "foo": {\n    "description": "abc", \n    "name": "foo",\n  },\n}';
+    expect(parseArgTypesSnapshot(text)).toEqual({
+      foo: { description: 'abc", \n    "name": "foo' },
+    });
+  });
+
   it('fails loudly on a duplicate key instead of silently overwriting', () => {
     expect(() => parseArgTypesSnapshot('{\n  "a": {},\n  "a": {},\n}', 'broken.snapshot')).toThrow(
       /broken\.snapshot.*duplicate/s

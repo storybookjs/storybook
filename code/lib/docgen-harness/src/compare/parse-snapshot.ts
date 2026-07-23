@@ -185,5 +185,51 @@ export function parseArgTypesSnapshot(
   if (pos < text.length) {
     return fail('unexpected trailing content');
   }
+
+  // The close-rule heuristics cannot fully disambiguate prose from structure: a string may
+  // legitimately contain `",` + newline + a key-shaped fragment, which would fabricate entries.
+  // Re-serializing the parse and demanding byte identity turns every such misparse - known or
+  // future - into the loud failure D1 requires.
+  const source = text.endsWith('\n') ? text.slice(0, -1) : text;
+  const reserialized = reserialize(result, '');
+  if (reserialized !== source) {
+    let index = 0;
+    while (
+      index < Math.min(reserialized.length, source.length) &&
+      reserialized[index] === source[index]
+    ) {
+      index += 1;
+    }
+    pos = index;
+    return fail('parsed value does not round-trip to the source bytes');
+  }
   return result as StrictArgTypes;
 }
+
+/** Writes the corpus grammar exactly: 2-space indent, trailing commas, raw strings, bare tokens. */
+const reserialize = (value: unknown, indent: string): string => {
+  if (typeof value === 'string') {
+    return `"${value}"`;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return '[]';
+    }
+    const inner = `${indent}  `;
+    return `[\n${value.map((item) => `${inner}${reserialize(item, inner)},\n`).join('')}${indent}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value);
+    if (entries.length === 0) {
+      return '{}';
+    }
+    const inner = `${indent}  `;
+    return `{\n${entries
+      .map(([key, member]) => `${inner}"${key}": ${reserialize(member, inner)},\n`)
+      .join('')}${indent}}`;
+  }
+  if (Object.is(value, -0)) {
+    return '-0';
+  }
+  return String(value);
+};

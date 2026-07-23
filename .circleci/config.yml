@@ -43,6 +43,9 @@ jobs:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
       - run:
+          name: Limit installs to the runner architecture
+          command: yarn config set supportedArchitectures --json '{"os":["current"],"cpu":["current"]}'
+      - run:
           name: Install dependencies
           command: yarn workspaces focus @storybook/scripts
       - run:

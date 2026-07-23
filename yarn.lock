@@ -5311,67 +5311,67 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openai/codex-darwin-arm64@npm:@openai/codex@0.117.0-darwin-arm64":
-  version: 0.117.0-darwin-arm64
-  resolution: "@openai/codex@npm:0.117.0-darwin-arm64"
+"@openai/codex-darwin-arm64@npm:@openai/codex@0.145.0-darwin-arm64":
+  version: 0.145.0-darwin-arm64
+  resolution: "@openai/codex@npm:0.145.0-darwin-arm64"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@openai/codex-darwin-x64@npm:@openai/codex@0.117.0-darwin-x64":
-  version: 0.117.0-darwin-x64
-  resolution: "@openai/codex@npm:0.117.0-darwin-x64"
+"@openai/codex-darwin-x64@npm:@openai/codex@0.145.0-darwin-x64":
+  version: 0.145.0-darwin-x64
+  resolution: "@openai/codex@npm:0.145.0-darwin-x64"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@openai/codex-linux-arm64@npm:@openai/codex@0.117.0-linux-arm64":
-  version: 0.117.0-linux-arm64
-  resolution: "@openai/codex@npm:0.117.0-linux-arm64"
+"@openai/codex-linux-arm64@npm:@openai/codex@0.145.0-linux-arm64":
+  version: 0.145.0-linux-arm64
+  resolution: "@openai/codex@npm:0.145.0-linux-arm64"
   conditions: os=linux & cpu=arm64
   languageName: node
   linkType: hard
 
-"@openai/codex-linux-x64@npm:@openai/codex@0.117.0-linux-x64":
-  version: 0.117.0-linux-x64
-  resolution: "@openai/codex@npm:0.117.0-linux-x64"
+"@openai/codex-linux-x64@npm:@openai/codex@0.145.0-linux-x64":
+  version: 0.145.0-linux-x64
+  resolution: "@openai/codex@npm:0.145.0-linux-x64"
   conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
-"@openai/codex-sdk@npm:^0.117.0":
-  version: 0.117.0
-  resolution: "@openai/codex-sdk@npm:0.117.0"
+"@openai/codex-sdk@npm:^0.145.0":
+  version: 0.145.0
+  resolution: "@openai/codex-sdk@npm:0.145.0"
   dependencies:
-    "@openai/codex": "npm:0.117.0"
-  checksum: 10c0/96f86890fd45a4030a8e9b6f8466389a015d0ee534b1661b56463a1fd210c6fc3af0ea1f3ce57306a13a9b6ff6197d6409a4d5af7f6d7c90e672009eee15e3fd
+    "@openai/codex": "npm:0.145.0"
+  checksum: 10c0/960ec8b7b1573914a3c4b16e34acaf28674e27ea0cfc923b9a5afb503d4d1f9d12f20141a76c7d30f8c26a1b785405e830d0547e29a4e5abc0f766129aca0ed0
   languageName: node
   linkType: hard
 
-"@openai/codex-win32-arm64@npm:@openai/codex@0.117.0-win32-arm64":
-  version: 0.117.0-win32-arm64
-  resolution: "@openai/codex@npm:0.117.0-win32-arm64"
+"@openai/codex-win32-arm64@npm:@openai/codex@0.145.0-win32-arm64":
+  version: 0.145.0-win32-arm64
+  resolution: "@openai/codex@npm:0.145.0-win32-arm64"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@openai/codex-win32-x64@npm:@openai/codex@0.117.0-win32-x64":
-  version: 0.117.0-win32-x64
-  resolution: "@openai/codex@npm:0.117.0-win32-x64"
+"@openai/codex-win32-x64@npm:@openai/codex@0.145.0-win32-x64":
+  version: 0.145.0-win32-x64
+  resolution: "@openai/codex@npm:0.145.0-win32-x64"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@openai/codex@npm:0.117.0":
-  version: 0.117.0
-  resolution: "@openai/codex@npm:0.117.0"
+"@openai/codex@npm:0.145.0":
+  version: 0.145.0
+  resolution: "@openai/codex@npm:0.145.0"
   dependencies:
-    "@openai/codex-darwin-arm64": "npm:@openai/codex@0.117.0-darwin-arm64"
-    "@openai/codex-darwin-x64": "npm:@openai/codex@0.117.0-darwin-x64"
-    "@openai/codex-linux-arm64": "npm:@openai/codex@0.117.0-linux-arm64"
-    "@openai/codex-linux-x64": "npm:@openai/codex@0.117.0-linux-x64"
-    "@openai/codex-win32-arm64": "npm:@openai/codex@0.117.0-win32-arm64"
-    "@openai/codex-win32-x64": "npm:@openai/codex@0.117.0-win32-x64"
+    "@openai/codex-darwin-arm64": "npm:@openai/codex@0.145.0-darwin-arm64"
+    "@openai/codex-darwin-x64": "npm:@openai/codex@0.145.0-darwin-x64"
+    "@openai/codex-linux-arm64": "npm:@openai/codex@0.145.0-linux-arm64"
+    "@openai/codex-linux-x64": "npm:@openai/codex@0.145.0-linux-x64"
+    "@openai/codex-win32-arm64": "npm:@openai/codex@0.145.0-win32-arm64"
+    "@openai/codex-win32-x64": "npm:@openai/codex@0.145.0-win32-x64"
   dependenciesMeta:
     "@openai/codex-darwin-arm64":
       optional: true
@@ -5387,7 +5387,7 @@ __metadata:
       optional: true
   bin:
     codex: bin/codex.js
-  checksum: 10c0/a5104a396f0f33558c9a402012bf2dd954f5d3465d3b0bb5fe780d265760a3c72b64af4a2d42a0012f661b7e4a274a42c5d4f5582de115613557f480dbec3b5b
+  checksum: 10c0/231e69274b32913660bc94fce3785214a198b32bec10cbba1fadbf04fe42f79e9561f22426ae35002efff63111704fbdb1649f399d7d6c5a7d0f92deaca38c6a
   languageName: node
   linkType: hard
 
@@ -10408,7 +10408,7 @@ __metadata:
     "@google-cloud/bigquery": "npm:^6.2.1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"
-    "@openai/codex-sdk": "npm:^0.117.0"
+    "@openai/codex-sdk": "npm:^0.145.0"
     "@polka/parse": "npm:^1.0.0-next.28"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.9.1"

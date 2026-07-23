@@ -1,12 +1,12 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { registerDocsService as registerCoreDocsService } from '../../../../core/src/shared/open-service/services/docs/server.ts';
+import { registerDocsApi as registerCoreDocsApi } from '../../../../core/src/shared/open-service/services/docs/server.ts';
 
-export type RegisterDocsServiceOptions = {
+export type RegisterDocsApiOptions = {
   getIndex: () => Promise<StoryIndex>;
 };
 
-/** Registers the public `core/docs` capability from the addon-docs preset. */
-export function registerDocsService(options: RegisterDocsServiceOptions) {
-  return registerCoreDocsService(options);
+/** Registers the public docs capability from the addon-docs preset. */
+export function registerDocsApi(options: RegisterDocsApiOptions) {
+  return registerCoreDocsApi(options);
 }

@@ -1,21 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { docsServiceDef } from './docs/definition.ts';
 import { reviewServiceDef } from './review/definition.ts';
 import { storiesServiceDef } from './stories/definition.ts';
 import { testServiceDef } from './test/definition.ts';
 
 describe('OSA capability service contracts', () => {
-  it('exposes the four accepted service ids', () => {
-    expect(docsServiceDef.id).toBe('core/docs');
+  it('exposes the three remaining service ids', () => {
     expect(storiesServiceDef.id).toBe('core/stories');
     expect(testServiceDef.id).toBe('core/test');
     expect(reviewServiceDef.id).toBe('core/review');
-  });
-
-  it('defines docs operations as queries only', () => {
-    expect(Object.keys(docsServiceDef.queries).sort()).toEqual(['list', 'show', 'showStory']);
-    expect(Object.keys(docsServiceDef.commands)).toEqual([]);
   });
 
   it('defines stories, test, and review operations as commands only', () => {
@@ -34,7 +27,7 @@ describe('OSA capability service contracts', () => {
   });
 
   it('keeps query and command names unique within each service', () => {
-    for (const def of [docsServiceDef, storiesServiceDef, testServiceDef, reviewServiceDef]) {
+    for (const def of [storiesServiceDef, testServiceDef, reviewServiceDef]) {
       const names = [...Object.keys(def.queries), ...Object.keys(def.commands)];
       expect(names).toEqual([...new Set(names)]);
     }

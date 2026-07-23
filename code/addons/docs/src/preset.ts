@@ -9,7 +9,7 @@ import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { CompileOptions } from './compiler';
-import { registerDocsService } from './docs-service/server.ts';
+import { registerDocsApi } from './docs-service/server.ts';
 import { registerMdxService } from './mdx-service/server.ts';
 
 /**
@@ -228,8 +228,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
     const getIndex = () => generator.getIndex();
     registerMdxService({ getIndex });
-    // MDX must register first so `core/docs` can compose it.
-    registerDocsService({ getIndex });
+    // MDX must register first so the docs API can compose it.
+    registerDocsApi({ getIndex });
   }
 };
 

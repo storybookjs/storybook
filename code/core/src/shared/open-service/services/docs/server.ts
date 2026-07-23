@@ -1,17 +1,15 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { registerService } from '../../server.ts';
-import { docsServiceDef } from './definition.ts';
-import { clearDocsRuntime, setDocsRuntime } from './runtime.ts';
+import { registerPublicApi } from '../../../public-api/index.ts';
+import { createDocsApi } from './definition.ts';
 
-export type RegisterDocsServiceOptions = {
+export type RegisterDocsApiOptions = {
   getIndex: () => Promise<StoryIndex>;
 };
 
-/** Registers the `core/docs` open service with its story-index dependency. */
-export function registerDocsService(options: RegisterDocsServiceOptions) {
-  setDocsRuntime({ getIndex: options.getIndex });
-  return registerService(docsServiceDef);
+/** Registers the public docs API with its story-index dependency. */
+export function registerDocsApi(options: RegisterDocsApiOptions) {
+  const docsApi = createDocsApi(options);
+  registerPublicApi([docsApi]);
+  return docsApi;
 }
-
-export { clearDocsRuntime };

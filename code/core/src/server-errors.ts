@@ -321,29 +321,7 @@ export class OpenServiceUnknownStoryIdsError extends StorybookError {
   }
 }
 
-export class OpenServiceDocsRuntimeMissingError extends StorybookError {
-  constructor() {
-    super({
-      name: 'OpenServiceDocsRuntimeMissingError',
-      category: Category.CORE_COMMON,
-      code: 19,
-      message:
-        'core/docs runtime is not configured. Call registerDocsService({ getIndex }) before using docs queries.',
-    });
-  }
-}
-
-export class OpenServiceDocsClassificationMissingError extends StorybookError {
-  constructor(public data: { key: string }) {
-    super({
-      name: 'OpenServiceDocsClassificationMissingError',
-      category: Category.CORE_COMMON,
-      code: 20,
-      message: `core/docs classification missing for "${data.key}". Use docs query .loaded() before .get().`,
-    });
-  }
-}
-
+// CORE_COMMON error codes 19 and 20 were retired with the stateless core/docs OSA facade.
 export class OpenServiceTestRunTimeoutError extends StorybookError {
   constructor(public data: { timeoutMs: number; requestId: string }) {
     super({

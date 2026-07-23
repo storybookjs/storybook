@@ -221,6 +221,8 @@ function main(options?: UserOptions): PluginOption {
       const polkaServer = polka();
       polkaServer.listen(port, '127.0.0.1');
       sb.port = server.config.server.port;
+      // @ts-expect-error untyped ?
+      sb.endpoint = '/__storybook/';
       await sb.presets.apply('experimental_devServer', polkaServer, sb);
 
       if (server.httpServer) {

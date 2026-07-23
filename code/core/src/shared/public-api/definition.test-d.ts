@@ -10,11 +10,27 @@ const exampleApi = defineApi({
     greet: {
       description: 'Greets a person.',
       schema: v.object({ name: v.string() }),
-      handler: async ({ name }, { consumer }) => {
+      handler: async ({ name }) => {
         expectTypeOf(name).toEqualTypeOf<string>();
-        expectTypeOf(consumer).toEqualTypeOf<ApiConsumer | undefined>();
 
         return `Hello ${name}`;
+      },
+    },
+  },
+});
+
+const reviewApi = defineApi({
+  id: 'review',
+  description: 'Review API',
+  methods: {
+    create: {
+      description: 'Creates a review.',
+      schema: v.object({ storyIds: v.array(v.string()) }),
+      handler: async ({ storyIds }, { consumer }) => {
+        expectTypeOf(storyIds).toEqualTypeOf<string[]>();
+        expectTypeOf(consumer).toEqualTypeOf<ApiConsumer | undefined>();
+
+        return storyIds.join(',');
       },
     },
   },
@@ -25,6 +41,9 @@ describe('defineApi types', () => {
     expectTypeOf(exampleApi).toMatchTypeOf<ApiDefinition>();
     expectTypeOf(exampleApi.methods.greet.handler).parameter(0).toEqualTypeOf<{
       name: string;
+    }>();
+    expectTypeOf(reviewApi.methods.create.handler).parameter(0).toEqualTypeOf<{
+      storyIds: string[];
     }>();
   });
 });

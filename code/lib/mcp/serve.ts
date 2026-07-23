@@ -30,7 +30,6 @@ async function serveMcp(port: number, manifestsDir: string) {
   });
 }
 
-// @ts-expect-error: import.meta.main is missing from TypeScript's lib types
 if (import.meta.main) {
   const args = parseArgs({
     options: {

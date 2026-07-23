@@ -37,7 +37,6 @@ describe('buildArgsParam', () => {
   });
 
   it('builds sparse arrays', () => {
-    // eslint-disable-next-line no-sparse-arrays
     const param = buildArgsParam({ arr: ['1', , '3'] });
     expect(param).toEqual('arr[0]:1;arr[2]:3');
   });
@@ -55,7 +54,6 @@ describe('buildArgsParam', () => {
   });
 
   it('builds arrays in objects', () => {
-    // eslint-disable-next-line no-sparse-arrays
     const param = buildArgsParam({ obj: { foo: ['1', , '3'] } });
     expect(param).toEqual('obj.foo[0]:1;obj.foo[2]:3');
   });

@@ -364,6 +364,42 @@ It may also contain at most one of the following operators:
 
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
+Conditional controls accept a single query object. To show similar controls for multiple conditions, define separate argTypes with unique arg keys and the same display `name` in your story meta or story definition:
+
+```ts
+argTypes: {
+  'loading.hasOverlineWhenLabel': {
+    name: 'loading.hasOverline',
+    control: 'boolean',
+    if: { arg: 'loading.hasLabel', eq: true },
+  },
+  'loading.hasOverlineWhenValue': {
+    name: 'loading.hasOverline',
+    control: 'boolean',
+    if: { arg: 'loading.hasValue', eq: true },
+  },
+},
+```
+
+Then combine their values inside the story's `render` function before passing them to your component:
+
+```tsx
+export const Example: Story = {
+  render: (args) => {
+    const loading = {
+      hasOverline:
+        args['loading.hasOverlineWhenLabel'] || args['loading.hasOverlineWhenValue'],
+      hasLabel: args['loading.hasLabel'],
+      hasValue: args['loading.hasValue'],
+    };
+
+    return <MyComponent loading={loading} />;
+  },
+};
+```
+
+Each control keeps its own independent arg value. Switching the active condition shows the value for the newly visible control, but does not change or synchronize values set for other conditions.
+
 ## Troubleshooting
 
 <If renderer={['angular', 'ember', 'web-components']}>

@@ -21,6 +21,8 @@ import {
 } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 if (BASELINE_PATH !== 'legacy') {
@@ -39,6 +41,21 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort();
+
+// Under `vitest -u` a match call may legitimately rewrite its file (an accepted improvement),
+// so parsed-committed vs live divergence is the comparator's verdict there, not parser
+// infidelity; the round-trip proof re-arms on the next normal run against the new text.
+// Reads the worker config to share one mechanism with the Vue recorder, where
+// `expect.getState().snapshotState` is unreachable (its production imports load
+// storybook/test, which replaces the global expect instance the runner attaches per-test
+// state to). If the worker global ever disappears, the guard degrades to running the
+// round-trip everywhere - loud under -u, never silently weaker.
+const snapshotsRewriteOnMismatch = (): boolean =>
+  (
+    (globalThis as unknown as Record<string, unknown>).__vitest_worker__ as
+      | { config?: { snapshotOptions?: { updateSnapshot?: string } } }
+      | undefined
+  )?.config?.snapshotOptions?.updateSnapshot === 'all';
 
 type AotCmp = {
   inputs: Record<string, [string, number, null]>;
@@ -83,15 +100,44 @@ describe('angular legacy baselines', () => {
     // call (Type<unknown> accepts it structurally).
     const asCompodocRef = component as unknown as Parameters<typeof extractArgTypes>[0];
 
+    // Committed baselines are read BEFORE their toMatchFileSnapshot call: under -u the
+    // match call rewrites the file first, and a read placed after it would compare the
+    // candidate against itself, masking regressions exactly at flip re-record time. A
+    // missing file is a fresh fixture's first record and skips the comparator.
     flags.angularFilterNonInputControls = false;
+    const argTypesPath = join(testDir, 'argtypes.snapshot');
+    const committedArgTypes = existsSync(argTypesPath)
+      ? readFileSync(argTypesPath, 'utf8')
+      : undefined;
     const argTypes = extractArgTypes(asCompodocRef);
-    await expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
+    await expect(argTypes).toMatchFileSnapshot(argTypesPath);
+    if (committedArgTypes !== undefined) {
+      const parsed = parseArgTypesSnapshot(committedArgTypes, `${fixtureCase}/argtypes.snapshot`);
+      if (!snapshotsRewriteOnMismatch()) {
+        // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
+        expect(parsed).toEqual(argTypes);
+      }
+      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: argTypes! });
+    }
 
     flags.angularFilterNonInputControls = true;
-    await expect(extractArgTypes(asCompodocRef)).toMatchFileSnapshot(
-      join(testDir, 'argtypes-filtered.snapshot')
-    );
+    const filteredPath = join(testDir, 'argtypes-filtered.snapshot');
+    const committedFiltered = existsSync(filteredPath)
+      ? readFileSync(filteredPath, 'utf8')
+      : undefined;
+    const filteredArgTypes = extractArgTypes(asCompodocRef);
+    await expect(filteredArgTypes).toMatchFileSnapshot(filteredPath);
     flags.angularFilterNonInputControls = false;
+    if (committedFiltered !== undefined) {
+      const parsed = parseArgTypesSnapshot(
+        committedFiltered,
+        `${fixtureCase}/argtypes-filtered.snapshot`
+      );
+      if (!snapshotsRewriteOnMismatch()) {
+        expect(parsed).toEqual(filteredArgTypes);
+      }
+      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: filteredArgTypes! });
+    }
 
     expect(Object.keys(stories).length).toBeGreaterThan(0);
 
@@ -107,9 +153,21 @@ describe('angular legacy baselines', () => {
           props[name] = () => {};
         }
       }
-      await expect(
-        computesTemplateSourceFromComponent(component, props, argTypes)
-      ).toMatchFileSnapshot(join(testDir, `snippet-${exportName}.snapshot`));
+      const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
+      const committedSnippet = existsSync(snippetPath)
+        ? readFileSync(snippetPath, 'utf8')
+        : undefined;
+      const snippet = computesTemplateSourceFromComponent(component, props, argTypes!);
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
+      if (committedSnippet !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'angular',
+          args: props,
+          baseline: committedSnippet,
+          candidate: snippet,
+        });
+      }
     }
 
     // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a

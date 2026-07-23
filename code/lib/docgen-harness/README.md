@@ -8,7 +8,13 @@ Nothing here ships to npm (`private: true`).
 
 ```text
 code/lib/docgen-harness/src/
-├── index.ts                      # package entry (the expectCurrentOrBetter comparator lands here)
+├── index.ts                      # package entry: the comparator's public surface
+├── compare/
+│   ├── parse-snapshot.ts         # tokenizer for committed argtypes*.snapshot text (pretty-format, not JSON)
+│   ├── argtypes.ts               # per-key argTypes floor rules
+│   ├── snippets.ts               # representation-set snippet rules (vue3 + angular matchers)
+│   ├── expect-current-or-better.ts  # the throwing wrapper
+│   └── types.ts                  # Violation model
 ├── vue3/
 │   ├── vue3-baselines.test.ts    # legacy baseline recorder (argTypes + snippets)
 │   ├── vue3-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
@@ -72,6 +78,18 @@ Editing a fixture component or its supporting sources therefore always requires 
 
 The signal fixtures' `aot-cmp.ts` maps follow the same rule: they are captured once from real `ngc` output (`@angular/compiler-cli` 21.2.17) by compiling the staged component and reading the emitted class's `ɵcmp.inputs`/`ɵcmp.outputs`, and re-capturing with another Angular version is a reviewed baseline change.
 The production reader consumes only each input tuple's first slot and the plain output strings; the remaining tuple slots are carried for shape fidelity only.
+
+## The expectCurrentOrBetter comparator
+
+`src/compare/` enforces "current or better" mechanically: nothing a committed baseline records may be lost, and improvements pass.
+For argTypes it is a per-key floor: a baseline key, description presence, default-value presence, or type must survive into the candidate; types may change only by normalized deep equality or an enumerated improvement (an `other` catch-all becoming structured, enum/union member supersets, recursive object/array widening).
+`required`, `table.category`, `table.jsDocTags`, `control`/`action`, `table.type.summary`, and description/default contents are deliberately not compared - each would entrench a recorded lie (#28706's `required: true`) or lateral engine vocabulary.
+For snippets it is a representation floor: represented names (bindings, slots, default content) are compared as sets, so attribute order, whitespace, and quote style cannot fail; a name the baseline represents must stay represented, a candidate-only representation is an improvement, and a declared arg absent from both sides is a baseline-encoded accepted delta.
+Committed `argtypes*.snapshot` files are pretty-format output, not JSON: `parseArgTypesSnapshot` tokenizes them (literal raw newlines and unescaped inner quotes in strings, bare `undefined`/`NaN`) and throws on anything outside that grammar - a silently dropped entry would loosen the floor invisibly.
+Both recorders run the checks per fixture on every baseline file, reading the committed text BEFORE its `toMatchFileSnapshot` call: under `-u` the match call rewrites the file, so the comparator judges the fresh output against the last committed text exactly when a flip re-record needs regressions surfaced.
+A parser round-trip (`parsed toEqual live`) guards the tokenizer on every normal and CI run; it skips files a `-u` run rewrites and re-arms on the next normal run.
+Acceptance is the reviewed snapshot update: there is no allowlist file, the committed baseline IS the allowlist, and a wanted deviation lands by re-recording under `-u` and reviewing the diff.
+Red markers and the comparator divide the work: markers pin specific closeable gaps and harden on the `BASELINE_PATH` flip, while the comparator is the general floor with no gap knowledge - a marker closing shows up as a passing improvement, and any unrelated loss still fails.
 
 ## Known legacy gaps (vue3)
 

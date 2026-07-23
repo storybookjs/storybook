@@ -130,6 +130,21 @@ describe('vue-component-meta plugin', () => {
       expect(result!.code).toContain('_sfc_main.__docgenInfo');
     });
 
+    it('should inject __docgenInfo when a production SFC imports its default export', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
     it('should NOT inject __docgenInfo when the default export is an inline expression with no local binding', async () => {
       const src = `import { defineComponent } from 'vue';\nexport default defineComponent({});\n`;
       const id = '/project/src/components/Tab.ts';

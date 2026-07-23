@@ -50,20 +50,24 @@ export class TelemetryService {
   }
 
   /** Track the main init event with all metadata */
-  async trackInit(data: {
-    projectType: ProjectType;
-    features: {
-      dev: boolean;
-      docs: boolean;
-      test: boolean;
-      onboarding: boolean;
-      ai: boolean;
-    };
-    newUser: boolean;
-    versionSpecifier?: string;
-    cliIntegration?: string;
-  }): Promise<void> {
-    await telemetry('init', data);
+  async trackInit(
+    data: {
+      projectType: ProjectType;
+      features: {
+        dev: boolean;
+        docs: boolean;
+        test: boolean;
+        onboarding: boolean;
+        ai: boolean;
+      };
+      newUser: boolean;
+      versionSpecifier?: string;
+      cliIntegration?: string;
+    },
+    options: { configDir?: string } = {}
+  ): Promise<void> {
+    // Pass configDir so metadata resolves `.rnstorybook` (RN) instead of defaulting to `.storybook`.
+    await telemetry('init', data, { configDir: options.configDir });
   }
 
   /** Track empty directory scaffolding event */
@@ -78,7 +82,8 @@ export class TelemetryService {
   async trackInitWithContext(
     projectType: ProjectType,
     selectedFeatures: Set<Feature>,
-    newUser: boolean
+    newUser: boolean,
+    configDir?: string
   ): Promise<void> {
     // Get telemetry info from process ancestry
     let versionSpecifier: string | undefined;
@@ -101,13 +106,16 @@ export class TelemetryService {
       ai: selectedFeatures.has(Feature.AI),
     };
 
-    await this.trackInit({
-      projectType,
-      features: telemetryFeatures,
-      newUser,
-      versionSpecifier,
-      cliIntegration,
-    });
+    await this.trackInit(
+      {
+        projectType,
+        features: telemetryFeatures,
+        newUser,
+        versionSpecifier,
+        cliIntegration,
+      },
+      { configDir }
+    );
   }
 
   async trackPromptCancel(prompt: string): Promise<void> {

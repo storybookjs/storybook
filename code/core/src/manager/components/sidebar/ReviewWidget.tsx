@@ -105,7 +105,7 @@ export const ReviewWidget = () => {
 
   const onDismiss = (event: SyntheticEvent) => {
     event.stopPropagation();
-    dismissReview(api);
+    void dismissReview(api);
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';

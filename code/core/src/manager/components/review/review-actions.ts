@@ -1,4 +1,5 @@
 import type { NavigateFunction } from 'storybook/internal/router';
+import { logger } from 'storybook/internal/client-logger';
 import { getService, type API } from 'storybook/manager-api';
 
 import {
@@ -87,8 +88,13 @@ export const navigateOutOfReview = async (
 };
 
 /** Clear the active review (if any) and return to the pre-review canvas. */
-export const dismissReview = (api: Pick<API, 'emit'>): void => {
-  void getService('core/review').commands.dismissReview(undefined);
+export const dismissReview = async (api: Pick<API, 'emit'>): Promise<void> => {
+  try {
+    await getService('core/review').commands.dismissReview(undefined);
+  } catch (error) {
+    logger.error('Failed to dismiss review', error);
+    return;
+  }
   api.emit(EVENTS.DISMISS_REVIEW, sessionStore.read(PRE_REVIEW_RETURN_KEY));
 };
 

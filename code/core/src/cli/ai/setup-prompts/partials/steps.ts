@@ -188,6 +188,12 @@ export function mswStep(
     'add',
     'msw-storybook-addon@3',
   ]);
+  const csfNextNote = projectInfo.hasCsfFactoryPreview
+    ? `
+
+    If \`storybook add\` injects \`import * as mswStorybookAddon from 'msw-storybook-addon/preview'\` and a \`mswStorybookAddon\` entry into your \`definePreview\` \`addons\`, remove both — that form breaks TypeScript inference for the entire preview. Register the addon with \`addonMsw()\` as shown below instead.
+`
+    : '';
 
   return {
     title: 'MSW handlers (only what stories will hit)',
@@ -198,7 +204,7 @@ export function mswStep(
     ${mswInstall}
     ${mswInit}
     \`\`\`
-
+${csfNextNote}
     Make sure \`${configDir}/main.${ts}\` serves \`./public\`:
 
     ${getMainConfigExample(projectInfo)}

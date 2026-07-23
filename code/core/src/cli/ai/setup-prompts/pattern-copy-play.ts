@@ -602,7 +602,11 @@ export function instructions(projectInfo: ProjectInfo): string {
     All network/data queries should be handled by the default Storybook environment.
 
     - Always use \`msw-storybook-addon\` for query mocking.
-    - If you introduce MSW, register the addon with \`${mswAddonAdd}\` (which also adds it to the main config) and run \`${mswInit}\` to create the worker file.
+    - If you introduce MSW, register the addon with \`${mswAddonAdd}\` (which also adds it to the main config) and run \`${mswInit}\` to create the worker file.${
+      projectInfo.hasCsfFactoryPreview
+        ? " If `storybook add` injects `import * as mswStorybookAddon from 'msw-storybook-addon/preview'` and a `mswStorybookAddon` entry into `definePreview` `addons`, remove both — that form breaks TypeScript inference for the entire preview; use `addonMsw()` instead."
+        : ''
+    }
     - Make sure Storybook serves \`./public\` as a static dir so \`mockServiceWorker.js\` is available.
     - Do not mock \`fetch\` directly.
     - Network/data queries should return deterministic mock data.

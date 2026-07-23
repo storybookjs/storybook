@@ -9951,6 +9951,7 @@ __metadata:
     "@storybook/angular-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/vue3": "workspace:*"
+    "@storybook/vue3-vite": "workspace:*"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     rxjs: "npm:^7.4.0"

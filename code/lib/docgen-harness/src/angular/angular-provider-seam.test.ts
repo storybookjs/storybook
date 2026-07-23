@@ -15,8 +15,10 @@ const presetModules: Record<string, Record<string, unknown>> = {
   'frameworks/angular-vite': angularVitePreset,
 };
 
-// Guards the markers below: a moved or broken preset module would throw inside a
-// test.fails body and silently masquerade as the expected failure.
+// Guards the markers below: the preset imports are static, so a moved module fails
+// collection loudly, but a module that still resolves while losing its exports would
+// keep the markers red on the key-absent assertion and masquerade as the expected
+// failure - this pins the namespaces as real, non-empty objects.
 test('the preset modules asserted by the markers resolve', () => {
   for (const [name, ns] of Object.entries(presetModules)) {
     expect(ns, name).toBeTypeOf('object');
@@ -25,27 +27,44 @@ test('the preset modules asserted by the markers resolve', () => {
 });
 
 test.fails('angular: docgen provider registered', async () => {
-  // Applying the preset value and requiring a real on-disk worker module stops a stub
-  // export (empty array or dangling descriptor) from flipping this marker.
-  const value = Object.values(presetModules)
-    .map((ns) => ns.experimental_docgenProvider)
-    .find((v) => v !== undefined);
-  expect(value).toBeDefined();
-  const applied = (typeof value === 'function' ? await value([]) : value) as {
-    moduleSpecifier: string;
-  }[];
-  expect(applied.length).toBeGreaterThanOrEqual(1);
-  expect(isAbsolute(applied[0].moduleSpecifier)).toBe(true);
-  expect(existsSync(applied[0].moduleSpecifier)).toBe(true);
+  // Applying every asserted module and requiring a real on-disk worker module keeps
+  // the flip honest in both directions: a stub export (empty array, dangling
+  // descriptor, or a value that cannot be applied cold) neither flips the marker nor
+  // masks a qualifying provider registered on another asserted module.
+  const descriptors: unknown[] = [];
+  for (const ns of Object.values(presetModules)) {
+    const value = ns.experimental_docgenProvider;
+    if (value === undefined) {
+      continue;
+    }
+    try {
+      const applied = typeof value === 'function' ? await value([]) : value;
+      if (Array.isArray(applied)) {
+        descriptors.push(...applied);
+      }
+    } catch {
+      // A cold apply carries no real Options; a value that throws does not register.
+    }
+  }
+  const qualifying = descriptors.filter(
+    (d) =>
+      typeof d === 'object' &&
+      d !== null &&
+      'moduleSpecifier' in d &&
+      typeof d.moduleSpecifier === 'string' &&
+      isAbsolute(d.moduleSpecifier) &&
+      existsSync(d.moduleSpecifier)
+  );
+  expect(qualifying.length).toBeGreaterThanOrEqual(1);
 });
 
 test.fails('angular: story-docs provider registered', () => {
   // The value form and the reducer form are both functions and cannot be told apart
   // without invoking with real Options, which no cold test fabricates - the flip edit
-  // adds the behavioral assertion against the real provider.
-  const value = Object.values(presetModules)
+  // adds the behavioral assertion against the real provider. Every asserted module is
+  // checked so a non-function stub cannot mask a real provider on another one.
+  const values = Object.values(presetModules)
     .map((ns) => ns.experimental_storyDocsProvider)
-    .find((v) => v !== undefined);
-  expect(value).toBeDefined();
-  expect(value).toBeTypeOf('function');
+    .filter((v) => v !== undefined);
+  expect(values.some((v) => typeof v === 'function')).toBe(true);
 });

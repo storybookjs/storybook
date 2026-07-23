@@ -34,6 +34,7 @@
     "@storybook/angular-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/vue3": "workspace:*",
+    "@storybook/vue3-vite": "workspace:*",
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.6.2",
     "rxjs": "^7.4.0",

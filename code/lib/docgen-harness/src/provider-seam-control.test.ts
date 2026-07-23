@@ -22,22 +22,36 @@ test('the preset modules asserted by the markers resolve', () => {
 });
 
 test('react: docgen provider registered', async () => {
-  const value = Object.values(presetModules)
-    .map((ns) => ns.experimental_docgenProvider)
-    .find((v) => v !== undefined);
-  expect(value).toBeDefined();
-  const applied = (typeof value === 'function' ? await value([]) : value) as {
-    moduleSpecifier: string;
-  }[];
-  expect(applied.length).toBeGreaterThanOrEqual(1);
-  expect(isAbsolute(applied[0].moduleSpecifier)).toBe(true);
-  expect(existsSync(applied[0].moduleSpecifier)).toBe(true);
+  const descriptors: unknown[] = [];
+  for (const ns of Object.values(presetModules)) {
+    const value = ns.experimental_docgenProvider;
+    if (value === undefined) {
+      continue;
+    }
+    try {
+      const applied = typeof value === 'function' ? await value([]) : value;
+      if (Array.isArray(applied)) {
+        descriptors.push(...applied);
+      }
+    } catch {
+      // A cold apply carries no real Options; a value that throws does not register.
+    }
+  }
+  const qualifying = descriptors.filter(
+    (d) =>
+      typeof d === 'object' &&
+      d !== null &&
+      'moduleSpecifier' in d &&
+      typeof d.moduleSpecifier === 'string' &&
+      isAbsolute(d.moduleSpecifier) &&
+      existsSync(d.moduleSpecifier)
+  );
+  expect(qualifying.length).toBeGreaterThanOrEqual(1);
 });
 
 test('react: story-docs provider registered', () => {
-  const value = Object.values(presetModules)
+  const values = Object.values(presetModules)
     .map((ns) => ns.experimental_storyDocsProvider)
-    .find((v) => v !== undefined);
-  expect(value).toBeDefined();
-  expect(value).toBeTypeOf('function');
+    .filter((v) => v !== undefined);
+  expect(values.some((v) => typeof v === 'function')).toBe(true);
 });

@@ -1,6 +1,6 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { registerDocsApi as registerCoreDocsApi } from '../../../../core/src/shared/open-service/services/docs/server.ts';
+import { registerDocsApi as registerCoreDocsApi } from '../../../../core/src/shared/open-service/services/docs/api.ts';
 
 export type RegisterDocsApiOptions = {
   getIndex: () => Promise<StoryIndex>;

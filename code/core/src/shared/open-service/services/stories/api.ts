@@ -29,9 +29,7 @@ export type RegisterStoriesApiOptions = {
   ) => Promise<FindByComponentOutput>;
 };
 
-/**
- * Registers the public stories API with injected runtime dependencies.
- */
+/** Registers the public stories API with injected runtime dependencies. */
 export function registerStoriesApi(options: RegisterStoriesApiOptions) {
   const storiesApi = createStoriesApi(options);
   registerPublicApi([storiesApi]);

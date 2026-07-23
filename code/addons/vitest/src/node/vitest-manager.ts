@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 
 import type {
   CoverageOptions,
@@ -69,7 +70,11 @@ export class VitestManager {
         ? {
             enabled: true,
             clean: true,
-            cleanOnRerun: true,
+            // Vitest runs in watch mode here, so `cleanOnRerun` would let any rerun wipe the
+            // coverage directory while a still-running suite writes its `.tmp` files, crashing
+            // large runs. The directory is cleaned in `runTests` instead, where no run is in
+            // flight.
+            cleanOnRerun: false,
             reportOnFailure: true,
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
@@ -400,6 +405,13 @@ export class VitestManager {
     this.resetGlobalTestNamePattern();
 
     await this.cancelCurrentRun();
+
+    // A freshly (re)started Vitest instance cleans the coverage directory itself (`clean: true`).
+    // When reusing an already coverage-enabled instance, clean it here — after the current run has
+    // been cancelled and drained — so the previous run's results don't leak into this one.
+    if (coverageShouldBeEnabled && currentCoverage) {
+      await rm(resolvePathInStorybookCache(COVERAGE_DIRECTORY), { recursive: true, force: true });
+    }
 
     const testSpecifications = await this.getStorybookTestSpecifications();
     const allStories = this.getStories();

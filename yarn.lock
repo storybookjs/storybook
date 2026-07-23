@@ -16915,7 +16915,7 @@ __metadata:
   resolution: "agent-eval@workspace:agent-eval"
   dependencies:
     "@tailwindcss/postcss": "npm:^4.3.2"
-    "@types/node": "npm:24.10.1"
+    "@types/node": "npm:^22.19.1"
     "@types/react": "npm:^19.2.17"
     "@types/react-dom": "npm:^19.2.3"
     "@vercel/agent-eval": "npm:1.2.0"

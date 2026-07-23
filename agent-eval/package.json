@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "24.10.1",
+    "@types/node": "^22.19.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vercel/agent-eval": "1.2.0",

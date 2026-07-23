@@ -21,7 +21,7 @@
     "@storybook/addon-themes": "file:../../code/addons/themes",
     "@storybook/addon-vitest": "file:../../code/addons/vitest",
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
-    "@storybook/csf-plugin": "portal:../../code/lib/csf-plugin",
+    "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/mcp": "file:../../code/lib/mcp",
     "@storybook/react": "file:../../code/renderers/react",
     "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",

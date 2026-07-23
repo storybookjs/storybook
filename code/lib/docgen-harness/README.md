@@ -12,7 +12,10 @@ code/lib/docgen-harness/src/
 ├── compare/
 │   ├── parse-snapshot.ts         # tokenizer for committed argtypes*.snapshot text (pretty-format, not JSON)
 │   ├── argtypes.ts               # per-key argTypes floor rules
-│   ├── snippets.ts               # representation-set snippet rules (vue3 + angular matchers)
+│   ├── snippets.ts               # representation-set snippet rules + exhaustive framework dispatch
+│   ├── snippets-vue3.ts          # Vue matcher (template block, v-model, slots, default content)
+│   ├── snippets-angular.ts       # Angular matcher ([input] / (output) attributes)
+│   ├── parse-element.ts          # framework-neutral root-element and attribute scanning
 │   ├── expect-current-or-better.ts  # the throwing wrapper
 │   └── types.ts                  # Violation model
 ├── vue3/
@@ -90,6 +93,7 @@ Both recorders run the checks per fixture on every baseline file, reading the co
 A parser round-trip (`parsed toEqual live`) guards the tokenizer on every normal and CI run; it skips files a `-u` run rewrites and re-arms on the next normal run.
 Acceptance is the reviewed snapshot update: there is no allowlist file, the committed baseline IS the allowlist, and a wanted deviation lands by re-recording under `-u` and reviewing the diff.
 Red markers and the comparator divide the work: markers pin specific closeable gaps and harden on the `BASELINE_PATH` flip, while the comparator is the general floor with no gap knowledge - a marker closing shows up as a passing improvement, and any unrelated loss still fails.
+Each framework's snippet matcher lives in its own `snippets-<framework>.ts`; the dispatch in `snippets.ts` is an exhaustive switch, so adding a member to the `Framework` union fails compilation there until the new framework's matcher exists.
 
 ## Known legacy gaps (vue3)
 

@@ -195,16 +195,20 @@ function createStorybookMiddleware(
           moduleUrl = moduleUrl.slice('/@id/'.length);
         }
 
-        const result = await storybookEnv.transformRequest(moduleUrl);
-        if (result) {
-          res.setHeader('Content-Type', 'application/javascript');
-          res.setHeader('Cache-Control', 'no-cache');
-          if (result.etag) {
-            res.setHeader('ETag', result.etag);
+        try {
+          const result = await storybookEnv.transformRequest(moduleUrl);
+          if (result) {
+            res.setHeader('Content-Type', 'application/javascript');
+            res.setHeader('Cache-Control', 'no-cache');
+            if (result.etag) {
+              res.setHeader('ETag', result.etag);
+            }
+            res.statusCode = 200;
+            res.end(result.code);
+            return;
           }
-          res.statusCode = 200;
-          res.end(result.code);
-          return;
+        } catch (e) {
+          // TODO fallback to vite error handling within proxy
         }
       } else if (pathname.startsWith('/@fs/')) {
         // raw file request — the host's /@fs middleware serves it from the shared filesystem

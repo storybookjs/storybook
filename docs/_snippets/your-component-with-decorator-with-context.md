@@ -13,7 +13,7 @@
       (story, { globals }) => {
         const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
         setContext('marginSize', marginSize);
-        return MarginDecorator;
+        return { Component: MarginDecorator };
       },
     ],
   });
@@ -30,9 +30,9 @@ export default {
   component: YourComponent,
   decorators: [
     (story, { globals }) => {
-      const marginSize = globals.marginSize === "small" ? "small" : "medium";
-      setContext("marginSize", marginSize);
-      return MarginDecorator;
+      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+      setContext('marginSize', marginSize);
+      return { Component: MarginDecorator };
     },
   ],
 };
@@ -68,7 +68,7 @@ export default {
       (story, { globals }) => {
         const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
         setContext('marginSize', marginSize);
-        return MarginDecorator;
+        return { Component: MarginDecorator };
       },
     ],
   });
@@ -78,7 +78,7 @@ export default {
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 import { setContext } from 'svelte';
 // Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from "@storybook/your-framework";
+import type { Meta } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
@@ -87,9 +87,9 @@ const meta = {
   component: YourComponent,
   decorators: [
     (story, { globals }) => {
-      const marginSize = globals.marginSize === "small" ? "small" : "medium";
-      setContext("marginSize", marginSize);
-      return MarginDecorator;
+      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+      setContext('marginSize', marginSize);
+      return { Component: MarginDecorator };
     },
   ],
 } satisfies Meta<typeof YourComponent>;

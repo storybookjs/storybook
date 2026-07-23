@@ -29,6 +29,7 @@ stateful OSA service and adds a one-shot API definition. `generateCLI` consumes 
 ### Task 1: Add the public API definition and registry
 
 **Files:**
+
 - Create: `code/core/src/shared/public-api/definition.ts`
 - Create: `code/core/src/shared/public-api/registry.ts`
 - Create: `code/core/src/shared/public-api/index.ts`
@@ -38,6 +39,7 @@ stateful OSA service and adds a one-shot API definition. `generateCLI` consumes 
 - Modify: `code/core/build-config.ts`
 
 **Interfaces:**
+
 - Produces: `defineApi`, `registerPublicApi`, `publicApi`, `invokeApi`, `clearPublicApiRegistry`
 - Produces: `ApiDefinition`, `AnyApiDefinition`, `ApiConsumer`, `ApiInvocationContext`
 - Consumes: Standard Schema validation through the existing open-service validation utility or an
@@ -101,6 +103,7 @@ git commit -m "Add defineApi public capability seam"
 ### Task 2: Move docs capability to `defineApi`
 
 **Files:**
+
 - Modify: `code/core/src/shared/open-service/services/docs/definition.ts`
 - Modify: `code/core/src/shared/open-service/services/docs/server.ts`
 - Modify: `code/core/src/shared/open-service/services/docs/runtime.ts`
@@ -113,6 +116,7 @@ git commit -m "Add defineApi public capability seam"
 - Modify: `code/core/src/server-errors.ts`
 
 **Interfaces:**
+
 - Produces: `docsApi`
 - Consumes: `getService<DocgenService>('core/docgen')`
 - Consumes: `getService<StoryDocsService>('core/story-docs')`
@@ -169,6 +173,7 @@ git commit -m "Move docs capability to defineApi"
 ### Task 3: Move stories capability to `defineApi`
 
 **Files:**
+
 - Modify: `code/core/src/shared/open-service/services/stories/definition.ts`
 - Modify: `code/core/src/shared/open-service/services/stories/server.ts`
 - Create: `code/core/src/shared/open-service/services/stories/format.ts`
@@ -177,6 +182,7 @@ git commit -m "Move docs capability to defineApi"
 - Modify: `code/core/src/shared/open-service/core-service-types.ts`
 
 **Interfaces:**
+
 - Produces: `createStoriesApi(options)`
 - Consumes: `previewStories`, `getChangedStories`, `findStoriesByComponent`
 - Consumes: existing `RegisterStoriesServiceOptions` dependencies, renamed for API registration
@@ -220,6 +226,7 @@ git commit -m "Move stories capability to defineApi"
 ### Task 4: Move test capability to `defineApi`
 
 **Files:**
+
 - Modify: `code/core/src/shared/open-service/services/test/definition.ts`
 - Modify: `code/core/src/shared/open-service/services/test/server.ts`
 - Create: `code/core/src/shared/open-service/services/test/format.ts`
@@ -228,6 +235,7 @@ git commit -m "Move stories capability to defineApi"
 - Modify: `code/core/src/shared/open-service/core-service-types.ts`
 
 **Interfaces:**
+
 - Produces: `createTestApi({ channel, getIndex })`
 - Consumes: `createAsyncQueue`, `runStoryTests`
 
@@ -265,6 +273,7 @@ git commit -m "Move test capability to defineApi"
 ### Task 5: Split review state service from review API
 
 **Files:**
+
 - Modify: `code/core/src/shared/open-service/services/review/definition.ts`
 - Modify: `code/core/src/shared/open-service/services/review/server.ts`
 - Create: `code/core/src/shared/open-service/services/review/api.ts`
@@ -280,6 +289,7 @@ git commit -m "Move test capability to defineApi"
 - Modify: `code/core/src/manager/components/review/review-actions.ts`
 
 **Interfaces:**
+
 - Produces: genuine `reviewServiceDef` with current state, a current-state query, and state commands
 - Produces: `createReviewApi({ getIndex, getOrigin })`
 - Preserves: legacy `PUSH_REVIEW` as an adapter into `reviewServiceDef`
@@ -332,6 +342,7 @@ git commit -m "Split review state from public API"
 ### Task 6: Refactor CLI generation and repository guidance
 
 **Files:**
+
 - Modify: `code/core/src/cli/tools/generate-cli.ts`
 - Modify: `code/core/src/cli/tools/generate-cli.test.ts`
 - Modify: `code/core/src/shared/open-service/service-registry.ts`
@@ -340,6 +351,7 @@ git commit -m "Split review state from public API"
 - Modify: `AGENTS.md`
 
 **Interfaces:**
+
 - `generateCLI(toolsCommand, apiDefinitions, options)` consumes `AnyApiDefinition[]`
 - Uses `invokeApi`, never `getService` or `AnyServiceDefinition`
 
@@ -377,10 +389,12 @@ git commit -m "Generate CLI from defineApi definitions"
 ### Task 7: Format, verify, push, and update PR
 
 **Files:**
+
 - Modify if needed: all touched files after formatting
 - External update: PR #35516 title and body
 
 **Interfaces:**
+
 - Consumes: all prior tasks
 - Produces: pushed branch and accurate PR metadata
 

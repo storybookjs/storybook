@@ -5,7 +5,7 @@
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
- *   bun packages/addon-mcp/scripts/generate-tools-api-doc.ts [output-path]
+ *   bun code/addons/mcp/scripts/generate-tools-api-doc.ts [output-path]
  *
  * Defaults to writing <repo-root>/tools-api.md (gitignored).
  */
@@ -315,7 +315,7 @@ async function renderCliSection(): Promise<string> {
   const sections = [
     '## `storybook ai` CLI (`STORYBOOK_FEATURE_AI_CLI=1`)',
     '',
-    'Captured against `apps/internal-storybook` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
+    'Captured against `test-storybooks/mcp` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
     '',
     '### `npx storybook ai --help`',
     '',
@@ -337,8 +337,8 @@ const generatedAt = new Date().toISOString().slice(0, 10);
 const document = [
   '# Storybook MCP / AI tools API',
   '',
-  `> Generated ${generatedAt} by \`packages/addon-mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
-  '> Regenerate from the repo root with `bun packages/addon-mcp/scripts/generate-tools-api-doc.ts`.',
+  `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
+  '> Regenerate from the repo root with `node code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
   'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, change detection on, module graph supported, single source. The only variable is the `experimentalReview` feature flag.',
   '',

@@ -604,12 +604,13 @@ async function readSandboxPackageJson(
   return JSON.stringify(sandboxPackageJson, null, 2).concat('\n');
 }
 
-function rewritePackageSpecsForNpm(
+export function rewritePackageSpecsForNpm(
   packageJson: Record<string, unknown>,
   options: { catalog: Catalog; dependencyOverrides?: DependencyOverrides }
 ): Record<string, unknown> {
   const dependencyOverrides = options.dependencyOverrides ?? {};
   const result = JSON.parse(JSON.stringify(packageJson)) as Record<string, unknown>;
+  const version = typeof result.version === 'string' ? result.version : undefined;
   const dependencyFields = [
     'dependencies',
     'devDependencies',
@@ -631,6 +632,7 @@ function rewritePackageSpecsForNpm(
       dependencies[name] = rewriteDependencySpec(name, spec, {
         catalog: options.catalog,
         dependencyOverrides,
+        version,
       });
     }
   }
@@ -641,7 +643,11 @@ function rewritePackageSpecsForNpm(
 function rewriteDependencySpec(
   name: string,
   spec: string,
-  options: { catalog: Catalog; dependencyOverrides: DependencyOverrides }
+  options: {
+    catalog: Catalog;
+    dependencyOverrides: DependencyOverrides;
+    version: string | undefined;
+  }
 ): string {
   const override = options.dependencyOverrides[name];
   if (override !== undefined) {
@@ -660,8 +666,18 @@ function rewriteDependencySpec(
     throw new Error(`Unsupported catalog dependency for ${name}: ${spec}`);
   }
 
+  if (spec === 'workspace:*' || spec === 'workspace:^' || spec === 'workspace:~') {
+    if (options.version === undefined) {
+      throw new Error(`Missing package version for workspace dependency ${name}`);
+    }
+
+    // Storybook publishes its monorepo packages in lockstep, so npm-facing
+    // workspace ranges use the package manifest's own version.
+    return spec === 'workspace:*' ? options.version : `${spec.at(-1)}${options.version}`;
+  }
+
   if (spec.startsWith('workspace:')) {
-    throw new Error(`Missing npm-compatible override for workspace dependency ${name}`);
+    throw new Error(`Unsupported workspace dependency for ${name}: ${spec}`);
   }
 
   return spec;

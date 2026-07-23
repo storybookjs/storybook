@@ -330,8 +330,11 @@ function triggerTestRun(
         case 'cancelled':
           settle(() => reject(new Error('Test run was cancelled')));
           break;
-        default:
+        default: {
+          const exhaustive: never = payload.status;
           settle(() => reject(new Error('Unexpected test run response')));
+          return exhaustive;
+        }
       }
     };
 

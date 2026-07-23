@@ -7,6 +7,7 @@
  */
 
 import { ComponentManifestMap, DocsManifestMap, type Source } from '@storybook/mcp';
+import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 
 export interface ComposedRef {
@@ -86,13 +87,13 @@ export class CompositionAuth {
           const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
           const newServer = result.resourceMetadata.authorization_servers[0];
           if (existingServer !== newServer) {
-            console.warn(
+            logger.warn(
               `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
             );
           }
         }
       } catch (error) {
-        console.warn(
+        logger.warn(
           `[addon-mcp] Failed to check auth for composed ref "${ref.title}" (${ref.url}): ${error instanceof Error ? error.message : String(error)}. Skipping this ref.`
         );
       }
@@ -338,14 +339,14 @@ export class CompositionAuth {
     const resourceMetadataUrl = match[1];
     const resourceResponse = await fetch(resourceMetadataUrl);
     if (!resourceResponse.ok) {
-      console.warn(
+      logger.warn(
         `[addon-mcp] Failed to fetch OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResponse.status}`
       );
       return null;
     }
     const resourceResult = v.safeParse(OAuthResourceMetadata, await resourceResponse.json());
     if (!resourceResult.success) {
-      console.warn(
+      logger.warn(
         `[addon-mcp] Invalid OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResult.issues.map((i) => i.message).join(', ')}`
       );
       return null;
@@ -355,7 +356,7 @@ export class CompositionAuth {
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
     const serverResponse = await fetch(serverMetadataUrl);
     if (!serverResponse.ok) {
-      console.warn(
+      logger.warn(
         `[addon-mcp] Failed to fetch OAuth server metadata from ${serverMetadataUrl}: ${serverResponse.status}`
       );
       return null;
@@ -363,7 +364,7 @@ export class CompositionAuth {
 
     const serverResult = v.safeParse(OAuthServerMetadata, await serverResponse.json());
     if (!serverResult.success) {
-      console.warn(
+      logger.warn(
         `[addon-mcp] Invalid OAuth server metadata from ${serverMetadataUrl}: ${serverResult.issues.map((i) => i.message).join(', ')}`
       );
       return null;

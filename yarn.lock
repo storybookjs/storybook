@@ -11697,27 +11697,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-mcp@npm:*":
-  version: 0.6.0
-  resolution: "@storybook/addon-mcp@npm:0.6.0"
-  dependencies:
-    "@storybook/mcp": "npm:0.7.0"
-    "@tmcp/adapter-valibot": "npm:^0.1.5"
-    "@tmcp/transport-http": "npm:^0.8.5"
-    picoquery: "npm:^2.5.0"
-    tmcp: "npm:^1.19.3"
-    valibot: "npm:1.2.0"
-  peerDependencies:
-    "@storybook/addon-vitest": ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
-    storybook: ^0.0.0-0 || ^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
-  peerDependenciesMeta:
-    "@storybook/addon-vitest":
-      optional: true
-  checksum: 10c0/f1edf6edd3ee242a54f3fb6cfb967a71504cca3ae160b43012d9d25d5485ad521b10d382010732428714ba58ad691c6638ec0a1393f7d16b0e736221f8ded8c0
-  languageName: node
-  linkType: hard
-
-"@storybook/addon-mcp@workspace:code/addons/mcp":
+"@storybook/addon-mcp@workspace:*, @storybook/addon-mcp@workspace:code/addons/mcp":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-mcp@workspace:code/addons/mcp"
   dependencies:
@@ -12029,7 +12009,7 @@ __metadata:
     "@storybook/addon-designs": "npm:^11.0.3"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-mcp": "npm:*"
+    "@storybook/addon-mcp": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
@@ -12269,18 +12249,6 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 10c0/072486356fc929ba5a1a225a8636f0e50b2019083e86e4d48d55aeeae4b40f17731cd1eea9cf1785c53e5fc4409fa93aeca15dccb96675c8e7ab536b18ba864c
-  languageName: node
-  linkType: hard
-
-"@storybook/mcp@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@storybook/mcp@npm:0.7.0"
-  dependencies:
-    "@tmcp/adapter-valibot": "npm:^0.1.5"
-    "@tmcp/transport-http": "npm:^0.8.5"
-    tmcp: "npm:^1.19.3"
-    valibot: "npm:1.2.0"
-  checksum: 10c0/56c90e597684e55e40451da47fc41e581d21365f405990c3cfbaaf8a19b71da17ede83399ed1524c6a1726050b0e0ba55474de5344cdeefe0cf9045faccb92b8
   languageName: node
   linkType: hard
 
@@ -37332,7 +37300,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tmcp@npm:^1.19.3, tmcp@npm:^1.19.4":
+"tmcp@npm:^1.19.4":
   version: 1.19.4
   resolution: "tmcp@npm:1.19.4"
   dependencies:

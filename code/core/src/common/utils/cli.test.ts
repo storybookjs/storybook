@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCorePackage } from './cli.ts';
+import { isCorePackage, isSatelliteAddon } from './cli.ts';
 
 describe('UTILS', () => {
   describe.each([
@@ -18,5 +18,10 @@ describe('UTILS', () => {
     it(`It should return "${output}" when given "${input}"`, () => {
       expect(isCorePackage(input)).toEqual(output);
     });
+  });
+
+  it('classifies @storybook/addon-mcp only as a monorepo package', () => {
+    expect(isCorePackage('@storybook/addon-mcp')).toBe(true);
+    expect(isSatelliteAddon('@storybook/addon-mcp')).toBe(false);
   });
 });

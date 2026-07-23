@@ -30,6 +30,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   VERCEL_PROJECT_NAME: storybook-evals
 

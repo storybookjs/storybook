@@ -42,15 +42,12 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
-// Under `vitest -u` a match call may legitimately rewrite its file (an accepted improvement),
-// so parsed-committed vs live divergence is the comparator's verdict there, not parser
-// infidelity; the round-trip proof re-arms on the next normal run against the new text.
-// Reads the worker config to share one mechanism with the Vue recorder, where
-// `expect.getState().snapshotState` is unreachable (its production imports load
-// storybook/test, which replaces the global expect instance the runner attaches per-test
-// state to). If the worker global ever disappears, the guard degrades to running the
-// round-trip everywhere - loud under -u, never silently weaker.
-const snapshotsRewriteOnMismatch = (): boolean =>
+// Under `-u` the match call rewrites the file, so old-text vs new-output divergence is the
+// comparator's job, not a parser failure; the round-trip proof re-arms on the next normal run.
+// Shares the Vue recorder's worker-config mechanism (there storybook/test replaces the expect
+// instance carrying snapshotState); if the worker global ever disappears, the guard degrades
+// to running the proof everywhere - loud, never silently weaker.
+const isSnapshotUpdateRun = (): boolean =>
   (
     (globalThis as unknown as Record<string, unknown>).__vitest_worker__ as
       | { config?: { snapshotOptions?: { updateSnapshot?: string } } }
@@ -113,7 +110,7 @@ describe('angular legacy baselines', () => {
     await expect(argTypes).toMatchFileSnapshot(argTypesPath);
     if (committedArgTypes !== undefined) {
       const parsed = parseArgTypesSnapshot(committedArgTypes, `${fixtureCase}/argtypes.snapshot`);
-      if (!snapshotsRewriteOnMismatch()) {
+      if (!isSnapshotUpdateRun()) {
         // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
         expect(parsed).toEqual(argTypes);
       }
@@ -133,7 +130,7 @@ describe('angular legacy baselines', () => {
         committedFiltered,
         `${fixtureCase}/argtypes-filtered.snapshot`
       );
-      if (!snapshotsRewriteOnMismatch()) {
+      if (!isSnapshotUpdateRun()) {
         expect(parsed).toEqual(filteredArgTypes);
       }
       expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: filteredArgTypes! });

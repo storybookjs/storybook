@@ -25,14 +25,12 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
-// Under `vitest -u` a match call may legitimately rewrite its file (an accepted improvement),
-// so parsed-committed vs live divergence is the comparator's verdict there, not parser
-// infidelity; the round-trip proof re-arms on the next normal run against the new text.
-// Read from the worker config: `expect.getState().snapshotState` is unreachable here because
-// the imported production source loads storybook/test, which replaces the global expect
-// instance the runner attaches per-test state to. If the worker global ever disappears, the
-// guard degrades to running the round-trip everywhere - loud under -u, never silently weaker.
-const snapshotsRewriteOnMismatch = (): boolean =>
+// Under `-u` the match call rewrites the file, so old-text vs new-output divergence is the
+// comparator's job, not a parser failure; the round-trip proof re-arms on the next normal run.
+// The worker global is the only update-mode signal reachable here (storybook/test, loaded via
+// the production imports, replaces the expect instance carrying snapshotState); if it ever
+// disappears, the guard degrades to running the proof everywhere - loud, never silently weaker.
+const isSnapshotUpdateRun = (): boolean =>
   (
     (globalThis as unknown as Record<string, unknown>).__vitest_worker__ as
       | { config?: { snapshotOptions?: { updateSnapshot?: string } } }
@@ -76,7 +74,7 @@ describe('vue3 legacy baselines', () => {
 
     if (committedArgTypes !== undefined) {
       const parsed = parseArgTypesSnapshot(committedArgTypes, `${fixtureCase}/argtypes.snapshot`);
-      if (!snapshotsRewriteOnMismatch()) {
+      if (!isSnapshotUpdateRun()) {
         // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
         expect(parsed).toEqual(argTypes);
       }

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import { preprocess } from 'svelte/compiler';
+import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
 
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
@@ -36,18 +37,37 @@ interface Results {
   isLegacy: boolean;
 }
 
+/**
+ * The indexer runs once per `*.stories.svelte` file, while the Svelte config is per-project state.
+ * Cache the lookup so the config-file scan runs once per process instead of once per story file —
+ * without this, projects without a `svelte.config.js` get one
+ * "no Svelte config found ... using default configuration" log line per story file.
+ * Trade-off: adding a svelte.config file while `storybook dev` runs requires a restart to be picked up.
+ */
+let svelteConfigPromise: Promise<Partial<SvelteConfig> | undefined> | undefined;
+
+async function loadCachedSvelteConfig(): Promise<Partial<SvelteConfig> | undefined> {
+  svelteConfigPromise ??= import('@sveltejs/vite-plugin-svelte')
+    .then(({ loadSvelteConfig }) => loadSvelteConfig())
+    .catch((error) => {
+      // Don't cache failures (e.g. a broken svelte.config.js), so the next indexing run retries.
+      svelteConfigPromise = undefined;
+      throw error;
+    });
+  return svelteConfigPromise;
+}
+
 export async function parseForIndexer(
   filename: string,
   options: Partial<StorybookAddonSvelteCsFOptions>
 ): Promise<Results> {
-  let [code, { walk }, { loadSvelteConfig }] = await Promise.all([
+  let [code, { walk }, svelteConfig] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
-    import('@sveltejs/vite-plugin-svelte'),
+    loadCachedSvelteConfig(),
   ]);
 
   const { legacyTemplate } = options;
-  const svelteConfig = await loadSvelteConfig();
 
   if (svelteConfig?.preprocess) {
     code = (

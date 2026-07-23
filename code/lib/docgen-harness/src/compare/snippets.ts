@@ -20,7 +20,7 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
   if (baselineNames === undefined) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
-      'The baseline snippet has no parsable <template> block; every committed Vue baseline has one'
+      'The baseline snippet has no parsable root element; every committed baseline has one'
     );
   }
   const candidateNames = representedNames(input.framework, input.candidate) ?? new Set<string>();
@@ -40,14 +40,23 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
 const representedNames = (framework: Framework, snippet: string): Set<string> | undefined =>
   framework === 'vue3' ? vueRepresentedNames(snippet) : angularRepresentedNames(snippet);
 
-/** Angular snippets are a single element; `[input]="..."` and `(output)="..."` are the grammar. */
-function angularRepresentedNames(snippet: string): Set<string> {
-  const names = new Set<string>();
-  for (const match of snippet.matchAll(/\[([\w$.-]+)\]="/g)) {
-    names.add(match[1]);
+/**
+ * Angular snippets are a single element; `[input]` and `(output)` attributes are the grammar.
+ * Attributes are parsed structurally rather than regexed over the whole string, so binding-shaped
+ * text inside an attribute VALUE can never count as representation, and quote style or spacing
+ * around `=` cannot fail the comparison.
+ */
+function angularRepresentedNames(snippet: string): Set<string> | undefined {
+  const root = parseRootElement(snippet);
+  if (root === undefined) {
+    return undefined;
   }
-  for (const match of snippet.matchAll(/\(([\w$.-]+)\)="/g)) {
-    names.add(match[1]);
+  const names = new Set<string>();
+  for (const rawName of parseAttributeNames(root.attrText)) {
+    const bound = /^\[([\w$.-]+)\]$/.exec(rawName) ?? /^\(([\w$.-]+)\)$/.exec(rawName);
+    if (bound) {
+      names.add(bound[1]);
+    }
   }
   return names;
 }
@@ -100,10 +109,14 @@ function parseRootElement(
     return undefined;
   }
   let i = openStart + nameMatch[0].length;
-  let inQuote = false;
-  while (i < block.length && (inQuote || block[i] !== '>')) {
-    if (block[i] === '"') {
-      inQuote = !inQuote;
+  let quote: string | undefined;
+  while (i < block.length && (quote !== undefined || block[i] !== '>')) {
+    if (quote !== undefined) {
+      if (block[i] === quote) {
+        quote = undefined;
+      }
+    } else if (block[i] === '"' || block[i] === "'") {
+      quote = block[i];
     }
     i += 1;
   }
@@ -119,7 +132,11 @@ function parseRootElement(
   return { attrText, childContent: closeIndex > i ? block.slice(i + 1, closeIndex) : undefined };
 }
 
-/** Splits an open tag's attribute text into raw attribute names, skipping quoted values. */
+/**
+ * Splits an open tag's attribute text into raw attribute names, skipping single- or double-quoted
+ * values and tolerating spaces around `=` - value content and formatting must never read as
+ * attribute names.
+ */
 function parseAttributeNames(attrText: string): string[] {
   const names: string[] = [];
   let i = 0;
@@ -135,19 +152,28 @@ function parseAttributeNames(attrText: string): string[] {
       i += 1;
     }
     const rawName = attrText.slice(start, i);
-    if (attrText[i] === '=') {
-      i += 1;
-      if (attrText[i] === '"') {
-        i += 1;
-        while (i < attrText.length && attrText[i] !== '"') {
-          i += 1;
+    let j = i;
+    while (j < attrText.length && (attrText[j] === ' ' || attrText[j] === '\t')) {
+      j += 1;
+    }
+    if (attrText[j] === '=') {
+      j += 1;
+      while (j < attrText.length && (attrText[j] === ' ' || attrText[j] === '\t')) {
+        j += 1;
+      }
+      const quote = attrText[j];
+      if (quote === '"' || quote === "'") {
+        j += 1;
+        while (j < attrText.length && attrText[j] !== quote) {
+          j += 1;
         }
-        i += 1;
+        j += 1;
       } else {
-        while (i < attrText.length && !/\s/.test(attrText[i])) {
-          i += 1;
+        while (j < attrText.length && !/\s/.test(attrText[j])) {
+          j += 1;
         }
       }
+      i = j;
     }
     if (rawName !== '') {
       names.push(rawName);

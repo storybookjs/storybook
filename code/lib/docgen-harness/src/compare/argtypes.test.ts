@@ -424,6 +424,59 @@ describe('compareArgTypes', () => {
     ]);
   });
 
+  it('compares tuples positionally', () => {
+    const tuple = (value: object[]) =>
+      argTypes({ pair: { name: 'pair', type: { name: 'tuple', value } as never } });
+    const baseline = tuple([{ name: 'string' }, { name: 'number' }]);
+    expect(compareArgTypes(baseline, tuple([{ name: 'number' }, { name: 'string' }]))).toEqual([
+      expect.objectContaining({ arg: 'pair', kind: 'type-fidelity' }),
+    ]);
+    expect(compareArgTypes(baseline, tuple([{ name: 'string' }]))).toEqual([
+      expect.objectContaining({ arg: 'pair', kind: 'type-fidelity' }),
+    ]);
+    expect(
+      compareArgTypes(
+        baseline,
+        tuple([{ name: 'string' }, { name: 'number' }, { name: 'boolean' }])
+      )
+    ).toEqual([]);
+  });
+
+  it('lets a catch-all union member improve into a structured member', () => {
+    // The canonical empty-enum improvement must also pass one union-member level deep.
+    const baseline = argTypes({
+      data: {
+        name: 'data',
+        type: { name: 'union', value: [{ name: 'other', value: 'empty-enum' }] },
+      },
+    });
+    const candidate = argTypes({
+      data: { name: 'data', type: { name: 'union', value: [{ name: 'literal', value: 'small' }] } },
+    });
+    expect(compareArgTypes(baseline, candidate)).toEqual([]);
+  });
+
+  it('still fails a literal union losing a member after the member-set rule falls through', () => {
+    const baseline = argTypes({
+      size: {
+        name: 'size',
+        type: {
+          name: 'union',
+          value: [
+            { name: 'literal', value: 'small' },
+            { name: 'literal', value: 'large' },
+          ],
+        },
+      },
+    });
+    const candidate = argTypes({
+      size: { name: 'size', type: { name: 'union', value: [{ name: 'literal', value: 'small' }] } },
+    });
+    expect(compareArgTypes(baseline, candidate)).toEqual([
+      expect.objectContaining({ arg: 'size', kind: 'type-fidelity' }),
+    ]);
+  });
+
   it('allows extra members in a same-kind union', () => {
     const baseline = argTypes({
       status: {

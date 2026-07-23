@@ -104,17 +104,31 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   }
   const baselineMembers = memberSet(baseline);
   const candidateMembers = memberSet(candidate);
-  if (baselineMembers !== undefined && candidateMembers !== undefined) {
-    // Cross-kind on purpose: Vue and Angular encode the same source union differently.
-    return [...baselineMembers].every((member) => candidateMembers.has(member));
+  if (
+    baselineMembers !== undefined &&
+    candidateMembers !== undefined &&
+    [...baselineMembers].every((member) => candidateMembers.has(member))
+  ) {
+    // Cross-kind on purpose: Vue and Angular encode the same source union differently. A failed
+    // superset falls through instead of failing outright, so a catch-all member can still improve
+    // structurally (e.g. union(other 'empty-enum') -> union(literal)); every decrease still ends
+    // in the else-fail below.
+    return true;
   }
   if (
     baseline.name === candidate.name &&
-    (baseline.name === 'union' || baseline.name === 'intersection' || baseline.name === 'tuple')
+    (baseline.name === 'union' || baseline.name === 'intersection')
   ) {
     const candidateValues = (candidate as Extract<SBType, { name: typeof baseline.name }>).value;
     return baseline.value.every((member) =>
       candidateValues.some((candidateMember) => typeCurrentOrBetter(member, candidateMember))
+    );
+  }
+  if (baseline.name === 'tuple' && candidate.name === 'tuple') {
+    // Tuples are positional: each recorded slot must survive at its index; appended slots pass.
+    return (
+      candidate.value.length >= baseline.value.length &&
+      baseline.value.every((member, index) => typeCurrentOrBetter(member, candidate.value[index]))
     );
   }
   if (baseline.name === 'object' && candidate.name === 'object') {

@@ -62,6 +62,20 @@ describe('compareSnippet (angular)', () => {
     const candidate = '<button sb-harness-action [emphasis]="true"></button>';
     expect(angular(baseline, candidate, { emphasis: true })).toEqual([]);
   });
+
+  it('does not read binding-shaped text inside attribute values as representations', () => {
+    const baseline = '<sb-cmp [count]="3"></sb-cmp>';
+    const candidate = '<sb-cmp data-example=\'[count]="not a binding"\'></sb-cmp>';
+    expect(angular(baseline, candidate, { count: 3 })).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+  });
+
+  it('accepts single quotes and spaces around = as formatting-only', () => {
+    const baseline = '<sb-cmp [count]="3" (clicked)="clicked($event)"></sb-cmp>';
+    const candidate = "<sb-cmp [count] = '3' (clicked)='clicked($event)'></sb-cmp>";
+    expect(angular(baseline, candidate, { count: 3 })).toEqual([]);
+  });
 });
 
 describe('compareSnippet (vue3)', () => {
@@ -181,6 +195,22 @@ describe('compareSnippet (vue3)', () => {
       expect.objectContaining({ arg: 'default', kind: 'lost-representation' }),
       expect.objectContaining({ arg: 'header', kind: 'lost-representation' }),
     ]);
+  });
+
+  it('does not read words inside single-quoted values as attribute names', () => {
+    // A single-quoted value must be skipped like a double-quoted one; its content would
+    // otherwise fabricate representations and mask a genuinely dropped binding.
+    const baseline = '<template>\n  <Widget :config="{ count: 1 }" :count="2" />\n</template>';
+    const candidate = "<template>\n  <Widget :config='{ count }' />\n</template>";
+    expect(vue(baseline, candidate, { config: { count: 1 }, count: 2 })).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+  });
+
+  it('keeps scanning past a single-quoted value containing a closing angle bracket', () => {
+    const baseline = '<template>\n  <Widget :condition="a > b" label="kept" />\n</template>';
+    const candidate = "<template>\n  <Widget :condition='a > b' label='kept' />\n</template>";
+    expect(vue(baseline, candidate, { condition: false, label: 'kept' })).toEqual([]);
   });
 
   it('ignores hoisted const names in the script block', () => {

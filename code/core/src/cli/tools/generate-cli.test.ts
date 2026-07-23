@@ -71,6 +71,18 @@ describe('generateCLI', () => {
     ]);
   });
 
+  it('rejects API ids that normalize to the same CLI group', () => {
+    const coreDocsApi = defineApi({
+      id: 'core/docs',
+      description: 'Core documentation tools.',
+      methods: {},
+    });
+
+    expect(() => buildProgram([docsApi, coreDocsApi])).toThrow(
+      'Public APIs "core/docs" and "docs" normalize to the same CLI group "docs".'
+    );
+  });
+
   it('invokes methods from raw CLI flags and prints string results directly', async () => {
     const { program, toolsCommand } = buildProgram();
     const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);

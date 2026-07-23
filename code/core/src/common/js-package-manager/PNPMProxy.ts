@@ -136,13 +136,20 @@ export class PNPMProxy extends JsPackageManager {
     // https://github.com/pnpm/pnpm/pull/9346
     // "npm config" commands are not allowed in workspaces per default
     // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
-    const childProcess = await executeCommand({
-      command: 'npm',
-      cwd: this.cwd,
-      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
-    });
-    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
-    return url === 'undefined' ? undefined : url;
+    try {
+      const childProcess = await executeCommand({
+        command: 'npm',
+        cwd: this.cwd,
+        args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+      });
+      const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
+      return url === 'undefined' ? undefined : url;
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+        return undefined;
+      }
+      throw error;
+    }
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {

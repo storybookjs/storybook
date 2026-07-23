@@ -1,21 +1,16 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
-import { registerService } from '../../server.ts';
-import { getChangedStories } from './changed.ts';
-import type { FindByComponentOutput } from './definition.ts';
-import { storiesServiceDef } from './definition.ts';
-import { previewStories } from './preview-stories.ts';
+import { registerPublicApi } from '../../../public-api/index.ts';
+import { createStoriesApi, type FindByComponentOutput } from './definition.ts';
 
 /**
- * Dependencies for `core/stories` command handlers.
+ * Dependencies for stories API handlers.
  *
  * Wired by core-server / common-preset once story index, change detection, and
- * module-graph reverse lookups are available. Until then, callers can register
- * with test doubles or leave handlers unset (remote-only).
+ * module-graph reverse lookups are available. Tests can supply lightweight doubles.
  */
-export type RegisterStoriesServiceOptions = {
+export type RegisterStoriesApiOptions = {
   getIndex: () => Promise<StoryIndex>;
   /** Storybook server origin used to build preview URLs (e.g. `http://localhost:6006`). */
   getOrigin: () => string;
@@ -35,50 +30,10 @@ export type RegisterStoriesServiceOptions = {
 };
 
 /**
- * Registers the `core/stories` open service with injected runtime dependencies.
- *
- * Does not wire itself into common-preset — callers must supply
- * {@link RegisterStoriesServiceOptions} (or pass a partial `registration` override).
+ * Registers the public stories API with injected runtime dependencies.
  */
-export function registerStoriesService(options: RegisterStoriesServiceOptions) {
-  const {
-    getIndex,
-    getOrigin,
-    getChangeStatuses,
-    detectUnreachableFiles,
-    findStoriesByComponent: findByComponent,
-  } = options;
-
-  return registerService(storiesServiceDef, {
-    commands: {
-      preview: {
-        handler: async (input) => {
-          const origin = getOrigin();
-          if (!origin) {
-            throw new OpenServiceMissingOriginError({
-              serviceId: storiesServiceDef.id,
-              operationName: 'preview',
-            });
-          }
-          const index = await getIndex();
-          return previewStories({ origin, index, stories: input.stories });
-        },
-      },
-      changed: {
-        handler: async () => {
-          const [statuses, index, unreachableFiles] = await Promise.all([
-            getChangeStatuses(),
-            getIndex(),
-            detectUnreachableFiles(),
-          ]);
-          return getChangedStories({ statuses, index, unreachableFiles });
-        },
-      },
-      findByComponent: {
-        handler: async (input) => {
-          return findByComponent(input.componentPaths, input.maxDistance);
-        },
-      },
-    },
-  });
+export function registerStoriesApi(options: RegisterStoriesApiOptions) {
+  const storiesApi = createStoriesApi(options);
+  registerPublicApi([storiesApi]);
+  return storiesApi;
 }

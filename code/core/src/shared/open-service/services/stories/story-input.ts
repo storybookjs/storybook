@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 /**
- * Shared story selector used by `core/stories` and `core/test`.
+ * Shared story selector used by the stories API and `core/test`.
  *
  * Prefer `{ storyId }` unless the caller already has a concrete story-file path and export name.
  */

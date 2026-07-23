@@ -1,7 +1,13 @@
+import type { StoryIndex } from 'storybook/internal/types';
+
 import * as v from 'valibot';
 
-import { defineService } from '../../service-definition.ts';
-import type { ServiceInstanceOf } from '../../types.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
+import { defineApi } from '../../../public-api/index.ts';
+import { getChangedStories } from './changed.ts';
+import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
+import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 
 const previewSuccessSchema = v.object({
@@ -80,52 +86,90 @@ const findByComponentOutputSchema = v.object({
 
 export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
 
-export type StoriesServiceState = Record<string, never>;
+export type CreateStoriesApiOptions = {
+  getIndex: () => Promise<StoryIndex>;
+  getOrigin: () => string;
+  getChangeStatuses: () => Promise<StatusesByStoryIdAndTypeId>;
+  detectUnreachableFiles: () => Promise<string[]>;
+  findStoriesByComponent: (
+    componentPaths: string[],
+    maxDistance?: number
+  ) => Promise<FindByComponentOutput>;
+};
 
-/**
- * Story discovery and preview URLs (`stories.preview` / `stories.changed` / `stories.findByComponent`).
- *
- * These are commands because each call performs live async work against injected runtime
- * dependencies (story index, status store, git/filesystem, module graph, server origin).
- */
-export const storiesServiceDef = defineService({
-  id: 'core/stories',
-  description: 'Story discovery, change detection, and preview URL generation.',
-  initialState: {} as StoriesServiceState,
-  queries: {},
-  commands: {
-    preview: {
-      description: 'Resolves story selectors to preview URLs.',
-      input: v.object({
-        stories: v.pipe(
-          storyInputArraySchema,
-          v.description('Stories to preview. Prefer { storyId } when available.')
-        ),
-      }),
-      output: previewOutputSchema,
-    },
-    changed: {
-      description:
-        'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
-      input: v.undefined(),
-      output: changedOutputSchema,
-    },
-    findByComponent: {
-      description: 'Finds stories that import the given component paths via the module graph.',
-      input: v.object({
-        componentPaths: v.pipe(
-          v.array(v.string()),
-          v.minLength(1),
-          v.description('Component file paths (absolute preferred).')
-        ),
-        maxDistance: v.pipe(
-          v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
-          v.description('Maximum import-graph distance to include. Defaults to 3.')
-        ),
-      }),
-      output: findByComponentOutputSchema,
-    },
-  },
-});
+const jsonSchema = v.optional(
+  v.pipe(v.boolean(), v.description('When true, return structured JSON instead of Markdown.')),
+  false
+);
 
-export type StoriesService = ServiceInstanceOf<typeof storiesServiceDef>;
+/** Creates the public stories API with request-local access to Storybook runtime dependencies. */
+export function createStoriesApi({
+  getIndex,
+  getOrigin,
+  getChangeStatuses,
+  detectUnreachableFiles,
+  findStoriesByComponent,
+}: CreateStoriesApiOptions) {
+  return defineApi({
+    id: 'stories',
+    description: 'Story discovery, change detection, and preview URL generation.',
+    methods: {
+      preview: {
+        schema: v.object({
+          stories: v.pipe(
+            storyInputArraySchema,
+            v.description('Stories to preview. Prefer { storyId } when available.')
+          ),
+          json: jsonSchema,
+        }),
+        description: 'Resolves story selectors to preview URLs.',
+        handler: async (input) => {
+          const origin = getOrigin();
+          if (!origin) {
+            throw new OpenServiceMissingOriginError({
+              serviceId: 'stories',
+              operationName: 'preview',
+            });
+          }
+          const data = previewStories({ origin, index: await getIndex(), stories: input.stories });
+          return input.json ? data : formatPreviewStories(data);
+        },
+      },
+      changed: {
+        schema: v.object({ json: jsonSchema }),
+        description:
+          'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
+        handler: async (input) => {
+          const [statuses, index, unreachableFiles] = await Promise.all([
+            getChangeStatuses(),
+            getIndex(),
+            detectUnreachableFiles(),
+          ]);
+          const data = getChangedStories({ statuses, index, unreachableFiles });
+          return input.json ? data : formatChangedStories(data);
+        },
+      },
+      findByComponent: {
+        schema: v.object({
+          componentPaths: v.pipe(
+            v.array(v.string()),
+            v.minLength(1),
+            v.description('Component file paths (absolute preferred).')
+          ),
+          maxDistance: v.pipe(
+            v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
+            v.description('Maximum import-graph distance to include. Defaults to 3.')
+          ),
+          json: jsonSchema,
+        }),
+        description: 'Finds stories that import the given component paths via the module graph.',
+        handler: async (input) => {
+          const data = await findStoriesByComponent(input.componentPaths, input.maxDistance);
+          return input.json ? data : formatFindByComponent(data);
+        },
+      },
+    },
+  });
+}
+
+export type StoriesApi = ReturnType<typeof createStoriesApi>;

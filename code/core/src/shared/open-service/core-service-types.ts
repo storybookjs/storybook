@@ -1,7 +1,6 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
 import { reviewServiceDef } from './services/review/definition.ts';
-import { storiesServiceDef } from './services/stories/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
 import { testServiceDef } from './services/test/definition.ts';
 import type {
@@ -25,7 +24,7 @@ import type {
  * import the derived *types* (`import type`), so these value imports add no runtime cost to the
  * manager/preview/server bundles — only the membership test pulls them in as values.
  *
- * Capability services (`core/stories`, `core/test`, `core/review`) are server-only. Runtime
+ * Capability services (`core/test`, `core/review`) are server-only. Runtime
  * handlers are supplied by dependency owners (core-server, addon-vitest, addon-mcp) via the
  * colocated `register*Service` helpers.
  */
@@ -35,7 +34,6 @@ export const serverCoreServiceDefs = [
   docgenServiceDef,
   storyDocsServiceDef,
   moduleGraphServiceDef,
-  storiesServiceDef,
   testServiceDef,
   reviewServiceDef,
 ];

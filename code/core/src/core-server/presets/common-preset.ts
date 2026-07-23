@@ -35,7 +35,7 @@ import { createDocgenWorkerClient } from '../../shared/open-service/services/doc
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { findStoriesByComponent } from '../../shared/open-service/services/stories/find-by-component.ts';
-import { registerStoriesService } from '../../shared/open-service/services/stories/server.ts';
+import { registerStoriesApi } from '../../shared/open-service/services/stories/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 import { getService } from '../../shared/open-service/server.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../shared/status-store/index.ts';
@@ -373,7 +373,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     presets: options.presets,
   });
 
-  registerStoriesService({
+  registerStoriesApi({
     getIndex: () => storyIndexGenerator.getIndex(),
     getOrigin: () => options.localAddress ?? '',
     getChangeStatuses: async () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),

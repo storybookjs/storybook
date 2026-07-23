@@ -12,24 +12,30 @@ export function useTransformCode(
   transform: (code: string, storyContext: ReducedStoryContext) => string | Promise<string>,
   storyContext: ReducedStoryContext
 ) {
-  const [transformedCode, setTransformedCode] = useState('Transforming...');
-
   const transformed = transform ? transform?.(source, storyContext) : source;
+  const isPromise =
+    typeof transformed === 'object' && typeof (transformed as Promise<string>)?.then === 'function';
+
+  const [transformedCode, setTransformedCode] = useState(
+    isPromise ? 'Transforming...' : (transformed as string)
+  );
 
   useEffect(() => {
-    async function getTransformedCode() {
-      const transformResult = await transformed;
-      if (transformResult !== transformedCode) {
-        setTransformedCode(transformResult);
-      }
+    if (!isPromise) {
+      return;
     }
 
-    getTransformedCode();
+    let cancelled = false;
+    Promise.resolve(transformed).then((transformResult) => {
+      if (!cancelled) {
+        setTransformedCode((current) => (current !== transformResult ? transformResult : current));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   });
 
-  if (typeof transformed === 'object' && typeof transformed.then === 'function') {
-    return transformedCode;
-  }
-
-  return transformed as string;
+  return isPromise ? transformedCode : (transformed as string);
 }

@@ -23,6 +23,7 @@ export type SourceParameters = SourceCodeProps & {
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string | Promise<string>;
+  transformCode?: boolean;
   /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
   originalSource?: string;
 };
@@ -46,6 +47,8 @@ export type SourceProps = SourceParameters & {
 
 const EMPTY_SOURCE_CONTEXT: SourceContextProps = { sources: {} };
 
+const IDENTITY_TRANSFORM = (code: string) => code;
+
 const getStorySource = (
   storyId: StoryId,
   args: Args,
@@ -65,41 +68,49 @@ const getStorySource = (
 };
 
 const useCode = ({
+  props,
+  sourceParameters,
   snippet,
   serviceSnippet,
   storyContext,
-  typeFromProps,
-  transformFromProps,
 }: {
+  props: SourceProps;
+  sourceParameters: SourceParameters;
   snippet: string;
   serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
-  typeFromProps: SourceType;
-  transformFromProps?: SourceProps['transform'];
-}): string => {
-  const parameters = storyContext.parameters ?? {};
-  const { __isArgsStory: isArgsStory } = parameters;
-  const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
+}): { code: string; hasDirectCode: boolean } => {
+  const directCode = props.code ?? sourceParameters.code;
+  const hasDirectCode = directCode !== undefined;
 
-  const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
+  let codeToTransform: string;
+  let transformer: SourceProps['transform'] | undefined;
 
-  const staticSnippet = serviceSnippet || snippet;
-  const useSnippet =
-    // if user has explicitly set this as dynamic, use snippet
-    type === SourceType.DYNAMIC ||
-    // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && staticSnippet && isArgsStory);
+  if (hasDirectCode) {
+    codeToTransform = directCode;
+    const shouldTransform = props.transformCode ?? sourceParameters.transformCode ?? false;
+    transformer = shouldTransform ? (props.transform ?? sourceParameters.transform) : undefined;
+  } else {
+    const { __isArgsStory: isArgsStory } = storyContext.parameters ?? {};
+    const type = props.type || sourceParameters.type || SourceType.AUTO;
+    const staticSnippet = serviceSnippet || snippet;
+    const useSnippet =
+      // if user has explicitly set this as dynamic, use snippet
+      type === SourceType.DYNAMIC ||
+      // if this is an args story and there's a snippet
+      (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
-  const transformer = transformFromProps ?? sourceParameters.transform;
-
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
-
-  if (sourceParameters.code !== undefined) {
-    return sourceParameters.code;
+    codeToTransform = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
+    transformer = props.transform ?? sourceParameters.transform;
   }
 
-  return transformedCode;
+  const transformedCode = useTransformCode(
+    codeToTransform,
+    transformer ?? IDENTITY_TRANSFORM,
+    storyContext
+  );
+
+  return { code: transformer ? transformedCode : codeToTransform, hasDirectCode };
 };
 
 // state is used by the Canvas block, which also calls useSourceProps
@@ -134,46 +145,30 @@ export const useSourceProps = (
     : storyContext.unmappedArgs;
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
+  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
 
-  const transformedCode = useCode({
+  const { code, hasDirectCode } = useCode({
+    props,
+    sourceParameters,
     snippet: source ? source.code : '',
     serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
-    typeFromProps: props.type as SourceType,
-    transformFromProps: props.transform,
   });
 
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
   }
 
-  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
-  let format = props.format;
-
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
-  if (props.code === undefined && !story) {
+  if (!hasDirectCode && !story) {
     return { error: SourceError.SOURCE_UNAVAILABLE };
   }
 
-  if (props.code !== undefined) {
-    return {
-      code: props.code,
-      format,
-      language,
-      dark,
-    };
-  }
+  const format = props.code !== undefined ? props.format : (source?.format ?? true);
 
-  format = source?.format ?? true;
-
-  return {
-    code: transformedCode,
-    format,
-    language,
-    dark,
-  };
+  return { code, format, language, dark };
 };
 
 const SourceWithStoryDocsSnippet: FC<

@@ -86,7 +86,18 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!currentReview) {
+    if (currentReview === undefined) {
+      return;
+    }
+    if (currentReview === null) {
+      const { state: displayed, pendingReview: deferred } = reviewStore.getState();
+      if (!displayed && !deferred) {
+        return;
+      }
+      clearReviewStatuses(reviewStatusStore);
+      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+      clearReviewNotificationsOnDismiss(api, displayed, deferred);
+      reviewStore.clearReview();
       return;
     }
 
@@ -103,15 +114,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
     reviewStore.displayReview(currentReview);
-  }, [currentReview, currentReview?.stale, syncActiveReviewStatuses]);
+  }, [api, currentReview, currentReview?.stale, syncActiveReviewStatuses]);
 
   const emit = useChannel({
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
-      clearReviewStatuses(reviewStatusStore);
-      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-      const { state: displayed, pendingReview: deferred } = reviewStore.getState();
-      clearReviewNotificationsOnDismiss(api, displayed, deferred);
-      reviewStore.clearReview();
       void navigateOutOfReview(api, navigate, returnSearch, { recordVisit: false });
     },
   });

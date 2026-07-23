@@ -38,6 +38,8 @@ export type ReviewServiceState = {
   current: ReviewState | null;
 };
 
+export const REVIEW_STALE_GRACE_MS = 10_000;
+
 /**
  * Stateful review coordination shared by the server and manager realms.
  */
@@ -56,42 +58,20 @@ export const reviewServiceDef = defineService({
   },
   commands: {
     setReview: {
-      description: 'Replaces the current review and assigns its server creation time.',
+      description:
+        'Replaces the current review and assigns its server creation time. Implemented by the server.',
       input: reviewStateSchema,
       output: v.void(),
-      handler: async (input, ctx) => {
-        const { stale: _stale, createdAt: _createdAt, ...review } = input;
-        ctx.self.setState((state) => {
-          state.current = { ...review, createdAt: Date.now() };
-        });
-      },
     },
     markStale: {
-      description: 'Marks the current review stale after the source-change grace period.',
+      description: 'Marks the current review stale. Implemented by the server.',
       input: v.undefined(),
       output: v.void(),
-      handler: async (_input, ctx) => {
-        ctx.self.setState((state) => {
-          const current = state.current;
-          if (
-            current?.createdAt !== undefined &&
-            !current.stale &&
-            Date.now() >= current.createdAt + 10_000
-          ) {
-            current.stale = true;
-          }
-        });
-      },
     },
     dismissReview: {
-      description: 'Clears the current review.',
+      description: 'Clears the current review. Implemented by the server.',
       input: v.undefined(),
       output: v.void(),
-      handler: async (_input, ctx) => {
-        ctx.self.setState((state) => {
-          state.current = null;
-        });
-      },
     },
   },
 });

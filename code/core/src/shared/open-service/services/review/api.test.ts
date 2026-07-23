@@ -1,6 +1,6 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearRegistry } from '../../server.ts';
 import { invokeApi } from '../../../public-api/index.ts';
@@ -38,6 +38,11 @@ const input = {
 describe('review API', () => {
   beforeEach(() => {
     clearRegistry();
+  });
+
+  afterEach(() => {
+    clearRegistry();
+    vi.restoreAllMocks();
   });
 
   it('validates story ids before setting review state', async () => {

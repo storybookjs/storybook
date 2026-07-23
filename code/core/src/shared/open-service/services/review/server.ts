@@ -1,7 +1,47 @@
 import { registerService } from '../../server.ts';
-import { reviewServiceDef } from './definition.ts';
+import { REVIEW_STALE_GRACE_MS, reviewServiceDef } from './definition.ts';
 
 /** Registers the stateful `core/review` service in the server realm. */
 export function registerReviewService() {
-  return registerService(reviewServiceDef);
+  return registerService(reviewServiceDef, {
+    commands: {
+      setReview: {
+        handler: async (input, ctx) => {
+          const { stale: _stale, createdAt: _createdAt, ...review } = input;
+          ctx.self.setState((state) => {
+            state.current = { ...review, createdAt: Date.now() };
+          });
+        },
+      },
+      markStale: {
+        handler: async (_input, ctx) => {
+          ctx.self.setState((state) => {
+            const current = state.current;
+            if (
+              current?.createdAt !== undefined &&
+              !current.stale &&
+              Date.now() >= current.createdAt + REVIEW_STALE_GRACE_MS
+            ) {
+              state.current = {
+                ...current,
+                collections: current.collections.map((collection) => ({
+                  ...collection,
+                  storyIds: [...collection.storyIds],
+                })),
+                ...(current.changedFiles ? { changedFiles: [...current.changedFiles] } : {}),
+                stale: true,
+              };
+            }
+          });
+        },
+      },
+      dismissReview: {
+        handler: async (_input, ctx) => {
+          ctx.self.setState((state) => {
+            state.current = null;
+          });
+        },
+      },
+    },
+  });
 }

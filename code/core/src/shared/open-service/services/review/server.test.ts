@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearRegistry } from '../../server.ts';
+import { reviewServiceDef } from './definition.ts';
 import { registerReviewService } from './server.ts';
 
 const review = {
@@ -22,7 +23,14 @@ describe('registerReviewService', () => {
   });
 
   afterEach(() => {
+    clearRegistry();
     vi.restoreAllMocks();
+  });
+
+  it('leaves state command handlers to server registration', () => {
+    expect(reviewServiceDef.commands.setReview.handler).toBeUndefined();
+    expect(reviewServiceDef.commands.markStale.handler).toBeUndefined();
+    expect(reviewServiceDef.commands.dismissReview.handler).toBeUndefined();
   });
 
   it('sets, marks stale, and dismisses the current review', async () => {

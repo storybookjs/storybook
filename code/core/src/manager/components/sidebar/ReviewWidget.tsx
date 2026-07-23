@@ -5,12 +5,11 @@ import { ActionList, Card } from 'storybook/internal/components';
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
 import { useNavigate } from 'storybook/internal/router';
-import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { EVENTS } from '../review/constants.ts';
-import { navigateToReviewSummary } from '../review/review-actions.ts';
+import { dismissReview, navigateToReviewSummary } from '../review/review-actions.ts';
 import { collectReviewStoryIds } from '../review/review-status.ts';
 import { useReview } from '../review/review-store.ts';
 
@@ -81,8 +80,6 @@ export const ReviewWidget = () => {
     excludedTagFilters = [],
   } = useStorybookState();
 
-  const emit = useChannel({});
-
   const regionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { role: 'region', 'aria-labelledby': HEADING_ID },
@@ -108,7 +105,7 @@ export const ReviewWidget = () => {
 
   const onDismiss = (event: SyntheticEvent) => {
     event.stopPropagation();
-    emit(EVENTS.DISMISS_REVIEW);
+    dismissReview(api);
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';

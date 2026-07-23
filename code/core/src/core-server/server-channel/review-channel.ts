@@ -2,7 +2,10 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
-import type { ReviewService } from '../../shared/open-service/services/review/definition.ts';
+import {
+  REVIEW_STALE_GRACE_MS,
+  type ReviewService,
+} from '../../shared/open-service/services/review/definition.ts';
 import { REVIEW_EVENTS } from '../../shared/review/events.ts';
 import type { ReviewState } from '../../shared/review/review-state.ts';
 
@@ -42,25 +45,40 @@ export interface ReviewChannelOptions {
  * Adapts legacy review channel events into the authoritative OSA state service.
  *
  * `PUSH_REVIEW` remains for the unchanged production MCP implementation.
- * `REVIEW_DISMISSED` remains for return navigation across manager tabs.
+ * Dismissal events only relay tab-specific return navigation.
  */
 export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}) {
   const subscribeToModuleGraphChanges =
     options.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
   const reviewService = getService<ReviewService>('core/review');
 
-  channel.on(REVIEW_EVENTS.PUSH_REVIEW, async (payload: ReviewState) => {
+  const onPushReview = async (payload: ReviewState) => {
     await reviewService.commands.setReview(payload);
-  });
+  };
 
-  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, async (returnSearch?: string | null) => {
-    await reviewService.commands.dismissReview(undefined);
+  const onDismissReview = (returnSearch?: string | null) => {
     channel.emit(REVIEW_EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
-  });
+  };
 
-  subscribeToModuleGraphChanges(() => {
+  channel.on(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
+  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
+
+  const unsubscribeFromModuleGraph = subscribeToModuleGraphChanges(() => {
+    const current = reviewService.queries.current.get(undefined);
+    if (
+      !current ||
+      current.stale ||
+      current.createdAt === undefined ||
+      Date.now() < current.createdAt + REVIEW_STALE_GRACE_MS
+    ) {
+      return;
+    }
     void reviewService.commands.markStale(undefined);
   });
 
-  return channel;
+  return () => {
+    channel.off(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
+    channel.off(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
+    unsubscribeFromModuleGraph();
+  };
 }

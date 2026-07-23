@@ -66,6 +66,8 @@ jobs:
         run: yarn install --immutable
 
       - name: Build local MCP packages
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
         run: yarn nx run-many -t compile --projects mcp,addon-mcp
 
       - name: Type check agent eval config

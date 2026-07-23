@@ -1,456 +1,716 @@
-# `defineApi` Implementation Plan
+# `defineApi` Milestone 2 Realignment Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development
 > (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the direct OSA-to-CLI capability contract with a small `defineApi` public
-capability layer while retaining OSA for genuine internal state and synchronization.
+**Goal:** Align PR #35516 with the July 23 update to tracking issue #35526 by making `defineApi` a
+minimal definition helper with explicit adapter composition and no registry or CLI implementation.
 
-**Architecture:** `storybook/public-api` defines, registers, validates, and invokes explicit public
-capabilities. Docs, stories, and test become API definitions over existing logic. Review keeps a
-stateful OSA service and adds a one-shot API definition. `generateCLI` consumes API definitions only.
+**Architecture:** Every API handler receives one required `ApiCtx` containing `consumer`, `origin`,
+and typed server `getService`. Docs and review are plain definitions; stories and test are factories
+over direct boot-time dependencies. OSA remains internal, with only review retaining synchronized
+state.
 
-**Tech Stack:** TypeScript, Standard Schema, Valibot, Vitest, Commander, Storybook OSA
+**Tech Stack:** TypeScript, Standard Schema, Valibot, Storybook OSA, Vitest, Storybook story tests.
 
 ## Global Constraints
 
 - Do not update tracking issue #35526.
 - Do not migrate production MCP adapters.
-- Do not expose production `storybook tools` commands.
+- Do not implement or expose `storybook tools`; CLI generation is Milestone 5.
+- Do not add a public API registry, invocation helper, middleware, SDK, HTTP adapter, or lifecycle.
+- Preserve the stateful `core/review` OSA service and the legacy `PUSH_REVIEW` compatibility path.
+- Method handlers return Markdown by default and structured data when their schema's `json` field is
+  true.
+- Run `yarn fmt:write` from `code/` after editing.
 - Do not merge PR #35516.
-- API methods contain only `schema`, `description`, and `handler`.
-- API methods return Markdown by default and structured data with `json: true`.
-- Only `review.create` uses `consumer: 'cli' | 'mcp'`.
-- Format with `cd code && yarn fmt:write` after editing.
 
 ---
 
-### Task 1: Add the public API definition and registry
+### Task 1: Reduce `storybook/public-api` to the definition contract
 
 **Files:**
 
-- Create: `code/core/src/shared/public-api/definition.ts`
-- Create: `code/core/src/shared/public-api/registry.ts`
-- Create: `code/core/src/shared/public-api/index.ts`
-- Create: `code/core/src/shared/public-api/definition.test-d.ts`
-- Create: `code/core/src/shared/public-api/registry.test.ts`
-- Modify: `code/core/package.json`
-- Modify: `code/core/build-config.ts`
+- Modify: `code/core/src/shared/public-api/definition.ts`
+- Modify: `code/core/src/shared/public-api/definition.test-d.ts`
+- Modify: `code/core/src/shared/public-api/index.ts`
+- Delete: `code/core/src/shared/public-api/registry.ts`
+- Delete: `code/core/src/shared/public-api/registry.test.ts`
 
 **Interfaces:**
 
-- Produces: `defineApi`, `registerPublicApi`, `publicApi`, `invokeApi`, `clearPublicApiRegistry`
-- Produces: `ApiDefinition`, `AnyApiDefinition`, `ApiConsumer`, `ApiInvocationContext`
-- Consumes: Standard Schema validation through the existing open-service validation utility or an
-  equivalent private helper
+- Produces: `ApiCtx`, `ApiMethod`, `ApiDefinition`, `AnyApiDefinition`, and `defineApi`.
+- Consumes: `TypedGetService<ServerCoreServices>` from
+  `code/core/src/shared/open-service/core-service-types.ts`.
 
-- [ ] **Step 1: Write failing type and runtime tests**
+- [ ] **Step 1: Rewrite the type test to require the complete context**
+
+Use a `review.create` fixture whose handler proves all context fields and typed service access:
 
 ```ts
-const exampleApi = defineApi({
-  id: 'example',
-  description: 'Example API',
+const reviewApi = defineApi({
+  id: 'review',
+  description: 'Create a review',
   methods: {
-    greet: {
-      description: 'Greets a person.',
-      schema: v.object({ name: v.string() }),
-      handler: async ({ name }) => `Hello ${name}`,
+    create: {
+      description: 'Create a review',
+      schema: v.object({ title: v.string() }),
+      handler: async (input, ctx) => {
+        expectTypeOf(input.title).toEqualTypeOf<string>();
+        expectTypeOf(ctx.consumer).toEqualTypeOf<'cli' | 'mcp'>();
+        expectTypeOf(ctx.origin).toEqualTypeOf<string>();
+        expectTypeOf(ctx.getService('core/review')).not.toBeAny();
+        return input.title;
+      },
     },
   },
 });
-
-registerPublicApi([exampleApi]);
-await expect(invokeApi(exampleApi, 'greet', { name: 42 })).rejects.toThrow();
-await expect(invokeApi(exampleApi, 'greet', { name: 'Ada' })).resolves.toBe('Hello Ada');
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+Remove expectations that `consumer` is optional and remove registry-related type fixtures.
+
+- [ ] **Step 2: Run the core check and verify the type test fails**
 
 Run:
 
 ```bash
-yarn test public-api
-```
-
-Expected: failure because `storybook/public-api` and its implementation do not exist.
-
-- [ ] **Step 3: Implement the minimal deep module**
-
-`defineApi` must preserve each method schema's parsed input type in its handler. `invokeApi` must
-validate input before calling the handler, pass `{ consumer }`, and propagate handler errors.
-Registration must reject duplicate API ids while allowing idempotent registration of the same
-definition.
-
-- [ ] **Step 4: Export the package entry and run tests**
-
-Run:
-
-```bash
-yarn test public-api
 yarn nx check core
 ```
 
-Expected: public API tests pass and core type checking succeeds.
+Expected: failure because `ApiCtx` does not yet provide `origin` or `getService`.
+
+- [ ] **Step 3: Implement the minimal definition-only module**
+
+Replace `ApiInvocationContext` with:
+
+```ts
+import type { ServerCoreServices, TypedGetService } from '../open-service/core-service-types.ts';
+
+export type ApiConsumer = 'cli' | 'mcp';
+
+export type ApiCtx = {
+  consumer: ApiConsumer;
+  origin: string;
+  getService: TypedGetService<ServerCoreServices>;
+};
+```
+
+Change `ApiMethod.handler` to:
+
+```ts
+handler: (input: StandardSchemaV1.InferOutput<TSchema>, context: ApiCtx) => unknown;
+```
+
+Keep `defineApi` as an identity function preserving literal ids and inferred schemas. Change
+`index.ts` to export only:
+
+```ts
+export { defineApi } from './definition.ts';
+export type {
+  AnyApiDefinition,
+  ApiConsumer,
+  ApiCtx,
+  ApiDefinition,
+  ApiMethod,
+} from './definition.ts';
+```
+
+Delete the registry implementation and tests.
+
+- [ ] **Step 4: Run the core check**
+
+Run:
+
+```bash
+yarn nx check core
+```
+
+Expected: remaining failures are limited to capability handlers and tests that still use the old
+optional context or `invokeApi`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add code/core/src/shared/public-api code/core/package.json code/core/build-config.ts
-git commit -m "Add defineApi public capability seam"
+git add code/core/src/shared/public-api
+git commit -m "Reduce defineApi to explicit definitions"
 ```
 
-### Task 2: Move docs capability to `defineApi`
+---
+
+### Task 2: Make docs a plain context-composed API
 
 **Files:**
 
 - Modify: `code/core/src/shared/open-service/services/docs/definition.ts`
-- Modify: `code/core/src/shared/open-service/services/docs/server.ts`
-- Modify: `code/core/src/shared/open-service/services/docs/runtime.ts`
-- Create: `code/core/src/shared/open-service/services/docs/format.ts`
-- Modify: `code/core/src/shared/open-service/services/docs/runtime.test.ts`
-- Create or modify: `code/core/src/shared/open-service/services/docs/api.test.ts`
-- Modify: `code/addons/docs/src/docs-service/server.ts`
-- Modify: `code/core/src/shared/open-service/core-service-types.ts`
-- Modify: `code/core/src/shared/open-service/services/capability-services.test.ts`
-- Modify: `code/core/src/server-errors.ts`
+- Modify: `code/core/src/shared/open-service/services/docs/api.test.ts`
+- Create: `code/core/src/shared/open-service/services/docs/classify-services.ts`
+- Create: `code/core/src/shared/open-service/services/docs/classify-services.test.ts`
+- Delete: `code/core/src/shared/open-service/services/docs/api.ts`
+- Delete: `code/addons/docs/src/docs-service/server.ts`
+- Modify: `code/addons/docs/src/preset.ts`
 
 **Interfaces:**
 
-- Produces: `docsApi`
-- Consumes: `getService<DocgenService>('core/docgen')`
-- Consumes: `getService<StoryDocsService>('core/story-docs')`
-- Consumes: existing `classifyIndex`, `mapDocsList`, `mapDocsShow`, `mapDocsShowStory`
+- Produces: `docsApi`.
+- Consumes: `ctx.getService('core/docgen')`, `ctx.getService('core/story-docs')`, and optional
+  `ctx.getService(MDX_SERVICE_ID)`.
 
-- [ ] **Step 1: Write API behavior tests**
+- [ ] **Step 1: Add failing service-classification tests**
 
-Tests must invoke `docsApi` through `invokeApi`, assert Markdown by default, structured output with
-`json: true`, and prove that mocked internal OSA services are called through `.loaded()`.
-
-- [ ] **Step 2: Run docs tests to verify failure**
-
-Run:
-
-```bash
-yarn test docs/api docs/map
-```
-
-Expected: API test fails while mapper regressions remain green.
-
-- [ ] **Step 3: Rewrite the definition as an async API**
-
-Each method should classify the index in request-local variables, await required OSA queries,
-derive one structured result with existing mappers, and select structured or Markdown output:
+Test that `classifyServices` derives:
 
 ```ts
-return input.json ? data : formatDocsList(data);
+expect(
+  classifyServices({
+    allDocgen: { button: { type: 'component', name: 'Button' } },
+    allStoryDocs: { button: storyDocsPayload },
+    allMdx: {
+      button: attachedMdxPayload,
+      introduction: unattachedMdxPayload,
+    },
+  }),
+).toMatchObject({
+  componentIds: ['button'],
+  storyBasedIds: new Set(['button']),
+  unattachedDocs: new Map([
+    ['introduction', expect.objectContaining({ id: 'introduction', name: 'Introduction' })],
+  ]),
+});
 ```
 
-Remove `DocsServiceState`, `_setClassification`, cache keys, store/restore helpers, and docs-specific
-OSA classification errors.
+Also assert that attached MDX entries populate `attachedDocsByComponent`.
 
-- [ ] **Step 4: Register `docsApi` from addon-docs**
-
-`registerDocsApi({ getIndex })` registers a definition whose handler closes over `getIndex`.
-Registration must no longer call `registerService`.
-
-- [ ] **Step 5: Run focused tests and commit**
+- [ ] **Step 2: Run the classifier test and verify it fails**
 
 Run:
 
 ```bash
-yarn test docs/api docs/map capability-services
+yarn test classify-services
 ```
 
-Expected: all selected tests pass.
+Expected: failure because `classifyServices` does not exist.
+
+- [ ] **Step 3: Implement classification from OSA payload maps**
+
+Add:
+
+```ts
+export function classifyServices({
+  allDocgen,
+  allStoryDocs,
+  allMdx,
+}: {
+  allDocgen: Record<string, DocgenPayload | undefined>;
+  allStoryDocs: Record<string, StoryDocsPayload | undefined>;
+  allMdx: Record<string, MdxPayload | undefined>;
+}): IndexClassification {
+  const storyBasedIds = new Set(Object.keys(allStoryDocs));
+  const unattachedDocs = new Map<string, DocsIndexEntry>();
+  const attachedDocsByComponent = new Map<string, DocsIndexEntry[]>();
+  const componentIds = new Set([...Object.keys(allDocgen), ...Object.keys(allStoryDocs)]);
+
+  for (const [id, payload] of Object.entries(allMdx)) {
+    if (!payload) {
+      continue;
+    }
+    if (payload.docs[id]) {
+      unattachedDocs.set(id, toDocsIndexEntry(id, payload.docs[id].name));
+      continue;
+    }
+    componentIds.add(id);
+    attachedDocsByComponent.set(
+      id,
+      Object.entries(payload.docs).map(([docsId, docs]) => toDocsIndexEntry(docsId, docs.name)),
+    );
+  }
+
+  return {
+    componentIds: [...componentIds].sort(),
+    storyBasedIds,
+    unattachedDocs,
+    attachedDocsByComponent,
+  };
+}
+```
+
+`toDocsIndexEntry` must construct the exact `DocsIndexEntry` fields required by `map.ts`, using
+empty `importPath` and `tags` only when those fields are required by the existing type.
+
+- [ ] **Step 4: Rewrite docs API tests around direct handlers**
+
+Create a complete context in `beforeEach`:
+
+```ts
+const ctx: ApiCtx = {
+  consumer: 'cli',
+  origin: 'http://localhost:6006',
+  getService: vi.fn((id) => services[id]) as ApiCtx['getService'],
+};
+```
+
+Parse each input with `v.parse(method.schema, rawInput)` and call:
+
+```ts
+await docsApi.methods.list.handler(v.parse(docsApi.methods.list.schema, input), ctx);
+```
+
+Assert Markdown, structured output, not-found behavior, and that service lookup happens through
+`ctx.getService`. Keep mock implementations in `beforeEach`.
+
+- [ ] **Step 5: Replace the factory with `docsApi`**
+
+Remove `getIndex`, module-global `getService`, `createDocsApi`, and registration. Each handler must
+load its required aggregate payloads through `ctx.getService`, derive classification with
+`classifyServices`, call the existing `mapDocs*` function, and then return structured data or the
+existing formatter result.
+
+For optional MDX:
+
+```ts
+function getMdxService(ctx: ApiCtx): MdxService | undefined {
+  try {
+    return ctx.getService<MdxService>(MDX_SERVICE_ID);
+  } catch {
+    return undefined;
+  }
+}
+```
+
+Export:
+
+```ts
+export const docsApi = defineApi({ id: 'docs', description, methods });
+export type DocsApi = typeof docsApi;
+```
+
+Remove public API registration from addon-docs while preserving MDX service registration.
+
+- [ ] **Step 6: Run focused docs tests**
 
 ```bash
-git add code/addons/docs code/core/src/shared/open-service/services/docs \
-  code/core/src/shared/open-service/core-service-types.ts code/core/src/server-errors.ts
-git commit -m "Move docs capability to defineApi"
+yarn test docs/api classify-services docs/map
 ```
 
-### Task 3: Move stories capability to `defineApi`
+Expected: all focused docs tests pass.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add code/addons/docs/src code/core/src/shared/open-service/services/docs
+git commit -m "Compose docs API through invocation context"
+```
+
+---
+
+### Task 3: Narrow stories and test factories to boot-time dependencies
 
 **Files:**
 
 - Modify: `code/core/src/shared/open-service/services/stories/definition.ts`
-- Modify: `code/core/src/shared/open-service/services/stories/server.ts`
-- Create: `code/core/src/shared/open-service/services/stories/format.ts`
-- Create or modify: `code/core/src/shared/open-service/services/stories/api.test.ts`
-- Modify: `code/core/src/core-server/presets/common-preset.ts`
-- Modify: `code/core/src/shared/open-service/core-service-types.ts`
+- Modify: `code/core/src/shared/open-service/services/stories/api.test.ts`
+- Create: `code/core/src/shared/open-service/services/stories/resolve-component-matches.ts`
+- Create: `code/core/src/shared/open-service/services/stories/resolve-component-matches.test.ts`
+- Create: `code/core/src/shared/open-service/services/stories/detect-unreachable-files.ts`
+- Create: `code/core/src/shared/open-service/services/stories/detect-unreachable-files.test.ts`
+- Delete: `code/core/src/shared/open-service/services/stories/api.ts`
+- Modify: `code/core/src/shared/open-service/services/test/definition.ts`
+- Modify: `code/core/src/shared/open-service/services/test/api.test.ts`
+- Delete: `code/core/src/shared/open-service/services/test/api.ts`
 
 **Interfaces:**
 
-- Produces: `createStoriesApi(options)`
-- Consumes: `previewStories`, `getChangedStories`, `findStoriesByComponent`
-- Consumes: existing `RegisterStoriesServiceOptions` dependencies, renamed for API registration
+- Produces: `createStoriesApi({ storyIndex, git })` and
+  `createTestApi({ channel, storyIndex })`.
+- Consumes: `ctx.origin` and `ctx.getService('core/module-graph')`.
 
-- [ ] **Step 1: Write representative API tests**
+- [ ] **Step 1: Rewrite stories API tests for the target dependencies**
 
-Cover `preview` Markdown and JSON results, plus one method using injected dependencies.
+Use:
 
-- [ ] **Step 2: Run stories API test to verify failure**
-
-Run:
-
-```bash
-yarn test stories/api
+```ts
+const storyIndex = { getIndex: vi.fn(async () => index) };
+const git = {
+  getChangedFiles: vi.fn(async () => ({
+    changed: new Set(['src/Button.tsx']),
+    new: new Set<string>(),
+  })),
+};
+const ctx: ApiCtx = {
+  consumer: 'cli',
+  origin: 'http://localhost:6006',
+  getService: vi.fn(() => moduleGraph) as ApiCtx['getService'],
+};
 ```
 
-Expected: failure because the definition still exposes an OSA service.
+Assert preview reads `ctx.origin`, changed reads git and module graph, and find-by-component resolves
+through `ctx.getService`.
 
-- [ ] **Step 3: Implement and register the API factory**
+- [ ] **Step 2: Add failing graph helper tests**
 
-Add `json` to every method schema. Keep existing structured helper outputs and add compact Markdown
-formatters. Replace `registerStoriesService` with `registerStoriesApi`.
+For `resolveComponentMatches`, cover existing files, missing paths, shortest-depth deduplication,
+and module-graph errors. For `detectUnreachableFiles`, cover ready and unavailable graph states and
+return only changed files whose `storiesForFiles` result is empty.
 
-- [ ] **Step 4: Run regressions and commit**
-
-Run:
+- [ ] **Step 3: Run focused stories tests and verify failures**
 
 ```bash
-yarn test find-story-ids preview.test changed.test find-by-component stories/api
+yarn test stories/api resolve-component-matches detect-unreachable-files
 ```
 
-Expected: all selected tests pass.
+Expected: failures from missing helpers and old factory options.
+
+- [ ] **Step 4: Implement the target stories factory**
+
+Define:
+
+```ts
+export type StoryIndexAccess = {
+  getIndex: () => Promise<StoryIndex>;
+};
+
+export type StoriesGitAccess = {
+  getChangedFiles: () => Promise<{
+    changed: Set<string>;
+    new: Set<string>;
+  }>;
+};
+
+export type CreateStoriesApiOptions = {
+  storyIndex: StoryIndexAccess;
+  git: StoriesGitAccess;
+};
+```
+
+The handlers must:
+
+- use `ctx.origin` plus `storyIndex.getIndex()` for preview;
+- read change statuses from `getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID)`;
+- pass git's changed and new files through `detectUnreachableFiles`;
+- use `ctx.getService('core/module-graph')` in changed and find-by-component;
+- call the existing pure mapping and formatting helpers.
+
+Move the current component-path resolver from `common-preset.ts` into
+`resolve-component-matches.ts`. Do not add barrel-file behavior beyond the current contract.
+
+- [ ] **Step 5: Rewrite test API tests and factory**
+
+Change its options to:
+
+```ts
+export type CreateTestApiOptions = {
+  channel: TestChannel;
+  storyIndex: StoryIndexAccess;
+};
+```
+
+Pass `storyIndex.getIndex` to `runStoryTests`. Tests must parse input and call
+`createTestApi(...).methods.run.handler(input, ctx)` directly while preserving queue coverage.
+
+- [ ] **Step 6: Run focused tests**
+
+```bash
+yarn test stories/api resolve-component-matches detect-unreachable-files test/api test/run
+```
+
+Expected: all focused stories and test capability tests pass.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add code/core/src/shared/open-service/services/stories \
-  code/core/src/core-server/presets/common-preset.ts \
-  code/core/src/shared/open-service/core-service-types.ts
-git commit -m "Move stories capability to defineApi"
+  code/core/src/shared/open-service/services/test
+git commit -m "Narrow capability factories to runtime dependencies"
 ```
 
-### Task 4: Move test capability to `defineApi`
+---
+
+### Task 4: Make review API context-only and keep validation internal
 
 **Files:**
 
-- Modify: `code/core/src/shared/open-service/services/test/definition.ts`
-- Modify: `code/core/src/shared/open-service/services/test/server.ts`
-- Create: `code/core/src/shared/open-service/services/test/format.ts`
-- Create or modify: `code/core/src/shared/open-service/services/test/api.test.ts`
-- Modify: `code/addons/vitest/src/preset.ts`
-- Modify: `code/core/src/shared/open-service/core-service-types.ts`
-
-**Interfaces:**
-
-- Produces: `createTestApi({ channel, getIndex })`
-- Consumes: `createAsyncQueue`, `runStoryTests`
-
-- [ ] **Step 1: Write API tests**
-
-Assert the queue-backed handler returns formatted Markdown by default and the existing
-`TestRunOutput` object with `json: true`.
-
-- [ ] **Step 2: Run test to verify failure**
-
-Run:
-
-```bash
-yarn test test/api
-```
-
-- [ ] **Step 3: Implement and register the API**
-
-Keep the queue in the factory closure. Replace `registerTestService` with `registerTestApi`.
-
-- [ ] **Step 4: Run regressions and commit**
-
-Run:
-
-```bash
-yarn test test/run test/api
-```
-
-```bash
-git add code/core/src/shared/open-service/services/test code/addons/vitest/src/preset.ts \
-  code/core/src/shared/open-service/core-service-types.ts
-git commit -m "Move test capability to defineApi"
-```
-
-### Task 5: Split review state service from review API
-
-**Files:**
-
-- Modify: `code/core/src/shared/open-service/services/review/definition.ts`
+- Modify: `code/core/src/shared/open-service/services/review/api.ts`
+- Modify: `code/core/src/shared/open-service/services/review/api.test.ts`
 - Modify: `code/core/src/shared/open-service/services/review/server.ts`
-- Create: `code/core/src/shared/open-service/services/review/api.ts`
-- Create: `code/core/src/shared/open-service/services/review/manager.tsx`
 - Modify: `code/core/src/shared/open-service/services/review/server.test.ts`
-- Create: `code/core/src/shared/open-service/services/review/api.test.ts`
-- Modify: `code/core/src/core-server/server-channel/review-channel.ts`
-- Modify: `code/core/src/core-server/server-channel/review-channel.test.ts`
-- Modify: `code/core/src/core-server/presets/common-preset.ts`
-- Modify: `code/core/src/core-server/presets/common-manager.ts`
-- Modify: `code/core/src/shared/open-service/core-service-types.ts`
-- Modify: `code/core/src/manager/components/review/components/ReviewProvider.tsx`
-- Modify: `code/core/src/manager/components/review/review-actions.ts`
 
 **Interfaces:**
 
-- Produces: genuine `reviewServiceDef` with current state, a current-state query, and state commands
-- Produces: `createReviewApi({ getIndex, getOrigin })`
-- Preserves: legacy `PUSH_REVIEW` as an adapter into `reviewServiceDef`
+- Produces: plain `reviewApi`.
+- Consumes: `ctx.origin` and `ctx.getService('core/review')`.
 
-- [ ] **Step 1: Write state service and API tests**
+- [ ] **Step 1: Rewrite review API tests for a plain definition**
 
-Verify `setReview` updates query state, `createReviewApi` validates ids and calls the OSA command,
-`consumer: 'mcp'` changes only the Markdown instruction suffix, and `json: true` returns
-`{ reviewUrl }`.
+Call `reviewApi.methods.create.handler` with parsed input and a full context. Assert:
 
-- [ ] **Step 2: Run tests to verify failure**
+- empty origin throws `OpenServiceMissingOriginError`;
+- service errors propagate unchanged;
+- CLI Markdown has no MCP instruction;
+- MCP Markdown includes the instruction;
+- `json: true` returns `{ reviewUrl }`;
+- `ctx.getService('core/review').commands.setReview` receives the review without `json`.
 
-Run:
+- [ ] **Step 2: Add a failing server validation test**
 
-```bash
-yarn test review/server review/api review-channel
+Register the review service with:
+
+```ts
+const getIndex = vi.fn(async () => ({
+  v: 5,
+  entries: { 'button--primary': storyEntry },
+}));
 ```
 
-- [ ] **Step 3: Implement the stateful service and compatibility bridge**
+Assert unknown story ids throw `OpenServiceUnknownStoryIdsError` and known ids update state.
 
-Move the authoritative review cache and stale flag into OSA state. Keep channel listeners required
-by the unchanged production MCP, but make them call OSA commands instead of maintaining another
-cache.
-
-- [ ] **Step 4: Register the manager service and subscribe in `ReviewProvider`**
-
-Register `reviewServiceDef` in manager and server realms. Use OSA query state as the payload source,
-while retaining `reviewStore` for route, pending-review, transition, and derived UI state.
-
-- [ ] **Step 5: Run review checks and commit**
-
-Run:
+- [ ] **Step 3: Run focused tests and verify failures**
 
 ```bash
-yarn test review/server review/api review-channel review-store
-yarn storybook:vitest ReviewPage ReviewWidget
+yarn test review/api review/server
 ```
+
+Expected: failures because review remains a factory and validation still lives in the API handler.
+
+- [ ] **Step 4: Move validation into the stateful service**
+
+Change registration to:
+
+```ts
+export function registerReviewService({
+  getIndex,
+}: {
+  getIndex: () => Promise<StoryIndex>;
+}) {
+```
+
+Before setting state, collect unique story ids, compare them against `await getIndex()`, and throw
+`OpenServiceUnknownStoryIdsError` for unknown ids. Preserve server-authoritative `createdAt`,
+staleness guards, and dismissal behavior.
+
+- [ ] **Step 5: Export plain `reviewApi`**
+
+Remove `CreateReviewApiOptions`, `createReviewApi`, `registerReviewApi`, module-global `getService`,
+and `getOrigin`. Use:
+
+```ts
+handler: async ({ json, ...review }, ctx) => {
+  if (!ctx.origin) {
+    throw new OpenServiceMissingOriginError({
+      serviceId: 'review',
+      operationName: 'create',
+    });
+  }
+  await ctx.getService('core/review').commands.setReview(review);
+  const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
+  if (json) {
+    return { reviewUrl };
+  }
+  const markdown = `Review created: ${reviewUrl}`;
+  return ctx.consumer === 'mcp'
+    ? `${markdown}\n\nShow this review URL to the user in your final response.`
+    : markdown;
+};
+```
+
+- [ ] **Step 6: Run review tests**
 
 ```bash
-git add code/core/src/shared/open-service/services/review \
-  code/core/src/core-server/server-channel/review-channel.ts \
-  code/core/src/core-server/server-channel/review-channel.test.ts \
-  code/core/src/core-server/presets/common-preset.ts \
-  code/core/src/core-server/presets/common-manager.ts \
-  code/core/src/shared/open-service/core-service-types.ts \
-  code/core/src/manager/components/review
-git commit -m "Split review state from public API"
+yarn test review/api review/server review-channel review-actions
 ```
 
-### Task 6: Refactor CLI generation and repository guidance
+Expected: all review API, OSA, compatibility, and action tests pass.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add code/core/src/shared/open-service/services/review
+git commit -m "Compose review API through OSA context"
+```
+
+---
+
+### Task 5: Remove registration side effects and Milestone 5 CLI work
 
 **Files:**
 
-- Modify: `code/core/src/cli/tools/generate-cli.ts`
-- Modify: `code/core/src/cli/tools/generate-cli.test.ts`
+- Modify: `code/core/src/core-server/presets/common-preset.ts`
+- Modify: `code/addons/vitest/src/preset.ts`
+- Delete: `code/core/src/cli/tools/generate-cli.ts`
+- Delete: `code/core/src/cli/tools/generate-cli.test.ts`
+- Modify: `code/core/src/cli/ai/mcp/tool-args.ts`
+- Modify: `code/core/src/cli/ai/mcp/tool-args.test.ts`
 - Modify: `code/core/src/shared/open-service/service-registry.ts`
 - Modify: `code/core/src/shared/open-service/service-registration.test.ts`
 - Modify: `code/core/src/server-errors.ts`
-- Modify: `AGENTS.md`
 
 **Interfaces:**
 
-- `generateCLI(toolsCommand, apiDefinitions, options)` consumes `AnyApiDefinition[]`
-- Uses `invokeApi`, never `getService` or `AnyServiceDefinition`
+- Produces: no runtime public API exposure in Milestone 2.
+- Preserves: review OSA registration and legacy review channel.
 
-- [ ] **Step 1: Rewrite CLI tests against `defineApi`**
+- [ ] **Step 1: Remove all public API startup registration**
 
-Cover explicit API selection, deterministic command ordering, validation, Markdown output, JSON
-output, `beforeRun`, error propagation, and normalized-name collisions.
+From `common-preset.ts`, remove stories and review API registration plus the inline component graph
+resolver. Keep module graph registration. Pass the index dependency to:
 
-- [ ] **Step 2: Run tests to verify failure**
-
-Run:
-
-```bash
-yarn test generate-cli service-registration
+```ts
+registerReviewService({
+  getIndex: () => storyIndexGenerator.getIndex(),
+});
 ```
 
-- [ ] **Step 3: Implement the adapter and remove CLI-only OSA invariants**
+Keep `initReviewChannel`. Remove test API registration from addon-vitest and docs API registration
+from addon-docs. Delete the thin registration modules.
 
-Remove query/command collision enforcement from OSA registration. Add API or CLI namespace
-invariants where they are now relevant.
+- [ ] **Step 2: Delete CLI generator files**
 
-- [ ] **Step 4: Update `AGENTS.md`**
-
-Document the OSA, `defineApi`, adapter split and unchanged Milestone 4 and 5 scope.
-
-- [ ] **Step 5: Run tests and commit**
+Delete `generate-cli.ts` and its test. Verify:
 
 ```bash
-yarn test generate-cli service-registration public-api
-git add code/core/src/cli/tools code/core/src/shared/open-service \
-  code/core/src/server-errors.ts AGENTS.md
-git commit -m "Generate CLI from defineApi definitions"
+rg "generateCLI|generate-cli" code
 ```
 
-### Task 7: Format, verify, push, and update PR
+Expected: no production or test references.
+
+- [ ] **Step 3: Revert only the `rawObjectFlag` argument-parser changes**
+
+Restore the two-argument signature:
+
+```ts
+export const parseToolArgs = (
+  tokens: string[],
+  base: Record<string, unknown> = {}
+): ParseResult => {
+```
+
+Restore `--json` as the raw object escape and remove only the relocated `--input` tests. Keep
+unrelated target-option fixes.
+
+- [ ] **Step 4: Restore OSA's operation-name invariant**
+
+Restore `OpenServiceOperationNameCollisionError`, the service-registry assertion that a query and
+command cannot share a name, and its regression test. This returns OSA to its base-branch behavior
+after removing the CLI-specific rationale for changing it.
+
+- [ ] **Step 5: Run focused infrastructure tests**
+
+```bash
+yarn test tool-args service-registration capability-services
+```
+
+Expected: all focused tests pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add code/addons/docs/src code/addons/vitest/src \
+  code/core/src/cli code/core/src/core-server/presets/common-preset.ts \
+  code/core/src/server-errors.ts code/core/src/shared/open-service
+git commit -m "Remove registry and CLI runtime wiring"
+```
+
+---
+
+### Task 6: Update guidance, verify the branch, and refresh the PR
 
 **Files:**
 
-- Modify if needed: all touched files after formatting
-- External update: PR #35516 title and body
+- Modify: `AGENTS.md`
+- Modify: `.superpowers/sdd/pr-35516-body.md`
 
 **Interfaces:**
 
-- Consumes: all prior tasks
-- Produces: pushed branch and accurate PR metadata
+- Produces: an accurately documented and verified PR.
 
-- [ ] **Step 1: Format**
+- [ ] **Step 1: Update repository guidance**
 
-Run:
+Document that `defineApi` is definition-only, handlers receive required `ApiCtx`, adapters receive
+explicit arrays, MCP migration is Milestone 4, and CLI generation is Milestone 5. Remove wording
+that claims `generateCLI` exists in Milestone 2.
+
+- [ ] **Step 2: Format**
 
 ```bash
 cd code && yarn fmt:write
 ```
 
-- [ ] **Step 2: Run focused runtime tests**
+Expected: formatter exits successfully.
 
-Run:
+- [ ] **Step 3: Run focused unit and contract tests**
 
 ```bash
-yarn test capability-services docs/map find-story-ids preview.test changed.test \
-  find-by-component review/server test/run generate-cli public-api
+yarn test public-api docs/api classify-services docs/map stories/api \
+  resolve-component-matches detect-unreachable-files test/api test/run \
+  review/api review/server review-channel review-actions capability-services \
+  tool-args service-registration
 ```
 
-Expected: zero failures.
+Expected: all selected tests pass.
 
-- [ ] **Step 3: Run type and lint checks**
+- [ ] **Step 4: Run component story tests affected by review state**
 
-Run:
+```bash
+cd code
+yarn vitest run --config vitest.config.storybook.ts \
+  core/src/manager/components/review/ReviewPage.stories.tsx \
+  core/src/manager/index.stories.tsx
+```
+
+Expected: all selected stories pass.
+
+- [ ] **Step 5: Run type checking and lint**
 
 ```bash
 yarn nx check core
-yarn --cwd code lint:js:cmd core/src/shared/public-api core/src/shared/open-service/services \
-  core/src/cli/tools addons/docs/src addons/vitest/src --fix
+yarn --cwd code lint:js:cmd \
+  core/src/shared/public-api \
+  core/src/shared/open-service/services/docs \
+  core/src/shared/open-service/services/stories \
+  core/src/shared/open-service/services/test \
+  core/src/shared/open-service/services/review
+```
+
+Expected: both commands pass.
+
+- [ ] **Step 6: Check the diff**
+
+```bash
 git diff --check
+git status --short
+git diff --stat origin/next...HEAD
 ```
 
-Expected: all commands exit successfully.
+Expected: no whitespace errors; unrelated `kozijnen-chat-history.md` remains untracked and is not
+staged.
 
-- [ ] **Step 4: Review the complete branch diff**
+- [ ] **Step 7: Update the PR description**
 
-Confirm production MCP and CLI wiring remain unchanged, no generated files changed accidentally,
-and issue #35526 was not edited.
+The PR body must state:
 
-- [ ] **Step 5: Commit formatting or verification fixes**
+- no registry and explicit-array exposure;
+- required `ApiCtx`;
+- plain docs and review APIs;
+- stories and test boot-time dependency factories;
+- review as the only retained OSA capability service;
+- CLI moved to Milestone 5 and MCP kept for Milestone 4;
+- exact verification commands and results;
+- any output-ordering difference caused by service-derived docs classification.
+
+- [ ] **Step 8: Commit documentation, push, and update PR**
 
 ```bash
-git add AGENTS.md code docs/superpowers
-git commit -m "Finalize defineApi capability migration"
-```
-
-- [ ] **Step 6: Push and update PR**
-
-```bash
+git add AGENTS.md .superpowers/sdd/pr-35516-body.md
+git commit -m "Document explicit defineApi composition"
 git push origin osa-generated-tools-cli
 gh pr edit 35516 --repo storybookjs/storybook \
-  --title "Core: Define shared public API for CLI and MCP" \
-  --body-file /tmp/pr-35516-body.md
+  --title "Core: Define shared public API capabilities" \
+  --body-file .superpowers/sdd/pr-35516-body.md
 ```
 
-- [ ] **Step 7: Start babysitting**
+- [ ] **Step 9: Monitor without merging**
 
-Invoke the Cursor babysit workflow for PR #35516. Do not merge the PR.
+```bash
+gh pr checks 35516 --repo storybookjs/storybook --watch --interval 30
+```
+
+Fix deterministic in-scope failures, push follow-up commits, and continue monitoring. Do not merge.

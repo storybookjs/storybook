@@ -13,17 +13,20 @@ export function generateCLI(
   toolsCommand.parent?.enablePositionalOptions();
   toolsCommand.enablePositionalOptions();
 
+  const sortedApiDefinitions = [...apiDefinitions].sort((a, b) => a.id.localeCompare(b.id));
   const apiIdsByCommandName = new Map<string, string>();
-  for (const definition of [...apiDefinitions].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const definition of sortedApiDefinitions) {
     const commandName = toCliServiceName(definition.id);
-    const existingApiId = apiIdsByCommandName.get(commandName);
-    if (existingApiId) {
+    if (apiIdsByCommandName.has(commandName)) {
       throw new TypeError(
-        `Public APIs "${existingApiId}" and "${definition.id}" normalize to the same CLI group "${commandName}".`
+        `Public APIs "${apiIdsByCommandName.get(commandName)}" and "${definition.id}" normalize to the same CLI group "${commandName}".`
       );
     }
     apiIdsByCommandName.set(commandName, definition.id);
+  }
 
+  for (const definition of sortedApiDefinitions) {
+    const commandName = toCliServiceName(definition.id);
     const apiCommand = toolsCommand
       .command(commandName)
       .description(definition.description ?? definition.id)

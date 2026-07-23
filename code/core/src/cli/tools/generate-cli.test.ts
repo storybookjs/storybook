@@ -83,6 +83,23 @@ describe('generateCLI', () => {
     );
   });
 
+  it('rejects empty API ids that normalize to the same CLI group', () => {
+    const emptyApi = defineApi({
+      id: '',
+      description: 'Empty API tools.',
+      methods: {},
+    });
+    const coreEmptyApi = defineApi({
+      id: 'core/',
+      description: 'Core empty API tools.',
+      methods: {},
+    });
+
+    expect(() => buildProgram([emptyApi, coreEmptyApi])).toThrow(
+      'Public APIs "" and "core/" normalize to the same CLI group "".'
+    );
+  });
+
   it('invokes methods from raw CLI flags and prints string results directly', async () => {
     const { program, toolsCommand } = buildProgram();
     const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);

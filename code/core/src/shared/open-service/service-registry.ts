@@ -19,7 +19,6 @@ import { getChannel } from '../../channels/channel-slot.ts';
 import {
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
-  OpenServiceOperationNameCollisionError,
 } from '../../server-errors.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
@@ -67,19 +66,6 @@ function getRegistry(): Map<string, RegistryEntry> {
   registryGlobal[REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
 
   return registryGlobal[REGISTRY_SYMBOL];
-}
-
-function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
-  const duplicateName = Object.keys(definition.queries).find((name) =>
-    Object.hasOwn(definition.commands, name)
-  );
-
-  if (duplicateName) {
-    throw new OpenServiceOperationNameCollisionError({
-      serviceId: definition.id,
-      operationName: duplicateName,
-    });
-  }
 }
 
 /**
@@ -227,8 +213,6 @@ export function registerService<
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
   { relay = false, staticLoader }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  assertUniqueOperationNames(definition as AnyServiceDefinition);
-
   const registry = getRegistry();
 
   // Registration is idempotent by id. Re-registering an already-registered service returns the

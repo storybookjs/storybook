@@ -89,9 +89,11 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Open services and CLI tools
 
-- `generateCLI` can expose explicitly selected Open Service Architecture (OSA) definitions as `storybook tools <service> <operation>` commands; it does not discover or register services automatically.
-- Only capability-level services intended as public CLI APIs should be selected, not implementation services such as `core/docgen` or `core/story-docs`.
-- Generated CLI operations use one namespace, so a service cannot register a query and command with the same name.
+- OSA owns internal state, synchronization, queries, commands, loading, and service composition.
+- Public capability factories for docs, stories, test, and review create `defineApi` definitions with one public method namespace, schemas, descriptions, and handlers.
+- Adapters select API definitions explicitly. `generateCLI` creates one `storybook tools <api> <method>` group per selected API, invokes methods through `invokeApi` with `consumer: 'cli'`, and rejects CLI name-normalization collisions.
+- OSA query and command names are independent. A public API definition or adapter owns any namespace invariant relevant to its public surface.
+- The public API remains experimental. Production MCP migration is Milestone 4 and production CLI startup, server targeting, project loading, telemetry, and root aliases remain Milestone 5.
 - MCP tools remain hand-authored in `addon-mcp`; they are not generated from OSA definitions.
 
 ## Common Commands

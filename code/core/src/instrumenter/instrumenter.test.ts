@@ -502,6 +502,36 @@ describe('Instrumenter', () => {
     );
   });
 
+  it('keeps logging interactions after a handled async error', async () => {
+    const fn = async () => {};
+    const failingFn = async () => {
+      throw new Error('handled');
+    };
+    const { fn1, fn2, fn3 } = instrument({ fn1: fn, fn2: failingFn, fn3: fn }, { intercept: true });
+
+    setRenderPhase('playing');
+    await fn1();
+    let handledError: unknown;
+    try {
+      await fn2();
+    } catch (err) {
+      handledError = err;
+    }
+    expect(handledError).toEqual(new Error('handled'));
+    await fn3();
+    await tick();
+
+    expect(mocks.syncSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        logItems: [
+          { callId: 'kind--story [0] fn1', status: 'done', ancestors: [] },
+          { callId: 'kind--story [1] fn2', status: 'error', ancestors: [] },
+          { callId: 'kind--story [2] fn3', status: 'done', ancestors: [] },
+        ],
+      })
+    );
+  });
+
   it('emits a "sync" event with debounce after a patched function is invoked', () => {
     const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
     vi.useFakeTimers();

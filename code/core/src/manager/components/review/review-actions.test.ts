@@ -1,9 +1,12 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NavigateFunction } from 'storybook/internal/router';
 import type { API } from 'storybook/manager-api';
 
+import { clearChannel, installNoopChannel } from '../../../channels/channel-slot.ts';
+import { clearRegistry } from '../../../shared/open-service/server.ts';
+import { registerReviewService } from '../../../shared/open-service/services/review/server.ts';
 import {
   EVENTS,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
@@ -52,8 +55,16 @@ const makeApi = () => {
 };
 
 beforeEach(() => {
+  installNoopChannel();
+  clearRegistry();
+  registerReviewService();
   sessionStorage.clear();
   reviewStore.reset();
+});
+
+afterEach(() => {
+  clearRegistry();
+  clearChannel();
 });
 
 describe('navigateOutOfReview', () => {

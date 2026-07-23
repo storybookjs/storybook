@@ -23,10 +23,9 @@ import type {
  * import the derived *types* (`import type`), so these value imports add no runtime cost to the
  * manager/preview/server bundles — only the membership test pulls them in as values.
  *
- * The `core/review` capability is server-only. Its runtime handler is supplied by the dependency
- * owner via a colocated `register*Service` helper.
+ * Stateful services shared across realms appear in each matching list so their state can synchronize.
  */
-export const managerCoreServiceDefs = [docgenServiceDef];
+export const managerCoreServiceDefs = [docgenServiceDef, reviewServiceDef];
 export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
 export const serverCoreServiceDefs = [
   docgenServiceDef,

@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 
+import type { ReviewState } from '../../../review/review-state.ts';
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
 
@@ -12,7 +13,7 @@ const reviewCollectionSchema = v.object({
   storyIds: v.pipe(v.array(v.string()), v.description('Story ids included in this collection.')),
 });
 
-const reviewCreateInputSchema = v.object({
+export const reviewStateSchema = v.object({
   title: v.pipe(v.string(), v.description('Terse review title. Plain text.')),
   description: v.pipe(
     v.string(),
@@ -21,36 +22,76 @@ const reviewCreateInputSchema = v.object({
     )
   ),
   collections: v.array(reviewCollectionSchema),
-  changedFiles: v.pipe(
-    v.array(v.string()),
-    v.description(
-      'Changed file paths, most central first. Pass an empty array when nothing changed.'
+  changedFiles: v.optional(
+    v.pipe(
+      v.array(v.string()),
+      v.description(
+        'Changed file paths, most central first. Pass an empty array when nothing changed.'
+      )
     )
   ),
+  createdAt: v.optional(v.number()),
+  stale: v.optional(v.boolean()),
 });
 
-const reviewCreateOutputSchema = v.object({
-  reviewUrl: v.pipe(v.string(), v.description('URL of the Storybook review page.')),
-});
-
-export type ReviewServiceState = Record<string, never>;
+export type ReviewServiceState = {
+  current: ReviewState | null;
+};
 
 /**
- * Review publication (`review.create`).
- *
- * Creates review state and returns a URL. Browser-opening instructions and Markdown remain
- * adapter concerns.
+ * Stateful review coordination shared by the server and manager realms.
  */
 export const reviewServiceDef = defineService({
   id: 'core/review',
-  description: 'Create a curated Storybook review and return its URL.',
-  initialState: {} as ReviewServiceState,
-  queries: {},
+  internal: true,
+  description: 'Owns the current curated Storybook review and its staleness.',
+  initialState: { current: null } as ReviewServiceState,
+  queries: {
+    current: {
+      description: 'Returns the current review, or null when no review is active.',
+      input: v.undefined(),
+      output: v.nullable(reviewStateSchema),
+      handler: (_input, ctx) => ctx.self.state.current,
+    },
+  },
   commands: {
-    create: {
-      description: 'Validates story ids, publishes review state, and returns the review page URL.',
-      input: reviewCreateInputSchema,
-      output: reviewCreateOutputSchema,
+    setReview: {
+      description: 'Replaces the current review and assigns its server creation time.',
+      input: reviewStateSchema,
+      output: v.void(),
+      handler: async (input, ctx) => {
+        const { stale: _stale, createdAt: _createdAt, ...review } = input;
+        ctx.self.setState((state) => {
+          state.current = { ...review, createdAt: Date.now() };
+        });
+      },
+    },
+    markStale: {
+      description: 'Marks the current review stale after the source-change grace period.',
+      input: v.undefined(),
+      output: v.void(),
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          const current = state.current;
+          if (
+            current?.createdAt !== undefined &&
+            !current.stale &&
+            Date.now() >= current.createdAt + 10_000
+          ) {
+            current.stale = true;
+          }
+        });
+      },
+    },
+    dismissReview: {
+      description: 'Clears the current review.',
+      input: v.undefined(),
+      output: v.void(),
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.current = null;
+        });
+      },
     },
   },
 });

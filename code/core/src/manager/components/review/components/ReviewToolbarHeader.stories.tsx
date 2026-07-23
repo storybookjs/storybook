@@ -4,17 +4,20 @@ import { MemoryRouter } from 'storybook/internal/router';
 import {
   ManagerContext,
   internal_fullStatusStore,
+  registerService,
   type API,
   type State,
 } from 'storybook/manager-api';
 
 import preview from '../../../../../../.storybook/preview.tsx';
-import { EVENTS } from '../constants.ts';
+import { reviewServiceDef } from '../../../../shared/open-service/services/review/definition.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import type { ReviewState } from '../review-state.ts';
 import { reviewStore } from '../review-store.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
+
+const reviewService = registerService(reviewServiceDef);
 
 type EventListener = (payload?: unknown) => void;
 
@@ -57,8 +60,7 @@ const reviewState: ReviewState = {
 };
 
 const applyReviewState = () => {
-  expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
-  emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+  reviewStore.displayReview(reviewState);
 };
 
 const managerStateBase: State = {
@@ -126,7 +128,8 @@ const meta = preview.meta({
       </ManagerContext.Provider>
     ),
   ],
-  beforeEach: () => {
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
     reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();

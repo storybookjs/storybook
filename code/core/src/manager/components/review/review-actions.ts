@@ -1,5 +1,5 @@
 import type { NavigateFunction } from 'storybook/internal/router';
-import { type API } from 'storybook/manager-api';
+import { getService, type API } from 'storybook/manager-api';
 
 import {
   AUTO_ENTERED_SESSION_KEY,
@@ -88,6 +88,7 @@ export const navigateOutOfReview = async (
 
 /** Clear the active review (if any) and return to the pre-review canvas. */
 export const dismissReview = (api: Pick<API, 'emit'>): void => {
+  void getService('core/review').commands.dismissReview(undefined);
   api.emit(EVENTS.DISMISS_REVIEW, sessionStore.read(PRE_REVIEW_RETURN_KEY));
 };
 

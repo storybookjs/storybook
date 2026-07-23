@@ -7,9 +7,13 @@ describe('OSA capability service contracts', () => {
     expect(reviewServiceDef.id).toBe('core/review');
   });
 
-  it('defines review operations as commands only', () => {
-    expect(Object.keys(reviewServiceDef.queries)).toEqual([]);
-    expect(Object.keys(reviewServiceDef.commands)).toEqual(['create']);
+  it('defines review state operations', () => {
+    expect(Object.keys(reviewServiceDef.queries)).toEqual(['current']);
+    expect(Object.keys(reviewServiceDef.commands)).toEqual([
+      'setReview',
+      'markStale',
+      'dismissReview',
+    ]);
   });
 
   it('keeps query and command names unique within each service', () => {

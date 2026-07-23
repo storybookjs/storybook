@@ -5,17 +5,18 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { Location, MemoryRouter } from 'storybook/internal/router';
-import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
+import { ManagerContext, internal_fullStatusStore, registerService } from 'storybook/manager-api';
 import { expect, fn, userEvent } from 'storybook/test';
 
+import { reviewServiceDef } from '../../../shared/open-service/services/review/definition.ts';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { REVIEW_COLLECTION_QUERY_PARAM } from '../review/review-navigation.ts';
 import { reviewStore } from '../review/review-store.ts';
 import { ReviewWidget } from './ReviewWidget.tsx';
 
+const reviewService = registerService(reviewServiceDef);
+
 const REVIEW_ADDON_ID = 'storybook/review';
-const DISPLAY_REVIEW = `${REVIEW_ADDON_ID}/display-review`;
-const REQUEST_REVIEW = `${REVIEW_ADDON_ID}/request-review`;
 const DISMISS_REVIEW = `${REVIEW_ADDON_ID}/dismiss-review`;
 
 type EventListener = (payload?: unknown) => void;
@@ -91,16 +92,6 @@ const makeManagerContext = (
   const emit =
     options.emit ??
     fn((eventName: string, payload?: unknown) => {
-      if (eventName === REQUEST_REVIEW && options.reviewTitle) {
-        const review = buildReviewPayload(
-          options.reviewTitle,
-          options.storyIds ?? [],
-          options.reviewCreatedAt
-        );
-        eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-          listener(review);
-        });
-      }
       eventListeners.get(eventName)?.forEach((listener) => {
         listener(payload);
       });
@@ -149,25 +140,36 @@ const meta = {
   component: ReviewWidget,
   title: 'Sidebar/ReviewWidget',
   decorators: [
-    (Story, { parameters }) => (
-      <MemoryRouter initialEntries={['/']}>
-        <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
-          <ReviewProvider>
-            <Location>
-              {({ path }) => (
-                <span data-testid="router-path" hidden>
-                  {path}
-                </span>
-              )}
-            </Location>
-            <div style={{ padding: '8px', width: '280px' }}>
-              <Story />
-            </div>
-          </ReviewProvider>
-        </ManagerContext.Provider>
-      </MemoryRouter>
-    ),
+    (Story, { parameters }) => {
+      const options = parameters?.contextOptions ?? {};
+      if (options.reviewTitle && !reviewStore.getState().state) {
+        reviewStore.displayReview(
+          buildReviewPayload(options.reviewTitle, options.storyIds ?? [], options.reviewCreatedAt)
+        );
+      }
+      return (
+        <MemoryRouter initialEntries={['/']}>
+          <ManagerContext.Provider value={makeManagerContext(options)}>
+            <ReviewProvider>
+              <Location>
+                {({ path }) => (
+                  <span data-testid="router-path" hidden>
+                    {path}
+                  </span>
+                )}
+              </Location>
+              <div style={{ padding: '8px', width: '280px' }}>
+                <Story />
+              </div>
+            </ReviewProvider>
+          </ManagerContext.Provider>
+        </MemoryRouter>
+      );
+    },
   ],
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
+  },
 } satisfies Meta<typeof ReviewWidget>;
 
 export default meta;
@@ -268,11 +270,6 @@ export const OpenReview: Story = {
 };
 
 const dismissEmitMock = fn((eventName: string, payload?: unknown) => {
-  if (eventName === REQUEST_REVIEW) {
-    eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-      listener(buildReviewPayload('Button prop rename', ['s1']));
-    });
-  }
   eventListeners.get(eventName)?.forEach((listener) => {
     listener(payload);
   });
@@ -317,11 +314,9 @@ export const KeepsDisplayedTitleDuringPendingUpdate: Story = {
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('First review title')).toBeVisible();
 
-    eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-      listener(
-        buildReviewPayload('Updated review title', ['s1', 's2'], INITIAL_CREATED_AT + 60_000)
-      );
-    });
+    reviewStore.deferReview(
+      buildReviewPayload('Updated review title', ['s1', 's2'], INITIAL_CREATED_AT + 60_000)
+    );
 
     await expect(canvas.getByText('First review title')).toBeVisible();
     expect(canvas.queryByText('Updated review title')).toBeNull();

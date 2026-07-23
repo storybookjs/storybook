@@ -33,6 +33,7 @@ import type {
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerReviewApi } from '../../shared/open-service/services/review/api.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoriesApi } from '../../shared/open-service/services/stories/api.ts';
 import { findStoriesByComponent } from '../../shared/open-service/services/stories/find-by-component.ts';
@@ -313,13 +314,6 @@ export const experimental_serverChannel = async (
   initOpenInEditorChannel(channel);
   if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
     initReviewChannel(channel);
-    const storyIndexGenerator =
-      await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-    registerReviewService({
-      channel,
-      getIndex: () => storyIndexGenerator.getIndex(),
-      getOrigin: () => options.localAddress ?? '',
-    });
   }
   initTelemetryChannel(channel);
 
@@ -435,6 +429,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
+
+  if (isReviewFeatureEnabled(features)) {
+    registerReviewService();
+    registerReviewApi({
+      getIndex: () => storyIndexGenerator.getIndex(),
+      getOrigin: () => options.localAddress ?? '',
+    });
+  }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
   // so registering it would force full story-index generation during manager-only builds (and

@@ -56,17 +56,20 @@ function addOperation(
   apiCommand
     .command(toKebabCase(methodName))
     .description(definition.methods[methodName].description ?? methodName)
-    .argument('[args...]', 'Operation input as --key value flags')
+    .argument('[args...]', "Operation input as --key value flags (or via --input '<object>')")
     .allowUnknownOption()
     .passThroughOptions()
     .action(async (tokens: string[]) => {
       await beforeRun?.();
-      const parsed = parseToolArgs(tokens);
+      // `--json` is a normal boolean flag here (method schemas expose it), so the raw-object escape
+      // hatch moves to `--input '<object>'` to avoid clobbering it.
+      const parsed = parseToolArgs(tokens, {}, { rawObjectFlag: 'input' });
       if (!parsed.ok) {
         throw new HandledError(parsed.error);
       }
-      const input = Object.keys(parsed.args).length === 0 ? undefined : parsed.args;
-      const result = await invokeApi(definition, methodName, input, { consumer: 'cli' });
+      // Always pass the parsed object (empty when no flags) so all-optional object schemas validate
+      // and apply their defaults; a method with no input uses an empty object schema, not `undefined`.
+      const result = await invokeApi(definition, methodName, parsed.args, { consumer: 'cli' });
       const output = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
 
       if (output !== undefined) {

@@ -313,6 +313,10 @@ export const experimental_serverChannel = async (
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    // The returned teardown is intentionally unused: the server channel lives for the whole
+    // dev-server process and `experimental_serverChannel` has no teardown phase to call it from, so
+    // this listener is process-lifetime by design. Wiring cleanup here would add lifecycle
+    // infrastructure with nothing to invoke it, matching the other `init*Channel` calls above.
     initReviewChannel(channel);
   }
   initTelemetryChannel(channel);

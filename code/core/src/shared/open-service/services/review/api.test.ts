@@ -62,6 +62,20 @@ describe('review API', () => {
     expect(setReview).not.toHaveBeenCalled();
   });
 
+  it('rejects with a missing-origin error when no server origin is configured', async () => {
+    const service = registerReviewService();
+    const setReview = vi.spyOn(service.commands, 'setReview');
+    const api = createReviewApi({
+      getIndex: async () => index,
+      getOrigin: () => '',
+    });
+
+    await expect(invokeApi(api, 'create', input)).rejects.toThrow(
+      /requires a Storybook server origin/
+    );
+    expect(setReview).not.toHaveBeenCalled();
+  });
+
   it('sets review state and returns Markdown by default', async () => {
     const service = registerReviewService();
     const setReview = vi.spyOn(service.commands, 'setReview');

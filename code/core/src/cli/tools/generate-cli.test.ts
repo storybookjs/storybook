@@ -18,7 +18,7 @@ const docsApi = defineApi({
     },
     listComponents: {
       description: 'Lists components.',
-      schema: v.undefined(),
+      schema: v.object({}),
       handler: async () => ({ components: ['Button'] }),
     },
   },
@@ -135,7 +135,7 @@ describe('generateCLI', () => {
       methods: {
         run: {
           description: 'Records a method invocation.',
-          schema: v.undefined(),
+          schema: v.object({}),
           handler: async () => {
             events.push('method');
           },
@@ -184,7 +184,7 @@ describe('generateCLI', () => {
       methods: {
         fail: {
           description: 'Fails.',
-          schema: v.undefined(),
+          schema: v.object({}),
           handler: async () => {
             throw error;
           },
@@ -219,5 +219,124 @@ describe('generateCLI', () => {
     expect(() => buildProgram([api])).toThrow(
       'Public API "collisions" has methods that normalize to the same CLI command "show-story".'
     );
+  });
+
+  it('passes an empty object for no-flag calls so all-optional object schemas validate', async () => {
+    let received: unknown;
+    const api = defineApi({
+      id: 'options',
+      description: 'All-optional tools.',
+      methods: {
+        list: {
+          description: 'Lists with optional flags.',
+          schema: v.object({
+            verbose: v.optional(v.boolean(), false),
+            limit: v.optional(v.number()),
+          }),
+          handler: async (input) => {
+            received = input;
+            return input;
+          },
+        },
+      },
+    });
+    const { program } = buildProgram([api]);
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await program.parseAsync(['node', 'storybook', 'tools', 'options', 'list']);
+
+    // A no-flag call must reach the handler with `{}` (defaults applied), not `undefined` (which an
+    // all-optional object schema rejects).
+    expect(received).toEqual({ verbose: false });
+  });
+
+  it('exposes the method-level `json` boolean as a bare `--json` flag', async () => {
+    let received: unknown;
+    const api = defineApi({
+      id: 'docs',
+      description: 'Documentation tools.',
+      methods: {
+        show: {
+          description: 'Shows a component.',
+          schema: v.object({
+            id: v.string(),
+            json: v.optional(v.boolean(), false),
+          }),
+          handler: async (input) => {
+            received = input;
+            return input;
+          },
+        },
+      },
+    });
+    const { program } = buildProgram([api]);
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await program.parseAsync([
+      'node',
+      'storybook',
+      'tools',
+      'docs',
+      'show',
+      '--id',
+      'Button',
+      '--json',
+    ]);
+
+    expect(received).toEqual({ id: 'Button', json: true });
+  });
+
+  it('accepts structured input through the `--input` escape flag', async () => {
+    let received: unknown;
+    const api = defineApi({
+      id: 'docs',
+      description: 'Documentation tools.',
+      methods: {
+        show: {
+          description: 'Shows a component.',
+          schema: v.object({
+            id: v.string(),
+            json: v.optional(v.boolean(), false),
+          }),
+          handler: async (input) => {
+            received = input;
+            return input;
+          },
+        },
+      },
+    });
+    const { program } = buildProgram([api]);
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await program.parseAsync([
+      'node',
+      'storybook',
+      'tools',
+      'docs',
+      'show',
+      '--input',
+      '{"id":"Button","json":true}',
+    ]);
+
+    expect(received).toEqual({ id: 'Button', json: true });
+  });
+
+  it('surfaces actionable Standard Schema detail in validation errors', async () => {
+    const api = defineApi({
+      id: 'validation',
+      description: 'Validation tools.',
+      methods: {
+        show: {
+          description: 'Shows a component.',
+          schema: v.object({ id: v.string() }),
+          handler: async () => '# should not run',
+        },
+      },
+    });
+    const { program } = buildProgram([api]);
+
+    await expect(
+      program.parseAsync(['node', 'storybook', 'tools', 'validation', 'show', '--id', '42'])
+    ).rejects.toThrow(/id: /);
   });
 });

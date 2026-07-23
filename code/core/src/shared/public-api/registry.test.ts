@@ -63,6 +63,32 @@ describe('public API registry', () => {
     ).toThrow();
   });
 
+  it('anchors the registry on a shared globalThis symbol slot', () => {
+    registerPublicApi([exampleApi]);
+
+    const slot = (globalThis as Record<symbol, unknown>)[
+      Symbol.for('storybook.public-api.registry')
+    ];
+    expect(slot).toBeInstanceOf(Map);
+    expect((slot as Map<string, unknown>).get('example')).toBe(exampleApi);
+  });
+
+  it('preserves actionable Standard Schema issue detail in validation errors', async () => {
+    const api = defineApi({
+      id: 'detail',
+      description: 'Detail API',
+      methods: {
+        greet: {
+          description: 'Greets a person.',
+          schema: v.object({ name: v.string() }),
+          handler: async ({ name }) => `Hello ${name}`,
+        },
+      },
+    });
+
+    await expect(invokeApi(api, 'greet', { name: 42 })).rejects.toThrow(/name: /);
+  });
+
   it('validates method input before calling its handler', async () => {
     const handler = vi.fn(async ({ name }: { name: string }) => `Hello ${name}`);
     const api = defineApi({

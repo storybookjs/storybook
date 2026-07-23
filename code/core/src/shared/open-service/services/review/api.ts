@@ -2,7 +2,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import * as v from 'valibot';
 
-import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
+import {
+  OpenServiceMissingOriginError,
+  OpenServiceUnknownStoryIdsError,
+} from '../../../../server-errors.ts';
 import { defineApi, registerPublicApi } from '../../../public-api/index.ts';
 import { getService } from '../../server.ts';
 
@@ -67,6 +70,14 @@ export function createReviewApi({ getIndex, getOrigin }: CreateReviewApiOptions)
         description:
           'Validates story ids, publishes review state, and returns the review page URL.',
         handler: async ({ json, ...review }, context) => {
+          const origin = getOrigin();
+          if (!origin) {
+            throw new OpenServiceMissingOriginError({
+              serviceId: 'review',
+              operationName: 'create',
+            });
+          }
+
           const index = await getIndex();
           const unknownIds = collectUniqueStoryIds(review.collections).filter(
             (storyId) => !index.entries[storyId]
@@ -77,7 +88,7 @@ export function createReviewApi({ getIndex, getOrigin }: CreateReviewApiOptions)
 
           await getService('core/review').commands.setReview(review);
 
-          const reviewUrl = `${getOrigin().replace(/\/$/, '')}/?path=/review/`;
+          const reviewUrl = `${origin.replace(/\/$/, '')}/?path=/review/`;
           if (json) {
             return { reviewUrl };
           }

@@ -313,12 +313,14 @@ async function hashMainConfig(configDir: string): Promise<string> {
 }
 
 function resolveDefaultConfigDir(packageJson: PackageJson): string {
-  // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
-  // Scenarios:
-  // 1. user changed it to something else e.g. "storybook:dev"
-  // 2. they are using angular/nx where the storybook config is defined somewhere else
-  // 3. React Native on-device Storybook uses `.rnstorybook` and `storybook:ios`/`storybook:android`
-  //    scripts (no `storybook` script), so the `.storybook` default never finds the config.
+  /*
+    TODO: improve the way configDir is extracted, as a "storybook" script might not be present.
+    Scenarios:
+    1. user changed it to something else e.g. "storybook:dev"
+    2. they are using angular/nx where the storybook config is defined somewhere else
+    3. React Native on-device Storybook uses `.rnstorybook` and `storybook:ios`/`storybook:android`
+       scripts (no `storybook` script), so the `.storybook` default never finds the config.
+  */
   const fromScript = getStorybookConfiguration(
     String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
     '-c',

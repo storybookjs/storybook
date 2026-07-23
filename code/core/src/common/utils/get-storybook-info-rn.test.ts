@@ -2,6 +2,8 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { SupportedRenderer } from 'storybook/internal/types';
+
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { getStorybookInfo } from './get-storybook-info.ts';
@@ -35,6 +37,7 @@ describe('getStorybookInfo React Native framework inference', () => {
 
     expect(info.frameworkPackage).toBe('@storybook/react-native');
     expect(info.rendererPackage).toBe('@storybook/react-native');
+    expect(info.renderer).toBe(SupportedRenderer.REACT_NATIVE);
   });
 
   it('does not infer RN framework for a plain .storybook without framework', async () => {

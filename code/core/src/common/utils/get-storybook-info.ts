@@ -166,10 +166,12 @@ export const getStorybookInfo = async (
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
   if (!frameworkField) {
-    // React Native on-device Storybook historically omitted `framework` from main.ts.
-    // When the config lives in `.rnstorybook`, infer the framework so telemetry
-    // `metadata.framework.name` is populated for existing projects (scoped to the
-    // RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
+    /*
+      React Native on-device Storybook historically omitted `framework` from main.ts.
+      When the config lives in `.rnstorybook`, infer the framework so telemetry
+      `metadata.framework.name` is populated for existing projects (scoped to the
+      RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
+    */
     if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
       return {
         ...configInfo,

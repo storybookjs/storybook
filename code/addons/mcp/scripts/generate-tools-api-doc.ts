@@ -264,12 +264,12 @@ function diffSummary(): string {
 async function renderSkills(): Promise<string> {
   const plugins = [
     {
-      title: 'Claude Code plugin (`packages/claude-plugin`)',
-      dir: 'packages/claude-plugin/skills',
+      title: 'Claude Code plugin (`code/lib/claude-plugin`)',
+      dir: 'code/lib/claude-plugin/skills',
     },
     {
-      title: 'Codex plugin (`packages/codex-plugin`)',
-      dir: 'packages/codex-plugin/plugins/storybook/skills',
+      title: 'Codex plugin (`code/lib/codex-plugin`)',
+      dir: 'code/lib/codex-plugin/plugins/storybook/skills',
     },
   ];
   const sections = ['## Skills', ''];

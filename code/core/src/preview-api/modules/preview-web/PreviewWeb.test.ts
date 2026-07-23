@@ -20,6 +20,7 @@ import {
   STORY_ERRORED,
   STORY_MISSING,
   STORY_PREPARED,
+  STORY_RENDER_PHASE_CHANGED,
   STORY_RENDERED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
@@ -1832,6 +1833,39 @@ describe('PreviewWeb', () => {
 
         await waitForEvents([STORY_UNCHANGED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+      });
+
+      it('emits a correlated abort when the selection has render context', async () => {
+        document.location.search = '?id=component-one--a';
+        await createAndRenderPreview();
+
+        const renderContext = { requestId: 'request-1' };
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--a',
+          viewMode: 'story',
+          renderContext,
+        });
+        await vi.waitFor(() => {
+          expect(mockChannel.emit).toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+          expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDER_PHASE_CHANGED, {
+            storyId: 'component-one--a',
+            renderId: expect.any(Number),
+            newPhase: 'aborted',
+            reason: 'unchanged',
+            renderContext,
+          });
+        });
+
+        const unchangedEventIndex = mockChannel.emit.mock.calls.findIndex(
+          ([event]) => event === STORY_UNCHANGED
+        );
+        const abortedEventIndex = mockChannel.emit.mock.calls.findIndex(
+          ([event, payload]) =>
+            event === STORY_RENDER_PHASE_CHANGED &&
+            payload.newPhase === 'aborted' &&
+            payload.renderContext === renderContext
+        );
+        expect(unchangedEventIndex).toBeLessThan(abortedEventIndex);
       });
 
       it('does NOT call renderToCanvas', async () => {

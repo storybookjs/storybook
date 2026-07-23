@@ -102,26 +102,34 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  private async runPhase(signal: AbortSignal, phase: RenderPhase, phaseFn?: () => Promise<void>) {
+  private async runPhase(
+    signal: AbortSignal,
+    phase: RenderPhase,
+    phaseFn?: () => Promise<void>,
+    renderContext?: unknown
+  ) {
     this.phase = phase;
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
       newPhase: this.phase,
       renderId: this.renderId,
       storyId: this.id,
+      ...(renderContext !== undefined ? { renderContext } : {}),
     });
     if (phaseFn) {
       await phaseFn();
-      this.checkIfAborted(signal);
+      this.checkIfAborted(signal, renderContext);
     }
   }
 
-  private checkIfAborted(signal: AbortSignal): boolean {
+  private checkIfAborted(signal: AbortSignal, renderContext?: unknown): boolean {
     if (signal.aborted && !['finished', 'aborted', 'errored'].includes(this.phase as RenderPhase)) {
       this.phase = 'aborted';
       this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
         newPhase: this.phase,
         renderId: this.renderId,
         storyId: this.id,
+        reason: 'aborted',
+        ...(renderContext !== undefined ? { renderContext } : {}),
       });
     }
     return signal.aborted;
@@ -165,7 +173,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // function below right away, so if the user changes story during the first render we can cancel
     // it without having to first wait for it to finish.
     // Whenever the selection changes we want to force the component to be remounted.
-    return this.render({ initial: true, forceRemount: true });
+    return this.render({
+      initial: true,
+      forceRemount: true,
+      renderContext: this.renderOptions.renderContext,
+    });
   }
 
   private storyContext() {
@@ -179,10 +191,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   async render({
     initial = false,
     forceRemount = false,
+    renderContext,
   }: {
     initial?: boolean;
     forceRemount?: boolean;
+    renderContext?: unknown;
   } = {}) {
+    const invocationContext = renderContext;
     const { canvasElement } = this;
 
     if (!this.story) {
@@ -219,6 +234,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // We need a stable reference to the signal -- if a re-mount happens the
     // abort controller may be torn down (above) before we actually check the signal.
     const abortSignal = this.abortController.signal;
+    const runPhase = (phase: RenderPhase, phaseFn?: () => Promise<void>) =>
+      this.runPhase(abortSignal, phase, phaseFn, invocationContext);
 
     let mounted = false;
 
@@ -248,13 +265,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         mount: async (...args) => {
           this.callbacks.showStoryDuringRender?.();
           let mountReturn: Awaited<ReturnType<StoryContext['mount']>> = null!;
-          await this.runPhase(abortSignal, 'rendering', async () => {
+          await runPhase('rendering', async () => {
             mountReturn = await story.mount(context)(...args);
           });
 
           // start playing phase if mount is used inside a play function
           if (isMountDestructured) {
-            await this.runPhase(abortSignal, 'playing');
+            await runPhase('playing');
           }
           return mountReturn;
         },
@@ -284,7 +301,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         storyFn: () => unboundStoryFn(context),
         unboundStoryFn,
       };
-      await this.runPhase(abortSignal, 'loading', async () => {
+      await runPhase('loading', async () => {
         context.loaded = await applyLoaders(context);
       });
 
@@ -295,7 +312,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       const cleanupCallbacks = await applyBeforeEach(context);
       this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
-      if (this.checkIfAborted(abortSignal)) {
+      if (this.checkIfAborted(abortSignal, invocationContext)) {
         return;
       }
 
@@ -334,7 +351,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             context.mount = async () => {
               throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
             };
-            await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
+            await runPhase('playing', async () => playFunction(context));
           } else {
             // when mount is used the playing phase will start later, right after mount is called in the play function
             await playFunction(context);
@@ -343,18 +360,18 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           if (!mounted) {
             throw new NoStoryMountedError();
           }
-          this.checkIfAborted(abortSignal);
+          this.checkIfAborted(abortSignal, invocationContext);
 
           if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
-            await this.runPhase(abortSignal, 'errored');
+            await runPhase('errored');
           } else {
-            await this.runPhase(abortSignal, 'played');
+            await runPhase('played');
           }
         } catch (error) {
           // Remove the loading screen, even if there was an error before rendering
           this.callbacks.showStoryDuringRender?.();
 
-          await this.runPhase(abortSignal, 'errored', async () => {
+          await runPhase('errored', async () => {
             this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
           });
 
@@ -378,7 +395,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       }
 
-      await this.runPhase(abortSignal, 'completing', async () => {
+      await runPhase('completing', async () => {
         if (isTestEnvironment()) {
           this.store.addCleanupCallbacks(story, pauseAnimations());
         } else {
@@ -386,12 +403,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       });
 
-      await this.runPhase(abortSignal, 'completed', async () => {
+      await runPhase('completed', async () => {
         this.channel.emit(STORY_RENDERED, id);
       });
 
       if (this.phase !== 'errored') {
-        await this.runPhase(abortSignal, 'afterEach', async () => {
+        await runPhase('afterEach', async () => {
           await applyAfterEach(context);
         });
       }
@@ -404,22 +421,26 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
       const hasStoryErrored = hasUnhandledErrors || hasSomeReportsFailed;
 
-      await this.runPhase(abortSignal, 'finished', async () =>
+      await runPhase('finished', async () =>
         this.channel.emit(STORY_FINISHED, {
           storyId: id,
           status: hasStoryErrored ? 'error' : 'success',
           reporters: context.reporting.reports,
+          renderId: this.renderId,
+          ...(invocationContext !== undefined ? { renderContext: invocationContext } : {}),
         } as StoryFinishedPayload)
       );
     } catch (err) {
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
 
-      await this.runPhase(abortSignal, 'finished', async () =>
+      await runPhase('finished', async () =>
         this.channel.emit(STORY_FINISHED, {
           storyId: id,
           status: 'error',
           reporters: [],
+          renderId: this.renderId,
+          ...(invocationContext !== undefined ? { renderContext: invocationContext } : {}),
         } as StoryFinishedPayload)
       );
     }
@@ -445,9 +466,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  async remount() {
+  async remount(renderContext?: unknown) {
     await this.teardown();
-    return this.render({ forceRemount: true });
+    return this.render({ forceRemount: true, renderContext });
   }
 
   // If the story is torn down (either a new story is rendered or the docs page removes it)

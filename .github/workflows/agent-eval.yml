@@ -164,8 +164,9 @@ jobs:
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
         run: |
-          if [[ "${{ steps.vercel_target.outputs.target }}" == "production" ]]; then
+          if [[ "$VERCEL_TARGET" == "production" ]]; then
             yarn workspace agent-eval exec vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
           else
             branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
@@ -177,7 +178,8 @@ jobs:
         id: build_playground
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: yarn workspace agent-eval exec vercel build --yes --target=${{ steps.vercel_target.outputs.target }} --token "$VERCEL_TOKEN"
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+        run: yarn workspace agent-eval exec vercel build --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN"
 
       - name: Deploy playground
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' && steps.build_playground.outcome == 'success' }}
@@ -185,8 +187,9 @@ jobs:
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
         run: |
-          deploy_output="$(yarn workspace agent-eval exec vercel deploy --prebuilt --yes --target=${{ steps.vercel_target.outputs.target }} --token "$VERCEL_TOKEN")"
+          deploy_output="$(yarn workspace agent-eval exec vercel deploy --prebuilt --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN")"
           printf '%s\n' "$deploy_output"
 
           url="$(
@@ -219,11 +222,14 @@ jobs:
 
       - name: Write deployment summary
         if: ${{ always() && steps.deploy_playground.outcome == 'success' }}
+        env:
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
         run: |
           {
             echo "### Agent eval playground"
             echo
-            echo "- Target: \`${{ steps.vercel_target.outputs.target }}\`"
+            echo "- Target: \`$VERCEL_TARGET\`"
             echo "- Project: \`$VERCEL_PROJECT_NAME\`"
-            echo "- URL: ${{ steps.deploy_playground.outputs.url }}"
+            echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"

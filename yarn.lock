@@ -9943,13 +9943,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"
   dependencies:
+    "@angular/common": "npm:^21.2.14"
+    "@angular/compiler": "npm:^21.2.14"
+    "@angular/core": "npm:^21.2.14"
+    "@angular/platform-browser": "npm:^21.2.14"
+    "@angular/platform-browser-dynamic": "npm:^21.2.14"
+    "@storybook/angular-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
+    rxjs: "npm:^7.4.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
+    zone.js: "npm:^0.16.2"
   languageName: unknown
   linkType: soft
 

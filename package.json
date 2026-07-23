@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": {
     "packages": [
+      "agent-eval",
       "code",
       "code/addons/*",
       "code/builders/*",
@@ -42,6 +43,7 @@
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
   },
   "resolutions": {
+    "@ai-sdk/anthropic": "^2.0.0",
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
     "@babel/types": "^7.28.4",
@@ -51,9 +53,12 @@
     "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.19.1",
+    "@types/node@npm:24.10.1": "24.10.1",
     "@types/react": "^18.0.0",
     "@typescript-eslint/types": "8.60.0",
+    "@vercel/agent-eval@npm:1.2.0": "patch:@vercel/agent-eval@npm%3A1.2.0#~/.yarn/patches/@vercel-agent-eval-npm-1.2.0-861deb21a0.patch",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+    "agent-eval/typescript": "5.9.3",
     "aria-query@5.3.0": "^5.3.0",
     "esbuild": "^0.28.0",
     "playwright": "1.58.2",

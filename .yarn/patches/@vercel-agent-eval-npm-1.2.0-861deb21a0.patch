@@ -1,5 +1,5 @@
 diff --git a/dist/cli.js b/dist/cli.js
-index 62513a2..5a50e3f 100644
+index 62513a2fa69ed14348fac25528074ad7415abae5..5a50e3f011bac2d034c369cc30ff9b06b3d23dde 100644
 --- a/dist/cli.js
 +++ b/dist/cli.js
 @@ -230,8 +230,13 @@ program
@@ -32,7 +32,7 @@ index 62513a2..5a50e3f 100644
          // Rate-limit sandbox starts across all experiments to avoid 429s (20 starts per 2 seconds)
          const rateLimiter = new StartRateLimiter(20, 2_000);
 diff --git a/dist/lib/agents/codex/run.mjs b/dist/lib/agents/codex/run.mjs
-index 12ff2d6..a6a3c5e 100644
+index 12ff2d6758852593b29792c9b7ad0e7fdb9b56d2..a6a3c5e0d3764cc0b83757988299b5ff32c35195 100644
 --- a/dist/lib/agents/codex/run.mjs
 +++ b/dist/lib/agents/codex/run.mjs
 @@ -287,12 +287,14 @@ export async function runAgent(input) {
@@ -55,7 +55,7 @@ index 12ff2d6..a6a3c5e 100644
    if (res.error || agentExitCode !== 0) {
      // Mirror the old error string: last 5 lines of output, else a coded fallback.
 diff --git a/dist/lib/classifier.js b/dist/lib/classifier.js
-index 5a6cf9b..df8b19f 100644
+index 5a6cf9b66c7b1f44ca074c2383f4df5666508205..df8b19f3350492459e9b9ac93ed6ae23c99bb2e6 100644
 --- a/dist/lib/classifier.js
 +++ b/dist/lib/classifier.js
 @@ -6,7 +6,8 @@
@@ -140,7 +140,7 @@ index 5a6cf9b..df8b19f 100644
   * Caches results in classification.json within the eval result directory.
   * Throws if the AI gateway call itself fails — callers must handle.
 diff --git a/dist/lib/docker-sandbox.js b/dist/lib/docker-sandbox.js
-index 99df8fb..369c403 100644
+index 99df8fb3ab72003144926f19243baf6b2102f050..369c4033d491105a97d95f7e86290553ef5c01b6 100644
 --- a/dist/lib/docker-sandbox.js
 +++ b/dist/lib/docker-sandbox.js
 @@ -3,6 +3,7 @@

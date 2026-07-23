@@ -108,10 +108,11 @@ const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
-const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
+const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
   REPO_ROOT,
-  'packages',
+  'code',
+  'lib',
   'codex-plugin',
   'plugins',
   'storybook',
@@ -555,7 +556,7 @@ async function readLocalStorybookMcpPackages(): Promise<Record<string, string>> 
 }
 
 async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'mcp');
+  const sourceDir = path.join(REPO_ROOT, 'code', 'lib', 'mcp');
   const targetDir = path.posix.join('local-packages', 'mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
@@ -569,7 +570,7 @@ async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<st
 async function readLocalStorybookAddonMcpPackage(
   catalog: Catalog
 ): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'addon-mcp');
+  const sourceDir = path.join(REPO_ROOT, 'code', 'addons', 'mcp');
   const targetDir = path.posix.join('local-packages', 'addon-mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
@@ -667,11 +668,11 @@ function rewriteDependencySpec(
 }
 
 async function readDefaultCatalog(): Promise<Catalog> {
-  const workspaceYaml = await fs.readFile(path.join(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8');
+  const workspaceYaml = await fs.readFile(path.join(AGENT_EVAL_ROOT, 'catalog.yaml'), 'utf8');
   const catalog: Catalog = {};
   let inDefaultCatalog = false;
 
-  // This intentionally supports only the repo-owned two-space default `catalog:` shape.
+  // This intentionally supports only the two-space default `catalog:` shape owned here.
   // Named catalogs stay unsupported here and still fail explicitly in `rewriteDependencySpec`.
   for (const line of workspaceYaml.split('\n')) {
     if (line.trim() === 'catalog:') {
@@ -719,7 +720,7 @@ async function readPackageDistFiles(
     }
   } catch {
     throw new Error(
-      `Missing build output for ${packageName} at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`
+      `Missing build output for ${packageName} at ${distDir}. Run \`yarn nx run-many -t compile --projects mcp,addon-mcp\` before running agent-eval.`
     );
   }
 

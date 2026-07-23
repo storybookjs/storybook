@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {},
+  "include": ["src/**/*", "../../renderers/vue3/src/typings.d.ts"],
+  "vueCompilerOptions": {
+    "target": 3
+  }
+}

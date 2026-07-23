@@ -55,7 +55,8 @@ export async function vueComponentMeta(
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-            if (!localBindings.has(name)) {
+            // Production SFCs can import `_sfc_main` from their virtual script module.
+            if (!localBindings.has(name) && !(id.endsWith('.vue') && isDefaultExport)) {
               return;
             }
 

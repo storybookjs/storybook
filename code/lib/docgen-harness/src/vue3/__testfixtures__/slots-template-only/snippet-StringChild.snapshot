@@ -1,0 +1,5 @@
+<template>
+  <TemplateOnlySlots > Plain text content
+
+<template #header>Header text</template> </TemplateOnlySlots>
+</template>

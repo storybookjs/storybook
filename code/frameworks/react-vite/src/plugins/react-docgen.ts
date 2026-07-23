@@ -89,7 +89,7 @@ export async function reactDocgen({
 
         return {
           code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
+          map: s.generateMap({ hires: true, source: id }).toString(),
         };
       } catch (e: any) {
         // Ignore the error when react-docgen cannot find a react component

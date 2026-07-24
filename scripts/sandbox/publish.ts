@@ -11,6 +11,7 @@ import { dirname, join, relative } from 'path';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { REPROS_DIRECTORY } from '../utils/constants.ts';
 import { commitAllToGit } from './utils/git.ts';
+import { sanitizePublishedSandboxes } from './utils/sanitize-published-sandbox.ts';
 import { getTemplatesData, renderTemplate } from './utils/template.ts';
 
 export const logger = console;
@@ -69,6 +70,13 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
 
   logger.log(`🚛 Moving all the repros into the repository`);
   await cp(REPROS_DIRECTORY, tmpFolder, { recursive: true });
+
+  logger.log(`🧼 Sanitizing published sandboxes (after-storybook .yarnrc.yml + install artifacts)`);
+  const sanitizeResult = await sanitizePublishedSandboxes(tmpFolder);
+  logger.log(
+    `🧼 Sanitize summary: stripped ${sanitizeResult.strippedKeyCount} key(s) from ` +
+      `${sanitizeResult.filteredYarnrcCount} .yarnrc.yml file(s); removed ${sanitizeResult.removedPaths} excluded path(s)`
+  );
 
   await commitAllToGit({ cwd: tmpFolder, branch });
 

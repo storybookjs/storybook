@@ -54,7 +54,9 @@ export function initReviewChannel(channel: Channel, options: ReviewChannelOption
     try {
       await reviewService.commands.setReview(payload);
     } catch (error) {
-      logger.warn('Failed to apply PUSH_REVIEW payload to core/review:', error);
+      logger.warn(
+        `Failed to apply PUSH_REVIEW payload to core/review: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };
 

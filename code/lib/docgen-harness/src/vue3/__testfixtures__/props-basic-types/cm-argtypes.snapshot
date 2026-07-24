@@ -1,0 +1,149 @@
+{
+  "big": {
+    "defaultValue": undefined,
+    "description": "Large numeric identifier.",
+    "name": "big",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "bigint",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "bigint | undefined",
+    },
+  },
+  "config": {
+    "defaultValue": undefined,
+    "description": "Arbitrary configuration object.",
+    "name": "config",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "{ theme: string; dense: boolean; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ theme: string; dense: boolean; } | undefined",
+    },
+  },
+  "count": {
+    "defaultValue": {
+      "summary": "1",
+    },
+    "description": "How many times the label repeats.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "number | undefined",
+    },
+  },
+  "enabled": {
+    "defaultValue": {
+      "summary": "false",
+    },
+    "description": "Whether the control is enabled.",
+    "name": "enabled",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "boolean | undefined",
+    },
+  },
+  "formatter": {
+    "defaultValue": undefined,
+    "description": "Formats the count for display.",
+    "name": "formatter",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "((value: number) => string)",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "((value: number) => string) | undefined",
+    },
+  },
+  "label": {
+    "defaultValue": undefined,
+    "description": "The main label text.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "tags": {
+    "defaultValue": {
+      "summary": "[]",
+    },
+    "description": "Plain string tags rendered after the label.",
+    "name": "tags",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string[] | undefined",
+    },
+  },
+  "token": {
+    "defaultValue": undefined,
+    "description": "Unique token for the instance.",
+    "name": "token",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "symbol",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "symbol | undefined",
+    },
+  },
+}

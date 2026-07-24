@@ -1,0 +1,35 @@
+{
+  "count": {
+    "defaultValue": undefined,
+    "description": "Number of repetitions.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "number | undefined",
+    },
+  },
+  "label": {
+    "defaultValue": undefined,
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

@@ -1,0 +1,11 @@
+<script lang="ts" setup>
+import { ref } from "vue";
+
+const checked = ref(true);
+
+const modelValue = ref("typed text");
+</script>
+
+<template>
+  <VModelInput v-model:checked="checked" v-model="modelValue" />
+</template>

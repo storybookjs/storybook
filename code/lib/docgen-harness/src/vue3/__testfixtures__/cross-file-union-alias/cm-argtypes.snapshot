@@ -1,0 +1,58 @@
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "size": {
+    "defaultValue": {
+      "summary": ""medium"",
+    },
+    "description": "Control size, an imported literal-union alias.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": "ButtonSize",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "ButtonSize | undefined",
+    },
+  },
+  "variant": {
+    "defaultValue": {
+      "summary": ""primary"",
+    },
+    "description": "Visual variant, an imported literal-union alias.",
+    "name": "variant",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""primary"",
+      },
+      "type": {
+        "summary": "ButtonVariant",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "ButtonVariant | undefined",
+    },
+  },
+}

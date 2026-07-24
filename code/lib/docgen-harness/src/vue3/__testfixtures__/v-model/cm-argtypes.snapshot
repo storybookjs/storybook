@@ -1,0 +1,69 @@
+{
+  "checked": {
+    "defaultValue": undefined,
+    "description": "Whether the box is checked, controlled via the named v-model.",
+    "name": "checked",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "boolean | undefined",
+    },
+  },
+  "modelValue": {
+    "defaultValue": undefined,
+    "description": "The text value controlled via the default v-model.",
+    "name": "modelValue",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "update:checked": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "update:checked",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[value: boolean]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[value: boolean | undefined]",
+    },
+  },
+  "update:modelValue": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Emitted when the text value changes.",
+    "name": "update:modelValue",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[value: string]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[value: string]",
+    },
+  },
+}

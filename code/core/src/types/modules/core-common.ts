@@ -425,7 +425,7 @@ export type ComponentSubcomponentManifest = Pick<
   | 'summary'
   | 'jsDocTags'
   | 'error'
-  | 'apiMd'
+  | 'apiDescription'
   | 'renderer'
 >;
 
@@ -440,7 +440,7 @@ export interface ComponentManifest {
    * API documentation in Markdown format.
    * Prefer ## level headings for sections (Props, Events, Slots, etc.) and TS types for structured data.
    */
-  apiMd?: string | undefined;
+  apiDescription?: string | undefined;
   renderer?: string | undefined;
   stories: {
     id: string;

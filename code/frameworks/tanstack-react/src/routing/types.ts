@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import type { AnyRoute, FileRoutesByPath, Register } from '@tanstack/react-router';
 import type { AnyContext, ResolveParams, RouteOptions, RoutesByPath } from '@tanstack/router-core';
 import type { Decorator } from '@storybook/react';
@@ -102,6 +103,10 @@ export type StoryRouteOptions<TRoute = undefined> =
 export interface RouteOverrideOptions<
   TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute'] | undefined = undefined,
 > {
+  /** Override the route's component. */
+  component?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
+    ? TRoute['options']['component'] | ComponentType
+    : ComponentType;
   /** Override the route's loader function. */
   loader?: TRoute extends FileRoutesByPath[keyof FileRoutesByPath]['preLoaderRoute']
     ? TRoute['options']['loader'] | ((ctx: unknown) => Promise<unknown> | unknown)

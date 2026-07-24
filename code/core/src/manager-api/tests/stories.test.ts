@@ -941,6 +941,61 @@ describe('stories API', () => {
 
       expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
+    it('moves from the last local story to the first composed story', async () => {
+      const initialState = {
+        path: '/story/custom-id--1',
+        storyId: 'custom-id--1',
+        viewMode: 'story',
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      const refIndex = Object.fromEntries(
+        Object.entries(store.getState().filteredIndex!).map(([id, entry]) => [
+          id,
+          { ...entry, refId: 'ref-a' },
+        ])
+      );
+      await store.setState({
+        refs: {
+          'ref-a': { id: 'ref-a', index: refIndex, filteredIndex: refIndex } as any,
+        },
+      });
+
+      api.jumpToStory(1);
+
+      expect(navigate).toHaveBeenCalledWith('/story/ref-a_a--1', undefined);
+    });
+    it('moves from the first composed story to the last local story', async () => {
+      const initialState = {
+        path: '/story/ref-a_a--1',
+        storyId: 'a--1',
+        refId: 'ref-a',
+        viewMode: 'story',
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      const refIndex = Object.fromEntries(
+        Object.entries(store.getState().filteredIndex!).map(([id, entry]) => [
+          id,
+          { ...entry, refId: 'ref-a' },
+        ])
+      );
+      await store.setState({
+        refs: {
+          'ref-a': { id: 'ref-a', index: refIndex, filteredIndex: refIndex } as any,
+        },
+      });
+
+      api.jumpToStory(-1);
+
+      expect(navigate).toHaveBeenCalledWith('/story/custom-id--1', undefined);
+    });
     it('does nothing if you are at the last story and go forward', () => {
       const initialState = {
         path: '/story/custom-id--1',

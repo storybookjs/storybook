@@ -2,21 +2,21 @@ import type {
   AllManifests,
   ComponentManifest,
   ComponentManifestEntry,
-  SubcomponentManifest,
   Doc,
   DocEntry,
   SourceManifests,
   Story,
+  SubcomponentManifest,
 } from '../../types.ts';
+import { dedent } from '../dedent.ts';
 import {
   parseReactComponentMeta,
   parseReactDocgen,
   parseReactDocgenTypescript,
   type ParsedDocgen,
 } from '../parse-react-docgen.ts';
-import { dedent } from '../dedent.ts';
-import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 import { formatRequiresOwnMcpNotice } from '../requires-own-mcp.ts';
+import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 
 /**
  * Maximum number of stories to show in full detail in component manifests.
@@ -246,7 +246,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
-  const hasApiMd = componentManifest.apiMd != null;
+  const hasApiMd = Boolean(componentManifest.apiMd);
 
   // Parse docgen data (from either engine) — only for the legacy/fallback path.
   const parsedDocgen = hasApiMd ? undefined : getParsedDocgen(componentManifest);

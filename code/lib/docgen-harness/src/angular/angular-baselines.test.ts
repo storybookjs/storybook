@@ -88,10 +88,6 @@ describe('angular legacy baselines', () => {
     // call (Type<unknown> accepts it structurally).
     const asCompodocRef = component as unknown as Parameters<typeof extractArgTypes>[0];
 
-    // Committed baselines are read BEFORE their toMatchFileSnapshot call: under -u the
-    // match call rewrites the file first, and a read placed after it would compare the
-    // candidate against itself, masking regressions exactly at flip re-record time. A
-    // missing file is a fresh fixture's first record and skips the comparator.
     const recordArgTypes = async (filterNonInputControls: boolean, fileName: string) => {
       flags.angularFilterNonInputControls = filterNonInputControls;
       const path = join(testDir, fileName);

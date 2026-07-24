@@ -331,6 +331,7 @@ Use:
 ```ts
 const storyIndex = { getIndex: vi.fn(async () => index) };
 const git = {
+  getRepoRoot: vi.fn(async () => '/repo'),
   getChangedFiles: vi.fn(async () => ({
     changed: new Set(['src/Button.tsx']),
     new: new Set<string>(),
@@ -370,6 +371,7 @@ export type StoryIndexAccess = {
 };
 
 export type StoriesGitAccess = {
+  getRepoRoot: () => Promise<string>;
   getChangedFiles: () => Promise<{
     changed: Set<string>;
     new: Set<string>;

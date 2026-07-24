@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.5.0 to 10.6.0](#from-version-1050-to-1060)
+  - [Synthetic component wrappers for unattached docs removed from index](#synthetic-component-wrappers-for-unattached-docs-removed-from-index)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
   - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
@@ -524,6 +526,19 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.5.0 to 10.6.0
+
+### Synthetic component wrappers for unattached docs removed from index
+
+In previous versions, `transformStoryIndexToStoriesHash` generated synthetic `component` wrapper nodes for unattached documentation entries (such as standalone MDX pages). The Storybook sidebar UI unwrapped these at render time, creating a mismatch between `useStorybookState().index` and the sidebar tree.
+
+Starting in this release, `transformStoryIndexToStoriesHash` hoists single-docs-child component nodes directly in the data layer. Unattached docs entries now appear as `type === 'docs'` nodes without a synthetic `component` parent wrapper.
+
+If you maintain an addon or integration that reads `useStorybookState().index` or `useStorybookState().filteredIndex`:
+- Unattached docs entries now have `type === 'docs'` directly at their title level.
+- Synthetic component wrapper entries (which previously had `type === 'component'` and a child `"Docs"` entry) are no longer generated for standalone docs pages.
+- Title and ID lookups via `api.selectStory(title)` or `linkTo(title)` continue to resolve seamlessly.
 
 ## From version 10.4.0 to 10.5.0
 

@@ -90,6 +90,14 @@ function cloneChild(
     getParentRoute: () => parent as any,
   } as any);
 
+  // `.lazy()` bindings (routeTree.gen chains them for `*.lazy.tsx` files)
+  // live on the route instance as `lazyFn`, not in options, so carry them
+  // over explicitly or clones lose their lazily-loaded component.
+  const lazyFn = (oldRoute as any).lazyFn;
+  if (lazyFn) {
+    (cloned as any).lazy(lazyFn);
+  }
+
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
   const children = (oldRoute as any).children as AnyRoute[] | undefined;
@@ -144,6 +152,13 @@ export function duplicateRouteTree(
     ...restRoot,
     ...rootOverride,
   } as any);
+  // A lazily-loaded root (`__root__.lazy.tsx`) carries its loader as `lazyFn`,
+  // like any other route; the root is rebuilt here rather than in `cloneChild`,
+  // so carry the binding over the same way.
+  const rootLazyFn = (rootRoute as any).lazyFn;
+  if (rootLazyFn) {
+    (newRoot as any).lazy(rootLazyFn);
+  }
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
   const children = (rootRoute as any).children as AnyRoute[] | undefined;

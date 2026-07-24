@@ -390,6 +390,22 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('preserves zero specificity for pseudo-states inside ":where"', () => {
+    const sheet = new Sheet('.textLink:where(:focus-visible) { text-decoration: none }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.textLink:where(:focus-visible), .textLink:where(.pseudo-focus-visible), :where(.pseudo-focus-visible-all) .textLink { text-decoration: none }'
+    );
+  });
+
+  it('preserves the specificity of pseudo-states inside and outside ":where"', () => {
+    const sheet = new Sheet('.textLink:hover:where(:focus-visible) { text-decoration: none }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.textLink:hover:where(:focus-visible), .textLink.pseudo-hover:where(.pseudo-focus-visible), .pseudo-hover-all:where(.pseudo-focus-visible-all) .textLink { text-decoration: none }'
+    );
+  });
+
   it('keeps child-combinator pseudo-state selectors valid', () => {
     const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
     rewriteStyleSheet(sheet as any);

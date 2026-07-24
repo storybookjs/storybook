@@ -9,12 +9,20 @@ import { parseArgsParam } from './parseArgsParam.ts';
 
 const { history, document } = global;
 
+// The manager builds its hrefs as `?path=/<viewMode>/<storyId>`, so the prefix carries the view
+// mode and is the only mode signal that form has — `?viewMode=` is only ever set alongside `?id=`.
+const PATH_REGEX = /^\/(story|docs)\/(.+)/;
+
 export function pathToId(path: string) {
-  const match = (path || '').match(/^\/story\/(.+)/);
+  const match = (path || '').match(PATH_REGEX);
   if (!match) {
-    throw new Error(`Invalid path '${path}',  must start with '/story/'`);
+    throw new Error(`Invalid path '${path}',  must start with '/story/' or '/docs/'`);
   }
-  return match[1];
+  return match[2];
+}
+
+function pathToViewMode(path: string): ViewMode | undefined {
+  return (path || '').match(PATH_REGEX)?.[1] as ViewMode | undefined;
 }
 
 const getQueryString = ({
@@ -73,14 +81,15 @@ export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = ()
     const args = typeof query.args === 'string' ? parseArgsParam(query.args) : undefined;
     const globals = typeof query.globals === 'string' ? parseArgsParam(query.globals) : undefined;
 
+    const path = getFirstString(query.path);
+
     let viewMode = getFirstString(query.viewMode) as ViewMode;
     if (typeof viewMode !== 'string' || !viewMode) {
-      viewMode = 'story';
+      viewMode = (path && pathToViewMode(path)) || 'story';
     } else if (!viewMode.match(/docs|story/)) {
       return null;
     }
 
-    const path = getFirstString(query.path);
     const storyId = path ? pathToId(path) : getFirstString(query.id);
 
     if (storyId) {

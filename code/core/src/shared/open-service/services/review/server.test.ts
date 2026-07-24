@@ -14,7 +14,7 @@ const storyEntry = {
   name: 'Primary',
   title: 'Button',
   importPath: './src/Button.stories.tsx',
-  tags: ['story'],
+  tags: ['story'] as string[],
 } as const;
 
 const index = {

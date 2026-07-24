@@ -38,7 +38,7 @@ async function loadDocsServices(ctx: ApiCtx) {
     docgen.queries.docgenForAllComponents.loaded(),
     storyDocs.queries.storyDocsForAllComponents.loaded(),
     mdx?.queries.mdxForAllComponents.loaded() ?? {},
-  ]);
+  ] as const);
 
   return {
     allDocgen,

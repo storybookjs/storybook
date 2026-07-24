@@ -128,30 +128,6 @@ describe('parseToolArgs', () => {
     });
   });
 
-  describe('relocated raw-object escape flag', () => {
-    it('treats a bare `--json` as a normal boolean flag when the escape moves to `--input`', () => {
-      const result = parseToolArgs(['--id', 'Button', '--json'], {}, { rawObjectFlag: 'input' });
-      expect(result).toMatchObject({ ok: true, args: { id: 'Button', json: true } });
-    });
-
-    it('uses `--input` as the raw-object escape hatch', () => {
-      const result = parseToolArgs(
-        ['--input', '{"id":"Button","json":true}'],
-        {},
-        { rawObjectFlag: 'input' }
-      );
-      expect(result).toMatchObject({ ok: true, args: { id: 'Button', json: true } });
-    });
-
-    it('reports the relocated flag name in escape-hatch errors', () => {
-      const result = parseToolArgs(['--input'], {}, { rawObjectFlag: 'input' });
-      expect(result).toMatchObject({ ok: false });
-      if (!result.ok) {
-        expect(result.error).toContain('`--input` requires a value');
-      }
-    });
-  });
-
   it('errors on positional tokens', () => {
     expect(error(['positional'])).toContain('Unexpected argument `positional`');
   });

@@ -78,6 +78,36 @@ describe('service registration', () => {
     expect(getRegisteredServices()).toHaveLength(1);
   });
 
+  it('rejects a query and command with the same name', () => {
+    const serviceDef = defineService({
+      id: 'internal-fixture/duplicate-operation-name',
+      initialState: {} as Record<string, never>,
+      queries: {
+        refresh: {
+          input: v.undefined(),
+          output: v.undefined(),
+          handler: () => undefined,
+        },
+      },
+      commands: {
+        refresh: {
+          input: v.undefined(),
+          output: v.undefined(),
+          handler: async () => undefined,
+        },
+      },
+    });
+
+    expect(() => registerService(serviceDef)).toThrowError(
+      expect.objectContaining({
+        fromStorybook: true,
+        code: 16,
+        message:
+          'Service "internal-fixture/duplicate-operation-name" cannot register "refresh" as both a query and a command.',
+      })
+    );
+  });
+
   it('throws a Storybook error when resolving a missing registered service id', () => {
     expect(() => getService('internal-fixture/missing-service')).toThrow(
       'No registered service with id "internal-fixture/missing-service" exists in this environment.'

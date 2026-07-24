@@ -286,7 +286,17 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
   }
 }
 
-// CORE_COMMON code 16 was retired when OSA query and command namespaces became independent.
+export class OpenServiceOperationNameCollisionError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceOperationNameCollisionError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: `Service "${data.serviceId}" cannot register "${data.operationName}" as both a query and a command.`,
+    });
+  }
+}
+
 export class OpenServiceMissingOriginError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({

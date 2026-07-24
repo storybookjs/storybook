@@ -12,9 +12,8 @@ export type ParsedToolArgs =
  * - `--key value` and `--key=value` become tool arguments; values are coerced by attempting
  *   `JSON.parse`, falling back to the raw string.
  * - A bare `--key` (no value) becomes `true`.
- * - The raw-object escape flag (`--json` by default) provides the raw argument object; explicit
- *   `--key` flags override its entries. Consumers that need `--json` as a normal boolean flag pass
- *   `rawObjectFlag` to relocate the escape hatch (the `storybook tools` adapter uses `--input`).
+ * - `--json '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
+ *   flags override its entries.
  * - `--help`/`-h` is consumed by the CLI itself and never forwarded to the tool.
  *
  * Target-selection options (`--cwd`, `--config-dir`, `--port`) are commander-owned and must
@@ -25,8 +24,7 @@ export function parseToolArgs(
   tokens: string[],
   defaults: {
     json?: string;
-  } = {},
-  { rawObjectFlag = 'json' }: { rawObjectFlag?: string } = {}
+  } = {}
 ): ParsedToolArgs {
   let rawJson = defaults.json;
   let help = false;
@@ -45,7 +43,7 @@ export function parseToolArgs(
     if (!token.startsWith('--') || token === '--') {
       return {
         ok: false,
-        error: `Unexpected argument \`${token}\`. Command arguments must be passed as \`--key value\` flags (or via \`--${rawObjectFlag} '<object>'\`).`,
+        error: `Unexpected argument \`${token}\`. Command arguments must be passed as \`--key value\` flags (or via \`--json '<object>'\`).`,
       };
     }
 
@@ -64,9 +62,9 @@ export function parseToolArgs(
       return { ok: false, error: `Invalid flag \`${token}\`.` };
     }
 
-    if (key === rawObjectFlag) {
+    if (key === 'json') {
       if (value === undefined) {
-        return { ok: false, error: `\`--${rawObjectFlag}\` requires a value.` };
+        return { ok: false, error: '`--json` requires a value.' };
       }
       rawJson = value;
       continue;
@@ -83,13 +81,13 @@ export function parseToolArgs(
     } catch (error) {
       return {
         ok: false,
-        error: `\`--${rawObjectFlag}\` must be valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        error: `\`--json\` must be valid JSON: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       return {
         ok: false,
-        error: `\`--${rawObjectFlag}\` must be a JSON object, e.g. '{"id": "button-docs"}'.`,
+        error: '`--json` must be a JSON object, e.g. \'{"id": "button-docs"}\'.',
       };
     }
     jsonArgs = parsed as Record<string, unknown>;

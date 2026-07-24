@@ -27,7 +27,6 @@ import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { registerTestApi } from '../../../core/src/shared/open-service/services/test/api.ts';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
@@ -264,12 +263,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         }),
       },
     });
-  });
-
-  // Register after the channel listener so test runs can complete.
-  registerTestApi({
-    channel,
-    getIndex: () => storyIndexGenerator.getIndex(),
   });
 
   const enableCrashReports = core?.enableCrashReports || options.enableCrashReports;

@@ -1,0 +1,22 @@
+{
+  "width": {
+    "description": "Width as number of pixels or a CSS length string.",
+    "name": "width",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'auto'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string|number",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string|number",
+    },
+  },
+}

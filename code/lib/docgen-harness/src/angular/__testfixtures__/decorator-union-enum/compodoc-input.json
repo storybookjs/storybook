@@ -1,0 +1,212 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "DecoratorUnionEnumComponent",
+      "id": "component-DecoratorUnionEnumComponent-929a72a04e601a59f03d1c5168c80a74334056ef2507347d1a654cdbbe5b8a5418a0b80c90628e7dfc89bafc25b56a11ff329bc457a624c0482d8efd26952cfe",
+      "file": "decorator-union-enum.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-decorator-union-enum",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ size }} {{ tone }} {{ kind }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "kind",
+          "defaultValue": "ButtonKind.Primary",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 14,
+          "type": "ButtonKind",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "size",
+          "defaultValue": "'small'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 10,
+          "type": "\"small\" | \"large\"",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "tone",
+          "defaultValue": "'info'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 12,
+          "type": "ToneOption",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\nimport { ButtonKind, type ToneOption } from './types.ts';\n\n@Component({\n  selector: 'sb-decorator-union-enum',\n  template: '<span>{{ size }} {{ tone }} {{ kind }}</span>',\n})\nexport class DecoratorUnionEnumComponent {\n  @Input() size: 'small' | 'large' = 'small';\n\n  @Input() tone: ToneOption = 'info';\n\n  @Input() kind: ButtonKind = ButtonKind.Primary;\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": {
+    "variables": [],
+    "functions": [],
+    "typealiases": [
+      {
+        "name": "ToneOption",
+        "ctype": "miscellaneous",
+        "subtype": "typealias",
+        "coverageIgnore": false,
+        "rawtype": "\"info\" | \"warn\" | \"error\"",
+        "file": "types.ts",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "kind": 193
+      }
+    ],
+    "enumerations": [
+      {
+        "name": "ButtonKind",
+        "childs": [
+          {
+            "name": "Primary",
+            "deprecated": false,
+            "deprecationMessage": "",
+            "value": "primary"
+          },
+          {
+            "name": "Secondary",
+            "deprecated": false,
+            "deprecationMessage": "",
+            "value": "secondary"
+          }
+        ],
+        "ctype": "miscellaneous",
+        "subtype": "enum",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "file": "types.ts"
+      }
+    ],
+    "groupedVariables": {},
+    "groupedFunctions": {},
+    "groupedEnumerations": {
+      "types.ts": [
+        {
+          "name": "ButtonKind",
+          "childs": [
+            {
+              "name": "Primary",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "value": "primary"
+            },
+            {
+              "name": "Secondary",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "value": "secondary"
+            }
+          ],
+          "ctype": "miscellaneous",
+          "subtype": "enum",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "file": "types.ts"
+        }
+      ]
+    },
+    "groupedTypeAliases": {
+      "types.ts": [
+        {
+          "name": "ToneOption",
+          "ctype": "miscellaneous",
+          "subtype": "typealias",
+          "coverageIgnore": false,
+          "rawtype": "\"info\" | \"warn\" | \"error\"",
+          "file": "types.ts",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "kind": 193
+        }
+      ]
+    }
+  },
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "decorator-union-enum.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "DecoratorUnionEnumComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/4",
+        "status": "low"
+      },
+      {
+        "filePath": "types.ts",
+        "type": "type alias",
+        "linktype": "miscellaneous",
+        "linksubtype": "typealias",
+        "name": "ToneOption",
+        "coveragePercent": 0,
+        "coverageCount": "0/1",
+        "status": "low"
+      }
+    ]
+  }
+}

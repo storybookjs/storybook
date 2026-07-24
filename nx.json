@@ -24,7 +24,7 @@
   "targetDefaults": {
     "compile": {
       "dependsOn": ["^compile"],
-      "command": "yarn exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
+      "command": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
       "inputs": ["production", "^production"],

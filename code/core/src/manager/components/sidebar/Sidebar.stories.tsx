@@ -69,6 +69,7 @@ const managerContext: any = (
     navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    experimental_setFilters: fn().mockName('api::experimental_setFilters'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
     getIsNavShown: () => true,
     getUrlState: () => ({
@@ -174,7 +175,6 @@ const refs: Record<string, RefType> = {
   },
 };
 
-// eslint-disable-next-line local-rules/no-uncategorized-errors
 const indexError = new Error('Failed to load index');
 
 const refsError = {

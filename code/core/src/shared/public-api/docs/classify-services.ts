@@ -1,5 +1,5 @@
-import type { DocgenPayload } from '../docgen/types.ts';
-import type { StoryDocsPayload } from '../story-docs/types.ts';
+import type { DocgenPayload } from '../../open-service/services/docgen/types.ts';
+import type { StoryDocsPayload } from '../../open-service/services/story-docs/types.ts';
 import type { MdxPayload } from './map.ts';
 
 export type DocsClassification = {

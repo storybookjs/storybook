@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
-import type { ApiCtx } from '../../../public-api/index.ts';
+import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
+import type { ApiCtx } from '../index.ts';
 import { docsApi } from './definition.ts';
 
 const docgenForAllComponents = vi.fn();

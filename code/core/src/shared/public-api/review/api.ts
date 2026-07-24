@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import { defineApi } from '../../../public-api/index.ts';
-import { reviewStateSchema } from './definition.ts';
+import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
+import { defineApi } from '../index.ts';
+import { reviewStateSchema } from '../../open-service/services/review/definition.ts';
 
 const reviewCreateInputSchema = v.object({
   ...v.omit(reviewStateSchema, ['createdAt', 'stale', 'changedFiles']).entries,

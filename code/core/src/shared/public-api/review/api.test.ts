@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ApiCtx } from '../../../public-api/index.ts';
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import type { ApiCtx } from '../index.ts';
+import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
 import { reviewApi } from './api.ts';
 
 const input = {

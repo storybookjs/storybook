@@ -3,10 +3,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
-import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import { defineApi } from '../../../public-api/index.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
+import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
+import { defineApi } from '../index.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';

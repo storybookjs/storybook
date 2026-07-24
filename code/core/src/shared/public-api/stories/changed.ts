@@ -1,11 +1,7 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import type {
-  Status,
-  StatusesByStoryIdAndTypeId,
-  StatusValue,
-} from '../../../status-store/index.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import type { Status, StatusesByStoryIdAndTypeId, StatusValue } from '../../status-store/index.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import type { ChangedStoriesOutput, ChangeStatusValue } from './definition.ts';
 
 const INCLUDED_STATUS_VALUES = new Set<ChangeStatusValue>([

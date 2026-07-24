@@ -1,9 +1,9 @@
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
-import { defineApi, type ApiCtx } from '../../../public-api/index.ts';
-import type { DocgenService } from '../docgen/definition.ts';
-import type { StoryDocsService } from '../story-docs/definition.ts';
+import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
+import { defineApi, type ApiCtx } from '../index.ts';
+import type { DocgenService } from '../../open-service/services/docgen/definition.ts';
+import type { StoryDocsService } from '../../open-service/services/story-docs/definition.ts';
 import { classifyServices } from './classify-services.ts';
 import { formatDocsList, formatDocsShow, formatDocsShowStory } from './format.ts';
 import { mapDocsList, mapDocsShow, mapDocsShowStory, type MdxPayload } from './map.ts';

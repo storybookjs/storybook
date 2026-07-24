@@ -6,13 +6,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 import { vol } from 'memfs';
 
-import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
-import type { ApiCtx } from '../../../public-api/index.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
+import type { ApiCtx } from '../index.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import { createStoriesApi } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('../../../../core-server/stores/status.ts', { spy: true });
+vi.mock('../../../core-server/stores/status.ts', { spy: true });
 
 const index = {
   v: 5,

@@ -4,7 +4,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
 
-import type { ModuleGraphService } from '../module-graph/definition.ts';
+import type { ModuleGraphService } from '../../open-service/services/module-graph/definition.ts';
 import type { FindByComponentOutput } from './definition.ts';
 
 /** Default import-graph distance ceiling (mirrors addon-mcp). */

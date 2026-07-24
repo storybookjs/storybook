@@ -3,7 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ApiCtx } from '../../../public-api/index.ts';
+import type { ApiCtx } from '../index.ts';
 import type { TestRunOutput } from './definition.ts';
 import { createTestApi } from './definition.ts';
 import { runStoryTests } from './run.ts';

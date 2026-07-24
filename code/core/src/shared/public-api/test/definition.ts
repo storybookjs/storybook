@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineApi } from '../../../public-api/index.ts';
+import { defineApi } from '../index.ts';
 import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
 import { formatTestRun } from './format.ts';

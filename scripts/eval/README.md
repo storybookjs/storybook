@@ -91,6 +91,8 @@ node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents claude
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-effort max
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --claude-efforts max,high
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-effort xhigh
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-model gpt-5.5
+node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --agents codex --codex-models gpt-5.5 --codex-efforts high,xhigh
 
 # Restrict to specific projects (works with both agents)
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes --projects mealdrop,edgy,echarts
@@ -107,6 +109,13 @@ node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
 node scripts/eval/run-batch.ts --prompt pattern-copy-play --yes \
   --agents codex --codex-effort high \
   --projects mealdrop,edgy,echarts --repetitions 2
+
+# GPT 5.5 comparison over two prompt variants
+node scripts/eval/run-batch.ts \
+  --prompts monorepo-optimized-tests-relaxed-limits-no-story-deletion,pattern-copy-play \
+  --agents codex --codex-models gpt-5.5 --codex-efforts high,xhigh \
+  --projects wikitok,evergreen-ci,mealdrop \
+  --repetitions 3 --yes
 
 # Different prompt or concurrency
 node scripts/eval/run-batch.ts --prompt setup --yes

@@ -35,12 +35,19 @@ describe('AGENTS', () => {
       execution: {
         approvalPolicy: 'never',
         permissionModel: 'approval-policy-never',
+        sandboxMode: 'danger-full-access',
+        serviceTier: 'fast',
       },
       pricing: {
         'gpt-5.4': {
           input: 2.5,
           cachedInput: 0.25,
           output: 15,
+        },
+        'gpt-5.5': {
+          input: 5,
+          cachedInput: 0.5,
+          output: 30,
         },
       },
     });

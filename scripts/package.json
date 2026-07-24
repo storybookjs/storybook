@@ -53,7 +53,7 @@
     "@google-cloud/bigquery": "^6.2.1",
     "@octokit/graphql": "^5.0.6",
     "@octokit/request": "^8.4.1",
-    "@openai/codex-sdk": "^0.117.0",
+    "@openai/codex-sdk": "0.128.0",
     "@polka/parse": "^1.0.0-next.28",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.9.1",

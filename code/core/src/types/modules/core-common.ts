@@ -410,8 +410,12 @@ type Tag = string;
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
   defaultFilterSelection?: 'include' | 'exclude' | undefined;
-  excludeFromSidebar: boolean;
-  excludeFromDocsStories: boolean;
+  /** Exclude this tag from the sidebar filtering UI */
+  excludeFromFilterPanel?: boolean;
+  /** Exclude stories with this tag from appearing in the sidebar */
+  excludeFromSidebar?: boolean;
+  /** Exclude stories with this tag from appearing in docs */
+  excludeFromDocsStories?: boolean;
 }
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;

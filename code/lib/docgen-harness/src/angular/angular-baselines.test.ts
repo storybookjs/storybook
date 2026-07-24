@@ -21,6 +21,9 @@ import {
 } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 if (BASELINE_PATH !== 'legacy') {
@@ -40,6 +43,9 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
+const readCommitted = (path: string): string | undefined =>
+  existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+
 type AotCmp = {
   inputs: Record<string, [string, number, null]>;
   outputs: Record<string, string>;
@@ -48,8 +54,7 @@ type AotCmp = {
 describe('angular legacy baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
     const testDir = join(fixturesDir, fixtureCase);
-    const dirFiles = readdirSync(testDir);
-    expect(dirFiles.filter((file) => file === `${fixtureCase}.component.ts`)).toHaveLength(1);
+    expect(existsSync(join(testDir, `${fixtureCase}.component.ts`))).toBe(true);
 
     setCompodocJson(JSON.parse(readFileSync(join(testDir, 'compodoc-input.json'), 'utf8')));
 
@@ -83,33 +88,53 @@ describe('angular legacy baselines', () => {
     // call (Type<unknown> accepts it structurally).
     const asCompodocRef = component as unknown as Parameters<typeof extractArgTypes>[0];
 
-    flags.angularFilterNonInputControls = false;
-    const argTypes = extractArgTypes(asCompodocRef);
-    await expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
+    const recordArgTypes = async (filterNonInputControls: boolean, fileName: string) => {
+      flags.angularFilterNonInputControls = filterNonInputControls;
+      const path = join(testDir, fileName);
+      const committed = readCommitted(path);
+      const extracted = extractArgTypes(asCompodocRef);
+      await expect(extracted).toMatchFileSnapshot(path);
+      flags.angularFilterNonInputControls = false;
+      if (committed !== undefined) {
+        const parsed = parseArgTypesSnapshot(committed, `${fixtureCase}/${fileName}`);
+        if (!isSnapshotUpdateRun()) {
+          // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
+          expect(parsed).toEqual(extracted);
+        }
+        expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: extracted! });
+      }
+      return extracted;
+    };
 
-    flags.angularFilterNonInputControls = true;
-    await expect(extractArgTypes(asCompodocRef)).toMatchFileSnapshot(
-      join(testDir, 'argtypes-filtered.snapshot')
-    );
-    flags.angularFilterNonInputControls = false;
+    const argTypes = await recordArgTypes(false, 'argtypes.snapshot');
+    await recordArgTypes(true, 'argtypes-filtered.snapshot');
 
     expect(Object.keys(stories).length).toBeGreaterThan(0);
 
+    const actionArgNames = Object.entries(argTypes ?? {})
+      .filter(([, argType]) => argType.action)
+      .map(([name]) => name);
+
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
-      // Production runs the actions addon's addActionsFromArgTypes args enhancer before
-      // the source decorator: every output argType carries `action`, so outputs a story
-      // does not set still receive an auto-injected handler arg and the legacy snippet
-      // binds every declared output. Only key presence reaches the snippet text, so a
-      // plain stub stands in for the injected action.
       const props: Record<string, unknown> = { ...meta.args, ...story.args };
-      for (const [name, argType] of Object.entries(argTypes ?? {})) {
-        if (argType.action && !(name in props)) {
+      for (const name of actionArgNames) {
+        if (!(name in props)) {
           props[name] = () => {};
         }
       }
-      await expect(
-        computesTemplateSourceFromComponent(component, props, argTypes)
-      ).toMatchFileSnapshot(join(testDir, `snippet-${exportName}.snapshot`));
+      const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
+      const committedSnippet = readCommitted(snippetPath);
+      const snippet = computesTemplateSourceFromComponent(component, props, argTypes!);
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
+      if (committedSnippet !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'angular',
+          args: props,
+          baseline: committedSnippet,
+          candidate: snippet,
+        });
+      }
     }
 
     // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a

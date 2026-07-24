@@ -112,6 +112,7 @@ interface HarnessOptions {
 
 interface Sample {
   save: number;
+  durMs: number;
   rssMb: number;
   heapUsedMb: number;
   retainedHeapMb?: number;
@@ -312,7 +313,8 @@ async function main() {
   const initialStart = Date.now();
   console.log(`  full extraction over ${entries.length} components (cold pass == refresh-all save)…`);
   manager.batchExtract(entries);
-  console.log(`  initial batchExtract: ${Date.now() - initialStart}ms`);
+  const coldMs = Date.now() - initialStart;
+  console.log(`  initial batchExtract: ${coldMs}ms`);
 
   const baseline = sampleMemory(options.forceGc && gcAvailable);
   console.log(
@@ -350,7 +352,7 @@ async function main() {
     const durMs = Date.now() - saveStart;
 
     const mem = sampleMemory(options.forceGc && gcAvailable);
-    samples.push({ save, ...mem });
+    samples.push({ save, durMs, ...mem });
     console.log(
       `  save ${String(save).padStart(3)}: ${String(durMs).padStart(5)}ms  ` +
         `rss=${mem.rssMb.toFixed(0).padStart(5)}MB  heapUsed=${mem.heapUsedMb.toFixed(0).padStart(5)}MB` +
@@ -404,7 +406,7 @@ async function main() {
     fs.writeFileSync(
       options.jsonOut,
       JSON.stringify(
-        { options, baseline, samples, peakRss, finalRss, rssSlope, retainedSlope, retainedGrowth, avgTransient },
+        { options, coldMs, baseline, samples, peakRss, finalRss, rssSlope, retainedSlope, retainedGrowth, avgTransient },
         null,
         2
       )

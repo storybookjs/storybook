@@ -438,7 +438,7 @@ export interface ComponentManifest {
   summary?: string | undefined;
   /**
    * API documentation in Markdown format.
-   * Prefer ## level headings for sections (Props, Events, Slots, etc.) and tables for structured data.
+   * Prefer ## level headings for sections (Props, Events, Slots, etc.) and TS types for structured data.
    */
   apiMd?: string | undefined;
   renderer?: string | undefined;

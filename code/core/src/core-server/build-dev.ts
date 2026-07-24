@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
+import { global } from '@storybook/global';
 import {
   JsPackageManagerFactory,
   cache,
@@ -19,7 +20,6 @@ import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
@@ -37,8 +37,8 @@ import { outputStartupInformation } from './utils/output-startup-information.ts'
 import { outputStats } from './utils/output-stats.ts';
 import {
   getMcpMetadataFromMainConfig,
-  type RuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
+  type RuntimeInstanceRecord,
 } from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
@@ -81,6 +81,8 @@ export async function buildDevStandalone(
       previewConfigPath?: string;
     }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
+  process.env.STORYBOOK_CLI = 'true';
+
   const { packageJson, versionUpdates } = options;
   let { storybookVersion, previewConfigPath } = options;
   const configDir = resolve(options.configDir);

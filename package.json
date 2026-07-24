@@ -79,5 +79,8 @@
     "vite": "^7.0.4",
     "vitest": "^4.1.5"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:^"
+  }
 }

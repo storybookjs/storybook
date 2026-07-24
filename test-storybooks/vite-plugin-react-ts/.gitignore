@@ -1,0 +1,7 @@
+node_modules
+dist
+storybook-static
+test-results
+playwright-report
+*.log
+.DS_Store

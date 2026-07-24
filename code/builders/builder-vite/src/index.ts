@@ -15,6 +15,9 @@ import { createViteServer } from './vite-server.ts';
 export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
+export { experimental_vitePlugin } from './vite-plugin/index.ts';
+export type { UserOptions as experimental_VitePluginUserOptions } from './vite-plugin/types.ts';
+
 export * from './types.ts';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {

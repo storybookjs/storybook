@@ -48,10 +48,17 @@
   ],
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
-    "ts-dedent": "^2.0.0"
+    "get-port-please": "^3.2.0",
+    "http-proxy-middleware": "3.0.5",
+    "polka": "^0.5.0",
+    "sirv": "^3.0.0",
+    "telejson": "8.0.0",
+    "ts-dedent": "^2.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "@types/ws": "^8.18.0",
     "empathic": "^2.0.0",
     "es-module-lexer": "^1.5.0",
     "glob": "^10.5.0",

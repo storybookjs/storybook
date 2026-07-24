@@ -26,6 +26,9 @@ import { wrapManagerEntries } from './utils/managerEntries.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
+export { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
+export { readOrderedFiles } from './utils/files.ts';
+export { readTemplate, renderHTML } from './utils/template.ts';
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 

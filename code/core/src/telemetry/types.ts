@@ -105,6 +105,8 @@ export type StorybookMetadata = {
   };
   portableStoriesFileCount?: number;
   applicationFileCount?: number;
+  /** True when Storybook runs through the Vite plugin instead of the CLI. */
+  vitePlugin?: boolean;
 };
 
 export interface Payload {

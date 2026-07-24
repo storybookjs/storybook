@@ -855,6 +855,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@arr/every@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "@arr/every@npm:1.0.1"
+  checksum: 10c0/f9769bc97eca37d1c0dedfda4c17506c0e1269d95c15a7478a49c4d84d43512a3f350b71c95e045cf4113d3398ebd6d298f2eea09196a1ed61c311bc4e6964e7
+  languageName: node
+  linkType: hard
+
 "@aw-web-design/x-default-browser@npm:1.4.126":
   version: 1.4.126
   resolution: "@aw-web-design/x-default-browser@npm:1.4.126"
@@ -6487,6 +6494,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polka/url@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@polka/url@npm:0.5.0"
+  checksum: 10c0/76324126e1608f4cdc5c6b11b618ca67612c37d45401f3fbcce4967294093761b7568cc6ae74ade8afbe744547e72e9d50bc38f690ddea0904a1d66a6b8a0093
+  languageName: node
+  linkType: hard
+
 "@polka/url@npm:^1.0.0-next.21, @polka/url@npm:^1.0.0-next.24":
   version: 1.0.0-next.29
   resolution: "@polka/url@npm:1.0.0-next.29"
@@ -9691,21 +9705,28 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:code/builders/builder-vite":
+"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:^, @storybook/builder-vite@workspace:code/builders/builder-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.19.1"
+    "@types/ws": "npm:^8.18.0"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
+    get-port-please: "npm:^3.2.0"
     glob: "npm:^10.5.0"
+    http-proxy-middleware: "npm:3.0.5"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^0.30.0"
     pathe: "npm:^1.1.2"
+    polka: "npm:^0.5.0"
+    sirv: "npm:^3.0.0"
     slash: "npm:^5.0.0"
+    telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
     vite: "npm:^7.0.4"
+    ws: "npm:^8.18.0"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -10384,6 +10405,7 @@ __metadata:
   dependencies:
     "@nx/workspace": "npm:^22.6.1"
     "@playwright/test": "npm:^1.58.2"
+    "@storybook/builder-vite": "workspace:^"
     "@types/kill-port": "npm:^2.0.3"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"
@@ -12164,7 +12186,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8, @types/ws@npm:^8.5.10":
+"@types/ws@npm:^8, @types/ws@npm:^8.18.0, @types/ws@npm:^8.5.10":
   version: 8.18.1
   resolution: "@types/ws@npm:8.18.1"
   dependencies:
@@ -20282,6 +20304,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"get-port-please@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "get-port-please@npm:3.2.0"
+  checksum: 10c0/7e48443110b463e76ef47efc381c9f16d78798f9ea9f6d928dad2b5cee53a199cf64e6e2f22603e5f8a1f742e3d4a144cd367f6ef82ac48759bfd2beb48ee9e5
+  languageName: node
+  linkType: hard
+
 "get-proto@npm:^1.0.0, get-proto@npm:^1.0.1":
   version: 1.0.1
   resolution: "get-proto@npm:1.0.1"
@@ -24131,6 +24160,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"matchit@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "matchit@npm:1.1.0"
+  dependencies:
+    "@arr/every": "npm:^1.0.0"
+  checksum: 10c0/f2cd8702ea37dd9859cf1df762581c822180eb72372b9240397a80320cb4ffb4828b3d8ed0beff2429daf500d1ec746c2963dbb3c6386f1b5b9eb969e0f1caaa
+  languageName: node
+  linkType: hard
+
 "math-intrinsics@npm:^1.1.0":
   version: 1.1.0
   resolution: "math-intrinsics@npm:1.1.0"
@@ -27480,6 +27518,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"polka@npm:^0.5.0":
+  version: 0.5.2
+  resolution: "polka@npm:0.5.2"
+  dependencies:
+    "@polka/url": "npm:^0.5.0"
+    trouter: "npm:^2.0.1"
+  checksum: 10c0/113005fe146e1ee67bc6e1a5438c71e1b59ac05a8bc435d593be210e21f712e6b9ba4d163072e3c941f8efbb7516df9c55bf18934948f91623d03dc9657a1410
+  languageName: node
+  linkType: hard
+
 "polka@npm:^1.0.0-next.28":
   version: 1.0.0-next.28
   resolution: "polka@npm:1.0.0-next.28"
@@ -30801,7 +30849,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sirv@npm:^3.0.1, sirv@npm:^3.0.2":
+"sirv@npm:^3.0.0, sirv@npm:^3.0.1, sirv@npm:^3.0.2":
   version: 3.0.2
   resolution: "sirv@npm:3.0.2"
   dependencies:
@@ -32637,6 +32685,15 @@ __metadata:
   version: 2.2.0
   resolution: "trough@npm:2.2.0"
   checksum: 10c0/58b671fc970e7867a48514168894396dd94e6d9d6456aca427cc299c004fe67f35ed7172a36449086b2edde10e78a71a284ec0076809add6834fb8f857ccb9b0
+  languageName: node
+  linkType: hard
+
+"trouter@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "trouter@npm:2.0.1"
+  dependencies:
+    matchit: "npm:^1.0.0"
+  checksum: 10c0/9d294dbe74d45649d929d3abf0d4cb8e508985a2ea0f8be41b3b097a985352b14f65dd76b68ae651731128995eceddba375b15719356c419bbfe754c5fb5673c
   languageName: node
   linkType: hard
 

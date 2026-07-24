@@ -1,11 +1,5 @@
 import { parseAttributeNames, parseRootElement } from './parse-element.ts';
 
-/**
- * Scans the <template> block only - a hoisted const in <script setup> whose name collides with a
- * declared prop must not count as representation. Returns undefined when no template block or root
- * element can be found (unparsable for the baseline side is a corpus break, reported by the
- * caller).
- */
 export function vueRepresentedNames(snippet: string): Set<string> | undefined {
   const open = snippet.indexOf('<template>');
   const close = snippet.lastIndexOf('</template>');

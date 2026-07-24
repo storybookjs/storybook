@@ -87,14 +87,17 @@ Internal exports include:
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
-### Open services and CLI tools
+### Open services and public API
 
-- OSA owns internal state, synchronization, queries, commands, loading, and service composition.
-- Public capability factories for docs, stories, test, and review create `defineApi` definitions with one public method namespace, schemas, descriptions, and handlers.
-- Adapters select API definitions explicitly. `generateCLI` creates one `storybook tools <api> <method>` group per selected API, invokes methods through `invokeApi` with `consumer: 'cli'`, and rejects CLI name-normalization collisions.
-- OSA query and command names are independent. A public API definition or adapter owns any namespace invariant relevant to its public surface.
-- The public API remains experimental. Production MCP migration is Milestone 4 and production CLI startup, server targeting, project loading, telemetry, and root aliases remain Milestone 5.
-- MCP tools remain hand-authored in `addon-mcp`; they are not generated from OSA definitions.
+- OSA owns internal state, synchronization, queries, commands, loading, and service composition. Nothing about OSA is Storybook's public CLI/MCP/SDK surface.
+- `defineApi` defines public capabilities: each API has an id, description, and one method namespace; each method has only `schema`, `description`, and `handler`.
+- Handlers receive `(input, ctx)` where `ctx` always provides `consumer` (`'cli' | 'mcp'`), `origin`, and typed server `getService`. Capability-specific boot-time dependencies (story index, git, vitest channel) are closed over by factories.
+- There is no public API registry. Adapters receive an explicit array of API definitions; that array is the exposure boundary.
+- Handlers return Markdown by default. Each method schema declares `json` for structured output.
+- Docs and review are plain definitions that compose OSA through `ctx.getService`. Stories and test are factories over boot-time dependencies.
+- Only `core/review` remains as a stateful public-capability OSA service; docs, stories, and test have no OSA facades.
+- The public API remains experimental. Production MCP migration is Milestone 4. CLI generation and production `storybook tools` wiring are Milestone 5.
+- MCP tools remain hand-authored in `addon-mcp` until Milestone 4.
 
 ## Common Commands
 

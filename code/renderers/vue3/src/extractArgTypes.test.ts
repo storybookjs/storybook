@@ -12,7 +12,7 @@ import {
   templateSlots,
   vueDocgenMocks,
 } from './docs/tests-meta-components/meta-components.ts';
-import { extractArgTypes } from './extractArgTypes.ts';
+import { convertVueComponentMetaProp, extractArgTypes } from './extractArgTypes.ts';
 
 vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();
@@ -128,5 +128,51 @@ describe('extractArgTypes (vue-docgen-api)', () => {
     const argTypes = extractArgTypes(component);
 
     expect(argTypes).toMatchSnapshot();
+  });
+});
+
+describe('convertVueComponentMetaProp', () => {
+  it('should convert a literal union schema to an enum sbType with its values', () => {
+    expect(
+      convertVueComponentMetaProp({
+        type: '"small" | "medium" | "large"',
+        required: true,
+        schema: {
+          kind: 'enum',
+          type: '"small" | "medium" | "large"',
+          schema: ['"small"', '"medium"', '"large"'],
+        },
+      })
+    ).toEqual({ name: 'enum', value: ['small', 'medium', 'large'], required: true });
+  });
+
+  it('should not convert TS enum member references to an enum sbType', () => {
+    // the schema only carries the member names, not their runtime values; an enum
+    // sbType would make Controls inject the name string instead of the value
+    expect(
+      convertVueComponentMetaProp({
+        type: 'Severity',
+        required: true,
+        schema: {
+          kind: 'enum',
+          type: 'Severity',
+          schema: ['Severity.Info', 'Severity.Warning', 'Severity.Error'],
+        },
+      })
+    ).toEqual({ name: 'other', value: 'Severity', required: true });
+  });
+
+  it('should not convert numeric TS enum member references either', () => {
+    expect(
+      convertVueComponentMetaProp({
+        type: 'Level | undefined',
+        required: false,
+        schema: {
+          kind: 'enum',
+          type: 'Level | undefined',
+          schema: ['undefined', 'Level.Low', 'Level.High'],
+        },
+      })
+    ).toEqual({ name: 'other', value: 'Level | undefined', required: false });
   });
 });

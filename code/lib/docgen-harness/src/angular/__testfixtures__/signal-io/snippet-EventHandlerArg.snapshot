@@ -1,0 +1,1 @@
+<sb-signal-io [label]="'Quantity'" [count]="2" (toggled)="toggled($event)"></sb-signal-io>

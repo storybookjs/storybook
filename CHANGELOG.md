@@ -1,8 +1,14 @@
+## 10.5.4
+
+- ReactNative: Telemetry framework detection fix - [#35560](https://github.com/storybookjs/storybook/pull/35560), thanks @ndelangen!
+- SyntaxHighlighter: Fix PrismJS dark mode mismatch - [#35541](https://github.com/storybookjs/storybook/pull/35541), thanks @hxy-asdw!
+
+## 10.5.3
+
+- Dependencies: Upgrade TypeScript to 6.0.3 - [#34971](https://github.com/storybookjs/storybook/pull/34971), thanks @valentinpalkovic!
+
 ## 10.5.2
 
-- Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!
-- Angular-Vite: Widen TypeScript peer dependency range to support TypeScript 6 - [#35455](https://github.com/storybookjs/storybook/pull/35455), thanks @valentinpalkovic!
-- Core: Include chromatic packages in ecosystem identifier - [#35170](https://github.com/storybookjs/storybook/pull/35170), thanks @yannbf!
 - TanStack: Fix createServerFn validator mock - [#35185](https://github.com/storybookjs/storybook/pull/35185), thanks @sjh9714!
 - TanStack: Support pathless layout routes (id-only) in story routing - [#35465](https://github.com/storybookjs/storybook/pull/35465), thanks @unpunnyfuns!
 - Tanstack-react: Add missing Hydrate export - [#35111](https://github.com/storybookjs/storybook/pull/35111), thanks @arun-357!

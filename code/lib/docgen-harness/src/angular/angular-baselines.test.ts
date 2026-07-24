@@ -125,6 +125,8 @@ describe('angular legacy baselines', () => {
       const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
       const committedSnippet = readCommitted(snippetPath);
       const snippet = computesTemplateSourceFromComponent(component, props, argTypes!);
+      // null only when the component has no decorator metadata - impossible for these fixtures.
+      expect(snippet).not.toBeNull();
       await expect(snippet).toMatchFileSnapshot(snippetPath);
       if (committedSnippet !== undefined) {
         expectCurrentOrBetter({

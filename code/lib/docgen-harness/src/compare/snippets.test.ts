@@ -76,6 +76,18 @@ describe('compareSnippet (angular)', () => {
     const candidate = "<sb-cmp [count] = '3' (clicked)='clicked($event)'></sb-cmp>";
     expect(angular(baseline, candidate, { count: 3 })).toEqual([]);
   });
+
+  it('reads a two-way binding as both its input and change-output names', () => {
+    const banana = '<sb-cmp [(value)]="value"></sb-cmp>';
+    const desugared = '<sb-cmp [value]="value" (valueChange)="valueChange($event)"></sb-cmp>';
+    // The sugar and its expansion represent the same names, in both directions.
+    expect(angular(banana, desugared, { value: 1 })).toEqual([]);
+    expect(angular(desugared, banana, { value: 1 })).toEqual([]);
+    expect(angular(banana, '<sb-cmp></sb-cmp>', { value: 1 })).toEqual([
+      expect.objectContaining({ arg: 'value', kind: 'lost-representation' }),
+      expect.objectContaining({ arg: 'valueChange', kind: 'lost-representation' }),
+    ]);
+  });
 });
 
 describe('compareSnippet (vue3)', () => {
@@ -211,6 +223,15 @@ describe('compareSnippet (vue3)', () => {
     const baseline = '<template>\n  <Widget :condition="a > b" label="kept" />\n</template>';
     const candidate = "<template>\n  <Widget :condition='a > b' label='kept' />\n</template>";
     expect(vue(baseline, candidate, { condition: false, label: 'kept' })).toEqual([]);
+  });
+
+  it('reads event bindings as their bare event names', () => {
+    const baseline = '<template>\n  <Form label="x" @save="onSave" />\n</template>';
+    const longform = '<template>\n  <Form label="x" v-on:save="onSave" />\n</template>';
+    expect(vue(baseline, longform, { label: 'x', save: () => {} })).toEqual([]);
+    expect(vue(baseline, '<template>\n  <Form label="x" />\n</template>', { label: 'x' })).toEqual([
+      expect.objectContaining({ arg: 'save', kind: 'lost-representation' }),
+    ]);
   });
 
   it('ignores hoisted const names in the script block', () => {

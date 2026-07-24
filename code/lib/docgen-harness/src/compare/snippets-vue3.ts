@@ -40,7 +40,14 @@ const mapVueAttribute = (rawName: string): string | undefined => {
   if (rawName.startsWith(':')) {
     return rawName.slice(1);
   }
-  if (rawName.startsWith('v-') || rawName.startsWith('@') || rawName.startsWith('#')) {
+  // Event bindings map to their bare event name - Vue argTypes key events that way.
+  if (rawName.startsWith('@')) {
+    return rawName.slice(1);
+  }
+  if (rawName.startsWith('v-on:')) {
+    return rawName.slice('v-on:'.length);
+  }
+  if (rawName.startsWith('v-') || rawName.startsWith('#')) {
     return undefined;
   }
   return rawName;

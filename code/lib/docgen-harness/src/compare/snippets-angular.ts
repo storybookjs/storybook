@@ -14,6 +14,13 @@ export function angularRepresentedNames(snippet: string): Set<string> | undefine
   }
   const names = new Set<string>();
   for (const rawName of parseAttributeNames(root.attrText)) {
+    const twoWay = /^\[\(([\w$.-]+)\)\]$/.exec(rawName);
+    if (twoWay) {
+      // [(x)] is sugar for [x] + (xChange), so it represents both names.
+      names.add(twoWay[1]);
+      names.add(`${twoWay[1]}Change`);
+      continue;
+    }
     const bound = /^\[([\w$.-]+)\]$/.exec(rawName) ?? /^\(([\w$.-]+)\)$/.exec(rawName);
     if (bound) {
       names.add(bound[1]);

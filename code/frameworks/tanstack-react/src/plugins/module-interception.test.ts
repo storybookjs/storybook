@@ -18,7 +18,9 @@ function getHandler() {
 // that so a raw path (the pre-fix behavior) is distinguishable from a properly
 // delegated resolution.
 function viteResolve() {
-  return vi.fn(async (source: string) => ({ id: `${source}?v=abc123` }));
+  return vi.fn(
+    async (source: string): Promise<{ id: string } | null> => ({ id: `${source}?v=abc123` })
+  );
 }
 
 async function resolveId(

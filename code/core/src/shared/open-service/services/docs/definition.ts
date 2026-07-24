@@ -37,8 +37,8 @@ async function loadDocsServices(ctx: ApiCtx) {
   const [allDocgen, allStoryDocs, allMdx] = await Promise.all([
     docgen.queries.docgenForAllComponents.loaded(),
     storyDocs.queries.storyDocsForAllComponents.loaded(),
-    mdx?.queries.mdxForAllComponents.loaded() ?? {},
-  ] as const);
+    mdx?.queries.mdxForAllComponents.loaded() ?? ({} as Record<string, MdxPayload | undefined>),
+  ]);
 
   return {
     allDocgen,

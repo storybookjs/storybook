@@ -74,7 +74,33 @@ const CollapseButton = styled(Button)(({ theme }) => ({
   textTransform: 'uppercase',
   color: theme.textMutedColor,
   padding: '0 8px',
+  flex: '1 1 auto',
+  justifyContent: 'flex-start',
+  '&:hover': {
+    background: 'transparent',
+  },
 }));
+
+// Fallback expand/collapse-all control shown only when the root context menu is
+// unavailable (e.g. a production build where CONFIG_TYPE !== 'DEVELOPMENT', or a
+// composed Storybook). It occupies the same spot as the menu's floating button
+// and is hover-revealed by RootNode's data-displayed rules, so the two never
+// coexist.
+const FloatingExpandCollapseButton = styled(Button)({
+  background: 'var(--tree-node-background-hover)',
+  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
+  width: 28,
+  height: 28,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '&:focus-visible': {
+    outlineOffset: -2,
+  },
+});
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
@@ -204,6 +230,21 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
 
   const statusLinks = useMemo<Link[]>(() => {
+    if (item.type === 'root') {
+      // Expand/collapse-all lives in the root's context menu alongside any test
+      // provider actions, rather than as a separate icon button on the row.
+      return [
+        {
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />,
+          onClick: () => {
+            setFullyExpanded?.();
+          },
+        },
+      ];
+    }
+
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
@@ -223,7 +264,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     }
 
     return [];
-  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
+  }, [item.id, item.type, isFullyExpanded, setFullyExpanded, onSelectStoryId, statuses, theme]);
 
   const visibleStatus = useMemo(
     () =>
@@ -352,10 +393,11 @@ const Node = React.memo<NodeProps>(function Node(props) {
         data-ref-id={refId}
         data-item-id={item.id}
         data-nodetype="root"
+        onMouseEnter={contextMenu.onMouseEnter}
       >
         <CollapseButton
           variant="ghost"
-          ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
+          ariaLabel={isExpanded ? `Collapse ${item.name}` : `Expand ${item.name}`}
           data-action="collapse-root"
           onClick={(event) => {
             event.preventDefault();
@@ -366,22 +408,23 @@ const Node = React.memo<NodeProps>(function Node(props) {
           <CollapseIcon isExpanded={isExpanded} />
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
-        {isExpanded && (
-          <Button
-            padding="small"
+        {contextMenu.node ?? (
+          <FloatingExpandCollapseButton
+            data-displayed="off"
+            data-testid="expand-collapse-all"
+            ariaLabel={
+              isFullyExpanded ? `Collapse all in ${item.name}` : `Expand all in ${item.name}`
+            }
             variant="ghost"
-            className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Collapse all' : 'Expand all'}
-            data-action="expand-all"
-            data-expanded={isFullyExpanded}
+            padding="small"
+            type="button"
             onClick={(event) => {
               event.preventDefault();
-              // @ts-expect-error (non strict)
-              setFullyExpanded();
+              setFullyExpanded?.();
             }}
           >
             {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-          </Button>
+          </FloatingExpandCollapseButton>
         )}
       </RootNode>
     );

@@ -1,17 +1,21 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
+import type { ServerCoreServices, TypedGetService } from '../open-service/core-service-types.ts';
+
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
 export type ApiConsumer = 'cli' | 'mcp';
 
-export interface ApiInvocationContext {
-  consumer?: ApiConsumer;
-}
+export type ApiCtx = {
+  consumer: ApiConsumer;
+  origin: string;
+  getService: TypedGetService<ServerCoreServices>;
+};
 
 export type ApiMethod<TSchema extends AnySchema = AnySchema> = {
   description: string;
   schema: TSchema;
-  handler: (input: StandardSchemaV1.InferOutput<TSchema>, context: ApiInvocationContext) => unknown;
+  handler: (input: StandardSchemaV1.InferOutput<TSchema>, context: ApiCtx) => unknown;
 };
 
 // `any` permits a heterogeneous method map. Each individual method remains typed by `defineApi`.

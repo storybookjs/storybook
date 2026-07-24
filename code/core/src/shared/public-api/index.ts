@@ -1,8 +1,8 @@
 export { defineApi } from './definition.ts';
-export { clearPublicApiRegistry, invokeApi, publicApi, registerPublicApi } from './registry.ts';
 export type {
   AnyApiDefinition,
   ApiConsumer,
+  ApiCtx,
   ApiDefinition,
-  ApiInvocationContext,
+  ApiMethod,
 } from './definition.ts';

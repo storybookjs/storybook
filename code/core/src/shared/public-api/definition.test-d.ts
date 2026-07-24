@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { defineApi, type ApiConsumer, type ApiDefinition } from './index.ts';
+import { defineApi, type ApiDefinition } from './index.ts';
 
 const exampleApi = defineApi({
   id: 'example',
@@ -21,16 +21,18 @@ const exampleApi = defineApi({
 
 const reviewApi = defineApi({
   id: 'review',
-  description: 'Review API',
+  description: 'Create a review',
   methods: {
     create: {
-      description: 'Creates a review.',
-      schema: v.object({ storyIds: v.array(v.string()) }),
-      handler: async ({ storyIds }, { consumer }) => {
-        expectTypeOf(storyIds).toEqualTypeOf<string[]>();
-        expectTypeOf(consumer).toEqualTypeOf<ApiConsumer | undefined>();
+      description: 'Create a review',
+      schema: v.object({ title: v.string() }),
+      handler: async (input, ctx) => {
+        expectTypeOf(input.title).toEqualTypeOf<string>();
+        expectTypeOf(ctx.consumer).toEqualTypeOf<'cli' | 'mcp'>();
+        expectTypeOf(ctx.origin).toEqualTypeOf<string>();
+        expectTypeOf(ctx.getService('core/review')).not.toBeAny();
 
-        return storyIds.join(',');
+        return input.title;
       },
     },
   },
@@ -43,7 +45,7 @@ describe('defineApi types', () => {
       name: string;
     }>();
     expectTypeOf(reviewApi.methods.create.handler).parameter(0).toEqualTypeOf<{
-      storyIds: string[];
+      title: string;
     }>();
   });
 });

@@ -1,7 +1,7 @@
 /**
- * Budget values shared between the docgen-memory gate and the per-engine perf suite. Budgets are
- * derived per engine from that engine's own baseline runs and are never ported between engines;
- * missing engines get their rows when their baselines are recorded.
+ * Memory budget values for the engine gates. Budgets are derived per engine from that engine's own
+ * baseline runs and are never ported between engines; missing engines get their rows when their
+ * baselines are recorded.
  */
 import type { EngineId } from './types.ts';
 
@@ -21,3 +21,15 @@ export interface MemoryBudgets {
 export const MEMORY_BUDGETS: Partial<Record<EngineId, MemoryBudgets>> = {
   'react-osa': { maxRetainedGrowthMb: 60, maxTransientMb: 90, maxRetainedSlopeMb: 3 },
 };
+
+/**
+ * Budgets for `engine`, or a hard failure. A gate that reads a missing row would assert nothing and
+ * still pass, so an engine without recorded budgets must not reach a gate config at all.
+ */
+export function memoryBudgetsFor(engine: EngineId): MemoryBudgets {
+  const budgets = MEMORY_BUDGETS[engine];
+  if (!budgets) {
+    throw new Error(`no memory budgets recorded for "${engine}"`);
+  }
+  return budgets;
+}

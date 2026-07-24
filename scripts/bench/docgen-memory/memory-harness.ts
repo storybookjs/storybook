@@ -37,6 +37,7 @@ import * as path from 'node:path';
 import ts from 'typescript';
 
 import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
+import { leastSquaresSlope, summarizeSeries } from '../docgen-perf/stats.ts';
 import { componentSource, generateProject } from './generate-project.ts';
 
 /**
@@ -171,23 +172,6 @@ function sampleMemory(forceGc: boolean): { rssMb: number; heapUsedMb: number; re
     retainedHeapMb = process.memoryUsage().heapUsed / MB;
   }
   return { rssMb: pre.rss / MB, heapUsedMb: pre.heapUsed / MB, retainedHeapMb };
-}
-
-/** Least-squares slope of `values` vs index, in units-per-save. */
-function slopePerSave(values: number[]): number {
-  const n = values.length;
-  if (n < 2) {
-    return 0;
-  }
-  const meanX = (n - 1) / 2;
-  const meanY = values.reduce((a, b) => a + b, 0) / n;
-  let num = 0;
-  let den = 0;
-  for (let i = 0; i < n; i++) {
-    num += (i - meanX) * (values[i] - meanY);
-    den += (i - meanX) ** 2;
-  }
-  return den === 0 ? 0 : num / den;
 }
 
 function buildEntries(componentPaths: string[], storyPaths: string[]): StoryRef[] {
@@ -367,23 +351,9 @@ async function main() {
   const rssValues = samples.map((s) => s.rssMb);
   const peakRss = Math.max(baseline.rssMb, ...rssValues);
   const finalRss = rssValues.at(-1) ?? baseline.rssMb;
-  const rssSlope = slopePerSave(rssValues);
+  const rssSlope = leastSquaresSlope(rssValues);
 
-  const retainedValues = samples
-    .map((s) => s.retainedHeapMb)
-    .filter((v): v is number => v !== undefined);
-  const retainedSlope = retainedValues.length ? slopePerSave(retainedValues) : undefined;
-  const retainedGrowth =
-    retainedValues.length && baseline.retainedHeapMb !== undefined
-      ? (retainedValues.at(-1) as number) - baseline.retainedHeapMb
-      : undefined;
-
-  const transients = samples
-    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
-    .filter((v): v is number => v !== undefined);
-  const avgTransient = transients.length
-    ? transients.reduce((a, b) => a + b, 0) / transients.length
-    : undefined;
+  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
 
   console.log('\nsummary');
   console.log(`  peak rss:            ${peakRss.toFixed(0)}MB`);

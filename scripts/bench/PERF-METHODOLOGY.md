@@ -16,7 +16,11 @@ Each engine is measured through a directly callable entry point:
   Both wrappers cache per file for the life of the process and expose only global invalidation; a simulated save must invalidate before re-parsing or the warm sample is a cache hit.
   `react-docgen` is the budgeted legacy control; `react-docgen-typescript` is measurable through the same wrappers but carries no budget row.
 - Angular: a standalone Compodoc CLI run.
-- Vue, Svelte, and web components: their extraction engines are plain functions callable from Node; exact entry points get pinned when each engine's harness lands.
+  Storybook shells out to the same CLI (`runCompodoc`, `code/frameworks/angular/src/builders/utils/run-compodoc.ts`), so the harness measures the tool the framework actually runs.
+- Vue: `createChecker` and `createCheckerByJson` from `vue-component-meta`, with the checker options the Vite plugin passes (`code/frameworks/vue3-vite/src/plugins/vue-component-meta.ts`).
+  One caveat the budgets must respect: that plugin falls back to `createCheckerByJson` whenever the project's root tsconfig declares `references`, because `vue-component-meta` does not resolve them.
+  The harness's `workspace` and `base-type-touch` scenarios drive `createChecker` at a package tsconfig, which measures the engine rather than the plugin's path for that project shape.
+- Svelte and web components: their extraction engines are plain functions callable from Node; exact entry points get pinned when each engine's harness lands.
 
 ## Metrics
 
@@ -33,8 +37,9 @@ Five metrics per engine, all candidates for gating:
 Compodoc maps onto these differently because it is a fresh CLI process per run: cold extraction and whole-project scan are the same full-project measurement, warm extraction is a second full run after touching one file, and peak memory is the child's peak RSS sampled from outside the process.
 Whether the retained-series metrics mean anything for a fresh-process engine is settled when its baselines are recorded; until then its leak cells stay placeholders.
 
-The memory and leak half exists today in `scripts/bench/docgen-memory/` (`yarn bench:docgen-memory` from `scripts/`).
-The latency half is new: the current harness measures per-save duration but throws it away, so recording cold, warm, and scan timings is work for the per-engine harness.
+Two harnesses implement this.
+`scripts/bench/docgen-memory/` (`yarn bench:docgen-memory`) gates React memory and is the only tier that fails a build today.
+`scripts/bench/docgen-perf/` (`yarn bench:docgen-perf`) records all five metrics for every engine and gates nothing yet, because no budget values exist.
 
 ## Determinism method
 
@@ -49,8 +54,10 @@ The latency half is new: the current harness measures per-save duration but thro
   Each latency metric records a median, never a single-run number.
   Cold extraction and whole-project scan yield one sample per fresh process, so their N samples come from N spawns.
   Warm extraction records the median of the per-save durations inside a single run's save series.
+  That run is the repetition whose cold sample is the median, never the first: repetition 1 pays for a cold module graph and a cold page cache, and measures several times slower than the rest.
   The harness pins one N for all engines and records it with the results; numbers taken at different N are not comparable.
-  None of this exists today - the current gate runs each configuration exactly once.
+  An engine that fails part-way through its repetitions is reported as failed, never as measured at an N it did not reach.
+  `scripts/bench/docgen-perf/run.ts` implements this; the memory gate still runs each configuration exactly once.
 - **Series statistics for leak metrics.**
   Retained slope is a least-squares fit over the save series; retained growth is the delta between the final retained sample and the pre-run baseline.
   Both read one run's series instead of repeated runs.
@@ -73,6 +80,13 @@ The latency half is new: the current harness measures per-save duration but thro
 Timing budgets are ratios or slopes, never absolute milliseconds; absolute wall-clock on shared CI executors is too noisy to gate.
 A timing ratio divides the median of one side by the median of the other, both measured in the same job.
 The calibration reference for React is the legacy-vs-new-engine ratio measured in the same run on the same machine.
+
+The warm half of that ratio carries a caveat the baseline work must settle.
+Both sides re-extract one changed component per save, which compares the engines on equal work.
+Only the new engine has a production path shaped that way: `buildDocgenPayload` hardcodes `react-component-meta`, so the single-component docgen worker never runs a legacy parser.
+The legacy parsers are reachable only through `generator.ts`, which invalidates every cache and re-extracts every component on each manifest build.
+A real legacy save therefore costs the whole project, not one file, and the recorded warm ratio understates legacy's true per-save cost by roughly the component count.
+Run `react-legacy.ts --scope all` for the production-shaped number; the equal-work ratio is the engine comparison, not a saving a user would feel.
 Engines without a second implementation in the same job get their timing reference picked when their baselines are recorded; until then their timing budgets stay placeholders.
 Memory budgets stay absolute megabytes with generous headroom: budgets sit well above observed values so the gate is not flaky, while still failing hard on a real regression.
 Every engine must also carry its own negative control - a configuration that must fail, proving the gate can catch the regression class it exists for.
@@ -112,11 +126,12 @@ All three build on existing tooling and add no new dependencies:
 ## Budgets table skeleton
 
 The baseline work fills in the values; until then every cell is a placeholder.
+The exception is react-osa's memory row, which the docgen memory gate already enforces from `scripts/bench/docgen-perf/budgets.ts`.
 
 | Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Negative control | Tier       |
 | ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ---------------- | ---------- |
 | react-legacy (react-docgen, control)      | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
-| react-osa (react-component-meta, control) | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
+| react-osa (ComponentMetaManager, control)  | TBD (1.12)      | TBD (1.12)      | n/a                | 90MB                    | 60MB            | 3MB/save       | OOM (gate.ts)    | daily      |
 | vue-component-meta                        | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | compodoc                                  | TBD (1.12)      | TBD (1.12)      | TBD (1.12)         | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | svelte (stretch)                          | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |

@@ -32,7 +32,6 @@ export interface SeriesHarnessResult {
   samples: SaveSample[];
   retainedSlope?: number;
   retainedGrowth?: number;
-  avgTransient?: number;
 }
 
 /** A latency metric: median of repeated samples (fresh process each, for cold/scan). */

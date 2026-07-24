@@ -5,7 +5,9 @@
  *
  * Topology per engine:
  *   - Cold medians come from N fresh spawns; warm is the median of the per-save durations inside
- *     the first repetition's save series; memory metrics also read the first repetition.
+ *     one repetition's save series, and the memory metrics read that same repetition. The one that
+ *     supplies them is the repetition whose cold sample is the median, because repetition 1 pays
+ *     for a cold module graph and a cold page cache and is not representative.
  *   - react-legacy and react-osa are the calibration control pair: both run inside this one
  *     invocation, their spawn order alternates across repetitions, and the results carry the
  *     legacy-vs-osa ratio of medians for cold and warm.
@@ -70,25 +72,37 @@ interface CliOptions {
   jsonOut: string;
 }
 
+/**
+ * The value after `flag`, or undefined when the flag is absent. A missing value - end of argv, or
+ * the next flag - throws instead of silently consuming the next flag as a value.
+ */
+function valueAfter(argv: string[], flag: string, at = argv.indexOf(flag)): string | undefined {
+  if (at < 0) {
+    return undefined;
+  }
+  const value = argv[at + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return value;
+}
+
 function parseArgs(argv: string[]): CliOptions {
   const engines: EngineId[] = [];
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--engine' && argv[i + 1]) {
-      const engine = argv[i + 1] as EngineId;
-      if (!ALL_ENGINES.includes(engine)) {
-        throw new Error(`--engine must be one of ${ALL_ENGINES.join(', ')}, got "${argv[i + 1]}"`);
-      }
-      engines.push(engine);
+    if (argv[i] !== '--engine') {
+      continue;
     }
+    const engine = valueAfter(argv, '--engine', i) as EngineId;
+    if (!ALL_ENGINES.includes(engine)) {
+      throw new Error(`--engine must be one of ${ALL_ENGINES.join(', ')}, got "${engine}"`);
+    }
+    engines.push(engine);
   }
-  const jsonIdx = argv.indexOf('--json');
   return {
     quick: argv.includes('--quick'),
     engines: engines.length ? engines : DEFAULT_ENGINES,
-    jsonOut:
-      jsonIdx >= 0 && argv[jsonIdx + 1]
-        ? argv[jsonIdx + 1]
-        : path.join(WORK_ROOT, 'results.json'),
+    jsonOut: valueAfter(argv, '--json') ?? path.join(WORK_ROOT, 'results.json'),
   };
 }
 
@@ -118,7 +132,9 @@ function reactChildInvocation(engine: EngineId, cfg: ReactScenarioConfig) {
     return { childPath: OSA_HARNESS, args: [...sizeArgs, '--mode', 'refresh', '--scope', 'changed'] };
   }
   const parser = engine === 'react-legacy-rdt' ? 'react-docgen-typescript' : 'react-docgen';
-  return { childPath: LEGACY_HARNESS, args: [...sizeArgs, '--parser', parser] };
+  // Both sides re-extract one component per save, which measures the engines against each other.
+  // It is not what a real legacy save costs - see the calibration caveat in PERF-METHODOLOGY.md.
+  return { childPath: LEGACY_HARNESS, args: [...sizeArgs, '--parser', parser, '--scope', 'changed'] };
 }
 
 function vueChildInvocation(scenario: VueScenarioConfig) {
@@ -177,21 +193,27 @@ function runSeriesChild(
   return JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as SeriesHarnessResult;
 }
 
-interface SeriesCollector {
-  coldSamples: number[];
-  /** The first repetition's full result; warm and memory metrics read this run. */
-  designated?: SeriesHarnessResult;
+/**
+ * Warm latency and both memory metrics read one repetition's save series. Repetition 1 is
+ * systematically the slowest - it pays for a cold module graph and a cold OS page cache - so the
+ * representative run is the one whose cold sample is the median, never simply the first. Cold
+ * latency is already protected by taking the median across repetitions.
+ */
+function designatedRep(reps: SeriesHarnessResult[]): SeriesHarnessResult {
+  const byCold = [...reps].sort((a, b) => a.coldMs - b.coldMs);
+  return byCold[Math.floor((byCold.length - 1) / 2)];
 }
 
-function seriesMetrics(collector: SeriesCollector | undefined): EngineMetrics {
-  if (!collector?.designated) {
+function seriesMetrics(reps: SeriesHarnessResult[] | undefined, expectedN: number): EngineMetrics {
+  if (!reps || reps.length === 0) {
     throw new Error('no completed repetition recorded');
   }
-  const { designated } = collector;
-  const warmSamples = designated.samples.map((s) => s.durMs);
-  if (warmSamples.some((v) => v === undefined)) {
-    throw new Error('save series carries no durations (child predates latency persistence)');
+  if (reps.length !== expectedN) {
+    throw new Error(`recorded ${reps.length} repetitions, expected the pinned ${expectedN}`);
   }
+  const designated = designatedRep(reps);
+  const coldSamples = reps.map((r) => r.coldMs);
+  const warmSamples = designated.samples.map((s) => s.durMs);
   const transients = designated.samples
     .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
     .filter((v): v is number => v !== undefined);
@@ -203,11 +225,7 @@ function seriesMetrics(collector: SeriesCollector | undefined): EngineMetrics {
     throw new Error('retained metrics missing (child must run under --expose-gc)');
   }
   return {
-    coldExtractionMs: {
-      status: 'measured',
-      samples: collector.coldSamples,
-      median: median(collector.coldSamples),
-    },
+    coldExtractionMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
     warmExtractionMs: { status: 'measured', samples: warmSamples, median: median(warmSamples) },
     wholeProjectScanMs: NOT_APPLICABLE,
     peakTransientMb: { status: 'measured', samples: transients, mean: mean(transients) },
@@ -216,9 +234,12 @@ function seriesMetrics(collector: SeriesCollector | undefined): EngineMetrics {
   };
 }
 
-function compodocMetrics(reps: CompodocRepetition[]): EngineMetrics {
+function compodocMetrics(reps: CompodocRepetition[], expectedN: number): EngineMetrics {
   if (reps.length === 0) {
     throw new Error('no completed repetition recorded');
+  }
+  if (reps.length !== expectedN) {
+    throw new Error(`recorded ${reps.length} repetitions, expected the pinned ${expectedN}`);
   }
   const coldSamples = reps.map((r) => r.coldMs);
   const warmSamples = reps.map((r) => r.warmMs);
@@ -259,7 +280,7 @@ async function main() {
     console.log('  QUICK PROFILE: results are non-comparable smoke numbers');
   }
 
-  const state = new Map<string, SeriesCollector>();
+  const state = new Map<string, SeriesHarnessResult[]>();
   const failed = new Map<EngineId, string>();
   const skipped = new Map<EngineId, string>();
   const compodocReps: CompodocRepetition[] = [];
@@ -287,12 +308,9 @@ async function main() {
       path.join(scenarioDir, 'project'),
       path.join(scenarioDir, `rep${rep}.json`)
     );
-    const collector = state.get(key) ?? { coldSamples: [] };
-    collector.coldSamples.push(result.coldMs);
-    if (collector.designated === undefined) {
-      collector.designated = result;
-    }
-    state.set(key, collector);
+    const reps = state.get(key) ?? [];
+    reps.push(result);
+    state.set(key, reps);
     console.log(`    cold=${result.coldMs}ms`);
   };
 
@@ -304,8 +322,11 @@ async function main() {
       }
       try {
         if (engine === 'compodoc') {
+          if (!compodocBinary) {
+            throw new Error('compodoc binary unresolved');
+          }
           const repetition = await runCompodocRepetition(
-            compodocBinary as string,
+            compodocBinary,
             profile.angular,
             path.join(WORK_ROOT, 'compodoc'),
             RSS_POLL_INTERVAL_MS
@@ -337,18 +358,26 @@ async function main() {
       engineResults[engine] = { status: 'skipped', reason: skipReason };
       continue;
     }
+    // An engine that failed part-way through the repetitions holds fewer samples than the pinned N.
+    // Reporting it as 'measured' would put numbers taken at an unrecorded N into the results, so a
+    // mid-suite failure stays failed no matter how many repetitions it managed.
+    const failReason = failed.get(engine);
+    if (failReason) {
+      engineResults[engine] = { status: 'failed', reason: failReason };
+      continue;
+    }
     try {
       if (engine === 'compodoc') {
         engineResults[engine] = {
           status: 'measured',
-          scenarios: { default: { params: { ...profile.angular }, metrics: compodocMetrics(compodocReps) } },
+          scenarios: { default: { params: { ...profile.angular }, metrics: compodocMetrics(compodocReps, profile.n) } },
         };
       } else if (engine === 'vue-component-meta') {
         const scenarios: Extract<EngineResult, { status: 'measured' }>['scenarios'] = {};
         for (const scenario of profile.vue) {
           scenarios[scenario.name] = {
             params: { ...scenario },
-            metrics: seriesMetrics(state.get(`${engine}/${scenario.name}`)),
+            metrics: seriesMetrics(state.get(`${engine}/${scenario.name}`), profile.n),
           };
         }
         engineResults[engine] = { status: 'measured', scenarios };
@@ -356,7 +385,10 @@ async function main() {
         engineResults[engine] = {
           status: 'measured',
           scenarios: {
-            default: { params: { ...profile.react }, metrics: seriesMetrics(state.get(`${engine}/default`)) },
+            default: {
+              params: { ...profile.react },
+              metrics: seriesMetrics(state.get(`${engine}/default`), profile.n),
+            },
           },
         };
       }
@@ -432,6 +464,9 @@ async function main() {
   }
   if (ratios.warmLegacyVsOsa !== undefined) {
     console.log(`  ratio warm legacy/osa: ${ratios.warmLegacyVsOsa.toFixed(2)}`);
+  }
+  if (ratios.coldLegacyVsOsa === undefined && ratios.warmLegacyVsOsa === undefined) {
+    console.log('  no calibration ratio: it needs react-legacy and react-osa measured in one run');
   }
   if (!profile.comparable) {
     console.log('  QUICK PROFILE: results are non-comparable smoke numbers');

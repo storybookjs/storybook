@@ -22,7 +22,7 @@ import * as path from 'node:path';
 import { SANDBOX_DIRECTORY } from '../paths.ts';
 import { componentSource, generateProject } from '../../docgen-memory/generate-project.ts';
 import { gcAvailable, sampleMemory } from '../sampling.ts';
-import { leastSquaresSlope, mean } from '../stats.ts';
+import { summarizeSeries } from '../stats.ts';
 import type { SaveSample } from '../types.ts';
 
 /**
@@ -75,6 +75,12 @@ interface HarnessOptions {
   variants: number;
   props: number;
   saves: number;
+  /**
+   * Which components to re-extract per save. Mirrors the docgen-memory harness's flag.
+   *   all     – re-extract every component, the shape `generator.ts` actually runs.
+   *   changed – re-extract only the component whose file changed.
+   */
+  scope: 'all' | 'changed';
   outDir: string;
   jsonOut?: string;
 }
@@ -88,12 +94,17 @@ function parseArgs(argv: string[]): HarnessOptions {
   if (parser !== 'react-docgen' && parser !== 'react-docgen-typescript') {
     throw new Error(`--parser must be "react-docgen" or "react-docgen-typescript", got "${parser}"`);
   }
+  const scope = get('--scope', 'changed');
+  if (scope !== 'all' && scope !== 'changed') {
+    throw new Error(`--scope must be "all" or "changed", got "${scope}"`);
+  }
   return {
     parser,
     components: Number(get('--components', '300')),
     variants: Number(get('--variants', '4')),
     props: Number(get('--props', '10')),
     saves: Number(get('--saves', '20')),
+    scope,
     outDir: get('--out', path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')),
     jsonOut: argv.indexOf('--json') >= 0 ? get('--json', '') : undefined,
   };
@@ -115,7 +126,8 @@ async function main() {
 
   console.log(`react-legacy harness (${options.parser})`);
   console.log(
-    `  components=${options.components} variants=${options.variants} props=${options.props} saves=${options.saves}`
+    `  components=${options.components} variants=${options.variants} props=${options.props} ` +
+      `saves=${options.saves} scope=${options.scope}`
   );
   if (!gcAvailable()) {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
@@ -187,7 +199,13 @@ async function main() {
     invalidate();
 
     const saveStart = Date.now();
-    await extractOne(i);
+    if (options.scope === 'all') {
+      for (let c = 0; c < options.components; c++) {
+        await extractOne(c);
+      }
+    } else {
+      await extractOne(i);
+    }
     const durMs = Date.now() - saveStart;
 
     const mem = sampleMemory(true);
@@ -201,18 +219,7 @@ async function main() {
     );
   }
 
-  const retainedValues = samples
-    .map((s) => s.retainedHeapMb)
-    .filter((v): v is number => v !== undefined);
-  const retainedSlope = retainedValues.length ? leastSquaresSlope(retainedValues) : undefined;
-  const retainedGrowth =
-    retainedValues.length && baseline.retainedHeapMb !== undefined
-      ? (retainedValues.at(-1) as number) - baseline.retainedHeapMb
-      : undefined;
-  const transients = samples
-    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
-    .filter((v): v is number => v !== undefined);
-  const avgTransient = transients.length ? mean(transients) : undefined;
+  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
 
   console.log('\nsummary');
   console.log(`  cold pass:           ${coldMs}ms`);

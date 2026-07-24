@@ -1,4 +1,5 @@
 /** Statistics helpers for the per-engine docgen performance suite. */
+import type { MemorySample, SaveSample } from './types.ts';
 
 /** Median of `values`. Throws on an empty input so a missing series fails loudly. */
 export function median(values: number[]): number {
@@ -33,4 +34,41 @@ export function leastSquaresSlope(values: number[]): number {
     den += (i - meanX) ** 2;
   }
   return den === 0 ? 0 : num / den;
+}
+
+/** The retained- and transient-memory figures every series harness derives from its save series. */
+export interface SeriesSummary {
+  /** Post-GC retained heap per save. Empty unless the child ran under `--expose-gc`. */
+  retainedValues: number[];
+  /** Least-squares slope of retained heap over the save series, MB per save. */
+  retainedSlope?: number;
+  /** Final retained sample minus the pre-series baseline, MB. */
+  retainedGrowth?: number;
+  /** Per-save allocation spike above the retained baseline, MB. */
+  transients: number[];
+  /** Mean of {@link transients}. */
+  avgTransient?: number;
+}
+
+/**
+ * Derive the retained/transient series figures shared by every series harness. Kept here so the
+ * memory harness and the per-engine harnesses cannot drift apart in how they compute them.
+ */
+export function summarizeSeries(samples: SaveSample[], baseline: MemorySample): SeriesSummary {
+  const retainedValues = samples
+    .map((s) => s.retainedHeapMb)
+    .filter((v): v is number => v !== undefined);
+  const transients = samples
+    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
+    .filter((v): v is number => v !== undefined);
+  return {
+    retainedValues,
+    retainedSlope: retainedValues.length ? leastSquaresSlope(retainedValues) : undefined,
+    retainedGrowth:
+      retainedValues.length && baseline.retainedHeapMb !== undefined
+        ? (retainedValues.at(-1) as number) - baseline.retainedHeapMb
+        : undefined,
+    transients,
+    avgTransient: transients.length ? mean(transients) : undefined,
+  };
 }

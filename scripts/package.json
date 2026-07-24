@@ -154,6 +154,7 @@
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
     "vitest": "^4.1.5",
+    "vue": "^3.2.47",
     "vue-component-meta": "^3.2.7",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",

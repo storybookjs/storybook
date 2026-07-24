@@ -33,7 +33,7 @@ import {
 import { SANDBOX_DIRECTORY } from '../paths.ts';
 import { baseTypesSource, generateVueProject, vueComponentSource } from '../generators/vue.ts';
 import { gcAvailable, sampleMemory } from '../sampling.ts';
-import { leastSquaresSlope, mean } from '../stats.ts';
+import { summarizeSeries } from '../stats.ts';
 import type { SaveSample } from '../types.ts';
 
 type Scenario = 'flat' | 'workspace' | 'base-type-touch';
@@ -178,18 +178,7 @@ async function main() {
     );
   }
 
-  const retainedValues = samples
-    .map((s) => s.retainedHeapMb)
-    .filter((v): v is number => v !== undefined);
-  const retainedSlope = retainedValues.length ? leastSquaresSlope(retainedValues) : undefined;
-  const retainedGrowth =
-    retainedValues.length && baseline.retainedHeapMb !== undefined
-      ? (retainedValues.at(-1) as number) - baseline.retainedHeapMb
-      : undefined;
-  const transients = samples
-    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
-    .filter((v): v is number => v !== undefined);
-  const avgTransient = transients.length ? mean(transients) : undefined;
+  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
 
   console.log('\nsummary');
   console.log(`  cold pass:           ${coldMs}ms`);

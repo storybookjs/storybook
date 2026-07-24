@@ -19,7 +19,7 @@
  * and the scenario configs are committed.
  *
  * Run directly:
- *   node --import jiti/register scripts/bench/docgen-perf/generators/vue.ts --out ../storybook-sandboxes/docgen-perf-vue --packages 4 --components-per-package 10
+ *   node scripts/bench/docgen-perf/generators/vue.ts --out ../storybook-sandboxes/docgen-perf-vue --packages 4 --components-per-package 10
  */
 import { createRequire } from 'node:module';
 import * as fs from 'node:fs';
@@ -43,9 +43,7 @@ export interface VueGenerateOptions {
 
 export interface GeneratedVueProject {
   outDir: string;
-  /** Root tsconfig (references only). Absent in flat layout. */
-  rootConfigPath?: string;
-  /** Per-package tsconfig paths, in package order. Absent in flat layout. */
+  /** Per-package tsconfig paths, in package order. */
   packageConfigPaths: string[];
   /** Path of the shared base-type module (the base-type-touch scenario's save target). */
   baseTypesPath: string;
@@ -249,9 +247,10 @@ export function generateVueProject(options: VueGenerateOptions): GeneratedVuePro
     }
   }
 
-  const rootConfigPath = path.join(outDir, 'tsconfig.json');
+  // The root config declares `references` but no package sets `composite`, so `tsc -b` would reject
+  // this tree. It is here because the production Vite plugin branches on `references` being present.
   fs.writeFileSync(
-    rootConfigPath,
+    path.join(outDir, 'tsconfig.json'),
     JSON.stringify(
       {
         files: [],
@@ -264,7 +263,7 @@ export function generateVueProject(options: VueGenerateOptions): GeneratedVuePro
     )
   );
 
-  return { outDir, rootConfigPath, packageConfigPaths, baseTypesPath, componentPaths };
+  return { outDir, packageConfigPaths, baseTypesPath, componentPaths };
 }
 
 function parseArgs(argv: string[]): VueGenerateOptions {

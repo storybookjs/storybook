@@ -23,7 +23,7 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { MEMORY_BUDGETS, type MemoryBudgets } from '../docgen-perf/budgets.ts';
+import { type MemoryBudgets, memoryBudgetsFor } from '../docgen-perf/budgets.ts';
 import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
 
 interface HarnessResult {
@@ -70,7 +70,7 @@ const CONFIGS: GateConfig[] = [
       '--scope', 'changed',
     ],
     outSubdir: 'changed-scope',
-    budgets: MEMORY_BUDGETS['react-osa'],
+    budgets: memoryBudgetsFor('react-osa'),
   },
   {
     // Positive control: the live per-edit workload survives under a tight cap BECAUSE the shared

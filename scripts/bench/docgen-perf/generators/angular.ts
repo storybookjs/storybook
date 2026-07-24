@@ -6,7 +6,7 @@
  * real framework) just so type resolution stays clean.
  *
  * Run directly:
- *   node --import jiti/register scripts/bench/docgen-perf/generators/angular.ts --out ../storybook-sandboxes/docgen-perf-angular --components 100
+ *   node scripts/bench/docgen-perf/generators/angular.ts --out ../storybook-sandboxes/docgen-perf-angular --components 100
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -21,7 +21,6 @@ export interface AngularGenerateOptions {
 
 export interface GeneratedAngularProject {
   outDir: string;
-  configPath: string;
   /** Absolute component file paths, in component order. */
   componentPaths: string[];
 }
@@ -104,8 +103,8 @@ export function generateAngularProject(options: AngularGenerateOptions): Generat
 
   emitFakeAngularCore(outDir);
 
-  const configPath = path.join(outDir, 'tsconfig.json');
-  fs.writeFileSync(configPath, JSON.stringify(TSCONFIG, null, 2));
+  // The compodoc adapter passes `-p tsconfig.json` with the project dir as cwd.
+  fs.writeFileSync(path.join(outDir, 'tsconfig.json'), JSON.stringify(TSCONFIG, null, 2));
 
   const componentPaths: string[] = [];
   for (let i = 0; i < options.components; i++) {
@@ -114,7 +113,7 @@ export function generateAngularProject(options: AngularGenerateOptions): Generat
     componentPaths.push(componentPath);
   }
 
-  return { outDir, configPath, componentPaths };
+  return { outDir, componentPaths };
 }
 
 function parseArgs(argv: string[]): AngularGenerateOptions {

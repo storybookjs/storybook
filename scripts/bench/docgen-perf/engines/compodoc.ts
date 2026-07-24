@@ -59,7 +59,12 @@ function runCompodocOnce(
       if (child.pid === undefined) {
         return;
       }
+      // `ps` is absent on Windows, and it exits non-zero once the child is gone. Either way this
+      // throws from a timer callback if it is not guarded, which no per-engine catch can reach.
       const ps = spawnSync('ps', ['-o', 'rss=', '-p', String(child.pid)], { encoding: 'utf8' });
+      if (ps.error || typeof ps.stdout !== 'string') {
+        return;
+      }
       const rssKb = Number(ps.stdout.trim());
       if (Number.isFinite(rssKb) && rssKb > peakRssKb) {
         peakRssKb = rssKb;

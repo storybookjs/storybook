@@ -12,6 +12,8 @@ export const core: PresetProperty<'core'> = {
   renderer: import.meta.resolve('@storybook/vue3/preset'),
 };
 
+export { manifests as experimental_manifests } from './docs/vueComponentManifest.ts';
+
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
   const plugins: Plugin[] = [await templateCompilation()];
 

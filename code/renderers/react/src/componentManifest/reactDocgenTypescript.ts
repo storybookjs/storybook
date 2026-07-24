@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -182,6 +182,45 @@ export function invalidateParser() {
   cachedParserOptionsKey = undefined;
 }
 
+/**
+ * Parse a tsconfig for the RDT program. Vite-style roots only declare project references
+ * (`files: []`, `references: [...]`), which yields zero `fileNames` — follow those references to
+ * the first config that actually includes source files (typically `tsconfig.app.json`).
+ */
+function parseTsconfigForDocgen(typescript: TypeScriptRuntime, configPath: string) {
+  const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+  let parsed = typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath));
+
+  if (parsed.fileNames.length === 0 && Array.isArray(config.references)) {
+    for (const ref of config.references as Array<{ path?: unknown }>) {
+      if (typeof ref?.path !== 'string') {
+        continue;
+      }
+
+      const refPath = resolve(dirname(configPath), ref.path);
+      // A reference may point at a directory (`./tsconfig.app` → `./tsconfig.app/tsconfig.json`)
+      // or directly at a config file (`./tsconfig.app.json`).
+      const refConfigPath = refPath.endsWith('.json') ? refPath : resolve(refPath, 'tsconfig.json');
+      const refResult = typescript.readConfigFile(refConfigPath, typescript.sys.readFile);
+      if (refResult.error || !refResult.config) {
+        continue;
+      }
+
+      const refParsed = typescript.parseJsonConfigFileContent(
+        refResult.config,
+        typescript.sys,
+        dirname(refConfigPath)
+      );
+      if (refParsed.fileNames.length > 0) {
+        parsed = refParsed;
+        break;
+      }
+    }
+  }
+
+  return parsed;
+}
+
 async function getParser(userOptions?: ParserOptions) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
@@ -198,12 +237,7 @@ async function getParser(userOptions?: ParserOptions) {
     cachedCompilerOptions = { noErrorTruncation: true, strict: true };
 
     if (configPath) {
-      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
-        config,
-        typescript.sys,
-        dirname(configPath)
-      );
+      const parsed = parseTsconfigForDocgen(typescript, configPath);
       cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
       cachedFileNames = parsed.fileNames;
     } else {

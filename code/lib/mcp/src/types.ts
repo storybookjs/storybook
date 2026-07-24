@@ -183,6 +183,15 @@ const BaseInlineComponentProperties = v.object({
   path: v.optional(v.string()),
   summary: v.optional(v.string()),
   import: v.optional(v.string()),
+  /**
+   * Framework-rendered markdown fragment for the component's API surface
+   * (props/slots/events/...). Produced at build by the framework's manifest generator; the MCP
+   * server inserts it verbatim and must never parse it. When present, it replaces the legacy
+   * react-docgen-derived Props section for that row.
+   */
+  apiMd: v.optional(v.string()),
+  /** Renderer that produced this manifest row (e.g. `'vue3'`, `'react'`). */
+  renderer: v.optional(v.string()),
   reactDocgen: v.optional(v.any()),
   reactDocgenTypescript: v.optional(v.any()),
   reactComponentMeta: v.optional(v.any()),

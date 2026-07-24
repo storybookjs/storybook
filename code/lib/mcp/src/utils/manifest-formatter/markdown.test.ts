@@ -1063,6 +1063,136 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			\`\`\`"
 		`);
   });
+
+  describe('apiMd fragment (framework-rendered)', () => {
+    const VUE_FRAGMENT = [
+      '## Props',
+      '',
+      '| Name | Type | Required | Default | Description |',
+      '| --- | --- | --- | --- | --- |',
+      '| label | string | no |  |  |',
+      '',
+      '## Slots',
+      '',
+      '| Name | Bindings | Description |',
+      '| --- | --- | --- |',
+      '| default | text: string | The default slot |',
+    ].join('\n');
+
+    it('inserts the fragment verbatim where the Props section goes and skips the legacy path', () => {
+      const manifest: ComponentManifest = {
+        id: 'my-slot',
+        name: 'MySlotComponent',
+        path: 'src/MySlotComponent.vue',
+        renderer: 'vue3',
+        apiMd: VUE_FRAGMENT,
+        // A react-docgen payload is present but MUST be ignored when apiMd exists.
+        reactDocgen: { props: { ignored: { type: { name: 'string' } } } },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain(VUE_FRAGMENT);
+      expect(result).toContain('## Slots');
+      expect(result).not.toContain('ignored');
+      expect(result).not.toContain('export type Props');
+    });
+
+    it('caps stories at 3 when a fragment is present, regardless of react-docgen props', () => {
+      const stories = ['A', 'B', 'C', 'D', 'E'].map((n) => ({
+        name: n,
+        id: `s--${n.toLowerCase()}`,
+        snippet: `<C>${n}</C>`,
+      }));
+      const manifest: ComponentManifest = {
+        id: 'capped',
+        name: 'Capped',
+        path: 'src/Capped.vue',
+        renderer: 'vue3',
+        apiMd: VUE_FRAGMENT,
+        stories,
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('### Other Stories');
+      expect(result).toContain('- D (s--d)');
+      expect(result).toContain('- E (s--e)');
+    });
+
+    it('does NOT cap stories when the fragment is absent and there is no docgen (undocumented API)', () => {
+      const stories = ['A', 'B', 'C', 'D', 'E'].map((n) => ({
+        name: n,
+        id: `s--${n.toLowerCase()}`,
+        snippet: `<C>${n}</C>`,
+      }));
+      const manifest: ComponentManifest = {
+        id: 'undocumented',
+        name: 'Undocumented',
+        path: 'src/Undocumented.vue',
+        renderer: 'vue3',
+        stories,
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).not.toContain('### Other Stories');
+      expect(result).toContain('### D');
+      expect(result).toContain('### E');
+    });
+
+    it('inserts a subcomponent fragment verbatim and skips its legacy props path', () => {
+      const manifest: ComponentManifest = {
+        id: 'parent',
+        name: 'Parent',
+        path: 'src/Parent.vue',
+        renderer: 'vue3',
+        subcomponents: {
+          Child: {
+            name: 'Child',
+            path: 'src/Child.vue',
+            apiMd: '## Props\n\n| Name | Type |\n| --- | --- |\n| open | boolean |',
+            reactDocgen: { props: { ignored: { type: { name: 'string' } } } },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('| open | boolean |');
+      expect(result).not.toContain('ignored');
+      expect(result).not.toContain('export type ChildProps');
+    });
+
+    it('uses the fragment for the component but the legacy path for a fragment-less subcomponent', () => {
+      const manifest: ComponentManifest = {
+        id: 'mixed',
+        name: 'Mixed',
+        path: 'src/Mixed.tsx',
+        apiMd: VUE_FRAGMENT,
+        subcomponents: {
+          Legacy: {
+            name: 'Legacy',
+            path: 'src/Legacy.tsx',
+            reactDocgen: { props: { size: { type: { name: 'string' } } } },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain(VUE_FRAGMENT);
+      expect(result).toContain('export type LegacyProps');
+      expect(result).toContain('size: string');
+    });
+
+    it('leaves fragment-less fixtures byte-identical (regression: legacy path unchanged)', () => {
+      const button = fullManifestFixture.components.button as ComponentManifest;
+      const clone = JSON.parse(JSON.stringify(button)) as ComponentManifest;
+      expect(clone.apiMd).toBeUndefined();
+      expect(formatComponentManifest(clone)).toBe(formatComponentManifest(button));
+    });
+  });
 });
 
 describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {

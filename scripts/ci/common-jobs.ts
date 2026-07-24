@@ -69,6 +69,9 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
+        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
+        // so downstream checks need its node_modules packed explicitly.
+        `${WORKING_DIR}/agent-eval/node_modules`,
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),

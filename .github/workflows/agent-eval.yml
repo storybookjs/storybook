@@ -158,12 +158,16 @@ jobs:
             echo "target=preview" >> "$GITHUB_OUTPUT"
           fi
 
+      # Vercel CLI commands run from the repository root: the storybook-evals
+      # project's Root Directory setting is agent-eval, and in a monorepo the
+      # CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
+      # or `deploy --prebuilt` resolves trace paths against the wrong base.
       - name: Link Vercel project
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
-        run: yarn workspace agent-eval exec vercel link --yes --team "$VERCEL_TEAM_ID" --project "$VERCEL_PROJECT_NAME" --token "$VERCEL_TOKEN"
+        run: ./agent-eval/node_modules/.bin/vercel link --yes --team "$VERCEL_TEAM_ID" --project "$VERCEL_PROJECT_NAME" --token "$VERCEL_TOKEN"
 
       - name: Pull Vercel environment
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
@@ -173,10 +177,10 @@ jobs:
           VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
         run: |
           if [[ "$VERCEL_TARGET" == "production" ]]; then
-            yarn workspace agent-eval exec vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+            ./agent-eval/node_modules/.bin/vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
           else
             branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
-            yarn workspace agent-eval exec vercel pull --yes --environment=preview --git-branch "$branch" --token "$VERCEL_TOKEN"
+            ./agent-eval/node_modules/.bin/vercel pull --yes --environment=preview --git-branch "$branch" --token "$VERCEL_TOKEN"
           fi
 
       - name: Build playground
@@ -185,7 +189,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
-        run: yarn workspace agent-eval exec vercel build --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN"
+        run: ./agent-eval/node_modules/.bin/vercel build --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN"
 
       - name: Deploy playground
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' && steps.build_playground.outcome == 'success' }}
@@ -195,7 +199,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
         run: |
-          deploy_output="$(yarn workspace agent-eval exec vercel deploy --prebuilt --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN")"
+          deploy_output="$(./agent-eval/node_modules/.bin/vercel deploy --prebuilt --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN")"
           printf '%s\n' "$deploy_output"
 
           url="$(

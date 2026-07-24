@@ -64,6 +64,14 @@ For another example, see the section on [configuring the mock provider](./mockin
 
 </Callout>
 
+<If renderer="svelte">
+
+You can also use the story context to allow the usage of Svelte's APIs (e.g., [`context`](https://svelte.dev/docs/svelte/context)) in your decorators. For example, you can read a global value from Storybook's [globals](../essentials/toolbars-and-globals.mdx#globals) and provide it to your component using Svelte's `setContext` API:
+
+<CodeSnippets path="your-component-with-decorator-with-context.md" />
+
+</If>
+
 <If renderer="vue">
 
 ### Reactive globals

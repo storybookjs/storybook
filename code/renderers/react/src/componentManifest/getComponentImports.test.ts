@@ -5,11 +5,13 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import { dedent } from 'ts-dedent';
 
 import { getImports as buildImports, getComponentData } from './getComponentImports.ts';
+import { parseWithReactDocgenTypescript } from './reactDocgenTypescript.ts';
 import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 vi.mock(import('./utils.ts'), { spy: true });
+vi.mock(import('./reactDocgenTypescript.ts'), { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
@@ -1047,4 +1049,36 @@ test('importOverride: merges multiple components into a single declaration per s
       "import { DSButton as Button, Header } from \"@ds/ui\";",
     ]
   `);
+});
+
+test('importOverride: react-docgen-typescript tags.import is used (not description)', async () => {
+  vi.mocked(parseWithReactDocgenTypescript).mockResolvedValue([
+    {
+      exportName: 'Button',
+      displayName: 'Button',
+      description: '',
+      filePath: './src/stories/Button.tsx',
+      props: {},
+      methods: [],
+      tags: { import: "import { Button } from '@design-system/components/override';" },
+    },
+  ]);
+
+  const code = dedent`
+    import { Button } from '@design-system/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const { components } = await getComponentData({
+    csf,
+    storyFilePath: '/app/src/stories/Button.stories.tsx',
+    docgenEngine: 'react-docgen-typescript',
+  });
+
+  expect(components[0].importOverride).toBe(
+    "import { Button } from '@design-system/components/override';"
+  );
 });

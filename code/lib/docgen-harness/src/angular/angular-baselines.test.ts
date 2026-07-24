@@ -111,11 +111,6 @@ describe('angular legacy baselines', () => {
 
     expect(Object.keys(stories).length).toBeGreaterThan(0);
 
-    // Production runs the actions addon's addActionsFromArgTypes args enhancer before
-    // the source decorator: every output argType carries `action`, so outputs a story
-    // does not set still receive an auto-injected handler arg and the legacy snippet
-    // binds every declared output. Only key presence reaches the snippet text, so a
-    // plain stub stands in for the injected action.
     const actionArgNames = Object.entries(argTypes ?? {})
       .filter(([, argType]) => argType.action)
       .map(([name]) => name);

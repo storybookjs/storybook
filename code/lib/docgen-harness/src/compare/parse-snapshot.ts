@@ -2,6 +2,11 @@ import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 
 const WHITESPACE = ' \t\n\r';
 
+// A key's closing quote is immediately followed by `:`; a value's by `,` and a newline (or `,`
+// at end of input). The lazy body takes the first such candidate, like a left-to-right scan.
+const KEY_STRING = /"([\s\S]*?)"(?=:)/y;
+const VALUE_STRING = /"([\s\S]*?)"(?=,\r?\n|,$)/y;
+
 export function parseArgTypesSnapshot(
   text: string,
   sourceLabel = 'argtypes snapshot'
@@ -19,30 +24,15 @@ export function parseArgTypesSnapshot(
     }
   };
 
-  const closesString = (role: 'key' | 'value', after: number): boolean => {
-    if (role === 'key') {
-      return text[after] === ':';
-    }
-    if (text[after] !== ',') {
-      return false;
-    }
-    const next = text[after + 1] === '\r' ? after + 2 : after + 1;
-    return text[next] === '\n' || next >= text.length;
-  };
-
   const parseString = (role: 'key' | 'value'): string => {
-    const opening = pos;
-    pos += 1;
-    while (pos < text.length) {
-      if (text[pos] === '"' && closesString(role, pos + 1)) {
-        const value = text.slice(opening + 1, pos);
-        pos += 1;
-        return value;
-      }
-      pos += 1;
+    const pattern = role === 'key' ? KEY_STRING : VALUE_STRING;
+    pattern.lastIndex = pos;
+    const match = pattern.exec(text);
+    if (match === null) {
+      return fail('unterminated string');
     }
-    pos = opening;
-    return fail('unterminated string');
+    pos = pattern.lastIndex;
+    return match[1];
   };
 
   const parseBareToken = (): unknown => {

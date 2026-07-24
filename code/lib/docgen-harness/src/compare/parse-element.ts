@@ -1,86 +1,33 @@
 /** Framework-neutral scanning for a snippet's root element and its attribute names. */
 
+// The open tag runs to the first `>` outside quotes; the quoted alternatives absorb `>`, `=`,
+// and whitespace so value content can never leak into structure.
+const OPEN_TAG = /<([A-Za-z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/;
+
+// An attribute is a name, optionally followed by `=` (spaces tolerated) and a quoted or bare
+// value; quoted values are skipped whole, so their content can never read as attribute names.
+const ATTRIBUTE = /([^\s=]+)(?:\s*=\s*("[^"]*"|'[^']*'|\S+))?/g;
+
 export function parseRootElement(
   block: string
 ): { attrText: string; childContent: string | undefined } | undefined {
-  const openStart = block.search(/<[A-Za-z]/);
-  if (openStart === -1) {
+  const match = OPEN_TAG.exec(block);
+  if (match === null) {
     return undefined;
   }
-  const nameMatch = /^<([\w-]+)/.exec(block.slice(openStart));
-  if (nameMatch === null) {
-    return undefined;
-  }
-  let i = openStart + nameMatch[0].length;
-  let quote: string | undefined;
-  while (i < block.length && (quote !== undefined || block[i] !== '>')) {
-    if (quote !== undefined) {
-      if (block[i] === quote) {
-        quote = undefined;
-      }
-    } else if (block[i] === '"' || block[i] === "'") {
-      quote = block[i];
-    }
-    i += 1;
-  }
-  if (i >= block.length) {
-    return undefined;
-  }
-  const selfClosing = block[i - 1] === '/';
-  const attrText = block.slice(openStart + nameMatch[0].length, selfClosing ? i - 1 : i);
+  const [tag, name, rawAttrText] = match;
+  const selfClosing = rawAttrText.endsWith('/');
+  const attrText = selfClosing ? rawAttrText.slice(0, -1) : rawAttrText;
   if (selfClosing) {
     return { attrText, childContent: undefined };
   }
-  const closeIndex = block.lastIndexOf(`</${nameMatch[1]}>`);
-  return { attrText, childContent: closeIndex > i ? block.slice(i + 1, closeIndex) : undefined };
+  const openEnd = match.index + tag.length;
+  const closeIndex = block.lastIndexOf(`</${name}>`);
+  return {
+    attrText,
+    childContent: closeIndex >= openEnd ? block.slice(openEnd, closeIndex) : undefined,
+  };
 }
 
-/**
- * Splits an open tag's attribute text into raw attribute names, skipping single- or double-quoted
- * values and tolerating spaces around `=` - value content and formatting must never read as
- * attribute names.
- */
-export function parseAttributeNames(attrText: string): string[] {
-  const names: string[] = [];
-  let i = 0;
-  while (i < attrText.length) {
-    while (i < attrText.length && /\s/.test(attrText[i])) {
-      i += 1;
-    }
-    if (i >= attrText.length) {
-      break;
-    }
-    const start = i;
-    while (i < attrText.length && !/[\s=]/.test(attrText[i])) {
-      i += 1;
-    }
-    const rawName = attrText.slice(start, i);
-    let j = i;
-    while (j < attrText.length && (attrText[j] === ' ' || attrText[j] === '\t')) {
-      j += 1;
-    }
-    if (attrText[j] === '=') {
-      j += 1;
-      while (j < attrText.length && (attrText[j] === ' ' || attrText[j] === '\t')) {
-        j += 1;
-      }
-      const quote = attrText[j];
-      if (quote === '"' || quote === "'") {
-        j += 1;
-        while (j < attrText.length && attrText[j] !== quote) {
-          j += 1;
-        }
-        j += 1;
-      } else {
-        while (j < attrText.length && !/\s/.test(attrText[j])) {
-          j += 1;
-        }
-      }
-      i = j;
-    }
-    if (rawName !== '') {
-      names.push(rawName);
-    }
-  }
-  return names;
-}
+export const parseAttributeNames = (attrText: string): string[] =>
+  [...attrText.matchAll(ATTRIBUTE)].map((match) => match[1]);

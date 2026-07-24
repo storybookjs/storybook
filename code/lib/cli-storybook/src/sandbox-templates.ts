@@ -83,6 +83,11 @@ export type Template = {
    */
   inDevelopment?: boolean;
   /**
+   * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
+   * Set this flag to use --no-link by default (but still support --link for local testing).
+   */
+  preferNoLink?: boolean;
+  /**
    * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
    * main.js, for setting specific feature flags.
    */
@@ -712,6 +717,7 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    preferNoLink: true,
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -822,6 +828,7 @@ export const baseTemplates = {
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -835,6 +842,32 @@ export const baseTemplates = {
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
+  'preact-vite/prerelease-ts': {
+    name: 'Preact Prerelease (Vite | TypeScript)',
+    /**
+     * 1. Create a Vite project with the Preact template
+     * 2. Add Preact beta versions
+     * 3. Add resolutions for preact
+     * 4. Install preact beta version
+     */
+    script: `
+      npm create vite --yes {{beforeDir}} -- --template preact-ts && \
+      cd {{beforeDir}} && \
+      jq '.resolutions += {"preact": "npm:preact@beta",}' package.json > tmp.json && mv tmp.json package.json && \
+      yarn add preact@beta
+      `,
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -1139,6 +1172,8 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
+  // TODO/FIXME/TEMP/DEBUG: never merge this to next.
+  'preact-vite/prerelease-ts',
 ];
 
 export const merged: TemplateKey[] = [

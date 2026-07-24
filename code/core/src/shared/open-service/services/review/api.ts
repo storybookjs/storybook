@@ -2,25 +2,10 @@ import * as v from 'valibot';
 
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import { defineApi } from '../../../public-api/index.ts';
-
-const reviewCollectionSchema = v.object({
-  title: v.pipe(v.string(), v.description('Collection title shown on the review page.')),
-  rationale: v.pipe(
-    v.string(),
-    v.description('Why this collection is relevant. Plain text, one or two sentences.')
-  ),
-  storyIds: v.pipe(v.array(v.string()), v.description('Story ids included in this collection.')),
-});
+import { reviewStateSchema } from './definition.ts';
 
 const reviewCreateInputSchema = v.object({
-  title: v.pipe(v.string(), v.description('Terse review title. Plain text.')),
-  description: v.pipe(
-    v.string(),
-    v.description(
-      'Review scope and what to look for. Limited markdown: bold, italic, and inline code.'
-    )
-  ),
-  collections: v.array(reviewCollectionSchema),
+  ...v.omit(reviewStateSchema, ['createdAt', 'stale', 'changedFiles']).entries,
   changedFiles: v.pipe(
     v.array(v.string()),
     v.description(

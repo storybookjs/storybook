@@ -38,10 +38,7 @@ export function instructions(projectInfo: ProjectInfo): string {
   const tsx = ext(language, true);
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
-  const mswInstall = packageManager.getInstallCommand(
-    ['msw', 'mockdate'],
-    true
-  );
+  const mswInstall = packageManager.getInstallCommand(['msw', 'mockdate'], true);
 
   const ctx: SetupInstructionsContext = {
     configDir,

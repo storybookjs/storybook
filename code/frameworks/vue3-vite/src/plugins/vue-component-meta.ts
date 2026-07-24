@@ -125,8 +125,15 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
+            const isImportedSfcMain =
+              isDefaultExport &&
+              id.endsWith('.vue') &&
+              /^import\s+_sfc_main\s+from\s+['"][^'"]+\?vue&type=script(?:&[^'"]*)?['"];?$/m.test(
+                src
+              );
 
-            if (!localBindings.has(name)) {
+            // Production SFCs can import `_sfc_main` from their virtual script module.
+            if (!localBindings.has(name) && !isImportedSfcMain) {
               return;
             }
 

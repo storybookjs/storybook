@@ -1,0 +1,5 @@
+<template>
+  <SlotsShowcase heading="Structured"> <p class="body">Body content</p>
+
+<template #header><strong>Header content</strong></template> </SlotsShowcase>
+</template>

@@ -29,6 +29,7 @@ import codemodConfig from '../../code/lib/codemod/build-config.ts';
 import coreWebpackConfig from '../../code/lib/core-webpack/build-config.ts';
 import createStorybookConfig from '../../code/lib/create-storybook/build-config.ts';
 import csfPluginConfig from '../../code/lib/csf-plugin/build-config.ts';
+import docgenHarnessConfig from '../../code/lib/docgen-harness/build-config.ts';
 import eslintPluginConfig from '../../code/lib/eslint-plugin/build-config.ts';
 import mcpConfig from '../../code/lib/mcp/build-config.ts';
 import reactDomShimConfig from '../../code/lib/react-dom-shim/build-config.ts';
@@ -83,6 +84,7 @@ export const buildEntries = {
   '@storybook/codemod': codemodConfig,
   '@storybook/core-webpack': coreWebpackConfig,
   '@storybook/csf-plugin': csfPluginConfig,
+  '@storybook/docgen-harness': docgenHarnessConfig,
   '@storybook/mcp': mcpConfig,
   '@storybook/react-dom-shim': reactDomShimConfig,
   'create-storybook': createStorybookConfig,

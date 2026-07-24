@@ -239,9 +239,10 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
   );
 };
 
-// A `contentinfo` landmark must stay top-level, but this footer is rendered
-// inside the `main` landmark, so it is exposed as a named `region` instead
-// (a `<footer>` nested in `<main>` has no implicit `contentinfo` role).
+// A `contentinfo` landmark must stay top-level, but this footer sits inside the
+// `main` landmark, so it is exposed as a named `region` instead. It renders as a
+// `section` because `region` is not an allowed role on `footer` (aria-allowed-role),
+// and a `<footer>` nested in `<main>` has no implicit `contentinfo` role anyway.
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const { landmarkProps } = useLandmark(
@@ -249,7 +250,7 @@ const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
     regionRef
   );
   return (
-    <Footer as="footer" ref={regionRef} {...landmarkProps}>
+    <Footer as="section" ref={regionRef} {...landmarkProps}>
       {children}
     </Footer>
   );

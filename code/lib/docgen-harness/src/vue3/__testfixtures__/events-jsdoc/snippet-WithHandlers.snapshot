@@ -1,0 +1,3 @@
+<template>
+  <EventsJsdoc label="Save" />
+</template>

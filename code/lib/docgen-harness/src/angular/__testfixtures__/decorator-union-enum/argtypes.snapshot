@@ -1,0 +1,69 @@
+{
+  "kind": {
+    "description": "
+",
+    "name": "kind",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "ButtonKind.Primary",
+      },
+      "type": {
+        "required": true,
+        "summary": "ButtonKind",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "primary",
+        "secondary",
+      ],
+    },
+  },
+  "size": {
+    "description": "
+",
+    "name": "size",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "small",
+      },
+      "type": {
+        "required": true,
+        "summary": ""small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "small",
+        "large",
+      ],
+    },
+  },
+  "tone": {
+    "description": "
+",
+    "name": "tone",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "info",
+      },
+      "type": {
+        "required": true,
+        "summary": "ToneOption",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "info",
+        "warn",
+        "error",
+      ],
+    },
+  },
+}

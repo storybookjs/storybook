@@ -9701,7 +9701,7 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     glob: "npm:^10.5.0"
     knitwork: "npm:^1.1.0"
-    magic-string: "npm:^0.30.0"
+    magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
     slash: "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -9726,7 +9726,7 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
-    magic-string: "npm:^0.30.5"
+    magic-string: "npm:^1.1.0"
     pretty-hrtime: "npm:^1.0.3"
     semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
@@ -10193,7 +10193,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/semver": "npm:^7.7.1"
     empathic: "npm:^2.0.0"
-    magic-string: "npm:^0.30.5"
+    magic-string: "npm:^1.1.0"
     react-docgen: "npm:^8.0.2"
     resolve: "npm:^1.22.8"
     semver: "npm:^7.7.3"
@@ -10294,7 +10294,7 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
-    magic-string: "npm:^0.30.0"
+    magic-string: "npm:^1.1.0"
     react-docgen: "npm:^8.0.2"
     resolve: "npm:^1.22.8"
     tsconfig-paths: "npm:^4.2.0"
@@ -10561,7 +10561,7 @@ __metadata:
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@types/node": "npm:^22.19.1"
-    magic-string: "npm:^0.30.0"
+    magic-string: "npm:^1.1.0"
     svelte: "npm:^5.39.5"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"
@@ -10649,7 +10649,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@types/node": "npm:^22.19.1"
-    magic-string: "npm:^0.30.0"
+    magic-string: "npm:^1.1.0"
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
     vue-component-meta: "npm:^3.2.7"
@@ -23980,12 +23980,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:0.30.21, magic-string@npm:^0.30.0, magic-string@npm:^0.30.10, magic-string@npm:^0.30.11, magic-string@npm:^0.30.17, magic-string@npm:^0.30.21, magic-string@npm:^0.30.5":
+"magic-string@npm:0.30.21, magic-string@npm:^0.30.10, magic-string@npm:^0.30.11, magic-string@npm:^0.30.17, magic-string@npm:^0.30.21":
   version: 0.30.21
   resolution: "magic-string@npm:0.30.21"
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.5.5"
   checksum: 10c0/299378e38f9a270069fc62358522ddfb44e94244baa0d6a8980ab2a9b2490a1d03b236b447eee309e17eb3bddfa482c61259d47960eb018a904f0ded52780c4a
+  languageName: node
+  linkType: hard
+
+"magic-string@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "magic-string@npm:1.1.0"
+  dependencies:
+    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
+  checksum: 10c0/f904dee2fd190ee5450c754234d8a831228677e9092ed2e545e42746beecf18d617156eb911af55a14496ebe1e60179678c4080c919f74eca7738eba3f38f13a
   languageName: node
   linkType: hard
 

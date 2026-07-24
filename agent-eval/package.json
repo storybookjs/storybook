@@ -31,5 +31,8 @@
     "tailwindcss": "^4.3.2",
     "typescript": "5.9.3",
     "vitest": "4.0.6"
+  },
+  "installConfig": {
+    "hoistingLimits": "workspaces"
   }
 }

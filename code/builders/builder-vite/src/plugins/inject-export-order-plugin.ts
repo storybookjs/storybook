@@ -35,7 +35,7 @@ export async function injectExportOrderPlugin() {
         s.append(`;export const __namedExportsOrder = ${JSON.stringify(orderedExports)};`);
         return {
           code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
+          map: s.generateMap({ hires: true, source: id }).toString(),
         };
       },
     },

@@ -82,7 +82,6 @@ describe('vue3 legacy baselines', () => {
         expectCurrentOrBetter({
           kind: 'snippet',
           framework: 'vue3',
-          args: ctx.args,
           baseline: committedSnippet,
           candidate: snippet,
         });

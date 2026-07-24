@@ -39,7 +39,6 @@ describe('expectCurrentOrBetter', () => {
       expectCurrentOrBetter({
         kind: 'snippet',
         framework: 'angular',
-        args: { count: 3 },
         baseline,
         candidate: baseline,
       })
@@ -48,7 +47,6 @@ describe('expectCurrentOrBetter', () => {
       expectCurrentOrBetter({
         kind: 'snippet',
         framework: 'angular',
-        args: { count: 3 },
         baseline,
         candidate: '<sb-cmp></sb-cmp>',
       })

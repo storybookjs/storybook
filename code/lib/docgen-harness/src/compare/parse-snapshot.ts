@@ -168,7 +168,7 @@ export function parseArgTypesSnapshot(
 
   // The close-rule heuristics cannot fully disambiguate prose from structure: a string may
   // legitimately contain `",` + newline + a key-shaped fragment, which would fabricate entries.
-  // Re-serializing the parse and demanding byte identity turns every such misparse into the loud failure
+  // Re-serializing the parse and demanding byte identity turns every such misparse into a throw.
   const source = text.endsWith('\n') ? text.slice(0, -1) : text;
   const reserialized = reserialize(result, '');
   if (reserialized !== source) {

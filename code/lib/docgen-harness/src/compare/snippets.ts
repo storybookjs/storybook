@@ -4,7 +4,6 @@ import type { Framework, Violation } from './types.ts';
 
 export interface CompareSnippetInput {
   framework: Framework;
-  args: Record<string, unknown>;
   baseline: string;
   candidate: string;
 }
@@ -25,7 +24,18 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
       'The baseline snippet has no parsable root element; every committed baseline has one'
     );
   }
-  const candidateNames = representedNames(input.framework, input.candidate) ?? new Set<string>();
+  const candidateNames = representedNames(input.framework, input.candidate);
+  if (candidateNames === undefined) {
+    // Listing every baseline name as lost would read as a pile of dropped bindings rather than
+    // one broken snippet, and send the reader hunting in the wrong place.
+    return [
+      {
+        arg: 'snippet',
+        kind: 'unparsable-candidate',
+        message: 'the candidate snippet has no parsable root element',
+      },
+    ];
+  }
   const violations: Violation[] = [];
   for (const name of [...baselineNames].sort()) {
     if (!candidateNames.has(name)) {

@@ -366,12 +366,65 @@ describe('compareArgTypes', () => {
     ]);
   });
 
-  it('passes an unquoted catch-all other becoming a bare scalar', () => {
+  it('passes when a stub for an unextracted type becomes anything at all', () => {
+    // The three corpus markers for "nothing was extracted": Angular's empty-enum, Vue's
+    // undefined for runtime array props, and the empty string.
+    for (const value of ['empty-enum', 'undefined', '']) {
+      const baseline = argTypes({ data: { name: 'data', type: { name: 'other', value } } });
+      const candidate = argTypes({ data: { name: 'data', type: { name: 'boolean' } } });
+      expect(compareArgTypes(baseline, candidate)).toEqual([]);
+    }
+  });
+
+  it('fails when an other stub naming a real type collapses to an unrelated scalar', () => {
+    // Half the corpus is other-typed free text that still names something: TreeNode, ButtonSize,
+    // Array([object Object]), { theme: string; dense: boolean }. Swapping in a bare scalar is a
+    // lateral change, not added precision, so it needs a reviewed re-record.
+    for (const value of ['TreeNode', 'Array([object Object])']) {
+      const baseline = argTypes({ node: { name: 'node', type: { name: 'other', value } } });
+      const candidate = argTypes({ node: { name: 'node', type: { name: 'string' } } });
+      expect(compareArgTypes(baseline, candidate)).toEqual([
+        expect.objectContaining({ arg: 'node', kind: 'type-fidelity' }),
+      ]);
+    }
+  });
+
+  it('passes when an other stub gains structure or resolves to the scalar it named', () => {
+    const stub = (value: string) =>
+      argTypes({ node: { name: 'node', type: { name: 'other', value } } });
+    expect(
+      compareArgTypes(
+        stub('Array([object Object])'),
+        argTypes({ node: { name: 'node', type: { name: 'array', value: { name: 'string' } } } })
+      )
+    ).toEqual([]);
+    expect(
+      compareArgTypes(
+        stub('string'),
+        argTypes({ node: { name: 'node', type: { name: 'string' } } })
+      )
+    ).toEqual([]);
+  });
+
+  it('fails when a union of other stubs collapses onto one unrelated member', () => {
     const baseline = argTypes({
-      clicked: { name: 'clicked', type: { name: 'other', value: 'void' } },
+      shape: {
+        name: 'shape',
+        type: {
+          name: 'union',
+          value: [
+            { name: 'other', value: 'ButtonSize' },
+            { name: 'other', value: 'ButtonVariant' },
+          ],
+        },
+      },
     });
-    const candidate = argTypes({ clicked: { name: 'clicked', type: { name: 'string' } } });
-    expect(compareArgTypes(baseline, candidate)).toEqual([]);
+    const candidate = argTypes({
+      shape: { name: 'shape', type: { name: 'union', value: [{ name: 'string' }] } },
+    });
+    expect(compareArgTypes(baseline, candidate)).toEqual([
+      expect.objectContaining({ arg: 'shape', kind: 'type-fidelity' }),
+    ]);
   });
 
   it('passes when a candidate union keeps every literal member and adds a scalar', () => {
@@ -526,16 +579,48 @@ describe('compareArgTypes', () => {
     expect(compareArgTypes(baseline, candidate)).toEqual([]);
   });
 
-  it('reports every violation, not only the first', () => {
+  it('compares intersection members like union members', () => {
+    const baseline = argTypes({
+      merged: {
+        name: 'merged',
+        type: {
+          name: 'intersection',
+          value: [{ name: 'other', value: 'SharedProps' }, { name: 'boolean' }],
+        },
+      },
+    });
+    const dropped = argTypes({
+      merged: { name: 'merged', type: { name: 'intersection', value: [{ name: 'boolean' }] } },
+    });
+    const resolved = argTypes({
+      merged: {
+        name: 'merged',
+        type: {
+          name: 'intersection',
+          value: [{ name: 'object', value: { id: { name: 'number' } } }, { name: 'boolean' }],
+        },
+      },
+    });
+    expect(compareArgTypes(baseline, dropped)).toEqual([
+      expect.objectContaining({ arg: 'merged', kind: 'type-fidelity' }),
+    ]);
+    expect(compareArgTypes(baseline, resolved)).toEqual([]);
+  });
+
+  it('reports every violation, not only the first, each on one line', () => {
+    // The Angular jsdoc-tags fixture records a @default value with a trailing newline; a raw
+    // newline in the message would break the one-violation-per-line report.
     const baseline = argTypes({
       one: { name: 'one', type: { name: 'string' } },
       two: { name: 'two', description: 'Documented.' },
+      three: { name: 'three', table: { defaultValue: { summary: "'steelblue'\n" } } },
     });
-    const candidate = argTypes({ two: { name: 'two' } });
+    const candidate = argTypes({ two: { name: 'two' }, three: { name: 'three' } });
     const violations = compareArgTypes(baseline, candidate);
     expect(violations).toEqual([
       expect.objectContaining({ arg: 'one', kind: 'lost-arg' }),
       expect.objectContaining({ arg: 'two', kind: 'lost-description' }),
+      expect.objectContaining({ arg: 'three', kind: 'lost-default' }),
     ]);
     for (const violation of violations) {
       expect(violation.message).not.toContain('\n');

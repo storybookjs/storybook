@@ -63,10 +63,11 @@ const normalizeDescription = (description: unknown): string | undefined => {
 const hasDefaultValue = (entry: StrictInputType): boolean =>
   entry.defaultValue !== undefined || entry.table?.defaultValue?.summary !== undefined;
 
+// Quoted so a recorded default carrying a newline stays on one violation line.
 const describeDefault = (entry: StrictInputType): string =>
   entry.defaultValue !== undefined
-    ? `defaultValue: ${String(entry.defaultValue)}`
-    : `table summary: ${String(entry.table?.defaultValue?.summary)}`;
+    ? `defaultValue: ${JSON.stringify(String(entry.defaultValue))}`
+    : `table summary: ${JSON.stringify(String(entry.table?.defaultValue?.summary))}`;
 
 const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 
@@ -83,7 +84,7 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
       return normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value);
     }
     if (!isQuotedToken(baseline.value)) {
-      return true;
+      return resolvesStub(baseline.value, candidate);
     }
   }
   const baselineMembers = memberSet(baseline);
@@ -123,6 +124,33 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   }
   return false;
 }
+
+/** The corpus markers for "the engine extracted nothing"; any candidate improves on them. */
+const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
+
+const STRUCTURED_NAMES = new Set([
+  'array',
+  'enum',
+  'intersection',
+  'literal',
+  'object',
+  'tuple',
+  'union',
+]);
+
+/**
+ * Legacy engines park whatever they cannot resolve in `other`, so its value is free text naming a
+ * real type rather than a shape. A candidate improves on it by adding structure or by resolving it
+ * to the scalar it already named; an unrelated scalar is a lateral change. Reading more out of the
+ * text would mean guessing at each engine's spelling, so a resolution the rule cannot recognize
+ * fails and is accepted through a reviewed re-record - the harness's normal acceptance path.
+ */
+const resolvesStub = (stub: string, candidate: SBType): boolean => {
+  const text = stub.trim();
+  return (
+    UNRESOLVED_STUBS.has(text) || STRUCTURED_NAMES.has(candidate.name) || text === candidate.name
+  );
+};
 
 /** Ignores `required` and `raw` at every level and normalizes literal-ish values. */
 function canonicalType(type: SBType): unknown {

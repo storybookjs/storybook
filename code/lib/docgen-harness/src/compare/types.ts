@@ -6,7 +6,8 @@ export type ViolationKind =
   | 'lost-default'
   | 'lost-type'
   | 'type-fidelity'
-  | 'lost-representation';
+  | 'lost-representation'
+  | 'unparsable-candidate';
 
 export interface Violation {
   arg: string;

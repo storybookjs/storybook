@@ -132,7 +132,6 @@ describe('angular legacy baselines', () => {
         expectCurrentOrBetter({
           kind: 'snippet',
           framework: 'angular',
-          args: props,
           baseline: committedSnippet,
           candidate: snippet,
         });

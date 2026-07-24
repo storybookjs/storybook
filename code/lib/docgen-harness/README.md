@@ -54,8 +54,13 @@ src/
 
 - argTypes: every baseline key, description, default value, and type must survive.
   A type may only change by normalized deep equality or a clear improvement - a catch-all becoming structured, a literal union gaining members.
+  About half the corpus records `other`, where the legacy engine parked free text it could not resolve (`TreeNode`, `Array([object Object])`, `{ theme: string; dense: boolean }`).
+  Such a stub accepts a candidate that adds structure or resolves it to the scalar it already named; an unrelated scalar is a lateral change and fails.
+  Only the three markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string - today's Angular and Vue spellings, so adding a framework means revisiting that list.
+  A resolution the rule cannot recognize (legacy `TSFunctionType` becoming a `function` sbType, say) fails rather than guessing; re-record and review the diff.
   `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared; each would lock in a recorded lie (#28706) or engine-specific vocabulary.
 - Snippets: represented binding names are compared as sets, so formatting can never fail, but a lost binding does.
+  Directive spelling is normalized, so `:x`/`v-bind:x`, `@x`/`v-on:x`, `#x`/`v-slot:x`, and any `.modifier` all read as the same name.
 - Acceptance: there is no allowlist file.
   The committed baseline is the allowlist - accept an intentional change by re-recording with `-u` and reviewing the diff.
 - The recorders read each committed file before its snapshot call, so a `-u` re-record still compares the fresh output against the last committed text.

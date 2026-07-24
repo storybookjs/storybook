@@ -271,6 +271,12 @@ describe('parseArgTypesSnapshot', () => {
     });
   });
 
+  it('keeps a __proto__ key as an own property without touching the prototype', () => {
+    const parsed = parseArgTypesSnapshot('{\n  "__proto__": {\n    "name": "x",\n  },\n}');
+    expect(Object.prototype.hasOwnProperty.call(parsed, '__proto__')).toBe(true);
+    expect(Object.getPrototypeOf(parsed)).toBe(Object.prototype);
+  });
+
   it('fails loudly on a duplicate key instead of silently overwriting', () => {
     expect(() => parseArgTypesSnapshot('{\n  "a": {},\n  "a": {},\n}', 'broken.snapshot')).toThrow(
       /broken\.snapshot.*duplicate/s

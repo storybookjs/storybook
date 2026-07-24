@@ -116,7 +116,7 @@ export function renderComponentsManifest(
         : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
       : '';
 
-  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
+  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`, key)).join('');
   const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
 
   const errorGroups = Object.entries(
@@ -309,6 +309,14 @@ export function renderComponentsManifest(
           display: flex;
           flex-direction: column;
           gap: 10px;
+          /* Keep a deep-linked card clear of the sticky header when scrolled into view */
+          scroll-margin-top: 110px;
+      }
+
+      /* Highlight the card deep-linked via components.html#<manifest-id> */
+      .card:target {
+          box-shadow: 0 0 0 2px var(--info);
+          border-color: var(--info);
       }
 
       .head {
@@ -921,7 +929,15 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 </article>`;
 }
 
-function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
+// `anchorId`, when set, renders a stable `id` on the card so `components.html#<anchorId>` deep-links
+// resolve. Only the primary grid passes it; the error-group section re-renders the same components,
+// so anchoring those too would create duplicate DOM ids.
+function renderComponentCard(
+  key: string,
+  c: ComponentManifestWithDocs,
+  id: string,
+  anchorId?: string
+) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
   const allStories = storyEntries(c.stories);
@@ -1007,6 +1023,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   return `
 <article
+  ${anchorId ? `id="${esc(anchorId)}"` : ''}
   class="card 
   ${a.hasPropTypeError ? 'has-error' : 'no-error'} 
   ${a.hasWarns ? 'has-info' : 'no-info'} 

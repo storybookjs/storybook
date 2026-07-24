@@ -1,12 +1,19 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+export function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function buildImportRenameRegex(from: string): RegExp {
+  return new RegExp(`(['"])${escapeRegExp(from)}(\\/.*)?\\1`, 'g');
+}
+
 function transformImports(source: string, renamedImports: Record<string, string>) {
   let hasChanges = false;
   let transformed = source;
 
   for (const [from, to] of Object.entries(renamedImports)) {
-    // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
+    const regex = buildImportRenameRegex(from);
     if (regex.test(transformed)) {
       transformed = transformed.replace(regex, `$1${to}$2$1`);
       hasChanges = true;

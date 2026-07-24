@@ -22,6 +22,16 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
 
   promptType: 'auto',
 
+  detectMissedTransformations() {
+    return [
+      {
+        label: '@storybook/experimental-addon-test',
+        regex: /@storybook\/experimental-addon-test/g,
+        replacement: '@storybook/addon-vitest',
+      },
+    ];
+  },
+
   async check({ packageManager }) {
     const isExperimentalAddonTestInstalled = await packageManager.isPackageInstalled(
       '@storybook/experimental-addon-test'

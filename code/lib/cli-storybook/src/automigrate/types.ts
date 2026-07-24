@@ -49,6 +49,15 @@ export interface RunOptions<ResultType> {
  */
 export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
+export interface MissedTransformationPattern {
+  /** Human-readable label for the stale pattern, e.g. the old import specifier. */
+  label: string;
+  /** Matches stale content indicating this fix's transformation was needed but not applied. */
+  regex: RegExp;
+  /** What the stale pattern should be replaced with, shown to the user as a manual next step. */
+  replacement: string;
+}
+
 type BaseFix<ResultType = any> = {
   id: string;
   check: (options: CheckOptions) => Promise<ResultType | null>;
@@ -57,6 +66,14 @@ type BaseFix<ResultType = any> = {
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;
+  /**
+   * Given this fix's successful `check()` result, returns patterns that indicate the transformation
+   * was needed but not applied to a file. Only called after the fix has run successfully. Used to
+   * scan the rest of the project - outside the safe file set (main config, preview config, config
+   * dir, story files) - for files that likely need this change but that Storybook could not safely
+   * attribute to this Storybook instance.
+   */
+  detectMissedTransformations?: (result: ResultType) => MissedTransformationPattern[];
 };
 
 type PromptType<ResultType = any, T = Prompt> =
@@ -129,4 +146,13 @@ export type FixSummary = {
   manual: FixId[];
   succeeded: FixId[];
   failed: Record<FixId, string>;
+  /** Files outside the safe set that still match a succeeded fix's stale pattern. */
+  missedTransformations?: MissedTransformationMatch[];
 };
+
+export interface MissedTransformationMatch {
+  file: string;
+  fixId: FixId;
+  label: string;
+  replacement: string;
+}

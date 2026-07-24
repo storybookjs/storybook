@@ -4,7 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { JsPackageManager, versions } from 'storybook/internal/common';
 
-import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports.ts';
+import { consolidatedPackages } from '../helpers/consolidated-packages.ts';
+import {
+  consolidatedImports,
+  internalPackageRenames,
+  transformPackageJsonFiles,
+} from './consolidated-imports.ts';
 
 // mock picocolors yellow and cyan
 vi.mock('picocolors', () => {
@@ -232,5 +237,57 @@ describe('transformPackageJsonFiles', () => {
       file: filePath,
       error: expect.any(Error),
     });
+  });
+});
+
+describe('detectMissedTransformations', () => {
+  it('returns patterns for the full static key set regardless of what consolidatedDeps found', () => {
+    // Deliberately narrow/empty consolidatedDeps: a correct implementation must ignore this
+    // and still derive patterns from the full static consolidatedPackages + internalPackageRenames
+    // maps. A regressed implementation that filters by result.consolidatedDeps would fail here.
+    const narrowResult = { consolidatedDeps: new Set(['@storybook/theming']) };
+
+    const labels = new Set(
+      consolidatedImports.detectMissedTransformations!(narrowResult as any).map((p) => p.label)
+    );
+
+    const expectedLabels = new Set([
+      ...Object.keys(consolidatedPackages),
+      ...Object.keys(internalPackageRenames),
+    ]);
+
+    expect(expectedLabels.size).toBe(28);
+    expect(labels).toEqual(expectedLabels);
+  });
+
+  it('returns patterns for the full static key set even with an empty consolidatedDeps', () => {
+    const emptyResult = { consolidatedDeps: new Set() };
+
+    const labels = new Set(
+      consolidatedImports.detectMissedTransformations!(emptyResult as any).map((p) => p.label)
+    );
+
+    const expectedLabels = new Set([
+      ...Object.keys(consolidatedPackages),
+      ...Object.keys(internalPackageRenames),
+    ]);
+
+    expect(labels).toEqual(expectedLabels);
+  });
+
+  it('produces regexes that match a quoted old-package-name import', () => {
+    const patterns = consolidatedImports.detectMissedTransformations!({
+      consolidatedDeps: new Set(),
+    } as any);
+
+    const managerApiPattern = patterns.find((p) => p.label === 'storybook/internal/manager-api');
+    expect(managerApiPattern).toBeDefined();
+    expect(`import { addons } from "storybook/internal/manager-api";`).toMatch(
+      managerApiPattern!.regex
+    );
+
+    const coreCommonPattern = patterns.find((p) => p.label === '@storybook/core-common');
+    expect(coreCommonPattern).toBeDefined();
+    expect(`import { something } from '@storybook/core-common';`).toMatch(coreCommonPattern!.regex);
   });
 });

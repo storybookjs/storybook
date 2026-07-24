@@ -34,15 +34,9 @@ export function registerReviewService({ getIndex }: { getIndex: () => Promise<St
               !current.stale &&
               Date.now() >= current.createdAt + REVIEW_STALE_GRACE_MS
             ) {
-              state.current = {
-                ...current,
-                collections: current.collections.map((collection) => ({
-                  ...collection,
-                  storyIds: [...collection.storyIds],
-                })),
-                ...(current.changedFiles ? { changedFiles: [...current.changedFiles] } : {}),
-                stale: true,
-              };
+              // Mutate in place: replacing `current` with a shallow copy leaves proxied
+              // nested arrays that `structuredClone` cannot snapshot.
+              current.stale = true;
             }
           });
         },

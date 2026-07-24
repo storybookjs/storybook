@@ -103,7 +103,7 @@ describe('initReviewChannel', () => {
     vi.restoreAllMocks();
   });
 
-  it('adapts legacy PUSH_REVIEW into authoritative OSA state', async () => {
+  it('adapts legacy PUSH_REVIEW into authoritative review state', async () => {
     const service = registerReviewService({ getIndex });
     const { channel, emitted } = createMockChannel();
 
@@ -117,7 +117,7 @@ describe('initReviewChannel', () => {
     expect(emitted).toEqual([]);
   });
 
-  it('relays dismissal navigation without mutating OSA state again', async () => {
+  it('relays dismissal navigation without mutating review state again', async () => {
     const service = registerReviewService({ getIndex });
     const dismissReview = vi.spyOn(service.commands, 'dismissReview');
     const { channel, emitted } = createMockChannel();
@@ -150,7 +150,7 @@ describe('initReviewChannel', () => {
     expect(channel.on).toHaveBeenCalledTimes(2);
   });
 
-  it('marks OSA state stale after the grace window', async () => {
+  it('marks review state stale after the grace window', async () => {
     const service = registerReviewService({ getIndex });
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
@@ -165,7 +165,7 @@ describe('initReviewChannel', () => {
     });
   });
 
-  it('does not mark OSA state stale inside the grace window', async () => {
+  it('forwards graph changes during the grace window without marking stale', async () => {
     const service = registerReviewService({ getIndex });
     const markStale = vi.spyOn(service.commands, 'markStale');
     const { channel } = createMockChannel();
@@ -175,11 +175,11 @@ describe('initReviewChannel', () => {
 
     fireChange();
 
-    expect(markStale).not.toHaveBeenCalled();
+    expect(markStale).toHaveBeenCalledWith(undefined);
     expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
 
-  it('does not call markStale with no current review', () => {
+  it('forwards graph changes with no current review as a markStale no-op', () => {
     const service = registerReviewService({ getIndex });
     const markStale = vi.spyOn(service.commands, 'markStale');
     const { channel } = createMockChannel();
@@ -188,10 +188,11 @@ describe('initReviewChannel', () => {
 
     fireChange();
 
-    expect(markStale).not.toHaveBeenCalled();
+    expect(markStale).toHaveBeenCalledWith(undefined);
+    expect(service.queries.current.get(undefined)).toBeNull();
   });
 
-  it('does not call markStale when the current review is already stale', async () => {
+  it('forwards graph changes when the current review is already stale', async () => {
     const service = registerReviewService({ getIndex });
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
@@ -207,7 +208,8 @@ describe('initReviewChannel', () => {
     const markStale = vi.spyOn(service.commands, 'markStale');
     fireChange();
 
-    expect(markStale).not.toHaveBeenCalled();
+    expect(markStale).toHaveBeenCalledWith(undefined);
+    expect(service.queries.current.get(undefined)?.stale).toBe(true);
   });
 
   it('tears down channel and module-graph listeners', () => {

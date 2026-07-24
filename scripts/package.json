@@ -6,6 +6,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
+    "bench:docgen-perf": "node ./bench/docgen-perf/run.ts",
     "build-package": "jiti ./build-package.ts",
     "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
@@ -153,6 +154,7 @@
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
     "vitest": "^4.1.5",
+    "vue-component-meta": "^3.2.7",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",

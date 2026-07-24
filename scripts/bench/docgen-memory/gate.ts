@@ -23,6 +23,7 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { MEMORY_BUDGETS, type MemoryBudgets } from '../docgen-perf/budgets.ts';
 import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
 
 interface HarnessResult {
@@ -31,15 +32,6 @@ interface HarnessResult {
   retainedSlope?: number;
   retainedGrowth?: number;
   avgTransient?: number;
-}
-
-interface MetricBudgets {
-  /** Max allowed post-GC retained growth (MB) across the run. */
-  maxRetainedGrowthMb: number;
-  /** Max allowed average transient working set added per save (MB). */
-  maxTransientMb: number;
-  /** Max allowed post-GC retained-heap slope (MB/save). */
-  maxRetainedSlopeMb: number;
 }
 
 interface GateConfig {
@@ -55,7 +47,7 @@ interface GateConfig {
    */
   expectOom?: boolean;
   /** Post-GC metric budgets, asserted from `result.json` (metric configs only). */
-  budgets?: MetricBudgets;
+  budgets?: MemoryBudgets;
 }
 
 const HARNESS = path.join(import.meta.dirname, 'memory-harness.ts');
@@ -78,7 +70,7 @@ const CONFIGS: GateConfig[] = [
       '--scope', 'changed',
     ],
     outSubdir: 'changed-scope',
-    budgets: { maxRetainedGrowthMb: 60, maxTransientMb: 90, maxRetainedSlopeMb: 3 },
+    budgets: MEMORY_BUDGETS['react-osa'],
   },
   {
     // Positive control: the live per-edit workload survives under a tight cap BECAUSE the shared

@@ -2,7 +2,7 @@ import type { ChannelLike } from 'storybook/internal/channels';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { OpenServiceTestRunTimeoutError } from '../../../../server-errors.ts';
-import { findStoryIds, type FoundStory } from '../stories/find-story-ids.ts';
+import { findStoryIds, type FoundStory, type NotFoundStory } from '../stories/find-story-ids.ts';
 import type { StoryInput } from '../stories/story-input.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
 
@@ -168,6 +168,17 @@ export async function runStoryTests({
   if (stories) {
     const index = await getIndex();
     const resolved = findStoryIds(index, stories);
+    const unresolved = resolved.filter((story): story is NotFoundStory => !('id' in story));
+
+    if (unresolved.length > 0) {
+      return {
+        status: 'error',
+        error: {
+          message: unresolved.map((story) => story.errorMessage).join('; '),
+        },
+      };
+    }
+
     storyIds = resolved.filter((story): story is FoundStory => 'id' in story).map((s) => s.id);
 
     if (storyIds.length === 0) {

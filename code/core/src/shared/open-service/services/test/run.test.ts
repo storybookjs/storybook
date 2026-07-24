@@ -92,7 +92,7 @@ describe('createAsyncQueue', () => {
 });
 
 describe('runStoryTests', () => {
-  it('returns no-stories when focused selectors match nothing', async () => {
+  it('returns an error when any focused selector is unresolved', async () => {
     const channel = createMockChannel();
     const emitSpy = vi.spyOn(channel, 'emit');
 
@@ -100,6 +100,37 @@ describe('runStoryTests', () => {
       channel,
       getIndex: async () => index,
       stories: [{ storyId: 'missing--story' }],
+    });
+
+    expect(result).toEqual({
+      status: 'error',
+      error: { message: expect.stringContaining('missing--story') },
+    });
+    expect(emitSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns an error when some selectors resolve and others miss', async () => {
+    const channel = createMockChannel();
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      stories: [{ storyId: 'button--primary' }, { storyId: 'missing--story' }],
+    });
+
+    expect(result.status).toBe('error');
+    expect(emitSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns no-stories when the focused selector list is empty', async () => {
+    const channel = createMockChannel();
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => index,
+      stories: [],
     });
 
     expect(result).toEqual({ status: 'no-stories' });

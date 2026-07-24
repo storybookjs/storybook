@@ -1,7 +1,7 @@
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular-vite';
 
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient } from '@angular/common/http';
 
 import { ChipsModule } from './angular-src/chips.module';
 
@@ -14,8 +14,12 @@ const meta: Meta<ChipsModule> = {
       providers: [
         // ...
         // Register application-wide providers with provide-style functions, e.g.
-        provideAnimationsAsync(),
+        provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
+        // Note: Angular's legacy animations API (provideAnimations, provideNoopAnimations) is
+        // deprecated since Angular 20.2. Prefer native CSS transitions or the
+        // animate.enter/animate.leave bindings, which need no provider. If you still rely on the legacy API,
+        // you can register its providers here yourself.
       ],
     }),
   ],
@@ -40,7 +44,7 @@ export const WithCustomApplicationProvider: Story = {
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { applicationConfig } from '@storybook/angular-vite';
 
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient } from '@angular/common/http';
 
 import preview from '../.storybook/preview';
 
@@ -55,8 +59,12 @@ const meta = preview.type<{ args: ChipsModule }>().meta({
       providers: [
         // ...
         // Register application-wide providers with provide-style functions, e.g.
-        provideAnimationsAsync(),
+        provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
+        // Note: Angular's legacy animations API (provideAnimations, provideNoopAnimations) is
+        // deprecated since Angular 20.2. Prefer native CSS transitions or the
+        // animate.enter/animate.leave bindings, which need no provider. If you still rely on the legacy API,
+        // you can register its providers here yourself.
       ],
     }),
   ],

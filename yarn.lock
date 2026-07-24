@@ -446,17 +446,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/animations@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/animations@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/core": 21.2.17
-  checksum: 10c0/e846d1572c6c03374cdd4115140b8630bd660e8e94f5c29f8d8a405bd79436b739105ad143738d16330f4ae3782cc28814fdd0eafa0c91fe6fbe05941d3b4195
-  languageName: node
-  linkType: hard
-
 "@angular/build@npm:19.2.19":
   version: 19.2.19
   resolution: "@angular/build@npm:19.2.19"
@@ -9594,7 +9583,6 @@ __metadata:
     "@angular-devkit/architect": "npm:^0.2102.12"
     "@angular-devkit/build-angular": "npm:^21.2.12"
     "@angular-devkit/core": "npm:^21.2.12"
-    "@angular/animations": "npm:^21.2.14"
     "@angular/common": "npm:^21.2.14"
     "@angular/compiler": "npm:^21.2.14"
     "@angular/compiler-cli": "npm:^21.2.14"
@@ -9616,7 +9604,6 @@ __metadata:
     "@analogjs/vite-plugin-angular": ">=2.0.0"
     "@angular-devkit/architect": ">=0.2100.0 < 0.2300.0"
     "@angular-devkit/core": ">=21.0.0 < 23.0.0"
-    "@angular/animations": ">=21.0.0 < 23.0.0"
     "@angular/build": ">=21.0.0 < 23.0.0"
     "@angular/cli": ">=21.0.0 < 23.0.0"
     "@angular/common": ">=21.0.0 < 23.0.0"

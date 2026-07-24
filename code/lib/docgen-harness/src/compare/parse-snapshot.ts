@@ -2,16 +2,6 @@ import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 
 const WHITESPACE = ' \t\n\r';
 
-/**
- * Parses a committed `argtypes*.snapshot` file (vitest pretty-format output) back into the object
- * it serialized. The format is not JSON and not evaluable JS: strings contain literal unescaped
- * newlines and inner double quotes (never backslash escapes), and `undefined` / `NaN` appear as
- * bare tokens. Pretty-format writes one entry per line with a trailing comma everywhere, so a `"`
- * ends a key only when followed by `:` and ends a value only when followed by `,` and a newline —
- * embedded prose like `"red", "warning"` stays inside the string because its comma is followed by
- * a space. Any input outside these corpus rules throws — a silently dropped or misparsed entry
- * would loosen the current-or-better floor invisibly.
- */
 export function parseArgTypesSnapshot(
   text: string,
   sourceLabel = 'argtypes snapshot'

@@ -112,6 +112,7 @@ export async function vitestTransform({
   stories,
   tagsFilter,
   previewLevelTags = [],
+  registerStorybookAfterEach = false,
 }: {
   code: string;
   fileName: string;
@@ -119,6 +120,7 @@ export async function vitestTransform({
   tagsFilter: TagsFilter;
   stories: StoriesEntry[];
   previewLevelTags: Tag[];
+  registerStorybookAfterEach?: boolean;
 }): Promise<ReturnType<typeof formatCsf>> {
   const parsed = loadCsf(code, {
     fileName,
@@ -212,6 +214,12 @@ export async function vitestTransform({
   }
 
   const vitestExpectId = parsed._file.path.scope.generateUidIdentifier('expect');
+  const vitestAfterEachId = registerStorybookAfterEach
+    ? parsed._file.path.scope.generateUidIdentifier('afterEach')
+    : null;
+  const afterEachStoryId = registerStorybookAfterEach
+    ? parsed._file.path.scope.generateUidIdentifier('afterEachStory')
+    : null;
   const testStoryId = parsed._file.path.scope.generateUidIdentifier('testStory');
   const skipTagsId = t.identifier(JSON.stringify(tagsFilter.skip));
   const componentPathLiteral = parsed._rawComponentPath
@@ -389,6 +397,12 @@ export async function vitestTransform({
 
   const testBlock = t.ifStatement(isRunningFromThisFileId, t.blockStatement(storyTestStatements));
 
+  if (vitestAfterEachId && afterEachStoryId) {
+    ast.program.body.push(
+      t.expressionStatement(t.callExpression(vitestAfterEachId, [afterEachStoryId]))
+    );
+  }
+
   ast.program.body.push(testBlock);
 
   const hasTests = Object.keys(validStories).some(
@@ -400,6 +414,9 @@ export async function vitestTransform({
       [
         t.importSpecifier(vitestTestId, t.identifier('test')),
         t.importSpecifier(vitestExpectId, t.identifier('expect')),
+        ...(vitestAfterEachId
+          ? [t.importSpecifier(vitestAfterEachId, t.identifier('afterEach'))]
+          : []),
         ...(hasTests ? [t.importSpecifier(vitestDescribeId, t.identifier('describe'))] : []),
       ],
       t.stringLiteral('vitest')
@@ -411,6 +428,14 @@ export async function vitestTransform({
       ],
       t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
     ),
+    ...(afterEachStoryId
+      ? [
+          t.importDeclaration(
+            [t.importSpecifier(afterEachStoryId, t.identifier('afterEachStory'))],
+            t.stringLiteral('@storybook/addon-vitest/internal/setup-file')
+          ),
+        ]
+      : []),
   ];
 
   ast.program.body.unshift(...imports);

@@ -189,7 +189,7 @@ const BaseInlineComponentProperties = v.object({
    * server inserts it verbatim and must never parse it. When present, it replaces the legacy
    * react-docgen-derived Props section for that row.
    */
-  apiMd: v.optional(v.string()),
+  apiDescription: v.optional(v.string()),
   /** Renderer that produced this manifest row (e.g. `'vue3'`, `'react'`). */
   renderer: v.optional(v.string()),
   reactDocgen: v.optional(v.any()),

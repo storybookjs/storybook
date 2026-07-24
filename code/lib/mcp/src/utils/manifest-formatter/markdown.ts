@@ -213,8 +213,8 @@ function formatSubcomponentsSection(
       continue;
     }
 
-    if (subcomponent.apiMd != null) {
-      parts.push(subcomponent.apiMd);
+    if (subcomponent.apiDescription != null) {
+      parts.push(subcomponent.apiDescription);
       parts.push('');
     } else {
       const parsedDocgen = getParsedDocgen(subcomponent);
@@ -246,7 +246,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
-  const hasApiMd = Boolean(componentManifest.apiMd);
+  const hasApiMd = Boolean(componentManifest.apiDescription);
 
   // Parse docgen data (from either engine) — only for the legacy/fallback path.
   const parsedDocgen = hasApiMd ? undefined : getParsedDocgen(componentManifest);
@@ -296,7 +296,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   }
 
   if (hasApiMd) {
-    parts.push(componentManifest.apiMd!);
+    parts.push(componentManifest.apiDescription!);
     parts.push('');
   } else {
     parts.push(...formatPropsSection(parsedDocgen));

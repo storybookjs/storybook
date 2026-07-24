@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
+import { describe, expect, it } from 'vitest';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
+import type { AllManifests, ComponentManifest, ComponentManifestMap } from '../../types.ts';
 import {
   formatComponentManifest,
   formatManifestsToLists,
@@ -1064,7 +1064,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 		`);
   });
 
-  describe('apiMd fragment (framework-rendered)', () => {
+  describe('apiDescription fragment (framework-rendered)', () => {
     const VUE_FRAGMENT = [
       '## Props',
       '',
@@ -1085,8 +1085,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         name: 'MySlotComponent',
         path: 'src/MySlotComponent.vue',
         renderer: 'vue3',
-        apiMd: VUE_FRAGMENT,
-        // A react-docgen payload is present but MUST be ignored when apiMd exists.
+        apiDescription: VUE_FRAGMENT,
+        // A react-docgen payload is present but MUST be ignored when apiDescription exists.
         reactDocgen: { props: { ignored: { type: { name: 'string' } } } },
       };
 
@@ -1109,7 +1109,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         name: 'Capped',
         path: 'src/Capped.vue',
         renderer: 'vue3',
-        apiMd: VUE_FRAGMENT,
+        apiDescription: VUE_FRAGMENT,
         stories,
       };
 
@@ -1151,7 +1151,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
           Child: {
             name: 'Child',
             path: 'src/Child.vue',
-            apiMd: '## Props\n\n| Name | Type |\n| --- | --- |\n| open | boolean |',
+            apiDescription: '## Props\n\n| Name | Type |\n| --- | --- |\n| open | boolean |',
             reactDocgen: { props: { ignored: { type: { name: 'string' } } } },
           },
         },
@@ -1169,7 +1169,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         id: 'mixed',
         name: 'Mixed',
         path: 'src/Mixed.tsx',
-        apiMd: VUE_FRAGMENT,
+        apiDescription: VUE_FRAGMENT,
         subcomponents: {
           Legacy: {
             name: 'Legacy',
@@ -1189,7 +1189,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
     it('leaves fragment-less fixtures byte-identical (regression: legacy path unchanged)', () => {
       const button = fullManifestFixture.components.button as ComponentManifest;
       const clone = JSON.parse(JSON.stringify(button)) as ComponentManifest;
-      expect(clone.apiMd).toBeUndefined();
+      expect(clone.apiDescription).toBeUndefined();
       expect(formatComponentManifest(clone)).toBe(formatComponentManifest(button));
     });
   });

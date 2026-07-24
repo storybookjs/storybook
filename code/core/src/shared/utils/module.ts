@@ -1,9 +1,10 @@
 import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import nodeModule, { createRequire } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
+import semver from 'semver';
 import { dirname, join } from 'pathe';
 
 import { jsModuleExtensions } from '../constants/extensions.ts';
@@ -45,7 +46,40 @@ export const resolvePackageDir = (
   }
 };
 
-let isTypescriptLoaderRegistered = false;
+let typescriptLoaderRegistration: Promise<void> | null = null;
+
+/**
+ * Registers the TypeScript loader hook, memoizing the in-flight registration promise (rather than
+ * a boolean) so that concurrent callers await the same registration instead of racing past it:
+ * with a boolean flag set before the `await`, a second concurrent call would see the flag already
+ * set and proceed to `import()` its own file before the hook was actually active.
+ */
+function registerTypescriptLoader() {
+  if (!typescriptLoaderRegistration) {
+    typescriptLoaderRegistration = (async () => {
+      // Use new registerHooks on Node 26+ to avoid DEP0205 deprecation warning,
+      // with a fallback to the old register API if registerHooks fails.
+      // nodejs/node#62786 documents a possible `require.extensions` regression on Node 24.15.0+.
+      if (semver.gte(process.versions.node, '26.0.0')) {
+        try {
+          const { load } = await import('storybook/internal/bin/loader');
+          nodeModule.registerHooks({ load });
+        } catch {
+          // Fallback in case nodejs/node#62786 caused an exception
+          const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+          nodeModule.register(typescriptLoaderUrl, import.meta.url);
+        }
+      } else {
+        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+      }
+    })().catch((e) => {
+      typescriptLoaderRegistration = null;
+      throw e;
+    });
+  }
+  return typescriptLoaderRegistration;
+}
 
 /**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
@@ -68,11 +102,7 @@ export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
-  if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
-    isTypescriptLoaderRegistered = true;
-  }
+  await registerTypescriptLoader();
 
   let mod;
   try {

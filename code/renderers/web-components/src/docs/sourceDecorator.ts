@@ -41,13 +41,17 @@ export function sourceDecorator(
   });
 
   if (!skipSourceRender(context)) {
-    const container = window.document.createElement('div');
-    if (renderedForSource instanceof DocumentFragment) {
-      render(renderedForSource.cloneNode(true), container);
+    if (typeof renderedForSource === 'string') {
+      source = renderedForSource;
     } else {
-      render(renderedForSource, container);
+      const container = window.document.createElement('div');
+      if (renderedForSource instanceof DocumentFragment) {
+        render(renderedForSource.cloneNode(true), container);
+      } else {
+        render(renderedForSource, container);
+      }
+      source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
     }
-    source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
   }
 
   return story;

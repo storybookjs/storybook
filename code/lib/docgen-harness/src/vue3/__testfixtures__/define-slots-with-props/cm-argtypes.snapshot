@@ -1,0 +1,72 @@
+{
+  "default": {
+    "description": "Main content, rendered instead of the label.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any",
+    },
+  },
+  "disabled": {
+    "defaultValue": {
+      "summary": "false",
+    },
+    "description": "Whether the button is disabled.",
+    "name": "disabled",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "boolean | undefined",
+    },
+  },
+  "icon": {
+    "description": "Icon rendered before the content.",
+    "name": "icon",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ size: string; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ size: string; }",
+    },
+  },
+  "label": {
+    "defaultValue": {
+      "summary": ""Button"",
+    },
+    "description": "Visible label of the button.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""Button"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string | undefined",
+    },
+  },
+}

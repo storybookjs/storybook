@@ -117,6 +117,9 @@ Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
   The issue's primary report - a generated snippet binding the child to the parent's whole args object - is not reproduced here; this fixture's snippet already renders the destructured binding correctly, so closing the marker does not verify #24270 itself.
 - #26465 (partial) -> `slots/` (existing case): scoped-slot binding types must be extracted (legacy records `{ entry: unknown; index: unknown }`).
   The issue reports the `vue-component-meta` engine losing slot doc comments, defaults, and HMR; these baselines record the `vue-docgen-api` path, so the marker covers only the binding-type symptom, not the issue's own repro.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under the `vue-component-meta` engine - does not occur at vue-component-meta 3.2.7.
+  The `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact (with or without `schema: true`); a regression baseline, no marker.
+  The issue's secondary HMR symptom is a dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options (legacy records the alias name only).
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` type argument must resolve its props (legacy extracts none).
 

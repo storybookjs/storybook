@@ -167,6 +167,10 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .option(
+    '--features <list>',
+    'Comma-separated list of experimental flags to enable during the upgrade (e.g. "experimentalReview,experimentalDocgenServer")'
+  )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')

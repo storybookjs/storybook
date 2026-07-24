@@ -70,7 +70,10 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
 
-                dtsProcess.kill(408); // timed out
+                // ChildProcess.kill takes a signal, not an exit code; an invalid value like 408
+                // throws ERR_UNKNOWN_SIGNAL and crashes the whole build instead of reaching the
+                // retry logic below.
+                dtsProcess.kill('SIGTERM');
                 resolve(void 0);
               }, 120000);
             }),

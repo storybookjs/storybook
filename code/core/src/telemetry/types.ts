@@ -14,6 +14,7 @@ export type EventType =
   | 'index'
   | 'upgrade'
   | 'multi-upgrade'
+  | 'upgrade-experimental-flags'
   | 'init'
   | 'init-step'
   | 'scaffolded-empty'

@@ -211,6 +211,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     const leaf = resolveStoryLeaf(tree, {
       path: routerParameters.path as string | undefined,
       boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
+      params: routerParameters.params as Record<string, unknown> | undefined,
     });
 
     injectStoryComponent(leaf, Story, routeOverrides, leaf.id);

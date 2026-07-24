@@ -1,3 +1,8 @@
+## 10.6.0-alpha.2
+
+- Search: Show docs stories as docs search result item instead of a story-group search result item - [#35495](https://github.com/storybookjs/storybook/pull/35495), thanks @kroeder!
+- TanStack: Keep Start's document shell out of stories - [#35504](https://github.com/storybookjs/storybook/pull/35504), thanks @unpunnyfuns!
+
 ## 10.6.0-alpha.1
 
 - Angular-Vite: Drop @angular/platform-browser-dynamic peer dependency - [#35457](https://github.com/storybookjs/storybook/pull/35457), thanks @valentinpalkovic!

@@ -1,9 +1,14 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/client-logger';
 import type { NavigateFunction } from 'storybook/internal/router';
+import type { StoryIndex } from 'storybook/internal/types';
 import type { API } from 'storybook/manager-api';
 
+import { clearChannel, installNoopChannel } from '../../../channels/channel-slot.ts';
+import { clearRegistry, getService } from '../../../shared/open-service/server.ts';
+import { registerReviewService } from '../../../shared/open-service/services/review/server.ts';
 import {
   EVENTS,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
@@ -34,6 +39,9 @@ const emptyFilters = {
   excludedTagFilters: [],
 };
 
+const emptyIndex = { v: 5, entries: {} } as StoryIndex;
+const getIndex = vi.fn<() => Promise<StoryIndex>>();
+
 const makeApi = () => {
   const setAllStatusFilters = vi.fn(async () => {});
   const setAllTagFilters = vi.fn(async () => {});
@@ -52,8 +60,18 @@ const makeApi = () => {
 };
 
 beforeEach(() => {
+  installNoopChannel();
+  clearRegistry();
+  getIndex.mockResolvedValue(emptyIndex);
+  registerReviewService({ getIndex });
   sessionStorage.clear();
   reviewStore.reset();
+});
+
+afterEach(() => {
+  clearRegistry();
+  clearChannel();
+  vi.restoreAllMocks();
 });
 
 describe('navigateOutOfReview', () => {
@@ -158,13 +176,36 @@ describe('navigateOutOfReview', () => {
 });
 
 describe('dismissReview', () => {
-  it('emits the dismiss event with the pre-review return search', () => {
+  it('emits navigation only after the OSA dismissal command resolves', async () => {
     sessionStorage.setItem(PRE_REVIEW_RETURN_KEY, '?path=/story/example--default');
     const emit = vi.fn();
+    let resolveCommand!: () => void;
+    vi.spyOn(getService('core/review').commands, 'dismissReview').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCommand = resolve;
+        })
+    );
 
-    dismissReview({ emit } as unknown as API);
+    const dismissal = dismissReview({ emit } as unknown as API);
+
+    expect(emit).not.toHaveBeenCalled();
+    resolveCommand();
+    await dismissal;
 
     expect(emit).toHaveBeenCalledWith(EVENTS.DISMISS_REVIEW, '?path=/story/example--default');
+  });
+
+  it('handles command failure without navigation or an unhandled rejection', async () => {
+    const failure = new Error('remote dismissal timed out');
+    const emit = vi.fn();
+    vi.spyOn(getService('core/review').commands, 'dismissReview').mockRejectedValue(failure);
+    const logError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    await expect(dismissReview({ emit } as unknown as API)).resolves.toBeUndefined();
+
+    expect(emit).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith('Failed to dismiss review', failure);
   });
 });
 

@@ -29,7 +29,9 @@ export const ReviewSummaryHost: FC = () => {
     (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
   );
-  const onDismiss = useCallback(() => dismissReview(api), [api]);
+  const onDismiss = useCallback(() => {
+    void dismissReview(api);
+  }, [api]);
 
   // Mount on the summary route (so the page renders) and throughout review mode
   // (so hidden thumbnail iframes survive round-trips to individual stories).

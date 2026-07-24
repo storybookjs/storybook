@@ -14,7 +14,9 @@ import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
+  getService,
   useChannel,
+  useServiceQuery,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
@@ -61,9 +63,8 @@ const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): bo
   current?.createdAt !== undefined && current.createdAt === next.createdAt;
 
 /**
- * Wires channel events to reviewStore actions and keeps the store's derived
- * values (index-, status- and route-dependent) up to date. The store owns the
- * state; this component is its only React-side writer.
+ * Projects authoritative OSA review state into reviewStore and keeps its
+ * pending, index-, status-, and route-dependent UI values up to date.
  */
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const api = useStorybookApi();
@@ -71,6 +72,7 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { index, internal_index, path, viewMode, customQueryParams, location } =
     useStorybookState();
   const { state, pendingReview, isStale, isInReviewMode } = useReview();
+  const { data: currentReview } = useServiceQuery(getService('core/review').queries.current);
   // Last review page reported to telemetry; dedupes pageviews across re-renders.
   const lastPageviewKeyRef = useRef<string | null>(null);
 
@@ -83,40 +85,42 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     applyReviewStatuses(reviewStatusStore, collectReviewStoryIds(review));
   }, []);
 
-  const emit = useChannel({
-    [EVENTS.DISPLAY_REVIEW]: (next: ReviewState) => {
-      const current = reviewStore.getState().state;
-      if (isDeferredReviewUpdate(current, next)) {
-        reviewStore.deferReview(next);
+  useEffect(() => {
+    if (currentReview === undefined) {
+      return;
+    }
+    if (currentReview === null) {
+      const { state: displayed, pendingReview: deferred } = reviewStore.getState();
+      if (!displayed && !deferred) {
         return;
       }
-      // REQUEST_REVIEW replays the cached payload to every tab when another tab
-      // mounts; ignore identical reviews so summary UI state is not reset.
-      if (isSameReviewPayload(current, next)) {
-        reviewStore.setStale(!!next.stale);
-        syncActiveReviewStatuses(next);
-        return;
-      }
-      // A fresh payload re-arms the one-time auto-enter.
-      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-      reviewStore.displayReview(next);
-    },
-    [EVENTS.REVIEW_STALE]: () => {
-      reviewStore.setStale(true);
-    },
-    [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       clearReviewStatuses(reviewStatusStore);
       sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-      const { state: displayed, pendingReview: deferred } = reviewStore.getState();
       clearReviewNotificationsOnDismiss(api, displayed, deferred);
       reviewStore.clearReview();
+      return;
+    }
+
+    const current = reviewStore.getState().state;
+    if (isDeferredReviewUpdate(current, currentReview)) {
+      reviewStore.deferReview(currentReview);
+      return;
+    }
+    if (isSameReviewPayload(current, currentReview)) {
+      reviewStore.setStale(!!currentReview.stale);
+      syncActiveReviewStatuses(currentReview);
+      return;
+    }
+
+    sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+    reviewStore.displayReview(currentReview);
+  }, [api, currentReview, currentReview?.stale, syncActiveReviewStatuses]);
+
+  const emit = useChannel({
+    [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
       void navigateOutOfReview(api, navigate, returnSearch, { recordVisit: false });
     },
   });
-
-  useEffect(() => {
-    emit(EVENTS.REQUEST_REVIEW);
-  }, [emit]);
 
   // Tag every story in the active review so the sidebar shows reviewing status
   // and the filter menu can count them. Filtering is owned by review mode.

@@ -102,8 +102,8 @@ const commit = (patch: Partial<ReviewCoreState>) => {
 };
 
 /**
- * Single source of truth for review state. Channel handlers and actions write
- * to it directly; React reads it via {@link useReview}.
+ * Manager-local projection of the authoritative OSA review state plus deferred,
+ * transition, review-mode, and route-derived UI state.
  */
 export const reviewStore = {
   getState: (): ReviewStoreState => snapshot,

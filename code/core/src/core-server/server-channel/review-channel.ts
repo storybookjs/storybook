@@ -2,16 +2,12 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
+import {
+  REVIEW_STALE_GRACE_MS,
+  type ReviewService,
+} from '../../shared/open-service/services/review/definition.ts';
 import { REVIEW_EVENTS } from '../../shared/review/events.ts';
 import type { ReviewState } from '../../shared/review/review-state.ts';
-
-/**
- * Window after a review's `createdAt` during which graph changes are ignored.
- * Absorbs the agent's own edits (which precede the display-review call) whose
- * file-system events may land a few milliseconds after the review is cached,
- * preventing a freshly-pushed review from being marked stale immediately.
- */
-const STALE_GRACE_MS = 10_000;
 
 type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 
@@ -45,65 +41,44 @@ export interface ReviewChannelOptions {
   subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
 }
 
-function prepareReview(payload: ReviewState): ReviewState {
-  // Staleness is server-authoritative (set by the file-watch handler), so a
-  // fresh push must never inherit a stale flag from the agent payload.
-  const { stale: _untrustedStale, ...rest } = payload;
-  return {
-    ...rest,
-    // Server-side timestamp is authoritative for "Created x minutes ago".
-    createdAt: Date.now(),
-  };
-}
-
 /**
- * Owns the server-side review cache and staleness tracking.
+ * Adapts legacy review channel events into the authoritative OSA state service.
  *
- * - PUSH_REVIEW (from `@storybook/addon-mcp`): stamp the server createdAt,
- *   cache, broadcast as DISPLAY_REVIEW so any open tab updates.
- * - REQUEST_REVIEW (from a tab that just mounted): re-broadcast the cached
- *   payload as DISPLAY_REVIEW so the late tab catches up.
- * - DISMISS_REVIEW: clear the cache and broadcast REVIEW_DISMISSED.
- *
- * The cache is a single in-memory slot scoped to this dev-server channel; it is
- * intentionally not persisted, so a restart wipes the slate.
+ * `PUSH_REVIEW` remains for the unchanged production MCP implementation.
+ * Dismissal events only relay tab-specific return navigation.
  */
 export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}) {
   const subscribeToModuleGraphChanges =
     options.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
+  const reviewService = getService<ReviewService>('core/review');
 
-  let cached: ReviewState | undefined;
+  const onPushReview = async (payload: ReviewState) => {
+    await reviewService.commands.setReview(payload);
+  };
 
-  channel.on(REVIEW_EVENTS.PUSH_REVIEW, (payload: ReviewState) => {
-    // A fresh review starts non-stale; its new createdAt re-anchors staleness.
-    cached = prepareReview(payload);
-    channel.emit(REVIEW_EVENTS.DISPLAY_REVIEW, cached);
-  });
-
-  channel.on(REVIEW_EVENTS.REQUEST_REVIEW, () => {
-    if (cached) {
-      channel.emit(REVIEW_EVENTS.DISPLAY_REVIEW, cached);
-    }
-  });
-
-  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, (returnSearch?: string | null) => {
-    cached = undefined;
+  const onDismissReview = (returnSearch?: string | null) => {
     channel.emit(REVIEW_EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
-  });
+  };
 
-  // Mark the cached review stale on the first module-graph change that lands
-  // after its createdAt (past the grace window). Staleness rides on the cached
-  // state so REQUEST_REVIEW replays it to tabs that open after the change.
-  subscribeToModuleGraphChanges(() => {
-    if (!cached || cached.stale || cached.createdAt === undefined) {
+  channel.on(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
+  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
+
+  const unsubscribeFromModuleGraph = subscribeToModuleGraphChanges(() => {
+    const current = reviewService.queries.current.get(undefined);
+    if (
+      !current ||
+      current.stale ||
+      current.createdAt === undefined ||
+      Date.now() < current.createdAt + REVIEW_STALE_GRACE_MS
+    ) {
       return;
     }
-    if (Date.now() < cached.createdAt + STALE_GRACE_MS) {
-      return;
-    }
-    cached = { ...cached, stale: true };
-    channel.emit(REVIEW_EVENTS.REVIEW_STALE);
+    void reviewService.commands.markStale(undefined);
   });
 
-  return channel;
+  return () => {
+    channel.off(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
+    channel.off(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
+    unsubscribeFromModuleGraph();
+  };
 }

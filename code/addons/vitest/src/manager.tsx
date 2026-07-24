@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Addon_TypesEnum, SupportedBuilder } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import {
   a11yStatusStore,
@@ -23,7 +23,9 @@ import {
 import { useTestProvider } from './use-test-provider-state.ts';
 
 addons.register(ADDON_ID, (api) => {
-  if (globalThis.STORYBOOK_BUILDER === SupportedBuilder.VITE) {
+  // Compare to the builder string literal — importing SupportedBuilder can resolve to a
+  // different enum identity than the global STORYBOOK_BUILDER declaration under --no-link.
+  if (globalThis.STORYBOOK_BUILDER === 'vite') {
     const openPanel = (panelId: string) => {
       api.setSelectedPanel(panelId);
       api.togglePanel(true);

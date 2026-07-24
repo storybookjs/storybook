@@ -214,6 +214,11 @@
       "code": "./src/preview-api/index.ts",
       "default": "./dist/preview-api/index.js"
     },
+    "./public-api": {
+      "types": "./dist/shared/public-api/index.d.ts",
+      "code": "./src/shared/public-api/index.ts",
+      "default": "./dist/shared/public-api/index.js"
+    },
     "./test": {
       "types": "./dist/test/index.d.ts",
       "code": "./src/test/index.ts",

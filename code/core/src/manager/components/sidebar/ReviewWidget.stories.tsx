@@ -6,16 +6,15 @@ import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { Location, MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
-import { expect, fn, userEvent } from 'storybook/test';
+import { expect, fn, userEvent, waitFor } from 'storybook/test';
 
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { REVIEW_COLLECTION_QUERY_PARAM } from '../review/review-navigation.ts';
+import { reviewServiceForStories as reviewService } from '../review/review-service-story-helpers.ts';
 import { reviewStore } from '../review/review-store.ts';
 import { ReviewWidget } from './ReviewWidget.tsx';
 
 const REVIEW_ADDON_ID = 'storybook/review';
-const DISPLAY_REVIEW = `${REVIEW_ADDON_ID}/display-review`;
-const REQUEST_REVIEW = `${REVIEW_ADDON_ID}/request-review`;
 const DISMISS_REVIEW = `${REVIEW_ADDON_ID}/dismiss-review`;
 
 type EventListener = (payload?: unknown) => void;
@@ -91,16 +90,6 @@ const makeManagerContext = (
   const emit =
     options.emit ??
     fn((eventName: string, payload?: unknown) => {
-      if (eventName === REQUEST_REVIEW && options.reviewTitle) {
-        const review = buildReviewPayload(
-          options.reviewTitle,
-          options.storyIds ?? [],
-          options.reviewCreatedAt
-        );
-        eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-          listener(review);
-        });
-      }
       eventListeners.get(eventName)?.forEach((listener) => {
         listener(payload);
       });
@@ -149,25 +138,31 @@ const meta = {
   component: ReviewWidget,
   title: 'Sidebar/ReviewWidget',
   decorators: [
-    (Story, { parameters }) => (
-      <MemoryRouter initialEntries={['/']}>
-        <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
-          <ReviewProvider>
-            <Location>
-              {({ path }) => (
-                <span data-testid="router-path" hidden>
-                  {path}
-                </span>
-              )}
-            </Location>
-            <div style={{ padding: '8px', width: '280px' }}>
-              <Story />
-            </div>
-          </ReviewProvider>
-        </ManagerContext.Provider>
-      </MemoryRouter>
-    ),
+    (Story, { parameters }) => {
+      const options = parameters?.contextOptions ?? {};
+      return (
+        <MemoryRouter initialEntries={['/']}>
+          <ManagerContext.Provider value={makeManagerContext(options)}>
+            <ReviewProvider>
+              <Location>
+                {({ path }) => (
+                  <span data-testid="router-path" hidden>
+                    {path}
+                  </span>
+                )}
+              </Location>
+              <div style={{ padding: '8px', width: '280px' }}>
+                <Story />
+              </div>
+            </ReviewProvider>
+          </ManagerContext.Provider>
+        </MemoryRouter>
+      );
+    },
   ],
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
+  },
 } satisfies Meta<typeof ReviewWidget>;
 
 export default meta;
@@ -183,9 +178,12 @@ export const Default: Story = {
       reviewTitle: 'Button style changes on Shop screen',
     },
   },
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
+    await reviewService.commands.setReview(
+      buildReviewPayload('Button style changes on Shop screen', storyIds)
+    );
     return setReviewingStatuses(storyIds);
   },
   play: async ({ canvas }) => {
@@ -202,9 +200,12 @@ export const SingleStory: Story = {
       reviewTitle: 'Primary button visual refresh',
     },
   },
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
+    await reviewService.commands.setReview(
+      buildReviewPayload('Primary button visual refresh', ['s1'])
+    );
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {
@@ -214,7 +215,7 @@ export const SingleStory: Story = {
 };
 
 export const HiddenWhenZeroCounts: Story = {
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
     internal_fullStatusStore.unset();
@@ -244,7 +245,7 @@ export const OpenReview: Story = {
       setAllStatusFilters: setAllStatusFiltersMock,
     },
   },
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
     sessionStorage.clear();
@@ -254,6 +255,9 @@ export const OpenReview: Story = {
     togglePanelMock.mockClear();
     setAllTagFiltersMock.mockClear();
     setAllStatusFiltersMock.mockClear();
+    await reviewService.commands.setReview(
+      buildReviewPayload('Theme token cascade review', ['s1', 's2'])
+    );
     return setReviewingStatuses(['s1', 's2']);
   },
   play: async ({ canvas }) => {
@@ -268,11 +272,6 @@ export const OpenReview: Story = {
 };
 
 const dismissEmitMock = fn((eventName: string, payload?: unknown) => {
-  if (eventName === REQUEST_REVIEW) {
-    eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-      listener(buildReviewPayload('Button prop rename', ['s1']));
-    });
-  }
   eventListeners.get(eventName)?.forEach((listener) => {
     listener(payload);
   });
@@ -286,15 +285,18 @@ export const DismissReview: Story = {
       emit: dismissEmitMock,
     },
   },
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
     dismissEmitMock.mockClear();
+    sessionStorage.clear();
+    await reviewService.commands.setReview(buildReviewPayload('Button prop rename', ['s1']));
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Dismiss review' }));
-    await expect(dismissEmitMock).toHaveBeenCalledWith(DISMISS_REVIEW);
+    await expect(dismissEmitMock).toHaveBeenCalledWith(DISMISS_REVIEW, null);
+    await waitFor(() => expect(canvas.queryByText('Quick review')).toBeNull());
   },
 };
 
@@ -308,20 +310,21 @@ export const KeepsDisplayedTitleDuringPendingUpdate: Story = {
       reviewCreatedAt: INITIAL_CREATED_AT,
     },
   },
-  beforeEach: () => {
+  beforeEach: async () => {
     reviewStore.reset();
     eventListeners.clear();
     sessionStorage.clear();
+    await reviewService.commands.setReview(
+      buildReviewPayload('First review title', ['s1', 's2'], INITIAL_CREATED_AT)
+    );
     return setReviewingStatuses(['s1', 's2']);
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('First review title')).toBeVisible();
 
-    eventListeners.get(DISPLAY_REVIEW)?.forEach((listener) => {
-      listener(
-        buildReviewPayload('Updated review title', ['s1', 's2'], INITIAL_CREATED_AT + 60_000)
-      );
-    });
+    await reviewService.commands.setReview(
+      buildReviewPayload('Updated review title', ['s1', 's2'], INITIAL_CREATED_AT + 60_000)
+    );
 
     await expect(canvas.getByText('First review title')).toBeVisible();
     expect(canvas.queryByText('Updated review title')).toBeNull();

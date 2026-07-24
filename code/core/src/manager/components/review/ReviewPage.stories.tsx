@@ -18,13 +18,13 @@ import { ReviewNotification } from './components/ReviewNotification.tsx';
 import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
 import {
-  EVENTS,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
+import { reviewServiceForStories as reviewService } from './review-service-story-helpers.ts';
 import { reviewStore } from './review-store.ts';
 import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
@@ -129,10 +129,7 @@ const updatedReviewState: ReviewState = {
   createdAt: reviewState.createdAt! + 60_000,
 };
 
-const applyReviewState = () => {
-  expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
-  emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
-};
+const applyReviewState = () => reviewService.commands.setReview(reviewState);
 
 const ReviewHarness = () => (
   <ReviewProvider>
@@ -275,7 +272,8 @@ const meta = preview.meta({
       </MemoryRouter>
     ),
   ],
-  beforeEach: () => {
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
     reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();
@@ -309,19 +307,31 @@ export const Collections = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await reviewService.commands.setReview(reviewState);
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
   },
 });
 
+export const AuthoritativeNullClearsReview = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await reviewService.commands.setReview(reviewState);
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    await reviewService.commands.dismissReview(undefined);
+
+    await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
+    expect(canvas.queryByText('Manager settings polish')).not.toBeInTheDocument();
+  },
+});
+
 export const StoryLinksUseCollectionParam = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
     const link = await canvas.findByRole('link', {
       name: 'Review story Guide Page – Default',
@@ -339,12 +349,11 @@ export const StoryLinksUseCollectionParam = meta.story({
 export const PendingUpdateDeferred = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
@@ -357,12 +366,11 @@ export const PendingUpdateAccept = meta.story({
   render: () => <ReviewOutsideHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
     clearNotificationMock.mockClear();
     addNotificationMock.mockClear();
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
@@ -393,14 +401,13 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByRole('button', { name: /Select story/ })).toHaveTextContent(
       '2/3'
     );
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
@@ -413,13 +420,12 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 export const PendingUpdateSupersedesStale = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
-    emitMock(EVENTS.REVIEW_STALE);
+    await applyReviewState();
+    await reviewService.commands.markStale(undefined);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
@@ -437,8 +443,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
     },
   },
   play: async () => {
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -451,7 +456,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
     clearNotificationMock.mockClear();
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
     await waitFor(() =>
       expect(clearNotificationMock).toHaveBeenCalledWith(
         reviewAvailableNotificationId(reviewState.createdAt!)
@@ -479,8 +484,7 @@ export const ShowsNotificationForUnseenReview = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     expect(navigateMock).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
@@ -512,7 +516,7 @@ export const DismissesNotificationOnReviewVisit = meta.story({
     const canvas = within(canvasElement);
     try {
       sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
-      emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+      await reviewService.commands.setReview(reviewState);
       await waitFor(() =>
         expect(clearNotificationMock).toHaveBeenCalledWith(
           reviewAvailableNotificationId(reviewState.createdAt!)
@@ -543,8 +547,7 @@ export const HidesNotificationAfterReviewVisited = meta.story({
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
   },
   play: async () => {
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   },
@@ -565,8 +568,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
       ...reviewState,
       createdAt: reviewState.createdAt! + 120_000,
     };
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, freshReviewState);
+    await reviewService.commands.setReview(freshReviewState);
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -586,7 +588,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
       reviewAvailableNotificationId(freshReviewState.createdAt!)
     );
     expect(addNotificationMock).not.toHaveBeenCalled();
-    emitMock(EVENTS.DISPLAY_REVIEW, freshReviewState);
+    await reviewService.commands.setReview(freshReviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
   },
 });
@@ -594,7 +596,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
 export const SummaryStateSurvivesReviewReplay = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
     const collapseButton = await canvas.findByRole('button', {
       name: 'Collapse collection Settings',
@@ -604,8 +606,8 @@ export const SummaryStateSurvivesReviewReplay = meta.story({
       await canvas.findByRole('button', { name: 'Expand collection Settings' })
     ).toHaveAttribute('aria-expanded', 'false');
 
-    // Another tab's REQUEST_REVIEW replays the cached review to every open tab.
-    emitMock(EVENTS.DISPLAY_REVIEW, { ...reviewState });
+    // An equivalent OSA state emission must not reset local summary UI state.
+    await reviewService.commands.setReview({ ...reviewState });
 
     await expect(
       canvas.getByRole('button', { name: 'Expand collection Settings' })

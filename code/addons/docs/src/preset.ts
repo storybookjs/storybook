@@ -225,9 +225,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   ) {
     const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    registerMdxService({
-      getIndex: () => generator.getIndex(),
-    });
+    const getIndex = () => generator.getIndex();
+    registerMdxService({ getIndex });
   }
 };
 
@@ -241,5 +240,5 @@ const optimizeViteDeps = [
   'react',
 ];
 
-export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
+export { docsX as docs, optimizeViteDeps, webpackX as webpack };

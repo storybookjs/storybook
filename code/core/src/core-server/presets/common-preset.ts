@@ -33,6 +33,7 @@ import type {
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
 import * as pathe from 'pathe';
@@ -306,6 +307,10 @@ export const experimental_serverChannel = async (
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    // The returned teardown is intentionally unused: the server channel lives for the whole
+    // dev-server process and `experimental_serverChannel` has no teardown phase to call it from, so
+    // this listener is process-lifetime by design. Wiring cleanup here would add lifecycle
+    // infrastructure with nothing to invoke it, matching the other `init*Channel` calls above.
     initReviewChannel(channel);
   }
   initTelemetryChannel(channel);
@@ -361,6 +366,12 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
+
+  if (isReviewFeatureEnabled(features)) {
+    registerReviewService({
+      getIndex: () => storyIndexGenerator.getIndex(),
+    });
+  }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
   // so registering it would force full story-index generation during manager-only builds (and

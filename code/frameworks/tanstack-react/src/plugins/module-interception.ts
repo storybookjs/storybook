@@ -23,13 +23,6 @@ export function moduleInterceptionPlugin({
     resolveId: {
       order: 'pre',
       async handler(id: string, importer: string | undefined) {
-        // Resolve mock files through Vite instead of returning the raw file
-        // path. Users also import the mocks directly (the documented
-        // `@storybook/tanstack-react/react-router` spy-assertion path), and
-        // that import goes through Vite's resolver, which stamps a `?v=`
-        // query on the id. A raw path here would register a SECOND module
-        // instance of the same file, so user assertions would see spies the
-        // app never calls.
         const resolveMock = async (mockPath: string) => {
           const resolved = await this.resolve(mockPath, importer, { skipSelf: true });
           return resolved ?? mockPath;

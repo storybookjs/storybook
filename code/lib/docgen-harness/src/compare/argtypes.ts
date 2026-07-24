@@ -60,11 +60,6 @@ const normalizeDescription = (description: unknown): string | undefined => {
   return trimmed === '' ? undefined : trimmed;
 };
 
-/**
- * A default is present when either recorded location is strictly not-undefined. Never a truthy
- * check: eight committed Angular baselines record `{ summary: NaN }`, and `0`, `false`, `''` are
- * real defaults too.
- */
 const hasDefaultValue = (entry: StrictInputType): boolean =>
   entry.defaultValue !== undefined || entry.table?.defaultValue?.summary !== undefined;
 

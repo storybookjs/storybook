@@ -22,6 +22,7 @@ import {
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -42,17 +43,8 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
-// Under `-u` the match call rewrites the file, so old-text vs new-output divergence is the
-// comparator's job, not a parser failure; the round-trip proof re-arms on the next normal run.
-// Shares the Vue recorder's worker-config mechanism (there storybook/test replaces the expect
-// instance carrying snapshotState); if the worker global ever disappears, the guard degrades
-// to running the proof everywhere - loud, never silently weaker.
-const isSnapshotUpdateRun = (): boolean =>
-  (
-    (globalThis as unknown as Record<string, unknown>).__vitest_worker__ as
-      | { config?: { snapshotOptions?: { updateSnapshot?: string } } }
-      | undefined
-  )?.config?.snapshotOptions?.updateSnapshot === 'all';
+const readCommitted = (path: string): string | undefined =>
+  existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 
 type AotCmp = {
   inputs: Record<string, [string, number, null]>;
@@ -62,8 +54,7 @@ type AotCmp = {
 describe('angular legacy baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
     const testDir = join(fixturesDir, fixtureCase);
-    const dirFiles = readdirSync(testDir);
-    expect(dirFiles.filter((file) => file === `${fixtureCase}.component.ts`)).toHaveLength(1);
+    expect(existsSync(join(testDir, `${fixtureCase}.component.ts`))).toBe(true);
 
     setCompodocJson(JSON.parse(readFileSync(join(testDir, 'compodoc-input.json'), 'utf8')));
 
@@ -101,59 +92,47 @@ describe('angular legacy baselines', () => {
     // match call rewrites the file first, and a read placed after it would compare the
     // candidate against itself, masking regressions exactly at flip re-record time. A
     // missing file is a fresh fixture's first record and skips the comparator.
-    flags.angularFilterNonInputControls = false;
-    const argTypesPath = join(testDir, 'argtypes.snapshot');
-    const committedArgTypes = existsSync(argTypesPath)
-      ? readFileSync(argTypesPath, 'utf8')
-      : undefined;
-    const argTypes = extractArgTypes(asCompodocRef);
-    await expect(argTypes).toMatchFileSnapshot(argTypesPath);
-    if (committedArgTypes !== undefined) {
-      const parsed = parseArgTypesSnapshot(committedArgTypes, `${fixtureCase}/argtypes.snapshot`);
-      if (!isSnapshotUpdateRun()) {
-        // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
-        expect(parsed).toEqual(argTypes);
+    const recordArgTypes = async (filterNonInputControls: boolean, fileName: string) => {
+      flags.angularFilterNonInputControls = filterNonInputControls;
+      const path = join(testDir, fileName);
+      const committed = readCommitted(path);
+      const extracted = extractArgTypes(asCompodocRef);
+      await expect(extracted).toMatchFileSnapshot(path);
+      flags.angularFilterNonInputControls = false;
+      if (committed !== undefined) {
+        const parsed = parseArgTypesSnapshot(committed, `${fixtureCase}/${fileName}`);
+        if (!isSnapshotUpdateRun()) {
+          // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
+          expect(parsed).toEqual(extracted);
+        }
+        expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: extracted! });
       }
-      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: argTypes! });
-    }
+      return extracted;
+    };
 
-    flags.angularFilterNonInputControls = true;
-    const filteredPath = join(testDir, 'argtypes-filtered.snapshot');
-    const committedFiltered = existsSync(filteredPath)
-      ? readFileSync(filteredPath, 'utf8')
-      : undefined;
-    const filteredArgTypes = extractArgTypes(asCompodocRef);
-    await expect(filteredArgTypes).toMatchFileSnapshot(filteredPath);
-    flags.angularFilterNonInputControls = false;
-    if (committedFiltered !== undefined) {
-      const parsed = parseArgTypesSnapshot(
-        committedFiltered,
-        `${fixtureCase}/argtypes-filtered.snapshot`
-      );
-      if (!isSnapshotUpdateRun()) {
-        expect(parsed).toEqual(filteredArgTypes);
-      }
-      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: filteredArgTypes! });
-    }
+    const argTypes = await recordArgTypes(false, 'argtypes.snapshot');
+    await recordArgTypes(true, 'argtypes-filtered.snapshot');
 
     expect(Object.keys(stories).length).toBeGreaterThan(0);
 
+    // Production runs the actions addon's addActionsFromArgTypes args enhancer before
+    // the source decorator: every output argType carries `action`, so outputs a story
+    // does not set still receive an auto-injected handler arg and the legacy snippet
+    // binds every declared output. Only key presence reaches the snippet text, so a
+    // plain stub stands in for the injected action.
+    const actionArgNames = Object.entries(argTypes ?? {})
+      .filter(([, argType]) => argType.action)
+      .map(([name]) => name);
+
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
-      // Production runs the actions addon's addActionsFromArgTypes args enhancer before
-      // the source decorator: every output argType carries `action`, so outputs a story
-      // does not set still receive an auto-injected handler arg and the legacy snippet
-      // binds every declared output. Only key presence reaches the snippet text, so a
-      // plain stub stands in for the injected action.
       const props: Record<string, unknown> = { ...meta.args, ...story.args };
-      for (const [name, argType] of Object.entries(argTypes ?? {})) {
-        if (argType.action && !(name in props)) {
+      for (const name of actionArgNames) {
+        if (!(name in props)) {
           props[name] = () => {};
         }
       }
       const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
-      const committedSnippet = existsSync(snippetPath)
-        ? readFileSync(snippetPath, 'utf8')
-        : undefined;
+      const committedSnippet = readCommitted(snippetPath);
       const snippet = computesTemplateSourceFromComponent(component, props, argTypes!);
       await expect(snippet).toMatchFileSnapshot(snippetPath);
       if (committedSnippet !== undefined) {

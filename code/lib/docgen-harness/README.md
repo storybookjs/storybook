@@ -17,6 +17,7 @@ code/lib/docgen-harness/src/
 │   ├── snippets-angular.ts       # Angular matcher ([input] / (output) attributes)
 │   ├── parse-element.ts          # framework-neutral root-element and attribute scanning
 │   ├── expect-current-or-better.ts  # the throwing wrapper
+│   ├── is-snapshot-update-run.ts # -u detection shared by both recorders
 │   └── types.ts                  # Violation model
 ├── vue3/
 │   ├── vue3-baselines.test.ts    # legacy baseline recorder (argTypes + snippets)

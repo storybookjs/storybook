@@ -9,6 +9,7 @@ import { parse } from 'vue-docgen-api';
 import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -24,18 +25,6 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort();
-
-// Under `-u` the match call rewrites the file, so old-text vs new-output divergence is the
-// comparator's job, not a parser failure; the round-trip proof re-arms on the next normal run.
-// The worker global is the only update-mode signal reachable here (storybook/test, loaded via
-// the production imports, replaces the expect instance carrying snapshotState); if it ever
-// disappears, the guard degrades to running the proof everywhere - loud, never silently weaker.
-const isSnapshotUpdateRun = (): boolean =>
-  (
-    (globalThis as unknown as Record<string, unknown>).__vitest_worker__ as
-      | { config?: { snapshotOptions?: { updateSnapshot?: string } } }
-      | undefined
-  )?.config?.snapshotOptions?.updateSnapshot === 'all';
 
 type DocgenComponent = {
   name?: string;

@@ -9,10 +9,12 @@ Nothing here ships to npm (`private: true`).
 ```text
 code/lib/docgen-harness/src/
 ├── index.ts                      # package entry (the expectCurrentOrBetter comparator lands here)
+├── provider-seam-control.test.ts # green control: the seam files' assertion bodies pass against React
 ├── vue3/
-│   ├── vue3-baselines.test.ts    # legacy baseline recorder (argTypes + snippets)
-│   ├── vue3-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
-│   ├── vue3-render.test.ts       # portable-stories render smoke test (happy-dom)
+│   ├── vue3-baselines.test.ts     # legacy baseline recorder (argTypes + snippets)
+│   ├── vue3-legacy-gaps.test.ts   # test.fails red markers for the closeable legacy gaps
+│   ├── vue3-provider-seam.test.ts # test.fails red markers for the unregistered OSA providers
+│   ├── vue3-render.test.ts        # portable-stories render smoke test (happy-dom)
 │   └── __testfixtures__/
 │       └── <fixture-case>/
 │           ├── <CaseName>.vue            # the SFC under test; the filename IS the recorded component name
@@ -21,10 +23,11 @@ code/lib/docgen-harness/src/
 │           ├── argtypes.snapshot         # normalized StrictArgTypes from the legacy extractArgTypes path
 │           └── snippet-<story>.snapshot  # legacy Source-block snippet per named story export
 ├── angular/
-│   ├── angular-baselines.test.ts    # legacy baseline recorder (argTypes both flag states + snippets)
-│   ├── angular-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
-│   ├── angular-render.test.ts       # JIT TestBed render smoke test (happy-dom, decorator fixtures)
-│   ├── csf-types.ts                 # type-only CSF re-export the fixture stories import
+│   ├── angular-baselines.test.ts     # legacy baseline recorder (argTypes both flag states + snippets)
+│   ├── angular-legacy-gaps.test.ts   # test.fails red markers for the closeable legacy gaps
+│   ├── angular-provider-seam.test.ts # test.fails red markers for the unregistered OSA providers
+│   ├── angular-render.test.ts        # JIT TestBed render smoke test (happy-dom, decorator fixtures)
+│   ├── csf-types.ts                  # type-only CSF re-export the fixture stories import
 │   └── __testfixtures__/
 │       └── <fixture-case>/
 │           ├── <case-name>.component.ts    # the component under test; its class name IS the recorded identity
@@ -51,7 +54,7 @@ code/lib/docgen-harness/src/
 - angular: signal members (`input()`/`output()`/`model()`) are invisible to JIT - `ɵcmp.inputs`/`ɵcmp.outputs` stay empty without AOT.
   Signal fixtures therefore commit an `aot-cmp.ts`: the runtime `ɵcmp` maps captured from real `ngc` output (@angular/compiler-cli 21.2.17, compiled and loaded once to read the processed maps).
   The recorder attaches it wholesale before snippet generation and asserts the production reader sees its members, so a broken attach fails loudly.
-- angular: fixture stories import their CSF types from `src/angular/csf-types.ts`, and `angular-baselines.test.ts` / `angular-render.test.ts` are excluded from the package's vue-tsc program - angular-vite client source is authored under `strict: false` and cannot join this strict program; vitest is those two files' check.
+- angular: fixture stories import their CSF types from `src/angular/csf-types.ts`, and `angular-baselines.test.ts` / `angular-provider-seam.test.ts` / `angular-render.test.ts` are excluded from the package's vue-tsc program - angular-vite source (client runtime and preset) is authored under `strict: false` and cannot join this strict program; vitest is those files' check.
 - Snapshots must be deterministic: no timestamps, no absolute paths.
   Committed compodoc captures make OS-suffixed snapshots unnecessary here: no path-sensitive layer is ever snapshotted.
 
@@ -135,6 +138,16 @@ Same rules as vue3: thin or wrong output is recorded as-is, closeable gaps carry
 - #33779 (not reproduced) -> `decorator-union-enum/`: the reported union-controls collapse does not occur at the pinned compodoc 2.0.0 - all three union/enum inputs resolve to enum sbTypes, recorded as an engine-swap regression baseline; no marker.
 - #29697 (not reproduced) -> `signal-io/`: the aliased `input(_, { alias })` records under its alias at 2.0.0, so the reported alias blindness does not occur; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case; both flag states are recorded, and this is the fixture where they meaningfully differ.
+
+## Provider red tests
+
+Red means no OSA provider is registered on the package preset surface: the target `src/preset.ts` does not export `experimental_docgenProvider` / `experimental_storyDocsProvider` yet.
+`src/vue3/vue3-provider-seam.test.ts` and `src/angular/angular-provider-seam.test.ts` pin that state with bare `test.fails` markers, one per provider kind.
+When a qualifying provider export lands, vitest fails the marker ("Expect test to fail"), so the owning slice must edit `test.fails` into a plain test - that flip is the definition-of-done signal the Epic 3/4 slice exit criteria reference.
+`src/provider-seam-control.test.ts` proves the mechanism: the same assertion bodies pass against React's registered providers.
+The seam markers are independent of the gap markers: gaps flip on a reviewed baseline re-record via `BASELINE_PATH`, seam tests flip on provider registration, and the seam files never read `BASELINE_PATH`.
+The Vue markers accept either `renderers/vue3` or `frameworks/vue3-vite` as the registration surface; the Epic 3 flip pins the final location.
+Svelte and Web Components get their seam tests when their stretch slices (Epics 6/7) activate.
 
 ## What does not live here
 

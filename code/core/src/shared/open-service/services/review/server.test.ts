@@ -74,6 +74,22 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toBeNull();
   });
 
+  it('preserves the current review when replacement story ids are unknown', async () => {
+    const service = registerReviewService({ getIndex });
+    await service.commands.setReview(review);
+    const current = service.queries.current.get(undefined);
+
+    await expect(
+      service.commands.setReview({
+        ...review,
+        title: 'Invalid replacement',
+        collections: [{ ...review.collections[0], storyIds: ['missing--story'] }],
+      })
+    ).rejects.toBeInstanceOf(OpenServiceUnknownStoryIdsError);
+
+    expect(service.queries.current.get(undefined)).toEqual(current);
+  });
+
   it('sets, marks stale, and dismisses the current review', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });

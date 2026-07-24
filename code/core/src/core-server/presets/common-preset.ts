@@ -33,7 +33,6 @@ import type {
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
-import { registerReviewApi } from '../../shared/open-service/services/review/api.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoriesApi } from '../../shared/open-service/services/stories/api.ts';
 import { findStoriesByComponent } from '../../shared/open-service/services/stories/find-by-component.ts';
@@ -435,10 +434,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   const features = await options.presets.apply('features');
 
   if (isReviewFeatureEnabled(features)) {
-    registerReviewService();
-    registerReviewApi({
+    registerReviewService({
       getIndex: () => storyIndexGenerator.getIndex(),
-      getOrigin: () => options.localAddress ?? '',
     });
   }
 

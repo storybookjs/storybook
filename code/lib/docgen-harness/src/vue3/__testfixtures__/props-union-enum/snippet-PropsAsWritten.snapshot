@@ -1,0 +1,3 @@
+<template>
+  <PropsUnionEnum size="medium" status="ok" />
+</template>

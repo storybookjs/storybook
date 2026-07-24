@@ -1,38 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
 import path from 'node:path';
+
+import { vol } from 'memfs';
 import type { StoryIndex } from 'storybook/internal/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ModuleGraphStatus, ModuleGraphStoryHit } from './module-graph.ts';
 
 // Static import would freeze the mock target before each test gets a chance
 // to swap the underlying core-server module. We dynamically `import()` after
 // `vi.doMock` instead — see each test below.
 
-// The resolver canonicalises every input path with `fs.realpathSync.native` and probes
-// barrel candidates with `fs.existsSync`. These unit tests operate on synthetic paths that
-// don't exist on disk, so we stub `node:fs` with caller-controlled sets: `existingPaths`
-// drives `existsSync` (barrel sibling probing) and `missingPaths` drives realpath ENOENT
-// (the "path not found" branch). Both default to empty so paths are their own canonical form
-// and have no barrel siblings unless a test opts in.
-const { existingPaths, missingPaths, ioErrorPaths } = vi.hoisted(() => ({
-  existingPaths: new Set<string>(),
-  missingPaths: new Set<string>(),
-  ioErrorPaths: new Set<string>(),
-}));
-
-vi.mock('node:fs', () => {
-  const realpathSync: any = (p: string) => {
-    if (ioErrorPaths.has(p)) {
-      throw Object.assign(new Error(`EACCES: ${p}`), { code: 'EACCES' });
-    }
-    if (missingPaths.has(p)) {
-      throw Object.assign(new Error(`ENOENT: ${p}`), { code: 'ENOENT' });
-    }
-    return p;
-  };
-  realpathSync.native = realpathSync;
-  const fs = { realpathSync, existsSync: (p: string) => existingPaths.has(p) };
-  return { ...fs, default: fs };
-});
+vi.mock('node:fs', { spy: true });
 
 const FAKE_WORKING_DIR = '/repo';
 const BADGE_ABS = path.join(FAKE_WORKING_DIR, 'src/components/Badge/Badge.tsx');
@@ -88,9 +67,12 @@ function depsFor(byFile: Record<string, string[]> = {}, workingDir = FAKE_WORKIN
 
 beforeEach(() => {
   vi.resetModules();
-  existingPaths.clear();
-  missingPaths.clear();
-  ioErrorPaths.clear();
+  vol.reset();
+  vol.fromNestedJSON({ [BADGE_ABS]: '' });
+  vi.mocked(fs.existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(fs.realpathSync.native).mockImplementation((filePath) =>
+    String(vol.realpathSync(filePath))
+  );
 });
 
 afterEach(() => {
@@ -207,7 +189,7 @@ describe('resolveComponentStories', () => {
   it('expands barrel targets and merges the minimum depth across them', async () => {
     // `Badge/Badge.tsx` ↔ `Badge/index.ts`: both reach `A.stories.tsx`, but via different
     // depths. The merge must keep the shorter (barrel) path's depth.
-    existingPaths.add(BADGE_BARREL);
+    vol.fromNestedJSON({ [BADGE_BARREL]: '' });
     setupService({
       storiesByFile: {
         [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 2 }],
@@ -224,7 +206,6 @@ describe('resolveComponentStories', () => {
 
   it('flags pathNotFound when the component file does not exist on disk', async () => {
     const ghost = path.join(FAKE_WORKING_DIR, 'src/components/Ghost/Ghost.tsx');
-    missingPaths.add(ghost);
     setupService({ storiesByFile: {} });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories({ componentPaths: [ghost] }, depsFor());
@@ -237,7 +218,12 @@ describe('resolveComponentStories', () => {
     // A permission/IO error is a real failure, not a missing path — surfacing it as
     // `pathNotFound` would hide the underlying cause, so the resolver must let it propagate.
     const locked = path.join(FAKE_WORKING_DIR, 'src/components/Locked/Locked.tsx');
-    ioErrorPaths.add(locked);
+    vi.mocked(fs.realpathSync.native).mockImplementation((filePath) => {
+      if (filePath === locked) {
+        throw Object.assign(new Error(`EACCES: ${locked}`), { code: 'EACCES' });
+      }
+      return String(vol.realpathSync(filePath));
+    });
     setupService({ storiesByFile: {} });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     await expect(resolveComponentStories({ componentPaths: [locked] }, depsFor())).rejects.toThrow(

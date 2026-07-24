@@ -22,9 +22,8 @@ function isStoryIdInput(input: StoryInput): input is StoryInput & { storyId: str
   return 'storyId' in input;
 }
 
-// Keep normalization consistent with Storybook core importPath handling:
-// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L403
-// https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/utils/StoryIndexGenerator.ts#L434-L441
+// Keep normalization consistent with StoryIndexGenerator's importPath handling,
+// which normalizes story paths before storing and comparing index entries.
 function normalizeImportPath(importPath: string): string {
   const normalized = path.posix.normalize(slash(importPath));
   return slash(normalizeStoryPath(normalized));

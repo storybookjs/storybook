@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { logger } from 'storybook/internal/node-logger';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { CompositionAuth, extractBearerToken } from './composition-auth.ts';
 
 describe('CompositionAuth', () => {
@@ -771,7 +773,7 @@ describe('CompositionAuth', () => {
 
     it('warns when refs use different OAuth servers', async () => {
       const auth = new CompositionAuth();
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       vi.stubGlobal(
         'fetch',
@@ -841,7 +843,7 @@ describe('CompositionAuth', () => {
 
     it('gracefully skips refs that fail during auth discovery', async () => {
       const auth = new CompositionAuth();
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error: ECONNREFUSED')));
 
@@ -858,7 +860,7 @@ describe('CompositionAuth', () => {
 
     it('warns when OAuth resource metadata fetch fails', async () => {
       const auth = new CompositionAuth();
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       vi.stubGlobal(
         'fetch',
@@ -890,7 +892,7 @@ describe('CompositionAuth', () => {
 
     it('warns when OAuth server metadata fetch fails', async () => {
       const auth = new CompositionAuth();
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       vi.stubGlobal(
         'fetch',

@@ -9,14 +9,15 @@
     "stories",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/mcp/tree/main/packages/claude-plugin#readme",
-  "license": "MIT",
-  "author": "Storybook",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/storybookjs/mcp.git",
-    "directory": "packages/claude-plugin"
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/claude-plugin"
   },
+  "license": "MIT",
+  "author": "Storybook",
+  "type": "module",
   "files": [
     ".claude-plugin",
     ".mcp.json",
@@ -24,17 +25,16 @@
     "skills",
     "README.md"
   ],
-  "type": "module",
   "scripts": {
-    "validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json",
     "marketplace:add": "claude plugin marketplace add ./ --scope user",
-    "marketplace:update": "claude plugin marketplace update storybook",
     "marketplace:remove": "claude plugin marketplace remove storybook",
-    "plugin:install": "pnpm run validate && pnpm run marketplace:add && claude plugin install storybook@storybook --scope user",
-    "plugin:update": "claude plugin update storybook@storybook",
+    "marketplace:update": "claude plugin marketplace update storybook",
+    "plugin:install": "yarn run validate && yarn run marketplace:add && claude plugin install storybook@storybook --scope user",
+    "plugin:list": "claude plugin list --json",
     "plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
+    "plugin:update": "claude plugin update storybook@storybook",
     "remove": "node ./scripts/remove-plugin.ts",
-    "plugin:list": "claude plugin list --json"
+    "validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json"
   },
   "devDependencies": {
     "tinyexec": "^1.0.2"

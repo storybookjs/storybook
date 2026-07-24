@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getManifests,
   getMultiSourceManifests,
@@ -11,8 +11,6 @@ import {
 } from './get-manifest.ts';
 import type { ComponentManifest, ComponentManifestV1, Doc, DocV1 } from '../types.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source } from '../types.ts';
-
-global.fetch = vi.fn();
 
 /**
  * Helper function to create a mock Request object
@@ -104,8 +102,11 @@ function createManifestProviderMock(responses: {
 
 describe('getManifest', () => {
   beforeEach(() => {
-    // Reset the fetch mock between tests since we're checking call counts
-    vi.mocked(global.fetch).mockClear();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('error cases', () => {
@@ -122,11 +123,14 @@ describe('getManifest', () => {
       );
     });
     it('should throw ManifestGetError when fetch fails with 404 and include hint about componentsManifest', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
@@ -138,11 +142,14 @@ describe('getManifest', () => {
     });
 
     it('should throw ManifestGetError when fetch fails with 500 without manifest hint', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(
@@ -156,12 +163,15 @@ describe('getManifest', () => {
     });
 
     it('should throw ManifestGetError when content type is not JSON', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: {
-          get: vi.fn().mockReturnValue('text/html'),
-        },
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          headers: {
+            get: vi.fn().mockReturnValue('text/html'),
+          },
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
@@ -171,18 +181,21 @@ describe('getManifest', () => {
     });
 
     it('should throw ManifestGetError when response is not valid JSON', async () => {
-      global.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('components.json')) {
-          return Promise.resolve({
-            ok: true,
-            headers: {
-              get: vi.fn().mockReturnValue('application/json'),
-            },
-            text: vi.fn().mockResolvedValue('not valid json{'),
-          });
-        }
-        return Promise.resolve(create404Response());
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string) => {
+          if (url.includes('components.json')) {
+            return Promise.resolve({
+              ok: true,
+              headers: {
+                get: vi.fn().mockReturnValue('application/json'),
+              },
+              text: vi.fn().mockResolvedValue('not valid json{'),
+            });
+          }
+          return Promise.resolve(create404Response());
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
@@ -190,18 +203,21 @@ describe('getManifest', () => {
     });
 
     it('should throw ManifestGetError when manifest schema is invalid', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: {
-          get: vi.fn().mockReturnValue('application/json'),
-        },
-        text: vi.fn().mockResolvedValue(
-          JSON.stringify({
-            // Missing required 'components' field
-            v: 1,
-          })
-        ),
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          headers: {
+            get: vi.fn().mockReturnValue('application/json'),
+          },
+          text: vi.fn().mockResolvedValue(
+            JSON.stringify({
+              // Missing required 'components' field
+              v: 1,
+            })
+          ),
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects
@@ -210,18 +226,21 @@ Invalid key: Expected "components" but received undefined]`);
     });
 
     it('should throw ManifestGetError when components object is empty', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: {
-          get: vi.fn().mockReturnValue('application/json'),
-        },
-        text: vi.fn().mockResolvedValue(
-          JSON.stringify({
-            v: 1,
-            components: {},
-          })
-        ),
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: true,
+          headers: {
+            get: vi.fn().mockReturnValue('application/json'),
+          },
+          text: vi.fn().mockResolvedValue(
+            JSON.stringify({
+              v: 1,
+              components: {},
+            })
+          ),
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
@@ -229,7 +248,7 @@ Invalid key: Expected "components" but received undefined]`);
     });
 
     it('should wrap network errors in ManifestGetError', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network connection failed'));
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network connection failed')));
 
       const request = createMockRequest('https://example.com/mcp');
       await expect(getManifests(request)).rejects.toThrow(ManifestGetError);
@@ -237,11 +256,14 @@ Invalid key: Expected "components" but received undefined]`);
     });
 
     it('should preserve ManifestGetError when already thrown', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       try {
@@ -269,7 +291,7 @@ Invalid key: Expected "components" but received undefined]`);
         },
       };
 
-      global.fetch = createFetchMock({ components: validManifest });
+      vi.stubGlobal('fetch', createFetchMock({ components: validManifest }));
 
       const request = createMockRequest('https://example.com/mcp');
       const result = await getManifests(request);
@@ -299,7 +321,7 @@ Invalid key: Expected "components" but received undefined]`);
         },
       };
 
-      global.fetch = createFetchMock({ components: validManifest });
+      vi.stubGlobal('fetch', createFetchMock({ components: validManifest }));
 
       const request = createMockRequest(requestUrl);
       const result = await getManifests(request);
@@ -335,10 +357,13 @@ Invalid key: Expected "components" but received undefined]`);
         },
       };
 
-      global.fetch = createFetchMock({
-        components: validComponentManifest,
-        docs: validDocsManifest,
-      });
+      vi.stubGlobal(
+        'fetch',
+        createFetchMock({
+          components: validComponentManifest,
+          docs: validDocsManifest,
+        })
+      );
 
       const request = createMockRequest('https://example.com/mcp');
       const result = await getManifests(request);
@@ -427,7 +452,7 @@ Invalid key: Expected "components" but received undefined]`);
         },
       };
 
-      global.fetch = createFetchMock({ components: validManifest });
+      vi.stubGlobal('fetch', createFetchMock({ components: validManifest }));
 
       const request = createMockRequest('https://example.com/mcp');
       const result = await getManifests(request);

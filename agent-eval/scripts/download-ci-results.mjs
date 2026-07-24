@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Downloads the most recent agent-eval-results artifacts from GitHub Actions
 // and extracts them into agent-eval/results, so CI runs are inspectable in the
-// local playground (pnpm playground) and by local analysis tooling.
+// local playground (yarn workspace agent-eval run playground) and by local analysis tooling.
 //
 // Usage: node scripts/download-ci-results.mjs [count]
 //   count: number of artifacts to download (default 20)
@@ -94,4 +94,4 @@ for (const artifact of artifacts) {
   }
 }
 
-console.log('Done. Browse the results with: pnpm playground');
+console.log('Done. Browse the results with: yarn workspace agent-eval run playground');

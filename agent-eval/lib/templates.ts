@@ -108,10 +108,11 @@ const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
-const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
+const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
   REPO_ROOT,
-  'packages',
+  'code',
+  'lib',
   'codex-plugin',
   'plugins',
   'storybook',
@@ -555,7 +556,7 @@ async function readLocalStorybookMcpPackages(): Promise<Record<string, string>> 
 }
 
 async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'mcp');
+  const sourceDir = path.join(REPO_ROOT, 'code', 'lib', 'mcp');
   const targetDir = path.posix.join('local-packages', 'mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
@@ -569,7 +570,7 @@ async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<st
 async function readLocalStorybookAddonMcpPackage(
   catalog: Catalog
 ): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'addon-mcp');
+  const sourceDir = path.join(REPO_ROOT, 'code', 'addons', 'mcp');
   const targetDir = path.posix.join('local-packages', 'addon-mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
@@ -603,12 +604,13 @@ async function readSandboxPackageJson(
   return JSON.stringify(sandboxPackageJson, null, 2).concat('\n');
 }
 
-function rewritePackageSpecsForNpm(
+export function rewritePackageSpecsForNpm(
   packageJson: Record<string, unknown>,
   options: { catalog: Catalog; dependencyOverrides?: DependencyOverrides }
 ): Record<string, unknown> {
   const dependencyOverrides = options.dependencyOverrides ?? {};
   const result = JSON.parse(JSON.stringify(packageJson)) as Record<string, unknown>;
+  const version = typeof result.version === 'string' ? result.version : undefined;
   const dependencyFields = [
     'dependencies',
     'devDependencies',
@@ -630,6 +632,7 @@ function rewritePackageSpecsForNpm(
       dependencies[name] = rewriteDependencySpec(name, spec, {
         catalog: options.catalog,
         dependencyOverrides,
+        version,
       });
     }
   }
@@ -640,7 +643,11 @@ function rewritePackageSpecsForNpm(
 function rewriteDependencySpec(
   name: string,
   spec: string,
-  options: { catalog: Catalog; dependencyOverrides: DependencyOverrides }
+  options: {
+    catalog: Catalog;
+    dependencyOverrides: DependencyOverrides;
+    version: string | undefined;
+  }
 ): string {
   const override = options.dependencyOverrides[name];
   if (override !== undefined) {
@@ -659,19 +666,29 @@ function rewriteDependencySpec(
     throw new Error(`Unsupported catalog dependency for ${name}: ${spec}`);
   }
 
+  if (spec === 'workspace:*' || spec === 'workspace:^' || spec === 'workspace:~') {
+    if (options.version === undefined) {
+      throw new Error(`Missing package version for workspace dependency ${name}`);
+    }
+
+    // Storybook publishes its monorepo packages in lockstep, so npm-facing
+    // workspace ranges use the package manifest's own version.
+    return spec === 'workspace:*' ? options.version : `${spec.at(-1)}${options.version}`;
+  }
+
   if (spec.startsWith('workspace:')) {
-    throw new Error(`Missing npm-compatible override for workspace dependency ${name}`);
+    throw new Error(`Unsupported workspace dependency for ${name}: ${spec}`);
   }
 
   return spec;
 }
 
 async function readDefaultCatalog(): Promise<Catalog> {
-  const workspaceYaml = await fs.readFile(path.join(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8');
+  const workspaceYaml = await fs.readFile(path.join(AGENT_EVAL_ROOT, 'catalog.yaml'), 'utf8');
   const catalog: Catalog = {};
   let inDefaultCatalog = false;
 
-  // This intentionally supports only the repo-owned two-space default `catalog:` shape.
+  // This intentionally supports only the two-space default `catalog:` shape owned here.
   // Named catalogs stay unsupported here and still fail explicitly in `rewriteDependencySpec`.
   for (const line of workspaceYaml.split('\n')) {
     if (line.trim() === 'catalog:') {
@@ -719,7 +736,7 @@ async function readPackageDistFiles(
     }
   } catch {
     throw new Error(
-      `Missing build output for ${packageName} at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`
+      `Missing build output for ${packageName} at ${distDir}. Run \`yarn nx run-many -t compile --projects mcp,addon-mcp\` before running agent-eval.`
     );
   }
 

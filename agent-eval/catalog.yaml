@@ -1,0 +1,21 @@
+catalog:
+  '@storybook/addon-a11y': 10.6.0-alpha.0
+  '@storybook/addon-docs': 10.6.0-alpha.0
+  '@storybook/addon-themes': 10.6.0-alpha.0
+  '@storybook/addon-vitest': 10.6.0-alpha.0
+  '@storybook/react-vite': 10.6.0-alpha.0
+  '@types/semver': 7.7.1
+  '@tmcp/adapter-valibot': ^0.1.5
+  '@tmcp/transport-http': ^0.8.5
+  '@tmcp/transport-stdio': ^0.4.3
+  '@vitest/browser-playwright': 4.0.6
+  eslint-plugin-storybook: 10.6.0-alpha.0
+  playwright: 1.56.1
+  storybook: 10.6.0-alpha.0
+  tmcp: ^1.19.4
+  semver: 7.8.1
+  tsdown: ^0.15.12
+  typescript: ^5.9.3
+  valibot: 1.2.0
+  vite: 7.2.2
+  vitest: 4.0.6

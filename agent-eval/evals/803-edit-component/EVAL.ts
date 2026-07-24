@@ -18,6 +18,7 @@ const review = isReviewEnabled();
 // The edit pulls in a new Reshaped component (Button), which requires the
 // docs tools; codex is an accepted known failure here (skipped the docs
 // tools under both instruction shapes, CI run 28660377980, 2026-07-03).
+// Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
 test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
   expectWorkflowCalls(['get-documentation']);
 });

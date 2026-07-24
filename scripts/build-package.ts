@@ -20,6 +20,7 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
+import { isBuildEntries } from './build/entry-configs.ts';
 import { ROOT_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
 import { getCodeWorkspaces } from './utils/workspace.ts';
@@ -80,6 +81,9 @@ async function run() {
   });
 
   let selection = Object.values(tasks).filter((item) => item.value === true);
+  if (opts.all) {
+    selection = selection.filter((item) => isBuildEntries(item.name));
+  }
 
   // check for invalid package name(s) and try to guess the correct package name(s)
   const suffixList = Object.values(tasks).map((t) => t.suffix);

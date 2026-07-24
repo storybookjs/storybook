@@ -49,10 +49,6 @@ describe('vue3 legacy baselines', () => {
       JSON.parse(JSON.stringify(metaData))
     );
 
-    // Committed baselines are read BEFORE their toMatchFileSnapshot call: under -u the
-    // match call rewrites the file first, and a read placed after it would compare the
-    // candidate against itself, masking regressions exactly at flip re-record time. A
-    // missing file is a fresh fixture's first record and skips the comparator.
     const argTypesPath = join(testDir, 'argtypes.snapshot');
     const committedArgTypes = existsSync(argTypesPath)
       ? readFileSync(argTypesPath, 'utf8')

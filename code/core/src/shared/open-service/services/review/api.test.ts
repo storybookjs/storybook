@@ -1,26 +1,9 @@
-import type { StoryIndex } from 'storybook/internal/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as v from 'valibot';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { clearRegistry } from '../../server.ts';
-import { invokeApi } from '../../../public-api/index.ts';
-import { createReviewApi } from './api.ts';
-import { registerReviewService } from './server.ts';
-
-const index = {
-  v: 5,
-  entries: {
-    'button--primary': {
-      type: 'story',
-      subtype: 'story',
-      id: 'button--primary',
-      name: 'Primary',
-      title: 'Button',
-      importPath: './src/Button.stories.tsx',
-      tags: ['story'],
-    },
-  },
-} as StoryIndex;
+import type { ApiCtx } from '../../../public-api/index.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import { reviewApi } from './api.ts';
 
 const input = {
   title: 'Button tweaks',
@@ -35,85 +18,80 @@ const input = {
   changedFiles: ['src/Button.tsx'],
 };
 
+const setReview = vi.fn();
+let ctx: ApiCtx;
+let serviceError: Error | undefined;
+
+function createReview(
+  overrides: Partial<v.InferInput<typeof reviewApi.methods.create.schema>> = {}
+) {
+  return reviewApi.methods.create.handler(
+    v.parse(reviewApi.methods.create.schema, { ...input, ...overrides }),
+    ctx
+  );
+}
+
 describe('review API', () => {
   beforeEach(() => {
-    clearRegistry();
-  });
-
-  afterEach(() => {
-    clearRegistry();
-    vi.restoreAllMocks();
-  });
-
-  it('validates story ids before setting review state', async () => {
-    const service = registerReviewService();
-    const setReview = vi.spyOn(service.commands, 'setReview');
-    const api = createReviewApi({
-      getIndex: async () => index,
-      getOrigin: () => 'http://localhost:6006',
+    vi.clearAllMocks();
+    serviceError = undefined;
+    setReview.mockImplementation(async () => {
+      if (serviceError) {
+        throw serviceError;
+      }
     });
-
-    await expect(
-      invokeApi(api, 'create', {
-        ...input,
-        collections: [{ ...input.collections[0], storyIds: ['missing--story'] }],
-      })
-    ).rejects.toThrow(/1 story ID is not in the live Storybook index/);
-    expect(setReview).not.toHaveBeenCalled();
+    ctx = {
+      consumer: 'cli',
+      origin: 'http://localhost:6006/',
+      getService: vi.fn(() => ({ commands: { setReview } })) as ApiCtx['getService'],
+    };
   });
 
   it('rejects with a missing-origin error when no server origin is configured', async () => {
-    const service = registerReviewService();
-    const setReview = vi.spyOn(service.commands, 'setReview');
-    const api = createReviewApi({
-      getIndex: async () => index,
-      getOrigin: () => '',
-    });
+    ctx.origin = '';
 
-    await expect(invokeApi(api, 'create', input)).rejects.toThrow(
-      /requires a Storybook server origin/
-    );
+    await expect(createReview()).rejects.toBeInstanceOf(OpenServiceMissingOriginError);
     expect(setReview).not.toHaveBeenCalled();
   });
 
-  it('sets review state and returns Markdown by default', async () => {
-    const service = registerReviewService();
-    const setReview = vi.spyOn(service.commands, 'setReview');
-    const api = createReviewApi({
-      getIndex: async () => index,
-      getOrigin: () => 'http://localhost:6006/',
-    });
+  it('propagates service errors unchanged', async () => {
+    serviceError = new Error('review service unavailable');
 
-    await expect(invokeApi(api, 'create', input)).resolves.toBe(
+    await expect(createReview()).rejects.toBe(serviceError);
+  });
+
+  it('sets review state and returns Markdown by default', async () => {
+    await expect(createReview()).resolves.toBe(
       'Review created: http://localhost:6006/?path=/review/'
     );
     expect(setReview).toHaveBeenCalledWith(input);
+    expect(ctx.getService).toHaveBeenCalledWith('core/review');
   });
 
   it('adds the user-facing instruction only for the MCP Markdown response', async () => {
-    registerReviewService();
-    const api = createReviewApi({
-      getIndex: async () => index,
-      getOrigin: () => 'http://localhost:6006',
-    });
+    const cliResult = await createReview();
+    ctx.consumer = 'mcp';
+    const mcpResult = await createReview();
 
-    const cliResult = await invokeApi(api, 'create', input, { consumer: 'cli' });
-    const mcpResult = await invokeApi(api, 'create', input, { consumer: 'mcp' });
-
+    expect(cliResult).not.toContain('Show this review URL');
     expect(mcpResult).toBe(
       `${cliResult}\n\nShow this review URL to the user in your final response.`
     );
   });
 
   it('returns structured data with json true', async () => {
-    registerReviewService();
-    const api = createReviewApi({
-      getIndex: async () => index,
-      getOrigin: () => 'http://localhost:6006',
-    });
-
-    await expect(invokeApi(api, 'create', { ...input, json: true })).resolves.toEqual({
+    await expect(createReview({ json: true })).resolves.toEqual({
       reviewUrl: 'http://localhost:6006/?path=/review/',
     });
+    expect(setReview).toHaveBeenCalledWith(input);
+  });
+
+  it('contains only public API fields', () => {
+    expect(Object.keys(reviewApi)).toEqual(['id', 'description', 'methods']);
+    expect(Object.keys(reviewApi.methods.create).sort()).toEqual([
+      'description',
+      'handler',
+      'schema',
+    ]);
   });
 });

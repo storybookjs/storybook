@@ -1,13 +1,7 @@
-import type { StoryIndex } from 'storybook/internal/types';
-
 import * as v from 'valibot';
 
-import {
-  OpenServiceMissingOriginError,
-  OpenServiceUnknownStoryIdsError,
-} from '../../../../server-errors.ts';
-import { defineApi, registerPublicApi } from '../../../public-api/index.ts';
-import { getService } from '../../server.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import { defineApi } from '../../../public-api/index.ts';
 
 const reviewCollectionSchema = v.object({
   title: v.pipe(v.string(), v.description('Collection title shown on the review page.')),
@@ -39,75 +33,35 @@ const reviewCreateInputSchema = v.object({
   ),
 });
 
-export type CreateReviewApiOptions = {
-  getIndex: () => Promise<StoryIndex>;
-  getOrigin: () => string;
-};
+export const reviewApi = defineApi({
+  id: 'review',
+  description: 'Create a curated Storybook review.',
+  methods: {
+    create: {
+      schema: reviewCreateInputSchema,
+      description: 'Validates story ids, publishes review state, and returns the review page URL.',
+      handler: async ({ json, ...review }, ctx) => {
+        if (!ctx.origin) {
+          throw new OpenServiceMissingOriginError({
+            serviceId: 'review',
+            operationName: 'create',
+          });
+        }
 
-function collectUniqueStoryIds(
-  collections: ReadonlyArray<{ readonly storyIds: ReadonlyArray<string> }>
-): string[] {
-  const seen = new Set<string>();
-  return collections.flatMap(({ storyIds }) =>
-    storyIds.filter((storyId) => {
-      if (seen.has(storyId)) {
-        return false;
-      }
-      seen.add(storyId);
-      return true;
-    })
-  );
-}
+        await ctx.getService('core/review').commands.setReview(review);
 
-/** Creates the public one-shot review API around the stateful review service. */
-export function createReviewApi({ getIndex, getOrigin }: CreateReviewApiOptions) {
-  return defineApi({
-    id: 'review',
-    description: 'Create a curated Storybook review.',
-    methods: {
-      create: {
-        schema: reviewCreateInputSchema,
-        description:
-          'Validates story ids, publishes review state, and returns the review page URL.',
-        handler: async ({ json, ...review }, context) => {
-          const origin = getOrigin();
-          if (!origin) {
-            throw new OpenServiceMissingOriginError({
-              serviceId: 'review',
-              operationName: 'create',
-            });
-          }
+        const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
+        if (json) {
+          return { reviewUrl };
+        }
 
-          const index = await getIndex();
-          const unknownIds = collectUniqueStoryIds(review.collections).filter(
-            (storyId) => !index.entries[storyId]
-          );
-          if (unknownIds.length > 0) {
-            throw new OpenServiceUnknownStoryIdsError({ unknownIds });
-          }
-
-          await getService('core/review').commands.setReview(review);
-
-          const reviewUrl = `${origin.replace(/\/$/, '')}/?path=/review/`;
-          if (json) {
-            return { reviewUrl };
-          }
-
-          const markdown = `Review created: ${reviewUrl}`;
-          return context.consumer === 'mcp'
-            ? `${markdown}\n\nShow this review URL to the user in your final response.`
-            : markdown;
-        },
+        const markdown = `Review created: ${reviewUrl}`;
+        return ctx.consumer === 'mcp'
+          ? `${markdown}\n\nShow this review URL to the user in your final response.`
+          : markdown;
       },
     },
-  });
-}
+  },
+});
 
-/** Registers the public review API with its runtime dependencies. */
-export function registerReviewApi(options: CreateReviewApiOptions) {
-  const reviewApi = createReviewApi(options);
-  registerPublicApi([reviewApi]);
-  return reviewApi;
-}
-
-export type ReviewApi = ReturnType<typeof createReviewApi>;
+export type ReviewApi = typeof reviewApi;

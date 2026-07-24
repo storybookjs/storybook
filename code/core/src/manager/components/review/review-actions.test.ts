@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
 import type { NavigateFunction } from 'storybook/internal/router';
+import type { StoryIndex } from 'storybook/internal/types';
 import type { API } from 'storybook/manager-api';
 
 import { clearChannel, installNoopChannel } from '../../../channels/channel-slot.ts';
@@ -38,6 +39,9 @@ const emptyFilters = {
   excludedTagFilters: [],
 };
 
+const emptyIndex = { v: 5, entries: {} } as StoryIndex;
+const getIndex = vi.fn<() => Promise<StoryIndex>>();
+
 const makeApi = () => {
   const setAllStatusFilters = vi.fn(async () => {});
   const setAllTagFilters = vi.fn(async () => {});
@@ -58,7 +62,8 @@ const makeApi = () => {
 beforeEach(() => {
   installNoopChannel();
   clearRegistry();
-  registerReviewService();
+  getIndex.mockResolvedValue(emptyIndex);
+  registerReviewService({ getIndex });
   sessionStorage.clear();
   reviewStore.reset();
 });

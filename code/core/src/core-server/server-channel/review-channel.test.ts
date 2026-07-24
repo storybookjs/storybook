@@ -1,4 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,9 +62,25 @@ const sampleReview: ReviewState = {
   ],
 };
 
+const index = {
+  v: 5,
+  entries: {
+    'button--primary': {
+      type: 'story',
+      subtype: 'story',
+      id: 'button--primary',
+      name: 'Primary',
+      title: 'Button',
+      importPath: './src/Button.stories.tsx',
+      tags: ['story'],
+    },
+  },
+} as StoryIndex;
+
 describe('initReviewChannel', () => {
   const NOW = new Date().getTime();
   const teardowns: Array<() => void> = [];
+  const getIndex = vi.fn<() => Promise<StoryIndex>>();
   const initializeReviewChannel = (
     channel: Channel,
     options?: Parameters<typeof initReviewChannel>[1]
@@ -76,6 +93,7 @@ describe('initReviewChannel', () => {
   beforeEach(() => {
     teardowns.length = 0;
     clearRegistry();
+    getIndex.mockResolvedValue(index);
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
   });
 
@@ -86,7 +104,7 @@ describe('initReviewChannel', () => {
   });
 
   it('adapts legacy PUSH_REVIEW into authoritative OSA state', async () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const { channel, emitted } = createMockChannel();
 
     initializeReviewChannel(channel);
@@ -100,7 +118,7 @@ describe('initReviewChannel', () => {
   });
 
   it('relays dismissal navigation without mutating OSA state again', async () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const dismissReview = vi.spyOn(service.commands, 'dismissReview');
     const { channel, emitted } = createMockChannel();
 
@@ -120,7 +138,7 @@ describe('initReviewChannel', () => {
   });
 
   it('keeps only the legacy push and dismissal listeners', () => {
-    registerReviewService();
+    registerReviewService({ getIndex });
     const { channel } = createMockChannel();
 
     initializeReviewChannel(channel, {
@@ -133,7 +151,7 @@ describe('initReviewChannel', () => {
   });
 
   it('marks OSA state stale after the grace window', async () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
     initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
@@ -148,7 +166,7 @@ describe('initReviewChannel', () => {
   });
 
   it('does not mark OSA state stale inside the grace window', async () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const markStale = vi.spyOn(service.commands, 'markStale');
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
@@ -162,7 +180,7 @@ describe('initReviewChannel', () => {
   });
 
   it('does not call markStale with no current review', () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const markStale = vi.spyOn(service.commands, 'markStale');
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
@@ -174,7 +192,7 @@ describe('initReviewChannel', () => {
   });
 
   it('does not call markStale when the current review is already stale', async () => {
-    const service = registerReviewService();
+    const service = registerReviewService({ getIndex });
     const { channel } = createMockChannel();
     const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
     initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
@@ -193,7 +211,7 @@ describe('initReviewChannel', () => {
   });
 
   it('tears down channel and module-graph listeners', () => {
-    registerReviewService();
+    registerReviewService({ getIndex });
     const { channel } = createMockChannel();
     const unsubscribe = vi.fn();
     const subscribeToModuleGraphChanges = vi.fn(() => unsubscribe);

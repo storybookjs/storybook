@@ -183,16 +183,28 @@ export function mswStep(
   { configDir, mswInstall, packageManager, ts }: InstructionsContext
 ): { title: string; body: string } {
   const mswInit = getMswInitCommand(packageManager);
+  const mswAddonAdd = packageManager.getPackageCommand([
+    'storybook',
+    'add',
+    'msw-storybook-addon@3',
+  ]);
+  const csfNextNote = projectInfo.hasCsfFactoryPreview
+    ? `
+
+    If \`storybook add\` injects \`import * as mswStorybookAddon from 'msw-storybook-addon/preview'\` and a \`mswStorybookAddon\` entry into your \`definePreview\` \`addons\`, remove both — that form breaks TypeScript inference for the entire preview. Register the addon with \`addonMsw()\` as shown below instead.
+`
+    : '';
 
   return {
     title: 'MSW handlers (only what stories will hit)',
-    body: `Use \`msw-storybook-addon\`. Install with:
+    body: `Use \`msw-storybook-addon\`. Register it with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
 
     \`\`\`bash
+    ${mswAddonAdd}
     ${mswInstall}
     ${mswInit}
     \`\`\`
-
+${csfNextNote}
     Make sure \`${configDir}/main.${ts}\` serves \`./public\`:
 
     ${getMainConfigExample(projectInfo)}
@@ -203,13 +215,11 @@ export function mswStep(
     // ${configDir}/msw-handlers.${ts}
     import { http, HttpResponse } from 'msw';
 
-    export const mswHandlers = {
-      products: [
-        http.get('https://api.example.com/products', () =>
-          HttpResponse.json({ items: [{ id: 'p1', name: 'Example', price: 42 }] })
-        ),
-      ],
-    };
+    export const mswHandlers = [
+      http.get('https://api.example.com/products', () =>
+        HttpResponse.json({ items: [{ id: 'p1', name: 'Example', price: 42 }] })
+      ),
+    ];
     \`\`\`
 `,
   };

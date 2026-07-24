@@ -177,6 +177,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
     forceUseTs: true,
     noDeclarations: true,
     printer: { newLine: 1 },
+    schema: true,
   };
 
   const projectRoot = getProjectRoot();

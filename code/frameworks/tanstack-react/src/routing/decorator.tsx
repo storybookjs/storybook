@@ -17,6 +17,7 @@ import {
   duplicateRouteTree,
   findRootRoute,
   mountPathFor,
+  originalRouteId,
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
@@ -213,7 +214,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
       boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
     });
 
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    injectStoryComponent(leaf, Story, routeOverrides, originalRouteId(tree, leaf) ?? leaf.id);
     const renderLeaf = ensureMatchableLeaf(tree, leaf);
     return { tree, leaf: renderLeaf };
   }
@@ -229,7 +230,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     syntheticRoot.addChildren([routerParameterRoute]);
     const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
     const leaf = tree.byId.get(routerParameterRoute.id) ?? tree.root;
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    injectStoryComponent(leaf, Story, routeOverrides, routerParameterRoute.id);
     const renderLeaf = ensureMatchableLeaf(tree, leaf);
     return { tree, leaf: renderLeaf };
   }
@@ -247,16 +248,29 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
+  // The other branches apply overrides through `duplicateRouteTree`; this
+  // branch builds the child directly, so merge the leaf's override in here too
+  // (otherwise a story-supplied `component`/`loader` override is dropped).
+  const leafOverrideKey = syntheticRouteId ?? (plainRoutePath as string | undefined);
+  const leafOverride = leafOverrideKey
+    ? ((routeOverrides as Record<string, any> | undefined)?.[leafOverrideKey] ?? {})
+    : {};
   const syntheticChild = createRoute({
     component: () => <Story />,
     id: syntheticRouteId,
     path: plainRoutePath as string | undefined,
     ...plainRouteRest,
+    ...leafOverride,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);
 
-  injectStoryComponent(syntheticChild, Story, routeOverrides, syntheticChild.id);
+  injectStoryComponent(
+    syntheticChild,
+    Story,
+    routeOverrides,
+    syntheticRouteId ?? (plainRoutePath as string | undefined) ?? syntheticChild.id
+  );
   return {
     tree: { root: syntheticRoot, byId: new Map([[syntheticChild.id, syntheticChild]]) },
     leaf: syntheticChild,

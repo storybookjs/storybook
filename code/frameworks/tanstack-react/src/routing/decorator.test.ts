@@ -134,9 +134,6 @@ describe('createStoryRouter with routeOverrides', () => {
   });
 });
 
-// Explicit `path` selection previously compared init-backed `fullPath`
-// getters (always undefined on clones), so it silently fell through to the
-// bound route or the root's first child.
 describe('createStoryRouter leaf selection by path', () => {
   it('selects the route matching an explicit path when only the routeTree is bound', async () => {
     const root = createRootRoute();
@@ -201,8 +198,6 @@ describe('createStoryRouter leaf selection by path', () => {
     });
     await router.load();
 
-    // The static `/users/me` matches literally; `/users/$userId` matches only
-    // after interpolation. The literal (more specific) route must win.
     expect((router as any).routesById['/users/me'].options.component).toBeDefined();
     expect((router as any).routesById['/users/$userId'].options.component).toBeUndefined();
   });

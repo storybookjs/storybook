@@ -207,9 +207,8 @@ export function originalRouteId(tree: DuplicatedTree, route: AnyRoute): string |
  *
  * Resolution order:
  *
- * 1. The route whose mount path (from the cloned parent chain's options —
- *    `fullPath` getters are undefined before `init()`) matches the explicit
- *    `path` parameter, either literally or after interpolating `params`.
+ * 1. The route whose mount path matches the explicit `path` parameter,
+ *    literally or after interpolating `params`.
  * 2. The route bound to the story (`boundRouteId`), if it is present in the cloned tree.
  * 3. The first top-level child of the root.
  * 4. The root itself.
@@ -229,9 +228,6 @@ export function resolveStoryLeaf(
   const { root, byId } = tree;
 
   if (path) {
-    // The explicitly bound route wins whenever its own mount path matches the
-    // requested path — without this, a parent whose mount path ties with its
-    // bound index child would steal the leaf by scan order.
     const bound = boundRouteId ? byId.get(boundRouteId) : undefined;
     if (bound) {
       const boundCandidate = mountPathFor(bound);
@@ -258,9 +254,6 @@ export function resolveStoryLeaf(
       if (!isLiteral && interpolated !== path) {
         continue;
       }
-      // A literal match (a static route) is more specific than one that only
-      // matched after interpolating params, so it wins regardless of length;
-      // within the same kind, the longer (more deeply nested) mount path wins.
       const better = isLiteral === bestLiteral ? candidate.length > bestMatchLength : isLiteral;
       if (better) {
         bestMatch = route;

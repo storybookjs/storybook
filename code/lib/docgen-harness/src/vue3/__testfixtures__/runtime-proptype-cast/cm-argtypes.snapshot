@@ -1,0 +1,44 @@
+{
+  "kind": {
+    "defaultValue": {
+      "summary": "'primary'",
+    },
+    "description": "Visual kind, a literal union behind a PropType cast.",
+    "name": "kind",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "'primary'",
+      },
+      "type": {
+        "summary": ""primary" | "secondary"",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": ""primary" | "secondary" | undefined",
+    },
+  },
+  "measure": {
+    "defaultValue": {
+      "summary": "0",
+    },
+    "description": "Mixed primitive union behind a PropType cast.",
+    "name": "measure",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "string | number",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string | number | undefined",
+    },
+  },
+}

@@ -1,0 +1,40 @@
+{
+  "count": {
+    "defaultValue": {
+      "summary": "0",
+    },
+    "description": "Number of repetitions.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "number | undefined",
+    },
+  },
+  "label": {
+    "defaultValue": undefined,
+    "description": "Visible label for the control.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "string | undefined",
+    },
+  },
+}

@@ -11,6 +11,7 @@ code/lib/docgen-harness/src/
 ├── index.ts                      # package entry (the expectCurrentOrBetter comparator lands here)
 ├── vue3/
 │   ├── vue3-baselines.test.ts    # legacy baseline recorder (argTypes + snippets)
+│   ├── vue3-component-meta-baselines.test.ts  # same recorder through the vue-component-meta engine
 │   ├── vue3-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
 │   ├── vue3-render.test.ts       # portable-stories render smoke test (happy-dom)
 │   └── __testfixtures__/
@@ -19,7 +20,9 @@ code/lib/docgen-harness/src/
 │           ├── input.stories.ts          # real CSF stories driving the snippet baselines
 │           ├── *.ts                      # supporting sources some cases need
 │           ├── argtypes.snapshot         # normalized StrictArgTypes from the legacy extractArgTypes path
-│           └── snippet-<story>.snapshot  # legacy Source-block snippet per named story export
+│           ├── snippet-<story>.snapshot  # legacy Source-block snippet per named story export
+│           ├── cm-argtypes.snapshot      # same argTypes through the vue-component-meta engine
+│           └── cm-snippet-<story>.snapshot  # same snippets through the vue-component-meta engine
 ├── angular/
 │   ├── angular-baselines.test.ts    # legacy baseline recorder (argTypes both flag states + snippets)
 │   ├── angular-legacy-gaps.test.ts  # test.fails red markers for the closeable legacy gaps
@@ -46,6 +49,11 @@ code/lib/docgen-harness/src/
 - vue3: exactly one PascalCase SFC per case.
   The filename becomes `displayName` and therefore the component tag in every snippet - never share a filename like `input.vue`.
 - Both baseline layers come from one production-faithful `parse()` call per fixture: zero options, plugin-exact `__docgenInfo` attach.
+- vue3 records both production docgen engines from the same fixtures.
+  `vue3-baselines.test.ts` drives the default `vue-docgen-api` path; `vue3-component-meta-baselines.test.ts` drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite), replicating the vite plugin's processing exactly: checker options, empty-meta skip, nested-schema pruning, exposed filtering, and the vue-docgen-api event-description backfill.
+  Its snapshots carry the `cm-` prefix so each recorder's stale-snippet guard only sees its own files.
+  These baselines are plain recordings; the OSA "current or better" floor for the vue-component-meta path is a separate, later decision.
+  `sourceFiles` is recorded as `<sfc>` because production stores the absolute module id and snapshots must stay path-free; nothing downstream reads it.
 - angular: one kebab-case `<case-name>.component.ts` per case; the PascalCase class name must byte-match the captured compodoc entry (`findComponentByName` is name-only).
   The recorder drives the full production entry: `setCompodocJson(compodoc-input.json)` then `extractArgTypes(class)`, recorded with `angularFilterNonInputControls` OFF and ON; snippets come from `computesTemplateSourceFromComponent` with `{ ...meta.args, ...story.args }` plus a stub arg per unset output argType, mirroring the actions addon's args enhancer that production always runs.
 - angular: signal members (`input()`/`output()`/`model()`) are invisible to JIT - `ɵcmp.inputs`/`ɵcmp.outputs` stay empty without AOT.
@@ -109,6 +117,9 @@ Each line has a matching red marker in `vue3-legacy-gaps.test.ts`.
   The issue's primary report - a generated snippet binding the child to the parent's whole args object - is not reproduced here; this fixture's snippet already renders the destructured binding correctly, so closing the marker does not verify #24270 itself.
 - #26465 (partial) -> `slots/` (existing case): scoped-slot binding types must be extracted (legacy records `{ entry: unknown; index: unknown }`).
   The issue reports the `vue-component-meta` engine losing slot doc comments, defaults, and HMR; these baselines record the `vue-docgen-api` path, so the marker covers only the binding-type symptom, not the issue's own repro.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under the `vue-component-meta` engine - does not occur at vue-component-meta 3.2.7.
+  The `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact (with or without `schema: true`); a regression baseline, no marker.
+  The issue's secondary HMR symptom is a dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options (legacy records the alias name only).
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` type argument must resolve its props (legacy extracts none).
 

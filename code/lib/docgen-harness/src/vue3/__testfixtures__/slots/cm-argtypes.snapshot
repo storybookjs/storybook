@@ -1,0 +1,60 @@
+{
+  "default": {
+    "description": "Main content area.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any",
+    },
+  },
+  "header": {
+    "description": "Rendered above the content.",
+    "name": "header",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any",
+    },
+  },
+  "heading": {
+    "defaultValue": undefined,
+    "description": "Heading shown above the content.",
+    "name": "heading",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "item": {
+    "description": "Renders one entry; receives the entry and its position.",
+    "name": "item",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ entry: { label: string; }; index: number; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ entry: { label: string; }; index: number; }",
+    },
+  },
+}

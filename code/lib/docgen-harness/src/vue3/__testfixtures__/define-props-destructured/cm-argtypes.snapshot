@@ -1,0 +1,39 @@
+{
+  "label": {
+    "defaultValue": undefined,
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "defaultValue": {
+      "summary": ""medium"",
+    },
+    "description": "The visual size of the control.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": ""medium" | "small" | "large"",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": ""medium" | "small" | "large" | undefined",
+    },
+  },
+}

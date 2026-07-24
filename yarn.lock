@@ -9955,6 +9955,7 @@ __metadata:
     rxjs: "npm:^7.4.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
+    vue-component-meta: "npm:^3.2.7"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
     zone.js: "npm:^0.16.2"

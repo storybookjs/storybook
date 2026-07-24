@@ -1,0 +1,49 @@
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "id": {
+    "defaultValue": undefined,
+    "description": "Unique identifier.",
+    "name": "id",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "defaultValue": undefined,
+    "description": "Size of the button.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": ""medium" | "small" | "large"",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": ""medium" | "small" | "large" | undefined",
+    },
+  },
+}

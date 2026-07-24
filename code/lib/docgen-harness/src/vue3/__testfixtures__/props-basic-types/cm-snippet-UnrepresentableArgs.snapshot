@@ -1,0 +1,9 @@
+<script lang="ts" setup>
+const config = {"theme":"dark","dense":true};
+
+const tags = ["alpha","beta"];
+</script>
+
+<template>
+  <PropsBasicTypes :big="BigInt(9007199254740993)" :config="config" label="Formatted" :tags="tags" :token="Symbol('fixture')" />
+</template>

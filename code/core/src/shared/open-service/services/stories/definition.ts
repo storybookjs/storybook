@@ -2,12 +2,16 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import * as v from 'valibot';
 
+import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
 import { defineApi } from '../../../public-api/index.ts';
 import { getChangedStories } from './changed.ts';
+import { detectUnreachableFiles } from './detect-unreachable-files.ts';
+import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
+import { resolveComponentMatches } from './resolve-component-matches.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 
 const previewSuccessSchema = v.object({
@@ -86,15 +90,20 @@ const findByComponentOutputSchema = v.object({
 
 export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
 
-export type CreateStoriesApiOptions = {
+export type StoryIndexAccess = {
   getIndex: () => Promise<StoryIndex>;
-  getOrigin: () => string;
-  getChangeStatuses: () => Promise<StatusesByStoryIdAndTypeId>;
-  detectUnreachableFiles: () => Promise<string[]>;
-  findStoriesByComponent: (
-    componentPaths: string[],
-    maxDistance?: number
-  ) => Promise<FindByComponentOutput>;
+};
+
+export type StoriesGitAccess = {
+  getChangedFiles: () => Promise<{
+    changed: Set<string>;
+    new: Set<string>;
+  }>;
+};
+
+export type CreateStoriesApiOptions = {
+  storyIndex: StoryIndexAccess;
+  git: StoriesGitAccess;
 };
 
 const jsonSchema = v.optional(
@@ -103,13 +112,7 @@ const jsonSchema = v.optional(
 );
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
-export function createStoriesApi({
-  getIndex,
-  getOrigin,
-  getChangeStatuses,
-  detectUnreachableFiles,
-  findStoriesByComponent,
-}: CreateStoriesApiOptions) {
+export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
   return defineApi({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
@@ -123,15 +126,19 @@ export function createStoriesApi({
           json: jsonSchema,
         }),
         description: 'Resolves story selectors to preview URLs.',
-        handler: async (input) => {
-          const origin = getOrigin();
+        handler: async (input, ctx) => {
+          const origin = ctx.origin;
           if (!origin) {
             throw new OpenServiceMissingOriginError({
               serviceId: 'stories',
               operationName: 'preview',
             });
           }
-          const data = previewStories({ origin, index: await getIndex(), stories: input.stories });
+          const data = previewStories({
+            origin,
+            index: await storyIndex.getIndex(),
+            stories: input.stories,
+          });
           return input.json ? data : formatPreviewStories(data);
         },
       },
@@ -139,12 +146,15 @@ export function createStoriesApi({
         schema: v.object({ json: jsonSchema }),
         description:
           'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
-        handler: async (input) => {
-          const [statuses, index, unreachableFiles] = await Promise.all([
-            getChangeStatuses(),
-            getIndex(),
-            detectUnreachableFiles(),
+        handler: async (input, ctx) => {
+          const moduleGraph = ctx.getService('core/module-graph');
+          const [statuses, index, changedFiles] = await Promise.all([
+            getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
+            storyIndex.getIndex(),
+            git.getChangedFiles(),
           ]);
+          const files = [...new Set([...changedFiles.changed, ...changedFiles.new])];
+          const unreachableFiles = await detectUnreachableFiles({ files, moduleGraph });
           const data = getChangedStories({ statuses, index, unreachableFiles });
           return input.json ? data : formatChangedStories(data);
         },
@@ -163,8 +173,17 @@ export function createStoriesApi({
           json: jsonSchema,
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
-        handler: async (input) => {
-          const data = await findStoriesByComponent(input.componentPaths, input.maxDistance);
+        handler: async (input, ctx) => {
+          const moduleGraph = ctx.getService('core/module-graph');
+          const index = await storyIndex.getIndex();
+          const data = await findStoriesByComponent(
+            {
+              componentPaths: input.componentPaths,
+              maxDistance: input.maxDistance,
+              index,
+            },
+            (componentPaths) => resolveComponentMatches({ componentPaths, index, moduleGraph })
+          );
           return input.json ? data : formatFindByComponent(data);
         },
       },

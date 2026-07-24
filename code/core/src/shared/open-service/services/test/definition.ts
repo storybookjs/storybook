@@ -1,8 +1,7 @@
 import * as v from 'valibot';
 
-import type { StoryIndex } from 'storybook/internal/types';
-
 import { defineApi } from '../../../public-api/index.ts';
+import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
 import { formatTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
@@ -85,14 +84,14 @@ export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 
 export type CreateTestApiOptions = {
   channel: TestChannel;
-  getIndex: () => Promise<StoryIndex>;
+  storyIndex: StoryIndexAccess;
 };
 
 /**
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestApi({ channel, getIndex }: CreateTestApiOptions) {
+export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
   const queue = createAsyncQueue();
 
   return defineApi({
@@ -129,7 +128,7 @@ export function createTestApi({ channel, getIndex }: CreateTestApiOptions) {
           try {
             const result = await runStoryTests({
               channel,
-              getIndex,
+              getIndex: storyIndex.getIndex,
               stories: input.stories,
               a11y: input.a11y,
             });

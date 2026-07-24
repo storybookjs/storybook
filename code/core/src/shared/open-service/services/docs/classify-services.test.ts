@@ -37,6 +37,24 @@ const unattachedMdxPayload = {
 };
 
 describe('classifyServices', () => {
+  it('uses service aggregate keys as the visibility source of truth', () => {
+    const classification = classifyServices({
+      allDocgen: {
+        'docgen-only': {
+          id: 'docgen-only',
+          name: 'Docgen only',
+          path: './DocgenOnly.tsx',
+          jsDocTags: {},
+        },
+      },
+      allStoryDocs: {},
+      allMdx: {},
+    });
+
+    expect(classification.componentIds).toEqual(['docgen-only']);
+    expect(classification.storyBasedIds).toEqual(new Set());
+  });
+
   it('derives components and attached versus unattached docs from service payloads', () => {
     const classification = classifyServices({
       allDocgen: {

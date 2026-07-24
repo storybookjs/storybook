@@ -16,6 +16,10 @@ function toDocsIndexEntry(id: string, name: string): DocsIndexEntry {
   };
 }
 
+/**
+ * Visibility intentionally follows composed service payloads because this API has no story-index
+ * dependency with which to reapply manifest filtering.
+ */
 export function classifyServices({
   allDocgen,
   allStoryDocs,

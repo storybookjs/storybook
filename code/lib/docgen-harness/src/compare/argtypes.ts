@@ -2,13 +2,6 @@ import type { SBType } from '../../../../core/src/csf/SBType.ts';
 import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
 import type { Violation } from './types.ts';
 
-/**
- * Compares a candidate extraction against a baseline per key: nothing recorded may be lost, and
- * types may only change by deep equality or an enumerated improvement. Deliberately NOT compared
- * (each would entrench recorded lies or lateral engine vocabulary): `required` in both notions
- * (legacy Angular hardcodes `required: true` for every input, #28706), `table.category`,
- * `table.jsDocTags`, `control`/`action`, `table.type.summary`, and description/default contents.
- */
 export function compareArgTypes(baseline: StrictArgTypes, candidate: StrictArgTypes): Violation[] {
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {

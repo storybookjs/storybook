@@ -608,6 +608,27 @@ describe('prepareStory', () => {
         args: { one: ['mapped-1', 'mapped-1'] },
       });
     });
+
+    it('evaluates conditional args against the unmapped value of a mapped arg', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          args: { icon: 'star', iconPosition: 'left' },
+          argTypes: {
+            icon: { name: 'icon', mapping: { none: undefined, star: 'mapped-star' } },
+            iconPosition: { name: 'iconPosition', if: { arg: 'icon', eq: 'star' } },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: vi.fn() as any }
+      );
+
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+      expect(context.args).toEqual({ icon: 'mapped-star', iconPosition: 'left' });
+    });
   });
 
   describe('with `FEATURES.argTypeTargetsV7`', () => {

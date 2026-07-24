@@ -1,80 +1,24 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import type { PackageManagerName } from 'storybook/internal/common';
-import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
+import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import { SupportedLanguage } from 'storybook/internal/types';
 
-import { detectLanguage } from '../detectLanguage.ts';
-import { getStorybookData } from '../getStorybookData.ts';
+import { resolveProjectInfo } from './project-info.ts';
 import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
-import type { ProjectInfo, AiSetupOptions } from './types.ts';
+import type { AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
-  const { configDir: userConfigDir, packageManager, output } = options;
+  const { configDir, packageManager, output } = options;
 
-  let projectInfo: ProjectInfo;
+  const projectInfo = await resolveProjectInfo({
+    configDir,
+    packageManager,
+    needsUserOnboarding: () => cache.get<boolean>('onboarding-pending', false),
+  });
 
-  try {
-    const data = await getStorybookData({
-      configDir: userConfigDir,
-      packageManagerName: packageManager as PackageManagerName | undefined,
-    });
-
-    if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
-      logger.error(
-        'Could not detect framework, renderer, or builder from your Storybook config. Make sure you are running this command from your project root, or specify --config-dir.'
-      );
-      return;
-    }
-
-    const majorVersion = data.versionInstalled
-      ? parseMajorVersion(data.versionInstalled)
-      : undefined;
-
-    const detectedLanguage = await detectLanguage(data.packageManager, data.workingDir);
-    const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
-
-    const needsUserOnboarding = await cache.get<boolean>('onboarding-pending', false);
-
-    projectInfo = {
-      storybookVersion: data.versionInstalled,
-      majorVersion,
-      framework: data.frameworkPackage,
-      rendererPackage: data.rendererPackage,
-      renderer: data.renderer,
-      builderPackage: data.builderPackage,
-      addons: data.addons ?? [],
-      configDir: data.configDir,
-      storiesPaths: data.storiesPaths,
-      packageManager: data.packageManager,
-      packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
-      language,
-      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
-      needsUserOnboarding,
-    };
-  } catch (err) {
-    logger.error(
-      `Failed to read Storybook configuration: ${err instanceof Error ? err.message : String(err)}`
-    );
-    logger.log(
-      'Make sure you are running this command from your project root, or specify --config-dir.'
-    );
-    return;
-  }
-
-  if (
-    projectInfo.rendererPackage !== '@storybook/react' ||
-    projectInfo.builderPackage !== '@storybook/builder-vite'
-  ) {
-    logger.log(
-      'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
-        projectInfo.rendererPackage +
-        ', builder: ' +
-        projectInfo.builderPackage
-    );
+  if (!projectInfo) {
     return;
   }
 
@@ -117,9 +61,4 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   } else {
     process.stdout.write(`${markdownOutput}\n`);
   }
-}
-
-function parseMajorVersion(version: string): number | undefined {
-  const match = version.match(/^(\d+)/);
-  return match ? parseInt(match[1], 10) : undefined;
 }

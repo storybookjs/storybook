@@ -28,21 +28,21 @@ export type ChangedStoriesParams = {
   /** Change-detection statuses keyed by storyId → typeId → status. */
   statuses: StatusesByStoryIdAndTypeId;
   index: StoryIndex;
-  unreachableFiles?: string[];
   /** Defaults to `storybook/change-detection`. */
   changeDetectionTypeId?: string;
 };
 
+export type ChangedStoriesResult = Omit<ChangedStoriesOutput, 'unreachableFiles'>;
+
 /**
  * Filters change-detection statuses to new/modified/affected, enriches from the story index,
- * sorts by priority then storyId, and returns counts plus unreachable working-tree files.
+ * and sorts by priority then storyId.
  */
 export function getChangedStories({
   statuses,
   index,
-  unreachableFiles = [],
   changeDetectionTypeId = CHANGE_DETECTION_STATUS_TYPE_ID,
-}: ChangedStoriesParams): ChangedStoriesOutput {
+}: ChangedStoriesParams): ChangedStoriesResult {
   const changedFromStatusStore: Status[] = [];
   for (const byType of Object.values(statuses)) {
     const status = byType?.[changeDetectionTypeId];
@@ -78,9 +78,5 @@ export function getChangedStories({
     affected: stories.filter((story) => story.statusValue === 'status-value:affected').length,
   };
 
-  return {
-    stories,
-    counts,
-    unreachableFiles,
-  };
+  return { stories, counts };
 }

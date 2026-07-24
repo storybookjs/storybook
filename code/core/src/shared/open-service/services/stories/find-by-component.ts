@@ -1,5 +1,10 @@
+import { existsSync } from 'node:fs';
+
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
+
+import type { ModuleGraphService } from '../module-graph/definition.ts';
 import type { FindByComponentOutput } from './definition.ts';
 
 /** Default import-graph distance ceiling (mirrors addon-mcp). */
@@ -18,21 +23,12 @@ export type ResolveComponentMatchesResult = {
   pathNotFound?: boolean;
 };
 
-/**
- * Resolves component paths to reverse-graph story hits.
- *
- * Injected so unit tests and common-preset wiring can supply module-graph walks (or fixtures)
- * without coupling this helper to the live graph service.
- */
-export type ResolveComponentMatches = (
-  componentPaths: string[]
-) => ResolveComponentMatchesResult[] | Promise<ResolveComponentMatchesResult[]>;
-
 export type FindStoriesByComponentParams = {
   componentPaths: string[];
   /** Maximum import-graph distance to include. Defaults to {@link DEFAULT_MAX_DISTANCE}. */
   maxDistance?: number;
   index: StoryIndex;
+  moduleGraph: ModuleGraphService;
 };
 
 export type ClippedByMaxDistance = {
@@ -68,17 +64,90 @@ function applyMaxDistance(
   return { kept, clipped };
 }
 
+export async function resolveComponentMatches({
+  componentPaths,
+  index,
+  moduleGraph,
+}: {
+  componentPaths: string[];
+  index: StoryIndex;
+  moduleGraph: ModuleGraphService;
+}): Promise<ResolveComponentMatchesResult[]> {
+  // Exists-check first so missing paths skip the graph query cost when every path is missing.
+  // Mixed present/missing still queries once for the batch (module-graph API is bulk).
+  const absolutePaths = componentPaths.map((componentPath) =>
+    isAbsolute(componentPath) ? componentPath : join(process.cwd(), componentPath)
+  );
+  const missing = absolutePaths.map((absolute) => !existsSync(absolute));
+  if (missing.every(Boolean)) {
+    return componentPaths.map((componentPath) => ({
+      componentPath,
+      matches: [],
+      pathNotFound: true,
+    }));
+  }
+
+  let storiesForFiles: Array<Array<{ storyFile: string; depth: number }>>;
+  try {
+    storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({
+      files: componentPaths,
+    });
+  } catch {
+    return componentPaths.map((componentPath, position) =>
+      missing[position]
+        ? { componentPath, matches: [], pathNotFound: true }
+        : { componentPath, matches: [] }
+    );
+  }
+
+  const storyIdsByFile = new Map<string, string[]>();
+  for (const entry of Object.values(index.entries)) {
+    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
+      continue;
+    }
+    const key = entry.importPath.startsWith('./') ? entry.importPath : `./${entry.importPath}`;
+    const ids = storyIdsByFile.get(key) ?? [];
+    ids.push(entry.id);
+    storyIdsByFile.set(key, ids);
+  }
+
+  return componentPaths.map((componentPath, position) => {
+    if (missing[position]) {
+      return { componentPath, matches: [], pathNotFound: true };
+    }
+
+    const byStoryId = new Map<string, number>();
+    for (const { storyFile, depth } of storiesForFiles[position] ?? []) {
+      for (const storyId of storyIdsByFile.get(storyFile) ?? []) {
+        const existing = byStoryId.get(storyId);
+        if (existing === undefined || depth < existing) {
+          byStoryId.set(storyId, depth);
+        }
+      }
+    }
+
+    return {
+      componentPath,
+      matches: [...byStoryId.entries()]
+        .map(([storyId, depth]) => ({ storyId, depth }))
+        .sort((a, b) =>
+          a.depth !== b.depth ? a.depth - b.depth : a.storyId.localeCompare(b.storyId)
+        ),
+    };
+  });
+}
+
 /**
- * Shapes reverse-graph matches into the `stories.findByComponent` output.
- *
- * Graph walking is injected via `resolveMatches` — this helper only applies `maxDistance`
- * clipping, enriches from the story index, and preserves `pathNotFound`.
+ * Resolves reverse-graph matches into the `stories.findByComponent` output, applying
+ * `maxDistance` clipping and story-index enrichment.
  */
-export async function findStoriesByComponent(
-  { componentPaths, maxDistance = DEFAULT_MAX_DISTANCE, index }: FindStoriesByComponentParams,
-  resolveMatches: ResolveComponentMatches
-): Promise<FindByComponentOutput> {
-  const resolved = await resolveMatches(componentPaths);
+export async function findStoriesByComponent({
+  componentPaths,
+  maxDistance = DEFAULT_MAX_DISTANCE,
+  index,
+  moduleGraph,
+}: FindStoriesByComponentParams): Promise<FindByComponentOutput> {
+  const resolved = await resolveComponentMatches({ componentPaths, index, moduleGraph });
 
   const results: FindByComponentOutput['results'] = resolved.map((entry) => {
     if (entry.pathNotFound) {

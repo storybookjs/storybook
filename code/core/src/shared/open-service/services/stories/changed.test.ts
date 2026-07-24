@@ -114,7 +114,7 @@ describe('getChangedStories', () => {
     ]);
   });
 
-  it('computes counts and passes through unreachableFiles', () => {
+  it('computes counts for each status bucket', () => {
     const statuses: StatusesByStoryIdAndTypeId = {
       'button--primary': {
         [CHANGE_DETECTION_STATUS_TYPE_ID]: status('button--primary', 'status-value:new'),
@@ -133,11 +133,9 @@ describe('getChangedStories', () => {
     const result = getChangedStories({
       statuses,
       index,
-      unreachableFiles: ['/repo/src/theme.ts'],
     });
 
     expect(result.counts).toEqual({ new: 1, modified: 1, affected: 2 });
-    expect(result.unreachableFiles).toEqual(['/repo/src/theme.ts']);
   });
 
   it('drops statuses whose storyId is missing from the index', () => {
@@ -153,17 +151,15 @@ describe('getChangedStories', () => {
     expect(result.counts).toEqual({ new: 0, modified: 0, affected: 0 });
   });
 
-  it('returns empty stories with unreachableFiles when nothing changed', () => {
+  it('returns empty stories when nothing changed', () => {
     const result = getChangedStories({
       statuses: {},
       index,
-      unreachableFiles: ['/repo/src/tokens.css'],
     });
 
     expect(result).toEqual({
       stories: [],
       counts: { new: 0, modified: 0, affected: 0 },
-      unreachableFiles: ['/repo/src/tokens.css'],
     });
   });
 });

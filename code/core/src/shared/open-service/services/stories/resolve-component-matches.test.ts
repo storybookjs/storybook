@@ -6,7 +6,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import type { ModuleGraphService } from '../module-graph/definition.ts';
-import { resolveComponentMatches } from './resolve-component-matches.ts';
+import { resolveComponentMatches } from './find-by-component.ts';
 
 vi.mock('node:fs', { spy: true });
 

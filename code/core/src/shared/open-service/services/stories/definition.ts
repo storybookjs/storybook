@@ -5,14 +5,12 @@ import * as v from 'valibot';
 
 import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
 import { defineApi } from '../../../public-api/index.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
-import { detectUnreachableFiles } from './detect-unreachable-files.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
-import { resolveComponentMatches } from './resolve-component-matches.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 
 const previewSuccessSchema = v.object({
@@ -159,8 +157,18 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
           const files = [...new Set([...changedFiles.changed, ...changedFiles.new])].map((file) =>
             resolvePath(repoRoot, file)
           );
-          const unreachableFiles = await detectUnreachableFiles({ files, moduleGraph });
-          const data = getChangedStories({ statuses, index, unreachableFiles });
+          let unreachableFiles: string[] = [];
+          const status = await moduleGraph.queries.status.loaded(undefined);
+          if (status.value === 'ready') {
+            const storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({ files });
+            unreachableFiles = files.filter(
+              (_file, fileIndex) => storiesForFiles[fileIndex]?.length === 0
+            );
+          }
+          const data = {
+            ...getChangedStories({ statuses, index }),
+            unreachableFiles,
+          };
           return input.json ? data : formatChangedStories(data);
         },
       },
@@ -181,14 +189,12 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
         handler: async (input, ctx) => {
           const moduleGraph = ctx.getService('core/module-graph');
           const index = await storyIndex.getIndex();
-          const data = await findStoriesByComponent(
-            {
-              componentPaths: input.componentPaths,
-              maxDistance: input.maxDistance,
-              index,
-            },
-            (componentPaths) => resolveComponentMatches({ componentPaths, index, moduleGraph })
-          );
+          const data = await findStoriesByComponent({
+            componentPaths: input.componentPaths,
+            maxDistance: input.maxDistance,
+            index,
+            moduleGraph,
+          });
           return input.json ? data : formatFindByComponent(data);
         },
       },

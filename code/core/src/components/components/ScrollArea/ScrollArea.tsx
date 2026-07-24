@@ -16,30 +16,33 @@ export interface ScrollAreaProps {
    * interactive elements.
    */
   focusable?: boolean;
+  containOverscroll?: boolean;
 }
 
 const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number; offset: number }>(
   ({ scrollbarsize, offset }) => ({
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
     '--scrollbar-size': `${scrollbarsize + offset}px`,
     '--radix-scroll-area-thumb-width': `${scrollbarsize}px`,
   })
 );
 
-const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{ focusable: boolean }>(
-  ({ focusable, theme }) => ({
-    width: '100%',
-    height: '100%',
-    '&:focus': focusable
-      ? {
-          outline: `2px solid ${theme.color.secondary}`,
-          outlineOffset: -2,
-        }
-      : {},
-  })
-);
+const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{
+  focusable: boolean;
+  containOverscroll: boolean;
+}>(({ focusable, theme, containOverscroll }) => ({
+  width: '100%',
+  height: '100%',
+  '-webkit-overflow-scrolling': 'touch',
+  ...(containOverscroll ? { overscrollBehavior: 'contain' } : {}),
+  '&:focus': focusable
+    ? {
+        outline: `2px solid ${theme.color.secondary}`,
+        outlineOffset: -2,
+      }
+    : {},
+}));
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   offset: number;
@@ -103,6 +106,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
       scrollPadding = 0,
       className,
       focusable = false,
+      containOverscroll = false,
     },
     ref
   ) => (
@@ -112,6 +116,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
         style={{ scrollPadding }}
         tabIndex={focusable ? 0 : undefined}
         focusable={focusable}
+        containOverscroll={containOverscroll}
       >
         {children}
       </ScrollAreaViewport>

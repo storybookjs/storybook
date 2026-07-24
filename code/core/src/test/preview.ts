@@ -88,7 +88,7 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
 
 let patchedFocus = false;
 
-const enhanceContext: LoaderFunction = async (context) => {
+export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
   }
@@ -128,11 +128,26 @@ const enhanceContext: LoaderFunction = async (context) => {
               currentFocus = newFocus;
             },
             get() {
+              // Focus-management libraries (react-aria, Zag) read `HTMLElement.prototype.focus` to
+              // capture the method before wrapping it. `this` is the prototype there, not an
+              // element: hand back the current method, since touching `this.ownerDocument` below
+              // would hit a native brand check and throw "Illegal invocation".
+              if (this === HTMLElement.prototype) {
+                return currentFocus;
+              }
+
               // A node inside a removed iframe has no live browsing context as `ownerDocument.defaultView`
               // is null. The instrumented focus dispatches events through user-event, whose getWindow()
               // then throws "Could not determine window of node"; thrown in React's commit phase that
               // freezes the whole UI. Focus is meaningless on such a node, so hand back a no-op instead.
-              if (!this.ownerDocument?.defaultView) {
+              let browsingContext;
+              try {
+                browsingContext = this.ownerDocument?.defaultView;
+              } catch {
+                // Non-element receiver (e.g. a subclass prototype); brand checks reject it too.
+                return currentFocus;
+              }
+              if (!browsingContext) {
                 return noopFocus;
               }
 

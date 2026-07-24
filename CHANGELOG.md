@@ -1,3 +1,9 @@
+## 10.5.4
+
+- ReactNative: Telemetry framework detection fix - [#35560](https://github.com/storybookjs/storybook/pull/35560), thanks @ndelangen!
+- SyntaxHighlighter: Fix PrismJS dark mode mismatch - [#35541](https://github.com/storybookjs/storybook/pull/35541), thanks @hxy-asdw!
+- TanStack: Respect routeOverrides component overrides in stories - [#35497](https://github.com/storybookjs/storybook/pull/35497), thanks @unpunnyfuns!
+
 ## 10.5.3
 
 - Dependencies: Upgrade TypeScript to 6.0.3 - [#34971](https://github.com/storybookjs/storybook/pull/34971), thanks @valentinpalkovic!

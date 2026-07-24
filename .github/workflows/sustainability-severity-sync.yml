@@ -1,0 +1,84 @@
+name: Sustainability severity sync
+
+# Mirrors the sev:S1..sev:S4 repo labels into the "Severity" single-select field on the
+# Core Team Projects board (https://github.com/orgs/storybookjs/projects/8), so project
+# views can group, sort, and slice by severity (Projects v2 cannot group by labels).
+# Labels are the source of truth; this workflow only writes the project field.
+
+on:
+  issues:
+    types: [labeled, unlabeled]
+  # pull_request_target is required so the sync also runs with secrets for PRs from
+  # forks (community PRs). It is safe here: the workflow never checks out PR code.
+  pull_request_target:
+    types: [labeled, unlabeled]
+
+permissions: {}
+
+# Serialize runs per issue/PR so rapid label changes cannot write stale values.
+concurrency:
+  group: severity-sync-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync severity label to project field
+    if: github.repository_owner == 'storybookjs' && startsWith(github.event.label.name, 'sev:S')
+    runs-on: ubuntu-latest
+    env:
+      # PAT with the `project` scope; the default GITHUB_TOKEN cannot write org projects.
+      GH_TOKEN: ${{ secrets.PAT_STORYBOOK_BOT }}
+      PROJECT_ID: PVT_kwDOAVlWbs4AH6tY # Core Team Projects (org project 8)
+      SEVERITY_FIELD_ID: PVTSSF_lADOAVlWbs4AH6tYzhX7MRw
+      NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Update Severity field on project item
+        run: |
+          declare -A option_ids=(
+            ["sev:S1"]="bf07bca6"
+            ["sev:S2"]="418c12f5"
+            ["sev:S3"]="f131579a"
+            ["sev:S4"]="cdb19840"
+          )
+
+          # Re-read current labels from the API instead of trusting the event payload,
+          # so out-of-order event delivery cannot apply a stale severity.
+          content=$(gh api "repos/$REPO/issues/$NUMBER")
+          content_id=$(jq -r '.node_id' <<< "$content")
+          severity=$(jq -r '[.labels[].name | select(test("^sev:S[1-4]$"))] | sort | first // empty' <<< "$content")
+
+          # Idempotent: returns the existing item if the content is already on the board.
+          item_id=$(gh api graphql \
+            -f query='mutation($project: ID!, $content: ID!) {
+              addProjectV2ItemById(input: { projectId: $project, contentId: $content }) {
+                item { id }
+              }
+            }' \
+            -f project="$PROJECT_ID" -f content="$content_id" \
+            --jq '.data.addProjectV2ItemById.item.id')
+
+          if [ -n "$severity" ]; then
+            gh api graphql \
+              -f query='mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $project, itemId: $item, fieldId: $field,
+                  value: { singleSelectOptionId: $option }
+                }) { projectV2Item { id } }
+              }' \
+              -f project="$PROJECT_ID" -f item="$item_id" \
+              -f field="$SEVERITY_FIELD_ID" -f option="${option_ids[$severity]}" \
+              --jq '.data.updateProjectV2ItemFieldValue.projectV2Item.id' > /dev/null
+            echo "Set Severity=$severity on $REPO#$NUMBER"
+          else
+            gh api graphql \
+              -f query='mutation($project: ID!, $item: ID!, $field: ID!) {
+                clearProjectV2ItemFieldValue(input: {
+                  projectId: $project, itemId: $item, fieldId: $field
+                }) { projectV2Item { id } }
+              }' \
+              -f project="$PROJECT_ID" -f item="$item_id" \
+              -f field="$SEVERITY_FIELD_ID" \
+              --jq '.data.clearProjectV2ItemFieldValue.projectV2Item.id' > /dev/null
+            echo "Cleared Severity on $REPO#$NUMBER (no sev:* label left)"
+          fi

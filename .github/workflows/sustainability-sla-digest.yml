@@ -1,0 +1,130 @@
+name: Sustainability SLA digest
+
+# Reports community PRs that are falling through the cracks of the sustainability
+# workstream (https://github.com/orgs/storybookjs/projects/8):
+#   1. Untriaged: open community PRs older than 7 days without a sev:S1..S4 label.
+#   2. Unanswered: open community PRs older than 7 days without any maintainer
+#      comment or review.
+# The digest is written to the job summary and, when the DISCORD_SUSTAINABILITY_WEBHOOK
+# secret is configured, posted to Discord.
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5' # weekday mornings, 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    name: Report overdue community PRs
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Collect community PRs older than 7 days
+        run: |
+          cutoff=$(date -u -d '7 days ago' +%Y-%m-%d)
+          search="repo:$REPO is:pr is:open draft:false created:<$cutoff"
+          graphql_query='
+            query($q: String!, $cursor: String) {
+              search(query: $q, type: ISSUE, first: 50, after: $cursor) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                  ... on PullRequest {
+                    number title url createdAt authorAssociation
+                    author { login }
+                    labels(first: 20) { nodes { name } }
+                    comments(first: 100) { nodes { authorAssociation author { login } } }
+                    reviews(first: 50) { nodes { authorAssociation author { login } } }
+                  }
+                }
+              }
+            }'
+
+          cursor=""
+          : > prs.jsonl
+          for _ in 1 2 3 4 5 6; do
+            if [ -z "$cursor" ]; then
+              resp=$(gh api graphql -f q="$search" -f query="$graphql_query")
+            else
+              resp=$(gh api graphql -f q="$search" -f cursor="$cursor" -f query="$graphql_query")
+            fi
+            jq -c '.data.search.nodes[] | select(.number != null)' <<< "$resp" >> prs.jsonl
+            if [ "$(jq -r '.data.search.pageInfo.hasNextPage' <<< "$resp")" != "true" ]; then
+              break
+            fi
+            cursor=$(jq -r '.data.search.pageInfo.endCursor' <<< "$resp")
+          done
+
+          # Community PR: author is not an org member/owner and not a bot.
+          jq -c '
+            select(
+              (.authorAssociation | IN("MEMBER", "OWNER") | not)
+              and ((.author.login // "") | test("\\[bot\\]$|^dependabot") | not)
+            )' prs.jsonl > community.jsonl
+
+          age_line='"- [#\(.number)](\(.url)) \(.title) (\(.author.login), \((now - (.createdAt | fromdateiso8601)) / 86400 | floor)d old)"'
+
+          jq -r "select([.labels.nodes[].name | select(test(\"^sev:S[1-4]\$\"))] | length == 0) | $age_line" \
+            community.jsonl > untriaged.md
+
+          jq -r "select(
+              [
+                (.comments.nodes[], .reviews.nodes[])
+                | select(.authorAssociation | IN(\"MEMBER\", \"OWNER\"))
+                | select((.author.login // \"\") | test(\"\\\\[bot\\\\]\$|^storybook-bot\$\") | not)
+              ] | length == 0
+            ) | $age_line" \
+            community.jsonl > unanswered.md
+
+      - name: Build digest
+        id: build
+        run: |
+          section() { # $1=emoji $2=title $3=file
+            local total
+            total=$(grep -c . "$3" || true)
+            if [ "$total" -eq 0 ]; then
+              return 0
+            fi
+            echo "$1 **$total $2**"
+            head -n 15 "$3"
+            if [ "$total" -gt 15 ]; then
+              echo "…and $((total - 15)) more"
+            fi
+            echo ""
+          }
+          {
+            section "🔴" "community PRs untriaged for more than 7 days (apply a sev:S1..S4 label)" untriaged.md
+            section "🟠" "community PRs without any maintainer response for more than 7 days" unanswered.md
+          } > sections.md
+
+          if [ -s sections.md ]; then
+            {
+              echo "## Sustainability digest for $REPO"
+              echo ""
+              cat sections.md
+              echo "Board: https://github.com/orgs/storybookjs/projects/8"
+            } > digest.md
+            echo "has_content=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "All community PRs are triaged and answered within the SLA. 🎉" > digest.md
+            echo "has_content=false" >> "$GITHUB_OUTPUT"
+          fi
+          cat digest.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post digest to Discord
+        if: steps.build.outputs.has_content == 'true'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_SUSTAINABILITY_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_SUSTAINABILITY_WEBHOOK is not configured, skipping Discord notification."
+            exit 0
+          fi
+          # Discord messages are capped at 2000 characters.
+          jq -n --rawfile msg digest.md '{ content: ($msg | .[0:1990]) }' > payload.json
+          curl -sf -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK"

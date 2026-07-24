@@ -1,6 +1,6 @@
 import type { DocgenPayload } from '../docgen/types.ts';
 import type { StoryDocsPayload } from '../story-docs/types.ts';
-import type { IndexClassification } from './classify-index.ts';
+import type { DocsClassification } from './classify-services.ts';
 
 export type MdxDoc = {
   id: string;
@@ -97,7 +97,7 @@ function summaryOf(item: { summary?: string; description?: string }): string | u
 
 /** Builds the transport-neutral `docs.list` payload from settled dependency data. */
 export function mapDocsList(params: {
-  classification: IndexClassification;
+  classification: DocsClassification;
   allDocgen: Record<string, DocgenPayload | undefined>;
   allStoryDocs: Record<string, StoryDocsPayload | undefined>;
   allMdx: Record<string, MdxPayload | undefined>;
@@ -126,11 +126,11 @@ export function mapDocsList(params: {
     return component;
   });
 
-  const docs = [...classification.unattachedDocs.entries()].map(([docId, entry]) => {
+  const docs = [...classification.unattachedDocs.entries()].map(([docId, name]) => {
     const payload = allMdx[docId]?.docs?.[docId];
     const doc: DocsListResult['docs'][number] = {
       id: docId,
-      name: entry.name,
+      name,
     };
     if (payload?.title !== undefined) {
       doc.title = payload.title;
@@ -147,7 +147,7 @@ export function mapDocsList(params: {
 /** Builds the transport-neutral `docs.show` payload for one id. */
 export function mapDocsShow(params: {
   id: string;
-  classification: IndexClassification;
+  classification: DocsClassification;
   docgen?: DocgenPayload;
   storyDocs?: StoryDocsPayload;
   mdx?: MdxPayload;
@@ -179,10 +179,10 @@ export function mapDocsShow(params: {
   let docs: Record<string, MdxDoc> | undefined;
   if (attached.length > 0 && mdx?.docs) {
     docs = {};
-    for (const entry of attached) {
-      const doc = mdx.docs[entry.id];
+    for (const docsId of attached) {
+      const doc = mdx.docs[docsId];
       if (doc) {
-        docs[entry.id] = doc;
+        docs[docsId] = doc;
       }
     }
   }

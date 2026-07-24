@@ -1,52 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Tag } from '../../../constants/tags.ts';
-import { classifyIndex } from './classify-index.ts';
 import { mapDocsList, mapDocsShow, mapDocsShowStory } from './map.ts';
-
-describe('classifyIndex', () => {
-  it('selects story-backed components and splits attached vs unattached docs', () => {
-    const classification = classifyIndex({
-      v: 5,
-      entries: {
-        'button--primary': {
-          type: 'story',
-          subtype: 'story',
-          id: 'button--primary',
-          name: 'Primary',
-          title: 'Button',
-          importPath: './Button.stories.tsx',
-          tags: [Tag.MANIFEST],
-        },
-        'button--docs': {
-          type: 'docs',
-          id: 'button--docs',
-          name: 'Docs',
-          title: 'Button',
-          importPath: './Button.mdx',
-          storiesImports: ['./Button.stories.tsx'],
-          tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
-        },
-        'guide--docs': {
-          type: 'docs',
-          id: 'guide--docs',
-          name: 'Guide',
-          title: 'Guide',
-          importPath: './Guide.mdx',
-          storiesImports: [],
-          tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
-        },
-      },
-    });
-
-    expect(classification.componentIds).toEqual(['button']);
-    expect([...classification.storyBasedIds]).toEqual(['button']);
-    expect(classification.attachedDocsByComponent.get('button')?.map((entry) => entry.id)).toEqual([
-      'button--docs',
-    ]);
-    expect([...classification.unattachedDocs.keys()]).toEqual(['guide--docs']);
-  });
-});
 
 describe('mapDocsList', () => {
   it('lists components and optional story ids', () => {
@@ -55,20 +9,7 @@ describe('mapDocsList', () => {
         componentIds: ['button'],
         storyBasedIds: new Set(['button']),
         attachedDocsByComponent: new Map(),
-        unattachedDocs: new Map([
-          [
-            'guide--docs',
-            {
-              type: 'docs',
-              id: 'guide--docs',
-              name: 'Guide',
-              title: 'Guide',
-              importPath: './Guide.mdx',
-              storiesImports: [],
-              tags: [Tag.UNATTACHED_MDX],
-            },
-          ],
-        ]),
+        unattachedDocs: new Map([['guide--docs', 'Guide']]),
       },
       allDocgen: {
         button: {

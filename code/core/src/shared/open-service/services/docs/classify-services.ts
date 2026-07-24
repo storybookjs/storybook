@@ -1,20 +1,17 @@
-import type { DocsIndexEntry } from '../../../../types/modules/indexer.ts';
-
 import type { DocgenPayload } from '../docgen/types.ts';
 import type { StoryDocsPayload } from '../story-docs/types.ts';
-import type { IndexClassification } from './classify-index.ts';
 import type { MdxPayload } from './map.ts';
 
-function toDocsIndexEntry(id: string, name: string): DocsIndexEntry {
-  return {
-    type: 'docs',
-    id,
-    name,
-    title: name,
-    importPath: '',
-    storiesImports: [],
-  };
-}
+export type DocsClassification = {
+  /** Component ids present in docgen and/or story-docs aggregates. */
+  componentIds: string[];
+  /** Component ids backed by a story-docs payload. */
+  storyBasedIds: Set<string>;
+  /** Standalone MDX docs keyed by docs id → display name. */
+  unattachedDocs: Map<string, string>;
+  /** Attached MDX docs ids grouped by owning component id. */
+  attachedDocsByComponent: Map<string, string[]>;
+};
 
 /**
  * Visibility intentionally follows composed service payloads because this API has no story-index
@@ -28,10 +25,10 @@ export function classifyServices({
   allDocgen: Record<string, DocgenPayload | undefined>;
   allStoryDocs: Record<string, StoryDocsPayload | undefined>;
   allMdx: Record<string, MdxPayload | undefined>;
-}): IndexClassification {
+}): DocsClassification {
   const storyBasedIds = new Set(Object.keys(allStoryDocs));
-  const unattachedDocs = new Map<string, DocsIndexEntry>();
-  const attachedDocsByComponent = new Map<string, DocsIndexEntry[]>();
+  const unattachedDocs = new Map<string, string>();
+  const attachedDocsByComponent = new Map<string, string[]>();
   const componentIds = new Set([...Object.keys(allDocgen), ...Object.keys(allStoryDocs)]);
 
   for (const [id, payload] of Object.entries(allMdx)) {
@@ -39,14 +36,11 @@ export function classifyServices({
       continue;
     }
     if (payload.docs[id]) {
-      unattachedDocs.set(id, toDocsIndexEntry(id, payload.docs[id].name));
+      unattachedDocs.set(id, payload.docs[id].name);
       continue;
     }
     componentIds.add(id);
-    attachedDocsByComponent.set(
-      id,
-      Object.entries(payload.docs).map(([docsId, docs]) => toDocsIndexEntry(docsId, docs.name))
-    );
+    attachedDocsByComponent.set(id, Object.keys(payload.docs));
   }
 
   return {

@@ -72,15 +72,11 @@ describe('classifyServices', () => {
       },
     });
 
-    expect(classification).toMatchObject({
+    expect(classification).toEqual({
       componentIds: ['button'],
       storyBasedIds: new Set(['button']),
-      unattachedDocs: new Map([
-        ['introduction', expect.objectContaining({ id: 'introduction', name: 'Introduction' })],
-      ]),
+      unattachedDocs: new Map([['introduction', 'Introduction']]),
+      attachedDocsByComponent: new Map([['button', ['button--docs']]]),
     });
-    expect(classification.attachedDocsByComponent.get('button')).toEqual([
-      expect.objectContaining({ id: 'button--docs', name: 'Docs' }),
-    ]);
   });
 });

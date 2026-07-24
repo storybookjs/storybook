@@ -114,6 +114,43 @@ describe('multi-project management', () => {
     expect(buttonProject).not.toBe(cardProject);
   });
 
+  it('reuses parsed source files across projects', { timeout: 30_000 }, () => {
+    tempDir = createTempDir();
+
+    // Two projects that both reach shared.ts, neither having the other's component as a root file.
+    writeFiles(tempDir, {
+      'shared.ts': `export type Variant = 'primary' | 'secondary';`,
+      'app/tsconfig.json': tsconfigJSON(),
+      'app/Button.tsx': dedent`
+        import React from 'react';
+        import type { Variant } from '../shared.ts';
+        export const Button = (_props: { variant: Variant }) => <button />;
+      `,
+      'lib/tsconfig.json': tsconfigJSON(),
+      'lib/Card.tsx': dedent`
+        import React from 'react';
+        import type { Variant } from '../shared.ts';
+        export const Card = (_props: { variant: Variant }) => <div />;
+      `,
+    });
+
+    manager = new ComponentMetaManager(ts);
+
+    const buttonProject = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
+    const cardProject = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
+    expect(buttonProject).not.toBe(cardProject);
+
+    const sharedPath = path.join(tempDir, 'shared.ts');
+    const fromButton = buttonProject.getSourceFile(sharedPath);
+    const fromCard = cardProject.getSourceFile(sharedPath);
+
+    expect(fromButton).toBeDefined();
+    // Identity, not equality. Without a shared DocumentRegistry each LanguageService parses its own
+    // copy of every file it reaches, and the extracted docgen is unchanged either way, so the shared
+    // instance is the only observable difference.
+    expect(fromButton).toBe(fromCard);
+  });
+
   it('falls back to inferred project when no tsconfig found', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 

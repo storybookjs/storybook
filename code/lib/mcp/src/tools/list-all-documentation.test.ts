@@ -1,0 +1,481 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { McpServer } from 'tmcp';
+import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
+import { addListAllDocumentationTool, LIST_TOOL_NAME } from './list-all-documentation.ts';
+import type { ComponentManifestMap, DocsManifestMap, StorybookContext } from '../types.ts';
+import smallManifestFixtureRaw from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
+import smallDocsManifestFixtureRaw from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
+import * as getManifest from '../utils/get-manifest.ts';
+
+// JSON imports widen the `v` literal to `number`, so re-type the fixtures against
+// the discriminated-union schema for use in strongly-typed mocks.
+const smallManifestFixture = smallManifestFixtureRaw as unknown as ComponentManifestMap;
+const smallDocsManifestFixture = smallDocsManifestFixtureRaw as unknown as DocsManifestMap;
+
+describe('listAllDocumentationTool', () => {
+  let server: McpServer<any, StorybookContext>;
+  let getManifestsSpy: any;
+
+  beforeEach(async () => {
+    const adapter = new ValibotJsonSchemaAdapter();
+    server = new McpServer(
+      {
+        name: 'test-server',
+        version: '1.0.0',
+        description: 'Test server for list tool',
+      },
+      {
+        adapter,
+        capabilities: {
+          tools: { listChanged: true },
+        },
+      }
+    ).withContext<StorybookContext>();
+
+    // initialize test session
+    await server.receive(
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-06-18',
+          capabilities: {},
+          clientInfo: { name: 'test', version: '1.0.0' },
+        },
+      },
+      { sessionId: 'test-session' }
+    );
+    await addListAllDocumentationTool(server);
+
+    // Mock getManifests to return the fixture
+    getManifestsSpy = vi.spyOn(getManifest, 'getManifests');
+    getManifestsSpy.mockResolvedValue({
+      componentManifest: smallManifestFixture,
+    });
+  });
+
+  it('should return a list of all components', async () => {
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: LIST_TOOL_NAME,
+        arguments: {},
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "# Components
+
+			- Button (button): A simple button component
+			- Card (card): A container component for grouping related content.
+			- Input (input): A text input component with validation support.",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+  });
+
+  it('should include nested story IDs when withStoryIds is true', async () => {
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 2,
+      method: 'tools/call',
+      params: {
+        name: LIST_TOOL_NAME,
+        arguments: {
+          withStoryIds: true,
+        },
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest },
+    });
+
+    const text = (response.result as any).content[0].text;
+    expect(text).toContain('Button (button): A simple button component');
+    expect(text).toContain('  - Primary (button--primary)');
+  });
+
+  describe('multi-source mode', () => {
+    const sources = [
+      { id: 'local', title: 'Local' },
+      { id: 'remote', title: 'Remote', url: 'http://remote.example.com' },
+    ];
+
+    const remoteManifest: ComponentManifestMap = {
+      v: 0,
+      components: {
+        badge: {
+          id: 'badge',
+          path: 'src/Badge.tsx',
+          name: 'Badge',
+          summary: 'A badge component',
+        },
+      },
+    };
+
+    it('should return grouped output from multiple sources', async () => {
+      const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+      getMultiSourceManifestsSpy.mockResolvedValue([
+        {
+          source: sources[0]!,
+          componentManifest: smallManifestFixture,
+        },
+        {
+          source: sources[1]!,
+          componentManifest: remoteManifest,
+        },
+      ]);
+
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      const response = await server.receive(request, {
+        custom: { request: mockHttpRequest, sources },
+      });
+
+      const text = (response.result as any).content[0].text;
+      expect(text).toContain('# Local');
+      expect(text).toContain('id: local');
+      expect(text).toContain('Button (button)');
+      expect(text).toContain('# Remote');
+      expect(text).toContain('id: remote');
+      expect(text).toContain('Badge (badge)');
+
+      getMultiSourceManifestsSpy.mockRestore();
+    });
+
+    it('should call onListAllDocumentation with first successful source', async () => {
+      const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+      getMultiSourceManifestsSpy.mockResolvedValue([
+        {
+          source: sources[0]!,
+          componentManifest: smallManifestFixture,
+        },
+        {
+          source: sources[1]!,
+          componentManifest: remoteManifest,
+        },
+      ]);
+
+      const handler = vi.fn();
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      await server.receive(request, {
+        custom: {
+          request: mockHttpRequest,
+          sources,
+          onListAllDocumentation: handler,
+        },
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifests: {
+            componentManifest: smallManifestFixture,
+          },
+          resultText: expect.any(String),
+        })
+      );
+
+      getMultiSourceManifestsSpy.mockRestore();
+    });
+
+    it('should show error for failed sources while displaying successful ones', async () => {
+      const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+      getMultiSourceManifestsSpy.mockResolvedValue([
+        {
+          source: sources[0]!,
+          componentManifest: smallManifestFixture,
+        },
+        {
+          source: sources[1]!,
+          componentManifest: { v: 1, components: {} },
+          error: 'Failed to fetch manifest: 401 Unauthorized',
+        },
+      ]);
+
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      const response = await server.receive(request, {
+        custom: { request: mockHttpRequest, sources },
+      });
+
+      const text = (response.result as any).content[0].text;
+      expect(text).toContain('# Local');
+      expect(text).toContain('Button (button)');
+      expect(text).toContain('# Remote');
+      expect(text).toContain('error: Failed to fetch manifest: 401 Unauthorized');
+
+      getMultiSourceManifestsSpy.mockRestore();
+    });
+
+    it('should show private composed sources as routing notices', async () => {
+      const getMultiSourceManifestsSpy = vi.spyOn(getManifest, 'getMultiSourceManifests');
+      getMultiSourceManifestsSpy.mockResolvedValue([
+        {
+          source: sources[0]!,
+          componentManifest: smallManifestFixture,
+        },
+        {
+          source: {
+            id: 'tetra',
+            title: 'Tetra Design System',
+            url: 'https://tetra.chromatic.com',
+          },
+          componentManifest: { v: 1, components: {} },
+          notice: {
+            kind: 'requires-own-mcp',
+            endpoint: 'https://tetra.chromatic.com/mcp',
+          },
+        },
+      ]);
+
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      const response = await server.receive(request, {
+        custom: { request: mockHttpRequest, sources },
+      });
+
+      const text = (response.result as any).content[0].text;
+      expect(text).toContain('# Local');
+      expect(text).toContain('Button (button)');
+      expect(text).toContain('# Tetra Design System');
+      expect(text).toContain('id: tetra');
+      expect(text).toContain(
+        'This composed Storybook is private and cannot be read through the local Storybook MCP proxy.'
+      );
+      expect(text).toContain('https://tetra.chromatic.com/mcp');
+      expect(text).not.toContain('error:');
+
+      getMultiSourceManifestsSpy.mockRestore();
+    });
+  });
+
+  it('should handle fetch errors gracefully', async () => {
+    getManifestsSpy.mockRejectedValue(
+      new getManifest.ManifestGetError(
+        'Failed to fetch manifest: 404 Not Found',
+        'https://example.com/manifest.json'
+      )
+    );
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: LIST_TOOL_NAME,
+        arguments: {},
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "Error getting manifest: Failed to fetch manifest: 404 Not Found",
+			      "type": "text",
+			    },
+			  ],
+			  "isError": true,
+			}
+		`);
+  });
+
+  it('should handle unexpected errors gracefully', async () => {
+    getManifestsSpy.mockRejectedValue(new Error('Network timeout'));
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: LIST_TOOL_NAME,
+        arguments: {},
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "Unexpected error: Network timeout",
+			      "type": "text",
+			    },
+			  ],
+			  "isError": true,
+			}
+		`);
+  });
+
+  it('should call onListAllDocumentation handler when provided', async () => {
+    const handler = vi.fn();
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 2,
+      method: 'tools/call',
+      params: {
+        name: LIST_TOOL_NAME,
+        arguments: {},
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    // Pass the handler and request in the context for this specific request
+    await server.receive(request, {
+      custom: { request: mockHttpRequest, onListAllDocumentation: handler },
+    });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith({
+      context: expect.objectContaining({
+        request: mockHttpRequest,
+        onListAllDocumentation: handler,
+      }),
+      manifests: {
+        componentManifest: smallManifestFixture,
+      },
+      resultText: expect.any(String),
+    });
+  });
+
+  describe('with docs manifest', () => {
+    beforeEach(() => {
+      getManifestsSpy.mockResolvedValue({
+        componentManifest: smallManifestFixture,
+        docsManifest: smallDocsManifestFixture,
+      });
+    });
+
+    it('should return both components and docs entries', async () => {
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      const response = await server.receive(request, {
+        custom: { request: mockHttpRequest },
+      });
+
+      expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "# Components
+
+				- Button (button): A simple button component
+				- Card (card): A container component for grouping related content.
+				- Input (input): A text input component with validation support.
+
+				# Docs
+
+				- Getting Started Guide (getting-started): # Getting Started Welcome to the component library. This guide will help you get up and ru...
+				- Theming and Customization (theming): # Theming Learn how to customize the look and feel of components using our theming system....",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
+    });
+
+    it('should include docs manifest in onListAllDocumentation handler call', async () => {
+      const handler = vi.fn();
+
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: LIST_TOOL_NAME,
+          arguments: {},
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      await server.receive(request, {
+        custom: { request: mockHttpRequest, onListAllDocumentation: handler },
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith({
+        context: expect.objectContaining({
+          request: mockHttpRequest,
+          onListAllDocumentation: handler,
+        }),
+        manifests: {
+          componentManifest: smallManifestFixture,
+          docsManifest: smallDocsManifestFixture,
+        },
+        resultText: expect.any(String),
+      });
+    });
+  });
+});

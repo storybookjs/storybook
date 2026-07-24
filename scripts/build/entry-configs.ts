@@ -31,6 +31,7 @@ import createStorybookConfig from '../../code/lib/create-storybook/build-config.
 import csfPluginConfig from '../../code/lib/csf-plugin/build-config.ts';
 import docgenHarnessConfig from '../../code/lib/docgen-harness/build-config.ts';
 import eslintPluginConfig from '../../code/lib/eslint-plugin/build-config.ts';
+import mcpConfig from '../../code/lib/mcp/build-config.ts';
 import reactDomShimConfig from '../../code/lib/react-dom-shim/build-config.ts';
 import presetCraConfig from '../../code/presets/create-react-app/build-config.ts';
 import presetReactWebpackConfig from '../../code/presets/react-webpack/build-config.ts';
@@ -84,6 +85,7 @@ export const buildEntries = {
   '@storybook/core-webpack': coreWebpackConfig,
   '@storybook/csf-plugin': csfPluginConfig,
   '@storybook/docgen-harness': docgenHarnessConfig,
+  '@storybook/mcp': mcpConfig,
   '@storybook/react-dom-shim': reactDomShimConfig,
   'create-storybook': createStorybookConfig,
   'eslint-plugin-storybook': eslintPluginConfig,

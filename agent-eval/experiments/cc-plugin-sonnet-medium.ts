@@ -1,0 +1,22 @@
+import type { ExperimentConfig } from '@vercel/agent-eval';
+import { DEFAULT_EXPERIMENT_CONFIG, EXTRA_MODEL_PLUGIN_EVALS } from '../lib/experiment.ts';
+import {
+  setupSandbox,
+  writeClaudePluginSkills,
+  writeClaudePreviewBrowserMock,
+} from '../lib/templates.ts';
+
+export default {
+  ...DEFAULT_EXPERIMENT_CONFIG,
+  agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
+  model: 'sonnet',
+  agentOptions: { effort: 'medium' },
+  // Runs zero evals unless EVAL_EXTRA_MODELS=1 is set, and none under
+  // EVAL_STORYBOOK_LATEST=1; see EXTRA_MODEL_PLUGIN_EVALS.
+  evals: EXTRA_MODEL_PLUGIN_EVALS,
+  setup: async (sandbox) => {
+    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });
+    await writeClaudePluginSkills(sandbox);
+    await writeClaudePreviewBrowserMock(sandbox);
+  },
+} satisfies ExperimentConfig;

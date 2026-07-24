@@ -260,7 +260,7 @@
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
-    "ws": "^8.18.0"
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",

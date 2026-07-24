@@ -147,7 +147,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       mount: null!,
     });
 
-    context.parameters.__isPortableStory = true;
+    (context.parameters as Parameters).__isPortableStory = true;
 
     context.context = context;
 

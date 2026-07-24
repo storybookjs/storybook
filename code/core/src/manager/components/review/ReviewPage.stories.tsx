@@ -213,7 +213,7 @@ const ManagerStateSync = ({
   parameters,
 }: {
   children: ReactNode;
-  parameters?: { managerState?: Partial<State> };
+  parameters?: { managerState?: Partial<State>; routerInitialEntries?: string[] } & Record<string, any>;
 }) => (
   <Location>
     {({ location, path }) => {

@@ -1,15 +1,17 @@
-import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
+import { vol } from 'memfs';
 
 import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
 import type { ApiCtx } from '../../../public-api/index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
 import { createStoriesApi } from './definition.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('../../../../core-server/stores/status.ts', { spy: true });
 
 const index = {
@@ -27,15 +29,17 @@ const index = {
   },
 } as StoryIndex;
 
-const componentPath = fileURLToPath(new URL('./api.test.ts', import.meta.url));
-const getIndex = vi.fn(async () => index);
-const getChangedFiles = vi.fn(async () => ({
-  changed: new Set(['src/Button.tsx']),
-  new: new Set(['src/theme.ts']),
-}));
+const repoRoot = '/repo';
+const storybookWorkingDir = '/repo/packages/ui';
+const componentPath = `${storybookWorkingDir}/src/Button.tsx`;
+const themePath = `${storybookWorkingDir}/src/theme.ts`;
+const getIndex = vi.fn();
+const getChangedFiles = vi.fn();
+const getRepoRoot = vi.fn();
 const getStatuses = vi.fn();
 const graphStatus = vi.fn();
 const storiesForFiles = vi.fn();
+const cwd = vi.spyOn(process, 'cwd');
 const moduleGraph = {
   queries: {
     status: { loaded: graphStatus },
@@ -44,7 +48,9 @@ const moduleGraph = {
 };
 
 const storyIndex = { getIndex };
-const git = { getChangedFiles };
+const git = { getChangedFiles, getRepoRoot };
+let statusesFixture: Record<string, Record<string, unknown>>;
+let graphMatchesByFile: Map<string, Array<{ storyFile: string; depth: number }>>;
 let ctx: ApiCtx;
 
 function createApi() {
@@ -54,23 +60,40 @@ function createApi() {
   });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+
   vi.clearAllMocks();
+  vol.reset();
+  vol.fromNestedJSON({ [componentPath]: '' });
+  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
+  cwd.mockReturnValue(storybookWorkingDir);
+  statusesFixture = {};
+  graphMatchesByFile = new Map([
+    [componentPath, [{ storyFile: './src/Button.stories.tsx', depth: 1 }]],
+  ]);
   ctx = {
     consumer: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ApiCtx['getService'],
   };
   vi.mocked(getStatusStoreByTypeId).mockReturnValue({ getAll: getStatuses } as never);
-  getStatuses.mockReturnValue({});
+  getIndex.mockResolvedValue(index);
+  getChangedFiles.mockResolvedValue({
+    changed: new Set(['packages/ui/src/Button.tsx']),
+    new: new Set(['packages/ui/src/theme.ts']),
+  });
+  getRepoRoot.mockResolvedValue(repoRoot);
+  getStatuses.mockImplementation(() => statusesFixture);
   graphStatus.mockResolvedValue({ value: 'ready' });
   storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
-    files.map((file) =>
-      file.endsWith('Button.tsx') || file === componentPath
-        ? [{ storyFile: './src/Button.stories.tsx', depth: 1 }]
-        : []
-    )
+    files.map((file) => graphMatchesByFile.get(file) ?? [])
   );
+});
+
+afterAll(() => {
+  cwd.mockRestore();
+  vol.reset();
 });
 
 describe('stories API', () => {
@@ -137,14 +160,14 @@ describe('stories API', () => {
   });
 
   it('returns compact Markdown for changed stories by default', async () => {
-    getStatuses.mockReturnValue({
+    statusesFixture = {
       'button--primary': {
         [CHANGE_DETECTION_STATUS_TYPE_ID]: {
           storyId: 'button--primary',
           value: 'status-value:new',
         },
       },
-    });
+    };
     const storiesApi = createApi();
 
     await expect(
@@ -156,26 +179,38 @@ describe('stories API', () => {
         '- [new] Button - Primary',
         '',
         '## Unreachable files',
-        '- src/theme.ts',
+        `- ${themePath}`,
       ].join('\n')
     );
     expect(getStatusStoreByTypeId).toHaveBeenCalledWith(CHANGE_DETECTION_STATUS_TYPE_ID);
     expect(getChangedFiles).toHaveBeenCalledOnce();
+    expect(getRepoRoot).toHaveBeenCalledOnce();
     expect(ctx.getService).toHaveBeenCalledWith('core/module-graph');
     expect(storiesForFiles).toHaveBeenCalledWith({
-      files: ['src/Button.tsx', 'src/theme.ts'],
+      files: [componentPath, themePath],
+    });
+  });
+
+  it('anchors Git-relative paths when Storybook runs below the repository root', async () => {
+    const storiesApi = createApi();
+
+    await storiesApi.methods.changed.handler(v.parse(storiesApi.methods.changed.schema, {}), ctx);
+
+    expect(process.cwd()).toBe(storybookWorkingDir);
+    expect(storiesForFiles).toHaveBeenCalledWith({
+      files: [componentPath, themePath],
     });
   });
 
   it('returns structured changed stories with json true', async () => {
-    getStatuses.mockReturnValue({
+    statusesFixture = {
       'button--primary': {
         [CHANGE_DETECTION_STATUS_TYPE_ID]: {
           storyId: 'button--primary',
           value: 'status-value:modified',
         },
       },
-    });
+    };
     const storiesApi = createApi();
 
     await expect(
@@ -194,7 +229,7 @@ describe('stories API', () => {
         },
       ],
       counts: { new: 0, modified: 1, affected: 0 },
-      unreachableFiles: ['src/theme.ts'],
+      unreachableFiles: [themePath],
     });
   });
 

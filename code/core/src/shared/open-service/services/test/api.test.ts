@@ -11,7 +11,7 @@ import { runStoryTests } from './run.ts';
 vi.mock('./run.ts', { spy: true });
 
 const index = { v: 5, entries: {} } as StoryIndex;
-const getIndex = vi.fn(async () => index);
+const getIndex = vi.fn();
 const storyIndex = { getIndex };
 const ctx = {
   consumer: 'cli',
@@ -39,6 +39,7 @@ let pendingRun: Promise<TestRunOutput> | undefined;
 beforeEach(() => {
   vi.clearAllMocks();
   pendingRun = undefined;
+  getIndex.mockResolvedValue(index);
   vi.mocked(runStoryTests).mockImplementation(() => pendingRun ?? Promise.resolve(completedRun));
 });
 

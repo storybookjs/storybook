@@ -1,13 +1,16 @@
-import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { vol } from 'memfs';
 
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { resolveComponentMatches } from './resolve-component-matches.ts';
 
-const existingPath = fileURLToPath(new URL('./resolve-component-matches.test.ts', import.meta.url));
+vi.mock('node:fs', { spy: true });
+
+const existingPath = '/repo/src/Button.tsx';
 const missingPath = `${existingPath}.missing`;
 const index = {
   v: 5,
@@ -33,23 +36,39 @@ const index = {
   },
 } as StoryIndex;
 
-function createModuleGraph(
-  loaded: (input: {
-    files: string[];
-  }) => Promise<Array<Array<{ storyFile: string; depth: number }>>>
-) {
-  return {
-    queries: {
-      storiesForFiles: { loaded: vi.fn(loaded) },
-    },
-  } as unknown as ModuleGraphService;
-}
+const storiesForFiles = vi.fn();
+const moduleGraph = {
+  queries: {
+    storiesForFiles: { loaded: storiesForFiles },
+  },
+} as unknown as ModuleGraphService;
+let graphResults: Array<Array<{ storyFile: string; depth: number }>>;
+let graphError: Error | undefined;
+
+beforeEach(async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+
+  vi.clearAllMocks();
+  vol.reset();
+  vol.fromNestedJSON({ [existingPath]: '' });
+  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
+  graphResults = [];
+  graphError = undefined;
+  storiesForFiles.mockImplementation(async () => {
+    if (graphError) {
+      throw graphError;
+    }
+    return graphResults;
+  });
+});
+
+afterAll(() => {
+  vol.reset();
+});
 
 describe('resolveComponentMatches', () => {
   it('maps existing component files to story ids', async () => {
-    const moduleGraph = createModuleGraph(async () => [
-      [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
-    ]);
+    graphResults = [[{ storyFile: './src/Button.stories.tsx', depth: 1 }]];
 
     await expect(
       resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })
@@ -65,7 +84,7 @@ describe('resolveComponentMatches', () => {
   });
 
   it('marks paths that do not exist', async () => {
-    const moduleGraph = createModuleGraph(async () => [[]]);
+    graphResults = [[]];
 
     await expect(
       resolveComponentMatches({ componentPaths: [missingPath], index, moduleGraph })
@@ -79,12 +98,12 @@ describe('resolveComponentMatches', () => {
   });
 
   it('keeps each story id at its shortest depth', async () => {
-    const moduleGraph = createModuleGraph(async () => [
+    graphResults = [
       [
         { storyFile: './src/Button.stories.tsx', depth: 3 },
         { storyFile: './src/Button.stories.tsx', depth: 1 },
       ],
-    ]);
+    ];
 
     const [result] = await resolveComponentMatches({
       componentPaths: [existingPath],
@@ -99,9 +118,7 @@ describe('resolveComponentMatches', () => {
   });
 
   it('returns empty matches when the module graph errors', async () => {
-    const moduleGraph = createModuleGraph(async () => {
-      throw new Error('graph failed');
-    });
+    graphError = new Error('graph failed');
 
     await expect(
       resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })

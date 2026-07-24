@@ -1,5 +1,6 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
 import { getStatusStoreByTypeId } from '../../../../core-server/stores/status.ts';
@@ -95,6 +96,7 @@ export type StoryIndexAccess = {
 };
 
 export type StoriesGitAccess = {
+  getRepoRoot: () => Promise<string>;
   getChangedFiles: () => Promise<{
     changed: Set<string>;
     new: Set<string>;
@@ -148,12 +150,15 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
           'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
         handler: async (input, ctx) => {
           const moduleGraph = ctx.getService('core/module-graph');
-          const [statuses, index, changedFiles] = await Promise.all([
+          const [statuses, index, changedFiles, repoRoot] = await Promise.all([
             getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
             storyIndex.getIndex(),
             git.getChangedFiles(),
+            git.getRepoRoot(),
           ]);
-          const files = [...new Set([...changedFiles.changed, ...changedFiles.new])];
+          const files = [...new Set([...changedFiles.changed, ...changedFiles.new])].map((file) =>
+            resolvePath(repoRoot, file)
+          );
           const unreachableFiles = await detectUnreachableFiles({ files, moduleGraph });
           const data = getChangedStories({ statuses, index, unreachableFiles });
           return input.json ? data : formatChangedStories(data);

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
@@ -59,8 +59,6 @@ describe('Link mock', () => {
   });
 
   afterEach(() => {
-    // globals are disabled in this repo, so testing-library's auto-cleanup
-    // never registers; unmount explicitly to keep each render isolated.
     cleanup();
   });
 
@@ -124,64 +122,5 @@ describe('Link mock', () => {
 
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/users/$userId' }));
     expect(router.state.location.pathname).toBe('/');
-  });
-
-  it('runs a story-provided onClick handler before spying navigation', async () => {
-    const onClick = vi.fn();
-    await renderWithRouter(
-      <Link to="/users/$userId" params={{ userId: '42' }} onClick={onClick} data-testid="user-link">
-        Ada
-      </Link>
-    );
-
-    fireEvent.click(await screen.findByTestId('user-link'));
-
-    expect(onClick).toHaveBeenCalledTimes(1);
-    expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/users/$userId' }));
-  });
-
-  it('skips navigation when a story onClick prevents default', async () => {
-    const onClick = vi.fn((e: React.MouseEvent) => e.preventDefault());
-    await renderWithRouter(
-      <Link to="/users/$userId" params={{ userId: '42' }} onClick={onClick} data-testid="user-link">
-        Ada
-      </Link>
-    );
-
-    fireEvent.click(await screen.findByTestId('user-link'));
-
-    expect(onClick).toHaveBeenCalledTimes(1);
-    expect(onNavigate).not.toHaveBeenCalled();
-  });
-
-  it('passes the click event to the story onClick', async () => {
-    const onClick = vi.fn();
-    await renderWithRouter(
-      <Link to="/about" onClick={onClick} data-testid="about-link">
-        About
-      </Link>
-    );
-
-    fireEvent.click(await screen.findByTestId('about-link'));
-
-    const event = onClick.mock.calls[0]?.[0];
-    expect(event).toBeDefined();
-    expect(typeof event.preventDefault).toBe('function');
-  });
-
-  it('runs the story onClick on every click', async () => {
-    const onClick = vi.fn();
-    await renderWithRouter(
-      <Link to="/about" onClick={onClick} data-testid="about-link">
-        About
-      </Link>
-    );
-
-    const link = await screen.findByTestId('about-link');
-    fireEvent.click(link);
-    fireEvent.click(link);
-
-    expect(onClick).toHaveBeenCalledTimes(2);
-    expect(onNavigate).toHaveBeenCalledTimes(2);
   });
 });

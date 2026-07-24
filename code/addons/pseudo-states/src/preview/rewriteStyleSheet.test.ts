@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
 import { splitSelectors } from './splitSelectors.ts';
@@ -29,7 +29,12 @@ abstract class Rule {
   selectorText?: string;
 
   static parse(cssText: string): Rule {
-    return cssText.trim().startsWith('@') ? new GroupingRule(cssText) : new StyleRule(cssText);
+    if (cssText.trim().startsWith('@')) {
+      return new GroupingRule(cssText);
+    }
+
+    const innerCssText = cssText.substring(cssText.indexOf('{') + 1, cssText.lastIndexOf('}'));
+    return innerCssText.includes('{') ? new NestedStyleRule(cssText) : new StyleRule(cssText);
   }
 
   getSelectors(): string[] {
@@ -70,6 +75,13 @@ class GroupingRule extends Rule {
 
   insertRule(cssText: string, index: number) {
     this.cssRules.splice(index, 0, Rule.parse(cssText));
+  }
+}
+
+class NestedStyleRule extends GroupingRule {
+  constructor(cssText: string) {
+    super(cssText);
+    this.selectorText = cssText.substring(0, cssText.indexOf(' {'));
   }
 }
 
@@ -215,6 +227,18 @@ describe('rewriteStyleSheet', () => {
     const selectors = sheet.cssRules[0].getSelectors();
     selectors.splice(selectors.indexOf('a.pseudo-hover'), 1);
     expect(selectors).not.toContain('a.pseudo-hover');
+  });
+
+  it('does not mutate a rewritten rule again on subsequent rewrites', () => {
+    const sheet = new Sheet('a:hover { color: red }');
+    const deleteRule = vi.spyOn(sheet, 'deleteRule');
+    const insertRule = vi.spyOn(sheet, 'insertRule');
+
+    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any);
+
+    expect(deleteRule).toHaveBeenCalledOnce();
+    expect(insertRule).toHaveBeenCalledOnce();
   });
 
   it('supports combined pseudo selectors', () => {
@@ -566,5 +590,29 @@ describe('rewriteStyleSheet', () => {
         'a.pseudo-hover'
       );
     }
+  });
+
+  it('counts both a rewritten style rule and its nested rules toward the limit', () => {
+    const sheet = new Sheet(Array(501).fill('a:hover { b:hover { color: red } }').join('\n'));
+
+    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any);
+
+    expect(sheet.cssRules[499].getSelectors()).toContain('a.pseudo-hover');
+    expect(sheet.cssRules[500].getSelectors()).not.toContain('a.pseudo-hover');
+  });
+
+  it('does not rewrite nested rules after the outer rule reaches the limit', () => {
+    const sheet = new Sheet(
+      [...Array(999).fill('a:hover { color: red }'), 'b:hover { c:hover { color: red } }'].join(
+        '\n'
+      )
+    );
+
+    rewriteStyleSheet(sheet as any);
+
+    const finalRule = sheet.cssRules[999] as NestedStyleRule;
+    expect(finalRule.getSelectors()).toContain('b.pseudo-hover');
+    expect(finalRule.cssRules[0].getSelectors()).not.toContain('c.pseudo-hover');
   });
 });

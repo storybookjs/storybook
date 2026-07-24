@@ -215,18 +215,23 @@ const rewriteRuleContainer = (
       }
 
       // If it has nested rules, check them as well
-      if ('cssRules' in styleRule && (styleRule.cssRules as CSSRuleList).length) {
-        numRewritten = rewriteRuleContainer(
+      const remainingRewriteLimit = rewriteLimit - count - numRewritten;
+      if (
+        remainingRewriteLimit > 0 &&
+        'cssRules' in styleRule &&
+        (styleRule.cssRules as CSSRuleList).length
+      ) {
+        numRewritten += rewriteRuleContainer(
           styleRule as CSSGroupingRule,
-          rewriteLimit - count,
+          remainingRewriteLimit,
           forShadowDOM
         );
       }
 
       // @ts-expect-error We're adding this nonstandard property
-      cssRule.__processed = true;
+      styleRule.__processed = true;
       // @ts-expect-error We're adding this nonstandard property
-      cssRule.__pseudoStatesRewrittenCount = numRewritten;
+      styleRule.__pseudoStatesRewrittenCount = numRewritten;
     }
     count += numRewritten;
 

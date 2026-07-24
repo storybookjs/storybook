@@ -7,6 +7,7 @@ export type EngineId =
   | 'react-legacy'
   | 'react-legacy-rdt'
   | 'react-osa'
+  | 'vue-docgen-api'
   | 'vue-component-meta'
   | 'compodoc';
 
@@ -32,6 +33,11 @@ export interface SeriesHarnessResult {
   samples: SaveSample[];
   retainedSlope?: number;
   retainedGrowth?: number;
+  /**
+   * Documented members the cold pass produced. Two engines over the same project can differ by an
+   * order of magnitude here, and a timing ratio between them means nothing without it.
+   */
+  coldMembers?: number;
 }
 
 /** A latency metric: median of repeated samples (fresh process each, for cold/scan). */
@@ -91,8 +97,15 @@ export interface SuiteResults {
   rssPollIntervalMs: number;
   engines: Partial<Record<EngineId, EngineResult>>;
   /**
-   * React legacy (react-docgen) median divided by react-osa median, both measured in this same
-   * invocation. The calibration reference for every other engine's budgets.
+   * Each framework's legacy-engine median divided by its new-engine median, both measured in this
+   * same invocation. React pairs react-docgen against react-osa; Vue pairs vue-docgen-api (still
+   * the default plugin) against vue-component-meta. These are the calibration references budgets
+   * are derived from.
    */
-  ratios: { coldLegacyVsOsa?: number; warmLegacyVsOsa?: number };
+  ratios: {
+    coldLegacyVsOsa?: number;
+    warmLegacyVsOsa?: number;
+    coldVueLegacyVsMeta?: Record<string, number>;
+    warmVueLegacyVsMeta?: Record<string, number>;
+  };
 }

@@ -54,17 +54,28 @@ const ALL_ENGINES: EngineId[] = [
   'react-legacy',
   'react-legacy-rdt',
   'react-osa',
+  'vue-docgen-api',
   'vue-component-meta',
   'compodoc',
 ];
 
 /** react-legacy-rdt carries no budget row and only runs when named via --engine. */
-const DEFAULT_ENGINES: EngineId[] = ['react-legacy', 'react-osa', 'vue-component-meta', 'compodoc'];
+const DEFAULT_ENGINES: EngineId[] = [
+  'react-legacy',
+  'react-osa',
+  'vue-docgen-api',
+  'vue-component-meta',
+  'compodoc',
+];
+
+/** Engines driven by a per-scenario Vue child over the same generated project. */
+const VUE_ENGINES: EngineId[] = ['vue-docgen-api', 'vue-component-meta'];
 
 const WORK_ROOT = path.join(SANDBOX_DIRECTORY, 'docgen-perf');
 const OSA_HARNESS = path.join(import.meta.dirname, '../docgen-memory/memory-harness.ts');
 const LEGACY_HARNESS = path.join(import.meta.dirname, 'engines', 'react-legacy.ts');
-const VUE_HARNESS = path.join(import.meta.dirname, 'engines', 'vue-component-meta.ts');
+const VUE_META_HARNESS = path.join(import.meta.dirname, 'engines', 'vue-component-meta.ts');
+const VUE_DOCGEN_HARNESS = path.join(import.meta.dirname, 'engines', 'vue-docgen-api.ts');
 
 interface CliOptions {
   quick: boolean;
@@ -107,16 +118,26 @@ function parseArgs(argv: string[]): CliOptions {
 }
 
 /**
- * The control pair alternates spawn order across repetitions so cache warming and thermal drift do
- * not consistently favor one side.
+ * Every control pair alternates spawn order across repetitions so cache warming and thermal drift
+ * do not consistently favor one side.
  */
+const CONTROL_PAIRS: Array<[EngineId, EngineId]> = [
+  ['react-legacy', 'react-osa'],
+  ['vue-docgen-api', 'vue-component-meta'],
+];
+
 function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] {
   const order = [...engines];
-  const legacyIdx = order.indexOf('react-legacy');
-  const osaIdx = order.indexOf('react-osa');
-  if (legacyIdx >= 0 && osaIdx >= 0 && rep % 2 === 0) {
-    order[legacyIdx] = 'react-osa';
-    order[osaIdx] = 'react-legacy';
+  if (rep % 2 !== 0) {
+    return order;
+  }
+  for (const [legacy, next] of CONTROL_PAIRS) {
+    const legacyIdx = order.indexOf(legacy);
+    const nextIdx = order.indexOf(next);
+    if (legacyIdx >= 0 && nextIdx >= 0) {
+      order[legacyIdx] = next;
+      order[nextIdx] = legacy;
+    }
   }
   return order;
 }
@@ -137,9 +158,9 @@ function reactChildInvocation(engine: EngineId, cfg: ReactScenarioConfig) {
   return { childPath: LEGACY_HARNESS, args: [...sizeArgs, '--parser', parser, '--scope', 'changed'] };
 }
 
-function vueChildInvocation(scenario: VueScenarioConfig) {
+function vueChildInvocation(engine: EngineId, scenario: VueScenarioConfig) {
   return {
-    childPath: VUE_HARNESS,
+    childPath: engine === 'vue-docgen-api' ? VUE_DOCGEN_HARNESS : VUE_META_HARNESS,
     args: [
       '--scenario', scenario.name,
       '--packages', String(scenario.packages),
@@ -295,10 +316,9 @@ async function main() {
   }
 
   const runSeries = (engine: EngineId, scenarioName: string, rep: number) => {
-    const invocation =
-      engine === 'vue-component-meta'
-        ? vueChildInvocation(profile.vue.find((s) => s.name === scenarioName)!)
-        : reactChildInvocation(engine, profile.react);
+    const invocation = VUE_ENGINES.includes(engine)
+      ? vueChildInvocation(engine, profile.vue.find((s) => s.name === scenarioName)!)
+      : reactChildInvocation(engine, profile.react);
     const key = `${engine}/${scenarioName}`;
     const scenarioDir = path.join(WORK_ROOT, engine, scenarioName);
     console.log(`  ${key} (rep ${rep}/${profile.n})…`);
@@ -336,7 +356,7 @@ async function main() {
             `  compodoc: cold=${repetition.coldMs}ms warm=${repetition.warmMs}ms ` +
               `peakRss=${repetition.peakRssMb.toFixed(0)}MB`
           );
-        } else if (engine === 'vue-component-meta') {
+        } else if (VUE_ENGINES.includes(engine)) {
           for (const scenario of profile.vue) {
             runSeries(engine, scenario.name, rep);
           }
@@ -372,7 +392,7 @@ async function main() {
           status: 'measured',
           scenarios: { default: { params: { ...profile.angular }, metrics: compodocMetrics(compodocReps, profile.n) } },
         };
-      } else if (engine === 'vue-component-meta') {
+      } else if (VUE_ENGINES.includes(engine)) {
         const scenarios: Extract<EngineResult, { status: 'measured' }>['scenarios'] = {};
         for (const scenario of profile.vue) {
           scenarios[scenario.name] = {
@@ -411,6 +431,31 @@ async function main() {
     }
     if (legacyMetrics.warmExtractionMs.status === 'measured' && osaMetrics.warmExtractionMs.status === 'measured') {
       ratios.warmLegacyVsOsa = legacyMetrics.warmExtractionMs.median / osaMetrics.warmExtractionMs.median;
+    }
+  }
+
+  // The Vue equivalent, per scenario: vue-docgen-api is still the default plugin, vue-component-meta
+  // is the opt-in successor, and both ran over the same generated project in this invocation.
+  const vueLegacy = engineResults['vue-docgen-api'];
+  const vueMeta = engineResults['vue-component-meta'];
+  if (vueLegacy?.status === 'measured' && vueMeta?.status === 'measured') {
+    for (const [scenarioName, legacyScenario] of Object.entries(vueLegacy.scenarios)) {
+      const metaScenario = vueMeta.scenarios[scenarioName];
+      if (!metaScenario) {
+        continue;
+      }
+      const l = legacyScenario.metrics;
+      const m = metaScenario.metrics;
+      if (l.coldExtractionMs.status === 'measured' && m.coldExtractionMs.status === 'measured') {
+        ratios.coldVueLegacyVsMeta ??= {};
+        ratios.coldVueLegacyVsMeta[scenarioName] =
+          l.coldExtractionMs.median / m.coldExtractionMs.median;
+      }
+      if (l.warmExtractionMs.status === 'measured' && m.warmExtractionMs.status === 'measured') {
+        ratios.warmVueLegacyVsMeta ??= {};
+        ratios.warmVueLegacyVsMeta[scenarioName] =
+          l.warmExtractionMs.median / m.warmExtractionMs.median;
+      }
     }
   }
 
@@ -464,6 +509,23 @@ async function main() {
   }
   if (ratios.warmLegacyVsOsa !== undefined) {
     console.log(`  ratio warm legacy/osa: ${ratios.warmLegacyVsOsa.toFixed(2)}`);
+  }
+  for (const [scenarioName, value] of Object.entries(ratios.coldVueLegacyVsMeta ?? {})) {
+    // vue-docgen-api does not resolve tsconfig `paths` aliases, so on these generated projects it
+    // documents far less than vue-component-meta does. Printing the ratio without the member counts
+    // beside it would read as a 20x speed win over identical work, which it is not.
+    const legacyMembers = state.get(`vue-docgen-api/${scenarioName}`)?.[0]?.coldMembers;
+    const metaMembers = state.get(`vue-component-meta/${scenarioName}`)?.[0]?.coldMembers;
+    const members =
+      legacyMembers !== undefined && metaMembers !== undefined
+        ? `  [documented members ${legacyMembers} vs ${metaMembers}${legacyMembers === metaMembers ? '' : ' - NOT like-for-like'}]`
+        : '';
+    console.log(
+      `  ratio cold vue-docgen-api/component-meta (${scenarioName}): ${value.toFixed(2)}${members}`
+    );
+  }
+  for (const [scenarioName, value] of Object.entries(ratios.warmVueLegacyVsMeta ?? {})) {
+    console.log(`  ratio warm vue-docgen-api/component-meta (${scenarioName}): ${value.toFixed(2)}`);
   }
   if (ratios.coldLegacyVsOsa === undefined && ratios.warmLegacyVsOsa === undefined) {
     console.log('  no calibration ratio: it needs react-legacy and react-osa measured in one run');

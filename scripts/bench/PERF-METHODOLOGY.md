@@ -17,7 +17,10 @@ Each engine is measured through a directly callable entry point:
   `react-docgen` is the budgeted legacy control; `react-docgen-typescript` is measurable through the same wrappers but carries no budget row.
 - Angular: a standalone Compodoc CLI run.
   Storybook shells out to the same CLI (`runCompodoc`, `code/frameworks/angular/src/builders/utils/run-compodoc.ts`), so the harness measures the tool the framework actually runs.
-- Vue: `createChecker` and `createCheckerByJson` from `vue-component-meta`, with the checker options the Vite plugin passes (`code/frameworks/vue3-vite/src/plugins/vue-component-meta.ts`).
+- Vue, legacy engine: `parse` from `vue-docgen-api`, called per `.vue` file the way the Vite plugin calls it (`code/frameworks/vue3-vite/src/plugins/vue-docgen.ts`).
+  This is still the default plugin (`resolveDocgenOptions`, `code/frameworks/vue3-vite/src/preset.ts`), so it is Vue's legacy control the way `react-docgen` is React's.
+  The parser reads the file from disk on every call and keeps no cache, so one save costs one `parse` of one file - the per-save sample needs no invalidation step and matches production.
+- Vue, new engine: `createChecker` and `createCheckerByJson` from `vue-component-meta`, with the checker options the Vite plugin passes (`code/frameworks/vue3-vite/src/plugins/vue-component-meta.ts`).
   One caveat the budgets must respect: that plugin falls back to `createCheckerByJson` whenever the project's root tsconfig declares `references`, because `vue-component-meta` does not resolve them.
   The harness's `workspace` and `base-type-touch` scenarios drive `createChecker` at a package tsconfig, which measures the engine rather than the plugin's path for that project shape.
 - Svelte and web components: their extraction engines are plain functions callable from Node; exact entry points get pinned when each engine's harness lands.
@@ -87,6 +90,12 @@ Only the new engine has a production path shaped that way: `buildDocgenPayload` 
 The legacy parsers are reachable only through `generator.ts`, which invalidates every cache and re-extracts every component on each manifest build.
 A real legacy save therefore costs the whole project, not one file, and the recorded warm ratio understates legacy's true per-save cost by roughly the component count.
 Run `react-legacy.ts --scope all` for the production-shaped number; the equal-work ratio is the engine comparison, not a saving a user would feel.
+
+Vue's pair carries a different caveat, and a sharper one.
+`vue-docgen-api` does not resolve tsconfig `paths` aliases, and the Vite plugin calls `parse(id)` without an alias map, so on the generated projects it documents a fraction of what `vue-component-meta` documents.
+Measured on the flat scenario, the legacy engine finished a cold pass in 23ms against 425ms, but recorded 6 documented members where the new engine recorded the full surface, and 0 on the save it was timed on.
+The engines are not doing the same work, so the Vue ratio measures resolution depth as much as speed.
+The suite prints both engines' documented-member counts next to the ratio for that reason, and the ratio must not become a budget while the counts disagree.
 Engines without a second implementation in the same job get their timing reference picked when their baselines are recorded; until then their timing budgets stay placeholders.
 Memory budgets stay absolute megabytes with generous headroom: budgets sit well above observed values so the gate is not flaky, while still failing hard on a real regression.
 Every engine must also carry its own negative control - a configuration that must fail, proving the gate can catch the regression class it exists for.
@@ -132,6 +141,7 @@ The exception is react-osa's memory row, which the docgen memory gate already en
 | ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ---------------- | ---------- |
 | react-legacy (react-docgen, control)      | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | react-osa (ComponentMetaManager, control)  | TBD (1.12)      | TBD (1.12)      | n/a                | 90MB                    | 60MB            | 3MB/save       | OOM (gate.ts)    | daily      |
+| vue-docgen-api (legacy, current default)  | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | vue-component-meta                        | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | compodoc                                  | TBD (1.12)      | TBD (1.12)      | TBD (1.12)         | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |
 | svelte (stretch)                          | TBD (1.12)      | TBD (1.12)      | n/a                | TBD (1.12)              | TBD (1.12)      | TBD (1.12)     | TBD (1.12)       | TBD (1.12) |

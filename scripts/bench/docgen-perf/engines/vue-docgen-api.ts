@@ -1,34 +1,24 @@
 /**
- * Series harness for the vue-component-meta engine. Same shape as the docgen-memory harness:
- * generate a project, one timed cold pass (checker creation included - it is part of the engine's
- * first-extraction cost), then per-save touch + invalidate + re-extract with memory sampling.
+ * Series harness for the vue-docgen-api engine - Vue's legacy docgen and still the default one
+ * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/preset.ts`). It is the legacy half of the
+ * Vue control pair, the way react-docgen is for React.
  *
- * The checker never re-stats files on its own; a disk rewrite must be followed by
- * `checker.updateFile(path, content)` (the surface the production Vite plugin drives from HMR) or
- * the re-extraction measures a stale-cache no-op.
+ * Production calls `parse(id)` once per `.vue` file from a Vite `transform` hook
+ * (`code/frameworks/vue3-vite/src/plugins/vue-docgen.ts`), and the parser reads the file from disk
+ * on every call with no cache of its own. A save therefore costs exactly one `parse` of one file,
+ * so the per-save sample here is production-shaped without any invalidation step.
  *
- * Scenarios:
- *   flat             single package, checker over the project root (`createCheckerByJson`, the
- *                    production fallback for tsconfig-less projects); saves touch components
- *                    round-robin.
- *   workspace        packages/* layout; the checker is driven at the deepest package's tsconfig
- *                    (`createChecker`); saves touch that package's components round-robin.
- *   base-type-touch  workspace layout; every save touches the widely-imported base type instead,
- *                    then re-extracts one fixed dependent component, so each sample pays the wide
- *                    checker invalidation.
+ * The generated project is the same one the vue-component-meta harness measures, with the same
+ * scenario levers, so the two engines' medians divide into a ratio that means something.
  *
  * Run:
- *   node --expose-gc scripts/bench/docgen-perf/engines/vue-component-meta.ts \
+ *   node --expose-gc scripts/bench/docgen-perf/engines/vue-docgen-api.ts \
  *     --scenario workspace --packages 4 --components-per-package 10 --heavy-lib --json /tmp/result.json
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import {
-  type MetaCheckerOptions,
-  createChecker,
-  createCheckerByJson,
-} from 'vue-component-meta';
+import { parse } from 'vue-docgen-api';
 
 import { SANDBOX_DIRECTORY } from '../paths.ts';
 import { baseTypesSource, generateVueProject, vueComponentSource } from '../generators/vue.ts';
@@ -50,13 +40,6 @@ interface HarnessOptions {
   jsonOut?: string;
 }
 
-/** Mirrors the production Vite plugin's checker options. */
-const CHECKER_OPTIONS: MetaCheckerOptions = {
-  forceUseTs: true,
-  noDeclarations: true,
-  printer: { newLine: 1 },
-};
-
 function parseArgs(argv: string[]): HarnessOptions {
   const get = (flag: string, fallback: string) => {
     const idx = argv.indexOf(flag);
@@ -74,7 +57,7 @@ function parseArgs(argv: string[]): HarnessOptions {
     fanOut: Number(get('--fan-out', '4')),
     heavyLib: argv.includes('--heavy-lib'),
     saves: Number(get('--saves', '15')),
-    outDir: get('--out', path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'vue-component-meta', 'project')),
+    outDir: get('--out', path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'vue-docgen-api', 'project')),
     jsonOut: argv.indexOf('--json') >= 0 ? get('--json', '') : undefined,
   };
 }
@@ -84,7 +67,7 @@ async function main() {
   const flat = options.scenario === 'flat';
   const packages = flat ? 1 : options.packages;
 
-  console.log(`vue-component-meta harness (${options.scenario})`);
+  console.log(`vue-docgen-api harness (${options.scenario})`);
   console.log(
     `  packages=${packages} componentsPerPackage=${options.componentsPerPackage} ` +
       `chainDepth=${options.chainDepth} fanOut=${options.fanOut} heavyLib=${options.heavyLib} saves=${options.saves}`
@@ -104,36 +87,33 @@ async function main() {
   });
   console.log(`  generated project in ${Date.now() - genStart}ms at ${project.outDir}`);
 
-  // The measured set: every component in flat layout, the deepest package's components otherwise
-  // (their prop types pull the whole cross-package chain).
+  // Same measured set as the vue-component-meta harness: every component in flat layout, the
+  // deepest package's components otherwise.
   const targetPackage = packages - 1;
   const targetPaths = flat
     ? project.componentPaths
     : project.componentPaths.slice(-options.componentsPerPackage);
 
-  const extractOne = (checker: ReturnType<typeof createCheckerByJson>, sfcPath: string) => {
-    const exportNames = checker.getExportNames(sfcPath);
-    if (!exportNames.includes('default')) {
-      throw new Error(`no default export found in ${sfcPath} (got: ${exportNames.join(', ') || 'none'})`);
-    }
-    const meta = checker.getComponentMeta(sfcPath, 'default');
-    // Consume the surfaces production consumes so their evaluation cost is inside the measurement.
-    const propCount = meta.props.length + meta.events.length + meta.slots.length + meta.exposed.length;
-    if (meta.props.length === 0) {
-      throw new Error(`vue-component-meta returned zero props for ${sfcPath}`);
-    }
-    return propCount;
+  /**
+   * Returns how many documented members the parse produced. The two Vue engines resolve imported
+   * prop types to different depths, so a timing ratio is only meaningful next to this count -
+   * a parse that resolved nothing is fast for the wrong reason.
+   */
+  const extractOne = async (sfcPath: string): Promise<number> => {
+    const doc = await parse(sfcPath);
+    return (
+      Object.keys(doc.props ?? {}).length +
+      (doc.events ? Object.keys(doc.events).length : 0) +
+      (doc.slots ? Object.keys(doc.slots).length : 0) +
+      (doc.expose ? Object.keys(doc.expose).length : 0)
+    );
   };
 
-  // Cold pass: checker creation is part of the engine's first-extraction cost.
-  console.log(`  full extraction over ${targetPaths.length} components (cold pass, checker included)…`);
+  console.log(`  full extraction over ${targetPaths.length} components (cold pass)…`);
   const coldStart = Date.now();
-  const checker = flat
-    ? createCheckerByJson(project.outDir, { include: ['**/*'] }, CHECKER_OPTIONS)
-    : createChecker(project.packageConfigPaths[targetPackage], CHECKER_OPTIONS);
   let coldMembers = 0;
   for (const sfcPath of targetPaths) {
-    coldMembers += extractOne(checker, sfcPath);
+    coldMembers += await extractOne(sfcPath);
   }
   const coldMs = Date.now() - coldStart;
   console.log(`  cold pass: ${coldMs}ms (${coldMembers} documented members)`);
@@ -143,29 +123,23 @@ async function main() {
   const samples: SaveSample[] = [];
   const extraByTarget = new Array(targetPaths.length).fill(0);
   let extraBaseProps = 0;
+  let warmMembers = 0;
 
   for (let save = 1; save <= options.saves; save++) {
     let measuredPath: string;
     if (options.scenario === 'base-type-touch') {
-      // Touch the widely-imported base type; every dependent package's props type changes.
       extraBaseProps += 1;
-      const content = baseTypesSource(options.fanOut, extraBaseProps);
-      fs.writeFileSync(project.baseTypesPath, content);
-      checker.updateFile(project.baseTypesPath, content);
-      // Re-extract one fixed dependent - the first component of the deepest package - so each
-      // sample pays the wide invalidation.
+      fs.writeFileSync(project.baseTypesPath, baseTypesSource(options.fanOut, extraBaseProps));
       measuredPath = targetPaths[0];
     } else {
       const t = (save - 1) % targetPaths.length;
       extraByTarget[t] += 1;
-      const content = vueComponentSource(targetPackage, t, extraByTarget[t]);
-      fs.writeFileSync(targetPaths[t], content);
-      checker.updateFile(targetPaths[t], content);
+      fs.writeFileSync(targetPaths[t], vueComponentSource(targetPackage, t, extraByTarget[t]));
       measuredPath = targetPaths[t];
     }
 
     const saveStart = Date.now();
-    extractOne(checker, measuredPath);
+    warmMembers = await extractOne(measuredPath);
     const durMs = Date.now() - saveStart;
 
     const mem = sampleMemory(true);
@@ -183,6 +157,7 @@ async function main() {
 
   console.log('\nsummary');
   console.log(`  cold pass:           ${coldMs}ms`);
+  console.log(`  documented members:  ${coldMembers} cold, ${warmMembers} on the last save`);
   if (avgTransient !== undefined) {
     console.log(`  avg transient/save:  ${avgTransient.toFixed(0)}MB`);
   }
@@ -195,7 +170,17 @@ async function main() {
     fs.writeFileSync(
       options.jsonOut,
       JSON.stringify(
-        { options, coldMs, coldMembers, baseline, samples, retainedSlope, retainedGrowth, avgTransient },
+        {
+          options,
+          coldMs,
+          coldMembers,
+          warmMembers,
+          baseline,
+          samples,
+          retainedSlope,
+          retainedGrowth,
+          avgTransient,
+        },
         null,
         2
       )

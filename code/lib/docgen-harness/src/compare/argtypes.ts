@@ -109,10 +109,6 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     candidateMembers !== undefined &&
     [...baselineMembers].every((member) => candidateMembers.has(member))
   ) {
-    // Cross-kind on purpose: Vue and Angular encode the same source union differently. A failed
-    // superset falls through instead of failing outright, so a catch-all member can still improve
-    // structurally (e.g. union(other 'empty-enum') -> union(literal)); every decrease still ends
-    // in the else-fail below.
     return true;
   }
   if (

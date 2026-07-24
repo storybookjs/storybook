@@ -185,12 +185,6 @@ const normalizeLiteral = (value: unknown): string => {
   return String(value);
 };
 
-/**
- * Extracts a comparable member set from an enum, a union/intersection whose members are all
- * literal-ish, or a single literal-shaped type (a `literal` or a quoted-token `other` - both
- * singletons, so a literal may widen into an enum/union that keeps it). Returns undefined when
- * any member is structural.
- */
 function memberSet(type: SBType): Set<string> | undefined {
   if (type.name === 'enum') {
     return new Set(type.value.map(normalizeLiteral));

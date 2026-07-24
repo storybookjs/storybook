@@ -94,10 +94,6 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     if (candidate.name === 'other') {
       return normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value);
     }
-    // Only a genuine catch-all (empty-enum, void, raw type text) improves by becoming any
-    // structured type. A QUOTED-literal other is Vue's union-member encoding of a string
-    // literal - it falls through to the member-set rule below, so degrading it to a bare
-    // scalar fails (AC1's "union collapsing to string", one wrapper level deep).
     if (!isQuotedToken(baseline.value)) {
       return true;
     }

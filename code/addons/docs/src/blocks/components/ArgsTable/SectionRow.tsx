@@ -17,8 +17,8 @@ export interface SectionRowProps {
 }
 
 const ExpanderIconDown = styled(ChevronDownIcon)(({ theme }) => ({
-  marginRight: 8,
-  marginLeft: -10,
+  marginInlineEnd: 8,
+  marginInlineStart: -10,
   marginTop: -2, // optical alignment
   height: 12,
   width: 12,
@@ -31,8 +31,8 @@ const ExpanderIconDown = styled(ChevronDownIcon)(({ theme }) => ({
 }));
 
 const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
-  marginRight: 8,
-  marginLeft: -10,
+  marginInlineEnd: 8,
+  marginInlineStart: -10,
   marginTop: -2, // optical alignment
   height: 12,
   width: 12,

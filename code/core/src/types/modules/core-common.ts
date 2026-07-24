@@ -460,12 +460,7 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen:
-      | 'react-docgen'
-      | 'react-docgen-typescript'
-      | 'react-component-meta'
-      | 'vue-docgen-api'
-      | 'vue-component-meta';
+    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
     durationMs: number;
   };
 }

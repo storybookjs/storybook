@@ -176,7 +176,7 @@ describe('navigateOutOfReview', () => {
 });
 
 describe('dismissReview', () => {
-  it('emits navigation only after the OSA dismissal command resolves', async () => {
+  it('emits navigation only after the review dismissal command resolves', async () => {
     sessionStorage.setItem(PRE_REVIEW_RETURN_KEY, '?path=/story/example--default');
     const emit = vi.fn();
     let resolveCommand!: () => void;

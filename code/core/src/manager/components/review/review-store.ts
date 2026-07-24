@@ -102,7 +102,7 @@ const commit = (patch: Partial<ReviewCoreState>) => {
 };
 
 /**
- * Manager-local projection of the authoritative OSA review state plus deferred,
+ * Manager-local projection of the authoritative review state plus deferred,
  * transition, review-mode, and route-derived UI state.
  */
 export const reviewStore = {

@@ -3,7 +3,7 @@
  *
  * Flow:
  *   MCP `display-review` tool → emit PUSH_REVIEW on the Storybook channel
- *   → core-server adapts it into the `core/review` OSA service
+ *   → core-server adapts it into the `core/review` service
  *   → manager tabs subscribe to the service's current-review query.
  *
  * This mirrors the canonical valibot schema in `@storybook/addon-mcp` →
@@ -30,7 +30,7 @@ export interface ReviewState {
   createdAt?: number;
   /**
    * Set server-side once a watched source file changes after `createdAt`.
-   * Drives the "this review may be stale" banner and synchronizes through OSA.
+   * Drives the "this review may be stale" banner and synchronizes through the review service.
    */
   stale?: boolean;
 }

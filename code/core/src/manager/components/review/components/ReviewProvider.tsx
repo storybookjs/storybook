@@ -63,7 +63,7 @@ const isSameReviewPayload = (current: ReviewState | null, next: ReviewState): bo
   current?.createdAt !== undefined && current.createdAt === next.createdAt;
 
 /**
- * Projects authoritative OSA review state into reviewStore and keeps its
+ * Projects authoritative review service state into reviewStore and keeps its
  * pending, index-, status-, and route-dependent UI values up to date.
  */
 export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {

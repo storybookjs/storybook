@@ -606,7 +606,7 @@ export const SummaryStateSurvivesReviewReplay = meta.story({
       await canvas.findByRole('button', { name: 'Expand collection Settings' })
     ).toHaveAttribute('aria-expanded', 'false');
 
-    // An equivalent OSA state emission must not reset local summary UI state.
+    // An equivalent review-service state emission must not reset local summary UI state.
     await reviewService.commands.setReview({ ...reviewState });
 
     await expect(

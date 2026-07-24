@@ -91,6 +91,7 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 - OSA owns internal state, synchronization, queries, commands, loading, and service composition. Nothing about OSA is Storybook's public CLI/MCP/SDK surface.
 - `defineApi` defines public capabilities: each API has an id, description, and one method namespace; each method has only `schema`, `description`, and `handler`.
+- Public capability definitions live under `code/core/src/shared/public-api/` (`docs`, `stories`, `test`, `review.create`). Internal OSA services stay under `open-service/services/`.
 - Handlers receive `(input, ctx)` where `ctx` always provides `consumer` (`'cli' | 'mcp'`), `origin`, and typed server `getService`. Capability-specific boot-time dependencies (story index, git, vitest channel) are closed over by factories.
 - There is no public API registry. Adapters receive an explicit array of API definitions; that array is the exposure boundary.
 - Handlers return Markdown by default. Each method schema declares `json` for structured output.

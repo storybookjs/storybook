@@ -3,7 +3,7 @@ import { registerService } from 'storybook/manager-api';
 import { reviewServiceDef } from '../../../shared/open-service/services/review/definition.ts';
 
 /**
- * Story-only local handlers for exercising OSA projection without a dev-server peer.
+ * Story-only local handlers for exercising review-service projection without a dev-server peer.
  * Production manager registration intentionally supplies no command handlers.
  */
 export const reviewServiceForStories = registerService(reviewServiceDef, {

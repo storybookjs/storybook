@@ -14,6 +14,10 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 /** Available docgen plugins for vue. */
 export type VueDocgenPlugin = 'vue-docgen-api' | 'vue-component-meta';
 
+import type { DocgenFilterPattern } from './plugins/vue-component-meta.ts';
+
+export type { DocgenFilterPattern };
+
 export type FrameworkOptions = {
   builder?: BuilderOptions;
   /**
@@ -45,6 +49,27 @@ export type FrameworkOptions = {
          * @default 'tsconfig.json'
          */
         tsconfig: `${string}/tsconfig${string}.json` | `tsconfig${string}.json`;
+        /**
+         * Modules to extract docgen from, as a glob or regular expression. Replaces the default of
+         * every `.vue`, `.ts`, `.js`, `.tsx` and `.jsx` module in the preview graph.
+         *
+         * Docgen resolves types through the whole program, so it is the most expensive part of a
+         * Vue build. Narrowing this to the components you actually document can cut build time
+         * substantially on larger projects, at the cost of no prop tables for anything excluded.
+         *
+         * Third-party components can be documented by including their path explicitly, for example
+         * `['src/**', 'node_modules/some-library/**']`.
+         *
+         * @default /\.(vue|ts|js|tsx|jsx)$/
+         */
+        include?: DocgenFilterPattern;
+        /**
+         * Modules to skip, as a glob or regular expression. Added to the built-in exclusions
+         * (stories, virtual modules and Storybook internals) rather than replacing them.
+         *
+         * @default undefined
+         */
+        exclude?: DocgenFilterPattern;
       };
 };
 

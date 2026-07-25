@@ -2,6 +2,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
+import type { DocgenFilterPattern } from './plugins/vue-component-meta.ts';
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
@@ -24,7 +25,12 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   // add docgen plugin depending on framework option
   if (docgen !== false) {
     if (docgen.plugin === 'vue-component-meta') {
-      plugins.push(await vueComponentMeta(docgen.tsconfig));
+      plugins.push(
+        await vueComponentMeta(docgen.tsconfig, {
+          include: docgen.include,
+          exclude: docgen.exclude,
+        })
+      );
     } else {
       plugins.push(await vueDocgen());
     }
@@ -39,7 +45,14 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 /** Resolves the docgen framework option. */
 const resolveDocgenOptions = (
   docgen?: FrameworkOptions['docgen']
-): false | { plugin: VueDocgenPlugin; tsconfig?: string } => {
+):
+  | false
+  | {
+      plugin: VueDocgenPlugin;
+      tsconfig?: string;
+      include?: DocgenFilterPattern;
+      exclude?: DocgenFilterPattern;
+    } => {
   if (docgen === false) {
     return false;
   }

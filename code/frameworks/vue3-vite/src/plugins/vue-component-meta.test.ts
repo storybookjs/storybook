@@ -25,9 +25,11 @@ function makeComponentMeta() {
   };
 }
 
-async function getTransformHandler() {
+async function getTransformHandler(
+  filterOptions?: import('./vue-component-meta.ts').DocgenFilterOptions
+) {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const plugin = await vueComponentMeta();
+  const plugin = await vueComponentMeta('tsconfig.json', filterOptions);
 
   const handler =
     typeof plugin.transform === 'function'
@@ -139,6 +141,54 @@ describe('vue-component-meta plugin', () => {
       const result = await transform(src, id);
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('docgen filter options', () => {
+    const componentSrc = `import { defineComponent } from 'vue';\nexport const Tab = defineComponent({});\n`;
+
+    it('should docgen a module the default filter accepts', async () => {
+      const result = await transform(componentSrc, '/project/node_modules/lib/Tab.ts');
+
+      expect(result!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should skip a module outside a caller-supplied include', async () => {
+      const narrowed = await getTransformHandler({ include: /\/project\/src\// });
+
+      const outside = await narrowed(componentSrc, '/project/node_modules/lib/Tab.ts');
+      const inside = await narrowed(componentSrc, '/project/src/Tab.ts');
+
+      expect(outside?.code ?? '').not.toContain('__docgenInfo');
+      expect(inside!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should skip a module matching a caller-supplied exclude', async () => {
+      const narrowed = await getTransformHandler({ exclude: /\.generated\.ts$/ });
+
+      const excluded = await narrowed(componentSrc, '/project/src/Tab.generated.ts');
+      const kept = await narrowed(componentSrc, '/project/src/Tab.ts');
+
+      expect(excluded?.code ?? '').not.toContain('__docgenInfo');
+      expect(kept!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should keep the built-in exclusions when a caller supplies exclude', async () => {
+      // `exclude` is additive, so stories stay excluded even though the caller named something else.
+      const narrowed = await getTransformHandler({ exclude: /\.generated\.ts$/ });
+
+      const story = await narrowed(componentSrc, '/project/src/Tab.stories.ts');
+
+      expect(story?.code ?? '').not.toContain('__docgenInfo');
+    });
+
+    it('should keep the built-in exclusions when a caller widens include', async () => {
+      // A permissive include must not resurrect stories either.
+      const widened = await getTransformHandler({ include: /.*/ });
+
+      const story = await widened(componentSrc, '/project/src/Tab.stories.ts');
+
+      expect(story?.code ?? '').not.toContain('__docgenInfo');
     });
   });
 

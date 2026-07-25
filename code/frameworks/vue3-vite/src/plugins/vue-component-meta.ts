@@ -23,12 +23,39 @@ type MetaSource = {
 } & ComponentMeta &
   MetaCheckerOptions['schema'];
 
-export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
+/** Module id patterns accepted by the docgen transform's filter. */
+export type DocgenFilterPattern = string | RegExp | ReadonlyArray<string | RegExp>;
+
+/** Modules the docgen transform runs on. Both default to every module Storybook can document. */
+export type DocgenFilterOptions = {
+  include?: DocgenFilterPattern;
+  exclude?: DocgenFilterPattern;
+};
+
+/** Stories, virtual modules and storybook internals are never candidates for docgen. */
+const ALWAYS_EXCLUDE =
+  /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+
+const DEFAULT_INCLUDE = /\.(vue|ts|js|tsx|jsx)$/;
+
+function toPatternArray(pattern: DocgenFilterPattern | undefined): (string | RegExp)[] {
+  if (pattern === undefined) {
+    return [];
+  }
+  return Array.isArray(pattern) ? [...pattern] : [pattern as string | RegExp];
+}
+
+export async function vueComponentMeta(
+  tsconfigPath = 'tsconfig.json',
+  filterOptions: DocgenFilterOptions = {}
+): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
-  const include = /\.(vue|ts|js|tsx|jsx)$/;
+  // A caller-supplied `include` replaces the default, so docgen can be narrowed to the components a
+  // project actually documents. `exclude` is additive instead: the built-in exclusions are always
+  // applied, so narrowing can never accidentally pull stories or storybook internals into docgen.
+  const include = filterOptions.include ?? DEFAULT_INCLUDE;
+  const exclude = [ALWAYS_EXCLUDE, ...toPatternArray(filterOptions.exclude)];
   const filter = createFilter(include, exclude);
 
   const checker = await createVueComponentMetaChecker(tsconfigPath);

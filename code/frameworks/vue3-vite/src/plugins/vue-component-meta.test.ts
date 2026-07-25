@@ -159,7 +159,7 @@ describe('vue-component-meta plugin', () => {
       const outside = await narrowed(componentSrc, '/project/node_modules/lib/Tab.ts');
       const inside = await narrowed(componentSrc, '/project/src/Tab.ts');
 
-      expect(outside?.code ?? '').not.toContain('__docgenInfo');
+      expect(outside).toBeUndefined();
       expect(inside!.code).toContain('Tab.__docgenInfo');
     });
 
@@ -169,26 +169,24 @@ describe('vue-component-meta plugin', () => {
       const excluded = await narrowed(componentSrc, '/project/src/Tab.generated.ts');
       const kept = await narrowed(componentSrc, '/project/src/Tab.ts');
 
-      expect(excluded?.code ?? '').not.toContain('__docgenInfo');
+      expect(excluded).toBeUndefined();
       expect(kept!.code).toContain('Tab.__docgenInfo');
     });
 
     it('should keep the built-in exclusions when a caller supplies exclude', async () => {
-      // `exclude` is additive, so stories stay excluded even though the caller named something else.
       const narrowed = await getTransformHandler({ exclude: /\.generated\.ts$/ });
 
       const story = await narrowed(componentSrc, '/project/src/Tab.stories.ts');
 
-      expect(story?.code ?? '').not.toContain('__docgenInfo');
+      expect(story).toBeUndefined();
     });
 
     it('should keep the built-in exclusions when a caller widens include', async () => {
-      // A permissive include must not resurrect stories either.
       const widened = await getTransformHandler({ include: /.*/ });
 
       const story = await widened(componentSrc, '/project/src/Tab.stories.ts');
 
-      expect(story?.code ?? '').not.toContain('__docgenInfo');
+      expect(story).toBeUndefined();
     });
   });
 

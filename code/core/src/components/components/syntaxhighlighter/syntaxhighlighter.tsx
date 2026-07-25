@@ -252,8 +252,7 @@ export const SyntaxHighlighter = ({
   );
 };
 
-// Typed explicitly so declaration emit doesn't reference the untyped deep
-// react-syntax-highlighter entrypoint (leaks into the published d.ts, #35539).
+// Typed explicitly: deriving the type from the untyped deep import leaks it into the d.ts
 SyntaxHighlighter.registerLanguage = (name: string, func: any): void =>
   ReactSyntaxHighlighter.registerLanguage(name, func);
 

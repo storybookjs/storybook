@@ -252,8 +252,9 @@ export const SyntaxHighlighter = ({
   );
 };
 
-SyntaxHighlighter.registerLanguage = (
-  ...args: Parameters<typeof ReactSyntaxHighlighter.registerLanguage>
-) => ReactSyntaxHighlighter.registerLanguage(...args);
+// Typed explicitly so declaration emit doesn't reference the untyped deep
+// react-syntax-highlighter entrypoint (leaks into the published d.ts, #35539).
+SyntaxHighlighter.registerLanguage = (name: string, func: any): void =>
+  ReactSyntaxHighlighter.registerLanguage(name, func);
 
 export default SyntaxHighlighter;

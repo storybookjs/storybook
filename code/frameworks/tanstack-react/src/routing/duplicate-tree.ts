@@ -96,6 +96,11 @@ function cloneChild(
     (cloned as any).update({ id: explicitId });
   }
 
+  const lazyFn = (oldRoute as any).lazyFn;
+  if (lazyFn) {
+    (cloned as any).lazy(lazyFn);
+  }
+
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
   const children = (oldRoute as any).children as AnyRoute[] | undefined;
@@ -150,6 +155,10 @@ export function duplicateRouteTree(
     ...restRoot,
     ...rootOverride,
   } as any);
+  const rootLazyFn = (rootRoute as any).lazyFn;
+  if (rootLazyFn) {
+    (newRoot as any).lazy(rootLazyFn);
+  }
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
   const children = (rootRoute as any).children as AnyRoute[] | undefined;

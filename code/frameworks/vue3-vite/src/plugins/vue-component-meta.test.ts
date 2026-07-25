@@ -39,8 +39,6 @@ async function getTransformHandler() {
 
 describe('vue-component-meta plugin', () => {
   let transform: Awaited<ReturnType<typeof getTransformHandler>>;
-  // Export name that `getComponentMeta` should reject, mirroring a type-only export. Set by the
-  // cases that need it; left undefined so every other case resolves normally.
   let rejectedExportName: string | undefined;
 
   beforeEach(async () => {
@@ -153,8 +151,6 @@ describe('vue-component-meta plugin', () => {
 
   describe('non-component exports', () => {
     it('should keep docgen for the other exports when getComponentMeta throws for one', async () => {
-      // `getExportNames` reports type-level exports too, and `getComponentMeta` throws for those.
-      // One throw must not discard the docgen of the whole file.
       const src = [
         `import { defineComponent } from 'vue';`,
         `export type TabVariant = 'primary' | 'secondary';`,
@@ -184,8 +180,6 @@ describe('vue-component-meta plugin', () => {
     });
 
     it('should keep meta aligned with its export name when an earlier export throws', async () => {
-      // Regression guard for the index-alignment between `exportNames` and `componentsMeta`:
-      // a dropped export must not shift the remaining names by one.
       const src = [
         `export type TabsVariant = 'horizontal' | 'vertical';`,
         `export const Tabs = {};`,

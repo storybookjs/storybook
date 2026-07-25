@@ -142,6 +142,63 @@ describe('vue-component-meta plugin', () => {
     });
   });
 
+  describe('non-component exports', () => {
+    it('should keep docgen for the other exports when getComponentMeta throws for one', async () => {
+      // `getExportNames` reports type-level exports too (e.g. `export type Variant` declared in an
+      // SFC's <script>), and `getComponentMeta` throws for those. One throw must not discard the
+      // docgen of the whole file.
+      const src = `import { defineComponent } from 'vue';\nexport const Tab = defineComponent({});\n`;
+      const id = '/project/src/components/Tab.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabVariant', 'Tab']);
+      mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
+        if (name === 'TabVariant') {
+          throw new Error('Could not find export TabVariant');
+        }
+        return makeComponentMeta();
+      });
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should return undefined when every export throws', async () => {
+      const src = `export type Variant = 'a' | 'b';\n`;
+      const id = '/project/src/components/types.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['Variant']);
+      mockChecker.getComponentMeta.mockImplementation(() => {
+        throw new Error('Could not find export Variant');
+      });
+
+      const result = await transform(src, id);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should keep meta aligned with its export name when an earlier export throws', async () => {
+      // Regression guard for the index-alignment between `exportNames` and `componentsMeta`:
+      // a dropped export must not shift the remaining names by one.
+      const src = `export const Tabs = {};\n`;
+      const id = '/project/src/components/Tabs.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabsVariant', 'Tabs']);
+      mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
+        if (name === 'TabsVariant') {
+          throw new Error('Could not find export TabsVariant');
+        }
+        return makeComponentMeta();
+      });
+
+      const result = await transform(src, id);
+
+      expect(result!.code).toContain('Tabs.__docgenInfo');
+      expect(result!.code).toContain('"displayName":"Tabs"');
+    });
+  });
+
   describe('re-export detection', () => {
     it('should skip named re-exports like "export { Tab } from ..."', async () => {
       const result = await transform(

@@ -44,8 +44,27 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames = checker.getExportNames(id);
-          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
+          // `getExportNames` also reports exports that are not components — most commonly a type
+          // or interface declared in an SFC's `<script>` block — and `getComponentMeta` throws for
+          // those. Resolve each export on its own so one such export cannot discard the docgen of
+          // every other export in the file. Both arrays stay index-aligned.
+          const exportNames: string[] = [];
+          let componentsMeta: ComponentMeta[] = [];
+
+          for (const name of checker.getExportNames(id)) {
+            try {
+              const meta = checker.getComponentMeta(id, name);
+              exportNames.push(name);
+              componentsMeta.push(meta);
+            } catch {
+              // not a component — leave it out and keep the rest of the file's docgen
+            }
+          }
+
+          if (componentsMeta.length === 0) {
+            return undefined;
+          }
+
           componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
 
           const metaSources: MetaSource[] = [];

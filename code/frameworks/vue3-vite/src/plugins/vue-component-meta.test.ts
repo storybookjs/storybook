@@ -39,9 +39,13 @@ async function getTransformHandler() {
 
 describe('vue-component-meta plugin', () => {
   let transform: Awaited<ReturnType<typeof getTransformHandler>>;
+  // Export name that `getComponentMeta` should reject, mirroring a type-only export. Set by the
+  // cases that need it; left undefined so every other case resolves normally.
+  let rejectedExportName: string | undefined;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    rejectedExportName = undefined;
 
     // Only mock what's actually called: createCheckerByJson, getProjectRoot, stat
     // createChecker, readFile, parseMulti are never reached in these tests
@@ -52,7 +56,12 @@ describe('vue-component-meta plugin', () => {
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
 
     mockChecker.getExportNames.mockReturnValue(['Tab']);
-    mockChecker.getComponentMeta.mockReturnValue(makeComponentMeta());
+    mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
+      if (name === rejectedExportName) {
+        throw new Error(`Could not find export ${name}`);
+      }
+      return makeComponentMeta();
+    });
 
     transform = await getTransformHandler();
   });
@@ -144,19 +153,17 @@ describe('vue-component-meta plugin', () => {
 
   describe('non-component exports', () => {
     it('should keep docgen for the other exports when getComponentMeta throws for one', async () => {
-      // `getExportNames` reports type-level exports too (e.g. `export type Variant` declared in an
-      // SFC's <script>), and `getComponentMeta` throws for those. One throw must not discard the
-      // docgen of the whole file.
-      const src = `import { defineComponent } from 'vue';\nexport const Tab = defineComponent({});\n`;
+      // `getExportNames` reports type-level exports too, and `getComponentMeta` throws for those.
+      // One throw must not discard the docgen of the whole file.
+      const src = [
+        `import { defineComponent } from 'vue';`,
+        `export type TabVariant = 'primary' | 'secondary';`,
+        `export const Tab = defineComponent({});`,
+      ].join('\n');
       const id = '/project/src/components/Tab.ts';
 
       mockChecker.getExportNames.mockReturnValue(['TabVariant', 'Tab']);
-      mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
-        if (name === 'TabVariant') {
-          throw new Error('Could not find export TabVariant');
-        }
-        return makeComponentMeta();
-      });
+      rejectedExportName = 'TabVariant';
 
       const result = await transform(src, id);
 
@@ -169,9 +176,7 @@ describe('vue-component-meta plugin', () => {
       const id = '/project/src/components/types.ts';
 
       mockChecker.getExportNames.mockReturnValue(['Variant']);
-      mockChecker.getComponentMeta.mockImplementation(() => {
-        throw new Error('Could not find export Variant');
-      });
+      rejectedExportName = 'Variant';
 
       const result = await transform(src, id);
 
@@ -181,16 +186,14 @@ describe('vue-component-meta plugin', () => {
     it('should keep meta aligned with its export name when an earlier export throws', async () => {
       // Regression guard for the index-alignment between `exportNames` and `componentsMeta`:
       // a dropped export must not shift the remaining names by one.
-      const src = `export const Tabs = {};\n`;
+      const src = [
+        `export type TabsVariant = 'horizontal' | 'vertical';`,
+        `export const Tabs = {};`,
+      ].join('\n');
       const id = '/project/src/components/Tabs.ts';
 
       mockChecker.getExportNames.mockReturnValue(['TabsVariant', 'Tabs']);
-      mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
-        if (name === 'TabsVariant') {
-          throw new Error('Could not find export TabsVariant');
-        }
-        return makeComponentMeta();
-      });
+      rejectedExportName = 'TabsVariant';
 
       const result = await transform(src, id);
 

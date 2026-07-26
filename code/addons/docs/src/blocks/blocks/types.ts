@@ -11,5 +11,6 @@ export type DocsStoryProps = {
   expanded?: boolean;
   withToolbar?: boolean;
   __forceInitialArgs?: boolean;
+  forceInitialArgs?: boolean;
   __primary?: boolean;
 };

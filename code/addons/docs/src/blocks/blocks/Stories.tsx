@@ -14,6 +14,7 @@ import type { DocsParameters } from '../../types.ts';
 interface StoriesProps {
   title?: ReactElement | string;
   includePrimary?: boolean;
+  forceInitialArgs?: boolean;
 }
 
 const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
@@ -32,12 +33,18 @@ const StyledHeading: typeof Heading = styled(Heading)(({ theme }) => ({
   },
 }));
 
-const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = true }) => {
+const StoriesImpl: FC<StoriesProps> = ({
+  title = 'Stories',
+  includePrimary = true,
+  forceInitialArgs: forceInitialArgsProp,
+}) => {
   const { componentStories, projectAnnotations, getStoryContext } = useContext(DocsContext);
 
+  const storiesConfig = (projectAnnotations.parameters as DocsParameters | undefined)?.docs?.stories;
+  const forceInitialArgs = forceInitialArgsProp ?? storiesConfig?.forceInitialArgs ?? true;
+
   let stories = componentStories();
-  const filter = (projectAnnotations.parameters as DocsParameters | undefined)?.docs?.stories
-    ?.filter;
+  const filter = storiesConfig?.filter;
   if (filter) {
     stories = stories.filter((story) => filter(story, getStoryContext(story)));
   }
@@ -67,7 +74,14 @@ const StoriesImpl: FC<StoriesProps> = ({ title = 'Stories', includePrimary = tru
       {typeof title === 'string' ? <StyledHeading>{title}</StyledHeading> : title}
       {stories.map(
         (story) =>
-          story && <DocsStory key={story.id} of={story.moduleExport} expanded __forceInitialArgs />
+          story && (
+            <DocsStory
+              key={story.id}
+              of={story.moduleExport}
+              expanded
+              forceInitialArgs={forceInitialArgs}
+            />
+          )
       )}
     </>
   );

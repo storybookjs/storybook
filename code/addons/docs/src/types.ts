@@ -46,6 +46,10 @@ type StoriesBlockParameters = {
     Story: PreparedStory<TRenderer>,
     Context: ReturnType<DocsContextProps['getStoryContext']>
   ) => boolean;
+  /**
+   * Whether stories in autodocs keep their initial args or react dynamically to controls changes.
+   */
+  forceInitialArgs?: boolean;
 };
 
 type ControlsBlockParameters = {

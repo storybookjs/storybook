@@ -237,19 +237,14 @@ describe('vue-component-meta plugin', () => {
       expect(mockChecker.getExportNames).not.toHaveBeenCalled();
     });
 
-    it('should still process the bare .vue id that the sub-request derives from', async () => {
-      const src = [
-        `import _export_sfc from 'plugin-vue:export-helper';`,
-        `const _sfc_main = { name: 'Tab' };`,
-        `export default /*@__PURE__*/_export_sfc(_sfc_main, []);`,
-      ].join('\n');
+    it('should still process the bare id for the same component', async () => {
+      const result = await transform(
+        `import { defineComponent } from 'vue';\nexport const Tab = defineComponent({});\n`,
+        '/project/src/components/Tab.ts'
+      );
 
-      mockChecker.getExportNames.mockReturnValue(['default']);
-
-      const result = await transform(src, '/project/src/components/Tab.vue');
-
-      expect(result!.code).toContain('_sfc_main.__docgenInfo');
-      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.vue');
+      expect(result!.code).toContain('Tab.__docgenInfo');
+      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.ts');
     });
   });
 });

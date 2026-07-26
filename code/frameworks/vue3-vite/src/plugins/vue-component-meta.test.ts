@@ -215,4 +215,36 @@ describe('vue-component-meta plugin', () => {
       expect(result?.code ?? '').not.toContain('__docgenInfo');
     });
   });
+
+  describe('ids carrying a query', () => {
+    it('should skip plugin-vue script sub-requests, whose id ends in ".ts" but is not a file', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&setup=true&lang.ts'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should skip plugin-vue script sub-requests ending in ".js"', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&lang.js'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should still process the bare id for the same component', async () => {
+      const result = await transform(
+        `import { defineComponent } from 'vue';\nexport const Tab = defineComponent({});\n`,
+        '/project/src/components/Tab.ts'
+      );
+
+      expect(result!.code).toContain('Tab.__docgenInfo');
+      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.ts');
+    });
+  });
 });

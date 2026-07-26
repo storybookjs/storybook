@@ -31,7 +31,7 @@ export type DocgenFilterOptions = {
 };
 
 const ALWAYS_EXCLUDE =
-  /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
 
 const DEFAULT_INCLUDE = /\.(vue|ts|js|tsx|jsx)$/;
 

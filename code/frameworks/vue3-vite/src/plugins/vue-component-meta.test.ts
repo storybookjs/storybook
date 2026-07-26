@@ -188,6 +188,18 @@ describe('vue-component-meta plugin', () => {
 
       expect(story).toBeUndefined();
     });
+
+    it('should keep ids carrying a query excluded when a caller widens include', async () => {
+      const widened = await getTransformHandler({ include: /.*/ });
+
+      const subRequest = await widened(
+        componentSrc,
+        '/project/src/Tab.vue?vue&type=script&setup=true&lang.ts'
+      );
+
+      expect(subRequest).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
   });
 
   describe('re-export detection', () => {

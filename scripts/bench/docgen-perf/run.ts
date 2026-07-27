@@ -37,6 +37,7 @@ import {
 } from './config.ts';
 import {
   type CompodocRepetition,
+  compodocVersion,
   resolveCompodocBinary,
   runCompodocRepetition,
 } from './engines/compodoc.ts';
@@ -310,7 +311,7 @@ async function main() {
   if (options.engines.includes('compodoc') && !compodocBinary) {
     skipped.set(
       'compodoc',
-      'no compodoc binary found (workspace node_modules/.bin or PATH); @compodoc/compodoc is a user-project dependency'
+      'no compodoc binary found (workspace node_modules/.bin or PATH); @compodoc/compodoc is pinned in scripts/package.json, so run yarn install'
     );
     console.log(`  compodoc: SKIPPED - ${skipped.get('compodoc')}`);
   }
@@ -465,6 +466,7 @@ async function main() {
     pinnedN: profile.n,
     comparable: profile.comparable,
     rssPollIntervalMs: RSS_POLL_INTERVAL_MS,
+    compodocVersion: compodocBinary ? compodocVersion(compodocBinary) : undefined,
     engines: engineResults,
     ratios,
   };

@@ -17,6 +17,8 @@ Each engine is measured through a directly callable entry point:
   `react-docgen` is the budgeted legacy control; `react-docgen-typescript` is measurable through the same wrappers but carries no budget row.
 - Angular: a standalone Compodoc CLI run.
   Storybook shells out to the same CLI (`runCompodoc`, `code/frameworks/angular/src/builders/utils/run-compodoc.ts`), so the harness measures the tool the framework actually runs.
+  `@compodoc/compodoc` is pinned exactly at 2.0.0 in `scripts/package.json`, the version the Angular docgen baselines capture against (`code/lib/docgen-harness/README.md`).
+  The pin is exact rather than a range because compodoc's cost moves across versions, and the resolved version is recorded with the results.
 - Vue, legacy engine: `parse` from `vue-docgen-api`, called per `.vue` file the way the Vite plugin calls it (`code/frameworks/vue3-vite/src/plugins/vue-docgen.ts`).
   This is still the default plugin (`resolveDocgenOptions`, `code/frameworks/vue3-vite/src/preset.ts`), so it is Vue's legacy control the way `react-docgen` is React's.
   The parser reads the file from disk on every call and keeps no cache, so one save costs one `parse` of one file - the per-save sample needs no invalidation step and matches production.

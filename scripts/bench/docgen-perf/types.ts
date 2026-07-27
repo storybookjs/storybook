@@ -95,6 +95,8 @@ export interface SuiteResults {
   comparable: boolean;
   /** Sampling interval for the compodoc child's externally-polled peak RSS. */
   rssPollIntervalMs: number;
+  /** Resolved compodoc version, when that engine ran. Its cost moves across versions. */
+  compodocVersion?: string;
   engines: Partial<Record<EngineId, EngineResult>>;
   /**
    * Each framework's legacy-engine median divided by its new-engine median, both measured in this

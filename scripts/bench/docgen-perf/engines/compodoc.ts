@@ -5,9 +5,11 @@
  * full run after touching one component file, and peak memory is the child's peak RSS sampled from
  * outside the process.
  *
- * The compodoc binary is resolved at runtime: it is a user-project dependency in this repo, not a
- * workspace package, so the engine skips with an explicit message when no binary is found. Version
- * pinning is baseline work.
+ * `@compodoc/compodoc` is pinned exactly in `scripts/package.json`, at the same 2.0.0 the Angular
+ * docgen baselines capture against (`code/lib/docgen-harness/README.md`). The pin is exact because
+ * compodoc's output and cost both move across versions, so a caret range would drift the numbers
+ * without anyone deciding to. The binary is still resolved at runtime and the engine still skips
+ * with an explicit message if it is missing, which is what a partial install looks like.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -15,6 +17,29 @@ import * as path from 'node:path';
 
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
 import type { AngularScenarioConfig } from '../config.ts';
+
+/**
+ * The version of the binary that actually ran, walked up from the resolved executable rather than
+ * read from a fixed path - the package hoists to different node_modules depending on the install.
+ */
+export function compodocVersion(binary: string): string | undefined {
+  try {
+    let dir = path.dirname(fs.realpathSync(binary));
+    for (let up = 0; up < 5; up++) {
+      const candidate = path.join(dir, 'package.json');
+      if (fs.existsSync(candidate)) {
+        const pkg = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+        if (pkg.name === '@compodoc/compodoc') {
+          return pkg.version as string;
+        }
+      }
+      dir = path.dirname(dir);
+    }
+  } catch {
+    // A binary on PATH may not sit inside a package at all; an unknown version is not a failure.
+  }
+  return undefined;
+}
 
 /** Locations probed for a compodoc binary, in order: workspace .bin dirs, then PATH. */
 export function resolveCompodocBinary(): string | undefined {

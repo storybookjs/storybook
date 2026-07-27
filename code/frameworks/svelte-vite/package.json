@@ -54,7 +54,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
-    "magic-string": "^0.30.0",
+    "magic-string": "^1.1.0",
     "svelte2tsx": "^0.7.55",
     "typescript": "^4.9.4 || ^5.0.0"
   },

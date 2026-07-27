@@ -610,6 +610,94 @@ describe('prepareStory', () => {
     });
   });
 
+
+    it('evaluates conditional args against unmapped values (eq)', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          args: { icon: 'star', iconPosition: 'left' },
+          argTypes: {
+            icon: { name: 'icon', mapping: { none: undefined, star: 'mapped-star' } },
+            iconPosition: { name: 'iconPosition', if: { arg: 'icon', eq: 'star' } },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: vi.fn() as any }
+      );
+
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+      expect(context.args).toEqual({ icon: 'mapped-star', iconPosition: 'left' });
+    });
+
+    it('evaluates conditional args against unmapped values (neq)', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          args: { icon: 'star', iconPosition: 'left' },
+          argTypes: {
+            icon: { name: 'icon', mapping: { none: undefined, star: 'mapped-star' } },
+            iconPosition: { name: 'iconPosition', if: { arg: 'icon', neq: 'none' } },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: vi.fn() as any }
+      );
+
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+      expect(context.args).toEqual({ icon: 'mapped-star', iconPosition: 'left' });
+    });
+
+    it('evaluates conditional args against unmapped values (truthy with falsy mapping)', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          args: { icon: 'star', iconPosition: 'left' },
+          argTypes: {
+            icon: { name: 'icon', mapping: { star: '', none: undefined } },
+            iconPosition: { name: 'iconPosition', if: { arg: 'icon' } },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: vi.fn() as any }
+      );
+
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+      // icon is truthy in unmapped form ('star'), so iconPosition should be included
+      // even though the mapped value ('') is falsy
+      expect(context.args).toEqual({ icon: '', iconPosition: 'left' });
+    });
+
+    it('evaluates conditional args against unmapped values (exists)', () => {
+      const story = prepareStory(
+        {
+          id,
+          name,
+          args: { icon: 'star', iconPosition: 'left' },
+          argTypes: {
+            icon: { name: 'icon', mapping: { star: undefined, none: undefined } },
+            iconPosition: { name: 'iconPosition', if: { arg: 'icon', exists: true } },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: vi.fn() as any }
+      );
+
+      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+      // icon exists in unmapped form ('star'), so iconPosition should be included
+      expect(context.args).toEqual({ icon: undefined, iconPosition: 'left' });
+    });
+
   describe('with `FEATURES.argTypeTargetsV7`', () => {
     beforeEach(() => {
       vi.stubGlobal('FEATURES', { argTypeTargetsV7: true });

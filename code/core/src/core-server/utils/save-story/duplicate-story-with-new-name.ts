@@ -73,7 +73,7 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
       (prop) =>
         !(
           t.isObjectProperty(prop) &&
-          ((t.isIdentifier(prop.key) && prop.key.name === 'name') ||
+          ((t.isIdentifier(prop.key) && !prop.computed && prop.key.name === 'name') ||
             (t.isStringLiteral(prop.key) && prop.key.value === 'name'))
         )
     );

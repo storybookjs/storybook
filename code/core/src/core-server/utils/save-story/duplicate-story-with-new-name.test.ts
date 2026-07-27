@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -189,6 +189,54 @@ describe('success', () => {
         
       + export const WithNameDuplicated = meta.story({});
       + "
+    `);
+  });
+  test('String-literal and computed name keys', async () => {
+    // oxfmt normalizes quoted object keys in fixture files, so these key forms
+    // can only be exercised from an inline source string
+    const code = `
+      export default { title: 'MyComponent' };
+      const name = 'dynamic';
+      export const WithQuotedName = {
+        'name': 'Quoted Name',
+      };
+      export const WithComputedName = {
+        [name]: 'value',
+      };
+      export const WithComputedQuotedName = {
+        ['name']: 'Computed Quoted Name',
+      };
+    `;
+    const parsed = loadCsf(code, { makeTitle }).parse();
+
+    duplicateStoryWithNewName(parsed, 'WithQuotedName', 'WithQuotedNameDuplicated');
+    duplicateStoryWithNewName(parsed, 'WithComputedName', 'WithComputedNameDuplicated');
+    duplicateStoryWithNewName(parsed, 'WithComputedQuotedName', 'WithComputedQuotedNameDuplicated');
+
+    const after = await format(printCsf(parsed).code, { parser: 'typescript' });
+
+    // quoted 'name' and computed ['name'] keys are removed (both statically the
+    // name key), while the dynamic computed [name] key is preserved
+    expect(after).toMatchInlineSnapshot(`
+      "export default { title: "MyComponent" };
+      const name = "dynamic";
+      export const WithQuotedName = {
+        name: "Quoted Name",
+      };
+      export const WithComputedName = {
+        [name]: "value",
+      };
+      export const WithComputedQuotedName = {
+        ["name"]: "Computed Quoted Name",
+      };
+      export const WithQuotedNameDuplicated = {};
+
+      export const WithComputedNameDuplicated = {
+        [name]: "value",
+      };
+
+      export const WithComputedQuotedNameDuplicated = {};
+      "
     `);
   });
   test('Unsupported CSF Variances', async () => {

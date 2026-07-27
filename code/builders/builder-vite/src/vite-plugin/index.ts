@@ -27,6 +27,7 @@ import { createServerChannel } from './middlewares/channel.ts';
 import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
 import { buildManager } from './middlewares/manager.ts';
 import { createStaticMiddlewares } from './middlewares/static.ts';
+import { createProxyPathFilter, SERVER_CHANNEL_PATH } from './proxy-path-filter.ts';
 import { emitDevTelemetry, reportTelemetryError } from './telemetry.ts';
 import type { UserOptions } from './types.ts';
 
@@ -238,7 +239,7 @@ function main(options?: UserOptions): PluginOption {
 
         const channel = createServerChannel(
           server.httpServer as Parameters<typeof createServerChannel>[0],
-          '/storybook-server-channel',
+          SERVER_CHANNEL_PATH,
           wsToken
         );
         sb.channel = channel;
@@ -255,13 +256,11 @@ function main(options?: UserOptions): PluginOption {
         const hmrOpts = server.config.server.hmr;
         const hostServer = typeof hmrOpts == 'object' && hmrOpts && hmrOpts.server;
         if (hostServer) {
-          const CHANNEL = '/storybook-server-channel';
-
           const hostHmrBase = server.config.base || '/';
           const originals = hostServer.rawListeners('upgrade');
           hostServer.removeAllListeners('upgrade');
           hostServer.on('upgrade', (req, socket, head) => {
-            if (req?.url?.startsWith(CHANNEL)) {
+            if (req?.url?.startsWith(SERVER_CHANNEL_PATH)) {
               sharedUpgrades.emit('upgrade', req, socket, head);
               return;
             }
@@ -280,7 +279,7 @@ function main(options?: UserOptions): PluginOption {
         if (!globalWithChannel.__SB_CHANNEL__) {
           globalWithChannel.__SB_CHANNEL__ = createServerChannel(
             sharedUpgrades,
-            '/storybook-server-channel',
+            SERVER_CHANNEL_PATH,
             wsToken
           );
           await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
@@ -292,7 +291,7 @@ function main(options?: UserOptions): PluginOption {
         server.config.root,
         'node_modules/.cache/storybook-vite-manager/sb-addons'
       );
-      const managerHtml = await buildManager(sb, basePath, '/storybook-server-channel', addonsDir);
+      const managerHtml = await buildManager(sb, basePath, SERVER_CHANNEL_PATH, addonsDir);
 
       // derived here (not at plugin creation) so the storybook-mode basePath override applies
       const baseNoSlash = basePath.replace(/\/+$/, '');
@@ -309,6 +308,10 @@ function main(options?: UserOptions): PluginOption {
           target: `http://127.0.0.1:${port}`,
           changeOrigin: true,
           ws: true,
+          pathFilter: createProxyPathFilter({
+            basePath,
+            channelPath: SERVER_CHANNEL_PATH,
+          }),
           pathRewrite: (path) =>
             baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
         }),

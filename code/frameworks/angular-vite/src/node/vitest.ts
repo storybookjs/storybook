@@ -107,12 +107,13 @@ export function storybookAngularVitest(options: AngularVitestOptions = {}): Plug
     // `node_modules`. `configureServer` is required: Vitest builds the browser server's allow-list
     // itself, so entries added via the `config` hook or static config never reach it.
     configureServer(server) {
-      const fsAllow = server.config.server?.fs?.allow;
-      if (Array.isArray(fsAllow)) {
-        for (const nodeModulesRoot of findNodeModulesRoots(server.config.root)) {
-          if (!fsAllow.includes(nodeModulesRoot)) {
-            fsAllow.push(nodeModulesRoot);
-          }
+      // Vitest always populates `fs.allow` today; initialize it defensively so the workspace root
+      // is still allowed if that ever changes.
+      const fs = server.config.server.fs as { allow?: string[] };
+      fs.allow ??= [];
+      for (const nodeModulesRoot of findNodeModulesRoots(server.config.root)) {
+        if (!fs.allow.includes(nodeModulesRoot)) {
+          fs.allow.push(nodeModulesRoot);
         }
       }
     },

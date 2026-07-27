@@ -23,7 +23,6 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
 import { pluginConfig } from '../vite-config.ts';
 import { buildStaticStorybook } from './build.ts';
-import { resolveChannelToken, type CoreWithChannelOptions } from './channel-token.ts';
 import { createServerChannel } from './middlewares/channel.ts';
 import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
 import { buildManager } from './middlewares/manager.ts';
@@ -212,9 +211,9 @@ function main(options?: UserOptions): PluginOption {
       const storyIndexGenerator =
         await sb.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-      const coreOptions = await sb.presets.apply<CoreWithChannelOptions>('core', {});
+      const coreOptions = await sb.presets.apply<CoreConfig>('core', {});
 
-      const wsToken = coreOptions.channelOptions?.wsToken;
+      const wsToken = coreOptions.channelOptions?.wsToken ?? server.config.webSocketToken;
 
       const staticHandlers = await createStaticMiddlewares(sb, '/');
 

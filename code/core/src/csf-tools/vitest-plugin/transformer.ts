@@ -7,7 +7,7 @@ import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryTest, formatCsf, loadCsf } from '../CsfFile.ts';
+import { type StoryTest, formatCsf, loadCsf as defaultLoadCsf, type LoadCSF } from '../CsfFile.ts';
 
 type TagsFilter = {
   include: string[];
@@ -112,6 +112,7 @@ export async function vitestTransform({
   stories,
   tagsFilter,
   previewLevelTags = [],
+  loadCsf = defaultLoadCsf,
 }: {
   code: string;
   fileName: string;
@@ -119,6 +120,7 @@ export async function vitestTransform({
   tagsFilter: TagsFilter;
   stories: StoriesEntry[];
   previewLevelTags: Tag[];
+  loadCsf?: LoadCSF;
 }): Promise<ReturnType<typeof formatCsf>> {
   const parsed = loadCsf(code, {
     fileName,

@@ -1,3 +1,5 @@
+import type { LoadCSF } from 'storybook/internal/csf-tools';
+
 export type UserOptions = {
   /**
    * The directory where the Storybook configuration is located, relative to the vitest
@@ -48,6 +50,11 @@ export type UserOptions = {
    * @default {}
    */
   initialGlobals?: Record<string, unknown>;
+
+  /**
+   * Custom CSF file loader
+   */
+  loadCsf?: LoadCSF;
 };
 
 export type InternalOptions = Required<UserOptions> & {

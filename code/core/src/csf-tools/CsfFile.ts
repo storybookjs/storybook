@@ -1079,7 +1079,9 @@ export const babelParseFile = ({
   );
 };
 
-export const loadCsf = (code: string, options: CsfOptions) => {
+export type LoadCSF = (code: string, options: CsfOptions) => CsfFile;
+
+export const loadCsf: LoadCSF = (code, options) => {
   const ast = babelParse(code);
   const file = babelParseFile({ code, filename: options.fileName, ast });
   return new CsfFile(ast, options, file);

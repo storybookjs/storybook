@@ -213,7 +213,8 @@ function main(options?: UserOptions): PluginOption {
       const coreOptions = await sb.presets.apply<
         CoreConfig & { channelOptions?: { wsToken?: string } }
       >('core', {});
-      const wsToken = coreOptions.channelOptions?.wsToken ?? '';
+
+      const wsToken = server.config.webSocketToken ?? coreOptions.channelOptions?.wsToken;
 
       const staticHandlers = await createStaticMiddlewares(sb, '/');
 

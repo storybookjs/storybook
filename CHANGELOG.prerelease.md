@@ -1,3 +1,11 @@
+## 10.6.0-alpha.4
+
+- Core: Upgrade `ws` to fix security advisories - [#35584](https://github.com/storybookjs/storybook/pull/35584), thanks @ndelangen!
+- Dependencies: Bump magic-string from 0.30.21 to 1.1.0 - [#35559](https://github.com/storybookjs/storybook/pull/35559), thanks @wojtekmaj!
+- TanStack: Preserve explicit route ids on pathful clones - [#35499](https://github.com/storybookjs/storybook/pull/35499), thanks @unpunnyfuns!
+- TanStack: Resolve mock redirects through Vite's resolver - [#35501](https://github.com/storybookjs/storybook/pull/35501), thanks @unpunnyfuns!
+- Vue3 Vite: Enable Schema Extraction for Vue Component Meta - [#35565](https://github.com/storybookjs/storybook/pull/35565), thanks @dmitriy-prokoshev!
+
 ## 10.6.0-alpha.3
 
 - Addon Vitest: Pin storybook/test in optimizeDeps so its CJS-only deps are prebundled - [#35572](https://github.com/storybookjs/storybook/pull/35572), thanks @Nic-Polumeyv!

@@ -1,10 +1,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { enableExperimentalReview, isReviewEnabledFor } from './templates.ts';
+import {
+  enableExperimentalReview,
+  isReviewEnabledFor,
+  rewritePackageSpecsForNpm,
+} from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
@@ -67,12 +71,49 @@ describe('enableExperimentalReview', () => {
   });
 });
 
+describe('rewritePackageSpecsForNpm', () => {
+  it('rewrites the real addon manifest for npm sandboxes', () => {
+    const packageJson = JSON.parse(
+      readFileSync(join(AGENT_EVAL_ROOT, '..', 'code', 'addons', 'mcp', 'package.json'), 'utf8')
+    ) as Record<string, unknown>;
+    const rewritten = rewritePackageSpecsForNpm(packageJson, {
+      dependencyOverrides: {
+        '@storybook/mcp': 'file:../mcp',
+      },
+    });
+    const version = packageJson.version;
+    const dependencyFields = [
+      'dependencies',
+      'devDependencies',
+      'optionalDependencies',
+      'peerDependencies',
+    ] as const;
+    const rewrittenSpecs = dependencyFields.flatMap((field) =>
+      Object.values((rewritten[field] as Record<string, string> | undefined) ?? {})
+    );
+
+    expect(rewrittenSpecs.some((spec) => spec.startsWith('workspace:'))).toBe(false);
+    expect((rewritten.dependencies as Record<string, string>)['@storybook/mcp']).toBe(
+      'file:../mcp'
+    );
+    expect((rewritten.devDependencies as Record<string, string>)['@storybook/addon-a11y']).toBe(
+      version
+    );
+    expect((rewritten.peerDependencies as Record<string, string>)['@storybook/addon-vitest']).toBe(
+      `^${version}`
+    );
+  });
+});
+
 function findStorybookMainFiles(rootDir: string): string[] {
   return readdirSync(rootDir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = join(rootDir, entry.name);
     if (entry.isDirectory()) {
       return entry.name === 'node_modules' ? [] : findStorybookMainFiles(entryPath);
     }
-    return entry.name === 'main.ts' && entryPath.includes('/.storybook/') ? [entryPath] : [];
+    // `sep`-based so the match also works on Windows, where `join` emits backslashes.
+    return entry.name === 'main.ts' && entryPath.includes(`${sep}.storybook${sep}`)
+      ? [entryPath]
+      : [];
   });
 }

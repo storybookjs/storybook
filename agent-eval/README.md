@@ -10,7 +10,7 @@ tests through the MCP server or the plugin skills.
 1. **Install dependencies:**
 
    ```bash
-   pnpm install
+   yarn install
    ```
 
 2. **Configure environment variables:**
@@ -25,16 +25,15 @@ tests through the MCP server or the plugin skills.
 
 ## Running Evals
 
-Commands below assume you are in `agent-eval/`. From the repository root, prefix
-them with `pnpm --dir agent-eval`, for example `pnpm --dir agent-eval run
-eval:dry`.
+Run the commands below from the repository root with
+`yarn workspace agent-eval run <script>`.
 
 ### Preview (no cost)
 
 See what will run without making API calls:
 
 ```bash
-pnpm eval:dry
+yarn workspace agent-eval run eval:dry
 ```
 
 ### Run Experiments
@@ -42,13 +41,13 @@ pnpm eval:dry
 Run all configured experiments:
 
 ```bash
-pnpm eval
+yarn workspace agent-eval run eval
 ```
 
 Run a single experiment:
 
 ```bash
-pnpm exec agent-eval cc-mcp-opus-high
+yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI. The
@@ -66,8 +65,8 @@ workflow evals on every experiment plus the lifecycle 82x evals
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_EXTRA_EVALS=1 pnpm eval
-EVAL_ONLY=803-edit-component pnpm eval
+EVAL_EXTRA_EVALS=1 yarn workspace agent-eval run eval
+EVAL_ONLY=803-edit-component yarn workspace agent-eval run eval
 ```
 
 A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 3
@@ -75,7 +74,7 @@ lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
-(see storybookjs/mcp#324).
+(see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
 The 9xx evals (ports from the old `/eval` system) never run automatically; see
 `lib/experiment.ts`.
@@ -86,7 +85,7 @@ run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
 for the default-model experiments:
 
 ```bash
-EVAL_EXTRA_MODELS=1 pnpm exec agent-eval cc-plugin-sonnet-medium
+EVAL_EXTRA_MODELS=1 yarn workspace agent-eval exec agent-eval cc-plugin-sonnet-medium
 ```
 
 Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
@@ -99,7 +98,7 @@ builds — to check whether a behavior change (e.g. in the documentation tooling
 regressed since the last stable release:
 
 ```bash
-EVAL_STORYBOOK_LATEST=1 pnpm eval
+EVAL_STORYBOOK_LATEST=1 yarn workspace agent-eval run eval
 ```
 
 Review mode follows the integration. The plugin experiments always run — and
@@ -112,7 +111,7 @@ the flag in every sandbox Storybook and flip the MCP assertions to the review
 workflow too:
 
 ```bash
-EVAL_REVIEW=1 pnpm eval
+EVAL_REVIEW=1 yarn workspace agent-eval run eval
 ```
 
 In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
@@ -185,9 +184,9 @@ template.
 
 Templates can use local built Storybook MCP packages with npm `file:`
 dependencies, for example `file:./local-packages/addon-mcp`. The setup step
-copies `packages/addon-mcp/dist` and `packages/mcp/dist` from this checkout into
+copies `code/addons/mcp/dist` and `code/lib/mcp/dist` from this checkout into
 the sandbox before the sandbox runs `npm install`. CI builds those packages
-before running evals; run `pnpm --filter @storybook/addon-mcp... run build`
+before running evals; run `yarn nx run-many -t compile --projects mcp,addon-mcp`
 locally after changing those packages.
 
 The MCP experiments configure each agent through its project-local MCP file:
@@ -205,7 +204,7 @@ https://github.com/openai/codex/issues/26234.
 ### View Results
 
 ```bash
-pnpm playground
+yarn workspace agent-eval run playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
@@ -217,8 +216,8 @@ Pull the eval results produced by recent CI runs into the local
 and inspected by analysis tooling:
 
 ```bash
-pnpm results:download        # latest 20 agent-eval-results artifacts
-pnpm results:download 5      # or any count between 1 and 100
+yarn workspace agent-eval run results:download        # latest 20 agent-eval-results artifacts
+yarn workspace agent-eval run results:download 5      # or any count between 1 and 100
 ```
 
 Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
@@ -245,7 +244,7 @@ workflow status still fails when the eval, build, or deploy step fails.
 The workflow links the Vercel project at runtime instead of committing
 `.vercel/project.json`. It uses the same Vercel access token for the Sandbox
 evals and the Vercel CLI preview deployment, but those are separate steps:
-Sandbox auth happens in `pnpm eval`, while the preview playground deployment
+Sandbox auth happens in `yarn workspace agent-eval run eval`, while the preview playground deployment
 runs `vercel link`, `vercel pull`, `vercel build`, and
 `vercel deploy --prebuilt`.
 
@@ -257,4 +256,4 @@ Configure these GitHub secrets before enabling the workflow:
 
 The thin app wrapper in `agent-eval/app` re-exports routes from
 `@vercel/agent-eval-playground` so Next.js can discover them from this package.
-Run `pnpm playground:check-routes` after upgrading the playground package.
+Run `yarn workspace agent-eval run playground:check-routes` after upgrading the playground package.

@@ -32,7 +32,7 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 describe('MCP Endpoint E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = x('pnpm', ['storybook'], {
+		storybookProcess = x('yarn', ['storybook'], {
 			nodeOptions: {
 				cwd: STORYBOOK_DIR,
 			},
@@ -773,9 +773,9 @@ describe('MCP Endpoint E2E Tests', () => {
 	describe('Tool: preview-stories', () => {
 		it('should return story URLs for valid stories', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
-			const storyPath = cwd.endsWith('/apps/internal-storybook')
+			const storyPath = cwd.endsWith('/test-storybooks/mcp')
 				? `${cwd}/stories/components/Button.stories.ts`
-				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
 				name: 'preview-stories',
@@ -956,9 +956,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should run tests for a story and report accessibility violations', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
-			const storyPath = cwd.endsWith('/apps/internal-storybook')
+			const storyPath = cwd.endsWith('/test-storybooks/mcp')
 				? `${cwd}/stories/components/Button.stories.ts`
-				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
 				name: 'run-story-tests',
@@ -982,9 +982,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should run tests for multiple stories', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
-			const storyPath = cwd.endsWith('/apps/internal-storybook')
+			const storyPath = cwd.endsWith('/test-storybooks/mcp')
 				? `${cwd}/stories/components/Button.stories.ts`
-				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
 				name: 'run-story-tests',
@@ -1030,9 +1030,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should sequentialize 4 concurrent calls to run-story-tests', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
-			const storyPath = cwd.endsWith('/apps/internal-storybook')
+			const storyPath = cwd.endsWith('/test-storybooks/mcp')
 				? `${cwd}/stories/components/Button.stories.ts`
-				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			// Make 4 concurrent calls with different story exports
 			const promise1 = mcpRequest('tools/call', {

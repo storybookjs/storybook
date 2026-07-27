@@ -10,13 +10,13 @@
     {
       "name": "storybook",
       "description": "Build, preview, and test UI components with Storybook.",
-      "source": "./packages/claude-plugin",
+      "source": "./code/lib/claude-plugin",
       "author": {
         "name": "Storybook",
         "url": "https://storybook.js.org/"
       },
       "homepage": "https://storybook.js.org/docs/ai/mcp/overview",
-      "repository": "https://github.com/storybookjs/mcp",
+      "repository": "https://github.com/storybookjs/storybook",
       "license": "MIT",
       "keywords": [
         "storybook",

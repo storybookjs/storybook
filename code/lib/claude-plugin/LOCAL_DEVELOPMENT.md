@@ -7,18 +7,18 @@ Claude has two lifecycle layers:
 - the **marketplace** entry, which tells Claude where to find this plugin catalog
 - the installed **plugin**, `storybook@storybook`, which is installed from that marketplace
 
-Run package scripts from the repository root with `pnpm --filter @storybook/claude-code-plugin run <script>`, or from this package directory with `pnpm run <script>`.
+Run package scripts from the repository root with `yarn workspace @storybook/claude-code-plugin run <script>`, or from this package directory with `yarn run <script>`.
 
 Validate the marketplace and plugin manifests:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run validate
+yarn workspace @storybook/claude-code-plugin run validate
 ```
 
 Run the same validation in vitest before pushing changes (from the repository root):
 
 ```sh
-pnpm vitest run --project=@storybook/claude-code-plugin
+yarn vitest run --project @storybook/claude-code-plugin
 ```
 
 The test runs `claude plugin validate` for the marketplace and plugin manifests. It skips when the Claude CLI is not installed. Use `validate` for manual checks or CI, and `plugin:install` below for local install testing.
@@ -26,7 +26,7 @@ The test runs `claude plugin validate` for the marketplace and plugin manifests.
 Install the plugin from this checkout at user scope:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:install
+yarn workspace @storybook/claude-code-plugin run plugin:install
 ```
 
 This validates the manifests, adds this package directory as the `storybook` Claude marketplace, and installs `storybook@storybook` at user scope so it is available in every project.
@@ -34,27 +34,27 @@ This validates the manifests, adds this package directory as the `storybook` Cla
 After changing plugin files, refresh the installed plugin from the local marketplace:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run marketplace:update
-pnpm --filter @storybook/claude-code-plugin run plugin:update
+yarn workspace @storybook/claude-code-plugin run marketplace:update
+yarn workspace @storybook/claude-code-plugin run plugin:update
 ```
 
 If the installed plugin cache still looks stale, reinstall it:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run remove
-pnpm --filter @storybook/claude-code-plugin run plugin:install
+yarn workspace @storybook/claude-code-plugin run remove
+yarn workspace @storybook/claude-code-plugin run plugin:install
 ```
 
 To fully uninstall Storybook from Claude (plugin, marketplace, and local cache):
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run remove
+yarn workspace @storybook/claude-code-plugin run remove
 ```
 
 Verify the installed plugin:
 
 ```sh
-pnpm --filter @storybook/claude-code-plugin run plugin:list
+yarn workspace @storybook/claude-code-plugin run plugin:list
 ```
 
 The output should include `storybook@storybook` with:
@@ -94,7 +94,7 @@ To test in Claude Desktop, restart Claude Desktop after installing or updating t
 
 This package is private during development. The repository root includes
 `.claude-plugin/marketplace.json` so testers can install from GitHub with
-`claude plugin marketplace add storybookjs/mcp@main`. The local marketplace in
+`claude plugin marketplace add storybookjs/storybook`. The local marketplace in
 this package is for package-local development and validation. The plugin will
 eventually ship through the official Claude plugin marketplace.
 

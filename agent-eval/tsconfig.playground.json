@@ -7,7 +7,7 @@
     "paths": {
       "#test-utils": ["./lib/test-utils.ts"],
       "@/*": ["./node_modules/@vercel/agent-eval-playground/*"],
-      "@storybook/mcp": ["../packages/mcp/src/index.ts"]
+      "@storybook/mcp": ["../code/lib/mcp/src/index.ts"]
     }
   },
   "include": [

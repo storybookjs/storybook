@@ -7,6 +7,7 @@
  * before-test.test.ts to verify they match.
  */
 export const EXISTING_RESOLUTIONS = new Set([
+  '@ai-sdk/anthropic',
   '@babel/runtime',
   '@babel/traverse',
   '@babel/types',
@@ -18,11 +19,16 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@types/node',
   '@types/react',
   '@typescript-eslint/types',
+  '@vercel/agent-eval-playground/react',
+  '@vercel/agent-eval-playground/react-dom',
+  '@vercel/agent-eval@npm:1.2.0',
   '@vitest/expect@npm:3.2.4',
+  'agent-eval/typescript',
   'aria-query@5.3.0',
   'esbuild',
   'playwright',
   'playwright-core',
+  'radix-ui@npm:^1.4.3',
   'react',
   'rxjs',
   'react-joyride/type-fest',

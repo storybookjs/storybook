@@ -18,7 +18,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 1. Run this command to add the Storybook marketplace to Claude Code:
 
    ```bash
-   claude plugin marketplace add storybookjs/mcp@main --scope user
+   claude plugin marketplace add storybookjs/storybook --scope user
    ```
 
 2. Then install the plugin:
@@ -43,7 +43,7 @@ You're all set!
 1. Run this command to add the Storybook marketplace to Claude Desktop:
 
    ```bash
-   /plugin marketplace add storybookjs/mcp@main --scope user
+   /plugin marketplace add storybookjs/storybook --scope user
    ```
 
 2. Then install the plugin:
@@ -106,7 +106,7 @@ These skills are available to agents that have the Storybook plugin installed. T
 
 ### `init`
 
-Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../addon-mcp), then runs the [setup](#setup) skill.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../../addons/mcp), then runs the [setup](#setup) skill.
 
 ### `setup`
 

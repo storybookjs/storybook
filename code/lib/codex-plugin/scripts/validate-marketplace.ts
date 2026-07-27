@@ -8,7 +8,7 @@ import { x } from 'tinyexec';
 
 const marketplaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marketplacePath = resolve(marketplaceRoot, '.agents/plugins/marketplace.json');
-const repoRoot = resolve(marketplaceRoot, '../..');
+const repoRoot = resolve(marketplaceRoot, '../../..');
 const rootMarketplacePath = resolve(repoRoot, '.agents/plugins/marketplace.json');
 
 type MarketplaceJson = {
@@ -102,7 +102,7 @@ const packagePluginRoot = validateMarketplaceShape(
 const rootPluginRoot = validateMarketplaceShape(
   rootMarketplace,
   repoRoot,
-  './packages/codex-plugin/plugins/storybook'
+  './code/lib/codex-plugin/plugins/storybook'
 );
 
 deepStrictEqual(normalizeMarketplace(rootMarketplace), normalizeMarketplace(packageMarketplace));

@@ -5,7 +5,7 @@
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
- *   bun packages/addon-mcp/scripts/generate-tools-api-doc.ts [output-path]
+ *   bun code/addons/mcp/scripts/generate-tools-api-doc.ts [output-path]
  *
  * Defaults to writing <repo-root>/tools-api.md (gitignored).
  */
@@ -21,9 +21,9 @@ import type { ToolAvailability } from '../src/utils/get-tool-availability.ts';
 
 const execFileAsync = promisify(execFile);
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const outputPath = path.resolve(repoRoot, process.argv[2] ?? 'tools-api.md');
-const internalStorybookDir = path.join(repoRoot, 'apps/internal-storybook');
+const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
@@ -264,12 +264,12 @@ function diffSummary(): string {
 async function renderSkills(): Promise<string> {
   const plugins = [
     {
-      title: 'Claude Code plugin (`packages/claude-plugin`)',
-      dir: 'packages/claude-plugin/skills',
+      title: 'Claude Code plugin (`code/lib/claude-plugin`)',
+      dir: 'code/lib/claude-plugin/skills',
     },
     {
-      title: 'Codex plugin (`packages/codex-plugin`)',
-      dir: 'packages/codex-plugin/plugins/storybook/skills',
+      title: 'Codex plugin (`code/lib/codex-plugin`)',
+      dir: 'code/lib/codex-plugin/plugins/storybook/skills',
     },
   ];
   const sections = ['## Skills', ''];
@@ -289,7 +289,6 @@ async function renderSkills(): Promise<string> {
 }
 
 function stripAnsi(text: string): string {
-  // oxlint-disable-next-line no-control-regex
   return text.replace(/\[[0-9;]*m/g, '');
 }
 
@@ -316,7 +315,7 @@ async function renderCliSection(): Promise<string> {
   const sections = [
     '## `storybook ai` CLI (`STORYBOOK_FEATURE_AI_CLI=1`)',
     '',
-    'Captured against `apps/internal-storybook` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
+    'Captured against `test-storybooks/mcp` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
     '',
     '### `npx storybook ai --help`',
     '',
@@ -338,8 +337,8 @@ const generatedAt = new Date().toISOString().slice(0, 10);
 const document = [
   '# Storybook MCP / AI tools API',
   '',
-  `> Generated ${generatedAt} by \`packages/addon-mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
-  '> Regenerate from the repo root with `bun packages/addon-mcp/scripts/generate-tools-api-doc.ts`.',
+  `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
+  '> Regenerate from the repo root with `node code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
   'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, change detection on, module graph supported, single source. The only variable is the `experimentalReview` feature flag.',
   '',

@@ -1,42 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
 import path from 'node:path';
+
+import { vol } from 'memfs';
 import type { StoryIndex } from 'storybook/internal/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ModuleGraphStatus, ModuleGraphStoryHit } from './module-graph.ts';
 
 // Static import would freeze the mock target before each test gets a chance
 // to swap the underlying core-server module. We dynamically `import()` after
 // `vi.doMock` instead — see each test below.
 
-// The resolver canonicalises every input path with `fs.realpathSync.native` and probes
-// barrel candidates with `fs.existsSync`. These unit tests operate on synthetic paths that
-// don't exist on disk, so we stub `node:fs` with caller-controlled sets: `existingPaths`
-// drives `existsSync` (barrel sibling probing) and `missingPaths` drives realpath ENOENT
-// (the "path not found" branch). Both default to empty so paths are their own canonical form
-// and have no barrel siblings unless a test opts in.
-const { existingPaths, missingPaths, ioErrorPaths } = vi.hoisted(() => ({
-  existingPaths: new Set<string>(),
-  missingPaths: new Set<string>(),
-  ioErrorPaths: new Set<string>(),
-}));
+vi.mock('node:fs', { spy: true });
 
-vi.mock('node:fs', () => {
-  const realpathSync: any = (p: string) => {
-    if (ioErrorPaths.has(p)) {
-      throw Object.assign(new Error(`EACCES: ${p}`), { code: 'EACCES' });
-    }
-    if (missingPaths.has(p)) {
-      throw Object.assign(new Error(`ENOENT: ${p}`), { code: 'ENOENT' });
-    }
-    return p;
-  };
-  realpathSync.native = realpathSync;
-  const fs = { realpathSync, existsSync: (p: string) => existingPaths.has(p) };
-  return { ...fs, default: fs };
-});
-
-const FAKE_WORKING_DIR = '/repo';
+// `path.resolve` gives the fixture a drive letter on Windows, matching what the
+// resolver's own `path.resolve(workingDir, …)` produces there.
+const FAKE_WORKING_DIR = path.resolve('/repo');
 const BADGE_ABS = path.join(FAKE_WORKING_DIR, 'src/components/Badge/Badge.tsx');
 const BADGE_BARREL = path.join(FAKE_WORKING_DIR, 'src/components/Badge/index.ts');
+
+/** The forward-slashed form the resolver queries the module graph with. */
+const asGraphPath = (p: string) => path.normalize(p).replaceAll('\\', '/');
+const storyFileAbs = (rel: string) => path.join(FAKE_WORKING_DIR, rel);
 
 /**
  * Mocks the `core/module-graph` open service via `getService`. `storiesByFile` keys are the
@@ -88,9 +73,12 @@ function depsFor(byFile: Record<string, string[]> = {}, workingDir = FAKE_WORKIN
 
 beforeEach(() => {
   vi.resetModules();
-  existingPaths.clear();
-  missingPaths.clear();
-  ioErrorPaths.clear();
+  vol.reset();
+  vol.fromNestedJSON({ [BADGE_ABS]: '' });
+  vi.mocked(fs.existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(fs.realpathSync.native).mockImplementation((filePath) =>
+    String(vol.realpathSync(filePath))
+  );
 });
 
 afterEach(() => {
@@ -106,20 +94,20 @@ describe('resolveComponentStories', () => {
     // consumed the *barrel* (`Badge/index.ts`) instead of `Badge.tsx`.
     setupService({
       storiesByFile: {
-        [BADGE_ABS]: [
+        [asGraphPath(BADGE_ABS)]: [
           { storyFile: './src/A.stories.tsx', depth: 1 },
           { storyFile: './src/B.stories.tsx', depth: 2 },
         ],
-        [BADGE_BARREL]: [{ storyFile: './src/C.stories.tsx', depth: 1 }], // unrelated barrel consumer
+        [asGraphPath(BADGE_BARREL)]: [{ storyFile: './src/C.stories.tsx', depth: 1 }], // unrelated barrel consumer
       },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [`${BADGE_ABS}/`] },
       depsFor({
-        '/repo/src/A.stories.tsx': ['a--default'],
-        '/repo/src/B.stories.tsx': ['b--default'],
-        '/repo/src/C.stories.tsx': ['c--default'],
+        [storyFileAbs('src/A.stories.tsx')]: ['a--default'],
+        [storyFileAbs('src/B.stories.tsx')]: ['b--default'],
+        [storyFileAbs('src/C.stories.tsx')]: ['c--default'],
       })
     );
     expect(res.available).toBe(true);
@@ -133,24 +121,24 @@ describe('resolveComponentStories', () => {
 
   it('resolves relative paths against the workingDir', async () => {
     setupService({
-      storiesByFile: { [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: ['src/components/Badge/Badge.tsx'] },
-      depsFor({ '/repo/src/A.stories.tsx': ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
     );
     expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
   });
 
   it('normalizes redundant slashes (`/services//webapp/`)', async () => {
     setupService({
-      storiesByFile: { [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
-      { componentPaths: ['/repo/src//components/Badge/Badge.tsx'] },
-      depsFor({ '/repo/src/A.stories.tsx': ['a--default'] })
+      { componentPaths: [`${FAKE_WORKING_DIR}${path.sep}src//components/Badge/Badge.tsx`] },
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
     );
     expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
   });
@@ -159,19 +147,19 @@ describe('resolveComponentStories', () => {
     // The story index here uses `src/A.stories.tsx` (no `./`); the module graph returns
     // `./src/A.stories.tsx`. The resolver normalizes both to the same form so they line up.
     setupService({
-      storiesByFile: { [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 3 }] },
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 3 }] },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [BADGE_ABS] },
-      depsFor({ '/repo/src/A.stories.tsx': ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
     );
     expect(res.results?.[0]?.matches).toEqual([{ storyId: 'a--default', depth: 3 }]);
   });
 
   it('skips virtual: importPath entries when building the file→storyIds map', async () => {
     setupService({
-      storiesByFile: { [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const indexWithVirtual: StoryIndex = {
@@ -207,24 +195,23 @@ describe('resolveComponentStories', () => {
   it('expands barrel targets and merges the minimum depth across them', async () => {
     // `Badge/Badge.tsx` ↔ `Badge/index.ts`: both reach `A.stories.tsx`, but via different
     // depths. The merge must keep the shorter (barrel) path's depth.
-    existingPaths.add(BADGE_BARREL);
+    vol.fromNestedJSON({ [BADGE_BARREL]: '' });
     setupService({
       storiesByFile: {
-        [BADGE_ABS]: [{ storyFile: './src/A.stories.tsx', depth: 2 }],
-        [BADGE_BARREL]: [{ storyFile: './src/A.stories.tsx', depth: 1 }],
+        [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 2 }],
+        [asGraphPath(BADGE_BARREL)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }],
       },
     });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [BADGE_ABS] },
-      depsFor({ '/repo/src/A.stories.tsx': ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
     );
     expect(res.results?.[0]?.matches).toEqual([{ storyId: 'a--default', depth: 1 }]);
   });
 
   it('flags pathNotFound when the component file does not exist on disk', async () => {
     const ghost = path.join(FAKE_WORKING_DIR, 'src/components/Ghost/Ghost.tsx');
-    missingPaths.add(ghost);
     setupService({ storiesByFile: {} });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories({ componentPaths: [ghost] }, depsFor());
@@ -237,7 +224,12 @@ describe('resolveComponentStories', () => {
     // A permission/IO error is a real failure, not a missing path — surfacing it as
     // `pathNotFound` would hide the underlying cause, so the resolver must let it propagate.
     const locked = path.join(FAKE_WORKING_DIR, 'src/components/Locked/Locked.tsx');
-    ioErrorPaths.add(locked);
+    vi.mocked(fs.realpathSync.native).mockImplementation((filePath) => {
+      if (filePath === locked) {
+        throw Object.assign(new Error(`EACCES: ${locked}`), { code: 'EACCES' });
+      }
+      return String(vol.realpathSync(filePath));
+    });
     setupService({ storiesByFile: {} });
     const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     await expect(resolveComponentStories({ componentPaths: [locked] }, depsFor())).rejects.toThrow(

@@ -118,7 +118,8 @@ describe('detectUnreachableChanges', () => {
   }
 
   function mockGit(porcelain: string) {
-    vi.doMock('node:child_process', () => ({
+    vi.doMock('node:child_process', async (importOriginal) => ({
+      ...(await importOriginal<typeof import('node:child_process')>()),
       execSync: () => porcelain,
     }));
   }
@@ -195,7 +196,8 @@ describe('detectUnreachableChanges', () => {
 
   it('returns [] gracefully when git fails (not a repo, etc.)', async () => {
     mockService({ storiesForFiles: (files) => files.map(() => []) });
-    vi.doMock('node:child_process', () => ({
+    vi.doMock('node:child_process', async (importOriginal) => ({
+      ...(await importOriginal<typeof import('node:child_process')>()),
       execSync: () => {
         throw new Error('not a git repository');
       },

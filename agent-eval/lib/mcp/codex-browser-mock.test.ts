@@ -66,8 +66,26 @@ class McpClient {
     return this.callTool('js', { code, timeout_ms: timeoutMs, title: 'test' });
   }
 
-  close(): void {
+  /** Ends stdin and awaits child exit — on Windows the child's cwd locks the workspace dir. */
+  close(): Promise<void> {
+    const exited = new Promise<void>((resolve) => {
+      this.child.once('exit', () => resolve());
+    });
     this.child.stdin.end();
+    const killTimer = setTimeout(() => this.child.kill(), 2000);
+    return exited.then(() => clearTimeout(killTimer));
+  }
+}
+
+/**
+ * Best-effort workspace removal: on Windows a just-stopped grandchild server can hold the dir
+ * lock a while after its kill; leaking an OS temp dir is preferable to failing the suite on it.
+ */
+function cleanupWorkspace(dir: string): void {
+  try {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 30, retryDelay: 200 });
+  } catch {
+    // Ignore: the OS temp dir is ephemeral.
   }
 }
 
@@ -126,11 +144,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  client.close();
+  await client.close();
   await new Promise<void>((resolve) => {
     fixtureServer.close(() => resolve());
   });
-  rmSync(workspace, { recursive: true, force: true });
+  cleanupWorkspace(workspace);
 });
 
 describe('node_repl mock', () => {

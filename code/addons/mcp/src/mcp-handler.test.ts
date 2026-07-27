@@ -1,4 +1,3 @@
-// oxlint-disable typescript-eslint(unbound-method) -- I'm unsure how to fix this properly
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   incomingMessageToWebRequest,

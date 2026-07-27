@@ -8,7 +8,7 @@
       "name": "storybook",
       "source": {
         "source": "local",
-        "path": "./packages/codex-plugin/plugins/storybook"
+        "path": "./code/lib/codex-plugin/plugins/storybook"
       },
       "policy": {
         "installation": "AVAILABLE",

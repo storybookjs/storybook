@@ -15,7 +15,6 @@ type FixturePackageJson = {
 
 type EvalAgent = 'claude-code' | 'codex';
 type EvalIntegration = 'mcp' | 'plugin';
-type Catalog = Record<string, string>;
 type DependencyOverrides = Record<string, string>;
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
@@ -108,10 +107,11 @@ const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
-const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'packages', 'claude-plugin', 'skills');
+const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
   REPO_ROOT,
-  'packages',
+  'code',
+  'lib',
   'codex-plugin',
   'plugins',
   'storybook',
@@ -546,30 +546,24 @@ function getDependencySpec(packageJson: Record<string, unknown>, name: string): 
 }
 
 async function readLocalStorybookMcpPackages(): Promise<Record<string, string>> {
-  const catalog = await readDefaultCatalog();
-
   return {
-    ...(await readLocalStorybookMcpPackage(catalog)),
-    ...(await readLocalStorybookAddonMcpPackage(catalog)),
+    ...(await readLocalStorybookMcpPackage()),
+    ...(await readLocalStorybookAddonMcpPackage()),
   };
 }
 
-async function readLocalStorybookMcpPackage(catalog: Catalog): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'mcp');
+async function readLocalStorybookMcpPackage(): Promise<Record<string, string>> {
+  const sourceDir = path.join(REPO_ROOT, 'code', 'lib', 'mcp');
   const targetDir = path.posix.join('local-packages', 'mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
-  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
-    catalog,
-  });
+  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {});
 
   return files;
 }
 
-async function readLocalStorybookAddonMcpPackage(
-  catalog: Catalog
-): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'packages', 'addon-mcp');
+async function readLocalStorybookAddonMcpPackage(): Promise<Record<string, string>> {
+  const sourceDir = path.join(REPO_ROOT, 'code', 'addons', 'mcp');
   const targetDir = path.posix.join('local-packages', 'addon-mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
@@ -578,7 +572,6 @@ async function readLocalStorybookAddonMcpPackage(
     'utf8'
   );
   files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
-    catalog,
     dependencyOverrides: {
       '@storybook/mcp': 'file:../mcp',
     },
@@ -589,7 +582,7 @@ async function readLocalStorybookAddonMcpPackage(
 
 async function readSandboxPackageJson(
   sourceDir: string,
-  options: { catalog: Catalog; dependencyOverrides?: DependencyOverrides }
+  options: { dependencyOverrides?: DependencyOverrides }
 ): Promise<string> {
   const packageJson = JSON.parse(
     await fs.readFile(path.join(sourceDir, 'package.json'), 'utf8')
@@ -603,12 +596,13 @@ async function readSandboxPackageJson(
   return JSON.stringify(sandboxPackageJson, null, 2).concat('\n');
 }
 
-function rewritePackageSpecsForNpm(
+export function rewritePackageSpecsForNpm(
   packageJson: Record<string, unknown>,
-  options: { catalog: Catalog; dependencyOverrides?: DependencyOverrides }
+  options: { dependencyOverrides?: DependencyOverrides }
 ): Record<string, unknown> {
   const dependencyOverrides = options.dependencyOverrides ?? {};
   const result = JSON.parse(JSON.stringify(packageJson)) as Record<string, unknown>;
+  const version = typeof result.version === 'string' ? result.version : undefined;
   const dependencyFields = [
     'dependencies',
     'devDependencies',
@@ -628,8 +622,8 @@ function rewritePackageSpecsForNpm(
       }
 
       dependencies[name] = rewriteDependencySpec(name, spec, {
-        catalog: options.catalog,
         dependencyOverrides,
+        version,
       });
     }
   }
@@ -640,70 +634,31 @@ function rewritePackageSpecsForNpm(
 function rewriteDependencySpec(
   name: string,
   spec: string,
-  options: { catalog: Catalog; dependencyOverrides: DependencyOverrides }
+  options: {
+    dependencyOverrides: DependencyOverrides;
+    version: string | undefined;
+  }
 ): string {
   const override = options.dependencyOverrides[name];
   if (override !== undefined) {
     return override;
   }
 
-  if (spec === 'catalog:') {
-    const catalogSpec = options.catalog[name];
-    if (catalogSpec === undefined) {
-      throw new Error(`Missing default catalog entry for ${name}`);
+  if (spec === 'workspace:*' || spec === 'workspace:^' || spec === 'workspace:~') {
+    if (options.version === undefined) {
+      throw new Error(`Missing package version for workspace dependency ${name}`);
     }
-    return catalogSpec;
-  }
 
-  if (spec.startsWith('catalog:')) {
-    throw new Error(`Unsupported catalog dependency for ${name}: ${spec}`);
+    // Storybook publishes its monorepo packages in lockstep, so npm-facing
+    // workspace ranges use the package manifest's own version.
+    return spec === 'workspace:*' ? options.version : `${spec.at(-1)}${options.version}`;
   }
 
   if (spec.startsWith('workspace:')) {
-    throw new Error(`Missing npm-compatible override for workspace dependency ${name}`);
+    throw new Error(`Unsupported workspace dependency for ${name}: ${spec}`);
   }
 
   return spec;
-}
-
-async function readDefaultCatalog(): Promise<Catalog> {
-  const workspaceYaml = await fs.readFile(path.join(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8');
-  const catalog: Catalog = {};
-  let inDefaultCatalog = false;
-
-  // This intentionally supports only the repo-owned two-space default `catalog:` shape.
-  // Named catalogs stay unsupported here and still fail explicitly in `rewriteDependencySpec`.
-  for (const line of workspaceYaml.split('\n')) {
-    if (line.trim() === 'catalog:') {
-      inDefaultCatalog = true;
-      continue;
-    }
-
-    if (!inDefaultCatalog) {
-      continue;
-    }
-
-    if (line.length > 0 && !line.startsWith(' ')) {
-      break;
-    }
-
-    const match = /^\s{2}(.+?):\s*(.+?)\s*$/.exec(line);
-    if (!match) {
-      continue;
-    }
-    const [, rawName, rawSpec] = match;
-    if (rawName === undefined || rawSpec === undefined) {
-      continue;
-    }
-
-    catalog[stripYamlQuotes(rawName)] = stripYamlQuotes(rawSpec);
-  }
-
-  return catalog;
-}
-
-function stripYamlQuotes(value: string): string {
-  return value.replace(/^['"]|['"]$/g, '');
 }
 
 async function readPackageDistFiles(
@@ -719,7 +674,7 @@ async function readPackageDistFiles(
     }
   } catch {
     throw new Error(
-      `Missing build output for ${packageName} at ${distDir}. Run \`pnpm turbo run build\` before running agent-eval.`
+      `Missing build output for ${packageName} at ${distDir}. Run \`yarn nx run-many -t compile --projects mcp,addon-mcp\` before running agent-eval.`
     );
   }
 

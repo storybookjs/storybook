@@ -1,0 +1,35 @@
+{
+	"name": "storybook",
+	"version": "0.0.0",
+	"description": "Build, preview, and test UI components with Storybook Codex skills.",
+	"author": {
+		"name": "Storybook Core Team",
+		"url": "https://storybook.js.org/"
+	},
+	"homepage": "https://storybook.js.org/docs/ai/mcp/overview",
+	"repository": "https://github.com/storybookjs/mcp",
+	"license": "MIT",
+	"keywords": ["storybook", "mcp", "components", "stories", "codex"],
+	"skills": "./skills/",
+	"mcpServers": "./.mcp.json",
+	"interface": {
+		"displayName": "Storybook",
+		"shortDescription": "Build, preview, and test UI components",
+		"longDescription": "Give Codex Storybook setup, init, and upgrade skills for component development. Use it to prepare projects for Storybook MCP workflows, preview UI in the browser, run story tests, and repair Storybook setup.",
+		"developerName": "Storybook",
+		"category": "Coding",
+		"capabilities": ["Interactive", "Write"],
+		"websiteURL": "https://storybook.js.org/",
+		"privacyPolicyURL": "https://storybook.js.org/privacy/",
+		"termsOfServiceURL": "https://storybook.js.org/terms/",
+		"defaultPrompt": [
+			"Set up Storybook for Codex",
+			"Preview changed stories in Storybook",
+			"Run Storybook tests for changed stories"
+		],
+		"brandColor": "#FF4785",
+		"composerIcon": "./assets/storybook.svg",
+		"logo": "./assets/storybook.svg",
+		"screenshots": []
+	}
+}

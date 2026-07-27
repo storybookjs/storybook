@@ -1,0 +1,7 @@
+{
+	"name": "804-write-story-for-existing-component",
+	"type": "module",
+	"evals": {
+		"template": "reshaped-storybook"
+	}
+}

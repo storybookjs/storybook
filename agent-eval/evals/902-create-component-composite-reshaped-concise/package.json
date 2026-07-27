@@ -1,0 +1,7 @@
+{
+	"name": "902-create-component-composite-reshaped-concise",
+	"type": "module",
+	"evals": {
+		"template": "reshaped-storybook"
+	}
+}

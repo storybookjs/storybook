@@ -1,0 +1,69 @@
+{
+	"v": 5,
+	"entries": {
+		"button--primary": {
+			"id": "button--primary",
+			"title": "Button",
+			"name": "Primary",
+			"importPath": "./src/components/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component", "autodocs"]
+		},
+		"button--secondary": {
+			"id": "button--secondary",
+			"title": "Button",
+			"name": "Secondary",
+			"importPath": "./src/components/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"button--large": {
+			"id": "button--large",
+			"title": "Button",
+			"name": "Large",
+			"importPath": "./src/components/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"card--basic": {
+			"id": "card--basic",
+			"title": "Card",
+			"name": "Basic",
+			"importPath": "./src/components/Card.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"card--with-image": {
+			"id": "card--with-image",
+			"title": "Card",
+			"name": "WithImage",
+			"importPath": "./src/components/Card.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"input--default": {
+			"id": "input--default",
+			"title": "Input",
+			"name": "Default",
+			"importPath": "./src/forms/Input.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"input--with-label": {
+			"id": "input--with-label",
+			"title": "Input",
+			"name": "WithLabel",
+			"importPath": "./src/forms/Input.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"modal--open": {
+			"id": "modal--open",
+			"title": "Modal",
+			"name": "Open",
+			"importPath": "./src/overlays/Modal.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		}
+	}
+}

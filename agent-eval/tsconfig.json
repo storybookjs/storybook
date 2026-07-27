@@ -1,0 +1,21 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"moduleResolution": "bundler",
+		"paths": {
+			"#test-utils": ["./lib/test-utils.ts"],
+			"@storybook/mcp": ["../packages/mcp/src/index.ts"]
+		}
+	},
+	"include": [
+		"eval.d.ts",
+		"eval-matchers.d.ts",
+		"experiments/**/*.ts",
+		"evals/**/EVAL.ts",
+		"evals/**/EVAL.tsx",
+		"lib/**/*.ts",
+		"vitest.config.ts"
+	],
+	"exclude": ["results/**", "templates/**"]
+}

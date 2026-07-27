@@ -1,0 +1,29 @@
+{
+	"v": 5,
+	"entries": {
+		"button--primary": {
+			"id": "button--primary",
+			"title": "Button",
+			"name": "Primary",
+			"importPath": "./src/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"button--secondary": {
+			"id": "button--secondary",
+			"title": "Button",
+			"name": "Secondary",
+			"importPath": "./src/Button.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		},
+		"input--default": {
+			"id": "input--default",
+			"title": "Input",
+			"name": "Default",
+			"importPath": "./src/Input.stories.tsx",
+			"type": "story",
+			"tags": ["component"]
+		}
+	}
+}

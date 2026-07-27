@@ -139,7 +139,7 @@ export class PNPMProxy extends JsPackageManager {
     const childProcess = await executeCommand({
       command: 'npm',
       cwd: this.cwd,
-      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+      args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
     });
     const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
@@ -211,7 +211,10 @@ export class PNPMProxy extends JsPackageManager {
     return JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   }
 
-  protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
+  protected getResolutions(
+    packageJson: PackageJson,
+    versions: Record<string, string>
+  ): Record<string, any> {
     return {
       overrides: {
         ...packageJson.overrides,

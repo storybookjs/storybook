@@ -238,8 +238,15 @@ export function angularOptionsPlugin(
     config(userConfig: UserConfig) {
       resolvedConfig = userConfig;
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
-      const loadPaths = options?.angularBuilderOptions?.stylePreprocessorOptions?.loadPaths;
-      const sassOptions = options?.angularBuilderOptions?.stylePreprocessorOptions?.sass;
+      const stylePreprocessorOptions =
+        options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
+      // Angular's builder schema (and this framework's builder schema) names the
+      // SCSS search-path array `includePaths`, matching angular.json. dart-sass
+      // and Vite call the same thing `loadPaths`; accept that spelling too so
+      // configs written against either convention work. `includePaths` wins when
+      // both are present.
+      const loadPaths = stylePreprocessorOptions.includePaths ?? stylePreprocessorOptions.loadPaths;
+      const sassOptions = stylePreprocessorOptions.sass;
 
       if (Array.isArray(loadPaths)) {
         const workspaceRoot =

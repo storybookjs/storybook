@@ -249,7 +249,10 @@ const meta = preview.meta({
   parameters: {
     layout: 'fullscreen',
     chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+      // Ignore the entire thumbnail cell, not just the iframe: the loading overlay and the
+      // self-measuring iframe render nondeterministically (especially in Edge), and pixels
+      // outside the iframe but inside the cell kept flagging spurious changes on every build.
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
   decorators: [
@@ -376,6 +379,11 @@ export const PendingUpdateAccept = meta.story({
 
 export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   parameters: {
+    // Clicking "Update" at the end of the play function swaps in a fresh review whose
+    // preview-thumbnail iframes are still loading and self-measuring at capture time, so the
+    // snapshot (in Edge especially) differs on nearly every build and had to be re-accepted
+    // over and over. The flow itself is still covered as an interaction test.
+    chromatic: { disableSnapshot: true },
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {
       path: '/story/manager-settings-guidepage--default',

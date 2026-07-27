@@ -97,6 +97,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "loadPaths": {
+          "description": "Alias for `includePaths` using the dart-sass/Vite spelling. Paths will be resolved to workspace root.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { defineToolset } from './definition.ts';
-import { loadToolsets } from './load-toolsets.ts';
+import { defineToolset, type AnyToolsetDefinition } from './definition.ts';
+import { loadToolsets, type ToolsetPresets } from './load-toolsets.ts';
 
 const docs = defineToolset({
   id: 'docs',
@@ -30,10 +30,10 @@ const fromAddon = defineToolset({
 
 describe('loadToolsets', () => {
   it('returns presets.apply experimental_toolsets with the given defaults', async () => {
-    const apply = vi.fn(async (_ext: string, config: unknown) => [
-      ...(config as (typeof docs)[]),
-      fromAddon,
-    ]);
+    const apply = vi.fn(
+      async <T>(_ext: string, config?: T): Promise<T> =>
+        [...((config as AnyToolsetDefinition[] | undefined) ?? []), fromAddon] as T
+    ) as ToolsetPresets['apply'];
 
     await expect(loadToolsets({ apply }, [docs])).resolves.toEqual([docs, fromAddon]);
     expect(apply).toHaveBeenCalledWith('experimental_toolsets', [docs]);

@@ -4,7 +4,7 @@ import { mapStaticDir, type StoryIndexGenerator } from 'storybook/internal/core-
 import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { basename, join } from 'pathe';
+import { basename, join, resolve } from 'pathe';
 import type { ViteBuilder } from 'vite';
 
 import { buildManager, copyManagerAssets } from './middlewares/manager.ts';
@@ -15,6 +15,7 @@ type StaticBuildOptions = {
   builder: ViteBuilder;
   options: Options;
   outputDir: string;
+  root: string;
 };
 
 async function copyStaticDirs(options: Options, outputDir: string): Promise<void> {
@@ -41,7 +42,18 @@ export async function buildStaticStorybook({
   builder,
   options,
   outputDir,
+  root,
 }: StaticBuildOptions): Promise<void> {
+  if (outputDir === '') {
+    throw new Error("Won't remove current directory. Check your outputDir!");
+  }
+
+  outputDir = resolve(root, outputDir);
+
+  if (outputDir === '/' || outputDir === resolve(root)) {
+    throw new Error("Won't remove project root or filesystem root. Check your outputDir!");
+  }
+
   await rm(outputDir, { recursive: true, force: true });
   await mkdir(outputDir, { recursive: true });
 

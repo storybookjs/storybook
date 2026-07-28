@@ -118,10 +118,8 @@ function main(options?: UserOptions): PluginOption {
                       basePath,
                       builder,
                       options: sb,
-                      outputDir: resolve(
-                        builder.config.root ?? config.root,
-                        finalOptions.outputDir
-                      ),
+                      outputDir: finalOptions.outputDir,
+                      root: builder.config.root ?? config.root,
                     });
                   } catch (error) {
                     const core = await sb.presets

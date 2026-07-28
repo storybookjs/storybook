@@ -1,7 +1,6 @@
 # Agent Instructions
 
-Canonical agent guidance for `vite-plugin-storybook-nextjs`. `CLAUDE.md` symlinks here —
-keep instructions here, don't duplicate.
+Canonical agent guidance for `vite-plugin-storybook-nextjs`. `CLAUDE.md` points here — keep instructions here, don't duplicate.
 
 This plugin aliases Next.js modules to Storybook-friendly mocks so portable stories run
 under Vitest. It backs `@storybook/nextjs-vite` / `@storybook/experimental-nextjs-vite`.

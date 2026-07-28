@@ -16,12 +16,8 @@ export async function getPreviewPlugins(
   const entryPlugins = await getEntryPlugins(options, basePath);
 
   const globalsPlugin = await storybookExternalGlobalsPlugin(options);
-  const adaptedGlobalsPlugin: Plugin = {
-    ...globalsPlugin,
-    apply: 'serve',
-  };
 
-  return [...corePlugins, adaptedGlobalsPlugin, await csfPlugin(options), ...entryPlugins];
+  return [...corePlugins, globalsPlugin, await csfPlugin(options), ...entryPlugins];
 }
 
 async function getEntryPlugins(options: Options, basePath: string): Promise<Plugin[]> {

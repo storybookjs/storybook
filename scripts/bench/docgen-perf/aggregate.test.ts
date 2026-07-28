@@ -1,21 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SaveSample } from '../docgen-shared/samples.ts';
+import type { MemorySample, SaveSample } from '../docgen-shared/samples.ts';
 import type { SeriesResult } from '../docgen-shared/series.ts';
+import { summarizeSeries } from '../docgen-shared/stats.ts';
 import { designatedRep, oneShotMetrics, seriesMetrics } from './aggregate.ts';
 
 function sample(save: number, durMs: number, heapUsedMb = 20, retainedHeapMb = 10): SaveSample {
   return { save, durMs, rssMb: 100, heapUsedMb, retainedHeapMb };
 }
 
+/** Built through summarizeSeries, so the fixture cannot claim figures a real run would not produce. */
+function repOf(coldMs: number, samples: SaveSample[], baseline: MemorySample): SeriesResult {
+  return { coldMs, baseline, samples, ...summarizeSeries(samples, baseline) };
+}
+
 function rep(coldMs: number, durations: number[]): SeriesResult {
-  return {
+  return repOf(
     coldMs,
-    baseline: { rssMb: 90, heapUsedMb: 12, retainedHeapMb: 10 },
-    samples: durations.map((d, i) => sample(i + 1, d)),
-    retainedSlope: 0.5,
-    retainedGrowth: 4,
-  };
+    durations.map((d, i) => sample(i + 1, d)),
+    { rssMb: 90, heapUsedMb: 12, retainedHeapMb: 10 }
+  );
 }
 
 describe('designatedRep', () => {
@@ -70,15 +74,13 @@ describe('seriesMetrics', () => {
 
   it('rejects an empty set of repetitions', () => {
     expect(() => seriesMetrics([], 5)).toThrow('no completed repetition recorded');
-    expect(() => seriesMetrics(undefined, 5)).toThrow('no completed repetition recorded');
   });
 
   it('rejects a run with no retained samples', () => {
-    const noGc: SeriesResult = {
-      coldMs: 100,
-      baseline: { rssMb: 90, heapUsedMb: 12 },
-      samples: [{ save: 1, durMs: 5, rssMb: 100, heapUsedMb: 20 }],
-    };
+    const noGc = repOf(100, [{ save: 1, durMs: 5, rssMb: 100, heapUsedMb: 20 }], {
+      rssMb: 90,
+      heapUsedMb: 12,
+    });
     expect(() => seriesMetrics([noGc], 1)).toThrow('retained metrics missing');
   });
 });

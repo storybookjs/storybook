@@ -38,8 +38,6 @@ export function leastSquaresSlope(values: number[]): number {
 
 /** The retained- and transient-memory figures every series harness derives from its save series. */
 export interface SeriesSummary {
-  /** Post-GC retained heap per save. Empty unless the child ran under `--expose-gc`. */
-  retainedValues: number[];
   /** Least-squares slope of retained heap over the save series, MB per save. */
   retainedSlope?: number;
   /** Final retained sample minus the pre-series baseline, MB. */
@@ -55,18 +53,19 @@ export interface SeriesSummary {
  * memory harness and the per-engine harnesses cannot drift apart in how they compute them.
  */
 export function summarizeSeries(samples: SaveSample[], baseline: MemorySample): SeriesSummary {
-  const retainedValues = samples
-    .map((s) => s.retainedHeapMb)
-    .filter((v): v is number => v !== undefined);
-  const transients = samples
-    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
-    .filter((v): v is number => v !== undefined);
+  // Samples taken without --expose-gc carry no retained heap; dropping them keeps a missing reading
+  // from being averaged in as a zero.
+  const gcSampled = samples.filter(
+    (s): s is SaveSample & { retainedHeapMb: number } => s.retainedHeapMb !== undefined
+  );
+  const retained = gcSampled.map((s) => s.retainedHeapMb);
+  const transients = gcSampled.map((s) => s.heapUsedMb - s.retainedHeapMb);
+  const last = retained.at(-1);
   return {
-    retainedValues,
-    retainedSlope: retainedValues.length ? leastSquaresSlope(retainedValues) : undefined,
+    retainedSlope: retained.length ? leastSquaresSlope(retained) : undefined,
     retainedGrowth:
-      retainedValues.length && baseline.retainedHeapMb !== undefined
-        ? (retainedValues.at(-1) as number) - baseline.retainedHeapMb
+      last !== undefined && baseline.retainedHeapMb !== undefined
+        ? last - baseline.retainedHeapMb
         : undefined,
     transients,
     avgTransient: transients.length ? mean(transients) : undefined,

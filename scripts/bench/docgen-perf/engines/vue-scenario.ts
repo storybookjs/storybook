@@ -69,13 +69,7 @@ export interface VueHarnessOptions {
 
 export function parseVueOptions(argv: string[], engineDirName: string): VueHarnessOptions {
   return parseHarnessOptions<VueHarnessOptions>(argv, OPTIONS, schemaFor(engineDirName), (values) => ({
-    scenario: values.scenario,
-    packages: values.packages,
-    componentsPerPackage: values['components-per-package'],
-    chainDepth: values['chain-depth'],
-    fanOut: values['fan-out'],
-    heavyLib: values['heavy-lib'],
-    saves: values.saves,
+    ...values,
     outDir: values.out,
     jsonOut: values.json,
   }));

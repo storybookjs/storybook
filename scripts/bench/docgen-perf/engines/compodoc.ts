@@ -12,12 +12,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { outputTail } from '../../docgen-shared/child-output.ts';
 import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
+import type { AngularScenarioConfig, SuiteProfile } from '../config.ts';
 import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.ts';
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
-import type { AngularScenarioConfig, SuiteProfile } from '../config.ts';
-import type { EngineId } from '../../docgen-shared/engine-ids.ts';
-import type { EngineMetrics } from '../types.ts';
+import type { EngineId, EngineMetrics } from '../types.ts';
 
 /**
  * Walked up from the resolved binary rather than a fixed path, since the package hoists to
@@ -105,8 +105,7 @@ function runCompodocOnce(
       clearInterval(poll);
       const durMs = Date.now() - start;
       if (status !== 0) {
-        const tail = output.trim().split('\n').slice(-8).join('\n');
-        reject(new Error(`compodoc exited with status ${status}:\n${tail}`));
+        reject(new Error(`compodoc exited with status ${status}:\n${outputTail(output, 8)}`));
         return;
       }
       if (!fs.existsSync(path.join(docsOutDir, 'documentation.json'))) {

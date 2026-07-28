@@ -57,10 +57,8 @@ export function renderResults(
     }
   }
 
-  const widths = HEADER.map((_, col) => Math.max(...rows.map((row) => (row[col] ?? '').length)));
-  const table = rows.map(
-    (row) => `  ${row.map((cell, col) => (cell ?? '').padEnd(widths[col])).join('  ')}`
-  );
+  const widths = HEADER.map((_, col) => Math.max(...rows.map((row) => row[col].length)));
+  const table = rows.map((row) => `  ${row.map((cell, col) => cell.padEnd(widths[col])).join('  ')}`);
   return { table, statusLines };
 }
 

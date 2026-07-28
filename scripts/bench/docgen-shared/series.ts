@@ -9,7 +9,7 @@ import * as fs from 'node:fs';
 
 import type { MemorySample, SaveSample } from './samples.ts';
 import { formatSampleLine, gcAvailable, sampleMemory } from './sampling.ts';
-import { summarizeSeries } from './stats.ts';
+import { type SeriesSummary, summarizeSeries } from './stats.ts';
 
 export interface SeriesEngine {
   /**
@@ -25,16 +25,13 @@ export interface SeriesEngine {
   dispose?(): void;
 }
 
-export interface SeriesResult {
+export interface SeriesResult extends SeriesSummary {
   coldMs: number;
   coldMembers?: number;
   /** Members documented by the last timed re-extraction. */
   warmMembers?: number;
   baseline: MemorySample;
   samples: SaveSample[];
-  retainedSlope?: number;
-  retainedGrowth?: number;
-  avgTransient?: number;
 }
 
 export interface SeriesOptions {
@@ -77,17 +74,7 @@ export async function runSeries(
 
   engine.dispose?.();
 
-  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
-  return {
-    coldMs,
-    coldMembers,
-    warmMembers,
-    baseline,
-    samples,
-    retainedSlope,
-    retainedGrowth,
-    avgTransient,
-  };
+  return { coldMs, coldMembers, warmMembers, baseline, samples, ...summarizeSeries(samples, baseline) };
 }
 
 export function printSeriesSummary(result: SeriesResult, saves: number): void {

@@ -4,12 +4,11 @@
  */
 import * as path from 'node:path';
 
-import type { EngineId } from '../docgen-shared/engine-ids.ts';
 import type { SeriesResult } from '../docgen-shared/series.ts';
 import { seriesMetrics } from './aggregate.ts';
 import type { SuiteProfile } from './config.ts';
 import type { SeriesChildSpec } from './spawn.ts';
-import type { EngineMetrics } from './types.ts';
+import type { EngineId, EngineMetrics } from './types.ts';
 
 export interface ScenarioSpec {
   name: string;

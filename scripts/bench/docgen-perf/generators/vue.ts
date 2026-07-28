@@ -284,14 +284,7 @@ function parseOptions(argv: string[]): VueGenerateOptions {
       fanOut: countOption(4),
       heavyLib: z.boolean().default(false),
     }),
-    (values) => ({
-      outDir: values.out,
-      packages: values.packages,
-      componentsPerPackage: values['components-per-package'],
-      chainDepth: values['chain-depth'],
-      fanOut: values['fan-out'],
-      heavyLib: values['heavy-lib'],
-    })
+    (values) => ({ ...values, outDir: values.out })
   );
 }
 

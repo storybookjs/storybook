@@ -31,7 +31,6 @@ const parse = (argv: string[]) =>
   parseHarnessOptions<Options>(argv, OPTIONS, SCHEMA, (values) => ({
     ...values,
     outDir: values.out,
-    componentsPerPackage: values['components-per-package'],
   }));
 
 describe('parseHarnessOptions', () => {

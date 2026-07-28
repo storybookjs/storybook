@@ -28,7 +28,7 @@ export function parseCliOptions(argv: string[], workRoot: string): CliOptions {
     jsonOut: z.string().default(path.join(workRoot, 'results.json')),
   });
   const options = parseHarnessOptions<CliOptions>(argv, OPTIONS, schema, (values) => ({
-    quick: values.quick,
+    ...values,
     engines: values.engine,
     jsonOut: values.json,
   }));

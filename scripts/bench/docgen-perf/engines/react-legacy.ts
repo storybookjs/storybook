@@ -17,14 +17,16 @@ import * as path from 'node:path';
 
 import { z } from 'zod';
 
-import { componentSource, generateProject } from '../../docgen-memory/generate-project.ts';
+import {
+  type GeneratedProject,
+  componentRef,
+  componentSource,
+  generateProject,
+} from '../../docgen-memory/generate-project.ts';
 import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
 import {
-  type ReactDocgenModule,
-  type ReactDocgenTypescriptModule,
-  type UtilsModule,
-  componentRef,
+  type ComponentRefLike,
   loadRendererModule,
 } from '../../docgen-shared/renderer-module.ts';
 import {
@@ -32,6 +34,23 @@ import {
   harnessMain,
   runSeriesHarness,
 } from '../../docgen-shared/series.ts';
+
+/** The renderer module surfaces this harness loads, narrowed to what it calls. */
+interface UtilsModule {
+  invalidateCache(): void;
+}
+
+interface ReactDocgenModule {
+  getReactDocgen(
+    path: string,
+    component: ComponentRefLike
+  ): { type: 'success' } | { type: 'error'; error: { name: string; message: string } };
+}
+
+interface ReactDocgenTypescriptModule {
+  parseWithReactDocgenTypescript(filePath: string): Promise<Array<{ exportName?: string }>>;
+  invalidateParser(): void;
+}
 
 const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
 /**
@@ -84,6 +103,50 @@ function parseOptions(argv: string[]): HarnessOptions {
   }));
 }
 
+interface Parser {
+  /** Extract `Comp{i}`. Throws on a failed or empty result, which is fast for the wrong reason. */
+  extractOne(i: number): Promise<void>;
+  /** Global invalidation is the only surface these engines expose. */
+  invalidate(): void;
+}
+
+async function loadParser(options: HarnessOptions, project: GeneratedProject): Promise<Parser> {
+  const { componentPaths } = project;
+  const { invalidateCache } = await loadRendererModule<UtilsModule>('utils.ts');
+
+  if (options.parser === 'react-docgen') {
+    const { getReactDocgen } = await loadRendererModule<ReactDocgenModule>('reactDocgen.ts');
+    return {
+      async extractOne(i) {
+        const result = getReactDocgen(componentPaths[i], componentRef(i, componentPaths[i]));
+        if (result.type === 'error') {
+          throw new Error(
+            `react-docgen failed on Comp${i}: ${result.error.name} ${result.error.message}`
+          );
+        }
+      },
+      invalidate: invalidateCache,
+    };
+  }
+
+  const { parseWithReactDocgenTypescript, invalidateParser } =
+    await loadRendererModule<ReactDocgenTypescriptModule>('reactDocgenTypescript.ts');
+  // The parser resolves its tsconfig from process.cwd(); point it at the generated project.
+  process.chdir(project.outDir);
+  return {
+    async extractOne(i) {
+      const docs = await parseWithReactDocgenTypescript(componentPaths[i]);
+      if (docs.length === 0) {
+        throw new Error(`react-docgen-typescript returned no docs for Comp${i}`);
+      }
+    },
+    invalidate() {
+      invalidateParser();
+      invalidateCache();
+    },
+  };
+}
+
 async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
   const genStart = Date.now();
   const project = generateProject({
@@ -98,39 +161,7 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
   });
   console.log(`  generated project in ${Date.now() - genStart}ms at ${project.outDir}`);
 
-  const { invalidateCache } = await loadRendererModule<UtilsModule>('utils.ts');
-
-  let extractOne: (i: number) => Promise<void>;
-  let invalidate: () => void;
-
-  if (options.parser === 'react-docgen') {
-    const { getReactDocgen } = await loadRendererModule<ReactDocgenModule>('reactDocgen.ts');
-    extractOne = async (i) => {
-      const componentPath = project.componentPaths[i];
-      const result = getReactDocgen(componentPath, componentRef(i, componentPath));
-      if (result.type === 'error') {
-        throw new Error(
-          `react-docgen failed on Comp${i}: ${result.error.name} ${result.error.message}`
-        );
-      }
-    };
-    invalidate = invalidateCache;
-  } else {
-    const { parseWithReactDocgenTypescript, invalidateParser } =
-      await loadRendererModule<ReactDocgenTypescriptModule>('reactDocgenTypescript.ts');
-    // The parser resolves its tsconfig from process.cwd(); point it at the generated project.
-    process.chdir(project.outDir);
-    extractOne = async (i) => {
-      const docs = await parseWithReactDocgenTypescript(project.componentPaths[i]);
-      if (docs.length === 0) {
-        throw new Error(`react-docgen-typescript returned no docs for Comp${i}`);
-      }
-    };
-    invalidate = () => {
-      invalidateParser();
-      invalidateCache();
-    };
-  }
+  const { extractOne, invalidate } = await loadParser(options, project);
 
   const extractAll = async () => {
     for (let i = 0; i < options.components; i++) {
@@ -151,8 +182,7 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
       const i = changedIndex(save);
       extraByComponent[i] += 1;
       fs.writeFileSync(project.componentPaths[i], componentSource(i, extraByComponent[i]));
-      // Global invalidation is the only surface these engines expose; without it the re-extraction
-      // below is a cache hit.
+      // Without this the re-extraction below is a cache hit, not a measurement.
       invalidate();
     },
     async reextract(save) {

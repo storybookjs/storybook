@@ -69,8 +69,8 @@ function assembleScenario(
   return {
     params: scenario.params,
     metrics,
-    coldMembers: engine.coldMembers?.(designated),
-    warmMembers: engine.warmMembers?.(designated),
+    coldMembers: engine.coldMembers(designated),
+    warmMembers: engine.warmMembers(designated),
   };
 }
 
@@ -89,7 +89,7 @@ async function main() {
   const skipped = new Map<EngineId, string>();
 
   for (const engineId of options.engines) {
-    const reason = engineById(engineId).preflight?.();
+    const reason = engineById(engineId).preflight();
     if (reason) {
       skipped.set(engineId, reason);
       console.log(`  ${engineId}: SKIPPED - ${reason}`);
@@ -116,7 +116,8 @@ async function main() {
   const engineVersions: SuiteResults['engineVersions'] = {};
 
   for (const engineId of options.engines) {
-    const version = engineById(engineId).version?.();
+    const engine = engineById(engineId);
+    const version = engine.version();
     if (version) {
       engineVersions[engineId] = version;
     }
@@ -135,7 +136,7 @@ async function main() {
     }
     try {
       const scenarios: Record<string, ScenarioResult> = {};
-      for (const scenario of engineById(engineId).scenarios(profile)) {
+      for (const scenario of engine.scenarios(profile)) {
         scenarios[scenario.name] = assembleScenario(engineId, scenario, profile, store);
       }
       engineResults[engineId] = { status: 'measured', scenarios } satisfies EngineResult;

@@ -16,9 +16,14 @@ type OptionsConfig = NonNullable<ParseArgsConfig['options']>;
 export const countOption = (fallback: number) =>
   z.coerce.number().int().nonnegative().default(fallback);
 
+/** parseArgs keys flags as written, so `--fan-out` arrives as `fan-out`; schema keys are camelCase. */
+function toCamelCase(flag: string): string {
+  return flag.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
 /**
- * Keys in `values` are the flags as written, so kebab-case flags arrive kebab-cased. `toInput` maps
- * them onto the schema's shape, the way eval.ts spreads renamed keys into `safeParse`.
+ * Flags reach the schema camel-cased, so only genuine renames (`--out` onto `outDir`) need
+ * `toInput`, which spreads renamed keys into `safeParse` the way eval.ts does.
  *
  * `Out` is supplied by the caller rather than inferred: under this TypeScript setup zod 3 types a
  * `.default()` key as optional even on the parsed output, so inference would make every defaulted
@@ -32,7 +37,10 @@ export function parseHarnessOptions<Out>(
   toInput?: (values: Record<string, unknown>) => Record<string, unknown>
 ): Out {
   const { values } = parseArgs({ args: argv, options, strict: true });
-  const result = schema.safeParse(toInput ? toInput(values) : values);
+  const flags = Object.fromEntries(
+    Object.entries(values).map(([flag, value]) => [toCamelCase(flag), value])
+  );
+  const result = schema.safeParse(toInput ? toInput(flags) : flags);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => `  --${issue.path.join('.')}: ${issue.message}`)

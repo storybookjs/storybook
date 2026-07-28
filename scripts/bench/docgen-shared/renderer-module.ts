@@ -2,9 +2,10 @@
  * Runtime access to the React renderer's docgen internals.
  *
  * The specifiers are built with `new URL` rather than written as static imports so the `scripts`
- * typecheck does not pull `code/renderers` source into its program. The structural interfaces below
- * are the minimum each harness touches; the real types live in
- * `code/renderers/react/src/componentManifest`.
+ * typecheck does not pull `code/renderers` source into its program. The ref interfaces below are the
+ * minimum the harnesses pass across that boundary; the real types live in
+ * `code/renderers/react/src/componentManifest`. Each harness declares the shape of the module it
+ * loads next to its own call.
  */
 
 const COMPONENT_MANIFEST = '../../../code/renderers/react/src/componentManifest/';
@@ -26,39 +27,4 @@ export interface ComponentRefLike {
 export interface StoryRefLike {
   storyPath: string;
   component: ComponentRefLike;
-}
-
-/** The component reference the generated project's `Comp{i}` corresponds to. */
-export function componentRef(i: number, componentPath: string): ComponentRefLike {
-  return {
-    componentName: `Comp${i}`,
-    importName: `Comp${i}`,
-    localImportName: `Comp${i}`,
-    importId: `./Comp${i}`,
-    isPackage: false,
-    path: componentPath,
-  };
-}
-
-export function buildStoryRefs(componentPaths: string[], storyPaths: string[]): StoryRefLike[] {
-  return componentPaths.map((componentPath, i) => ({
-    storyPath: storyPaths[i],
-    component: componentRef(i, componentPath),
-  }));
-}
-
-export interface ReactDocgenModule {
-  getReactDocgen(
-    path: string,
-    component: ComponentRefLike
-  ): { type: 'success' } | { type: 'error'; error: { name: string; message: string } };
-}
-
-export interface UtilsModule {
-  invalidateCache(): void;
-}
-
-export interface ReactDocgenTypescriptModule {
-  parseWithReactDocgenTypescript(filePath: string): Promise<Array<{ exportName?: string }>>;
-  invalidateParser(): void;
 }

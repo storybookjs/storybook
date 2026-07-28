@@ -39,11 +39,7 @@ import { z } from 'zod';
 
 import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
-import {
-  type StoryRefLike,
-  buildStoryRefs,
-  loadRendererModule,
-} from '../docgen-shared/renderer-module.ts';
+import { type StoryRefLike, loadRendererModule } from '../docgen-shared/renderer-module.ts';
 import { MB, gcAvailable } from '../docgen-shared/sampling.ts';
 import {
   type SeriesEngine,
@@ -52,7 +48,7 @@ import {
   runSeries,
 } from '../docgen-shared/series.ts';
 import { leastSquaresSlope } from '../docgen-shared/stats.ts';
-import { componentSource, generateProject } from './generate-project.ts';
+import { buildStoryRefs, componentSource, generateProject } from './generate-project.ts';
 
 interface ComponentMetaManagerLike {
   batchExtract(entries: StoryRefLike[]): void;
@@ -129,7 +125,7 @@ const SCHEMA = z.object({
   heavyTypes: z.boolean().default(false),
   heavyFactor: countOption(1),
   base64Kb: countOption(0),
-  forceGc: z.boolean().default(false).transform((noForceGc) => !noForceGc),
+  forceGc: z.boolean().default(true),
   outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
   reuse: z.boolean().default(false),
   jsonOut: z.string().optional(),
@@ -138,21 +134,12 @@ const SCHEMA = z.object({
 
 function parseOptions(argv: string[]): HarnessOptions {
   return parseHarnessOptions<HarnessOptions>(argv, OPTIONS, SCHEMA, (values) => ({
-    components: values.components,
-    variants: values.variants,
-    props: values.props,
-    saves: values.saves,
-    mode: values.mode,
-    scope: values.scope,
+    ...values,
     recycleHeapPressureRatio: values.recycle,
     heavyTypes: values.heavy,
-    heavyFactor: values['heavy-factor'],
-    base64Kb: values['base64-kb'],
-    forceGc: values['no-force-gc'],
+    forceGc: !values.noForceGc,
     outDir: values.out,
-    reuse: values.reuse,
     jsonOut: values.json,
-    maxRetainedGrowthMb: values['max-retained-growth'],
   }));
 }
 
@@ -168,9 +155,10 @@ async function loadComponentMetaManager(): Promise<ComponentMetaManagerCtor> {
 }
 
 function resolveProject(options: HarnessOptions): ReturnType<typeof generateProject> {
-  const genStart = Date.now();
-  if (options.reuse && fs.existsSync(path.join(path.resolve(options.outDir), 'tsconfig.json'))) {
-    const outDir = path.resolve(options.outDir);
+  const outDir = path.resolve(options.outDir);
+  const configPath = path.join(outDir, 'tsconfig.json');
+
+  if (options.reuse && fs.existsSync(configPath)) {
     const componentPaths: string[] = [];
     const storyPaths: string[] = [];
     for (let i = 0; i < options.components; i++) {
@@ -178,8 +166,10 @@ function resolveProject(options: HarnessOptions): ReturnType<typeof generateProj
       storyPaths.push(path.join(outDir, 'src', `Comp${i}`, `Comp${i}.stories.tsx`));
     }
     console.log(`  reusing generated project at ${outDir}`);
-    return { outDir, configPath: path.join(outDir, 'tsconfig.json'), componentPaths, storyPaths };
+    return { outDir, configPath, componentPaths, storyPaths };
   }
+
+  const genStart = Date.now();
   const project = generateProject({
     outDir: options.outDir,
     components: options.components,

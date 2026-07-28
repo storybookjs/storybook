@@ -17,20 +17,13 @@ export function designatedRep<T extends { coldMs: number }>(reps: T[]): T {
   return byCold[Math.floor((byCold.length - 1) / 2)];
 }
 
-/** Per-save allocation spikes above the retained baseline, for the repetitions the child sampled. */
-function transientsOf(rep: SeriesResult): number[] {
-  return rep.samples
-    .map((s) => (s.retainedHeapMb !== undefined ? s.heapUsedMb - s.retainedHeapMb : undefined))
-    .filter((v): v is number => v !== undefined);
-}
-
 /**
  * An engine that failed part-way through holds fewer samples than expectedN. Reporting those would
  * put numbers taken at an unrecorded N into the results file, which the comparison method rests on
  * not happening.
  */
-function assertRepetitionCount(reps: unknown[] | undefined, expectedN: number): void {
-  if (!reps || reps.length === 0) {
+function assertRepetitionCount(reps: unknown[], expectedN: number): void {
+  if (reps.length === 0) {
     throw new Error('no completed repetition recorded');
   }
   if (reps.length !== expectedN) {
@@ -38,15 +31,15 @@ function assertRepetitionCount(reps: unknown[] | undefined, expectedN: number): 
   }
 }
 
-export function seriesMetrics(reps: SeriesResult[] | undefined, expectedN: number): EngineMetrics {
+export function seriesMetrics(reps: SeriesResult[], expectedN: number): EngineMetrics {
   assertRepetitionCount(reps, expectedN);
-  const designated = designatedRep(reps!);
-  const coldSamples = reps!.map((r) => r.coldMs);
+  const designated = designatedRep(reps);
+  const coldSamples = reps.map((r) => r.coldMs);
   const warmSamples = designated.samples.map((s) => s.durMs);
-  const transients = transientsOf(designated);
+  const { transients, avgTransient } = designated;
 
   if (
-    transients.length === 0 ||
+    avgTransient === undefined ||
     designated.retainedGrowth === undefined ||
     designated.retainedSlope === undefined
   ) {
@@ -58,7 +51,7 @@ export function seriesMetrics(reps: SeriesResult[] | undefined, expectedN: numbe
     warmExtractionMs: { status: 'measured', samples: warmSamples, median: median(warmSamples) },
     // Per-component engines have no batch pass; recording one would be a faked equivalent.
     wholeProjectScanMs: NOT_APPLICABLE,
-    peakTransientMb: { status: 'measured', samples: transients, mean: mean(transients) },
+    peakTransientMb: { status: 'measured', samples: transients, mean: avgTransient },
     retainedGrowthMb: { status: 'measured', value: designated.retainedGrowth },
     retainedSlopeMbPerSave: { status: 'measured', value: designated.retainedSlope },
   };

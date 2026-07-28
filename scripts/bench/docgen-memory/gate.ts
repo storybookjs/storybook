@@ -21,6 +21,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { type MemoryBudgets, memoryBudgetsFor } from '../docgen-shared/budgets.ts';
+import { outputTail } from '../docgen-shared/child-output.ts';
 import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
 
 interface HarnessResult {
@@ -142,15 +143,7 @@ function runHarness(config: GateConfig): RunOutcome {
 
   const proc = spawnSync(process.execPath, nodeArgs, { encoding: 'utf8' });
   const output = `${proc.stdout ?? ''}${proc.stderr ?? ''}`;
-  // Echo a compact tail so CI logs show what happened without the full V8 crash dump.
-  console.log(
-    output
-      .trim()
-      .split('\n')
-      .slice(-8)
-      .map((line) => `    ${line}`)
-      .join('\n')
-  );
+  console.log(outputTail(output, 8));
 
   const result = fs.existsSync(jsonPath)
     ? (JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as HarnessResult)

@@ -3,10 +3,17 @@
  * median, both measured in the same invocation. Ratios stand in for absolute milliseconds because
  * wall-clock on shared CI executors is too noisy to gate (PERF-METHODOLOGY.md, "Budget shape").
  */
-import type { EngineId } from '../docgen-shared/engine-ids.ts';
-import type { EngineResult, RatioEntry, Ratios, ScenarioResult } from './types.ts';
+import type {
+  EngineId,
+  EngineResult,
+  LatencyMetric,
+  NotApplicable,
+  RatioEntry,
+  Ratios,
+  ScenarioResult,
+} from './types.ts';
 
-export interface ControlPair {
+interface ControlPair {
   /** Key under which this pair's ratios appear in the results. */
   name: string;
   legacy: EngineId;
@@ -38,38 +45,38 @@ export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] 
   return order;
 }
 
+/** Undefined unless both sides measured: dividing by a skipped or failed side is not a comparison. */
+function medianRatio(legacy: LatencyMetric | NotApplicable, next: LatencyMetric | NotApplicable) {
+  return legacy.status === 'measured' && next.status === 'measured'
+    ? legacy.median / next.median
+    : undefined;
+}
+
+/**
+ * Undefined, not false, when an engine reports no member counts - see renderRatios for why that
+ * distinction matters.
+ */
+function likeForLike(legacy: ScenarioResult, next: ScenarioResult): boolean | undefined {
+  if (legacy.coldMembers === undefined || next.coldMembers === undefined) {
+    return undefined;
+  }
+  const warmAgrees =
+    legacy.warmMembers === undefined ||
+    next.warmMembers === undefined ||
+    legacy.warmMembers === next.warmMembers;
+  return legacy.coldMembers === next.coldMembers && warmAgrees;
+}
+
 function ratioFor(legacy: ScenarioResult, next: ScenarioResult): RatioEntry {
-  const entry: RatioEntry = {
+  return {
+    cold: medianRatio(legacy.metrics.coldExtractionMs, next.metrics.coldExtractionMs),
+    warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
     legacyColdMembers: legacy.coldMembers,
     nextColdMembers: next.coldMembers,
     legacyWarmMembers: legacy.warmMembers,
     nextWarmMembers: next.warmMembers,
+    likeForLike: likeForLike(legacy, next),
   };
-
-  if (
-    legacy.metrics.coldExtractionMs.status === 'measured' &&
-    next.metrics.coldExtractionMs.status === 'measured'
-  ) {
-    entry.cold = legacy.metrics.coldExtractionMs.median / next.metrics.coldExtractionMs.median;
-  }
-  if (
-    legacy.metrics.warmExtractionMs.status === 'measured' &&
-    next.metrics.warmExtractionMs.status === 'measured'
-  ) {
-    entry.warm = legacy.metrics.warmExtractionMs.median / next.metrics.warmExtractionMs.median;
-  }
-
-  // likeForLike is left undefined, not false, when an engine reports no member counts - see
-  // renderRatios for why that distinction matters.
-  if (legacy.coldMembers !== undefined && next.coldMembers !== undefined) {
-    const warmAgrees =
-      legacy.warmMembers === undefined ||
-      next.warmMembers === undefined ||
-      legacy.warmMembers === next.warmMembers;
-    entry.likeForLike = legacy.coldMembers === next.coldMembers && warmAgrees;
-  }
-
-  return entry;
 }
 
 /**

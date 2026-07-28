@@ -19,6 +19,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { z } from 'zod';
+
+import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
+import type { ComponentRefLike, StoryRefLike } from '../docgen-shared/react-renderer-module.ts';
+
 const require = createRequire(import.meta.url);
 
 export interface GenerateOptions {
@@ -239,6 +244,26 @@ ${variantExports}
 `;
 }
 
+/** The renderer-side reference for the generated `Comp{i}`, matching the naming used above. */
+export function componentRef(i: number, componentPath: string): ComponentRefLike {
+  return {
+    componentName: `Comp${i}`,
+    importName: `Comp${i}`,
+    localImportName: `Comp${i}`,
+    importId: `./Comp${i}`,
+    isPackage: false,
+    path: componentPath,
+  };
+}
+
+/** Pairs {@link GeneratedProject.componentPaths} with `storyPaths`, which share an index. */
+export function buildStoryRefs(componentPaths: string[], storyPaths: string[]): StoryRefLike[] {
+  return componentPaths.map((componentPath, i) => ({
+    storyPath: storyPaths[i],
+    component: componentRef(i, componentPath),
+  }));
+}
+
 export function generateProject(options: GenerateOptions): GeneratedProject {
   const outDir = path.resolve(options.outDir);
   fs.rmSync(outDir, { recursive: true, force: true });
@@ -275,25 +300,40 @@ export function generateProject(options: GenerateOptions): GeneratedProject {
   return { outDir, configPath, componentPaths, storyPaths };
 }
 
-function parseArgs(argv: string[]): GenerateOptions {
-  const get = (flag: string, fallback: string) => {
-    const idx = argv.indexOf(flag);
-    return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : fallback;
-  };
-  return {
-    outDir: get('--out', '../storybook-sandboxes/docgen-memory-stress'),
-    components: Number(get('--components', '500')),
-    variants: Number(get('--variants', '4')),
-    props: Number(get('--props', '8')),
-    heavyTypes: argv.includes('--heavy'),
-    heavyFactor: Number(get('--heavy-factor', '1')),
-    base64Kb: Number(get('--base64-kb', '0')),
-    withNodeModules: !argv.includes('--no-node-modules'),
-  };
+function parseOptions(argv: string[]): GenerateOptions {
+  return parseHarnessOptions<GenerateOptions>(
+    argv,
+    {
+      out: { type: 'string' },
+      components: { type: 'string' },
+      variants: { type: 'string' },
+      props: { type: 'string' },
+      heavy: { type: 'boolean' },
+      'heavy-factor': { type: 'string' },
+      'base64-kb': { type: 'string' },
+      'no-node-modules': { type: 'boolean' },
+    } as const,
+    z.object({
+      outDir: z.string().default('../storybook-sandboxes/docgen-memory-stress'),
+      components: countOption(500),
+      variants: countOption(4),
+      props: countOption(8),
+      heavyTypes: z.boolean().default(false),
+      heavyFactor: countOption(1),
+      base64Kb: countOption(0),
+      withNodeModules: z.boolean().default(true),
+    }),
+    (values) => ({
+      ...values,
+      outDir: values.out,
+      heavyTypes: values.heavy,
+      withNodeModules: !values.noNodeModules,
+    })
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const options = parseArgs(process.argv.slice(2));
+  const options = parseOptions(process.argv.slice(2));
   const start = Date.now();
   const result = generateProject(options);
   console.log(

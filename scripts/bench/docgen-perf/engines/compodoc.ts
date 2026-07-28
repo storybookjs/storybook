@@ -1,15 +1,6 @@
-/**
- * Adapter for the Compodoc engine. Compodoc is a one-shot CLI - a fresh process per run - so this
- * adapter spawns the compodoc CLI itself as the measured child: cold extraction and whole-project
- * scan are the same full-project run, warm extraction is a second full run after touching one
- * component file, and peak memory is the child's peak RSS sampled from outside the process.
- *
- * `@compodoc/compodoc` is pinned exactly in `scripts/package.json`, matching the version the Angular
- * docgen baselines capture against (`code/lib/docgen-harness/README.md`) - a caret range would let
- * the numbers drift across compodoc versions without anyone deciding to.
- */
 import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
+import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
 import { outputTail } from '../../docgen-shared/child-output.ts';
@@ -19,43 +10,25 @@ import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.t
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
 import type { EngineId, EngineMetrics } from '../types.ts';
 
-/**
- * Walked up from the resolved binary rather than a fixed path, since the package hoists to
- * different node_modules depending on the install.
- */
-export function compodocVersion(binary: string): string | undefined {
-  try {
-    let dir = path.dirname(fs.realpathSync(binary));
-    for (let up = 0; up < 5; up++) {
-      const candidate = path.join(dir, 'package.json');
-      if (fs.existsSync(candidate)) {
-        const pkg = JSON.parse(fs.readFileSync(candidate, 'utf8'));
-        if (pkg.name === '@compodoc/compodoc') {
-          return pkg.version as string;
-        }
-      }
-      dir = path.dirname(dir);
-    }
-  } catch {
-    // A binary on PATH may not sit inside a package at all; an unknown version is not a failure.
-  }
-  return undefined;
+const require = createRequire(import.meta.url);
+
+interface ResolvedCompodoc {
+  /** The CLI entry point, run as `node <cli>` so no shell shim or exec bit is involved. */
+  cli: string;
+  version: string;
 }
 
-/** Locations probed for a compodoc binary, in order: workspace .bin dirs, then PATH. */
-export function resolveCompodocBinary(): string | undefined {
-  const candidates = [
-    path.resolve(import.meta.dirname, '../../../node_modules/.bin/compodoc'),
-    path.resolve(import.meta.dirname, '../../../../node_modules/.bin/compodoc'),
-  ];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+function resolveCompodoc(): ResolvedCompodoc | undefined {
+  try {
+    const packagePath = require.resolve('@compodoc/compodoc/package.json');
+    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    return {
+      cli: path.join(path.dirname(packagePath), pkg.bin.compodoc),
+      version: pkg.version,
+    };
+  } catch {
+    return undefined;
   }
-  const which = spawnSync('which', ['compodoc'], { encoding: 'utf8' });
-  const fromPath = which.status === 0 ? which.stdout.trim() : '';
-  return fromPath || undefined;
 }
 
 interface CompodocRun {
@@ -63,19 +36,18 @@ interface CompodocRun {
   peakRssMb: number;
 }
 
-/** Run compodoc once over the project, polling the child's RSS from outside. */
 function runCompodocOnce(
-  binary: string,
+  cli: string,
   projectDir: string,
   docsOutDir: string,
   pollIntervalMs: number
 ): Promise<CompodocRun> {
   fs.rmSync(docsOutDir, { recursive: true, force: true });
-  const args = ['-p', 'tsconfig.json', '-e', 'json', '-d', docsOutDir, '--silent'];
+  const args = [cli, '-p', 'tsconfig.json', '-e', 'json', '-d', docsOutDir, '--silent'];
 
   return new Promise((resolve, reject) => {
     const start = Date.now();
-    const child = spawn(binary, args, { cwd: projectDir });
+    const child = spawn(process.execPath, args, { cwd: projectDir });
     let peakRssKb = 0;
     let output = '';
     child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -85,8 +57,7 @@ function runCompodocOnce(
       if (child.pid === undefined) {
         return;
       }
-      // `ps` is absent on Windows, and it exits non-zero once the child is gone. Either way this
-      // throws from a timer callback if it is not guarded, which no per-engine catch can reach.
+
       const ps = spawnSync('ps', ['-o', 'rss=', '-p', String(child.pid)], { encoding: 'utf8' });
       if (ps.error || typeof ps.stdout !== 'string') {
         return;
@@ -123,7 +94,7 @@ function runCompodocOnce(
  * fresh compodoc processes, matching the one-sample-per-fresh-process topology.
  */
 export async function runCompodocRepetition(
-  binary: string,
+  cli: string,
   scenario: AngularScenarioConfig,
   workDir: string,
   pollIntervalMs: number
@@ -136,11 +107,11 @@ export async function runCompodocRepetition(
     props: scenario.props,
   });
 
-  const cold = await runCompodocOnce(binary, project.outDir, docsOutDir, pollIntervalMs);
+  const cold = await runCompodocOnce(cli, project.outDir, docsOutDir, pollIntervalMs);
 
   // Touch one component so the warm run sees a genuinely changed file.
   fs.writeFileSync(project.componentPaths[0], angularComponentSource(0, scenario.props + 1));
-  const warm = await runCompodocOnce(binary, project.outDir, docsOutDir, pollIntervalMs);
+  const warm = await runCompodocOnce(cli, project.outDir, docsOutDir, pollIntervalMs);
 
   return {
     coldMs: cold.durMs,
@@ -153,35 +124,35 @@ export async function runCompodocRepetition(
  * Compodoc as an engine. Unlike the series engines it has no child harness to spawn: the CLI is the
  * measured process, and this class drives it directly.
  *
- * It is also the only engine with state - the resolved binary, found once in {@link preflight} and
- * reused for every repetition and for the recorded version.
+ * It is also the only engine with state - the resolved CLI and version, looked up once in
+ * {@link preflight} and reused for every repetition.
  */
 export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   readonly id: EngineId = 'compodoc';
 
-  #binary: string | undefined;
+  #resolved: ResolvedCompodoc | undefined;
 
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     return [{ name: 'default', params: { ...profile.angular } }];
   }
 
   preflight(): string | undefined {
-    this.#binary = resolveCompodocBinary();
-    return this.#binary
+    this.#resolved = resolveCompodoc();
+    return this.#resolved
       ? undefined
-      : 'no compodoc binary found (workspace node_modules/.bin or PATH); @compodoc/compodoc is pinned in scripts/package.json, so run yarn install';
+      : '@compodoc/compodoc did not resolve; it is pinned in scripts/package.json, so run yarn install';
   }
 
   version(): string | undefined {
-    return this.#binary ? compodocVersion(this.#binary) : undefined;
+    return this.#resolved?.version;
   }
 
   async measure(ctx: MeasureContext, scenario: ScenarioSpec): Promise<OneShotRepetition> {
-    if (!this.#binary) {
-      throw new Error('compodoc binary unresolved; preflight must run first');
+    if (!this.#resolved) {
+      throw new Error('compodoc unresolved; preflight must run first');
     }
     return runCompodocRepetition(
-      this.#binary,
+      this.#resolved.cli,
       { components: Number(scenario.params.components), props: Number(scenario.params.props) },
       ctx.scenarioDir,
       ctx.rssPollIntervalMs

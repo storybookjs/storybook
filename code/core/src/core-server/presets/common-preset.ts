@@ -31,7 +31,6 @@ import type {
 } from 'storybook/internal/types';
 
 import { docsApi } from '../../shared/public-api/docs/definition.ts';
-import { loadToolsets } from '../../shared/public-api/load-toolsets.ts';
 import type { AnyToolsetDefinition } from '../../shared/public-api/definition.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
@@ -353,10 +352,19 @@ globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? f
  * Public toolsets contributed by core. Addons append via the same preset property
  * (`export const experimental_toolsets = [myToolset]`). Stories/test join when their
  * boot-time deps are wired (stories factory; test moves to addon-vitest).
+ * Adapters should `presets.apply('experimental_toolsets', [])` when they need the list.
  */
 export const experimental_toolsets = async (
-  existing: AnyToolsetDefinition[] = []
-): Promise<AnyToolsetDefinition[]> => [...existing, docsApi, reviewApi];
+  existing: AnyToolsetDefinition[] = [],
+  options: Options
+): Promise<AnyToolsetDefinition[]> => {
+  const features = await options.presets.apply('features');
+  const toolsets = [...existing, docsApi];
+  if (isReviewFeatureEnabled(features)) {
+    toolsets.push(reviewApi);
+  }
+  return toolsets;
+};
 
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
@@ -365,8 +373,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
-
-  await loadToolsets(options.presets);
 
   // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
   // generator, not a promise.

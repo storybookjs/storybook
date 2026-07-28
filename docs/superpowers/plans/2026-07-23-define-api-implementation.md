@@ -387,7 +387,7 @@ export type CreateStoriesApiOptions = {
 The handlers must:
 
 - use `ctx.origin` plus `storyIndex.getIndex()` for preview;
-- read change statuses from `getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID)`;
+- read change statuses from injected `changeStatuses.getAll()` (host wires the status store);
 - pass git's changed and new files through `detectUnreachableFiles`;
 - use `ctx.getService('core/module-graph')` in changed and find-by-component;
 - call the existing pure mapping and formatting helpers.

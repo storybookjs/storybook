@@ -1,15 +1,23 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-import type { ServerCoreServices, TypedGetService } from '../open-service/core-service-types.ts';
+import type { GetServiceOptions } from '../open-service/types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
 export type ToolsetConsumer = 'cli' | 'mcp';
 
+/**
+ * Service lookup for toolset handlers. Intentionally not keyed to ServerCoreServices:
+ * toolsets may call core OSA (with `{ internal: true }`) or optional addon services by id.
+ */
+export type ToolsetGetService = {
+  <TInstance = unknown>(serviceId: string, options?: GetServiceOptions): TInstance;
+};
+
 export type ToolsetCtx = {
   consumer: ToolsetConsumer;
   origin: string;
-  getService: TypedGetService<ServerCoreServices>;
+  getService: ToolsetGetService;
 };
 
 export type ToolsetMethod<TSchema extends AnySchema = AnySchema> = {

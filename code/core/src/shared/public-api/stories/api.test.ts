@@ -6,13 +6,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 import { vol } from 'memfs';
 
-import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
 import type { ToolsetCtx } from '../index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import { createStoriesApi } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('../../../core-server/stores/status.ts', { spy: true });
 
 const index = {
   v: 5,
@@ -49,6 +47,7 @@ const moduleGraph = {
 
 const storyIndex = { getIndex };
 const git = { getChangedFiles, getRepoRoot };
+const changeStatuses = { getAll: getStatuses };
 let statusesFixture: Record<string, Record<string, unknown>>;
 let graphMatchesByFile: Map<string, Array<{ storyFile: string; depth: number }>>;
 let ctx: ToolsetCtx;
@@ -57,6 +56,7 @@ function createApi() {
   return createStoriesApi({
     storyIndex,
     git,
+    changeStatuses,
   });
 }
 
@@ -77,7 +77,6 @@ beforeEach(async () => {
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
   };
-  vi.mocked(getStatusStoreByTypeId).mockReturnValue({ getAll: getStatuses } as never);
   getIndex.mockResolvedValue(index);
   getChangedFiles.mockResolvedValue({
     changed: new Set(['packages/ui/src/Button.tsx']),
@@ -182,7 +181,7 @@ describe('stories API', () => {
         `- ${themePath}`,
       ].join('\n')
     );
-    expect(getStatusStoreByTypeId).toHaveBeenCalledWith(CHANGE_DETECTION_STATUS_TYPE_ID);
+    expect(getStatuses).toHaveBeenCalledOnce();
     expect(getChangedFiles).toHaveBeenCalledOnce();
     expect(getRepoRoot).toHaveBeenCalledOnce();
     expect(ctx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });

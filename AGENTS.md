@@ -95,8 +95,9 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   when the service is internal.
 - `defineToolset` defines public toolsets for CLI/MCP: each has an `id`, description, and methods with
   only `schema`, `description`, and `handler`.
-- Toolsets are collected via the `experimental_toolsets` preset property and `loadToolsets(presets)`.
-  Addons contribute by exporting that property (addon → core; core never imports addon code).
+- Toolsets are contributed via the `experimental_toolsets` preset property (arrays concat). Addons
+  export that property (addon → core; core never imports addon code). Adapters call
+  `presets.apply('experimental_toolsets', [])` when they need the list; there is no boot-time cache.
 - Docs/stories/test live under `code/core/src/shared/public-api/` for now; the review toolset is
   colocated with `core/review` under `open-service/services/review/`. Test moves to `addon-vitest` later.
 - Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), `origin`, and typed `getService`.

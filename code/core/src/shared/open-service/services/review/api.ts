@@ -2,7 +2,7 @@ import * as v from 'valibot';
 
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import { defineToolset } from '../../../public-api/index.ts';
-import { reviewStateSchema } from './definition.ts';
+import { reviewStateSchema, type ReviewService } from './definition.ts';
 
 const reviewCreateInputSchema = v.object({
   ...v.omit(reviewStateSchema, ['createdAt', 'stale', 'changedFiles']).entries,
@@ -33,7 +33,9 @@ export const reviewApi = defineToolset({
           });
         }
 
-        await ctx.getService('core/review', { internal: true }).commands.setReview(review);
+        await ctx
+          .getService<ReviewService>('core/review', { internal: true })
+          .commands.setReview(review);
 
         const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
         if (json) {

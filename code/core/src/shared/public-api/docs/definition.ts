@@ -24,7 +24,7 @@ type MdxService = {
 
 function tryGetService<T>(ctx: ToolsetCtx, serviceId: string): T | undefined {
   try {
-    return ctx.getService<T>(serviceId as never, { internal: true });
+    return ctx.getService<T>(serviceId, { internal: true });
   } catch (error) {
     if (error instanceof OpenServiceMissingServiceError) {
       return undefined;

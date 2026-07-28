@@ -30,7 +30,11 @@ const reviewApi = defineToolset({
         expectTypeOf(input.title).toEqualTypeOf<string>();
         expectTypeOf(ctx.consumer).toEqualTypeOf<'cli' | 'mcp'>();
         expectTypeOf(ctx.origin).toEqualTypeOf<string>();
-        expectTypeOf(ctx.getService('core/review', { internal: true })).not.toBeAny();
+        expectTypeOf(
+          ctx.getService<{ ok: true }>('core/review', { internal: true })
+        ).toEqualTypeOf<{
+          ok: true;
+        }>();
 
         return input.title;
       },

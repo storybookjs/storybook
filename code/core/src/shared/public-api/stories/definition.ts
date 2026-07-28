@@ -3,10 +3,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
-import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
 import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
+import type { ModuleGraphService } from '../../open-service/services/module-graph/definition.ts';
 import { defineToolset } from '../index.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
+import type { StatusesByStoryIdAndTypeId } from '../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
@@ -101,9 +101,15 @@ export type StoriesGitAccess = {
   }>;
 };
 
+export type StoriesChangeStatusesAccess = {
+  getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
+};
+
 export type CreateStoriesApiOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
+  /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
+  changeStatuses: StoriesChangeStatusesAccess;
 };
 
 const jsonSchema = v.optional(
@@ -112,7 +118,7 @@ const jsonSchema = v.optional(
 );
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
-export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
+export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStoriesApiOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
@@ -147,9 +153,11 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
         description:
           'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
         handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService('core/module-graph', { internal: true });
+          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+            internal: true,
+          });
           const [statuses, index, changedFiles, repoRoot] = await Promise.all([
-            getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
+            Promise.resolve(changeStatuses.getAll()),
             storyIndex.getIndex(),
             git.getChangedFiles(),
             git.getRepoRoot(),
@@ -187,7 +195,9 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
         handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService('core/module-graph', { internal: true });
+          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+            internal: true,
+          });
           const index = await storyIndex.getIndex();
           const data = await findStoriesByComponent({
             componentPaths: input.componentPaths,

@@ -45,9 +45,9 @@ Capability-specific dependencies are captured by plain factories. They do not be
 fields.
 
 There is no imperative `registerToolset` helper. Toolsets are discovered through the
-`experimental_toolsets` preset property and loaded at boot with `loadToolsets(presets)`. Core
-contributes docs and review; addons append their own definitions (addon → core only). Adapters read
-`getLoadedToolsets()` or the array returned from `loadToolsets`.
+`experimental_toolsets` preset property. Core contributes docs (and review when the feature is
+enabled); addons append their own definitions (addon → core only). Adapters call
+`presets.apply('experimental_toolsets', [])` when they need the list.
 
 ## Capability Boundaries
 

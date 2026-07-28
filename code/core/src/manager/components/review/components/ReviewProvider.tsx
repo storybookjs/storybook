@@ -109,6 +109,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return;
     }
     if (isSameReviewPayload(current, currentReview)) {
+      // Keep held display in sync (including `stale`) without clearing a deferred update.
+      reviewStore.updateDisplayed(currentReview);
       syncActiveReviewStatuses(currentReview);
       return;
     }

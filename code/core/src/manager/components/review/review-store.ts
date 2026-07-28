@@ -37,8 +37,8 @@ export interface ReviewDerivedState {
 
 export interface ReviewStoreState extends ReviewDerivedState {
   /**
-   * Displayed review payload. Held during deferred updates so the UI keeps the old review until
-   * accept; live OSA `current` / `stale` are read in ReviewProvider for banners and sync.
+   * Held display payload for defer/accept UX. Banner staleness prefers live OSA `current.stale`;
+   * this field is still updated when OSA pushes the same review (including stale flips).
    */
   state: ReviewState | null;
   /** An updated payload held back until the user accepts it. */
@@ -113,6 +113,10 @@ export const reviewStore = {
   /** Show a review, replacing any displayed or deferred one. */
   displayReview: (next: ReviewState) => {
     commit({ state: next, pendingReview: null });
+  },
+  /** Refresh the held display without clearing a deferred update. */
+  updateDisplayed: (next: ReviewState) => {
+    commit({ state: next });
   },
   /** Hold an updated payload until the user accepts it. */
   deferReview: (next: ReviewState) => {

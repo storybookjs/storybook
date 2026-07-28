@@ -225,8 +225,9 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   ) {
     const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    const getIndex = () => generator.getIndex();
-    registerMdxService({ getIndex });
+    registerMdxService({
+      getIndex: () => generator.getIndex(),
+    });
   }
 };
 

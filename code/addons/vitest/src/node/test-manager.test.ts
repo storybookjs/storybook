@@ -3,6 +3,7 @@ import { rm } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TestResult } from 'vitest/node';
 
+import { resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
@@ -15,6 +16,7 @@ import path from 'pathe';
 import type { Report } from 'storybook/preview-api';
 
 import {
+  COVERAGE_DIRECTORY,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_TEST_PROVIDE_KEY,
@@ -62,8 +64,7 @@ vi.mock('vitest/node', () => ({
 
 vi.mock('node:fs/promises', { spy: true });
 
-// Use the mock function directly
-const createVitest = mockCreateVitest;
+const createVitest = vi.mocked(mockCreateVitest);
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -550,7 +551,7 @@ describe('TestManager', () => {
     expect(createVitest).toHaveBeenCalledWith(
       Tag.TEST,
       expect.objectContaining({
-        coverage: expect.objectContaining({ enabled: true, cleanOnRerun: false }),
+        coverage: expect.objectContaining({ enabled: true, clean: true, cleanOnRerun: false }),
       })
     );
     // The fresh instance cleans the coverage directory itself; no manual clean needed.
@@ -577,7 +578,7 @@ describe('TestManager', () => {
     });
 
     expect(createVitest).not.toHaveBeenCalled();
-    expect(rm).toHaveBeenCalledWith(expect.stringContaining('coverage'), {
+    expect(rm).toHaveBeenCalledWith(resolvePathInStorybookCache(COVERAGE_DIRECTORY), {
       recursive: true,
       force: true,
     });

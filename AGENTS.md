@@ -89,15 +89,20 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Open services and public API
 
-- OSA owns internal state, synchronization, queries, commands, loading, and service composition. Nothing about OSA is Storybook's public CLI/MCP/SDK surface.
-- `defineApi` defines public capabilities: each API has an id, description, and one method namespace; each method has only `schema`, `description`, and `handler`.
-- Public capability definitions live under `code/core/src/shared/public-api/` (`docs`, `stories`, `test`, `review.create`). Internal OSA services stay under `open-service/services/`.
-- Handlers receive `(input, ctx)` where `ctx` always provides `consumer` (`'cli' | 'mcp'`), `origin`, and typed server `getService`. Capability-specific boot-time dependencies (story index, git, vitest channel) are closed over by factories.
-- There is no public API registry. Adapters receive an explicit array of API definitions; that array is the exposure boundary.
+- OSA owns internal state, synchronization, queries, commands, loading, and service composition. All
+  core OSA services are `internal: true` and may change without a public semver bump.
+- Resolve internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws
+  when the service is internal.
+- `defineToolset` defines public toolsets for CLI/MCP: each has an `id`, description, and methods with
+  only `schema`, `description`, and `handler`.
+- Toolsets are collected via the `experimental_toolsets` preset property and `loadToolsets(presets)`.
+  Addons contribute by exporting that property (addon → core; core never imports addon code).
+- Docs/stories/test live under `code/core/src/shared/public-api/` for now; the review toolset is
+  colocated with `core/review` under `open-service/services/review/`. Test moves to `addon-vitest` later.
+- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), `origin`, and typed `getService`.
 - Handlers return Markdown by default. Each method schema declares `json` for structured output.
-- Docs and review are plain definitions that compose OSA through `ctx.getService`. Stories and test are factories over boot-time dependencies.
-- Only `core/review` remains as a stateful public-capability OSA service; docs, stories, and test have no OSA facades.
-- The public API remains experimental. Production MCP migration is Milestone 4. CLI generation and production `storybook tools` wiring are Milestone 5.
+- The public API remains experimental. Production MCP migration is Milestone 4. CLI generation and
+  production `storybook tools` wiring are Milestone 5.
 - MCP tools remain hand-authored in `addon-mcp` until Milestone 4.
 
 ## Common Commands

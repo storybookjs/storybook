@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineApi } from '../index.ts';
+import { defineToolset } from '../index.ts';
 import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
 import { formatTestRun } from './format.ts';
@@ -94,7 +94,7 @@ export type CreateTestApiOptions = {
 export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
   const queue = createAsyncQueue();
 
-  return defineApi({
+  return defineToolset({
     id: 'test',
     description: 'Run Storybook story tests via addon-vitest.',
     methods: {

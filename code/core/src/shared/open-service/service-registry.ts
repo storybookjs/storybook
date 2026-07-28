@@ -17,6 +17,7 @@
 
 import { getChannel } from '../../channels/channel-slot.ts';
 import {
+  OpenServiceInternalServiceError,
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
   OpenServiceOperationNameCollisionError,
@@ -29,6 +30,7 @@ import type { StaticLoader } from './static-fetch.ts';
 import type {
   AnyServiceDefinition,
   Commands,
+  GetServiceOptions,
   Queries,
   RuntimeService,
   ServiceDefinition,
@@ -345,12 +347,23 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  *
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
+ *
+ * Services with `internal: true` require `{ internal: true }` — otherwise this throws
+ * {@link OpenServiceInternalServiceError}. Do not depend on internal OSA from public adapters;
+ * prefer public toolsets (`defineToolset`) instead.
  */
-export function getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance {
+export function getService<TInstance = RuntimeService>(
+  serviceId: ServiceId,
+  options?: GetServiceOptions
+): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
+  }
+
+  if (entry.definition.internal && !options?.internal) {
+    throw new OpenServiceInternalServiceError({ serviceId });
   }
 
   return entry.instance as unknown as TInstance;

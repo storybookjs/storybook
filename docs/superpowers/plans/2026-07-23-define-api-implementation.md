@@ -1,13 +1,13 @@
-# `defineApi` Milestone 2 Realignment Implementation Plan
+# `defineToolset` Milestone 2 Realignment Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development
 > (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Align PR #35516 with the July 23 update to tracking issue #35526 by making `defineApi` a
+**Goal:** Align PR #35516 with the July 23 update to tracking issue #35526 by making `defineToolset` a
 minimal definition helper with explicit adapter composition and no registry or CLI implementation.
 
-**Architecture:** Every API handler receives one required `ApiCtx` containing `consumer`, `origin`,
+**Architecture:** Every API handler receives one required `ToolsetCtx` containing `consumer`, `origin`,
 and typed server `getService`. Docs and review are plain definitions; stories and test are factories
 over direct boot-time dependencies. OSA remains internal, with only review retaining synchronized
 state.
@@ -40,7 +40,7 @@ state.
 
 **Interfaces:**
 
-- Produces: `ApiCtx`, `ApiMethod`, `ApiDefinition`, `AnyApiDefinition`, and `defineApi`.
+- Produces: `ToolsetCtx`, `ToolsetMethod`, `ToolsetDefinition`, `AnyToolsetDefinition`, and `defineToolset`.
 - Consumes: `TypedGetService<ServerCoreServices>` from
   `code/core/src/shared/open-service/core-service-types.ts`.
 
@@ -49,7 +49,7 @@ state.
 Use a `review.create` fixture whose handler proves all context fields and typed service access:
 
 ```ts
-const reviewApi = defineApi({
+const reviewApi = defineToolset({
   id: 'review',
   description: 'Create a review',
   methods: {
@@ -78,7 +78,7 @@ Run:
 yarn nx check core
 ```
 
-Expected: failure because `ApiCtx` does not yet provide `origin` or `getService`.
+Expected: failure because `ToolsetCtx` does not yet provide `origin` or `getService`.
 
 - [ ] **Step 3: Implement the minimal definition-only module**
 
@@ -87,32 +87,32 @@ Replace `ApiInvocationContext` with:
 ```ts
 import type { ServerCoreServices, TypedGetService } from '../open-service/core-service-types.ts';
 
-export type ApiConsumer = 'cli' | 'mcp';
+export type ToolsetConsumer = 'cli' | 'mcp';
 
-export type ApiCtx = {
-  consumer: ApiConsumer;
+export type ToolsetCtx = {
+  consumer: ToolsetConsumer;
   origin: string;
   getService: TypedGetService<ServerCoreServices>;
 };
 ```
 
-Change `ApiMethod.handler` to:
+Change `ToolsetMethod.handler` to:
 
 ```ts
-handler: (input: StandardSchemaV1.InferOutput<TSchema>, context: ApiCtx) => unknown;
+handler: (input: StandardSchemaV1.InferOutput<TSchema>, context: ToolsetCtx) => unknown;
 ```
 
-Keep `defineApi` as an identity function preserving literal ids and inferred schemas. Change
+Keep `defineToolset` as an identity function preserving literal ids and inferred schemas. Change
 `index.ts` to export only:
 
 ```ts
-export { defineApi } from './definition.ts';
+export { defineToolset } from './definition.ts';
 export type {
-  AnyApiDefinition,
-  ApiConsumer,
-  ApiCtx,
-  ApiDefinition,
-  ApiMethod,
+  AnyToolsetDefinition,
+  ToolsetConsumer,
+  ToolsetCtx,
+  ToolsetDefinition,
+  ToolsetMethod,
 } from './definition.ts';
 ```
 
@@ -133,7 +133,7 @@ optional context or `invokeApi`.
 
 ```bash
 git add code/core/src/shared/public-api
-git commit -m "Reduce defineApi to explicit definitions"
+git commit -m "Reduce defineToolset to explicit definitions"
 ```
 
 ---
@@ -242,10 +242,10 @@ empty `importPath` and `tags` only when those fields are required by the existin
 Create a complete context in `beforeEach`:
 
 ```ts
-const ctx: ApiCtx = {
+const ctx: ToolsetCtx = {
   consumer: 'cli',
   origin: 'http://localhost:6006',
-  getService: vi.fn((id) => services[id]) as ApiCtx['getService'],
+  getService: vi.fn((id) => services[id]) as ToolsetCtx['getService'],
 };
 ```
 
@@ -268,7 +268,7 @@ existing formatter result.
 For optional MDX:
 
 ```ts
-function getMdxService(ctx: ApiCtx): MdxService | undefined {
+function getMdxService(ctx: ToolsetCtx): MdxService | undefined {
   try {
     return ctx.getService<MdxService>(MDX_SERVICE_ID);
   } catch {
@@ -280,7 +280,7 @@ function getMdxService(ctx: ApiCtx): MdxService | undefined {
 Export:
 
 ```ts
-export const docsApi = defineApi({ id: 'docs', description, methods });
+export const docsApi = defineToolset({ id: 'docs', description, methods });
 export type DocsApi = typeof docsApi;
 ```
 
@@ -337,10 +337,10 @@ const git = {
     new: new Set<string>(),
   })),
 };
-const ctx: ApiCtx = {
+const ctx: ToolsetCtx = {
   consumer: 'cli',
   origin: 'http://localhost:6006',
-  getService: vi.fn(() => moduleGraph) as ApiCtx['getService'],
+  getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
 };
 ```
 
@@ -626,7 +626,7 @@ git commit -m "Remove registry and CLI runtime wiring"
 
 - [ ] **Step 1: Update repository guidance**
 
-Document that `defineApi` is definition-only, handlers receive required `ApiCtx`, adapters receive
+Document that `defineToolset` is definition-only, handlers receive required `ToolsetCtx`, adapters receive
 explicit arrays, MCP migration is Milestone 4, and CLI generation is Milestone 5. Remove wording
 that claims `generateCLI` exists in Milestone 2.
 
@@ -690,7 +690,7 @@ staged.
 The PR body must state:
 
 - no registry and explicit-array exposure;
-- required `ApiCtx`;
+- required `ToolsetCtx`;
 - plain docs and review APIs;
 - stories and test boot-time dependency factories;
 - review as the only retained OSA capability service;
@@ -702,7 +702,7 @@ The PR body must state:
 
 ```bash
 git add AGENTS.md .superpowers/sdd/pr-35516-body.md
-git commit -m "Document explicit defineApi composition"
+git commit -m "Document explicit defineToolset composition"
 git push origin osa-generated-tools-cli
 gh pr edit 35516 --repo storybookjs/storybook \
   --title "Core: Define shared public API capabilities" \

@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
-import { defineApi, type ApiCtx } from '../index.ts';
+import { defineToolset, type ToolsetCtx } from '../index.ts';
 import type { DocgenService } from '../../open-service/services/docgen/definition.ts';
 import type { StoryDocsService } from '../../open-service/services/story-docs/definition.ts';
 import { classifyServices } from './classify-services.ts';
@@ -22,9 +22,9 @@ type MdxService = {
   };
 };
 
-function tryGetService<T>(ctx: ApiCtx, serviceId: string): T | undefined {
+function tryGetService<T>(ctx: ToolsetCtx, serviceId: string): T | undefined {
   try {
-    return ctx.getService<T>(serviceId as never);
+    return ctx.getService<T>(serviceId as never, { internal: true });
   } catch (error) {
     if (error instanceof OpenServiceMissingServiceError) {
       return undefined;
@@ -33,9 +33,9 @@ function tryGetService<T>(ctx: ApiCtx, serviceId: string): T | undefined {
   }
 }
 
-async function loadDocsListServices(ctx: ApiCtx) {
-  const docgen = ctx.getService<DocgenService>('core/docgen');
-  const storyDocs = ctx.getService<StoryDocsService>('core/story-docs');
+async function loadDocsListServices(ctx: ToolsetCtx) {
+  const docgen = ctx.getService<DocgenService>('core/docgen', { internal: true });
+  const storyDocs = ctx.getService<StoryDocsService>('core/story-docs', { internal: true });
   const mdx = tryGetService<MdxService>(ctx, MDX_SERVICE_ID);
   const [allDocgen, allStoryDocs, allMdx] = await Promise.all([
     docgen.queries.docgenForAllComponents.loaded(),
@@ -52,7 +52,7 @@ async function loadDocsListServices(ctx: ApiCtx) {
   };
 }
 
-export const docsApi = defineApi({
+export const docsApi = defineToolset({
   id: 'docs',
   description: 'Storybook component and docs documentation.',
   methods: {
@@ -98,8 +98,8 @@ export const docsApi = defineApi({
       }),
       description: 'Returns documentation for one component or standalone docs entry by id.',
       handler: async (input, ctx) => {
-        const docgen = ctx.getService<DocgenService>('core/docgen');
-        const storyDocs = ctx.getService<StoryDocsService>('core/story-docs');
+        const docgen = ctx.getService<DocgenService>('core/docgen', { internal: true });
+        const storyDocs = ctx.getService<StoryDocsService>('core/story-docs', { internal: true });
         const mdx = tryGetService<MdxService>(ctx, MDX_SERVICE_ID);
         const [docgenPayload, storyDocsPayload, mdxPayload] = await Promise.all([
           docgen.queries.docgen.loaded({ id: input.id }),
@@ -137,8 +137,8 @@ export const docsApi = defineApi({
       }),
       description: 'Returns documentation for one story of a component.',
       handler: async (input, ctx) => {
-        const storyDocs = ctx.getService<StoryDocsService>('core/story-docs');
-        const docgen = ctx.getService<DocgenService>('core/docgen');
+        const storyDocs = ctx.getService<StoryDocsService>('core/story-docs', { internal: true });
+        const docgen = ctx.getService<DocgenService>('core/docgen', { internal: true });
         const [storyDocsPayload, docgenPayload] = await Promise.all([
           storyDocs.queries.storyDocs.loaded({ id: input.componentId }),
           docgen.queries.docgen.loaded({ id: input.componentId }),

@@ -5,7 +5,7 @@ import * as v from 'valibot';
 
 import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
 import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
-import { defineApi } from '../index.ts';
+import { defineToolset } from '../index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
@@ -113,7 +113,7 @@ const jsonSchema = v.optional(
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
-  return defineApi({
+  return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
@@ -147,7 +147,7 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
         description:
           'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
         handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService('core/module-graph');
+          const moduleGraph = ctx.getService('core/module-graph', { internal: true });
           const [statuses, index, changedFiles, repoRoot] = await Promise.all([
             getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
             storyIndex.getIndex(),
@@ -187,7 +187,7 @@ export function createStoriesApi({ storyIndex, git }: CreateStoriesApiOptions) {
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
         handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService('core/module-graph');
+          const moduleGraph = ctx.getService('core/module-graph', { internal: true });
           const index = await storyIndex.getIndex();
           const data = await findStoriesByComponent({
             componentPaths: input.componentPaths,

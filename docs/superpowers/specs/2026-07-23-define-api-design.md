@@ -1,4 +1,4 @@
-# `defineApi` Architecture Design
+# `defineToolset` Architecture Design
 
 ## Status
 
@@ -13,17 +13,17 @@ Separate Storybook's internal Open Service Architecture from its public capabili
 ```text
 Internal OSA services
         ↓
-Public capability logic defined with defineApi
+Public capability logic defined with defineToolset
         ↓
 CLI adapter / MCP adapter
 ```
 
-OSA owns state, synchronization, commands, queries, loading, and service composition. `defineApi`
+OSA owns state, synchronization, commands, queries, loading, and service composition. `defineToolset`
 owns only public capability names, method schemas, descriptions, and handlers.
 
 ## Public API Contract
 
-`storybook/public-api` exports `defineApi` and the types needed to describe an API definition. An
+`storybook/public-api` exports `defineToolset` and the types needed to describe an API definition. An
 API has an `id`, a description, and one method namespace. Each method has exactly three fields:
 
 - `schema`
@@ -34,7 +34,7 @@ Every handler receives `(input, ctx)`. The context contains only values that eve
 provides:
 
 ```ts
-type ApiCtx = {
+type ToolsetCtx = {
   consumer: 'cli' | 'mcp';
   origin: string;
   getService: TypedGetService<ServerCoreServices>;
@@ -44,9 +44,10 @@ type ApiCtx = {
 Capability-specific dependencies are captured by plain factories. They do not become context
 fields.
 
-There is no public API registry, registration lifecycle, discovery mechanism, or generic invocation
-helper. An adapter receives an explicit array of API definitions. That array is the complete
-exposure boundary.
+There is no imperative `registerToolset` helper. Toolsets are discovered through the
+`experimental_toolsets` preset property and loaded at boot with `loadToolsets(presets)`. Core
+contributes docs and review; addons append their own definitions (addon → core only). Adapters read
+`getLoadedToolsets()` or the array returned from `loadToolsets`.
 
 ## Capability Boundaries
 
@@ -105,7 +106,7 @@ data when `json: true`. Capability code computes structured data once and format
 future adapters share schemas and semantics without duplicating business logic.
 
 Adapters are responsible for validating transport input against the method schema before calling
-the handler. `defineApi` itself only preserves TypeScript inference and returns the supplied
+the handler. `defineToolset` itself only preserves TypeScript inference and returns the supplied
 definition.
 
 ## Runtime Composition
@@ -130,8 +131,8 @@ Milestone 4 maps existing MCP tools onto these definitions. Milestone 5 implemen
 
 Primary contract tests cover:
 
-- `defineApi` schema, handler, and context inference.
-- The required `ApiCtx` fields.
+- `defineToolset` schema, handler, and context inference.
+- The required `ToolsetCtx` fields.
 - Method schemas with representative valid and invalid inputs.
 - Direct handler behavior with a complete test context.
 - Error propagation from handlers and composed OSA services.

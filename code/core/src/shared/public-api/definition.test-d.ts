@@ -1,9 +1,9 @@
 import * as v from 'valibot';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { defineApi, type ApiDefinition } from './index.ts';
+import { defineToolset, type ToolsetDefinition } from './index.ts';
 
-const exampleApi = defineApi({
+const exampleApi = defineToolset({
   id: 'example',
   description: 'Example API',
   methods: {
@@ -19,7 +19,7 @@ const exampleApi = defineApi({
   },
 });
 
-const reviewApi = defineApi({
+const reviewApi = defineToolset({
   id: 'review',
   description: 'Create a review',
   methods: {
@@ -30,7 +30,7 @@ const reviewApi = defineApi({
         expectTypeOf(input.title).toEqualTypeOf<string>();
         expectTypeOf(ctx.consumer).toEqualTypeOf<'cli' | 'mcp'>();
         expectTypeOf(ctx.origin).toEqualTypeOf<string>();
-        expectTypeOf(ctx.getService('core/review')).not.toBeAny();
+        expectTypeOf(ctx.getService('core/review', { internal: true })).not.toBeAny();
 
         return input.title;
       },
@@ -38,9 +38,9 @@ const reviewApi = defineApi({
   },
 });
 
-describe('defineApi types', () => {
+describe('defineToolset types', () => {
   it('preserves method schema output types in handlers', () => {
-    expectTypeOf(exampleApi).toMatchTypeOf<ApiDefinition>();
+    expectTypeOf(exampleApi).toMatchTypeOf<ToolsetDefinition>();
     expectTypeOf(exampleApi.methods.greet.handler).parameter(0).toEqualTypeOf<{
       name: string;
     }>();

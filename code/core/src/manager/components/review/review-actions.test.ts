@@ -180,7 +180,10 @@ describe('dismissReview', () => {
     sessionStorage.setItem(PRE_REVIEW_RETURN_KEY, '?path=/story/example--default');
     const emit = vi.fn();
     let resolveCommand!: () => void;
-    vi.spyOn(getService('core/review').commands, 'dismissReview').mockImplementation(
+    vi.spyOn(
+      getService('core/review', { internal: true }).commands,
+      'dismissReview'
+    ).mockImplementation(
       () =>
         new Promise<void>((resolve) => {
           resolveCommand = resolve;
@@ -199,7 +202,10 @@ describe('dismissReview', () => {
   it('handles command failure without navigation or an unhandled rejection', async () => {
     const failure = new Error('remote dismissal timed out');
     const emit = vi.fn();
-    vi.spyOn(getService('core/review').commands, 'dismissReview').mockRejectedValue(failure);
+    vi.spyOn(
+      getService('core/review', { internal: true }).commands,
+      'dismissReview'
+    ).mockRejectedValue(failure);
     const logError = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     await expect(dismissReview({ emit } as unknown as API)).resolves.toBeUndefined();

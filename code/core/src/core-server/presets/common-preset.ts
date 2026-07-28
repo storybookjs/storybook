@@ -30,9 +30,13 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { docsApi } from '../../shared/public-api/docs/definition.ts';
+import { loadToolsets } from '../../shared/public-api/load-toolsets.ts';
+import type { AnyToolsetDefinition } from '../../shared/public-api/definition.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { reviewApi } from '../../shared/open-service/services/review/api.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
@@ -345,6 +349,15 @@ export const managerEntries = async (existing: any) => {
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
+/**
+ * Public toolsets contributed by core. Addons append via the same preset property
+ * (`export const experimental_toolsets = [myToolset]`). Stories/test join when their
+ * boot-time deps are wired (stories factory; test moves to addon-vitest).
+ */
+export const experimental_toolsets = async (
+  existing: AnyToolsetDefinition[] = []
+): Promise<AnyToolsetDefinition[]> => [...existing, docsApi, reviewApi];
+
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
     throw new Error(
@@ -352,6 +365,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     );
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  await loadToolsets(options.presets);
 
   // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
   // generator, not a promise.

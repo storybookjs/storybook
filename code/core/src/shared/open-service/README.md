@@ -185,11 +185,17 @@ still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
 Services and operations can be hidden from discovery APIs without disabling them at runtime:
 
-- Set `internal: true` on a **service** to omit it from `listServices()`. `describeService(id)` and
-  `getService(id)` still work when the id is known.
+- Set `internal: true` on a **service** to omit it from `listServices()`. Callers must use
+  `getService(id, { internal: true })` to resolve it — a plain `getService(id)` throws
+  `OpenServiceInternalServiceError`. `describeService(id)` still works when the id is known.
 - Set `internal: true` on a **query or command** to omit it from `describeService()` output (and
   therefore from `queryNames` / `commandNames` in `listServices()` summaries). Runtime callers can
   still invoke the operation through a service handle, and TypeScript types remain available.
+  Operations may be marked internal even on a non-internal service.
+
+All core Storybook OSA services are currently `internal: true`. Treat them as unstable: Storybook
+may break their ids, state shapes, and operations without a public semver bump. Prefer public
+toolsets (`defineToolset`) for MCP/CLI surfaces.
 
 `internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
 be overridden at `registerService()` time. Static snapshot building is unaffected.

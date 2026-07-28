@@ -36,11 +36,13 @@ export interface ReviewDerivedState {
 }
 
 export interface ReviewStoreState extends ReviewDerivedState {
-  /** The displayed review. */
+  /**
+   * Displayed review payload. Held during deferred updates so the UI keeps the old review until
+   * accept; live OSA `current` / `stale` are read in ReviewProvider for banners and sync.
+   */
   state: ReviewState | null;
   /** An updated payload held back until the user accepts it. */
   pendingReview: ReviewState | null;
-  isStale: boolean;
   isInReviewMode: boolean;
   /** True while navigateOutOfReview is in flight; blocks the summary auto-enter. */
   isExiting: boolean;
@@ -49,7 +51,6 @@ export interface ReviewStoreState extends ReviewDerivedState {
 interface ReviewCoreState {
   state: ReviewState | null;
   pendingReview: ReviewState | null;
-  isStale: boolean;
   isInReviewMode: boolean;
   isExiting: boolean;
 }
@@ -57,7 +58,6 @@ interface ReviewCoreState {
 const emptyCore: ReviewCoreState = {
   state: null,
   pendingReview: null,
-  isStale: false,
   isInReviewMode: false,
   isExiting: false,
 };
@@ -82,7 +82,6 @@ const buildSnapshot = (): ReviewStoreState => ({
   ...derived,
   state: core.state,
   pendingReview: core.pendingReview,
-  isStale: core.isStale,
   isInReviewMode: core.isInReviewMode,
   isExiting: core.isExiting,
 });
@@ -113,19 +112,16 @@ export const reviewStore = {
   },
   /** Show a review, replacing any displayed or deferred one. */
   displayReview: (next: ReviewState) => {
-    commit({ state: next, pendingReview: null, isStale: !!next.stale });
+    commit({ state: next, pendingReview: null });
   },
   /** Hold an updated payload until the user accepts it. */
   deferReview: (next: ReviewState) => {
     commit({ pendingReview: next });
   },
-  setStale: (isStale: boolean) => {
-    commit({ isStale });
-  },
   /** Drop all review state (dismissal), including the persisted review-mode flag. */
   clearReview: () => {
     sessionStore.remove(REVIEW_MODE_SESSION_KEY);
-    commit({ state: null, pendingReview: null, isStale: false, isInReviewMode: false });
+    commit({ state: null, pendingReview: null, isInReviewMode: false });
   },
   /** Toggle review mode, persisted so it survives reloads. */
   setReviewMode: (active: boolean) => {

@@ -71,8 +71,10 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { index, internal_index, path, viewMode, customQueryParams, location } =
     useStorybookState();
-  const { state, pendingReview, isStale, isInReviewMode } = useReview();
-  const { data: currentReview } = useServiceQuery(getService('core/review').queries.current);
+  const { state, pendingReview, isInReviewMode } = useReview();
+  const { data: currentReview } = useServiceQuery(
+    getService('core/review', { internal: true }).queries.current
+  );
   // Last review page reported to telemetry; dedupes pageviews across re-renders.
   const lastPageviewKeyRef = useRef<string | null>(null);
 
@@ -107,14 +109,13 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return;
     }
     if (isSameReviewPayload(current, currentReview)) {
-      reviewStore.setStale(!!currentReview.stale);
       syncActiveReviewStatuses(currentReview);
       return;
     }
 
     sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
     reviewStore.displayReview(currentReview);
-  }, [api, currentReview, currentReview?.stale, syncActiveReviewStatuses]);
+  }, [api, currentReview, syncActiveReviewStatuses]);
 
   const emit = useChannel({
     [EVENTS.REVIEW_DISMISSED]: (returnSearch?: string | null) => {
@@ -162,14 +163,15 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [api, navigate, filtersRef]);
 
   // Pending-update outranks stale: accepting the update supersedes the warning.
+  // Stale comes from live OSA current, not a store mirror.
   const banner = useMemo<ReviewBanner>(
     () =>
       pendingReview !== null
         ? { kind: 'pending-update', onAccept: onAcceptPendingUpdate }
-        : isStale
+        : currentReview?.stale
           ? { kind: 'stale' }
           : null,
-    [pendingReview, isStale, onAcceptPendingUpdate]
+    [pendingReview, currentReview?.stale, onAcceptPendingUpdate]
   );
 
   // Report a "pageview" whenever the active review surface changes: the summary

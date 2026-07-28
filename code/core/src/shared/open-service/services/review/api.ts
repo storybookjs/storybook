@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 
-import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
-import { defineApi } from '../index.ts';
-import { reviewStateSchema } from '../../open-service/services/review/definition.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import { defineToolset } from '../../../public-api/index.ts';
+import { reviewStateSchema } from './definition.ts';
 
 const reviewCreateInputSchema = v.object({
   ...v.omit(reviewStateSchema, ['createdAt', 'stale', 'changedFiles']).entries,
@@ -18,7 +18,7 @@ const reviewCreateInputSchema = v.object({
   ),
 });
 
-export const reviewApi = defineApi({
+export const reviewApi = defineToolset({
   id: 'review',
   description: 'Create a curated Storybook review.',
   methods: {
@@ -33,7 +33,7 @@ export const reviewApi = defineApi({
           });
         }
 
-        await ctx.getService('core/review').commands.setReview(review);
+        await ctx.getService('core/review', { internal: true }).commands.setReview(review);
 
         const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
         if (json) {

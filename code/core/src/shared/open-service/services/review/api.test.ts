@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ApiCtx } from '../index.ts';
-import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
+import type { ToolsetCtx } from '../../../public-api/index.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import { reviewApi } from './api.ts';
 
 const input = {
@@ -19,7 +19,7 @@ const input = {
 };
 
 const setReview = vi.fn();
-let ctx: ApiCtx;
+let ctx: ToolsetCtx;
 let serviceError: Error | undefined;
 
 function createReview(
@@ -43,7 +43,7 @@ describe('review API', () => {
     ctx = {
       consumer: 'cli',
       origin: 'http://localhost:6006/',
-      getService: vi.fn(() => ({ commands: { setReview } })) as ApiCtx['getService'],
+      getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
     };
   });
 
@@ -65,7 +65,7 @@ describe('review API', () => {
       'Review created: http://localhost:6006/?path=/review/'
     );
     expect(setReview).toHaveBeenCalledWith(input);
-    expect(ctx.getService).toHaveBeenCalledWith('core/review');
+    expect(ctx.getService).toHaveBeenCalledWith('core/review', { internal: true });
   });
 
   it('adds the user-facing instruction only for the MCP Markdown response', async () => {

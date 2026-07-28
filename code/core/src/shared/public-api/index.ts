@@ -1,8 +1,10 @@
-export { defineApi } from './definition.ts';
+export { defineToolset } from './definition.ts';
+export { getLoadedToolsets, loadToolsets } from './load-toolsets.ts';
+export type { ToolsetPresets } from './load-toolsets.ts';
 export type {
-  AnyApiDefinition,
-  ApiConsumer,
-  ApiCtx,
-  ApiDefinition,
-  ApiMethod,
+  AnyToolsetDefinition,
+  ToolsetConsumer,
+  ToolsetCtx,
+  ToolsetDefinition,
+  ToolsetMethod,
 } from './definition.ts';

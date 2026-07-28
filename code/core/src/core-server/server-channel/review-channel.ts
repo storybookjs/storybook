@@ -19,7 +19,7 @@ type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
  */
 const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
   try {
-    const service = getService<ModuleGraphService>('core/module-graph');
+    const service = getService<ModuleGraphService>('core/module-graph', { internal: true });
     // Omit the input to watch the entire graph. The initial emission carries
     // revision 0 (or the current revision at subscribe time); only subsequent
     // advances represent a change after the review was cached.
@@ -48,7 +48,7 @@ export interface ReviewChannelOptions {
 export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}) {
   const subscribeToModuleGraphChanges =
     options.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
-  const reviewService = getService<ReviewService>('core/review');
+  const reviewService = getService<ReviewService>('core/review', { internal: true });
 
   const onPushReview = async (payload: ReviewState) => {
     try {

@@ -47,8 +47,10 @@ export type PreviewCoreServices = CoreServices<typeof previewCoreServiceDefs>;
 /** Core services registered on the dev server. */
 export type ServerCoreServices = CoreServices<typeof serverCoreServiceDefs>;
 
+import type { GetServiceOptions } from './types.ts';
+
 /** Module-level `getService` overloads keyed by a per-runtime core-service map. */
 export interface TypedGetService<TMap> {
-  <K extends keyof TMap & ServiceId>(serviceId: K): TMap[K];
-  <TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
+  <K extends keyof TMap & ServiceId>(serviceId: K, options?: GetServiceOptions): TMap[K];
+  <TInstance = RuntimeService>(serviceId: ServiceId, options?: GetServiceOptions): TInstance;
 }

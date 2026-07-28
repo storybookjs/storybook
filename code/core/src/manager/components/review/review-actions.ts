@@ -90,7 +90,7 @@ export const navigateOutOfReview = async (
 /** Clear the active review (if any) and return to the pre-review canvas. */
 export const dismissReview = async (api: Pick<API, 'emit'>): Promise<void> => {
   try {
-    await getService('core/review').commands.dismissReview(undefined);
+    await getService('core/review', { internal: true }).commands.dismissReview(undefined);
   } catch (error) {
     logger.error('Failed to dismiss review', error);
     return;

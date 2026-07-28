@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
 import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
-import type { ApiCtx } from '../index.ts';
+import type { ToolsetCtx } from '../index.ts';
 import { docsApi } from './definition.ts';
 
 const docgenForAllComponents = vi.fn();
@@ -33,7 +33,7 @@ const services = {
   },
 };
 
-let ctx: ApiCtx;
+let ctx: ToolsetCtx;
 let mdxAvailable: boolean;
 
 beforeEach(() => {
@@ -47,7 +47,7 @@ beforeEach(() => {
         throw new OpenServiceMissingServiceError({ serviceId: 'addon-docs/mdx' });
       }
       return services[id as keyof typeof services];
-    }) as ApiCtx['getService'],
+    }) as ToolsetCtx['getService'],
   };
   const buttonDocgen = {
     id: 'button',
@@ -114,9 +114,9 @@ describe('docs API', () => {
         '- Getting started (guide--docs): Intro',
       ].join('\n')
     );
-    expect(ctx.getService).toHaveBeenCalledWith('core/docgen');
-    expect(ctx.getService).toHaveBeenCalledWith('core/story-docs');
-    expect(ctx.getService).toHaveBeenCalledWith('addon-docs/mdx');
+    expect(ctx.getService).toHaveBeenCalledWith('core/docgen', { internal: true });
+    expect(ctx.getService).toHaveBeenCalledWith('core/story-docs', { internal: true });
+    expect(ctx.getService).toHaveBeenCalledWith('addon-docs/mdx', { internal: true });
   });
 
   it('returns structured JSON when json is true', async () => {

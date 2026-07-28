@@ -35,14 +35,13 @@ beforeEach(() => {
 });
 
 describe('displayReview', () => {
-  it('shows the review and derives staleness from the payload', () => {
+  it('shows the review as the held display payload', () => {
     reviewStore.displayReview({ ...review, stale: true });
     expect(reviewStore.getState().state?.title).toBe('Example review');
-    expect(reviewStore.getState().isStale).toBe(true);
+    expect(reviewStore.getState().state?.stale).toBe(true);
 
     reviewStore.displayReview(updatedReview);
     expect(reviewStore.getState().state).toBe(updatedReview);
-    expect(reviewStore.getState().isStale).toBe(false);
   });
 
   it('clears any deferred payload', () => {
@@ -63,7 +62,7 @@ describe('deferReview', () => {
 });
 
 describe('clearReview', () => {
-  it('drops displayed, deferred, stale, and review-mode state', () => {
+  it('drops displayed, deferred, and review-mode state', () => {
     reviewStore.displayReview({ ...review, stale: true });
     reviewStore.deferReview(updatedReview);
     reviewStore.setReviewMode(true);
@@ -73,7 +72,6 @@ describe('clearReview', () => {
     const state = reviewStore.getState();
     expect(state.state).toBeNull();
     expect(state.pendingReview).toBeNull();
-    expect(state.isStale).toBe(false);
     expect(state.isInReviewMode).toBe(false);
     expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
   });
@@ -102,7 +100,7 @@ describe('subscribe', () => {
     expect(reviewStore.getState()).not.toBe(before);
 
     unsubscribe();
-    reviewStore.setStale(true);
+    reviewStore.setDerived(derived);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });

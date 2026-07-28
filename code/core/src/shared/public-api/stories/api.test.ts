@@ -7,7 +7,7 @@ import * as v from 'valibot';
 import { vol } from 'memfs';
 
 import { getStatusStoreByTypeId } from '../../../core-server/stores/status.ts';
-import type { ApiCtx } from '../index.ts';
+import type { ToolsetCtx } from '../index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
 import { createStoriesApi } from './definition.ts';
 
@@ -51,7 +51,7 @@ const storyIndex = { getIndex };
 const git = { getChangedFiles, getRepoRoot };
 let statusesFixture: Record<string, Record<string, unknown>>;
 let graphMatchesByFile: Map<string, Array<{ storyFile: string; depth: number }>>;
-let ctx: ApiCtx;
+let ctx: ToolsetCtx;
 
 function createApi() {
   return createStoriesApi({
@@ -75,7 +75,7 @@ beforeEach(async () => {
   ctx = {
     consumer: 'cli',
     origin: 'http://localhost:6006',
-    getService: vi.fn(() => moduleGraph) as ApiCtx['getService'],
+    getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
   };
   vi.mocked(getStatusStoreByTypeId).mockReturnValue({ getAll: getStatuses } as never);
   getIndex.mockResolvedValue(index);
@@ -155,7 +155,7 @@ describe('stories API', () => {
         '  ./src/Button.stories.tsx',
       ].join('\n')
     );
-    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph');
+    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 
@@ -185,7 +185,7 @@ describe('stories API', () => {
     expect(getStatusStoreByTypeId).toHaveBeenCalledWith(CHANGE_DETECTION_STATUS_TYPE_ID);
     expect(getChangedFiles).toHaveBeenCalledOnce();
     expect(getRepoRoot).toHaveBeenCalledOnce();
-    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph');
+    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
     expect(storiesForFiles).toHaveBeenCalledWith({
       files: [componentPath, themePath],
     });

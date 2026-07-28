@@ -313,7 +313,15 @@ describe('service registration', () => {
       commands: {},
     });
 
-    expect(getService('internal-fixture/hidden-service').queries.secret.get(undefined)).toBe(true);
+    expect(
+      getService('internal-fixture/hidden-service', { internal: true }).queries.secret.get(
+        undefined
+      )
+    ).toBe(true);
+
+    expect(() => getService('internal-fixture/hidden-service')).toThrow(
+      /Pass \{ internal: true \}/
+    );
   });
 
   it('still builds static snapshots for internal queries', async () => {

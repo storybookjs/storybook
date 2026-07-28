@@ -189,6 +189,17 @@ export class OpenServiceMissingServiceError extends StorybookError {
   }
 }
 
+export class OpenServiceInternalServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceInternalServiceError',
+      category: Category.CORE_COMMON,
+      code: 19,
+      message: `Service "${data.serviceId}" is internal. Pass { internal: true } to getService() only if you intentionally depend on an unstable OSA surface. Internal services may change without notice.`,
+    });
+  }
+}
+
 export class OpenServiceUnimplementedOperationError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
     super({

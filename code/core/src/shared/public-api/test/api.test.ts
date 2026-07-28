@@ -3,7 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ApiCtx } from '../index.ts';
+import type { ToolsetCtx } from '../index.ts';
 import type { TestRunOutput } from './definition.ts';
 import { createTestApi } from './definition.ts';
 import { runStoryTests } from './run.ts';
@@ -16,8 +16,8 @@ const storyIndex = { getIndex };
 const ctx = {
   consumer: 'cli',
   origin: 'http://localhost:6006',
-  getService: vi.fn() as ApiCtx['getService'],
-} satisfies ApiCtx;
+  getService: vi.fn() as ToolsetCtx['getService'],
+} satisfies ToolsetCtx;
 
 const completedRun: TestRunOutput = {
   status: 'completed',

@@ -1,0 +1,39 @@
+/**
+ * Fixed measurement parameters for the per-engine docgen performance suite.
+ *
+ * N is pinned here for every engine and recorded with the results; numbers taken at different N are
+ * not comparable. The --quick profile exists for smoke runs only and marks its results
+ * non-comparable.
+ */
+
+/** Fresh-process spawns per cold/scan median. One value for all engines. */
+export const PINNED_N = 5;
+
+/** Spawns for --quick smoke runs. Never comparable with PINNED_N results. */
+export const QUICK_N = 2;
+
+/** Sampling interval for the compodoc child's externally-polled peak RSS. */
+export const RSS_POLL_INTERVAL_MS = 100;
+
+export interface AngularScenarioConfig {
+  components: number;
+  props: number;
+}
+
+export interface SuiteProfile {
+  n: number;
+  comparable: boolean;
+  angular: AngularScenarioConfig;
+}
+
+export const DEFAULT_PROFILE: SuiteProfile = {
+  n: PINNED_N,
+  comparable: true,
+  angular: { components: 100, props: 8 },
+};
+
+export const QUICK_PROFILE: SuiteProfile = {
+  n: QUICK_N,
+  comparable: false,
+  angular: { components: 10, props: 4 },
+};

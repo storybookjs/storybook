@@ -83,6 +83,15 @@ function main(options?: UserOptions): PluginOption {
     }));
   let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
 
+  const activePolkaServers = new Set<ReturnType<typeof polka>>();
+  const closePolkaServer = (instance: ReturnType<typeof polka>) => {
+    if (!activePolkaServers.has(instance)) {
+      return;
+    }
+    activePolkaServers.delete(instance);
+    instance.server?.close();
+  };
+
   const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) => {
     // don't activate the plugin if we're running Vitest, since that will load Storybook's Vite config and cause issues with Vitest's Vite config
     if (process.env.VITEST) {
@@ -218,6 +227,8 @@ function main(options?: UserOptions): PluginOption {
       const port = await getPort({ random: true, host: '127.0.0.1' });
       const polkaServer = polka();
       polkaServer.listen(port, '127.0.0.1');
+      activePolkaServers.add(polkaServer);
+      server.httpServer?.once('close', () => closePolkaServer(polkaServer));
       sb.port = server.config.server.port;
       await sb.presets.apply('experimental_devServer', polkaServer, sb);
 
@@ -322,6 +333,12 @@ function main(options?: UserOptions): PluginOption {
         disableTelemetry: coreOptions.disableTelemetry,
         storyIndexGenerator,
       });
+    },
+
+    closeBundle() {
+      for (const instance of [...activePolkaServers]) {
+        closePolkaServer(instance);
+      }
     },
   };
 }

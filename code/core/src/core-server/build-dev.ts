@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
+import { global } from '@storybook/global';
 import {
   JsPackageManagerFactory,
   cache,
@@ -9,6 +10,7 @@ import {
   isWebContainer,
   loadAllPresets,
   loadMainConfig,
+  normalizeBasePath,
   resolveAddonName,
   resolvePathInStorybookCache,
   validateFrameworkName,
@@ -18,7 +20,6 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
@@ -36,8 +37,8 @@ import { outputStartupInformation } from './utils/output-startup-information.ts'
 import { outputStats } from './utils/output-stats.ts';
 import {
   getMcpMetadataFromMainConfig,
-  type RuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
+  type RuntimeInstanceRecord,
 } from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
@@ -144,6 +145,7 @@ export async function buildDevStandalone(
   options.serverChannelUrl = getServerChannelUrl(port, options);
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
+  options.basePath = normalizeBasePath('/');
 
   const config = await loadMainConfig(options);
   const { core, framework } = config;

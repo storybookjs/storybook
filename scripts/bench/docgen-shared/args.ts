@@ -1,81 +1,43 @@
 /**
- * Strict command-line parsing for the docgen bench harnesses.
+ * Option parsing for the docgen bench harnesses: `node:util` parseArgs in strict mode for the
+ * parse, then a Zod schema for coercion and validation. Same pairing as scripts/eval/eval.ts.
  *
- * Every harness used to carry its own `get(flag, fallback)` helper that returned `argv[idx + 1]`
- * without checking it. `--saves --json out.json` therefore parsed as `saves = "--json"`, and
- * `Number()` turned that into `NaN`, which reached the generators as a silently wrong project size.
- * Values are validated here instead, once.
+ * Strict mode is what makes this worth doing. It rejects a flag the harness does not declare, so
+ * `--component 5` with the `s` missing fails loudly instead of leaving the default in place and
+ * reporting a benchmark for a project size nobody asked for.
  */
+import { type ParseArgsConfig, parseArgs } from 'node:util';
 
-export class Args {
-  // A plain field, not a constructor parameter property: these harnesses run on Node's strip-only
-  // TypeScript support, which rejects parameter properties outright.
-  private readonly argv: string[];
+import { z } from 'zod';
 
-  constructor(argv: string[]) {
-    this.argv = argv;
+type OptionsConfig = NonNullable<ParseArgsConfig['options']>;
+
+/** parseArgs yields strings, so numeric flags are coerced here rather than at each call site. */
+export const countOption = (fallback: number) =>
+  z.coerce.number().int().nonnegative().default(fallback);
+
+/**
+ * Keys in `values` are the flags as written, so kebab-case flags arrive kebab-cased. `toInput` maps
+ * them onto the schema's shape, the way eval.ts spreads renamed keys into `safeParse`.
+ *
+ * `Out` is supplied by the caller rather than inferred: under this TypeScript setup zod 3 types a
+ * `.default()` key as optional even on the parsed output, so inference would make every defaulted
+ * option optional at the call site. The harness interfaces stay the source of truth, and
+ * args.test.ts asserts that a parse with no arguments really does populate every field.
+ */
+export function parseHarnessOptions<Out>(
+  argv: string[],
+  options: OptionsConfig,
+  schema: z.ZodTypeAny,
+  toInput?: (values: Record<string, unknown>) => Record<string, unknown>
+): Out {
+  const { values } = parseArgs({ args: argv, options, strict: true });
+  const result = schema.safeParse(toInput ? toInput(values) : values);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((issue) => `  --${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
+    throw new Error(`invalid options:\n${issues}`);
   }
-
-  /** True when `--name` is present. */
-  flag(name: string): boolean {
-    return this.argv.includes(`--${name}`);
-  }
-
-  /**
-   * The value after `--name`. Throws when the flag is present but its value is missing or is
-   * itself a flag, so a typo fails at the boundary instead of becoming a bad measurement.
-   */
-  private valueAt(name: string, at: number): string {
-    const value = this.argv[at + 1];
-    if (value === undefined || value.startsWith('--')) {
-      throw new Error(`--${name} requires a value`);
-    }
-    return value;
-  }
-
-  /** The value after `--name`, or undefined when the flag is absent. */
-  optional(name: string): string | undefined {
-    const at = this.argv.indexOf(`--${name}`);
-    return at < 0 ? undefined : this.valueAt(name, at);
-  }
-
-  string(name: string, fallback: string): string {
-    return this.optional(name) ?? fallback;
-  }
-
-  /** Every value of a repeatable flag, in the order given. */
-  all(name: string): string[] {
-    const values: string[] = [];
-    for (let i = 0; i < this.argv.length; i++) {
-      if (this.argv[i] === `--${name}`) {
-        values.push(this.valueAt(name, i));
-      }
-    }
-    return values;
-  }
-
-  /** A non-negative integer. Rejects `NaN`, fractions and negatives rather than passing them on. */
-  count(name: string, fallback: number): number {
-    const raw = this.optional(name);
-    if (raw === undefined) {
-      return fallback;
-    }
-    const value = Number(raw);
-    if (!Number.isInteger(value) || value < 0) {
-      throw new Error(`--${name} must be a non-negative integer, got "${raw}"`);
-    }
-    return value;
-  }
-
-  /** One of `allowed`. The error names the whole set, so a typo is self-correcting. */
-  choice<const T extends string>(name: string, allowed: readonly T[], fallback: T): T {
-    const raw = this.optional(name);
-    if (raw === undefined) {
-      return fallback;
-    }
-    if (!(allowed as readonly string[]).includes(raw)) {
-      throw new Error(`--${name} must be one of ${allowed.join(', ')}, got "${raw}"`);
-    }
-    return raw as T;
-  }
+  return result.data as Out;
 }

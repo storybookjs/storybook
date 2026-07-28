@@ -21,7 +21,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { Args } from '../../docgen-shared/args.ts';
+import { z } from 'zod';
+
+import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -263,20 +265,38 @@ export function generateVueProject(options: VueGenerateOptions): GeneratedVuePro
   return { outDir, packageConfigPaths, baseTypesPath, componentPaths };
 }
 
-function parseArgs(argv: string[]): VueGenerateOptions {
-  const args = new Args(argv);
-  return {
-    outDir: args.string('out', '../storybook-sandboxes/docgen-perf-vue'),
-    packages: args.count('packages', 4),
-    componentsPerPackage: args.count('components-per-package', 10),
-    chainDepth: args.count('chain-depth', 3),
-    fanOut: args.count('fan-out', 4),
-    heavyLib: args.flag('heavy-lib'),
-  };
+function parseOptions(argv: string[]): VueGenerateOptions {
+  return parseHarnessOptions<VueGenerateOptions>(
+    argv,
+    {
+      out: { type: 'string' },
+      packages: { type: 'string' },
+      'components-per-package': { type: 'string' },
+      'chain-depth': { type: 'string' },
+      'fan-out': { type: 'string' },
+      'heavy-lib': { type: 'boolean' },
+    } as const,
+    z.object({
+      outDir: z.string().default('../storybook-sandboxes/docgen-perf-vue'),
+      packages: countOption(4),
+      componentsPerPackage: countOption(10),
+      chainDepth: countOption(3),
+      fanOut: countOption(4),
+      heavyLib: z.boolean().default(false),
+    }),
+    (values) => ({
+      outDir: values.out,
+      packages: values.packages,
+      componentsPerPackage: values['components-per-package'],
+      chainDepth: values['chain-depth'],
+      fanOut: values['fan-out'],
+      heavyLib: values['heavy-lib'],
+    })
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const options = parseArgs(process.argv.slice(2));
+  const options = parseOptions(process.argv.slice(2));
   const start = Date.now();
   const result = generateVueProject(options);
   console.log(

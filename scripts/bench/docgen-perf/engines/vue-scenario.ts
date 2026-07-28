@@ -13,7 +13,9 @@
  */
 import * as path from 'node:path';
 
-import { Args } from '../../docgen-shared/args.ts';
+import { z } from 'zod';
+
+import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
 import {
   type GeneratedVueProject,
@@ -24,6 +26,34 @@ import {
 
 export const VUE_SCENARIOS = ['flat', 'workspace', 'base-type-touch'] as const;
 export type VueScenario = (typeof VUE_SCENARIOS)[number];
+
+const OPTIONS = {
+  scenario: { type: 'string' },
+  packages: { type: 'string' },
+  'components-per-package': { type: 'string' },
+  'chain-depth': { type: 'string' },
+  'fan-out': { type: 'string' },
+  'heavy-lib': { type: 'boolean' },
+  saves: { type: 'string' },
+  out: { type: 'string' },
+  json: { type: 'string' },
+} as const;
+
+/** `engineDirName` only supplies the default scratch directory, so it is bound per harness. */
+const schemaFor = (engineDirName: string) =>
+  z.object({
+    scenario: z.enum(VUE_SCENARIOS).default('workspace'),
+    packages: countOption(4),
+    componentsPerPackage: countOption(10),
+    chainDepth: countOption(3),
+    fanOut: countOption(4),
+    heavyLib: z.boolean().default(false),
+    saves: countOption(15),
+    outDir: z
+      .string()
+      .default(path.join(SANDBOX_DIRECTORY, 'docgen-perf', engineDirName, 'project')),
+    jsonOut: z.string().optional(),
+  });
 
 export interface VueHarnessOptions {
   scenario: VueScenario;
@@ -38,18 +68,17 @@ export interface VueHarnessOptions {
 }
 
 export function parseVueOptions(argv: string[], engineDirName: string): VueHarnessOptions {
-  const args = new Args(argv);
-  return {
-    scenario: args.choice('scenario', VUE_SCENARIOS, 'workspace'),
-    packages: args.count('packages', 4),
-    componentsPerPackage: args.count('components-per-package', 10),
-    chainDepth: args.count('chain-depth', 3),
-    fanOut: args.count('fan-out', 4),
-    heavyLib: args.flag('heavy-lib'),
-    saves: args.count('saves', 15),
-    outDir: args.string('out', path.join(SANDBOX_DIRECTORY, 'docgen-perf', engineDirName, 'project')),
-    jsonOut: args.optional('json'),
-  };
+  return parseHarnessOptions<VueHarnessOptions>(argv, OPTIONS, schemaFor(engineDirName), (values) => ({
+    scenario: values.scenario,
+    packages: values.packages,
+    componentsPerPackage: values['components-per-package'],
+    chainDepth: values['chain-depth'],
+    fanOut: values['fan-out'],
+    heavyLib: values['heavy-lib'],
+    saves: values.saves,
+    outDir: values.out,
+    jsonOut: values.json,
+  }));
 }
 
 export function vueBanner(options: VueHarnessOptions): Record<string, unknown> {

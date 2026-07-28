@@ -1,9 +1,17 @@
 /** Command line for the docgen perf suite. */
 import * as path from 'node:path';
 
-import { Args } from '../docgen-shared/args.ts';
+import { z } from 'zod';
+
+import { parseHarnessOptions } from '../docgen-shared/args.ts';
 import { ALL_ENGINE_IDS, DEFAULT_ENGINE_IDS } from './registry.ts';
 import type { EngineId } from './types.ts';
+
+const OPTIONS = {
+  quick: { type: 'boolean' },
+  engine: { type: 'string', multiple: true },
+  json: { type: 'string' },
+} as const;
 
 export interface CliOptions {
   quick: boolean;
@@ -12,16 +20,20 @@ export interface CliOptions {
 }
 
 export function parseCliOptions(argv: string[], workRoot: string): CliOptions {
-  const args = new Args(argv);
-  const engines = args.all('engine');
-  for (const engine of engines) {
-    if (!ALL_ENGINE_IDS.includes(engine as EngineId)) {
-      throw new Error(`--engine must be one of ${ALL_ENGINE_IDS.join(', ')}, got "${engine}"`);
-    }
-  }
+  const schema = z.object({
+    quick: z.boolean().default(false),
+    // No --engine means the default set, which is why this defaults to empty rather than to
+    // DEFAULT_ENGINE_IDS: an explicit empty list and an absent flag are the same request.
+    engines: z.array(z.enum(ALL_ENGINE_IDS as [EngineId, ...EngineId[]])).default([]),
+    jsonOut: z.string().default(path.join(workRoot, 'results.json')),
+  });
+  const options = parseHarnessOptions<CliOptions>(argv, OPTIONS, schema, (values) => ({
+    quick: values.quick,
+    engines: values.engine,
+    jsonOut: values.json,
+  }));
   return {
-    quick: args.flag('quick'),
-    engines: engines.length ? (engines as EngineId[]) : DEFAULT_ENGINE_IDS,
-    jsonOut: args.string('json', path.join(workRoot, 'results.json')),
+    ...options,
+    engines: options.engines.length ? options.engines : DEFAULT_ENGINE_IDS,
   };
 }

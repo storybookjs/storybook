@@ -1,75 +1,91 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
-import { Args } from './args.ts';
+import { countOption, parseHarnessOptions } from './args.ts';
 
-describe('Args', () => {
-  it('reads a string value', () => {
-    expect(new Args(['--parser', 'react-docgen']).string('parser', 'x')).toBe('react-docgen');
-  });
+const OPTIONS = {
+  components: { type: 'string' },
+  scope: { type: 'string' },
+  heavy: { type: 'boolean' },
+  out: { type: 'string' },
+  'components-per-package': { type: 'string' },
+} as const;
 
-  it('falls back when the flag is absent', () => {
-    expect(new Args([]).string('parser', 'fallback')).toBe('fallback');
-  });
+const SCHEMA = z.object({
+  components: countOption(300),
+  scope: z.enum(['all', 'changed']).default('changed'),
+  heavy: z.boolean().default(false),
+  outDir: z.string().default('/default'),
+  componentsPerPackage: countOption(10),
+});
 
-  it('detects boolean flags', () => {
-    expect(new Args(['--quick']).flag('quick')).toBe(true);
-    expect(new Args([]).flag('quick')).toBe(false);
-  });
+interface Options {
+  components: number;
+  scope: 'all' | 'changed';
+  heavy: boolean;
+  outDir: string;
+  componentsPerPackage: number;
+}
 
-  it('throws when a flag is followed by another flag instead of a value', () => {
-    expect(() => new Args(['--saves', '--json', 'out.json']).count('saves', 1)).toThrow(
-      '--saves requires a value'
-    );
-  });
+const parse = (argv: string[]) =>
+  parseHarnessOptions<Options>(argv, OPTIONS, SCHEMA, (values) => ({
+    ...values,
+    outDir: values.out,
+    componentsPerPackage: values['components-per-package'],
+  }));
 
-  it('throws when a flag is the last argument', () => {
-    expect(() => new Args(['--out']).string('out', 'x')).toThrow('--out requires a value');
-  });
-
-  it('collects every value of a repeated flag', () => {
-    const args = new Args(['--engine', 'a', '--quick', '--engine', 'b']);
-    expect(args.all('engine')).toEqual(['a', 'b']);
-  });
-
-  it('returns an empty list when a repeated flag is absent', () => {
-    expect(new Args(['--quick']).all('engine')).toEqual([]);
-  });
-
-  describe('count', () => {
-    it('parses an integer', () => {
-      expect(new Args(['--saves', '20']).count('saves', 1)).toBe(20);
+describe('parseHarnessOptions', () => {
+  it('applies defaults when nothing is passed', () => {
+    expect(parse([])).toEqual({
+      components: 300,
+      scope: 'changed',
+      heavy: false,
+      outDir: '/default',
+      componentsPerPackage: 10,
     });
+  });
 
+  it('coerces numeric flags', () => {
+    expect(parse(['--components', '20']).components).toBe(20);
+  });
+
+  it('maps kebab-case flags onto the schema shape', () => {
+    expect(parse(['--components-per-package', '5']).componentsPerPackage).toBe(5);
+  });
+
+  it('reads boolean flags', () => {
+    expect(parse(['--heavy']).heavy).toBe(true);
+  });
+
+  it('rejects an unknown flag', () => {
+    // The reason for strict mode: `--component 5` would otherwise be dropped silently and the
+    // harness would benchmark 300 components while reporting a run someone asked for at 5.
+    expect(() => parse(['--component', '5'])).toThrow(/Unknown option/);
+  });
+
+  it('rejects a flag whose value is another flag', () => {
+    expect(() => parse(['--components', '--out', 'x'])).toThrow(/ambiguous/);
+  });
+
+  it('rejects a flag with no value at all', () => {
+    expect(() => parse(['--components'])).toThrow(/argument missing/);
+  });
+
+  it('rejects a value outside an enum, naming the flag', () => {
+    expect(() => parse(['--scope', 'some'])).toThrow(/--scope/);
+  });
+
+  describe('countOption', () => {
     it('rejects a non-numeric value', () => {
-      expect(() => new Args(['--saves', 'lots']).count('saves', 1)).toThrow(
-        '--saves must be a non-negative integer, got "lots"'
-      );
+      expect(() => parse(['--components', 'lots'])).toThrow(/--components/);
     });
 
     it('rejects a fraction', () => {
-      expect(() => new Args(['--saves', '2.5']).count('saves', 1)).toThrow(
-        'must be a non-negative integer'
-      );
+      expect(() => parse(['--components', '2.5'])).toThrow(/--components/);
     });
 
     it('rejects a negative', () => {
-      expect(() => new Args(['--saves', '-3']).count('saves', 1)).toThrow(
-        'must be a non-negative integer'
-      );
-    });
-  });
-
-  describe('choice', () => {
-    it('accepts an allowed value', () => {
-      expect(new Args(['--scope', 'all']).choice('scope', ['all', 'changed'], 'changed')).toBe(
-        'all'
-      );
-    });
-
-    it('names the whole set when the value is not allowed', () => {
-      expect(() =>
-        new Args(['--scope', 'some']).choice('scope', ['all', 'changed'], 'changed')
-      ).toThrow('--scope must be one of all, changed, got "some"');
+      expect(() => parse(['--components', '-3'])).toThrow(/--components/);
     });
   });
 });

@@ -15,8 +15,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { z } from 'zod';
+
 import { componentSource, generateProject } from '../../docgen-memory/generate-project.ts';
-import { Args } from '../../docgen-shared/args.ts';
+import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
 import {
   type ReactDocgenModule,
@@ -39,6 +41,30 @@ const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
  */
 const SCOPES = ['all', 'changed'] as const;
 
+const OPTIONS = {
+  parser: { type: 'string' },
+  components: { type: 'string' },
+  variants: { type: 'string' },
+  props: { type: 'string' },
+  saves: { type: 'string' },
+  scope: { type: 'string' },
+  out: { type: 'string' },
+  json: { type: 'string' },
+} as const;
+
+const SCHEMA = z.object({
+  parser: z.enum(PARSERS).default('react-docgen'),
+  components: countOption(300),
+  variants: countOption(4),
+  props: countOption(10),
+  saves: countOption(20),
+  scope: z.enum(SCOPES).default('changed'),
+  outDir: z
+    .string()
+    .default(path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')),
+  jsonOut: z.string().optional(),
+});
+
 interface HarnessOptions {
   parser: (typeof PARSERS)[number];
   components: number;
@@ -51,20 +77,11 @@ interface HarnessOptions {
 }
 
 function parseOptions(argv: string[]): HarnessOptions {
-  const args = new Args(argv);
-  return {
-    parser: args.choice('parser', PARSERS, 'react-docgen'),
-    components: args.count('components', 300),
-    variants: args.count('variants', 4),
-    props: args.count('props', 10),
-    saves: args.count('saves', 20),
-    scope: args.choice('scope', SCOPES, 'changed'),
-    outDir: args.string(
-      'out',
-      path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')
-    ),
-    jsonOut: args.optional('json'),
-  };
+  return parseHarnessOptions<HarnessOptions>(argv, OPTIONS, SCHEMA, (values) => ({
+    ...values,
+    outDir: values.out,
+    jsonOut: values.json,
+  }));
 }
 
 async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {

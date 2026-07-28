@@ -11,7 +11,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { Args } from '../../docgen-shared/args.ts';
+import { z } from 'zod';
+
+import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 
 export interface AngularGenerateOptions {
   outDir: string;
@@ -117,17 +119,21 @@ export function generateAngularProject(options: AngularGenerateOptions): Generat
   return { outDir, componentPaths };
 }
 
-function parseArgs(argv: string[]): AngularGenerateOptions {
-  const args = new Args(argv);
-  return {
-    outDir: args.string('out', '../storybook-sandboxes/docgen-perf-angular'),
-    components: args.count('components', 100),
-    props: args.count('props', 8),
-  };
+function parseOptions(argv: string[]): AngularGenerateOptions {
+  return parseHarnessOptions<AngularGenerateOptions>(
+    argv,
+    { out: { type: 'string' }, components: { type: 'string' }, props: { type: 'string' } } as const,
+    z.object({
+      outDir: z.string().default('../storybook-sandboxes/docgen-perf-angular'),
+      components: countOption(100),
+      props: countOption(8),
+    }),
+    (values) => ({ ...values, outDir: values.out })
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const options = parseArgs(process.argv.slice(2));
+  const options = parseOptions(process.argv.slice(2));
   const start = Date.now();
   const result = generateAngularProject(options);
   console.log(

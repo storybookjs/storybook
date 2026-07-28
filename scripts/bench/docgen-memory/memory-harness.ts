@@ -35,7 +35,9 @@ import * as path from 'node:path';
 
 import ts from 'typescript';
 
-import { Args } from '../docgen-shared/args.ts';
+import { z } from 'zod';
+
+import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 import {
   type StoryRefLike,
@@ -94,26 +96,64 @@ interface HarnessOptions {
   recycleHeapPressureRatio?: number;
 }
 
+const OPTIONS = {
+  components: { type: 'string' },
+  variants: { type: 'string' },
+  props: { type: 'string' },
+  saves: { type: 'string' },
+  mode: { type: 'string' },
+  scope: { type: 'string' },
+  recycle: { type: 'string' },
+  heavy: { type: 'boolean' },
+  'heavy-factor': { type: 'string' },
+  'base64-kb': { type: 'string' },
+  'no-force-gc': { type: 'boolean' },
+  out: { type: 'string' },
+  reuse: { type: 'boolean' },
+  json: { type: 'string' },
+  'max-retained-growth': { type: 'string' },
+} as const;
+
+const SCHEMA = z.object({
+  components: countOption(600),
+  variants: countOption(4),
+  props: countOption(8),
+  saves: countOption(25),
+  mode: z.enum(MODES).default('refresh'),
+  scope: z.enum(SCOPES).default('all'),
+  // `Infinity` disables program recycling; `undefined` leaves the product default in place.
+  recycleHeapPressureRatio: z
+    .enum(RECYCLE)
+    .default('on')
+    .transform((recycle) => (recycle === 'off' ? Number.POSITIVE_INFINITY : undefined)),
+  heavyTypes: z.boolean().default(false),
+  heavyFactor: countOption(1),
+  base64Kb: countOption(0),
+  forceGc: z.boolean().default(false).transform((noForceGc) => !noForceGc),
+  outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
+  reuse: z.boolean().default(false),
+  jsonOut: z.string().optional(),
+  maxRetainedGrowthMb: countOption(400),
+});
+
 function parseOptions(argv: string[]): HarnessOptions {
-  const args = new Args(argv);
-  return {
-    components: args.count('components', 600),
-    variants: args.count('variants', 4),
-    props: args.count('props', 8),
-    saves: args.count('saves', 25),
-    mode: args.choice('mode', MODES, 'refresh'),
-    scope: args.choice('scope', SCOPES, 'all'),
-    recycleHeapPressureRatio:
-      args.choice('recycle', RECYCLE, 'on') === 'off' ? Number.POSITIVE_INFINITY : undefined,
-    heavyTypes: args.flag('heavy'),
-    heavyFactor: args.count('heavy-factor', 1),
-    base64Kb: args.count('base64-kb', 0),
-    forceGc: !args.flag('no-force-gc'),
-    outDir: args.string('out', path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
-    reuse: args.flag('reuse'),
-    jsonOut: args.optional('json'),
-    maxRetainedGrowthMb: args.count('max-retained-growth', 400),
-  };
+  return parseHarnessOptions<HarnessOptions>(argv, OPTIONS, SCHEMA, (values) => ({
+    components: values.components,
+    variants: values.variants,
+    props: values.props,
+    saves: values.saves,
+    mode: values.mode,
+    scope: values.scope,
+    recycleHeapPressureRatio: values.recycle,
+    heavyTypes: values.heavy,
+    heavyFactor: values['heavy-factor'],
+    base64Kb: values['base64-kb'],
+    forceGc: values['no-force-gc'],
+    outDir: values.out,
+    reuse: values.reuse,
+    jsonOut: values.json,
+    maxRetainedGrowthMb: values['max-retained-growth'],
+  }));
 }
 
 /**

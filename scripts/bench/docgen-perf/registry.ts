@@ -71,6 +71,18 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/vue-component-meta.ts',
     scenarios: vueScenarios,
     args: vueArgs,
+    versionPackage: 'vue-component-meta',
+  }),
+  // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
+  // control rather than an engine-vs-engine one. No budget row yet, so it stays out of the
+  // default run; a contributor testing a bump runs both ids with --engine explicitly.
+  new SeriesChildEngine({
+    id: 'vue-component-meta-next',
+    child: 'engines/vue-component-meta.ts',
+    scenarios: vueScenarios,
+    inDefaultRun: false,
+    args: (scenario) => [...vueArgs(scenario), '--pin', 'next'],
+    versionPackage: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
 ];

@@ -181,6 +181,68 @@ describe('renderRatios', () => {
   it('says so when there is no ratio at all', () => {
     expect(block(renderRatios({}))).toMatchInlineSnapshot(`"  no calibration ratio: it needs both sides of a control pair measured in one run"`);
   });
+
+  it('names both versions when a pair compares one package against another release of it', () => {
+    expect(
+      block(
+        renderRatios({
+          'vue-component-meta-version': {
+            flat: {
+              cold: 1.08,
+              legacyVersion: '3.3.2',
+              nextVersion: '3.3.8',
+              coldComparability: 'like-for-like',
+              warmComparability: 'like-for-like',
+            },
+          },
+        })
+      )
+    ).toMatchInlineSnapshot(`"  ratio cold legacy/new (vue-component-meta-version/flat): 1.08  [3.3.2 vs 3.3.8]"`);
+  });
+
+  it('says a pair measured nothing when both sides resolved the same version', () => {
+    // A range on the current side is enough to let both land on one release. The ratio is then 1.00
+    // against itself, which is the one failure a version pair must never report as a clean result.
+    expect(
+      block(
+        renderRatios({
+          'vue-component-meta-version': {
+            flat: {
+              cold: 1.0,
+              legacyVersion: '3.3.8',
+              nextVersion: '3.3.8',
+              coldComparability: 'like-for-like',
+              warmComparability: 'like-for-like',
+            },
+          },
+        })
+      )
+    ).toMatchInlineSnapshot(`"  ratio cold legacy/new (vue-component-meta-version/flat): 1.00  [both sides resolved 3.3.8 - NOT a comparison]"`);
+  });
+
+  it('carries the versions onto the warm line as well as the cold one', () => {
+    expect(
+      block(
+        renderRatios({
+          'vue-component-meta-version': {
+            flat: {
+              cold: 1.08,
+              warm: 0.97,
+              legacyColdMembers: 320,
+              nextColdMembers: 320,
+              legacyVersion: '3.3.2',
+              nextVersion: '3.3.8',
+              coldComparability: 'like-for-like',
+              warmComparability: 'unknown',
+            },
+          },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "  ratio cold legacy/new (vue-component-meta-version/flat): 1.08  [documented members 320 vs 320]  [3.3.2 vs 3.3.8]
+        ratio warm legacy/new (vue-component-meta-version/flat): 0.97  [3.3.2 vs 3.3.8]"
+    `);
+  });
 });
 
 describe('renderResults', () => {

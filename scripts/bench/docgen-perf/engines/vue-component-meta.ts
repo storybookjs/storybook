@@ -12,7 +12,7 @@
  */
 import * as fs from 'node:fs';
 
-import { type MetaCheckerOptions, createChecker, createCheckerByJson } from 'vue-component-meta';
+import type { MetaCheckerOptions } from 'vue-component-meta';
 
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
 import {
@@ -22,7 +22,9 @@ import {
   vueBanner,
 } from './vue-scenario.ts';
 
-type Checker = ReturnType<typeof createCheckerByJson>;
+/** Both pins are the same package, so the current one's types describe either install. */
+type CheckerModule = typeof import('vue-component-meta');
+type Checker = ReturnType<CheckerModule['createCheckerByJson']>;
 
 /** Mirrors the production Vite plugin's checker options. */
 const CHECKER_OPTIONS: MetaCheckerOptions = {
@@ -30,6 +32,32 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
   noDeclarations: true,
   printer: { newLine: 1 },
 };
+
+const PINS = ['current', 'next'] as const;
+type Pin = (typeof PINS)[number];
+
+/** Pulls --pin out of argv before the shared parseVueOptions ever sees it, so vue-scenario.ts
+ * and vue-docgen-api.ts stay unaware this flag exists. */
+function parsePin(argv: string[]): { pin: Pin; rest: string[] } {
+  const idx = argv.indexOf('--pin');
+  if (idx === -1) {
+    return { pin: 'current', rest: argv };
+  }
+  const value = argv[idx + 1];
+  if (!PINS.includes(value as Pin)) {
+    throw new Error(`invalid --pin value: ${value}`);
+  }
+  return { pin: value as Pin, rest: [...argv.slice(0, idx), ...argv.slice(idx + 2)] };
+}
+
+/**
+ * Only the pin being measured is loaded. Importing both copies would leave the other one's module
+ * graph on the heap of every run, including the runs that feed the standing vue pair, which would
+ * shift a memory number that has nothing to do with this comparison.
+ */
+function loadCheckers(pin: Pin): Promise<CheckerModule> {
+  return pin === 'next' ? import('vue-component-meta-next') : import('vue-component-meta');
+}
 
 /**
  * Both checker calls stay inside the timed path on purpose, re-extraction included. The production
@@ -52,8 +80,9 @@ function extractOne(checker: Checker, sfcPath: string): number {
   return meta.props.length + meta.events.length + meta.slots.length + meta.exposed.length;
 }
 
-function createEngine(options: VueHarnessOptions): SeriesEngine {
+async function createEngine(options: VueHarnessOptions, pin: Pin): Promise<SeriesEngine> {
   const scenario = setUpVueScenario(options);
+  const fns = await loadCheckers(pin);
   let checker: Checker | undefined;
   let measuredPath = scenario.targetPaths[0];
 
@@ -61,8 +90,11 @@ function createEngine(options: VueHarnessOptions): SeriesEngine {
     async cold() {
       checker =
         options.scenario === 'flat'
-          ? createCheckerByJson(scenario.project.outDir, { include: ['**/*'] }, CHECKER_OPTIONS)
-          : createChecker(scenario.project.packageConfigPaths[scenario.targetPackage], CHECKER_OPTIONS);
+          ? fns.createCheckerByJson(scenario.project.outDir, { include: ['**/*'] }, CHECKER_OPTIONS)
+          : fns.createChecker(
+              scenario.project.packageConfigPaths[scenario.targetPackage],
+              CHECKER_OPTIONS
+            );
       let members = 0;
       for (const sfcPath of scenario.targetPaths) {
         members += extractOne(checker, sfcPath);
@@ -82,14 +114,15 @@ function createEngine(options: VueHarnessOptions): SeriesEngine {
 }
 
 harnessMain(async () => {
-  const options = parseVueOptions(process.argv.slice(2), 'vue-component-meta');
+  const { pin, rest } = parsePin(process.argv.slice(2));
+  const options = parseVueOptions(rest, pin === 'next' ? 'vue-component-meta-next' : 'vue-component-meta');
   await runSeriesHarness({
-    title: `vue-component-meta harness (${options.scenario})`,
+    title: `vue-component-meta harness (${options.scenario}, pin=${pin})`,
     options,
     banner: vueBanner(options),
     saves: options.saves,
     coldLabel: `${options.componentsPerPackage} components, checker creation included`,
     jsonOut: options.jsonOut,
-    setup: async () => createEngine(options),
+    setup: async () => createEngine(options, pin),
   });
 });

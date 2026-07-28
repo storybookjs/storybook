@@ -53,6 +53,12 @@ export interface ScenarioResult {
   coldMembers?: number;
   /** Members the timed re-extraction documented. Warm ratios need this for the same reason. */
   warmMembers?: number;
+  /**
+   * Of {@link coldMembers}, how many the engine documented under a type name it never resolved.
+   * An engine that prints `Hop19Shape` and one that expands it into its fields report the same
+   * member count off very different work, so equal counts alone do not make a ratio like-for-like.
+   */
+  coldOpaqueTypes?: number;
 }
 
 export type EngineResult =

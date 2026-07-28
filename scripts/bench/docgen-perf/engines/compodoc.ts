@@ -5,6 +5,7 @@ import * as path from 'node:path';
 
 import { outputTail } from '../../docgen-shared/child-output.ts';
 import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
+import { type DocumentationCounts, countDocumentation } from './compodoc-doc.ts';
 import type { AngularScenarioConfig, SuiteProfile } from '../config.ts';
 import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.ts';
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
@@ -31,7 +32,7 @@ function resolveCompodoc(): ResolvedCompodoc | undefined {
   }
 }
 
-interface CompodocRun {
+interface CompodocRun extends DocumentationCounts {
   durMs: number;
   peakRssMb: number;
 }
@@ -79,12 +80,15 @@ function runCompodocOnce(
         reject(new Error(`compodoc exited with status ${status}:\n${outputTail(output, 8)}`));
         return;
       }
-      if (!fs.existsSync(path.join(docsOutDir, 'documentation.json'))) {
+      const documentationJson = path.join(docsOutDir, 'documentation.json');
+      if (!fs.existsSync(documentationJson)) {
         reject(new Error('compodoc run produced no documentation.json'));
         return;
       }
+      // Counted before the next run overwrites the file, which both runs share.
+      const counts = countDocumentation(documentationJson);
       // The polled peak misses spikes shorter than the interval; the recorded value is a floor.
-      resolve({ durMs, peakRssMb: peakRssKb / 1024 });
+      resolve({ durMs, peakRssMb: peakRssKb / 1024, ...counts });
     });
   });
 }
@@ -117,16 +121,14 @@ export async function runCompodocRepetition(
     coldMs: cold.durMs,
     warmMs: warm.durMs,
     peakRssMb: Math.max(cold.peakRssMb, warm.peakRssMb),
+    coldMembers: cold.members,
+    // A second whole-project pass, so this counts the project, not the one file that changed. It is
+    // not comparable with a series engine's warm count, which covers only the re-extracted member.
+    warmMembers: warm.members,
+    coldOpaqueTypes: cold.opaqueTypes,
   };
 }
 
-/**
- * Compodoc as an engine. Unlike the series engines it has no child harness to spawn: the CLI is the
- * measured process, and this class drives it directly.
- *
- * It is also the only engine with state - the resolved CLI and version, looked up once in
- * {@link preflight} and reused for every repetition.
- */
 export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   readonly id: EngineId = 'compodoc';
 
@@ -161,5 +163,17 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
 
   aggregate(samples: OneShotRepetition[], expectedN: number): EngineMetrics {
     return oneShotMetrics(samples, expectedN);
+  }
+
+  coldMembers(sample: OneShotRepetition): number | undefined {
+    return sample.coldMembers;
+  }
+
+  warmMembers(sample: OneShotRepetition): number | undefined {
+    return sample.warmMembers;
+  }
+
+  coldOpaqueTypes(sample: OneShotRepetition): number | undefined {
+    return sample.coldOpaqueTypes;
   }
 }

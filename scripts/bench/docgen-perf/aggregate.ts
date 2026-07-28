@@ -61,6 +61,10 @@ export interface OneShotRepetition {
   coldMs: number;
   warmMs: number;
   peakRssMb: number;
+  coldMembers?: number;
+  warmMembers?: number;
+  /** Of the cold pass's members, how many carry a type the engine never resolved. */
+  coldOpaqueTypes?: number;
 }
 
 /**

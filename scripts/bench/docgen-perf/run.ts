@@ -71,6 +71,7 @@ function assembleScenario(
     metrics,
     coldMembers: engine.coldMembers(designated),
     warmMembers: engine.warmMembers(designated),
+    coldOpaqueTypes: engine.coldOpaqueTypes(designated),
   };
 }
 

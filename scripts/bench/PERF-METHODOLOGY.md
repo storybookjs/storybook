@@ -99,6 +99,18 @@ Every run so far has the legacy engine finishing its cold pass an order of magni
 The engines are not doing the same work, so the Vue ratio measures resolution depth as much as speed.
 Both engines therefore report their documented-member counts, and the suite prints those counts beside every ratio - the warm one as much as the cold one - and marks the pair not like-for-like whenever they disagree.
 A ratio marked not like-for-like must not become a budget.
+
+Angular needs a second signal, because equal member counts there would not mean equal work.
+Compodoc never resolves a named type: it records the name written at the property, so `@Input() kind: ButtonKind` is stored as `ButtonKind` and an `@Output()` is stored as `EventEmitter` with its payload dropped, while the same union written inline is stored in full.
+Chain a type through twenty files and it still documents every member, at the same speed, having looked through none of them - so a member count alone would read as identical to an engine that expanded all of them.
+Compodoc therefore also reports how many of its documented members carry a type it never resolved, and a future Angular pair must compare that alongside the counts before calling a ratio like-for-like.
+Its warm member count is a second whole-project total rather than the one member re-extracted, so it is not comparable with a series engine's warm count either.
+
+Signals are documented, not benchmarked.
+Compodoc reads `input()`, `output()` and `model()` by matching the initializer's source text, not by resolving the import or the type, and it documents them at the same speed and count as the decorator form - so there is no timing to measure.
+What the textual match costs is fidelity: an aliased `import { input as ngInput }` stops being recognised as an input at all, and a non-literal default without an explicit generic loses its type.
+Those belong in the docgen-harness fixtures that pin compodoc's behaviour, not in a bench scenario that would report two rows indistinguishable from the baseline.
+
 The baseline work records the figures; quoting any here would pin numbers taken at one profile on one machine.
 Engines without a second implementation in the same job get their timing reference picked when their baselines are recorded; until then their timing budgets stay placeholders.
 Memory budgets stay absolute megabytes with generous headroom: budgets sit well above observed values so the gate is not flaky, while still failing hard on a real regression.

@@ -59,6 +59,15 @@ export abstract class BenchEngine<Sample = unknown> {
   warmMembers(_sample: Sample): number | undefined {
     return undefined;
   }
+
+  /**
+   * Of the cold pass's members, how many the engine documented under a type name it never resolved.
+   * Two engines can agree on {@link coldMembers} and still have done entirely different work, so a
+   * member count alone does not establish like-for-like; this is what separates them.
+   */
+  coldOpaqueTypes(_sample: Sample): number | undefined {
+    return undefined;
+  }
 }
 
 export interface SeriesChildConfig {

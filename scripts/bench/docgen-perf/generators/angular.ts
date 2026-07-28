@@ -12,6 +12,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { Args } from '../../docgen-shared/args.ts';
+
 export interface AngularGenerateOptions {
   outDir: string;
   components: number;
@@ -117,14 +119,11 @@ export function generateAngularProject(options: AngularGenerateOptions): Generat
 }
 
 function parseArgs(argv: string[]): AngularGenerateOptions {
-  const get = (flag: string, fallback: string) => {
-    const idx = argv.indexOf(flag);
-    return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : fallback;
-  };
+  const args = new Args(argv);
   return {
-    outDir: get('--out', '../storybook-sandboxes/docgen-perf-angular'),
-    components: Number(get('--components', '100')),
-    props: Number(get('--props', '8')),
+    outDir: args.string('out', '../storybook-sandboxes/docgen-perf-angular'),
+    components: args.count('components', 100),
+    props: args.count('props', 8),
   };
 }
 

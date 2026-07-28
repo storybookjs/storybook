@@ -62,7 +62,7 @@ Two harnesses implement this.
   That run is the repetition whose cold sample is the median, never the first: repetition 1 pays for a cold module graph and a cold page cache, and measures several times slower than the rest.
   The harness pins one N for all engines and records it with the results; numbers taken at different N are not comparable.
   An engine that fails part-way through its repetitions is reported as failed, never as measured at an N it did not reach.
-  `scripts/bench/docgen-perf/run.ts` implements this; the memory gate still runs each configuration exactly once.
+  `scripts/bench/docgen-perf/aggregate.ts` implements this; the memory gate still runs each configuration exactly once.
 - **Series statistics for leak metrics.**
   Retained slope is a least-squares fit over the save series; retained growth is the delta between the final retained sample and the pre-run baseline.
   Both read one run's series instead of repeated runs.
@@ -95,9 +95,11 @@ Run `react-legacy.ts --scope all` for the production-shaped number; the equal-wo
 
 Vue's pair carries a different caveat, and a sharper one.
 `vue-docgen-api` does not resolve tsconfig `paths` aliases, and the Vite plugin calls `parse(id)` without an alias map, so on the generated projects it documents a fraction of what `vue-component-meta` documents.
-Measured on the flat scenario, the legacy engine finished a cold pass in 23ms against 425ms, but recorded 6 documented members where the new engine recorded the full surface, and 0 on the save it was timed on.
+Every run so far has the legacy engine finishing its cold pass an order of magnitude faster while documenting an order of magnitude fewer members, and documenting nothing at all on the save it was timed on.
 The engines are not doing the same work, so the Vue ratio measures resolution depth as much as speed.
-The suite prints both engines' documented-member counts next to the ratio for that reason, and the ratio must not become a budget while the counts disagree.
+Both engines therefore report their documented-member counts, and the suite prints those counts beside every ratio - the warm one as much as the cold one - and marks the pair not like-for-like whenever they disagree.
+A ratio marked not like-for-like must not become a budget.
+The baseline work records the figures; quoting any here would pin numbers taken at one profile on one machine.
 Engines without a second implementation in the same job get their timing reference picked when their baselines are recorded; until then their timing budgets stay placeholders.
 Memory budgets stay absolute megabytes with generous headroom: budgets sit well above observed values so the gate is not flaky, while still failing hard on a real regression.
 Every engine must also carry its own negative control - a configuration that must fail, proving the gate can catch the regression class it exists for.
@@ -137,7 +139,7 @@ All three build on existing tooling and add no new dependencies:
 ## Budgets table skeleton
 
 The baseline work fills in the values; until then every cell is a placeholder.
-The exception is react-osa's memory row, which the docgen memory gate already enforces from `scripts/bench/docgen-perf/budgets.ts`.
+The exception is react-osa's memory row, which the docgen memory gate already enforces from `scripts/bench/docgen-shared/budgets.ts`.
 
 | Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Negative control | Tier       |
 | ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ---------------- | ---------- |

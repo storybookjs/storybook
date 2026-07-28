@@ -36,29 +36,25 @@ import * as path from 'node:path';
 
 import ts from 'typescript';
 
-import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
-import { leastSquaresSlope, summarizeSeries } from '../docgen-perf/stats.ts';
+import { Args } from '../docgen-shared/args.ts';
+import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
+import {
+  type StoryRefLike,
+  buildStoryRefs,
+  loadRendererModule,
+} from '../docgen-shared/renderer-module.ts';
+import { MB, gcAvailable } from '../docgen-shared/sampling.ts';
+import {
+  type SeriesEngine,
+  harnessMain,
+  printSeriesSummary,
+  runSeries,
+} from '../docgen-shared/series.ts';
+import { leastSquaresSlope } from '../docgen-shared/stats.ts';
 import { componentSource, generateProject } from './generate-project.ts';
 
-/**
- * Minimal structural view of the entry shape consumed by `ComponentMetaManager.batchExtract`. Kept
- * local so the `scripts` typecheck does not descend into `code/renderers` internals; the real types
- * live in `code/renderers/react/src/componentManifest`.
- */
-interface StoryRef {
-  storyPath: string;
-  component: {
-    componentName: string;
-    importName: string;
-    localImportName: string;
-    importId: string;
-    isPackage: boolean;
-    path: string;
-  };
-}
-
 interface ComponentMetaManagerLike {
-  batchExtract(entries: StoryRef[]): void;
+  batchExtract(entries: StoryRefLike[]): void;
   onFilesChanged(changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>): void;
   dispose(): void;
 }
@@ -68,35 +64,26 @@ type ComponentMetaManagerCtor = new (
   recycleHeapPressureRatio?: number
 ) => ComponentMetaManagerLike;
 
+const MODES = ['refresh', 'live'] as const;
 /**
- * Load the real `ComponentMetaManager` at runtime. The specifier is built with `new URL` so the
- * static `scripts` typecheck does not pull `code/renderers` source into its program.
+ * Which entries to re-extract per save.
+ *   all     - re-extract every component each save (the docgen service refreshing all extracted
+ *             components on an empty change hint).
+ *   changed - re-extract only the component whose file changed.
  */
-async function loadComponentMetaManager(): Promise<ComponentMetaManagerCtor> {
-  const url = new URL(
-    '../../../code/renderers/react/src/componentManifest/componentMeta/ComponentMetaManager.ts',
-    import.meta.url
-  ).href;
-  const mod = (await import(url)) as { ComponentMetaManager: ComponentMetaManagerCtor };
-  return mod.ComponentMetaManager;
-}
+const SCOPES = ['all', 'changed'] as const;
+const RECYCLE = ['on', 'off'] as const;
 
 interface HarnessOptions {
   components: number;
   variants: number;
   props: number;
   saves: number;
-  mode: 'refresh' | 'live';
+  mode: (typeof MODES)[number];
   heavyTypes: boolean;
   heavyFactor: number;
   base64Kb: number;
-  /**
-   * Which entries to re-extract per save.
-   *   all     – re-extract every component each save (the docgen service refreshing all extracted
-   *             components on an empty change hint).
-   *   changed – re-extract only the component whose file changed.
-   */
-  scope: 'all' | 'changed';
+  scope: (typeof SCOPES)[number];
   forceGc: boolean;
   outDir: string;
   reuse: boolean;
@@ -111,81 +98,64 @@ interface HarnessOptions {
   recycleHeapPressureRatio?: number;
 }
 
-interface Sample {
-  save: number;
-  durMs: number;
-  rssMb: number;
-  heapUsedMb: number;
-  retainedHeapMb?: number;
-}
-
-const MB = 1024 * 1024;
-
-function parseArgs(argv: string[]): HarnessOptions {
-  const get = (flag: string, fallback: string) => {
-    const idx = argv.indexOf(flag);
-    return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : fallback;
-  };
-  const mode = get('--mode', 'refresh');
-  if (mode !== 'refresh' && mode !== 'live') {
-    throw new Error(`--mode must be "refresh" or "live", got "${mode}"`);
-  }
-  const scope = get('--scope', 'all');
-  if (scope !== 'all' && scope !== 'changed') {
-    throw new Error(`--scope must be "all" or "changed", got "${scope}"`);
-  }
-  const recycle = get('--recycle', 'on');
-  if (recycle !== 'on' && recycle !== 'off') {
-    throw new Error(`--recycle must be "on" or "off", got "${recycle}"`);
-  }
+function parseOptions(argv: string[]): HarnessOptions {
+  const args = new Args(argv);
   return {
-    components: Number(get('--components', '600')),
-    variants: Number(get('--variants', '4')),
-    props: Number(get('--props', '8')),
-    saves: Number(get('--saves', '25')),
-    mode,
-    scope: scope as 'all' | 'changed',
-    recycleHeapPressureRatio: recycle === 'off' ? Number.POSITIVE_INFINITY : undefined,
-    heavyTypes: argv.includes('--heavy'),
-    heavyFactor: Number(get('--heavy-factor', '1')),
-    base64Kb: Number(get('--base64-kb', '0')),
-    forceGc: !argv.includes('--no-force-gc'),
-    outDir: get('--out', path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
-    reuse: argv.includes('--reuse'),
-    jsonOut: argv.indexOf('--json') >= 0 ? get('--json', '') : undefined,
-    maxRetainedGrowthMb: Number(get('--max-retained-growth', '400')),
+    components: args.count('components', 600),
+    variants: args.count('variants', 4),
+    props: args.count('props', 8),
+    saves: args.count('saves', 25),
+    mode: args.choice('mode', MODES, 'refresh'),
+    scope: args.choice('scope', SCOPES, 'all'),
+    recycleHeapPressureRatio:
+      args.choice('recycle', RECYCLE, 'on') === 'off' ? Number.POSITIVE_INFINITY : undefined,
+    heavyTypes: args.flag('heavy'),
+    heavyFactor: args.count('heavy-factor', 1),
+    base64Kb: args.count('base64-kb', 0),
+    forceGc: !args.flag('no-force-gc'),
+    outDir: args.string('out', path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
+    reuse: args.flag('reuse'),
+    jsonOut: args.optional('json'),
+    maxRetainedGrowthMb: args.count('max-retained-growth', 400),
   };
 }
 
-function gc(): void {
-  if (typeof global.gc === 'function') {
-    global.gc();
-    global.gc();
-  }
+/**
+ * Load the real `ComponentMetaManager` at runtime. The specifier is built with `new URL` so the
+ * static `scripts` typecheck does not pull `code/renderers` source into its program.
+ */
+async function loadComponentMetaManager(): Promise<ComponentMetaManagerCtor> {
+  const mod = await loadRendererModule<{ ComponentMetaManager: ComponentMetaManagerCtor }>(
+    'componentMeta/ComponentMetaManager.ts'
+  );
+  return mod.ComponentMetaManager;
 }
 
-function sampleMemory(forceGc: boolean): { rssMb: number; heapUsedMb: number; retainedHeapMb?: number } {
-  const pre = process.memoryUsage();
-  let retainedHeapMb: number | undefined;
-  if (forceGc) {
-    gc();
-    retainedHeapMb = process.memoryUsage().heapUsed / MB;
+function resolveProject(options: HarnessOptions): ReturnType<typeof generateProject> {
+  const genStart = Date.now();
+  if (options.reuse && fs.existsSync(path.join(path.resolve(options.outDir), 'tsconfig.json'))) {
+    const outDir = path.resolve(options.outDir);
+    const componentPaths: string[] = [];
+    const storyPaths: string[] = [];
+    for (let i = 0; i < options.components; i++) {
+      componentPaths.push(path.join(outDir, 'src', `Comp${i}`, `Comp${i}.tsx`));
+      storyPaths.push(path.join(outDir, 'src', `Comp${i}`, `Comp${i}.stories.tsx`));
+    }
+    console.log(`  reusing generated project at ${outDir}`);
+    return { outDir, configPath: path.join(outDir, 'tsconfig.json'), componentPaths, storyPaths };
   }
-  return { rssMb: pre.rss / MB, heapUsedMb: pre.heapUsed / MB, retainedHeapMb };
-}
-
-function buildEntries(componentPaths: string[], storyPaths: string[]): StoryRef[] {
-  return componentPaths.map((componentPath, i) => ({
-    storyPath: storyPaths[i],
-    component: {
-      componentName: `Comp${i}`,
-      importName: `Comp${i}`,
-      localImportName: `Comp${i}`,
-      importId: `./Comp${i}`,
-      isPackage: false,
-      path: componentPath,
-    },
-  }));
+  const project = generateProject({
+    outDir: options.outDir,
+    components: options.components,
+    variants: options.variants,
+    props: options.props,
+    heavyTypes: options.heavyTypes,
+    heavyFactor: options.heavyFactor,
+    base64Kb: options.base64Kb,
+    withNodeModules: true,
+  });
+  console.log(`  generated project in ${Date.now() - genStart}ms at ${project.outDir}`);
+  return project;
 }
 
 /**
@@ -202,7 +172,7 @@ function buildEntries(componentPaths: string[], storyPaths: string[]): StoryRef[
  */
 function runLiveMode(
   manager: ComponentMetaManagerLike,
-  entries: StoryRef[],
+  entries: StoryRefLike[],
   options: HarnessOptions
 ): void {
   const recycleEnabled = options.recycleHeapPressureRatio === undefined;
@@ -242,144 +212,103 @@ function runLiveMode(
   }
 }
 
-async function main() {
-  const options = parseArgs(process.argv.slice(2));
-  const gcAvailable = typeof global.gc === 'function';
+/**
+ * Refresh-path mode as a save series. The cold pass is the *identical* operation a `scope=all`
+ * refresh save performs (extractPropsFromStories over every entry), so an OOM there is the same OOM
+ * every refresh-all save would hit; it simply lands on the first pass when the full-extraction
+ * working set already exceeds the heap cap.
+ */
+function refreshEngine(
+  manager: ComponentMetaManagerLike,
+  entries: StoryRefLike[],
+  project: ReturnType<typeof generateProject>,
+  options: HarnessOptions
+): SeriesEngine {
+  // Track how many extra props each component currently has, so each save grows the type.
+  const extraByComponent = new Array<number>(options.components).fill(options.props);
+  const changedIndex = (save: number) => (save - 1) % options.components;
+
+  return {
+    async cold() {
+      manager.batchExtract(entries);
+      return undefined;
+    },
+    async applySave(save) {
+      const i = changedIndex(save);
+      const componentPath = project.componentPaths[i];
+      // Mutate the component's props interface on disk so the type genuinely changes.
+      extraByComponent[i] += 1;
+      fs.writeFileSync(
+        componentPath,
+        componentSource(i, extraByComponent[i], {
+          heavyTypes: options.heavyTypes,
+          heavyFactor: options.heavyFactor,
+          base64Kb: options.base64Kb,
+        })
+      );
+      // Bump project versions so the next extraction re-reads the mutated file (matches the dev
+      // server's file-watcher → onFilesChanged flow); without this the program serves stale snapshots.
+      manager.onFilesChanged([{ filePath: componentPath, type: 'changed' }]);
+    },
+    async reextract(save) {
+      manager.batchExtract(options.scope === 'changed' ? [entries[changedIndex(save)]] : entries);
+      return undefined;
+    },
+    dispose: () => manager.dispose(),
+  };
+}
+
+harnessMain(async () => {
+  const options = parseOptions(process.argv.slice(2));
 
   console.log('docgen-memory harness');
   console.log(
     `  components=${options.components} variants=${options.variants} props=${options.props} ` +
-      `saves=${options.saves} mode=${options.mode} scope=${options.scope} forceGc=${options.forceGc && gcAvailable}`
+      `saves=${options.saves} mode=${options.mode} scope=${options.scope} ` +
+      `forceGc=${options.forceGc && gcAvailable()}`
   );
-  if (options.forceGc && !gcAvailable) {
+  if (options.forceGc && !gcAvailable()) {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
   }
 
-  const genStart = Date.now();
-  let project: ReturnType<typeof generateProject>;
-  if (options.reuse && fs.existsSync(path.join(path.resolve(options.outDir), 'tsconfig.json'))) {
-    const outDir = path.resolve(options.outDir);
-    const componentPaths: string[] = [];
-    const storyPaths: string[] = [];
-    for (let i = 0; i < options.components; i++) {
-      componentPaths.push(path.join(outDir, 'src', `Comp${i}`, `Comp${i}.tsx`));
-      storyPaths.push(path.join(outDir, 'src', `Comp${i}`, `Comp${i}.stories.tsx`));
-    }
-    project = { outDir, configPath: path.join(outDir, 'tsconfig.json'), componentPaths, storyPaths };
-    console.log(`  reusing generated project at ${outDir}`);
-  } else {
-    project = generateProject({
-      outDir: options.outDir,
-      components: options.components,
-      variants: options.variants,
-      props: options.props,
-      heavyTypes: options.heavyTypes,
-      heavyFactor: options.heavyFactor,
-      base64Kb: options.base64Kb,
-      withNodeModules: true,
-    });
-    console.log(`  generated project in ${Date.now() - genStart}ms at ${project.outDir}`);
-  }
-
+  const project = resolveProject(options);
   const ComponentMetaManager = await loadComponentMetaManager();
   const manager = new ComponentMetaManager(ts, options.recycleHeapPressureRatio);
-  const entries = buildEntries(project.componentPaths, project.storyPaths);
+  const entries = buildStoryRefs(project.componentPaths, project.storyPaths);
 
   if (options.mode === 'live') {
     runLiveMode(manager, entries, options);
     return;
   }
 
-  // Initial extraction — builds the full TS program once (the cold path). This is the *identical*
-  // operation a `scope=all` refresh save performs (extractPropsFromStories over every entry), so an
-  // OOM here is the same OOM every refresh-all save would hit; it simply lands on the first pass when
-  // the full-extraction working set already exceeds the heap cap.
-  const initialStart = Date.now();
-  console.log(`  full extraction over ${entries.length} components (cold pass == refresh-all save)…`);
-  manager.batchExtract(entries);
-  const coldMs = Date.now() - initialStart;
-  console.log(`  initial batchExtract: ${coldMs}ms`);
+  const series = await runSeries(refreshEngine(manager, entries, project, options), {
+    saves: options.saves,
+    coldLabel: `${entries.length} components`,
+    forceGc: options.forceGc,
+  });
 
-  const baseline = sampleMemory(options.forceGc && gcAvailable);
-  console.log(
-    `  baseline: rss=${baseline.rssMb.toFixed(0)}MB heapUsed=${baseline.heapUsedMb.toFixed(0)}MB` +
-      (baseline.retainedHeapMb !== undefined
-        ? ` retained=${baseline.retainedHeapMb.toFixed(0)}MB`
-        : '')
-  );
-
-  const samples: Sample[] = [];
-  // Track how many extra props each component currently has, so each save grows the type.
-  const extraByComponent = new Array(options.components).fill(options.props);
-
-  for (let save = 1; save <= options.saves; save++) {
-    const i = (save - 1) % options.components;
-    const componentPath = project.componentPaths[i];
-
-    // Mutate the component's props interface on disk so the type genuinely changes.
-    extraByComponent[i] += 1;
-    fs.writeFileSync(
-      componentPath,
-      componentSource(i, extraByComponent[i], {
-        heavyTypes: options.heavyTypes,
-        heavyFactor: options.heavyFactor,
-        base64Kb: options.base64Kb,
-      })
-    );
-    // Bump project versions so the next extraction re-reads the mutated file (matches the dev
-    // server's file-watcher → onFilesChanged flow); without this the program serves stale snapshots.
-    manager.onFilesChanged([{ filePath: componentPath, type: 'changed' }]);
-
-    const saveStart = Date.now();
-    const toExtract = options.scope === 'changed' ? [entries[i]] : entries;
-    manager.batchExtract(toExtract);
-    const durMs = Date.now() - saveStart;
-
-    const mem = sampleMemory(options.forceGc && gcAvailable);
-    samples.push({ save, durMs, ...mem });
-    console.log(
-      `  save ${String(save).padStart(3)}: ${String(durMs).padStart(5)}ms  ` +
-        `rss=${mem.rssMb.toFixed(0).padStart(5)}MB  heapUsed=${mem.heapUsedMb.toFixed(0).padStart(5)}MB` +
-        (mem.retainedHeapMb !== undefined
-          ? `  retained=${mem.retainedHeapMb.toFixed(0).padStart(5)}MB`
-          : '')
-    );
-  }
-
-  manager.dispose();
-
-  const rssValues = samples.map((s) => s.rssMb);
-  const peakRss = Math.max(baseline.rssMb, ...rssValues);
-  const finalRss = rssValues.at(-1) ?? baseline.rssMb;
+  const rssValues = series.samples.map((s) => s.rssMb);
+  const peakRss = Math.max(series.baseline.rssMb, ...rssValues);
+  const finalRss = rssValues.at(-1) ?? series.baseline.rssMb;
   const rssSlope = leastSquaresSlope(rssValues);
+  const { retainedGrowth } = series;
 
-  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
-
-  console.log('\nsummary');
+  printSeriesSummary(series, options.saves);
   console.log(`  peak rss:            ${peakRss.toFixed(0)}MB`);
-  if (avgTransient !== undefined) {
-    console.log(`  avg transient/save:  ${avgTransient.toFixed(0)}MB (pre-GC heapUsed − post-GC heapUsed)`);
-  }
   console.log(`  final rss:           ${finalRss.toFixed(0)}MB`);
   console.log(`  rss slope:           ${rssSlope.toFixed(1)}MB/save`);
-  if (retainedSlope !== undefined) {
-    console.log(`  retained slope:      ${retainedSlope.toFixed(2)}MB/save (post-GC heapUsed)`);
-    console.log(`  retained growth:     ${retainedGrowth!.toFixed(0)}MB over ${options.saves} saves`);
+  if (retainedGrowth !== undefined) {
     console.log(
-      retainedGrowth! > 5
+      retainedGrowth > 5
         ? '  → classification:    RETAINED leak (memory held between saves)'
-        : '  → classification:    TRANSIENT pressure (post-GC heap flat; OOM is GC-can\'t-keep-up)'
+        : "  → classification:    TRANSIENT pressure (post-GC heap flat; OOM is GC-can't-keep-up)"
     );
   }
 
   if (options.jsonOut) {
     fs.writeFileSync(
       options.jsonOut,
-      JSON.stringify(
-        { options, coldMs, baseline, samples, peakRss, finalRss, rssSlope, retainedSlope, retainedGrowth, avgTransient },
-        null,
-        2
-      )
+      JSON.stringify({ options, ...series, peakRss, finalRss, rssSlope }, null, 2)
     );
     console.log(`  wrote ${options.jsonOut}`);
   }
@@ -390,9 +319,4 @@ async function main() {
     );
     process.exitCode = 1;
   }
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
 });

@@ -1,44 +1,10 @@
 /**
- * Shared shapes for the per-engine docgen performance suite. The measurement contract behind these
+ * Result shapes for the per-engine docgen performance suite. The measurement contract behind these
  * shapes is scripts/bench/PERF-METHODOLOGY.md.
  */
+import type { EngineId } from '../docgen-shared/engine-ids.ts';
 
-export type EngineId =
-  | 'react-legacy'
-  | 'react-legacy-rdt'
-  | 'react-osa'
-  | 'vue-docgen-api'
-  | 'vue-component-meta'
-  | 'compodoc';
-
-export interface MemorySample {
-  rssMb: number;
-  heapUsedMb: number;
-  retainedHeapMb?: number;
-}
-
-export interface SaveSample extends MemorySample {
-  save: number;
-  durMs: number;
-}
-
-/**
- * Subset of a series-harness child's `--json` output that the orchestrator consumes. The
- * docgen-memory harness writes a superset of this; the new engine children write exactly this plus
- * their own options echo.
- */
-export interface SeriesHarnessResult {
-  coldMs: number;
-  baseline: MemorySample;
-  samples: SaveSample[];
-  retainedSlope?: number;
-  retainedGrowth?: number;
-  /**
-   * Documented members the cold pass produced. Two engines over the same project can differ by an
-   * order of magnitude here, and a timing ratio between them means nothing without it.
-   */
-  coldMembers?: number;
-}
+export type { EngineId };
 
 /** A latency metric: median of repeated samples (fresh process each, for cold/scan). */
 export interface LatencyMetric {
@@ -79,12 +45,41 @@ export interface EngineMetrics {
 export interface ScenarioResult {
   params: Record<string, number | string | boolean>;
   metrics: EngineMetrics;
+  /**
+   * Members the cold pass documented, when the engine reports it. Two engines over the same project
+   * can differ by an order of magnitude here, and a timing ratio between them means nothing without
+   * it.
+   */
+  coldMembers?: number;
+  /** Members the timed re-extraction documented. Warm ratios need this for the same reason. */
+  warmMembers?: number;
 }
 
 export type EngineResult =
   | { status: 'measured'; scenarios: Record<string, ScenarioResult> }
   | { status: 'skipped'; reason: string }
   | { status: 'failed'; reason: string };
+
+/**
+ * One control pair's comparison for one scenario: the legacy engine's median over the new engine's,
+ * both measured in the same invocation.
+ *
+ * `likeForLike` is false when the two engines documented different numbers of members, which means
+ * they did not do the same work and the ratio measures resolution depth as much as speed. A ratio
+ * whose `likeForLike` is false must not become a budget.
+ */
+export interface RatioEntry {
+  cold?: number;
+  warm?: number;
+  legacyColdMembers?: number;
+  nextColdMembers?: number;
+  legacyWarmMembers?: number;
+  nextWarmMembers?: number;
+  likeForLike?: boolean;
+}
+
+/** Keyed by control-pair name, then by scenario name. */
+export type Ratios = Record<string, Record<string, RatioEntry>>;
 
 export interface SuiteResults {
   generatedAt: string;
@@ -95,19 +90,8 @@ export interface SuiteResults {
   comparable: boolean;
   /** Sampling interval for the compodoc child's externally-polled peak RSS. */
   rssPollIntervalMs: number;
-  /** Resolved compodoc version, when that engine ran. Its cost moves across versions. */
-  compodocVersion?: string;
+  /** Resolved versions of externally-installed engines, when they ran. */
+  engineVersions: Partial<Record<EngineId, string>>;
   engines: Partial<Record<EngineId, EngineResult>>;
-  /**
-   * Each framework's legacy-engine median divided by its new-engine median, both measured in this
-   * same invocation. React pairs react-docgen against react-osa; Vue pairs vue-docgen-api (still
-   * the default plugin) against vue-component-meta. These are the calibration references budgets
-   * are derived from.
-   */
-  ratios: {
-    coldLegacyVsOsa?: number;
-    warmLegacyVsOsa?: number;
-    coldVueLegacyVsMeta?: Record<string, number>;
-    warmVueLegacyVsMeta?: Record<string, number>;
-  };
+  ratios: Ratios;
 }

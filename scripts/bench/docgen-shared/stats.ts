@@ -1,5 +1,5 @@
-/** Statistics helpers for the per-engine docgen performance suite. */
-import type { MemorySample, SaveSample } from './types.ts';
+/** Statistics helpers shared by the docgen bench harnesses. */
+import type { MemorySample, SaveSample } from './samples.ts';
 
 /** Median of `values`. Throws on an empty input so a missing series fails loudly. */
 export function median(values: number[]): number {

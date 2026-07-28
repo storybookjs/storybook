@@ -26,6 +26,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { Args } from '../../docgen-shared/args.ts';
+
 const require = createRequire(import.meta.url);
 
 export interface VueGenerateOptions {
@@ -267,17 +269,14 @@ export function generateVueProject(options: VueGenerateOptions): GeneratedVuePro
 }
 
 function parseArgs(argv: string[]): VueGenerateOptions {
-  const get = (flag: string, fallback: string) => {
-    const idx = argv.indexOf(flag);
-    return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : fallback;
-  };
+  const args = new Args(argv);
   return {
-    outDir: get('--out', '../storybook-sandboxes/docgen-perf-vue'),
-    packages: Number(get('--packages', '4')),
-    componentsPerPackage: Number(get('--components-per-package', '10')),
-    chainDepth: Number(get('--chain-depth', '3')),
-    fanOut: Number(get('--fan-out', '4')),
-    heavyLib: argv.includes('--heavy-lib'),
+    outDir: args.string('out', '../storybook-sandboxes/docgen-perf-vue'),
+    packages: args.count('packages', 4),
+    componentsPerPackage: args.count('components-per-package', 10),
+    chainDepth: args.count('chain-depth', 3),
+    fanOut: args.count('fan-out', 4),
+    heavyLib: args.flag('heavy-lib'),
   };
 }
 

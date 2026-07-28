@@ -1,11 +1,9 @@
 /**
  * Series harness for the legacy React docgen engines: `react-docgen` (the budgeted legacy control)
- * and `react-docgen-typescript` (measurable, no budget row). Same shape as the docgen-memory
- * harness: generate a project, one timed cold pass, then per-save touch + invalidate + re-extract
- * with memory sampling around forced GC.
+ * and `react-docgen-typescript` (measurable, no budget row).
  *
  * Both engines cache per file for the life of the process and expose only global invalidation, so
- * every simulated save calls the global invalidation first - skipping it would measure a cache hit.
+ * every simulated save invalidates before re-extracting - skipping it would measure a cache hit.
  * The react-docgen-typescript parser additionally keys its TS program off `process.cwd()`, so this
  * harness chdirs into the generated project before the first parse.
  *
@@ -19,120 +17,59 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { SANDBOX_DIRECTORY } from '../paths.ts';
 import { componentSource, generateProject } from '../../docgen-memory/generate-project.ts';
-import { gcAvailable, sampleMemory } from '../sampling.ts';
-import { summarizeSeries } from '../stats.ts';
-import type { SaveSample } from '../types.ts';
+import { Args } from '../../docgen-shared/args.ts';
+import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
+import {
+  type ReactDocgenModule,
+  type ReactDocgenTypescriptModule,
+  type UtilsModule,
+  componentRef,
+  loadRendererModule,
+} from '../../docgen-shared/renderer-module.ts';
+import {
+  type SeriesEngine,
+  harnessMain,
+  runSeriesHarness,
+} from '../../docgen-shared/series.ts';
 
+const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
 /**
- * Minimal structural views of the legacy engine modules, kept local so the `scripts` typecheck does
- * not descend into `code/renderers` internals; the real types live in
- * `code/renderers/react/src/componentManifest`.
+ * Which components to re-extract per save.
+ *   all     - re-extract every component, the shape `generator.ts` actually runs.
+ *   changed - re-extract only the component whose file changed.
  */
-interface ComponentRefLike {
-  componentName: string;
-  importName: string;
-  localImportName: string;
-  importId: string;
-  isPackage: boolean;
-  path: string;
-}
-
-interface ReactDocgenModule {
-  getReactDocgen(
-    path: string,
-    component: ComponentRefLike
-  ): { type: 'success' } | { type: 'error'; error: { name: string; message: string } };
-}
-
-interface UtilsModule {
-  invalidateCache(): void;
-}
-
-interface ReactDocgenTypescriptModule {
-  parseWithReactDocgenTypescript(filePath: string): Promise<Array<{ exportName?: string }>>;
-  invalidateParser(): void;
-}
-
-/**
- * Load a `code/renderers/react` module at runtime. The specifier is built with `new URL` so the
- * static `scripts` typecheck does not pull `code/renderers` source into its program.
- */
-async function loadRendererModule<T>(relativePath: string): Promise<T> {
-  const url = new URL(
-    `../../../../code/renderers/react/src/componentManifest/${relativePath}`,
-    import.meta.url
-  ).href;
-  return (await import(url)) as T;
-}
-
-type Parser = 'react-docgen' | 'react-docgen-typescript';
+const SCOPES = ['all', 'changed'] as const;
 
 interface HarnessOptions {
-  parser: Parser;
+  parser: (typeof PARSERS)[number];
   components: number;
   variants: number;
   props: number;
   saves: number;
-  /**
-   * Which components to re-extract per save. Mirrors the docgen-memory harness's flag.
-   *   all     – re-extract every component, the shape `generator.ts` actually runs.
-   *   changed – re-extract only the component whose file changed.
-   */
-  scope: 'all' | 'changed';
+  scope: (typeof SCOPES)[number];
   outDir: string;
   jsonOut?: string;
 }
 
-function parseArgs(argv: string[]): HarnessOptions {
-  const get = (flag: string, fallback: string) => {
-    const idx = argv.indexOf(flag);
-    return idx >= 0 && argv[idx + 1] ? argv[idx + 1] : fallback;
-  };
-  const parser = get('--parser', 'react-docgen');
-  if (parser !== 'react-docgen' && parser !== 'react-docgen-typescript') {
-    throw new Error(`--parser must be "react-docgen" or "react-docgen-typescript", got "${parser}"`);
-  }
-  const scope = get('--scope', 'changed');
-  if (scope !== 'all' && scope !== 'changed') {
-    throw new Error(`--scope must be "all" or "changed", got "${scope}"`);
-  }
+function parseOptions(argv: string[]): HarnessOptions {
+  const args = new Args(argv);
   return {
-    parser,
-    components: Number(get('--components', '300')),
-    variants: Number(get('--variants', '4')),
-    props: Number(get('--props', '10')),
-    saves: Number(get('--saves', '20')),
-    scope,
-    outDir: get('--out', path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')),
-    jsonOut: argv.indexOf('--json') >= 0 ? get('--json', '') : undefined,
+    parser: args.choice('parser', PARSERS, 'react-docgen'),
+    components: args.count('components', 300),
+    variants: args.count('variants', 4),
+    props: args.count('props', 10),
+    saves: args.count('saves', 20),
+    scope: args.choice('scope', SCOPES, 'changed'),
+    outDir: args.string(
+      'out',
+      path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')
+    ),
+    jsonOut: args.optional('json'),
   };
 }
 
-function componentRef(i: number, componentPath: string): ComponentRefLike {
-  return {
-    componentName: `Comp${i}`,
-    importName: `Comp${i}`,
-    localImportName: `Comp${i}`,
-    importId: `./Comp${i}`,
-    isPackage: false,
-    path: componentPath,
-  };
-}
-
-async function main() {
-  const options = parseArgs(process.argv.slice(2));
-
-  console.log(`react-legacy harness (${options.parser})`);
-  console.log(
-    `  components=${options.components} variants=${options.variants} props=${options.props} ` +
-      `saves=${options.saves} scope=${options.scope}`
-  );
-  if (!gcAvailable()) {
-    console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
-  }
-
+async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
   const genStart = Date.now();
   const project = generateProject({
     outDir: options.outDir,
@@ -148,15 +85,18 @@ async function main() {
 
   const { invalidateCache } = await loadRendererModule<UtilsModule>('utils.ts');
 
-  let extractOne: (i: number) => Promise<void> | void;
+  let extractOne: (i: number) => Promise<void>;
   let invalidate: () => void;
 
   if (options.parser === 'react-docgen') {
     const { getReactDocgen } = await loadRendererModule<ReactDocgenModule>('reactDocgen.ts');
-    extractOne = (i) => {
-      const result = getReactDocgen(project.componentPaths[i], componentRef(i, project.componentPaths[i]));
+    extractOne = async (i) => {
+      const componentPath = project.componentPaths[i];
+      const result = getReactDocgen(componentPath, componentRef(i, componentPath));
       if (result.type === 'error') {
-        throw new Error(`react-docgen failed on Comp${i}: ${result.error.name} ${result.error.message}`);
+        throw new Error(
+          `react-docgen failed on Comp${i}: ${result.error.name} ${result.error.message}`
+        );
       }
     };
     invalidate = invalidateCache;
@@ -177,74 +117,55 @@ async function main() {
     };
   }
 
-  console.log(`  full extraction over ${options.components} components (cold pass)…`);
-  const coldStart = Date.now();
-  for (let i = 0; i < options.components; i++) {
-    await extractOne(i);
-  }
-  const coldMs = Date.now() - coldStart;
-  console.log(`  cold pass: ${coldMs}ms`);
-
-  const baseline = sampleMemory(true);
-
-  const samples: SaveSample[] = [];
-  const extraByComponent = new Array(options.components).fill(options.props);
-
-  for (let save = 1; save <= options.saves; save++) {
-    const i = (save - 1) % options.components;
-    extraByComponent[i] += 1;
-    fs.writeFileSync(project.componentPaths[i], componentSource(i, extraByComponent[i]));
-    // Global invalidation is the only surface these engines expose; without it the re-extraction
-    // below is a cache hit.
-    invalidate();
-
-    const saveStart = Date.now();
-    if (options.scope === 'all') {
-      for (let c = 0; c < options.components; c++) {
-        await extractOne(c);
-      }
-    } else {
+  const extractAll = async () => {
+    for (let i = 0; i < options.components; i++) {
       await extractOne(i);
     }
-    const durMs = Date.now() - saveStart;
+  };
 
-    const mem = sampleMemory(true);
-    samples.push({ save, durMs, ...mem });
-    console.log(
-      `  save ${String(save).padStart(3)}: ${String(durMs).padStart(5)}ms  ` +
-        `rss=${mem.rssMb.toFixed(0).padStart(5)}MB  heapUsed=${mem.heapUsedMb.toFixed(0).padStart(5)}MB` +
-        (mem.retainedHeapMb !== undefined
-          ? `  retained=${mem.retainedHeapMb.toFixed(0).padStart(5)}MB`
-          : '')
-    );
-  }
+  // Track how many extra props each component currently has, so each save grows its type.
+  const extraByComponent = new Array<number>(options.components).fill(options.props);
+  const changedIndex = (save: number) => (save - 1) % options.components;
 
-  const { retainedSlope, retainedGrowth, avgTransient } = summarizeSeries(samples, baseline);
-
-  console.log('\nsummary');
-  console.log(`  cold pass:           ${coldMs}ms`);
-  if (avgTransient !== undefined) {
-    console.log(`  avg transient/save:  ${avgTransient.toFixed(0)}MB`);
-  }
-  if (retainedSlope !== undefined && retainedGrowth !== undefined) {
-    console.log(`  retained slope:      ${retainedSlope.toFixed(2)}MB/save`);
-    console.log(`  retained growth:     ${retainedGrowth.toFixed(0)}MB over ${options.saves} saves`);
-  }
-
-  if (options.jsonOut) {
-    fs.writeFileSync(
-      options.jsonOut,
-      JSON.stringify(
-        { options, coldMs, baseline, samples, retainedSlope, retainedGrowth, avgTransient },
-        null,
-        2
-      )
-    );
-    console.log(`  wrote ${options.jsonOut}`);
-  }
+  return {
+    async cold() {
+      await extractAll();
+      return undefined;
+    },
+    async applySave(save) {
+      const i = changedIndex(save);
+      extraByComponent[i] += 1;
+      fs.writeFileSync(project.componentPaths[i], componentSource(i, extraByComponent[i]));
+      // Global invalidation is the only surface these engines expose; without it the re-extraction
+      // below is a cache hit.
+      invalidate();
+    },
+    async reextract(save) {
+      if (options.scope === 'all') {
+        await extractAll();
+      } else {
+        await extractOne(changedIndex(save));
+      }
+      return undefined;
+    },
+  };
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
+harnessMain(async () => {
+  const options = parseOptions(process.argv.slice(2));
+  await runSeriesHarness({
+    title: `react-legacy harness (${options.parser})`,
+    options,
+    banner: {
+      components: options.components,
+      variants: options.variants,
+      props: options.props,
+      saves: options.saves,
+      scope: options.scope,
+    },
+    saves: options.saves,
+    coldLabel: `${options.components} components`,
+    jsonOut: options.jsonOut,
+    setup: () => createEngine(options),
+  });
 });

@@ -3,7 +3,7 @@
  * baseline runs and are never ported between engines; missing engines get their rows when their
  * baselines are recorded.
  */
-import type { EngineId } from './types.ts';
+import type { EngineId } from './engine-ids.ts';
 
 export interface MemoryBudgets {
   /** Max allowed post-GC retained growth (MB) across the run. */

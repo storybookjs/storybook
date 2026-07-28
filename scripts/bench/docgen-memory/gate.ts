@@ -23,7 +23,7 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { type MemoryBudgets, memoryBudgetsFor } from '../docgen-perf/budgets.ts';
+import { type MemoryBudgets, memoryBudgetsFor } from '../docgen-shared/budgets.ts';
 import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
 
 interface HarnessResult {

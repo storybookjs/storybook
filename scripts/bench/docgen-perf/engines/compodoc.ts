@@ -15,8 +15,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
+import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.ts';
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
-import type { AngularScenarioConfig } from '../config.ts';
+import type { AngularScenarioConfig, SuiteProfile } from '../config.ts';
+import type { EngineId } from '../../docgen-shared/engine-ids.ts';
+import type { EngineMetrics } from '../types.ts';
 
 /**
  * The version of the binary that actually ran, walked up from the resolved executable rather than
@@ -118,12 +122,6 @@ function runCompodocOnce(
   });
 }
 
-export interface CompodocRepetition {
-  coldMs: number;
-  warmMs: number;
-  peakRssMb: number;
-}
-
 /**
  * One repetition: fresh project, cold full run, touch one component, warm full run. Both runs are
  * fresh compodoc processes, matching the one-sample-per-fresh-process topology.
@@ -133,7 +131,7 @@ export async function runCompodocRepetition(
   scenario: AngularScenarioConfig,
   workDir: string,
   pollIntervalMs: number
-): Promise<CompodocRepetition> {
+): Promise<OneShotRepetition> {
   const projectDir = path.join(workDir, 'project');
   const docsOutDir = path.join(workDir, 'docs');
   const project = generateAngularProject({
@@ -153,4 +151,48 @@ export async function runCompodocRepetition(
     warmMs: warm.durMs,
     peakRssMb: Math.max(cold.peakRssMb, warm.peakRssMb),
   };
+}
+
+/**
+ * Compodoc as an engine. Unlike the series engines it has no child harness to spawn: the CLI is the
+ * measured process, and this class drives it directly.
+ *
+ * It is also the only engine with state - the resolved binary, found once in {@link preflight} and
+ * reused for every repetition and for the recorded version.
+ */
+export class CompodocEngine extends BenchEngine<OneShotRepetition> {
+  readonly id: EngineId = 'compodoc';
+
+  #binary: string | undefined;
+
+  scenarios(profile: SuiteProfile): ScenarioSpec[] {
+    return [{ name: 'default', params: { ...profile.angular } }];
+  }
+
+  preflight(): string | undefined {
+    this.#binary = resolveCompodocBinary();
+    return this.#binary
+      ? undefined
+      : 'no compodoc binary found (workspace node_modules/.bin or PATH); @compodoc/compodoc is pinned in scripts/package.json, so run yarn install';
+  }
+
+  version(): string | undefined {
+    return this.#binary ? compodocVersion(this.#binary) : undefined;
+  }
+
+  async measure(ctx: MeasureContext, scenario: ScenarioSpec): Promise<OneShotRepetition> {
+    if (!this.#binary) {
+      throw new Error('compodoc binary unresolved; preflight must run first');
+    }
+    return runCompodocRepetition(
+      this.#binary,
+      { components: Number(scenario.params.components), props: Number(scenario.params.props) },
+      ctx.scenarioDir,
+      ctx.rssPollIntervalMs
+    );
+  }
+
+  aggregate(samples: OneShotRepetition[], expectedN: number): EngineMetrics {
+    return oneShotMetrics(samples, expectedN);
+  }
 }

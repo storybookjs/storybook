@@ -22,7 +22,8 @@ export type SBObjectType = SBBaseType & {
 };
 export type SBEnumType = SBBaseType & {
   name: 'enum';
-  value: (string | number)[];
+  // `null` appears for TS unions that include `null`, e.g. `'a' | 'b' | null`
+  value: (string | number | null)[];
 };
 export type SBIntersectionType = SBBaseType & {
   name: 'intersection';

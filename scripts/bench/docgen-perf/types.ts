@@ -108,6 +108,12 @@ export interface RatioEntry {
   nextWarmMembers?: number;
   coldComparability: Comparability;
   warmComparability: Comparability;
+  /**
+   * The versions the two sides resolved to. Only meaningful for a pair whose sides are the same
+   * package, where two equal versions mean nothing was compared at all.
+   */
+  legacyVersion?: string;
+  nextVersion?: string;
 }
 
 /** Keyed by control-pair name, then by scenario name. */

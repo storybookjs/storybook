@@ -7,4 +7,5 @@ export type EngineId =
   | 'react-osa'
   | 'vue-docgen-api'
   | 'vue-component-meta'
+  | 'vue-component-meta-next'
   | 'compodoc';

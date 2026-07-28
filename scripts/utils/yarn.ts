@@ -132,7 +132,7 @@ export const addWorkaroundResolutions = async ({
   packageJson.resolutions = {
     ...packageJson.resolutions,
     '@testing-library/dom': '^9.3.4',
-    '@testing-library/jest-dom': '^6.6.3',
+    '@testing-library/jest-dom': '6.9.1',
     '@testing-library/user-event': '^14.5.2',
     ...additionalResolutions,
   };

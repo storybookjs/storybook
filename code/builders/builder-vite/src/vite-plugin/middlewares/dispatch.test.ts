@@ -2,24 +2,31 @@ import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import type { Connect, ViteDevServer } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { registerStorybookMiddleware } from './dispatch.ts';
+import { renderIframeHtml } from './iframe.ts';
+import { createAddonsAssetsHandler, createManagerAssetsHandler } from './manager.ts';
 
-vi.mock('./iframe.ts', () => ({
-  renderIframeHtml: vi.fn(async () => '<html>iframe</html>'),
-}));
-vi.mock('./manager.ts', () => ({
-  createManagerAssetsHandler: (): Connect.NextHandleFunction => (_req, _res, next) => next(),
-  createAddonsAssetsHandler: (): Connect.NextHandleFunction => (req, res, next) => {
-    if (req.url === '/manager-bundle.js') {
-      res.statusCode = 200;
-      (res as unknown as { end(body?: unknown): void }).end('addon-bundle');
-      return;
+vi.mock(import('./iframe.ts'), { spy: true });
+vi.mock(import('./manager.ts'), { spy: true });
+
+beforeEach(() => {
+  vi.mocked(renderIframeHtml).mockImplementation(async () => '<html>iframe</html>');
+  vi.mocked(createManagerAssetsHandler).mockImplementation(
+    (): Connect.NextHandleFunction => (_req, _res, next) => next()
+  );
+  vi.mocked(createAddonsAssetsHandler).mockImplementation(
+    (): Connect.NextHandleFunction => (req, res, next) => {
+      if (req.url === '/manager-bundle.js') {
+        res.statusCode = 200;
+        (res as unknown as { end(body?: unknown): void }).end('addon-bundle');
+        return;
+      }
+      next();
     }
-    next();
-  },
-}));
+  );
+});
 
 const MANAGER_HTML = '<html>manager</html>';
 

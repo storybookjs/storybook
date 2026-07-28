@@ -17,7 +17,7 @@ export async function createStaticMiddlewares(
 
   for (const dir of staticDirs) {
     try {
-      const { staticDir, targetEndpoint } = await mapStaticDir(dir, options.configDir);
+      const { staticDir, targetEndpoint } = mapStaticDir(dir, options.configDir);
       const mountPath = `${basePath}${targetEndpoint.replace(/^\//, '')}`;
 
       const handler = sirv(staticDir, {

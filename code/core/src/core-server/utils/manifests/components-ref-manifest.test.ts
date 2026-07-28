@@ -203,4 +203,25 @@ describe('components-ref-manifest', () => {
       button: { id: 'button', name: 'button' },
     });
   });
+
+  it('projects apiDescription inline onto the index entry when the payload carries one', () => {
+    const fragment = '## Props\n\n```ts\nexport type Props = {\n  label?: string;\n};\n```';
+    const payload: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+      apiDescription: fragment,
+    };
+
+    const entries = toComponentManifestIndexEntries(['button'], { button: payload });
+
+    // Inserted verbatim, and absent (not empty) when the payload has none.
+    expect(entries.button.apiDescription).toBe(fragment);
+    expect(
+      toComponentManifestIndexEntries(['plain'], {
+        plain: { id: 'plain', name: 'Plain', path: './plain.stories.tsx', jsDocTags: {} },
+      }).plain
+    ).not.toHaveProperty('apiDescription');
+  });
 });

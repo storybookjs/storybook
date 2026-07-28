@@ -30,6 +30,11 @@ export type ComponentManifestIndexEntry = {
   name: string;
   description?: string;
   summary?: string;
+  /**
+   * Framework-rendered markdown fragment for the component's API surface, projected inline from
+   * the docgen payload. Consumers insert it verbatim and must never parse it.
+   */
+  apiDescription?: string;
   docgen?: JsonRef;
   stories?: JsonRef;
   docs?: Record<string, DocsManifestEntry>;
@@ -142,6 +147,9 @@ export function toComponentManifestIndexEntries(
           name: payload.name ?? id,
           ...(payload.description !== undefined ? { description: payload.description } : {}),
           ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
+          ...(payload.apiDescription !== undefined
+            ? { apiDescription: payload.apiDescription }
+            : {}),
           docgen: { $ref: docgenManifestRef(id) },
           ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
           ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),

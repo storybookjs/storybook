@@ -42,27 +42,31 @@ export async function emitDevTelemetry({
   storyIndexGenerator: StoryIndexGenerator;
 }) {
   await resolveTelemetryState(disableTelemetry);
-  telemetry(
-    'dev',
-    async () => {
-      let indexAndStats;
-      try {
-        indexAndStats = await storyIndexGenerator.getIndexAndStats();
-      } catch (err) {
-        // Returning { error } triggers automatic error telemetry in place of the normal event.
-        const error = err instanceof Error ? err : new Error(String(err));
-        return { error };
-      }
-      return {
-        precedingUpgrade: await getPrecedingUpgrade(),
-        // The version-update check is a CLI dev-flow feature that doesn't exist in the plugin.
-        versionStatus: 'disabled',
-        storyIndex: summarizeIndex(indexAndStats.storyIndex),
-        storyStats: indexAndStats.stats,
-      };
-    },
-    { configDir }
-  );
+  try {
+    await telemetry(
+      'dev',
+      async () => {
+        let indexAndStats;
+        try {
+          indexAndStats = await storyIndexGenerator.getIndexAndStats();
+        } catch (err) {
+          // Returning { error } triggers automatic error telemetry in place of the normal event.
+          const error = err instanceof Error ? err : new Error(String(err));
+          return { error };
+        }
+        return {
+          precedingUpgrade: await getPrecedingUpgrade(),
+          // The version-update check is a CLI dev-flow feature that doesn't exist in the plugin.
+          versionStatus: 'disabled',
+          storyIndex: summarizeIndex(indexAndStats.storyIndex),
+          storyStats: indexAndStats.stats,
+        };
+      },
+      { configDir }
+    );
+  } catch (e) {
+    logger.debug?.(`Dev telemetry failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 export async function emitBuildTelemetry({

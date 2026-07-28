@@ -12767,6 +12767,7 @@ __metadata:
   dependencies:
     "@actions/core": "npm:^1.11.1"
     "@anthropic-ai/claude-agent-sdk": "npm:^0.2.85"
+    "@compodoc/compodoc": "npm:2.0.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
     "@octokit/graphql": "npm:^5.0.6"

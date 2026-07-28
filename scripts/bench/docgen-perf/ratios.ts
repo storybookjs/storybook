@@ -26,6 +26,7 @@ interface ControlPair {
 export const CONTROL_PAIRS: ControlPair[] = [
   { name: 'react', legacy: 'react-legacy', next: 'react-osa' },
   { name: 'vue', legacy: 'vue-docgen-api', next: 'vue-component-meta' },
+  { name: 'vue-component-meta-version', legacy: 'vue-component-meta', next: 'vue-component-meta-next' },
 ];
 
 /**
@@ -81,7 +82,11 @@ function comparability(
   return nextOpaque > legacyOpaque ? 'next-resolves-less' : 'next-resolves-more';
 }
 
-function ratioFor(legacy: ScenarioResult, next: ScenarioResult): RatioEntry {
+function ratioFor(
+  legacy: ScenarioResult,
+  next: ScenarioResult,
+  versions: PairVersions
+): RatioEntry {
   return {
     cold: medianRatio(legacy.metrics.coldExtractionMs, next.metrics.coldExtractionMs),
     warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
@@ -97,14 +102,27 @@ function ratioFor(legacy: ScenarioResult, next: ScenarioResult): RatioEntry {
     ),
     // No engine reports opaque types for the re-extracted member, so warm is judged on counts alone.
     warmComparability: comparability(legacy.warmMembers, next.warmMembers),
+    ...versions,
   };
+}
+
+interface PairVersions {
+  legacyVersion?: string;
+  nextVersion?: string;
 }
 
 /**
  * Ratios for every control pair whose two engines both measured in this invocation. A pair with one
  * failed or skipped side yields nothing: dividing a fresh median by a stale one is not a comparison.
+ *
+ * Resolved versions ride along because a pair can have both sides land on the same version - a
+ * range on one side is enough - and a ratio of one taken against itself must not read as a clean
+ * result.
  */
-export function computeRatios(results: Partial<Record<EngineId, EngineResult>>): Ratios {
+export function computeRatios(
+  results: Partial<Record<EngineId, EngineResult>>,
+  engineVersions: Partial<Record<EngineId, string>> = {}
+): Ratios {
   const ratios: Ratios = {};
 
   for (const pair of CONTROL_PAIRS) {
@@ -113,13 +131,17 @@ export function computeRatios(results: Partial<Record<EngineId, EngineResult>>):
     if (legacy?.status !== 'measured' || next?.status !== 'measured') {
       continue;
     }
+    const versions: PairVersions = {
+      legacyVersion: engineVersions[pair.legacy],
+      nextVersion: engineVersions[pair.next],
+    };
     for (const [scenarioName, legacyScenario] of Object.entries(legacy.scenarios)) {
       const nextScenario = next.scenarios[scenarioName];
       if (!nextScenario) {
         continue;
       }
       ratios[pair.name] ??= {};
-      ratios[pair.name][scenarioName] = ratioFor(legacyScenario, nextScenario);
+      ratios[pair.name][scenarioName] = ratioFor(legacyScenario, nextScenario, versions);
     }
   }
 

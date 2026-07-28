@@ -28,6 +28,9 @@ async function specFor(id: EngineId, scenario: ScenarioSpec, rep = 1) {
 }
 
 const reactScenario = engineById('react-legacy').scenarios(QUICK_PROFILE)[0];
+const vueFlatScenario = engineById('vue-component-meta')
+  .scenarios(QUICK_PROFILE)
+  .find((s) => s.name === 'flat')!;
 
 describe('the engine table', () => {
   it('registers each id exactly once', () => {
@@ -59,9 +62,12 @@ describe('the engine table', () => {
     }
   });
 
-  it('runs both sides of every control pair by default', () => {
+  it('runs both sides of every control pair that is on by default', () => {
     // A ratio needs both sides measured in the same invocation.
     for (const pair of CONTROL_PAIRS) {
+      if (!DEFAULT_ENGINE_IDS.includes(pair.next)) {
+        continue; // e.g. vue-component-meta-version: opt-in, no budget row yet
+      }
       expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.legacy);
       expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.next);
     }
@@ -118,5 +124,26 @@ describe('what the series engines spawn', () => {
 
   it('writes each repetition to its own result file', async () => {
     expect((await specFor('react-legacy', reactScenario, 3)).jsonPath).toMatch(/rep3\.json$/);
+  });
+
+  it('sends the two vue-component-meta versions to one child with different pins', async () => {
+    const pinned = await specFor('vue-component-meta', vueFlatScenario);
+    const next = await specFor('vue-component-meta-next', vueFlatScenario);
+    expect(next.spec.childPath).toBe(pinned.spec.childPath);
+    expect(pinned.spec.args).not.toContain('next');
+    expect(next.spec.args.slice(-2)).toEqual(['--pin', 'next']);
+  });
+
+  it('gives both vue-component-meta versions identical flags apart from --pin', async () => {
+    for (const scenario of engineById('vue-component-meta').scenarios(QUICK_PROFILE)) {
+      const pinned = await specFor('vue-component-meta', scenario);
+      const next = await specFor('vue-component-meta-next', scenario);
+      expect(next.spec.args.slice(0, -2)).toEqual(pinned.spec.args);
+    }
+  });
+
+  it('resolves a real version for both sides of the version pair', () => {
+    expect(engineById('vue-component-meta').version()).toMatch(/^\d+\.\d+\.\d+/);
+    expect(engineById('vue-component-meta-next').version()).toBe('3.3.8');
   });
 });

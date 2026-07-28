@@ -11,6 +11,7 @@
  * conversion, which this module imports from `@storybook/vue3`.
  */
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
@@ -36,7 +37,12 @@ export const createDocgenProvider = (
       try {
         const checker = await createVueComponentMetaChecker(options.tsconfigPath);
         return { checker, freshness: new CheckerFreshness(checker) };
-      } catch {
+      } catch (error) {
+        logger.warn(
+          `Vue docgen is unavailable: the vue-component-meta checker could not be created. ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
         return undefined;
       }
     })();

@@ -15,9 +15,14 @@ export interface ResolvedVueComponent {
   exportName: string;
 }
 
+/**
+ * Resolves component imports the way the Vue Vite pipeline does: SFC extensions first, then the
+ * JS/TS family.
+ */
 const componentResolver = new ResolverFactory({
   extensions: ['.vue', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   mainFields: ['module', 'main'],
+  tsconfig: 'auto',
 });
 
 /** Reason a story file yielded no component to extract docgen from. */

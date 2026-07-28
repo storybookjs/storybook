@@ -18,7 +18,13 @@ export default defineConfig({
             'junit',
             {
               embedAnnotationsAsProperties: true,
-              outputFile: path.join(__dirname, '..', '..', 'test-results', 'vite-plugin-e2e.xml'),
+              outputFile: path.join(
+                import.meta.dirname,
+                '..',
+                '..',
+                'test-results',
+                'vite-plugin-e2e.xml'
+              ),
             },
           ],
         ] as const)

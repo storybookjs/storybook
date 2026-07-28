@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { renderRatios, renderResults } from './report.ts';
-import { NOT_APPLICABLE, type Ratios } from './types.ts';
+import { NOT_APPLICABLE, type RatioEntry, type Ratios } from './types.ts';
 
 describe('renderRatios', () => {
   const notLikeForLike: Ratios = {
@@ -31,6 +31,34 @@ describe('renderRatios', () => {
     const warm = renderRatios(notLikeForLike).find((line) => line.includes('warm'));
     expect(warm).toContain('documented members 0 vs 32');
     expect(warm).toContain('NOT like-for-like');
+  });
+
+  it('names both versions when a pair compares one package against another release of it', () => {
+    const entry: RatioEntry = {
+      cold: 1.08,
+      legacyVersion: '3.3.2',
+      nextVersion: '3.3.8',
+      coldComparability: 'like-for-like',
+      warmComparability: 'like-for-like',
+    };
+    expect(renderRatios({ 'vue-component-meta-version': { flat: entry } })[0]).toContain(
+      '[3.3.2 vs 3.3.8]'
+    );
+  });
+
+  it('says a pair measured nothing when both sides resolved the same version', () => {
+    // A range on the current side is enough to let both land on one release. The ratio is then 1.00
+    // against itself, which is the one failure a version pair must never report as a clean result.
+    const entry: RatioEntry = {
+      cold: 1.0,
+      legacyVersion: '3.3.8',
+      nextVersion: '3.3.8',
+      coldComparability: 'like-for-like',
+      warmComparability: 'like-for-like',
+    };
+    expect(renderRatios({ 'vue-component-meta-version': { flat: entry } })[0]).toContain(
+      'NOT a comparison'
+    );
   });
 
   it('prints no warning when the engines did the same work', () => {

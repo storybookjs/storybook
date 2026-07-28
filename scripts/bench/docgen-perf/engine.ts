@@ -2,6 +2,8 @@
  * What the orchestrator knows about an engine. Engines differ only in how one repetition is
  * produced; everything downstream (aggregation, member counts) follows from that choice.
  */
+import * as fs from 'node:fs';
+import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
 import type { SeriesResult } from '../docgen-shared/series.ts';
@@ -9,6 +11,17 @@ import { seriesMetrics } from './aggregate.ts';
 import type { SuiteProfile } from './config.ts';
 import type { SeriesChildSpec } from './spawn.ts';
 import type { EngineId, EngineMetrics } from './types.ts';
+
+const require = createRequire(import.meta.url);
+
+function resolvePackageVersion(packageName: string): string | undefined {
+  try {
+    const packagePath = require.resolve(`${packageName}/package.json`);
+    return (JSON.parse(fs.readFileSync(packagePath, 'utf8')) as { version: string }).version;
+  } catch {
+    return undefined;
+  }
+}
 
 export interface ScenarioSpec {
   name: string;
@@ -79,6 +92,8 @@ export interface SeriesChildConfig {
   /** Only the reused docgen-memory harness runs under the jiti loader. */
   jiti?: boolean;
   inDefaultRun?: boolean;
+  /** The npm package name whose resolved `package.json#version` should be reported for this engine. */
+  versionPackage?: string;
 }
 
 /**
@@ -99,6 +114,10 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
 
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     return this.#config.scenarios(profile);
+  }
+
+  version(): string | undefined {
+    return this.#config.versionPackage ? resolvePackageVersion(this.#config.versionPackage) : undefined;
   }
 
   async measure(ctx: MeasureContext, scenario: ScenarioSpec, rep: number): Promise<SeriesResult> {

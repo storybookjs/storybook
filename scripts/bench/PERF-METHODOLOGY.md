@@ -42,6 +42,16 @@ Performance questions are answered by ratios between runs executed on one machin
 - A new engine against its legacy counterpart
   Both are measured inside the same run. Paired runs also alternate their order across repetitions so that neither a warm cache nor a machine that has heated up can consistently favor one side.
 
+### Comparing an engine against another release of itself
+
+There is a third comparison that follows the same two rules: two installs of one engine, measured against each other rather than against a different engine. This is how we check a version bump, because storing last week's milliseconds and diffing against them today would break the same-machine rule. Both sides run inside the same invocation, in the same alternating order, through the same control pair machinery, so nothing new was needed to compare them.
+
+Like-for-like still applies here, and it earns its keep. A newer version that legitimately documents more members costs more, and we want that to show up as a member count mismatch rather than as a regression.
+
+One failure is specific to this shape. If both sides resolve to the same install, and a single caret range is enough for that to happen, then we compare an engine against itself and get a ratio of roughly one, which reads exactly like a clean result. So both resolved versions are printed beside every ratio, and two equal ones are called out as not being a comparison at all.
+
+A bump proposed in a pull request is fully covered by this. Catching a regression on the day it ships is not, because nothing here fetches the newest published version on its own, so moving the candidate forward still waits on a person or on a scheduled job that does not exist yet.
+
 ## Budget shape
 
 Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, `vue-docgen-api` against `vue-component-meta`) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.

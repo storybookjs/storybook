@@ -154,7 +154,7 @@ async function main() {
     comparable: profile.comparable,
     engineVersions,
     engines: engineResults,
-    ratios: computeRatios(engineResults),
+    ratios: computeRatios(engineResults, engineVersions),
   };
 
   console.log('\nresults');

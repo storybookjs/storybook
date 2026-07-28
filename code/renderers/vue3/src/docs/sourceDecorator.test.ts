@@ -1,13 +1,17 @@
 import { expect, test } from 'vitest';
 
+import type { StrictArgTypes } from 'storybook/internal/types';
+
 import { h } from 'vue';
 
+import type { StoryContext } from '../public-types';
 import type { SourceCodeGeneratorContext } from './sourceDecorator';
 import {
   generatePropsSourceCode,
   generateSlotSourceCode,
   generateSourceCode,
   getFunctionParamNames,
+  namesFromArgTypes,
   parseDocgenInfo,
 } from './sourceDecorator';
 
@@ -253,4 +257,56 @@ test.each<{ fn: (...args: any[]) => unknown; expectedNames: string[] }>([
 ])('should extract function parameter names', ({ fn, expectedNames }) => {
   const paramNames = getFunctionParamNames(fn);
   expect(paramNames).toStrictEqual(expectedNames);
+});
+
+/** Server docgen only needs the name and the section each arg came from. */
+const serviceArgTypes = (categories: Record<string, string>): StrictArgTypes =>
+  Object.fromEntries(
+    Object.entries(categories).map(([name, category]) => [
+      name,
+      { name, type: { name: 'other', value: '' }, table: { category } },
+    ])
+  );
+
+const componentNamed = (name: string) => ({ __name: name }) as StoryContext['component'];
+
+test('should read slot and event names from server-extracted argTypes', () => {
+  const names = namesFromArgTypes(
+    componentNamed('MyComponent'),
+    serviceArgTypes({
+      a: 'props',
+      change: 'events',
+      mySlot: 'slots',
+      default: 'slots',
+      focus: 'exposed',
+    })
+  );
+
+  expect(names).toStrictEqual({
+    displayName: 'MyComponent',
+    // Default slot first, then alphabetical — same order as the `__docgenInfo` path.
+    slotNames: ['default', 'mySlot'],
+    eventNames: ['change'],
+  });
+});
+
+test('should generate the same source code from argTypes as from __docgenInfo', () => {
+  const component = componentNamed('MyComponent');
+  const ctx = {
+    title: 'Example/MyComponent',
+    component,
+    args: { a: 42, mySlot: 'slot content' },
+  };
+
+  const fromDocgenInfo = generateSourceCode({
+    ...ctx,
+    component: { ...component, __docgenInfo: { slots: [{ name: 'mySlot' }], events: [] } },
+  });
+  const fromArgTypes = generateSourceCode(
+    ctx,
+    namesFromArgTypes(component, serviceArgTypes({ a: 'props', mySlot: 'slots' }))
+  );
+
+  expect(fromArgTypes).toBe(fromDocgenInfo);
+  expect(fromArgTypes).toContain('<template #mySlot>slot content</template>');
 });

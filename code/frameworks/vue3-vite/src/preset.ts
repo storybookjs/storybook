@@ -2,15 +2,18 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
+import { resolveDocgenOptions } from './docgen/options.ts';
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
-import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types.ts';
+import type { FrameworkOptions, StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),
   renderer: import.meta.resolve('@storybook/vue3/preset'),
 };
+
+export { experimental_docgenProvider } from './docgen/preset.ts';
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
   const plugins: Plugin[] = [await templateCompilation()];
@@ -24,7 +27,12 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   // add docgen plugin depending on framework option
   if (docgen !== false) {
     if (docgen.plugin === 'vue-component-meta') {
-      plugins.push(await vueComponentMeta(docgen.tsconfig));
+      const features = await options.presets.apply('features', {});
+      // The docgen service extracts component meta on the server. Keep the preview bundle free of
+      // build-time `__docgenInfo` injection so custom argTypes remain docgen-free.
+      if (!features?.experimentalDocgenServer) {
+        plugins.push(await vueComponentMeta(docgen.tsconfig));
+      }
     } else {
       plugins.push(await vueDocgen());
     }
@@ -34,23 +42,4 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   return mergeConfig(config, {
     plugins,
   });
-};
-
-/** Resolves the docgen framework option. */
-const resolveDocgenOptions = (
-  docgen?: FrameworkOptions['docgen']
-): false | { plugin: VueDocgenPlugin; tsconfig?: string } => {
-  if (docgen === false) {
-    return false;
-  }
-
-  if (docgen === undefined || docgen === true) {
-    return { plugin: 'vue-docgen-api' };
-  }
-
-  if (typeof docgen === 'string') {
-    return { plugin: docgen };
-  }
-
-  return docgen;
 };

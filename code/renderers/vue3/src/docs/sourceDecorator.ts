@@ -1,6 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
+import type { StrictArgTypes } from 'storybook/internal/types';
 
-import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import { emitTransformCode, getService, useEffect, useRef } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode } from 'vue';
 
@@ -44,17 +45,49 @@ export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const story = storyFn();
 
   useEffect(() => {
-    const sourceCode = generateSourceCode(ctx);
-
     if (shouldSkipSourceCodeGeneration(ctx)) {
       return;
     }
 
-    emitTransformCode(sourceCode, ctx);
+    if (!globalThis.FEATURES?.experimentalDocgenServer) {
+      emitTransformCode(generateSourceCode(ctx), ctx);
+      return;
+    }
+
+    // With server docgen there is no `__docgenInfo` in the bundle, so the slot and event names the
+    // generator needs come from the docgen service instead. Emitting from the resolved query keeps
+    // slots rendering as children and `v-model` bindings detected; a docgen-less component still
+    // gets a snippet, just with every arg treated as a prop.
+    void resolveDocgenNames(ctx).then((names) =>
+      emitTransformCode(generateSourceCode(ctx, names), ctx)
+    );
   });
 
   return story;
 };
+
+/**
+ * Slot and event names for the story's component, read from the `core/docgen` service.
+ *
+ * Falls back to the component's own names when the service is unavailable (portable stories have no
+ * server peer) or reports no docgen for the component.
+ */
+async function resolveDocgenNames(ctx: StoryContext): Promise<ComponentDocgenNames> {
+  const service = (() => {
+    try {
+      return getService('core/docgen');
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if (!service) {
+    return parseDocgenInfo(ctx.component);
+  }
+
+  const payload = await service.queries.docgen.loaded({ id: ctx.id.split('--')[0]! });
+  return namesFromArgTypes(ctx.component, payload?.argTypes);
+}
 
 /**
  * Generate Vue source code for the given Story.
@@ -64,14 +97,16 @@ export const sourceDecorator: Decorator = (storyFn, ctx) => {
 export const generateSourceCode = (
   ctx: Pick<StoryContext, 'title' | 'component' | 'args'> & {
     component?: StoryContext['component'] & { __docgenInfo?: unknown };
-  }
+  },
+  /** Names to generate against. Defaults to the component's bundled `__docgenInfo`. */
+  docgenNames?: ComponentDocgenNames
 ): string => {
   const sourceCodeContext: SourceCodeGeneratorContext = {
     imports: {},
     scriptVariables: {},
   };
 
-  const { displayName, slotNames, eventNames } = parseDocgenInfo(ctx.component);
+  const { displayName, slotNames, eventNames } = docgenNames ?? parseDocgenInfo(ctx.component);
 
   const props = generatePropsSourceCode(ctx.args, slotNames, eventNames, sourceCodeContext);
   const slotSourceCode = generateSlotSourceCode(ctx.args, slotNames, sourceCodeContext);
@@ -128,12 +163,58 @@ export const shouldSkipSourceCodeGeneration = (context: StoryContext): boolean =
 };
 
 /**
+ * The docgen-derived names {@link generateSourceCode} needs: which args are slots (rendered as
+ * children), which are events (needed to pair a prop with `v-model`), and what to call the component.
+ */
+export type ComponentDocgenNames = {
+  displayName?: string;
+  slotNames: string[];
+  eventNames: string[];
+};
+
+/** Default slot first, remaining slots alphabetical — the order slots are rendered in. */
+const sortSlotNames = (slotNames: string[]) =>
+  slotNames.sort((a, b) => {
+    if (a === 'default') {
+      return -1;
+    }
+
+    if (b === 'default') {
+      return 1;
+    }
+    return a.localeCompare(b);
+  });
+
+/**
+ * Reads the same names out of server-extracted argTypes, where the docgen section a member came from
+ * survives as `table.category`.
+ *
+ * The component's own `__name` stands in for `displayName`: the SFC compiler sets it from the
+ * filename, which is what the docgen engine reports for a default export anyway.
+ */
+export const namesFromArgTypes = (
+  component: StoryContext['component'] | undefined,
+  argTypes: StrictArgTypes | undefined
+): ComponentDocgenNames => {
+  const namesInCategory = (category: string) =>
+    Object.values(argTypes ?? {})
+      .filter((argType) => argType.table?.category === category)
+      .map((argType) => argType.name);
+
+  return {
+    displayName: component?.__name,
+    slotNames: sortSlotNames(namesInCategory('slots')),
+    eventNames: namesInCategory('events'),
+  };
+};
+
+/**
  * Parses the __docgenInfo of the given component. Requires Storybook docs addon to be enabled.
  * Default slot will always be sorted first, remaining slots are sorted alphabetically.
  */
 export const parseDocgenInfo = (
   component?: StoryContext['component'] & { __docgenInfo?: unknown }
-) => {
+): ComponentDocgenNames => {
   // type check __docgenInfo to prevent errors
   if (
     !component ||
@@ -169,16 +250,7 @@ export const parseDocgenInfo = (
 
   return {
     displayName: displayName || component.__name,
-    slotNames: parseNames('slots').sort((a, b) => {
-      if (a === 'default') {
-        return -1;
-      }
-
-      if (b === 'default') {
-        return 1;
-      }
-      return a.localeCompare(b);
-    }),
+    slotNames: sortSlotNames(parseNames('slots')),
     eventNames: parseNames('events'),
   };
 };

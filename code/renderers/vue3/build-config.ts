@@ -28,6 +28,12 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        // argTypes conversion, shared with the framework's server-side docgen provider. Built for
+        // node so the docgen worker can import it; the preview gets it through `entry-preview`.
+        exportEntries: ['./internal/extract-arg-types'],
+        entryPoint: './src/extractArgTypes.ts',
+      },
     ],
   },
 };

@@ -1,5 +1,11 @@
 ## 3.1.12
 
+## 3.3.1
+
+### Patch Changes
+
+- [#136](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/136) [`d63959a`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/d63959ab2bb2a359e570174d58a6df9ce9155374) Thanks [@sobol-sudo](https://github.com/sobol-sudo)! - Apply `trailingSlash` to the href rendered by the `next/link` mock, matching real `next/link`
+
 ## 3.3.0
 
 ### Minor Changes

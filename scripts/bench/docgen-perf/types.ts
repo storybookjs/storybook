@@ -1,0 +1,103 @@
+/**
+ * Result shapes for the per-engine docgen performance suite. The measurement contract behind these
+ * shapes is scripts/bench/PERF-METHODOLOGY.md.
+ */
+import type { EngineId } from '../docgen-shared/engine-ids.ts';
+
+export type { EngineId };
+
+/** A latency metric: median of repeated samples (fresh process each, for cold/scan). */
+export interface LatencyMetric {
+  status: 'measured';
+  samples: number[];
+  median: number;
+}
+
+/** A memory metric aggregated as the mean of a per-save (or per-run) series. */
+export interface SeriesMeanMetric {
+  status: 'measured';
+  samples: number[];
+  mean: number;
+}
+
+/** A single-valued metric read from one run's series (retained growth, retained slope). */
+export interface ValueMetric {
+  status: 'measured';
+  value: number;
+}
+
+/** The explicit marker for a metric that does not apply to an engine; never a faked equivalent. */
+export interface NotApplicable {
+  status: 'n/a';
+}
+
+export const NOT_APPLICABLE: NotApplicable = { status: 'n/a' };
+
+export interface EngineMetrics {
+  coldExtractionMs: LatencyMetric | NotApplicable;
+  warmExtractionMs: LatencyMetric | NotApplicable;
+  wholeProjectScanMs: LatencyMetric | NotApplicable;
+  peakTransientMb: SeriesMeanMetric | NotApplicable;
+  retainedGrowthMb: ValueMetric | NotApplicable;
+  retainedSlopeMbPerSave: ValueMetric | NotApplicable;
+}
+
+export interface ScenarioResult {
+  params: Record<string, number | string | boolean>;
+  metrics: EngineMetrics;
+  /**
+   * Members the cold pass documented, when the engine reports it. Two engines over the same project
+   * can differ by an order of magnitude here, and a timing ratio between them means nothing without
+   * it.
+   */
+  coldMembers?: number;
+  /** Members the timed re-extraction documented. Warm ratios need this for the same reason. */
+  warmMembers?: number;
+  /**
+   * Of {@link coldMembers}, how many the engine documented under a type name it never resolved.
+   * An engine that prints `Hop19Shape` and one that expands it into its fields report the same
+   * member count off very different work, so equal counts alone do not make a ratio like-for-like.
+   */
+  coldOpaqueTypes?: number;
+}
+
+export type EngineResult =
+  | { status: 'measured'; scenarios: Record<string, ScenarioResult> }
+  | { status: 'skipped'; reason: string }
+  | { status: 'failed'; reason: string };
+
+/**
+ * One control pair's comparison for one scenario: the legacy engine's median over the new engine's,
+ * both measured in the same invocation.
+ *
+ * `likeForLike` is false when the two engines documented different numbers of members, which means
+ * they did not do the same work and the ratio measures resolution depth as much as speed. A ratio
+ * whose `likeForLike` is false must not become a budget.
+ */
+export interface RatioEntry {
+  cold?: number;
+  warm?: number;
+  legacyColdMembers?: number;
+  nextColdMembers?: number;
+  legacyWarmMembers?: number;
+  nextWarmMembers?: number;
+  likeForLike?: boolean;
+}
+
+/** Keyed by control-pair name, then by scenario name. */
+export type Ratios = Record<string, Record<string, RatioEntry>>;
+
+export interface SuiteResults {
+  generatedAt: string;
+  nodeVersion: string;
+  /** The one pinned N; numbers taken at different N are not comparable. */
+  pinnedN: number;
+  /** False for --quick smoke runs, whose numbers must never be compared against real runs. */
+  comparable: boolean;
+  /** Sampling interval for the compodoc child's externally-polled peak RSS. */
+  rssPollIntervalMs: number;
+  /** Resolved versions of externally-installed engines, when they ran. */
+  engineVersions: Partial<Record<EngineId, string>>;
+  engines: Partial<Record<EngineId, EngineResult>>;
+  ratios: Ratios;
+}

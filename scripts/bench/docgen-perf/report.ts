@@ -1,5 +1,12 @@
 /** Renders the suite's terminal output. Pure string building, so it is testable without a runner. */
-import type { Comparability, EngineId, EngineMetrics, EngineResult, Ratios } from './types.ts';
+import type {
+  Comparability,
+  EngineId,
+  EngineMetrics,
+  EngineResult,
+  RatioEntry,
+  Ratios,
+} from './types.ts';
 
 const HEADER = ['engine/scenario', 'cold', 'warm', 'scan', 'peak', 'ret-growth', 'ret-slope'];
 
@@ -86,17 +93,20 @@ export function renderRatios(ratios: Ratios): string[] {
   for (const [pairName, scenarios] of Object.entries(ratios)) {
     for (const [scenarioName, entry] of Object.entries(scenarios)) {
       const label = `${pairName}/${scenarioName}`;
+      const versions = versionNote(entry);
 
       if (entry.cold !== undefined) {
         lines.push(
           `  ratio cold legacy/new (${label}): ${entry.cold.toFixed(2)}` +
-            memberNote(entry.legacyColdMembers, entry.nextColdMembers, entry.coldComparability)
+            memberNote(entry.legacyColdMembers, entry.nextColdMembers, entry.coldComparability) +
+            versions
         );
       }
       if (entry.warm !== undefined) {
         lines.push(
           `  ratio warm legacy/new (${label}): ${entry.warm.toFixed(2)}` +
-            memberNote(entry.legacyWarmMembers, entry.nextWarmMembers, entry.warmComparability)
+            memberNote(entry.legacyWarmMembers, entry.nextWarmMembers, entry.warmComparability) +
+            versions
         );
       }
     }
@@ -133,4 +143,17 @@ function memberNote(
     return note ? `  [${note}]` : '';
   }
   return `  [documented members ${legacy} vs ${next}${note ? ` - ${note}` : ''}]`;
+}
+
+/**
+ * Two sides on the same version compare an engine against itself, which reads as a clean 1.00 and
+ * means nothing. Saying so beside the ratio is what stops it being read as "no regression".
+ */
+function versionNote({ legacyVersion, nextVersion }: RatioEntry): string {
+  if (legacyVersion === undefined || nextVersion === undefined) {
+    return '';
+  }
+  return legacyVersion === nextVersion
+    ? `  [both sides resolved ${legacyVersion} - NOT a comparison]`
+    : `  [${legacyVersion} vs ${nextVersion}]`;
 }

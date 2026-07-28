@@ -12879,6 +12879,7 @@ __metadata:
     vitest: "npm:^4.1.5"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.2.7"
+    vue-component-meta-next: "npm:vue-component-meta@3.3.8"
     vue-docgen-api: "npm:^4.75.1"
     wait-on: "npm:^8.0.3"
     window-size: "npm:^1.1.1"

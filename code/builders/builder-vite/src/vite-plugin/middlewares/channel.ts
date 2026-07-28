@@ -76,6 +76,7 @@ export function createServerChannel(
 ): Channel {
   const transports = [new PluginChannelTransport(server, channelPath, token)];
   const channel = new Channel({ transports, async: true });
-  UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
+
+  (UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
   return channel;
 }

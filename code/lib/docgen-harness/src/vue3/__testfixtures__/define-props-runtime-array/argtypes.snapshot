@@ -1,0 +1,36 @@
+{
+  "appearance": {
+    "description": undefined,
+    "name": "appearance",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "undefined",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "undefined",
+    },
+  },
+  "label": {
+    "description": undefined,
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "undefined",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "undefined",
+    },
+  },
+}

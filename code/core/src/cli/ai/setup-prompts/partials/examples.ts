@@ -3,9 +3,39 @@ import type { ProjectInfo } from '../../types.ts';
 import { ext } from '../../utils/ext.ts';
 
 export function getPreviewExample(projectInfo: ProjectInfo): string {
-  const { configDir, language, framework, rendererPackage } = projectInfo;
+  const { configDir, language, framework, rendererPackage, hasCsfFactoryPreview } = projectInfo;
   const tsx = ext(language, true);
   const typeImport = framework || rendererPackage || '@storybook/react-vite';
+
+  if (hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`${tsx}
+      // ${configDir}/preview.${tsx}
+      import { definePreview } from '${typeImport}';
+      import '../src/index.css';
+      import MockDate from 'mockdate';
+      import addonMsw from 'msw-storybook-addon';
+      import { SessionProvider } from '../src/contexts/SessionContext';
+      import { mswHandlers } from './msw-handlers';
+
+      export default definePreview({
+        addons: [addonMsw()],
+        decorators: [
+          (Story) => (
+            <SessionProvider>
+              <Story />
+            </SessionProvider>
+          ),
+        ],
+        async beforeEach({ msw }) {
+          msw.use(...mswHandlers);
+          localStorage.setItem('theme', 'dark');
+          MockDate.set('2024-04-01T12:00:00Z');
+        },
+      });
+      \`\`\`
+    `;
+  }
 
   if (language === 'js') {
     return dedent`
@@ -13,11 +43,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
       // ${configDir}/preview.${tsx}
       import '../src/index.css';
       import MockDate from 'mockdate';
-      import { initialize, mswLoader } from 'msw-storybook-addon';
+      import { mswLoader } from 'msw-storybook-addon/csf3';
       import { SessionProvider } from '../src/contexts/SessionContext';
       import { mswHandlers } from './msw-handlers';
-
-      initialize({ onUnhandledRequest: 'bypass' });
 
       const preview = {
         decorators: [
@@ -27,9 +55,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
             </SessionProvider>
           ),
         ],
-        loaders: [mswLoader],
-        parameters: { msw: { handlers: mswHandlers } },
-        async beforeEach() {
+        loaders: [mswLoader()],
+        async beforeEach({ msw }) {
+          msw.use(...mswHandlers);
           localStorage.setItem('theme', 'dark');
           MockDate.set('2024-04-01T12:00:00Z');
         },
@@ -46,11 +74,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
     import type { Preview } from '${typeImport}';
     import '../src/index.css';
     import MockDate from 'mockdate';
-    import { initialize, mswLoader } from 'msw-storybook-addon';
+    import { mswLoader } from 'msw-storybook-addon/csf3';
     import { SessionProvider } from '../src/contexts/SessionContext';
     import { mswHandlers } from './msw-handlers';
-
-    initialize({ onUnhandledRequest: 'bypass' });
 
     const preview: Preview = {
       decorators: [
@@ -60,9 +86,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
           </SessionProvider>
         ),
       ],
-      loaders: [mswLoader],
-      parameters: { msw: { handlers: mswHandlers } },
-      async beforeEach() {
+      loaders: [mswLoader()],
+      async beforeEach({ msw }) {
+        msw.use(...mswHandlers);
         localStorage.setItem('theme', 'dark');
         MockDate.set('2024-04-01T12:00:00Z');
       },

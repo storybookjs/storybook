@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "10.6.0-alpha.2",
+  "version": "10.6.0-alpha.3",
   "description": "Storybook for Vue3 and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -51,7 +51,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
-    "magic-string": "^0.30.0",
+    "magic-string": "^1.1.0",
     "typescript": "^5.9.3",
     "vue-component-meta": "^3.2.7",
     "vue-docgen-api": "^4.75.1"

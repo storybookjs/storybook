@@ -9705,7 +9705,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:^, @storybook/builder-vite@workspace:code/builders/builder-vite":
+"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:code/builders/builder-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
@@ -10405,7 +10405,6 @@ __metadata:
   dependencies:
     "@nx/workspace": "npm:^22.6.1"
     "@playwright/test": "npm:^1.58.2"
-    "@storybook/builder-vite": "workspace:^"
     "@types/kill-port": "npm:^2.0.3"
     http-server: "npm:^14.1.1"
     husky: "npm:^9.1.7"

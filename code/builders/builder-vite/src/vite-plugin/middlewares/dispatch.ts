@@ -158,11 +158,10 @@ function createStorybookMiddleware(
         return;
       }
 
-      if (pathname.startsWith(DEPS_STORYBOOK_PREFIX)) {
+      if (pathname.startsWith(DEPS_STORYBOOK_PREFIX) && pathname.endsWith('.map')) {
         try {
           const content = await readFile(join(server.config.root, pathname));
-          const isMap = pathname.endsWith('.map');
-          res.setHeader('Content-Type', isMap ? 'application/json' : 'application/javascript');
+          res.setHeader('Content-Type', 'application/json');
           res.setHeader('Cache-Control', 'max-age=31536000, immutable');
           res.statusCode = 200;
           res.end(content);

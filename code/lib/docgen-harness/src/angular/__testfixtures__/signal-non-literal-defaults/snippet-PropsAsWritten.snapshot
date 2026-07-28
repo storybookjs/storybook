@@ -1,0 +1,1 @@
+<sb-signal-non-literal-defaults [list]="[4, 5, 6]" [computed]="7" [config]="{a: 2}" [requiredValue]="'x'"></sb-signal-non-literal-defaults>

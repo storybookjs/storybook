@@ -1,0 +1,176 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "SignalNonLiteralDefaultsComponent",
+      "id": "component-SignalNonLiteralDefaultsComponent-8da16ea8c1aeca37dd447577f0d4fdf303029d673bb45e17ba26b01698d88b5d83cdbf09cb2567117e4b17a672572e0f152b5fe55df2891c5689cda070c52163",
+      "file": "signal-non-literal-defaults.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-signal-non-literal-defaults",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ list() }} {{ computed() }} {{ config() }} {{ requiredValue() }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "name": "computed",
+          "coverageIgnore": false,
+          "defaultValue": "makeDefault()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 14,
+          "rawdescription": "\n",
+          "required": false
+        },
+        {
+          "name": "config",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 16,
+          "rawdescription": "\n",
+          "required": false
+        },
+        {
+          "name": "list",
+          "coverageIgnore": false,
+          "defaultValue": "[1, 2, 3]",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 12,
+          "rawdescription": "\n",
+          "required": false
+        },
+        {
+          "name": "requiredValue",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 18,
+          "rawdescription": "\n",
+          "required": true
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, input } from '@angular/core';\n\nfunction makeDefault(): number {\n  return 42;\n}\n\n@Component({\n  selector: 'sb-signal-non-literal-defaults',\n  template: '<span>{{ list() }} {{ computed() }} {{ config() }} {{ requiredValue() }}</span>',\n})\nexport class SignalNonLiteralDefaultsComponent {\n  list = input([1, 2, 3]);\n\n  computed = input(makeDefault());\n\n  config = input({ a: 1 });\n\n  requiredValue = input.required();\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": {
+    "variables": [],
+    "functions": [
+      {
+        "name": "makeDefault",
+        "file": "signal-non-literal-defaults.component.ts",
+        "ctype": "miscellaneous",
+        "subtype": "function",
+        "coverageIgnore": false,
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "displayName": "makeDefault",
+        "args": [],
+        "returnType": "number"
+      }
+    ],
+    "typealiases": [],
+    "enumerations": [],
+    "groupedVariables": {},
+    "groupedFunctions": {
+      "signal-non-literal-defaults.component.ts": [
+        {
+          "name": "makeDefault",
+          "file": "signal-non-literal-defaults.component.ts",
+          "ctype": "miscellaneous",
+          "subtype": "function",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "displayName": "makeDefault",
+          "args": [],
+          "returnType": "number"
+        }
+      ]
+    },
+    "groupedEnumerations": {},
+    "groupedTypeAliases": {}
+  },
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "signal-non-literal-defaults.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "SignalNonLiteralDefaultsComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/5",
+        "status": "low"
+      },
+      {
+        "filePath": "signal-non-literal-defaults.component.ts",
+        "type": "function",
+        "linktype": "miscellaneous",
+        "linksubtype": "function",
+        "name": "makeDefault",
+        "coveragePercent": 0,
+        "coverageCount": "0/1",
+        "status": "low"
+      }
+    ]
+  }
+}

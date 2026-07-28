@@ -136,6 +136,8 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - With `angularFilterNonInputControls` off, `properties`/`methods`/`view child` sections surface as argTypes, including private fields (#22007); on restricts to inputs.
 - `model()` records one input plus a synthesized `${name}Change` output.
 - Snippets use only the first comma-separated selector; attribute selectors are mangled to bare attributes.
+- A signal input/output/model behind an aliased import (`import { input as ngInput }`) is invisible: the signal parser regex-matches only the literal function name in the initializer text, so the member is demoted to an untyped property (`signal-aliased-import/`).
+- A signal input's non-literal default loses its type: an array or a function-call default keeps its raw text but no type; a sole object-literal argument is mistaken for the options bag, so it records neither a type nor a default; `input.required()` without an explicit generic records no type either (`signal-non-literal-defaults/`).
 
 ## Issue-linked cases (angular)
 

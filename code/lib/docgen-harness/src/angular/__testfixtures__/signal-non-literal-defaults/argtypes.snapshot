@@ -1,0 +1,76 @@
+{
+  "computed": {
+    "description": "
+",
+    "name": "computed",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "makeDefault()",
+      },
+      "type": {
+        "required": true,
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "config": {
+    "description": "
+",
+    "name": "config",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "list": {
+    "description": "
+",
+    "name": "list",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "[1, 2, 3]",
+      },
+      "type": {
+        "required": true,
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "requiredValue": {
+    "description": "
+",
+    "name": "requiredValue",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+}

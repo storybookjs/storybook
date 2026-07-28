@@ -1,0 +1,21 @@
+{
+  "aliased": {
+    "description": "
+",
+    "name": "aliased",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "ngInput('hello')",
+      },
+      "type": {
+        "required": true,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+}

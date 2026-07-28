@@ -34,7 +34,12 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 // Signal fixtures cannot render under JIT: their ɵcmp input/output maps stay empty, so
 // bindings are dropped and required signals throw NG0950 at change detection; the OSA
 // path they feed is static and never mounts components either.
-const SIGNAL_FIXTURES = new Set(['signal-io', 'signal-model']);
+const SIGNAL_FIXTURES = new Set([
+  'signal-io',
+  'signal-model',
+  'signal-aliased-import',
+  'signal-non-literal-defaults',
+]);
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && !SIGNAL_FIXTURES.has(entry.name))

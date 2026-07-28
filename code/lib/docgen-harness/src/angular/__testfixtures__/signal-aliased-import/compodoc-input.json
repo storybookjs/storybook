@@ -1,0 +1,88 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "SignalAliasedImportComponent",
+      "id": "component-SignalAliasedImportComponent-85e2be9f71384ca12d3e3df0e3d627444fd0f08c73352db7089b264f5cff30212ab4302e5e19d902b1c0c8306f772aa2b853cc125e55b5c05c73026aecc0bed1",
+      "file": "signal-aliased-import.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-signal-aliased-import",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ aliased() }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [],
+      "outputsClass": [],
+      "propertiesClass": [
+        {
+          "name": "aliased",
+          "coverageIgnore": false,
+          "defaultValue": "ngInput('hello')",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "unknown",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 8,
+          "rawdescription": "\n"
+        }
+      ],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, input as ngInput } from '@angular/core';\n\n@Component({\n  selector: 'sb-signal-aliased-import',\n  template: '<span>{{ aliased() }}</span>',\n})\nexport class SignalAliasedImportComponent {\n  aliased = ngInput('hello');\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "signal-aliased-import.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "SignalAliasedImportComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/2",
+        "status": "low"
+      }
+    ]
+  }
+}

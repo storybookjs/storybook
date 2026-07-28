@@ -14,6 +14,8 @@ const BASELINES = {
   ioBasicsArgTypes: 'decorator-io-basics/argtypes.snapshot',
   expressionDefaultsArgTypes: 'expression-defaults/argtypes.snapshot',
   jsdocArgTypes: 'jsdoc-tags/argtypes.snapshot',
+  aliasedImportArgTypes: 'signal-aliased-import/argtypes.snapshot',
+  nonLiteralDefaultsArgTypes: 'signal-non-literal-defaults/argtypes.snapshot',
 } as const;
 
 const baseline = (key: keyof typeof BASELINES) =>
@@ -66,6 +68,22 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     // Legacy: the DOMParser extraction keeps the surrounding quotes and the trailing
     // newline of the JSDoc comment (`'steelblue'\n`).
     expect(baseline('jsdocArgTypes')).toContain('"summary": "steelblue"');
+  });
+
+  gapTest('a signal input behind an aliased import is still recognized as an input', () => {
+    // Legacy: SignalConfigParser regex-matches only a literal `input`/`output`/`model`
+    // prefix in the initializer source text; `import { input as ngInput }` never matches,
+    // so the member is demoted to an untyped property instead of surviving as an input.
+    expect(baseline('aliasedImportArgTypes')).toContain('"category": "inputs"');
+  });
+
+  gapTest('non-literal signal input defaults still resolve real type/default info', () => {
+    // Legacy: inferTypeFromValue only recognizes boolean/number/string literals, and a
+    // sole object-literal argument is assumed to be the InputOptions bag rather than the
+    // value - there is no type-checker fallback, so a function-call default (`computed`)
+    // and a plain-object default (`config`) both lose real type/default information.
+    expect(baseline('nonLiteralDefaultsArgTypes')).toContain('"summary": "number"');
+    expect(baseline('nonLiteralDefaultsArgTypes')).toContain('"summary": "{ a: 1 }"');
   });
 });
 

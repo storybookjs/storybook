@@ -1,4 +1,5 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
+import { docsServiceDef } from './services/docs/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
 import type {
@@ -24,7 +25,12 @@ import type {
  */
 export const managerCoreServiceDefs = [docgenServiceDef];
 export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
-export const serverCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef, moduleGraphServiceDef];
+export const serverCoreServiceDefs = [
+  docgenServiceDef,
+  storyDocsServiceDef,
+  moduleGraphServiceDef,
+  docsServiceDef,
+];
 
 /** Maps a list of service definitions to `{ [id]: instance }`, keyed by each definition's id. */
 type CoreServices<TDefs extends readonly AnyServiceDefinition[]> = {

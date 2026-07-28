@@ -32,6 +32,7 @@ import type {
 
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
+import { registerDocsService } from '../../shared/open-service/services/docs/server.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 
@@ -39,13 +40,13 @@ import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initReviewChannel } from '../server-channel/review-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
@@ -396,6 +397,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       storyDocsProvider,
       workingDir: process.cwd(),
     });
+
+    registerDocsService();
   }
 };
 

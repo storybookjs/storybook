@@ -33,6 +33,7 @@ const docgenComponentFields = {
   path: v.string(),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
+  apiDescription: v.optional(v.string()),
   jsDocTags: docgenJsDocTagsSchema,
   argTypes: v.optional(argTypesSchema),
   error: v.optional(docgenErrorSchema),

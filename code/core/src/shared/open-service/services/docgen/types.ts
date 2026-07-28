@@ -35,6 +35,10 @@ export interface DocgenPayload {
   path: string;
   description?: string;
   summary?: string;
+  /**
+   * Framework-rendered API reference as a Markdown fragment, produced by the docgen provider.
+   */
+  apiDescription?: string;
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;

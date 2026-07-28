@@ -94,6 +94,14 @@ export type DocgenMiddleware = (nextDocgen: DocgenProvider) => DocgenProvider;
 export interface DocgenProviderDescriptor {
   /** Absolute path to a module that exports {@link DocgenWorkerModule.createDocgenProvider}. */
   moduleSpecifier: string;
+  /**
+   * Structured-clone-safe configuration handed to `createDocgenProvider` inside the worker.
+   *
+   * Use it for the few preset-derived values an engine cannot read for itself once it is off the main
+   * thread (for example the Vue framework's `docgen.tsconfig` path). Anything non-serializable — a
+   * closure, a `presets` handle — cannot cross the worker boundary and does not belong here.
+   */
+  options?: Record<string, unknown>;
 }
 
 /**
@@ -102,5 +110,7 @@ export interface DocgenProviderDescriptor {
  * the provider chain. Integrations implement only this factory — they never touch threading.
  */
 export interface DocgenWorkerModule {
-  createDocgenProvider: () => DocgenMiddleware | Promise<DocgenMiddleware>;
+  createDocgenProvider: (
+    options?: DocgenProviderDescriptor['options']
+  ) => DocgenMiddleware | Promise<DocgenMiddleware>;
 }

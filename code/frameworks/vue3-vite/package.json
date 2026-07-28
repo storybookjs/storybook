@@ -31,6 +31,7 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -52,6 +53,7 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
     "magic-string": "^1.1.0",
+    "oxc-resolver": "^11.19.1",
     "typescript": "^5.9.3",
     "vue-component-meta": "^3.2.7",
     "vue-docgen-api": "^4.75.1"

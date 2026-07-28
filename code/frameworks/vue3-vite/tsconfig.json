@@ -6,5 +6,8 @@
     "rootDir": "./src"
   },
   "extends": "../../tsconfig.json",
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  // Docgen test fixtures are read from disk as source text, never imported. They include a `.vue`
+  // SFC that plain `tsc` cannot resolve, and type-checking them would prove nothing.
+  "exclude": ["src/docgen/__testfixtures__/**"]
 }

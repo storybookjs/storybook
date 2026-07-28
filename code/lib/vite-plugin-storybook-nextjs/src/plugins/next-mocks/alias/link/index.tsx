@@ -4,10 +4,12 @@ import { fn } from "storybook/test";
 
 const linkAction = fn().mockName("next/link::Link");
 
-// Mirrors next/dist/client/normalize-trailing-slash, which the real <Link> applies to every
-// href it renders. Both flags are supplied by Next's own getDefineEnv, which this plugin
-// already spreads into Vite's `define`: __NEXT_TRAILING_SLASH is `trailingSlash` and
-// __NEXT_MANUAL_TRAILING_SLASH is `skipTrailingSlashRedirect`.
+/**
+ * Mirrors next/dist/client/normalize-trailing-slash, which the real <Link> applies to every
+ * href it renders. Both flags are supplied by Next's own getDefineEnv, which this plugin
+ * already spreads into Vite's `define`: __NEXT_TRAILING_SLASH is `trailingSlash` and
+ * __NEXT_MANUAL_TRAILING_SLASH is `skipTrailingSlashRedirect`.
+ */
 const removeTrailingSlash = (route: string) =>
   route.endsWith("/") && route.length > 1 ? route.slice(0, -1) : route;
 

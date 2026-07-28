@@ -22,7 +22,7 @@ import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 
 import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
-import type { ComponentRefLike, StoryRefLike } from '../docgen-shared/renderer-module.ts';
+import type { ComponentRefLike, StoryRefLike } from '../docgen-shared/react-renderer-module.ts';
 
 const require = createRequire(import.meta.url);
 

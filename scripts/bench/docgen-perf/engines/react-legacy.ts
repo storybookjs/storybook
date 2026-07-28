@@ -27,8 +27,8 @@ import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
 import {
   type ComponentRefLike,
-  loadRendererModule,
-} from '../../docgen-shared/renderer-module.ts';
+  loadReactRendererModule,
+} from '../../docgen-shared/react-renderer-module.ts';
 import {
   type SeriesEngine,
   harnessMain,
@@ -112,10 +112,10 @@ interface Parser {
 
 async function loadParser(options: HarnessOptions, project: GeneratedProject): Promise<Parser> {
   const { componentPaths } = project;
-  const { invalidateCache } = await loadRendererModule<UtilsModule>('utils.ts');
+  const { invalidateCache } = await loadReactRendererModule<UtilsModule>('utils.ts');
 
   if (options.parser === 'react-docgen') {
-    const { getReactDocgen } = await loadRendererModule<ReactDocgenModule>('reactDocgen.ts');
+    const { getReactDocgen } = await loadReactRendererModule<ReactDocgenModule>('reactDocgen.ts');
     return {
       async extractOne(i) {
         const result = getReactDocgen(componentPaths[i], componentRef(i, componentPaths[i]));
@@ -130,7 +130,7 @@ async function loadParser(options: HarnessOptions, project: GeneratedProject): P
   }
 
   const { parseWithReactDocgenTypescript, invalidateParser } =
-    await loadRendererModule<ReactDocgenTypescriptModule>('reactDocgenTypescript.ts');
+    await loadReactRendererModule<ReactDocgenTypescriptModule>('reactDocgenTypescript.ts');
   // The parser resolves its tsconfig from process.cwd(); point it at the generated project.
   process.chdir(project.outDir);
   return {

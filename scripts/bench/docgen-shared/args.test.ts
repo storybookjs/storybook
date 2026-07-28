@@ -9,6 +9,7 @@ const OPTIONS = {
   heavy: { type: 'boolean' },
   out: { type: 'string' },
   'components-per-package': { type: 'string' },
+  'max-retained-growth': { type: 'string' },
 } as const;
 
 const SCHEMA = z.object({
@@ -17,6 +18,7 @@ const SCHEMA = z.object({
   heavy: z.boolean().default(false),
   outDir: z.string().default('/default'),
   componentsPerPackage: countOption(10),
+  maxRetainedGrowthMb: countOption(400),
 });
 
 interface Options {
@@ -25,12 +27,14 @@ interface Options {
   heavy: boolean;
   outDir: string;
   componentsPerPackage: number;
+  maxRetainedGrowthMb: number;
 }
 
 const parse = (argv: string[]) =>
   parseHarnessOptions<Options>(argv, OPTIONS, SCHEMA, (values) => ({
     ...values,
     outDir: values.out,
+    maxRetainedGrowthMb: values.maxRetainedGrowth,
   }));
 
 describe('parseHarnessOptions', () => {
@@ -41,6 +45,7 @@ describe('parseHarnessOptions', () => {
       heavy: false,
       outDir: '/default',
       componentsPerPackage: 10,
+      maxRetainedGrowthMb: 400,
     });
   });
 
@@ -50,6 +55,13 @@ describe('parseHarnessOptions', () => {
 
   it('maps kebab-case flags onto the schema shape', () => {
     expect(parse(['--components-per-package', '5']).componentsPerPackage).toBe(5);
+  });
+
+  it('carries a flag whose schema key is not its camelCase', () => {
+    // `--max-retained-growth` camel-cases to `maxRetainedGrowth`, but the schema names the unit.
+    // Without the rename in `toInput` the flag is accepted and then silently ignored, which is how
+    // the memory harness lost its threshold flag once already.
+    expect(parse(['--max-retained-growth', '50']).maxRetainedGrowthMb).toBe(50);
   });
 
   it('reads boolean flags', () => {

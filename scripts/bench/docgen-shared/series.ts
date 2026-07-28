@@ -1,5 +1,5 @@
 /**
- * The save-series harness every docgen engine child runs, per scripts/bench/PERF-METHODOLOGY.md:
+ * The save-series harness every docgen engine child runs:
  * one timed cold pass, then K simulated saves that mutate the project on disk, invalidate the
  * engine's caches, and re-extract, with memory sampled around forced GC after every save. Engines
  * differ only in what those steps mean, so they implement {@link SeriesEngine} and this module owns

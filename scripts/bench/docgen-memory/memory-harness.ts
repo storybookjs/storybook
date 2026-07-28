@@ -39,7 +39,7 @@ import { z } from 'zod';
 
 import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
-import { type StoryRefLike, loadRendererModule } from '../docgen-shared/renderer-module.ts';
+import { type StoryRefLike, loadReactRendererModule } from '../docgen-shared/react-renderer-module.ts';
 import { MB, gcAvailable } from '../docgen-shared/sampling.ts';
 import {
   type SeriesEngine,
@@ -140,6 +140,8 @@ function parseOptions(argv: string[]): HarnessOptions {
     forceGc: !values.noForceGc,
     outDir: values.out,
     jsonOut: values.json,
+    // The schema key carries the unit the flag name leaves off, so camel-casing alone misses it.
+    maxRetainedGrowthMb: values.maxRetainedGrowth,
   }));
 }
 
@@ -148,7 +150,7 @@ function parseOptions(argv: string[]): HarnessOptions {
  * `code/renderers` source into its program.
  */
 async function loadComponentMetaManager(): Promise<ComponentMetaManagerCtor> {
-  const mod = await loadRendererModule<{ ComponentMetaManager: ComponentMetaManagerCtor }>(
+  const mod = await loadReactRendererModule<{ ComponentMetaManager: ComponentMetaManagerCtor }>(
     'componentMeta/ComponentMetaManager.ts'
   );
   return mod.ComponentMetaManager;

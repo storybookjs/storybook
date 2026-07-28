@@ -3,6 +3,7 @@ import versions from './versions.ts';
 /// <reference types="@types/compression" />
 
 export * from './presets.ts';
+export * from './utils/base-path.ts';
 export * from './utils/cache.ts';
 export * from './utils/cli.ts';
 export * from './utils/check-addon-order.ts';

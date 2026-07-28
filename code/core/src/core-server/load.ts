@@ -3,6 +3,7 @@ import {
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
+  normalizeBasePath,
   resolveAddonName,
   validateFrameworkName,
 } from 'storybook/internal/common';
@@ -31,6 +32,7 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+  options.basePath = normalizeBasePath(options.basePath);
 
   // no-op channel, as it's only relevant in dev mode
   const channel = new Channel({});

@@ -249,7 +249,7 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
     });
     await router.load();
 
-    expect((router.routesById['/lazy'] as any).options.component).toBe(marker);
+    expect((router as any).routesById['/lazy'].options.component).toBe(marker);
   });
 
   it('carries a lazy binding on the root route onto the clone', async () => {
@@ -266,6 +266,6 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
     });
     await router.load();
 
-    expect((router.routesById['__root__'] as any).options.component).toBe(marker);
+    expect((router as any).routesById['__root__'].options.component).toBe(marker);
   });
 });

@@ -1,7 +1,7 @@
 /** Statistics helpers shared by the docgen bench harnesses. */
 import type { MemorySample, SaveSample } from './samples.ts';
 
-/** Median of `values`. Throws on an empty input so a missing series fails loudly. */
+/** Throws on an empty input so a missing series fails loudly. */
 export function median(values: number[]): number {
   if (values.length === 0) {
     throw new Error('median() requires at least one value');
@@ -11,7 +11,7 @@ export function median(values: number[]): number {
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-/** Arithmetic mean of `values`. Throws on an empty input so a missing series fails loudly. */
+/** Throws on an empty input so a missing series fails loudly. */
 export function mean(values: number[]): number {
   if (values.length === 0) {
     throw new Error('mean() requires at least one value');

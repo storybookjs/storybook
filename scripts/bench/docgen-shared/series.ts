@@ -1,14 +1,9 @@
 /**
- * The save-series harness every docgen engine child runs.
- *
- * The shape is fixed by scripts/bench/PERF-METHODOLOGY.md: one timed cold pass, then K simulated
- * saves, each of which mutates the project on disk, invalidates whatever the engine caches, and
- * re-extracts. Memory is sampled around forced GC after every save.
- *
- * Engines differ only in what those three steps mean, so they implement {@link SeriesEngine} and this
- * module owns the timing. That matters more than the deduplication: which part of a save is inside
- * the stopwatch is the measurement contract, and it used to be hand-placed in each child.
- * `applySave` is never timed, `reextract` always is.
+ * The save-series harness every docgen engine child runs, per scripts/bench/PERF-METHODOLOGY.md:
+ * one timed cold pass, then K simulated saves that mutate the project on disk, invalidate the
+ * engine's caches, and re-extract, with memory sampled around forced GC after every save. Engines
+ * differ only in what those steps mean, so they implement {@link SeriesEngine} and this module owns
+ * the timing.
  */
 import * as fs from 'node:fs';
 
@@ -125,9 +120,8 @@ export interface SeriesHarnessSpec extends SeriesOptions {
 }
 
 /**
- * The whole body of an engine child: banner, setup, series, summary, result JSON. Children own only
- * their {@link SeriesEngine}; anything the orchestrator reads back is produced here so the children
- * cannot drift apart in what they report.
+ * Children own only their {@link SeriesEngine}; everything the orchestrator reads back is produced
+ * here so the children cannot drift apart in what they report.
  */
 export async function runSeriesHarness(spec: SeriesHarnessSpec): Promise<void> {
   console.log(spec.title);

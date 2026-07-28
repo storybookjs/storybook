@@ -2,18 +2,15 @@
  * CI regression gate for the docgen-server memory behavior
  * (https://github.com/storybookjs/storybook/issues/35260).
  *
- * Runs {@link file://./memory-harness.ts} in fresh child processes (so each measurement starts from a
- * clean heap) and asserts two independent things:
+ * Runs {@link file://./memory-harness.ts} in fresh child processes (one clean heap per measurement)
+ * and asserts two independent things:
  *
- *   1. Steady-state churn/leak-freeness (`changed-scope` metric config): post-GC `heapUsed` must not
- *      climb across saves, and the per-save transient working set must stay under budget. A regression
- *      that re-extracts the whole index would blow past these.
- *   2. The OOM fix itself, as a **crash → survive negative control** (`live` configs): the live path
- *      (many per-component `batchExtract` calls on the shared program) is run under a tight heap cap
- *      both WITH and WITHOUT program recycling.
- *        - recycle OFF (`--recycle off`, ratio Infinity) MUST OOM.
- *        - recycle ON (default) MUST survive.
- *      Asserting the flip (not just survival) is what guards the fix rather than the cap.
+ *   1. Steady-state leak-freeness (`changed-scope` metric config): post-GC `heapUsed` must not
+ *      climb across saves, and the per-save transient working set must stay under budget.
+ *   2. The OOM fix itself, as a **crash → survive negative control** (`live` configs): the live
+ *      path is run under a tight heap cap both WITH and WITHOUT program recycling - recycle OFF
+ *      (`--recycle off`, ratio Infinity) MUST OOM, recycle ON (default) MUST survive. Asserting
+ *      the flip, not just survival, is what guards the fix rather than the cap.
  *
  * Run:
  *   yarn bench:docgen-memory          # from scripts/
@@ -42,8 +39,8 @@ interface GateConfig {
   /** `--max-old-space-size` cap (MB) for the child. Omit to run uncapped. */
   capMb?: number;
   /**
-   * Crash → survive negative control. `true` ⇒ the child MUST OOM (recycle disabled); `false` ⇒ it
-   * MUST survive (recycle on). Omit for metric-only configs.
+   * Crash → survive negative control: `true` ⇒ MUST OOM (recycle disabled), `false` ⇒ MUST
+   * survive (recycle on). Omit for metric-only configs.
    */
   expectOom?: boolean;
   /** Post-GC metric budgets, asserted from `result.json` (metric configs only). */

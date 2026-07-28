@@ -1,15 +1,10 @@
 /**
- * Series harness for the vue-docgen-api engine - Vue's legacy docgen and still the default one
- * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/preset.ts`). It is the legacy half of the
- * Vue control pair, the way react-docgen is for React.
+ * Series harness for the vue-docgen-api engine - Vue's legacy docgen and still the default
+ * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/preset.ts`), the Vue equivalent of the
+ * react-docgen control.
  *
- * Production calls `parse(id)` once per `.vue` file from a Vite `transform` hook
- * (`code/frameworks/vue3-vite/src/plugins/vue-docgen.ts`), and the parser reads the file from disk
- * on every call with no cache of its own. A save therefore costs exactly one `parse` of one file,
- * so the per-save sample is production-shaped without any invalidation step.
- *
- * The generated project and the save sequence come from the shared scenario module, so they are
- * identical to the ones vue-component-meta measures.
+ * The parser reads from disk on every call and keeps no cache, so one save costs one `parse` and
+ * needs no invalidation step.
  *
  * Run:
  *   node --expose-gc scripts/bench/docgen-perf/engines/vue-docgen-api.ts \
@@ -28,9 +23,8 @@ import {
 } from './vue-scenario.ts';
 
 /**
- * How many documented members the parse produced. The two Vue engines resolve imported prop types
- * to different depths, so a timing ratio is only meaningful next to this count - a parse that
- * resolved nothing is fast for the wrong reason.
+ * Member count is reported alongside timing: a parse that resolved nothing is fast for the wrong
+ * reason.
  */
 async function extractOne(sfcPath: string): Promise<number> {
   const doc = await parse(sfcPath);

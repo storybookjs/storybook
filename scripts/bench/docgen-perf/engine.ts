@@ -1,13 +1,6 @@
 /**
- * What the orchestrator knows about an engine.
- *
- * Engines differ in exactly one way: how one repetition is produced. Five of them spawn a
- * series-harness child and get a save series back; Compodoc runs an external CLI and gets one
- * triple back. Everything downstream - which aggregation applies, whether there are member counts
- * to report - follows from that choice, so it is the only thing a subclass decides.
- *
- * React and Vue are not separate kinds. They are the same {@link SeriesChildEngine} with a different
- * child file and different flags, which is data, not behaviour.
+ * What the orchestrator knows about an engine. Engines differ only in how one repetition is
+ * produced; everything downstream (aggregation, member counts) follows from that choice.
  */
 import * as path from 'node:path';
 
@@ -45,9 +38,9 @@ export abstract class BenchEngine<Sample = unknown> {
   abstract aggregate(samples: Sample[], expectedN: number): EngineMetrics;
 
   /**
-   * Anything that must resolve before the run starts. A returned string is the skip reason, and a
-   * skip is reported instead of a failure: a missing external tool is what a partial install looks
-   * like, not a regression.
+   * Anything that must resolve before the run starts. A returned string is the skip reason: a
+   * missing external tool is a partial install, not a regression, so it is reported as skipped
+   * rather than failed.
    */
   preflight(): string | undefined {
     return undefined;
@@ -81,9 +74,9 @@ export interface SeriesChildConfig {
 }
 
 /**
- * An engine measured by spawning a series-harness child, one fresh process per repetition. The
- * child produces the save series; aggregation and member counts are the same for every engine of
- * this kind because they all share the series harness.
+ * An engine measured by spawning a series-harness child, one fresh process per repetition. All
+ * engines of this kind share the series harness, so aggregation and member counts are the same
+ * for each.
  */
 export class SeriesChildEngine extends BenchEngine<SeriesResult> {
   readonly id: EngineId;

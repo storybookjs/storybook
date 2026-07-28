@@ -1,15 +1,12 @@
 /**
  * Adapter for the Compodoc engine. Compodoc is a one-shot CLI - a fresh process per run - so this
- * adapter runs inside the orchestrator and spawns the compodoc CLI itself as the measured child:
- * cold extraction and whole-project scan are the same full-project run, warm extraction is a second
- * full run after touching one component file, and peak memory is the child's peak RSS sampled from
- * outside the process.
+ * adapter spawns the compodoc CLI itself as the measured child: cold extraction and whole-project
+ * scan are the same full-project run, warm extraction is a second full run after touching one
+ * component file, and peak memory is the child's peak RSS sampled from outside the process.
  *
- * `@compodoc/compodoc` is pinned exactly in `scripts/package.json`, at the same 2.0.0 the Angular
- * docgen baselines capture against (`code/lib/docgen-harness/README.md`). The pin is exact because
- * compodoc's output and cost both move across versions, so a caret range would drift the numbers
- * without anyone deciding to. The binary is still resolved at runtime and the engine still skips
- * with an explicit message if it is missing, which is what a partial install looks like.
+ * `@compodoc/compodoc` is pinned exactly in `scripts/package.json`, matching the version the Angular
+ * docgen baselines capture against (`code/lib/docgen-harness/README.md`) - a caret range would let
+ * the numbers drift across compodoc versions without anyone deciding to.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -23,8 +20,8 @@ import type { EngineId } from '../../docgen-shared/engine-ids.ts';
 import type { EngineMetrics } from '../types.ts';
 
 /**
- * The version of the binary that actually ran, walked up from the resolved executable rather than
- * read from a fixed path - the package hoists to different node_modules depending on the install.
+ * Walked up from the resolved binary rather than a fixed path, since the package hoists to
+ * different node_modules depending on the install.
  */
 export function compodocVersion(binary: string): string | undefined {
   try {

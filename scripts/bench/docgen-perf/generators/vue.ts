@@ -5,18 +5,13 @@
  * inside the generated tree's own node_modules (hermetic - no npm install).
  *
  * Structure levers:
- *   - packages: workspace width; each `packages/pkg{p}` extends the previous package's props type,
+ *   - packages: workspace width. Each `packages/pkg{p}` extends the previous package's props type,
  *     so the type chain across packages has depth = packages. `packages/types` holds the shared
- *     base type every package ultimately extends - the widely-imported type the base-type-touch
- *     scenario mutates.
- *   - chainDepth: intra-package type-alias hops between a package's props interface and its parent
- *     type, adding resolution steps without new files.
- *   - fanOut: distinct auxiliary types from `packages/types` referenced by every package's props.
- *   - heavyLib: emits `node_modules/(at)bench/heavy-ui` with a large generated `.d.ts` surface
- *     imitating a vuetify-scale component library; package props reference it when enabled.
- *
- * Generated trees are bench-time scratch output (under the sandbox directory); only this generator
- * and the scenario configs are committed.
+ *     base type every package extends - the type the base-type-touch scenario mutates.
+ *   - chainDepth: intra-package type-alias hops between a package's props interface and its parent.
+ *   - fanOut: auxiliary types from `packages/types` referenced by every package's props.
+ *   - heavyLib: emits a fake `(at)bench/heavy-ui` package with a large `.d.ts` surface; package
+ *     props reference it when enabled.
  *
  * Run directly:
  *   node scripts/bench/docgen-perf/generators/vue.ts --out ../storybook-sandboxes/docgen-perf-vue --packages 4 --components-per-package 10

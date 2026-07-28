@@ -1,10 +1,8 @@
 /**
  * The scenario plumbing both Vue engine harnesses share: option parsing, project generation, the
- * measured component set, and the per-save mutation.
- *
- * The two engines must see byte-identical projects and touch the same files in the same order, or
- * the ratio between their medians measures the generator instead of the engines. Keeping the shared
- * half here is what makes that true by construction.
+ * measured component set, and the per-save mutation. Both engines must see identical projects and
+ * touch the same files in the same order, or the ratio between their medians measures the generator
+ * instead of the engines.
  *
  * Scenarios:
  *   flat             single package; the measured set is every component.
@@ -116,8 +114,6 @@ export function setUpVueScenario(options: VueHarnessOptions): VueScenarioSetup {
     targetPackage,
     mutationFor(save) {
       if (options.scenario === 'base-type-touch') {
-        // Touch the widely-imported base type; every dependent package's props type changes. The
-        // re-extraction target is fixed so each sample pays the same wide invalidation.
         extraBaseProps += 1;
         return {
           filePath: project.baseTypesPath,

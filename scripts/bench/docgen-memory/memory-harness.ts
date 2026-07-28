@@ -2,22 +2,21 @@
  * Deterministic in-process memory harness for the docgen-server OOM
  * (https://github.com/storybookjs/storybook/issues/35260).
  *
- * It reproduces the "re-extract on every save" behavior without a browser or dev server, so it runs
- * fast and is fully deterministic. It drives the real {@link ComponentMetaManager} against a
- * generated project of N components, then simulates K file saves and samples memory after each one.
+ * Drives the real {@link ComponentMetaManager} against a generated project of N components, then
+ * simulates K file saves and samples memory after each one.
  *
- * Two failure signals are measured independently:
- *   - RETAINED growth: post-GC `heapUsed` trend across saves. A rising trend ⇒ a true leak (memory
- *     held between saves). A flat trend ⇒ the cost is transient allocation, not retained state.
- *   - PEAK pressure: pre-GC `rss` per save. With `--no-force-gc` and a `--max-old-space-size` cap at
- *     launch, this is what crashes the process when saves outpace GC (the reported OOM).
+ * Two independent failure signals:
+ *   - RETAINED growth: post-GC `heapUsed` trend across saves. Rising ⇒ a true leak (memory held
+ *     between saves), flat ⇒ transient allocation.
+ *   - PEAK pressure: pre-GC `rss` per save. Under `--no-force-gc` and a `--max-old-space-size` cap,
+ *     this is what crashes the process when saves outpace GC (the reported OOM).
  *
  * Modes:
- *   --mode refresh  call manager.batchExtract(allEntries) synchronously each save. Mirrors the docgen
+ *   --mode refresh  synchronous manager.batchExtract(allEntries) each save. Mirrors the docgen
  *                   open-service "refresh all extracted components" path (server.ts).
  *   --mode live     many per-component batchExtract calls on the shared program, mirroring the
- *                   docs-addon per-edit wave that drives the #35260 OOM. The program-recycle fix bounds
- *                   this path. Use --recycle off to assert the OOM still happens without the fix.
+ *                   docs-addon per-edit wave that drives the #35260 OOM. The program-recycle fix
+ *                   bounds this path; use --recycle off to assert the OOM still happens without it.
  *
  * Run (diagnose retained vs transient):
  *   node --expose-gc --import jiti/register scripts/bench/docgen-memory/memory-harness.ts \
@@ -66,10 +65,8 @@ type ComponentMetaManagerCtor = new (
 
 const MODES = ['refresh', 'live'] as const;
 /**
- * Which entries to re-extract per save.
- *   all     - re-extract every component each save (the docgen service refreshing all extracted
- *             components on an empty change hint).
- *   changed - re-extract only the component whose file changed.
+ * Which entries to re-extract per save: `all` re-extracts every component (the docgen service
+ * refreshing on an empty change hint), `changed` re-extracts only the component whose file changed.
  */
 const SCOPES = ['all', 'changed'] as const;
 const RECYCLE = ['on', 'off'] as const;
@@ -92,8 +89,7 @@ interface HarnessOptions {
   maxRetainedGrowthMb: number;
   /**
    * Heap-pressure ratio forwarded to `ComponentMetaManager`. `Infinity` disables program recycling
-   * (the negative control: assert the OOM happens without the fix). `undefined` uses the product
-   * default.
+   * (negative control), `undefined` uses the product default.
    */
   recycleHeapPressureRatio?: number;
 }
@@ -121,8 +117,8 @@ function parseOptions(argv: string[]): HarnessOptions {
 }
 
 /**
- * Load the real `ComponentMetaManager` at runtime. The specifier is built with `new URL` so the
- * static `scripts` typecheck does not pull `code/renderers` source into its program.
+ * Loaded via `new URL` at runtime, not a static import, so the `scripts` typecheck does not pull
+ * `code/renderers` source into its program.
  */
 async function loadComponentMetaManager(): Promise<ComponentMetaManagerCtor> {
   const mod = await loadRendererModule<{ ComponentMetaManager: ComponentMetaManagerCtor }>(
@@ -159,16 +155,10 @@ function resolveProject(options: HarnessOptions): ReturnType<typeof generateProj
 }
 
 /**
- * Live-path mode: mirrors the docs-addon per-edit "waves" that drive the #35260 OOM — many
- * individual per-component `batchExtract` calls on the ONE shared program, whose type-resolution
- * cache accumulates across calls. This is the exact shape the program-recycle fix bounds (the
- * recycle check runs between calls), unlike the `--scope all` single-call cold pass which OOMs
- * within one call regardless of recycling.
- *
- * Run under a `--max-old-space-size` cap:
- *   - recycle on (default): the heap sawtooths as the shared program is recycled, and survives.
- *   - `--recycle off` (ratio Infinity): the type cache climbs to the cap and the process OOMs —
- *     the negative control the gate asserts.
+ * Unlike the `--scope all` single-call cold pass (which OOMs within one call regardless of
+ * recycling), the recycle check runs between the per-component calls here, so under a heap cap:
+ * recycle on sawtooths and survives, `--recycle off` climbs to the cap and OOMs (the negative
+ * control the gate asserts).
  */
 function runLiveMode(
   manager: ComponentMetaManagerLike,
@@ -213,10 +203,9 @@ function runLiveMode(
 }
 
 /**
- * Refresh-path mode as a save series. The cold pass is the *identical* operation a `scope=all`
- * refresh save performs (extractPropsFromStories over every entry), so an OOM there is the same OOM
- * every refresh-all save would hit; it simply lands on the first pass when the full-extraction
- * working set already exceeds the heap cap.
+ * The cold pass is the *identical* operation a `scope=all` refresh save performs
+ * (extractPropsFromStories over every entry), so an OOM there is the same OOM every refresh-all
+ * save would hit.
  */
 function refreshEngine(
   manager: ComponentMetaManagerLike,
@@ -246,8 +235,7 @@ function refreshEngine(
           base64Kb: options.base64Kb,
         })
       );
-      // Bump project versions so the next extraction re-reads the mutated file (matches the dev
-      // server's file-watcher → onFilesChanged flow); without this the program serves stale snapshots.
+      // Must run after the write, or the program serves a stale snapshot for this file.
       manager.onFilesChanged([{ filePath: componentPath, type: 'changed' }]);
     },
     async reextract(save) {

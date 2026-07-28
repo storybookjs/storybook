@@ -1,9 +1,7 @@
 /**
  * The calibration references: each framework's legacy-engine median divided by its new-engine
- * median, both measured in the same invocation.
- *
- * Timing budgets are ratios rather than absolute milliseconds because absolute wall-clock on shared
- * CI executors is too noisy to gate (PERF-METHODOLOGY.md, "Budget shape").
+ * median, both measured in the same invocation. Ratios stand in for absolute milliseconds because
+ * wall-clock on shared CI executors is too noisy to gate (PERF-METHODOLOGY.md, "Budget shape").
  */
 import type { EngineId } from '../docgen-shared/engine-ids.ts';
 import type { EngineResult, RatioEntry, Ratios, ScenarioResult } from './types.ts';
@@ -21,8 +19,8 @@ export const CONTROL_PAIRS: ControlPair[] = [
 ];
 
 /**
- * Spawn order for a repetition. Each control pair swaps sides on even repetitions so cache warming
- * and thermal drift do not consistently favour whichever engine happens to be listed first.
+ * Each control pair swaps sides on even repetitions so cache warming and thermal drift do not
+ * consistently favour whichever engine is listed first.
  */
 export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] {
   const order = [...engines];
@@ -61,10 +59,8 @@ function ratioFor(legacy: ScenarioResult, next: ScenarioResult): RatioEntry {
     entry.warm = legacy.metrics.warmExtractionMs.median / next.metrics.warmExtractionMs.median;
   }
 
-  // Two engines that documented different numbers of members did not do the same work, so the
-  // ratio measures resolution depth as much as speed. Engines that report no counts leave this
-  // undefined: unknown is not the same claim as unequal, and only an explicit false is worth
-  // warning about.
+  // likeForLike is left undefined, not false, when an engine reports no member counts - see
+  // renderRatios for why that distinction matters.
   if (legacy.coldMembers !== undefined && next.coldMembers !== undefined) {
     const warmAgrees =
       legacy.warmMembers === undefined ||

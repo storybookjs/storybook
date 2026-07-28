@@ -1,10 +1,7 @@
 /**
  * The engine table. Adding an engine means adding one entry here; the orchestrator has no
- * per-engine branches, so an engine cannot be half-added - listed in one place and forgotten in
- * another.
- *
- * The machinery lives in engine.ts. Everything below is data: which child to spawn, with which
- * flags, over which scenarios.
+ * per-engine branches. Everything below is data: which child to spawn, with which flags, over
+ * which scenarios.
  */
 import type { SuiteProfile } from './config.ts';
 import { type BenchEngine, type ScenarioSpec, SeriesChildEngine } from './engine.ts';
@@ -36,9 +33,8 @@ const vueArgs = ({ params }: ScenarioSpec): string[] => [
 ];
 
 export const ENGINES: BenchEngine[] = [
-  // Both sides of the React pair re-extract one changed component per save, which compares the
-  // engines on equal work. It is not what a real legacy save costs - see the calibration caveat in
-  // PERF-METHODOLOGY.md.
+  // --scope changed on both sides of the React pair compares the engines on equal work; that is
+  // not what a real legacy save costs - see the calibration caveat in PERF-METHODOLOGY.md.
   new SeriesChildEngine({
     id: 'react-legacy',
     child: 'engines/react-legacy.ts',

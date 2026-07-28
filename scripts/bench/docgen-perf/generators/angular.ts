@@ -1,9 +1,8 @@
 /**
  * Generator for a synthetic Angular project consumable by a standalone Compodoc CLI run.
  *
- * Compodoc documents inputs/outputs from the TypeScript AST, so the generated tree ships a minimal
- * fake `(at)angular/core` type surface inside its own node_modules (hermetic - no npm install of the
- * real framework) just so type resolution stays clean.
+ * Ships a minimal fake `(at)angular/core` type surface inside its own node_modules so the tree is
+ * hermetic - no npm install of the real framework is needed for type resolution.
  *
  * Run directly:
  *   node scripts/bench/docgen-perf/generators/angular.ts --out ../storybook-sandboxes/docgen-perf-angular --components 100
@@ -51,8 +50,8 @@ function emitFakeAngularCore(projectDir: string): void {
 }
 
 /**
- * A component's source. `extraProps` grows the input surface by one per warm-run touch, so the
- * second Compodoc run sees a genuinely changed file.
+ * `extraProps` grows the input surface by one per warm-run touch, so the second Compodoc run sees
+ * a genuinely changed file.
  */
 export function angularComponentSource(i: number, extraProps: number): string {
   const extras = Array.from(

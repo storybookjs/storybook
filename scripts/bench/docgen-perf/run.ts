@@ -1,14 +1,6 @@
 /**
- * Orchestrator for the per-engine docgen performance suite. Implements the measurement contract in
- * scripts/bench/PERF-METHODOLOGY.md: five floor metrics per engine, plain Node, a fresh child
- * process per measurement, median-of-N with one pinned N recorded in the results.
- *
- * The loop below has no per-engine branches. What an engine measures and how its repetitions become
- * metrics lives in its descriptor in registry.ts; spawn order alternation and the ratios live in
- * ratios.ts; the aggregation rules live in aggregate.ts.
- *
- * A failed engine does not abort the suite: it is recorded as failed, the remaining engines keep
- * measuring, and the process exits 1 after the summary.
+ * Orchestrator for the per-engine docgen performance suite. See scripts/bench/PERF-METHODOLOGY.md
+ * for the measurement contract.
  *
  * Run:
  *   yarn bench:docgen-perf                # from scripts/, full profile
@@ -71,8 +63,8 @@ function assembleScenario(
   const engine = engineById(engineId);
   const samples = store.get(scenarioKey(engineId, scenario.name)) ?? [];
   const metrics = engine.aggregate(samples, profile.n);
-  // Member counts are read from the same repetition the warm and memory metrics come from, so
-  // every figure reported for a scenario describes one run.
+  // Member counts come from the same repetition as the warm and memory metrics, so every figure
+  // reported for a scenario describes one run.
   const designated = designatedRep(samples as Array<{ coldMs: number }>);
   return {
     params: scenario.params,
@@ -134,9 +126,8 @@ async function main() {
       engineResults[engineId] = { status: 'skipped', reason: skipReason };
       continue;
     }
-    // An engine that failed part-way holds fewer samples than the pinned N. Reporting it as
-    // measured would put numbers taken at an unrecorded N into the results, so a mid-suite failure
-    // stays failed no matter how many repetitions it managed.
+    // An engine that failed part-way holds fewer samples than the pinned N, so it stays failed
+    // rather than being reported as measured at an unrecorded N.
     const failReason = failed.get(engineId);
     if (failReason) {
       engineResults[engineId] = { status: 'failed', reason: failReason };

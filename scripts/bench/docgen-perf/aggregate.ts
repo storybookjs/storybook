@@ -1,19 +1,16 @@
 /**
- * Turning N repetitions into the five floor metrics, per scripts/bench/PERF-METHODOLOGY.md.
- *
- * Cold latency is the median across repetitions. Warm latency and all three memory metrics read one
- * repetition's save series, and they read the same one, so those four figures always describe the
- * same run.
+ * Turns N repetitions into the five floor metrics (see scripts/bench/PERF-METHODOLOGY.md). Warm
+ * latency and all three memory metrics read the same designated repetition's save series, so those
+ * four figures always describe one run; cold latency is a median across every repetition instead.
  */
 import type { SeriesResult } from '../docgen-shared/series.ts';
 import { mean, median } from '../docgen-shared/stats.ts';
 import { type EngineMetrics, NOT_APPLICABLE } from './types.ts';
 
 /**
- * The repetition whose cold sample is the median. Repetition 1 is systematically the slowest - it
- * pays for a cold module graph and a cold OS page cache - so taking it would bias warm latency and
- * all three memory metrics at once. Cold latency needs no such protection: it is already a median
- * across every repetition.
+ * Repetition 1 is systematically the slowest - it pays for a cold module graph and a cold OS page
+ * cache - so taking it would bias warm latency and all three memory metrics at once. Cold latency
+ * needs no such protection: it is already a median across every repetition.
  */
 export function designatedRep<T extends { coldMs: number }>(reps: T[]): T {
   const byCold = [...reps].sort((a, b) => a.coldMs - b.coldMs);
@@ -28,9 +25,9 @@ function transientsOf(rep: SeriesResult): number[] {
 }
 
 /**
- * Reject a repetition count that is not the pinned N. An engine that failed part-way through holds
- * fewer samples, and reporting those as a result would put numbers taken at an unrecorded N into the
- * results file - which the whole comparison method rests on not happening.
+ * An engine that failed part-way through holds fewer samples than expectedN. Reporting those would
+ * put numbers taken at an unrecorded N into the results file, which the comparison method rests on
+ * not happening.
  */
 function assertRepetitionCount(reps: unknown[] | undefined, expectedN: number): void {
   if (!reps || reps.length === 0) {

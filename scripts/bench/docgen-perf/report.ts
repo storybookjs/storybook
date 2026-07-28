@@ -1,7 +1,4 @@
-/**
- * Rendering the suite's terminal output. Pure string building, so the one rule that matters here -
- * a ratio never appears without the caveat that applies to it - is testable.
- */
+/** Renders the suite's terminal output. Pure string building, so it is testable without a runner. */
 import type { EngineId, EngineMetrics, EngineResult, Ratios } from './types.ts';
 
 const HEADER = ['engine/scenario', 'cold', 'warm', 'scan', 'peak', 'ret-growth', 'ret-slope'];
@@ -20,9 +17,9 @@ export function formatCell(metric: EngineMetrics[keyof EngineMetrics], unit: 'ms
 }
 
 export interface RenderedResults {
-  /** The metrics table, already padded into aligned lines. */
+  /** Already padded into aligned lines. */
   table: string[];
-  /** One line per engine that skipped or failed. */
+  /** One line per engine that skipped or failed, in place of a table row. */
   statusLines: string[];
 }
 
@@ -68,13 +65,11 @@ export function renderResults(
 }
 
 /**
- * Ratio lines, each carrying its own caveat.
- *
  * A ratio between engines that documented different numbers of members is not a speed comparison -
  * the faster side was fast because it resolved less. Printing such a ratio bare reads as a clean
  * win, so the member counts and the warning travel with it, on the warm line as much as the cold
- * one. The warm line needs it more: on these projects the legacy Vue parser has documented zero
- * members on the save it was timed on.
+ * one. The warm line needs it more: the legacy Vue parser documents zero members on the save it is
+ * timed on, so a bare warm ratio would read as a clean win over identical work.
  */
 export function renderRatios(ratios: Ratios): string[] {
   const lines: string[] = [];

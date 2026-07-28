@@ -25,7 +25,6 @@ describe('designatedRep', () => {
   });
 
   it('never picks the slow first repetition just because it came first', () => {
-    // Repetition 1 pays for a cold module graph; it must not supply the warm and memory metrics.
     const reps = [rep(5000, [999]), rep(100, [10]), rep(110, [11]), rep(120, [12]), rep(130, [13])];
     expect(designatedRep(reps).coldMs).not.toBe(5000);
     expect(designatedRep(reps).coldMs).toBe(120);

@@ -34,12 +34,12 @@ import type { UserOptions } from './types.ts';
 // use to guard against duplicate plugin activation
 const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
 
-export function experimental_vitePlugin(options?: UserOptions): Promise<PluginOption> {
+export function experimental_vitePlugin(options?: UserOptions): PluginOption {
   // prevent nested activation and deactivate self when ran through CLI
   if (ViteAsyncLocalStorage.getStore() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
-    return Promise.resolve([]);
+    return [];
   }
-  return Promise.resolve(main(options));
+  return main(options);
 }
 
 function normalizeBase(base: string): string {

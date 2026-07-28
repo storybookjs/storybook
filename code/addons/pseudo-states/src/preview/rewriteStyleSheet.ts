@@ -12,6 +12,10 @@ const selectorStartPattern = String.raw`[|>+~,\s(]`;
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
 
+// WebKit limits a style rule to 4096 selectors. Keep some headroom so rewritten rules remain
+// valid even after pseudo-state selectors are expanded.
+const maximumSelectorsPerRule = 4000;
+
 const warnings = new Set();
 const warnOnce = (message: string) => {
   if (warnings.has(message)) {
@@ -103,63 +107,90 @@ const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) 
   return `:not(${rewrittenSelectors.join(', ')})`;
 };
 
-const rewriteRule = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boolean) => {
-  return cssText.replace(
-    selectorText,
-    splitSelectors(selectorText)
-      .flatMap((selector) => {
-        if (selector.includes('.pseudo-')) {
-          return [];
-        }
-        const replacementSelectors = [selector];
-        if (!matchOne.test(selector)) {
-          return replacementSelectors;
-        }
+const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boolean) => {
+  const rewrittenSelectors = splitSelectors(selectorText).flatMap((selector) => {
+    if (selector.includes('.pseudo-')) {
+      return [];
+    }
+    const replacementSelectors = [selector];
+    if (!matchOne.test(selector)) {
+      return replacementSelectors;
+    }
 
-        const classSelector = replacePseudoStates(selector);
-        if (classSelector !== selector) {
-          replacementSelectors.push(classSelector);
-        }
+    const classSelector = replacePseudoStates(selector);
+    if (classSelector !== selector) {
+      replacementSelectors.push(classSelector);
+    }
 
-        let ancestorSelector = '';
+    let ancestorSelector = '';
 
-        if (selector.startsWith(':host(')) {
-          const matches = selector.match(/^:host\((\S+)\)\s+(.+)$/);
-          if (matches && matchOne.test(matches[2])) {
-            // Simple replacement won't work on pseudo-state selectors outside of :host().
-            // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
-            // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
-            let hostInnerSelector = matches[1];
-            let descendantSelector = matches[2];
-            // Simple replacement is fine for pseudo-state selectors inside :host() (even if inside :not()).
-            hostInnerSelector = replacePseudoStates(hostInnerSelector, true);
-            // Rewrite any :not selectors in the descendant selector.
-            descendantSelector = rewriteNotSelectors(descendantSelector, true);
-            // Any remaining pseudo-states in the descendant selector need to be moved into the host selector.
-            ancestorSelector = replacePseudoStatesWithAncestorSelector(
-              descendantSelector,
-              true,
-              hostInnerSelector
-            );
-          } else {
-            // Don't need to specially handle :not() because:
-            //  - if inside :host(), simple replacement is sufficient
-            //  - if outside :host(), didn't match any pseudo-states
-            ancestorSelector = replacePseudoStates(selector, true);
-          }
-        } else {
-          const withNotsReplaced = rewriteNotSelectors(selector, forShadowDOM);
-          ancestorSelector = replacePseudoStatesWithAncestorSelector(
-            withNotsReplaced,
-            forShadowDOM
-          );
-        }
-        replacementSelectors.push(ancestorSelector);
+    if (selector.startsWith(':host(')) {
+      const matches = selector.match(/^:host\((\S+)\)\s+(.+)$/);
+      if (matches && matchOne.test(matches[2])) {
+        // Simple replacement won't work on pseudo-state selectors outside of :host().
+        // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
+        // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
+        let hostInnerSelector = matches[1];
+        let descendantSelector = matches[2];
+        // Simple replacement is fine for pseudo-state selectors inside :host() (even if inside :not()).
+        hostInnerSelector = replacePseudoStates(hostInnerSelector, true);
+        // Rewrite any :not selectors in the descendant selector.
+        descendantSelector = rewriteNotSelectors(descendantSelector, true);
+        // Any remaining pseudo-states in the descendant selector need to be moved into the host selector.
+        ancestorSelector = replacePseudoStatesWithAncestorSelector(
+          descendantSelector,
+          true,
+          hostInnerSelector
+        );
+      } else {
+        // Don't need to specially handle :not() because:
+        //  - if inside :host(), simple replacement is sufficient
+        //  - if outside :host(), didn't match any pseudo-states
+        ancestorSelector = replacePseudoStates(selector, true);
+      }
+    } else {
+      const withNotsReplaced = rewriteNotSelectors(selector, forShadowDOM);
+      ancestorSelector = replacePseudoStatesWithAncestorSelector(withNotsReplaced, forShadowDOM);
+    }
+    replacementSelectors.push(ancestorSelector);
 
-        return replacementSelectors;
-      })
-      .join(', ')
-  );
+    return replacementSelectors;
+  });
+
+  const rewrittenRules: string[] = [];
+  for (let index = 0; index < rewrittenSelectors.length; index += maximumSelectorsPerRule) {
+    rewrittenRules.push(
+      cssText.replace(
+        selectorText,
+        rewrittenSelectors.slice(index, index + maximumSelectorsPerRule).join(', ')
+      )
+    );
+  }
+
+  return rewrittenRules;
+};
+
+const replaceRule = (
+  ruleContainer: CSSStyleSheet | CSSGroupingRule,
+  index: number,
+  newRules: string[]
+) => {
+  let insertedRules = 0;
+  try {
+    newRules.forEach((newRule, offset) => {
+      ruleContainer.insertRule(newRule, index + offset + 1);
+      insertedRules++;
+    });
+    ruleContainer.deleteRule(index);
+  } catch (error) {
+    while (insertedRules > 0) {
+      ruleContainer.deleteRule(index + 1);
+      insertedRules--;
+    }
+    throw error;
+  }
+
+  return Array.from(ruleContainer.cssRules).slice(index, index + newRules.length) as CSSStyleRule[];
 };
 
 // Rewrites the style sheet to add alternative selectors for any rule that targets a pseudo state.
@@ -200,37 +231,48 @@ const rewriteRuleContainer = (
       // @ts-expect-error We're adding this nonstandard property below
       numRewritten = cssRule.__pseudoStatesRewrittenCount;
     } else {
-      let styleRule = cssRule as CSSStyleRule;
+      let styleRules = [cssRule as CSSStyleRule];
 
       // Modify the rule, if it contains a pseudo state
-      if ('selectorText' in styleRule) {
-        if (matchOne.test(styleRule.selectorText)) {
-          const newRule = rewriteRule(styleRule, forShadowDOM);
-          ruleContainer.deleteRule(index);
-          ruleContainer.insertRule(newRule, index);
-          styleRule = ruleContainer.cssRules[index] as CSSStyleRule;
-          numRewritten = 1;
+      if ('selectorText' in styleRules[0]) {
+        if (matchOne.test(styleRules[0].selectorText)) {
+          const newRules = rewriteRules(styleRules[0], forShadowDOM);
+          if (newRules.length > 0) {
+            styleRules = replaceRule(ruleContainer, index, newRules);
+            numRewritten = 1;
+          }
         }
       }
 
-      // If it has nested rules, check them as well
-      const remainingRewriteLimit = rewriteLimit - count - numRewritten;
-      if (
-        remainingRewriteLimit > 0 &&
-        'cssRules' in styleRule &&
-        (styleRule.cssRules as CSSRuleList).length
-      ) {
-        numRewritten += rewriteRuleContainer(
-          styleRule as CSSGroupingRule,
-          remainingRewriteLimit,
-          forShadowDOM
-        );
-      }
+      const rewrittenCounts = styleRules.map((_, styleRuleIndex) =>
+        styleRuleIndex === 0 ? numRewritten : 0
+      );
+      styleRules.forEach((styleRule, styleRuleIndex) => {
+        // If it has nested rules, check them as well
+        const remainingRewriteLimit =
+          rewriteLimit - count - rewrittenCounts.reduce((sum, value) => sum + value, 0);
+        if (
+          remainingRewriteLimit > 0 &&
+          'cssRules' in styleRule &&
+          (styleRule.cssRules as CSSRuleList).length
+        ) {
+          rewrittenCounts[styleRuleIndex] += rewriteRuleContainer(
+            styleRule as CSSGroupingRule,
+            remainingRewriteLimit,
+            forShadowDOM
+          );
+        }
 
-      // @ts-expect-error We're adding this nonstandard property
-      styleRule.__processed = true;
-      // @ts-expect-error We're adding this nonstandard property
-      styleRule.__pseudoStatesRewrittenCount = numRewritten;
+        // @ts-expect-error We're adding this nonstandard property
+        styleRule.__processed = true;
+      });
+      numRewritten = rewrittenCounts.reduce((sum, value) => sum + value, 0);
+      styleRules.forEach((styleRule, styleRuleIndex) => {
+        // Store the total on the first rule so split replacements aren't counted again as the
+        // live CSSRuleList iterator advances through them.
+        // @ts-expect-error We're adding this nonstandard property
+        styleRule.__pseudoStatesRewrittenCount = styleRuleIndex === 0 ? numRewritten : 0;
+      });
     }
     count += numRewritten;
 

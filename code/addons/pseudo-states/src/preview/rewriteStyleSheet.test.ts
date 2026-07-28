@@ -470,6 +470,47 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('keeps rewritten selector lists within browser limits', () => {
+    const selectors = Array.from({ length: 1500 }, (_, index) => `.item-${index}:hover`);
+    const sheet = new Sheet(`${selectors.join(', ')} { color: red }`);
+
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+
+    const rewrittenSelectors = sheet.cssRules.flatMap((rule) => rule.getSelectors());
+    expect(sheet.cssRules).toHaveLength(2);
+    expect(sheet.cssRules.every((rule) => rule.getSelectors().length <= 4000)).toBe(true);
+    expect(rewrittenSelectors).toHaveLength(4500);
+    expect(rewrittenSelectors).toContain('.item-1499:hover');
+    expect(rewrittenSelectors).toContain('.item-1499.pseudo-hover');
+    expect(rewrittenSelectors).toContain('.pseudo-hover-all .item-1499');
+  });
+
+  it('preserves the original rule when a replacement cannot be inserted', () => {
+    const selectors = Array.from({ length: 1500 }, (_, index) => `.item-${index}:hover`);
+    const sheet = new Sheet(`${selectors.join(', ')} { color: red }`);
+    const originalInsertRule = sheet.insertRule.bind(sheet);
+    vi.spyOn(sheet, 'insertRule')
+      .mockImplementationOnce(originalInsertRule)
+      .mockImplementationOnce(() => {
+        throw new DOMException('The replacement is too large', 'HierarchyRequestError');
+      });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].getSelectors()).toEqual(selectors);
+
+    consoleError.mockRestore();
+  });
+
+  it('preserves a rule when no replacement selectors are generated', () => {
+    const sheet = new Sheet('.pseudo-hover:hover { color: red }');
+
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].cssText).toBe('.pseudo-hover:hover { color: red }');
+  });
+
   it('override correct rules with media query present', () => {
     const sheet = new Sheet(
       `@media (max-width: 790px) {

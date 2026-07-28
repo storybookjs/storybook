@@ -14,9 +14,11 @@ vi.mock(import('./manager.ts'), { spy: true });
 beforeEach(() => {
   vi.mocked(renderIframeHtml).mockImplementation(async () => '<html>iframe</html>');
   vi.mocked(createManagerAssetsHandler).mockImplementation(
+    // @ts-expect-error - mock implementation doesn't match the real signature, but we don't need it to for this test
     (): Connect.NextHandleFunction => (_req, _res, next) => next()
   );
   vi.mocked(createAddonsAssetsHandler).mockImplementation(
+    // @ts-expect-error - mock implementation doesn't match the real signature, but we don't need it to for this test
     (): Connect.NextHandleFunction => (req, res, next) => {
       if (req.url === '/manager-bundle.js') {
         res.statusCode = 200;

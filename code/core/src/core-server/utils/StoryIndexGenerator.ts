@@ -224,8 +224,8 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const preview = await this.getPreviewCode();
+    const projectTags = this.getProjectTags(preview);
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -737,8 +737,8 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const preview = await this.getPreviewCode();
+    const projectTags = this.getProjectTags(preview);
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -774,7 +774,7 @@ export class StoryIndexGenerator {
 
       const sorted = await this.sortStories(
         indexEntries,
-        previewCode && getStorySortParameter(previewCode)
+        preview && getStorySortParameter(preview.code)
       );
 
       this.lastStats = stats;
@@ -867,15 +867,20 @@ export class StoryIndexGenerator {
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? {
+          code: (await readFile(previewFile, { encoding: 'utf8' })).toString(),
+          fileName: previewFile,
+        }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(preview?: { code: string; fileName: string }) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (previewCode) {
+    if (preview) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
+        const projectAnnotations = loadConfig(preview.code, preview.fileName).parse();
         projectTags = projectAnnotations.getFieldValue(['tags']) ?? [];
       } catch (err) {
         once.warn(dedent`
@@ -889,7 +894,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${previewCode}
+          ${preview.code}
         `);
       }
     }

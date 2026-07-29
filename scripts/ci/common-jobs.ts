@@ -39,23 +39,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     npm.check(),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
-    {
-      run: {
-        name: 'Publish to Verdaccio',
-        working_directory: `code`,
-        command: 'yarn local-registry --publish',
-      },
-    },
-    git.check(),
-    ...workflow.reportOnFailure(workflowName),
-    artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.pack(
       [
         // Workspace-root node_modules folders. Yarn hoists shared/singleton
@@ -75,6 +58,24 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
+    {
+      run: {
+        name: 'Compile',
+        working_directory: `code`,
+        command: 'yarn task --task compile --start-from=auto --no-link --debug',
+      },
+    },
+    {
+      run: {
+        name: 'Publish to Verdaccio',
+        working_directory: `code`,
+        command: 'yarn local-registry --publish',
+      },
+    },
+    git.check(),
+    ...workflow.reportOnFailure(workflowName),
+    artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
+    workspace.awaitPack(),
     workspace.persist([
       PACKED_NODE_MODULES_ARCHIVE,
       ...packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'dist')}`),

@@ -48,7 +48,7 @@ const noop = () => {};
  * consumers see no review and inert callbacks, so surfaces like the sidebar
  * widget render nothing without touching the (unregistered) review service.
  */
-export const emptyReviewContextValue: ReviewContextValue = {
+const emptyReviewContextValue: ReviewContextValue = {
   review: null,
   pendingReview: null,
   storyInfo: {},

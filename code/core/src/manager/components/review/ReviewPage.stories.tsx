@@ -2,7 +2,13 @@ import React, { useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
+import {
+  Location,
+  MemoryRouter,
+  parsePath,
+  queryFromLocation,
+  useNavigate,
+} from 'storybook/internal/router';
 import type { API_Notification } from 'storybook/internal/types';
 import {
   ManagerContext,
@@ -15,9 +21,11 @@ import preview from '../../../../../.storybook/preview.tsx';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { NotificationList } from '../notifications/NotificationList.tsx';
 import { ReviewNotification } from './components/ReviewNotification.tsx';
+import { ReviewPersistentLayer } from './components/ReviewPersistentLayer.tsx';
 import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
 import {
+  AUTO_ENTERED_SESSION_KEY,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
   PRE_REVIEW_RETURN_KEY,
   REVIEW_MODE_SESSION_KEY,
@@ -594,6 +602,71 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
     expect(addNotificationMock).not.toHaveBeenCalled();
     await reviewService.commands.setReview(freshReviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
+  },
+});
+
+export const AutoEntersReviewModeOnFirstSummaryVisit = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    // Landing on the summary with a fresh review enters review mode once and
+    // arms the one-time latch that keeps reloads from re-entering.
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+    expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe('1');
+  },
+});
+
+const HistoryBackProbe = () => {
+  const navigate = useNavigate();
+  return (
+    <button data-testid="history-back" hidden onClick={() => navigate(-1)} type="button">
+      back
+    </button>
+  );
+};
+
+export const DoesNotReenterReviewModeAfterExit = meta.story({
+  render: () => (
+    <>
+      <ReviewProvider>
+        <ReviewPersistentLayer />
+      </ReviewProvider>
+      <RouterPathProbe />
+      <HistoryBackProbe />
+    </>
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
+  // This tab browsed a story before the review arrived.
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-guidepage--default'
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+
+    // Landing on the summary auto-enters review mode once.
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+
+    // Exit back to the pre-review canvas via the summary back link.
+    await userEvent.click(await canvas.findByRole('link', { name: 'Exit review' }));
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-guidepage--default'
+      )
+    );
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+
+    // Returning to the summary (browser back) must not drag the reviewer back in.
+    await userEvent.click(canvas.getByTestId('history-back'));
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
   },
 });
 

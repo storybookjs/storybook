@@ -25,10 +25,15 @@ import { logger, once } from 'storybook/internal/node-logger';
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import { dedent } from 'ts-dedent';
-import type ts from 'typescript';
 import * as v8 from 'v8';
 
-import type { ComponentMetaProjectBase, ComponentMetaProjectFactory, FileChange } from './types.ts';
+import type {
+  ComponentMetaFileSystem,
+  ComponentMetaProjectBase,
+  ComponentMetaProjectFactory,
+  FileChange,
+  ProjectCommandLine,
+} from './types.ts';
 
 // Adapted from:
 // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18
@@ -40,7 +45,10 @@ const rootTsConfigNames = ['tsconfig.json', 'jsconfig.json'];
  */
 const RECYCLE_HEAP_PRESSURE_RATIO = 0.7;
 
-export class ComponentMetaManager<P extends ComponentMetaProjectBase> {
+export class ComponentMetaManager<
+  P extends ComponentMetaProjectBase,
+  CL extends ProjectCommandLine = ProjectCommandLine,
+> {
   // Adapted from:
   // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L34-L37
   private configProjects = new Map<string, P>();
@@ -63,8 +71,11 @@ export class ComponentMetaManager<P extends ComponentMetaProjectBase> {
    *   without the fix. Defaults to {@link RECYCLE_HEAP_PRESSURE_RATIO}.
    */
   constructor(
-    private typescript: typeof ts,
-    private factory: ComponentMetaProjectFactory<P>,
+    // Structural host rather than `typeof ts`: naming the `typescript` package here would couple
+    // every consumer to core's copy of it (see the rationale on ComponentMetaFileSystem). Callers
+    // pass their own `typescript` module, which satisfies the shape via `ts.sys`.
+    private typescript: ComponentMetaFileSystem,
+    private factory: ComponentMetaProjectFactory<P, CL>,
     recycleHeapPressureRatio: number = RECYCLE_HEAP_PRESSURE_RATIO
   ) {
     this.heapRecycleThresholdBytes = Math.floor(
@@ -229,7 +240,7 @@ export class ComponentMetaManager<P extends ComponentMetaProjectBase> {
     // Adapted from:
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L189-L229
     const getReferencesChains = (
-      commandLine: ts.ParsedCommandLine,
+      commandLine: ProjectCommandLine,
       tsConfig: string,
       before: string[]
     ): string[][] => {
@@ -569,34 +580,6 @@ export class ComponentMetaManager<P extends ComponentMetaProjectBase> {
     this.searchedDirs.clear();
     this.rootTsConfigs.clear();
   }
-}
-
-/**
- * Parse a tsconfig with TypeScript's own machinery, the way `tsc` would. The default
- * `parseCommandLine` for factories whose components are plain TS/TSX; renderers with their own
- * file types (Vue SFCs) must parse with their own machinery instead so the manager's
- * file-to-tsconfig matching sees those files in `fileNames`.
- *
- * Adapted from:
- * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
- */
-export function parseTsconfigCommandLine(
-  typescript: typeof ts,
-  tsconfig: string
-): ts.ParsedCommandLine {
-  const config = typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile);
-  const content = typescript.parseJsonSourceFileConfigFileContent(
-    config,
-    typescript.sys,
-    path.dirname(tsconfig),
-    {},
-    tsconfig
-  );
-  // fix https://github.com/johnsoncodehk/volar/issues/1786
-  // https://github.com/microsoft/TypeScript/issues/30457
-  content.options.outDir = undefined;
-  content.fileNames = content.fileNames.map((fileName) => fileName.replace(/\\/g, '/'));
-  return content;
 }
 
 // Adapted from:

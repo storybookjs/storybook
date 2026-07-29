@@ -1,4 +1,10 @@
 /**
- * The docgen engines under measurement. Each engine adds its own id when it lands.
+ * The docgen engines under measurement.
  */
-export type EngineId = 'react-osa' | 'compodoc';
+export type EngineId =
+  | 'react-legacy'
+  | 'react-legacy-rdt'
+  | 'react-osa'
+  | 'vue-docgen-api'
+  | 'vue-component-meta'
+  | 'compodoc';

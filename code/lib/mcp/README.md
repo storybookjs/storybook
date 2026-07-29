@@ -15,9 +15,9 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ### Example implementation
 
-Reference implementation: [apps/self-host-mcp/server.ts](https://github.com/storybookjs/mcp/blob/main/apps/self-host-mcp/server.ts)
+In-repo local server: [`serve.ts`](./serve.ts) (Node process that loads manifests from a directory or URL).
 
-The example repo demonstrates self-hosting patterns for both a Node.js process and a Netlify Function.
+The snippets below cover the common self-hosting patterns.
 
 #### Minimal implementation
 

@@ -19,17 +19,17 @@
     }
   ],
   "repository": {
-    "url": "https://github.com/storybookjs/mcp",
+    "url": "https://github.com/storybookjs/storybook",
     "source": "github",
-    "id": "1042284426",
-    "subfolder": "packages/addon-mcp"
+    "id": "54173593",
+    "subfolder": "code/addons/mcp"
   },
-  "version": "0.4.1",
+  "version": "10.6.0-alpha.3",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@storybook/addon-mcp",
-      "version": "0.4.1",
+      "version": "10.6.0-alpha.3",
       "transport": {
         "type": "streamable-http",
         "url": "http://localhost:{--port}/mcp"

@@ -4,8 +4,13 @@
 export const MAX_SUMMARY_LENGTH = 90;
 
 /**
- * Extracts a summary from MDX content.
- * The summary is created by:
+ * Extracts a summary from MDX content when a docs entry has no precomputed `summary`.
+ *
+ * Prefer summaries written by addon-docs into the manifest. This copy is the fallback for older or
+ * remote docs that omit `summary`. Keep the algorithm in sync with
+ * `code/addons/docs/src/extract-docs-summary.ts` (dual copy by design; no cross-package dependency).
+ *
+ * Steps:
  * 1. Removing import statements
  * 2. Removing JSX/MDX expressions
  * 3. Extracting only text content from JSX/HTML elements

@@ -111,6 +111,77 @@ jobs:
         if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
+      # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
+      # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
+      - name: Register stable release in DX
+        id: register-dx-release
+        if: |
+          steps.publish-needed.outputs.published == 'false' &&
+          steps.is-prerelease.outputs.prerelease == 'false'
+        continue-on-error: true
+        env:
+          DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
+          DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          COMMIT_SHA=$(git rev-parse HEAD)
+          DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          SOURCE_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          REFERENCE_ID="${REPOSITORY}:npm:${CURRENT_VERSION}"
+          RESPONSE_FILE=$(mktemp)
+          trap 'rm -f "$RESPONSE_FILE"' EXIT
+
+          PAYLOAD=$(jq -n \
+            --arg referenceId "$REFERENCE_ID" \
+            --arg deployedAt "$DEPLOYED_AT" \
+            --arg repository "$REPOSITORY" \
+            --arg commitSha "$COMMIT_SHA" \
+            --arg sourceUrl "$SOURCE_URL" \
+            --arg version "$CURRENT_VERSION" \
+            '{
+              reference_id: $referenceId,
+              deployed_at: $deployedAt,
+              service: { identifier: "github:storybookjs:storybook" },
+              repository: $repository,
+              commit_sha: $commitSha,
+              source_url: $sourceUrl,
+              source_name: "GitHub Actions",
+              metadata: {
+                version: $version,
+                npm_dist_tag: "latest"
+              },
+              success: true
+            }')
+
+          HTTP_STATUS=$(curl \
+            --silent \
+            --show-error \
+            --output "$RESPONSE_FILE" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer ${DX_DATACLOUD_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "${DX_DATACLOUD_URL%/}/api/deployments.create")
+
+          if [[ "$HTTP_STATUS" != "200" ]] || [[ "$(jq -r '.ok // false' "$RESPONSE_FILE")" != "true" ]]; then
+            echo "Failed to register stable release in DX (HTTP $HTTP_STATUS)"
+            jq . "$RESPONSE_FILE" || true
+            exit 1
+          fi
+
+      - name: Report DX registration failure to Discord
+        continue-on-error: true
+        if: |
+          steps.register-dx-release.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but registering the stable release in DX failed. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
       - name: Get target branch
         id: target
         run: echo "target=${{ github.ref_name == 'next-release' && 'next' || 'main' }}" >> $GITHUB_OUTPUT

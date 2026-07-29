@@ -125,9 +125,9 @@ jobs:
           DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
           REPOSITORY: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          COMMIT_SHA=$(git rev-parse HEAD)
           DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           SOURCE_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
           REFERENCE_ID="${REPOSITORY}:npm:${CURRENT_VERSION}"

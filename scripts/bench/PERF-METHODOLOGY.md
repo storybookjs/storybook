@@ -1,6 +1,6 @@
 # Docgen performance methodology
 
-This document sets out how the per-engine docgen performance suite measures things. It elaborates on the metrics we record, the rules that make a run repeatable, the shape a budget may take, and the CIT at that gate.
+This document sets out how the per-engine docgen performance suite measures things. It elaborates on the metrics we record, the rules that make a run repeatable, the shape a budget may take, and the CI tier that gates.
 
 ## Scope
 
@@ -12,7 +12,7 @@ We are collecting five metrics per engine:
 
 1. Cold extraction: that's the time a fresh process takes over its full extraction, including starting the typescript program where an engine needs one.
 2. Warm extraction: the time to re-extract one changed component after a simulated save once the process is warm. In theory, an already booted typescript program's delay shouldn't be visible in the warm extraction anymore, and therefore warm extractions are faster than cold ones.
-3. Whole project scan: that's the time for one batch pass over the entire project. Currently, only CompuDoc works this way, so the metric applies to CompuDoc for Angular alone.
+3. Whole project scan: that's the time for one batch pass over the entire project. Currently, only Compodoc works this way, so the metric applies to Compodoc for Angular alone.
 4. Peak memory: the memory a save claims above the retained baseline
 5. Leak detection: How much retained heap is still held after the save series, together with how steeply it climbed from one save to the next?
 
@@ -44,17 +44,19 @@ Performance questions are answered by ratios between runs executed on one machin
 
 ## Budget shape
 
-Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, ViewDocktion API vs. ViewComponent meta) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.
+Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, `vue-docgen-api` against `vue-component-meta`) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.
 
-### Like-to-Like comparison
+### Like-for-like comparison
 
-Ratio only means something when both sides did the same amount of work. Engines, for example, resolve types to different depths, and a shallower one finishes sooner precisely because it documented less, which makes speed and thoroughness very easy to mistake for one another.
+A ratio only means something when both sides did the same amount of work. Engines resolve types to different depths, and a shallower one finishes sooner precisely because it documented less, which makes speed and thoroughness very easy to mistake for one another.
 
-Therefore, every engine reports how many members it documented. The suit prints those counts, besides every ratio, warm as well as cold, and any pair whose counts disagree is marked not like-to-like.
+Therefore, every engine reports how many members it documented, and the suite prints those counts beside every ratio, warm as well as cold. Where the two sides disagree, we do not just flag the ratio, we say which way it went, because the direction is what tells you how to read the number. An engine that documented less is fast for the wrong reason and its ratio is worthless. An engine that documented more and still won has a ratio that undersells it. Only a pair that did equal work may ever become a budget.
 
-A ratio marked that way must never become a budget. Rather, we should make sure that if the performance of an engine decreases (for example, by bumping the engine's version or introducing a new one), CI fails in these scenarios (so that a human can intercept and decide what to do next).
+Cold and warm get their own verdict, since a pair can document the same members on the cold pass and different ones on the save it was timed on. When either side reports no count at all we record that as unknown rather than treating it as agreement, because marking a pair equal on the strength of a number nobody measured is exactly how a bad ratio would slip through.
 
-But even a member count of properties is not always enough on its own. An engine that records a type's name but not the type's type doesn't contribute to a fair comparison. Therefore, a documented member's actual type will be recorded and is the second count to agree as well as a pair count for the like-for-like comparison.
+Even the member count is not enough on its own. An engine that records a type's name without ever looking through it documents exactly as many members as one that expanded the whole chain, and it does so at a fraction of the cost. So an engine that works that way also reports how many of its documented members carry a type it never resolved, and that second count has to agree as well before the two sides count as having done equal work.
+
+What we do not have yet is the gate. Once baselines exist, a ratio that moves the wrong way should fail CI, so that a human intercepts and decides what to do next.
 
 ### Memory budgets
 

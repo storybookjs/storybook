@@ -16,8 +16,13 @@ describe('getElementError', () => {
 
     expect(error.name).toBe('TestingLibraryElementError');
     expect(error.message).toContain('Unable to find an element');
-    expect(error.message).toContain('use screen.debug() to see the full DOM');
-    expect(error.message.split('\n').length).toBeLessThan(30);
+
+    const [, dump] = error.message.split('\n\n');
+    const dumpLines = dump.split('\n');
+    expect(dumpLines).toHaveLength(21);
+    expect(dumpLines.at(-1)).toContain(
+      'DOM dump truncated at 20 lines, use screen.debug() to see the full DOM'
+    );
   });
 
   it('leaves short DOM dumps intact', () => {

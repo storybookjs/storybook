@@ -338,7 +338,7 @@ const document = [
   '# Storybook MCP / AI tools API',
   '',
   `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
-  '> Regenerate from the repo root with `node code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
+  '> Regenerate from the repo root with `bun code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
   'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, change detection on, module graph supported, single source. The only variable is the `experimentalReview` feature flag.',
   '',

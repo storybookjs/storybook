@@ -81,9 +81,6 @@ async function run() {
   });
 
   let selection = Object.values(tasks).filter((item) => item.value === true);
-  if (opts.all) {
-    selection = selection.filter((item) => isBuildEntries(item.name));
-  }
 
   // check for invalid package name(s) and try to guess the correct package name(s)
   const suffixList = Object.values(tasks).map((t) => t.suffix);
@@ -107,6 +104,23 @@ async function run() {
   if (hasInvalidName) {
     process.exit(1);
   }
+
+  // Workspaces without build-config (e.g. agent-eval) appear in yarn workspaces but
+  // cannot be built by this script. Filter --all silently; reject explicit picks.
+  const nonBuildable = selection.filter((item) => !isBuildEntries(item.name));
+  if (nonBuildable.length && !opts.all) {
+    for (const item of nonBuildable) {
+      process.stderr.write(
+        `${picocolors.red('Error')}: ${picocolors.cyan(
+          item.name
+        )} has no build entries and cannot be built with this script.\n`
+      );
+    }
+    process.exit(1);
+  }
+  selection = selection.filter((item) => isBuildEntries(item.name));
+
+  const buildablePackages = packages.filter((pkg) => isBuildEntries(pkg.name));
 
   if (!selection.length) {
     selection = await prompts(
@@ -135,7 +149,7 @@ async function run() {
           hint: 'You can also run directly with package name like `yarn build storybook`, or `yarn build --all` for all packages!',
           // @ts-expect-error @types incomplete
           optionsPerPage: windowSize.height - 3, // 3 lines for extra info
-          choices: packages.map(({ name: key }) => ({
+          choices: buildablePackages.map(({ name: key }) => ({
             value: key,
             title: tasks[key].name || key,
             selected: (tasks[key] && tasks[key].defaultValue) || false,

@@ -1,5 +1,6 @@
 ## 10.6.0-alpha.3
 
+- **Breaking change (experimental):** Removed `@storybook/react|vue3|svelte/experimental-playwright` and `createPlaywrightTest`. Playwright's `@playwright/experimental-ct-*` packages are deprecated; see [Playwright component testing](https://playwright.dev/docs/test-components) and `MIGRATION.md`.
 - Addon Vitest: Pin storybook/test in optimizeDeps so its CJS-only deps are prebundled - [#35572](https://github.com/storybookjs/storybook/pull/35572), thanks @Nic-Polumeyv!
 - ReactNative: Telemetry framework detection fix - [#35560](https://github.com/storybookjs/storybook/pull/35560), thanks @ndelangen!
 - SyntaxHighlighter: Fix PrismJS dark mode mismatch - [#35541](https://github.com/storybookjs/storybook/pull/35541), thanks @hxy-asdw!

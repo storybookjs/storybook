@@ -38,9 +38,14 @@ const review = {
 const getIndex = vi.fn<() => Promise<StoryIndex>>();
 
 describe('registerReviewService', () => {
+  // Fixture-controlled clock: tests set `now` instead of re-spying Date.now.
+  let now: number;
+
   beforeEach(() => {
     clearRegistry();
     getIndex.mockResolvedValue(index);
+    now = 1_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
   });
 
   afterEach(() => {
@@ -92,7 +97,6 @@ describe('registerReviewService', () => {
   });
 
   it('sets, marks stale, and dismisses the current review', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
 
     expect(service.queries.current.get(undefined)).toBeNull();
@@ -102,7 +106,7 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
     expect(getIndex).toHaveBeenCalledOnce();
 
-    vi.spyOn(Date, 'now').mockReturnValue(12_000);
+    now = 12_000;
     await service.commands.markStale(undefined);
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
@@ -115,11 +119,10 @@ describe('registerReviewService', () => {
   });
 
   it('defers an incoming review to pending while a different one is current', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    vi.spyOn(Date, 'now').mockReturnValue(2_000);
+    now = 2_000;
     const updated = { ...review, title: 'Updated review' };
     await service.commands.setReview(updated);
 
@@ -128,13 +131,12 @@ describe('registerReviewService', () => {
   });
 
   it('replaces a held pending review with the latest incoming one', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    vi.spyOn(Date, 'now').mockReturnValue(2_000);
+    now = 2_000;
     await service.commands.setReview({ ...review, title: 'First update' });
-    vi.spyOn(Date, 'now').mockReturnValue(3_000);
+    now = 3_000;
     await service.commands.setReview({ ...review, title: 'Second update' });
 
     expect(service.queries.pending.get(undefined)).toEqual({
@@ -159,10 +161,9 @@ describe('registerReviewService', () => {
   });
 
   it('promotes the pending review on acceptPending and clears it', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
-    vi.spyOn(Date, 'now').mockReturnValue(2_000);
+    now = 2_000;
     const updated = { ...review, title: 'Updated review' };
     await service.commands.setReview(updated);
 
@@ -173,7 +174,6 @@ describe('registerReviewService', () => {
   });
 
   it('keeps the current review when acceptPending runs with nothing pending', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
@@ -184,10 +184,9 @@ describe('registerReviewService', () => {
   });
 
   it('clears both current and pending on dismissal', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
-    vi.spyOn(Date, 'now').mockReturnValue(2_000);
+    now = 2_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
 
     await service.commands.dismissReview(undefined);
@@ -197,11 +196,10 @@ describe('registerReviewService', () => {
   });
 
   it('does not mark the review stale inside the grace window', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    vi.spyOn(Date, 'now').mockReturnValue(5_000);
+    now = 5_000;
     await service.commands.markStale(undefined);
 
     expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
@@ -218,7 +216,6 @@ describe('registerReviewService', () => {
   it('marks the current review stale on module-graph changes after the grace window', async () => {
     let onChange: (() => void) | undefined;
     const unsubscribe = vi.fn();
-    vi.spyOn(Date, 'now').mockReturnValue(1_000);
     const service = registerReviewService({
       getIndex,
       subscribeToModuleGraphChanges: (handler) => {
@@ -228,13 +225,13 @@ describe('registerReviewService', () => {
     });
     await service.commands.setReview(review);
 
-    vi.spyOn(Date, 'now').mockReturnValue(5_000);
+    now = 5_000;
     onChange?.();
     await vi.waitFor(() => {
       expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
     });
 
-    vi.spyOn(Date, 'now').mockReturnValue(12_000);
+    now = 12_000;
     onChange?.();
     await vi.waitFor(() => {
       expect(service.queries.current.get(undefined)).toEqual({

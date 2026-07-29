@@ -14,10 +14,11 @@ const config = defineMain({
 		experimentalDocgenServer: true,
 	},
 	// Same public refs as `.storybook-composition/` — remote storybook-ui serves v0 manifests.
+	// Prefer main-- over next--: next builds currently omit /manifests/components.json.
 	refs: {
 		'storybook-ui': {
 			title: 'Storybook UI',
-			url: 'https://next--635781f3500dd2c49e189caf.chromatic.com',
+			url: 'https://main--635781f3500dd2c49e189caf.chromatic.com',
 		},
 		'no-manifest': {
 			title: 'No Manifest',

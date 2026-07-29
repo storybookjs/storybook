@@ -7,11 +7,12 @@ import baseConfig from '../.storybook/main';
  */
 const config = defineMain({
 	...baseConfig,
-	// Composition with public Chromatic Storybook (storybook-ui next branch)
+	// Composition with public Chromatic Storybook (storybook-ui main branch).
+	// Prefer main-- over next--: next builds currently omit /manifests/components.json.
 	refs: {
 		'storybook-ui': {
 			title: 'Storybook UI',
-			url: 'https://next--635781f3500dd2c49e189caf.chromatic.com',
+			url: 'https://main--635781f3500dd2c49e189caf.chromatic.com',
 		},
 		'no-manifest': {
 			title: 'No Manifest',

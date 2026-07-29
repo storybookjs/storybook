@@ -34,8 +34,10 @@ const prop = (overrides: Partial<PropertyMeta>): PropertyMeta =>
     schema: 'string',
     type: 'string',
     declarations: [],
+    getDeclarations: () => [],
+    getTypeObject: () => ({}),
     ...overrides,
-  }) as PropertyMeta;
+  }) as unknown as PropertyMeta;
 
 const buttonMeta: ComponentMeta = {
   type: TypeMeta.Class,
@@ -96,6 +98,17 @@ describe('buildDocgenPayload', () => {
       value: ['small', 'large'],
       required: false,
     });
+  });
+
+  // The worker posts the payload with `postMessage`, so anything a structured clone cannot carry is
+  // not a cosmetic problem: it throws `DataCloneError`, which fails a static build and silently
+  // yields no docgen in dev.
+  it('produces a payload that survives the worker boundary', async () => {
+    const payload = await build(createChecker(buttonMeta));
+
+    expect(() => structuredClone(payload)).not.toThrow();
+    expect(payload?.vueComponentMeta?.props[0]).not.toHaveProperty('getDeclarations');
+    expect(payload?.vueComponentMeta?.props[0]).not.toHaveProperty('getTypeObject');
   });
 
   it('keeps the raw component meta for non-UI consumers', async () => {

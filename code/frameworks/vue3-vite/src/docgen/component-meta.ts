@@ -23,13 +23,23 @@ import {
 } from 'vue-component-meta';
 import { parseMulti } from 'vue-docgen-api';
 
+type Serializable<T> = T extends object
+  ? { [K in keyof T]: Serializable<T[K]> }
+  : T extends Function
+    ? never
+    : T;
+
 /** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
 export type MetaSource = {
   exportName: string;
   displayName: string;
   sourceFiles: string;
-} & ComponentMeta &
+} & Serializable<ComponentMeta> &
   MetaCheckerOptions['schema'];
+
+function toSerializableMeta<T>(obj: T): Serializable<T> {
+  return JSON.parse(JSON.stringify(obj)) as Serializable<T>;
+}
 
 /**
  * Creates the `vue-component-meta` checker to use for extracting component meta/docs. Considers the
@@ -143,13 +153,15 @@ export async function collectComponentMetaSources(
           return true;
         });
 
-    metaSources.push({
-      exportName,
-      displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
-      ...meta,
-      exposed,
-      sourceFiles: id,
-    });
+    metaSources.push(
+      toSerializableMeta({
+        exportName,
+        displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+        ...meta,
+        exposed,
+        sourceFiles: id,
+      })
+    );
   });
 
   return metaSources;

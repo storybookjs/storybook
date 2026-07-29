@@ -36,6 +36,8 @@ export const reviewStateSchema = v.object({
 
 export type ReviewServiceState = {
   current: ReviewState | null;
+  /** An updated review held back until a reviewer accepts it, so in-progress reviews aren't yanked. */
+  pending: ReviewState | null;
 };
 
 export const REVIEW_STALE_GRACE_MS = 10_000;
@@ -46,8 +48,8 @@ export const REVIEW_STALE_GRACE_MS = 10_000;
 export const reviewServiceDef = defineService({
   id: 'core/review',
   internal: true,
-  description: 'Owns the current curated Storybook review and its staleness.',
-  initialState: { current: null } as ReviewServiceState,
+  description: 'Owns the current curated Storybook review, its deferred update, and its staleness.',
+  initialState: { current: null, pending: null } as ReviewServiceState,
   queries: {
     current: {
       description: 'Returns the current review, or null when no review is active.',
@@ -55,12 +57,23 @@ export const reviewServiceDef = defineService({
       output: v.nullable(reviewStateSchema),
       handler: (_input, ctx) => ctx.self.state.current,
     },
+    pending: {
+      description: 'Returns the deferred review update, or null when none is held.',
+      input: v.undefined(),
+      output: v.nullable(reviewStateSchema),
+      handler: (_input, ctx) => ctx.self.state.pending,
+    },
   },
   commands: {
     setReview: {
       description:
-        'Replaces the current review and assigns its server creation time. Implemented by the server.',
+        'Publishes a review and assigns its server creation time. Defers to pending while a different review is current. Implemented by the server.',
       input: reviewStateSchema,
+      output: v.void(),
+    },
+    acceptPending: {
+      description: 'Promotes the deferred review update to current. Implemented by the server.',
+      input: v.undefined(),
       output: v.void(),
     },
     markStale: {
@@ -69,7 +82,7 @@ export const reviewServiceDef = defineService({
       output: v.void(),
     },
     dismissReview: {
-      description: 'Clears the current review. Implemented by the server.',
+      description: 'Clears the current review and any deferred update. Implemented by the server.',
       input: v.undefined(),
       output: v.void(),
     },

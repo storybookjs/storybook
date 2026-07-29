@@ -24,7 +24,7 @@ const SummaryHost = styled.div<{ $visible: boolean }>(({ $visible }) => ({
 
 export const ReviewSummaryHost: FC = () => {
   const api = useStorybookApi();
-  const { state, storyInfo, banner, isInReviewMode, isSummaryVisible } = useReview();
+  const { review, storyInfo, banner, isInReviewMode, isSummaryVisible } = useReview();
   const getStoryPreviewHref = useCallback(
     (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
@@ -55,7 +55,7 @@ export const ReviewSummaryHost: FC = () => {
       data-review-summary={isSummaryVisible ? 'visible' : 'hidden'}
     >
       <SummaryScreen
-        state={state}
+        state={review}
         storyInfo={storyInfo}
         getStoryPreviewHref={getStoryPreviewHref}
         banner={banner}

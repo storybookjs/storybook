@@ -21,11 +21,17 @@ export type ReviewBanner = AttentionBannerProps | null;
 
 /**
  * Values the store cannot compute itself because they depend on React-land
- * inputs (the Storybook index, statuses, and the current route). ReviewProvider
- * recomputes them whenever their inputs change and pushes them via
- * {@link reviewStore.setDerived}.
+ * inputs (the review service's live queries, the Storybook index, statuses, and
+ * the current route). ReviewProvider recomputes them whenever their inputs
+ * change and pushes them via {@link reviewStore.setDerived}. The review
+ * payloads are pure projections of the `core/review` service queries — the
+ * store has no write path that could disagree with the service.
  */
 export interface ReviewDerivedState {
+  /** The current review projected from the service's `current` query. */
+  review: ReviewState | null;
+  /** The deferred review update projected from the service's `pending` query. */
+  pendingReview: ReviewState | null;
   storyInfo: Record<string, StoryInfo>;
   flattenedEntries: ReviewNavEntry[];
   newlyAddedStoryIds: Set<string>;
@@ -36,33 +42,24 @@ export interface ReviewDerivedState {
 }
 
 export interface ReviewStoreState extends ReviewDerivedState {
-  /**
-   * Held display payload for defer/accept UX. Banner staleness prefers live OSA `current.stale`;
-   * this field is still updated when OSA pushes the same review (including stale flips).
-   */
-  state: ReviewState | null;
-  /** An updated payload held back until the user accepts it. */
-  pendingReview: ReviewState | null;
   isInReviewMode: boolean;
   /** True while navigateOutOfReview is in flight; blocks the summary auto-enter. */
   isExiting: boolean;
 }
 
 interface ReviewCoreState {
-  state: ReviewState | null;
-  pendingReview: ReviewState | null;
   isInReviewMode: boolean;
   isExiting: boolean;
 }
 
 const emptyCore: ReviewCoreState = {
-  state: null,
-  pendingReview: null,
   isInReviewMode: false,
   isExiting: false,
 };
 
 const emptyDerived: ReviewDerivedState = {
+  review: null,
+  pendingReview: null,
   storyInfo: {},
   flattenedEntries: [],
   newlyAddedStoryIds: new Set(),
@@ -80,8 +77,6 @@ let derived: ReviewDerivedState = emptyDerived;
 
 const buildSnapshot = (): ReviewStoreState => ({
   ...derived,
-  state: core.state,
-  pendingReview: core.pendingReview,
   isInReviewMode: core.isInReviewMode,
   isExiting: core.isExiting,
 });
@@ -101,31 +96,15 @@ const commit = (patch: Partial<ReviewCoreState>) => {
 };
 
 /**
- * Manager-local projection of the authoritative review state plus deferred,
- * transition, review-mode, and route-derived UI state.
+ * Manager-local review-mode, transition, and route-derived UI state. Review
+ * payloads live in the `core/review` service; this store only mirrors them via
+ * the derived projection ReviewProvider pushes.
  */
 export const reviewStore = {
   getState: (): ReviewStoreState => snapshot,
   subscribe: (listener: () => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
-  },
-  /** Show a review, replacing any displayed or deferred one. */
-  displayReview: (next: ReviewState) => {
-    commit({ state: next, pendingReview: null });
-  },
-  /** Refresh the held display without clearing a deferred update. */
-  updateDisplayed: (next: ReviewState) => {
-    commit({ state: next });
-  },
-  /** Hold an updated payload until the user accepts it. */
-  deferReview: (next: ReviewState) => {
-    commit({ pendingReview: next });
-  },
-  /** Drop all review state (dismissal), including the persisted review-mode flag. */
-  clearReview: () => {
-    sessionStore.remove(REVIEW_MODE_SESSION_KEY);
-    commit({ state: null, pendingReview: null, isInReviewMode: false });
   },
   /** Toggle review mode, persisted so it survives reloads. */
   setReviewMode: (active: boolean) => {
@@ -139,7 +118,7 @@ export const reviewStore = {
   setExiting: (isExiting: boolean) => {
     commit({ isExiting });
   },
-  /** Push values derived by ReviewProvider from index/status/route inputs. */
+  /** Push values derived by ReviewProvider from service/index/status/route inputs. */
   setDerived: (next: ReviewDerivedState) => {
     derived = next;
     notify();

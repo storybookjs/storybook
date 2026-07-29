@@ -22,7 +22,7 @@ export const ReviewNotification: FC = () => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const { path, customQueryParams } = useStorybookState();
-  const { state: displayed, pendingReview: deferred } = useReview();
+  const { review: displayed, pendingReview: deferred } = useReview();
   const filtersRef = useReviewFiltersRef();
   const collectionIndex = readCollectionIndex(customQueryParams);
 

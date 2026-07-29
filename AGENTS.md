@@ -87,24 +87,30 @@ Internal exports include:
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
-### Open services and public API
+### Open services and toolsets
 
-- OSA owns internal state, synchronization, queries, commands, loading, and service composition. All
-  core OSA services are `internal: true` and may change without a public semver bump.
-- Resolve internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws
-  when the service is internal.
-- `defineToolset` defines public toolsets for CLI/MCP: each has an `id`, description, and methods with
-  only `schema`, `description`, and `handler`.
-- Toolsets are contributed via the `experimental_toolsets` preset property (arrays concat). Addons
-  export that property (addon → core; core never imports addon code). Adapters call
-  `presets.apply('experimental_toolsets', [])` when they need the list; there is no boot-time cache.
-- Docs/stories/test live under `code/core/src/shared/public-api/` for now; the review toolset is
-  colocated with `core/review` under `open-service/services/review/`. Test moves to `addon-vitest` later.
-- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), `origin`, and typed `getService`.
-- Handlers return Markdown by default. Each method schema declares `json` for structured output.
-- The public API remains experimental. Production MCP migration is Milestone 4. CLI generation and
-  production `storybook tools` wiring are Milestone 5.
-- MCP tools remain hand-authored in `addon-mcp` until Milestone 4.
+- OSA hosts two sibling constructs behind the `storybook/open-service` entry: **services**
+  (`defineService`/`registerService`) own internal state, synchronization, queries, commands, and
+  loading; **toolsets** (`defineToolset`/`registerToolset`) are the public agent surface for CLI/MCP.
+  They live in mirrored trees: `open-service/services/` and `open-service/toolsets/`.
+- All core OSA services are `internal: true` and may change without a public semver bump. Resolve
+  internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws when
+  the service is internal.
+- A toolset has an `id`, description, and methods with only `schema`, `description`, and `handler`.
+- Toolsets register imperatively via `registerToolset`, called from the same place the paired
+  service registers (the `services` preset hook for core and addons; the mechanism itself does not
+  depend on the Node preset system). Feature gating is shared: a disabled feature registers neither
+  the service nor its toolset. Adapters read the set via `getRegisteredToolsets()`; nothing consumes
+  it before Milestone 4.
+- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), optional `origin`, required
+  `format` (`'markdown' | 'json'`), and `getService`. Methods never declare the output format;
+  adapters own the mapping (CLI `--json` flag, MCP `json` tool input).
+- The docs toolset's Markdown is a verbatim port of the `@storybook/mcp` manifest formatter
+  (`toolsets/docs/manifest-formatter/`); the two copies must not drift until Milestone 4 deletes the
+  original. MCP consumer + Markdown is the parity-tested cell.
+- The toolset surface remains experimental. Production MCP migration is Milestone 4. CLI generation
+  and production `storybook tools` wiring are Milestone 5. MCP tools remain hand-authored in
+  `addon-mcp` until Milestone 4.
 
 ## Common Commands
 

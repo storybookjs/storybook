@@ -23,7 +23,22 @@ import {
   buildReviewChangesSummaryHref,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { reviewStore } from './review-store.ts';
+import { reviewStore, type ReviewDerivedState } from './review-store.ts';
+
+const seedDerived = (patch: Partial<ReviewDerivedState>) => {
+  reviewStore.setDerived({
+    review: null,
+    pendingReview: null,
+    storyInfo: {},
+    flattenedEntries: [],
+    newlyAddedStoryIds: new Set(),
+    activeEntry: null,
+    activeIndex: -1,
+    isSummaryVisible: false,
+    banner: null,
+    ...patch,
+  });
+};
 
 const review: ReviewState = {
   title: 'Example review',
@@ -118,7 +133,7 @@ describe('navigateOutOfReview', () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
 
-    reviewStore.displayReview(review);
+    seedDerived({ review });
 
     await navigateOutOfReview(api, navigate, '?path=/story/example--default');
 
@@ -132,7 +147,7 @@ describe('navigateOutOfReview', () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
 
-    reviewStore.displayReview(review);
+    seedDerived({ review });
 
     await navigateOutOfReview(api, navigate, '?path=/story/example--default', {
       recordVisit: false,
@@ -150,7 +165,7 @@ describe('navigateOutOfReview', () => {
     vi.clearAllMocks();
     setAllTagFilters.mockRejectedValueOnce(new Error('restore failed'));
 
-    reviewStore.displayReview(review);
+    seedDerived({ review });
 
     await expect(
       navigateOutOfReview(api, navigate, '?path=/story/example--default')
@@ -222,31 +237,56 @@ describe('acceptPendingReview', () => {
     createdAt: review.createdAt! + 60_000,
   };
 
-  it('is a no-op when nothing is pending', () => {
+  it('is a no-op when nothing is pending', async () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
+    const acceptPending = vi.spyOn(
+      getService('core/review', { internal: true }).commands,
+      'acceptPending'
+    );
 
-    acceptPendingReview(api, navigate, emptyFilters);
+    await acceptPendingReview(api, navigate, emptyFilters);
 
+    expect(acceptPending).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
     expect(api.clearNotification).not.toHaveBeenCalled();
   });
 
-  it('displays the pending review, enters review mode and navigates to the summary', () => {
+  it('promotes the pending review through the service, enters review mode and navigates', async () => {
     const { api } = makeApi();
     const navigate = vi.fn() as unknown as NavigateFunction;
-    reviewStore.displayReview(review);
-    reviewStore.deferReview(pending);
+    const acceptPending = vi.spyOn(
+      getService('core/review', { internal: true }).commands,
+      'acceptPending'
+    );
+    seedDerived({ review, pendingReview: pending });
 
-    acceptPendingReview(api, navigate, emptyFilters);
+    await acceptPendingReview(api, navigate, emptyFilters);
 
-    expect(reviewStore.getState().state).toBe(pending);
-    expect(reviewStore.getState().pendingReview).toBeNull();
+    expect(acceptPending).toHaveBeenCalledWith(undefined);
     expect(isReviewModeActive()).toBe(true);
     expect(api.clearNotification).toHaveBeenCalledWith(
       reviewAvailableNotificationId(pending.createdAt!)
     );
     expect(sessionStorage.getItem(VISITED_REVIEW_CREATED_AT_KEY)).toBe(String(pending.createdAt));
     expect(navigate).toHaveBeenCalledWith(buildReviewChangesSummaryHref(), { plain: true });
+  });
+
+  it('does not enter review mode or navigate when the accept command fails', async () => {
+    const failure = new Error('remote accept timed out');
+    const { api } = makeApi();
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    vi.spyOn(
+      getService('core/review', { internal: true }).commands,
+      'acceptPending'
+    ).mockRejectedValue(failure);
+    const logError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    seedDerived({ review, pendingReview: pending });
+
+    await expect(acceptPendingReview(api, navigate, emptyFilters)).resolves.toBeUndefined();
+
+    expect(isReviewModeActive()).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith('Failed to accept pending review', failure);
   });
 });

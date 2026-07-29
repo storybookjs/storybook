@@ -58,14 +58,14 @@ const DismissIcon = styled(CloseAltIcon)({
 
 /** Story count for the displayed review payload, not the sidebar status store. */
 export const useActiveReviewStoryCount = () => {
-  const { state } = useReview();
+  const { review } = useReview();
 
-  return useMemo(() => (state ? collectReviewStoryIds(state).size : 0), [state]);
+  return useMemo(() => (review ? collectReviewStoryIds(review).size : 0), [review]);
 };
 
 const useActiveReviewTitle = () => {
-  const { state } = useReview();
-  return state?.title ?? null;
+  const { review } = useReview();
+  return review?.title ?? null;
 };
 
 export const ReviewWidget = () => {

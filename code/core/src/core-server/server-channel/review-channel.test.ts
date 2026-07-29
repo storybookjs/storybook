@@ -1,4 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,18 +10,7 @@ import { REVIEW_EVENTS } from '../../shared/review/events.ts';
 import type { ReviewState } from '../../shared/review/review-state.ts';
 import { initReviewChannel } from './review-channel.ts';
 
-function createMockSubscribe() {
-  let captured: (() => void) | undefined;
-  return {
-    subscribeToModuleGraphChanges: vi.fn((onChange: () => void) => {
-      captured = onChange;
-      return () => {
-        captured = undefined;
-      };
-    }),
-    fireChange: () => captured?.(),
-  };
-}
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 function createMockChannel() {
   type Listener = (...args: unknown[]) => unknown;
@@ -81,11 +71,10 @@ describe('initReviewChannel', () => {
   const NOW = new Date().getTime();
   const teardowns: Array<() => void> = [];
   const getIndex = vi.fn<() => Promise<StoryIndex>>();
-  const initializeReviewChannel = (
-    channel: Channel,
-    options?: Parameters<typeof initReviewChannel>[1]
-  ) => {
-    const teardown = initReviewChannel(channel, options);
+  const registerService = () =>
+    registerReviewService({ getIndex, subscribeToModuleGraphChanges: () => () => {} });
+  const initializeReviewChannel = (channel: Channel) => {
+    const teardown = initReviewChannel(channel);
     teardowns.push(teardown);
     return teardown;
   };
@@ -104,7 +93,7 @@ describe('initReviewChannel', () => {
   });
 
   it('adapts legacy PUSH_REVIEW into authoritative review state', async () => {
-    const service = registerReviewService({ getIndex });
+    const service = registerService();
     const { channel, emitted } = createMockChannel();
 
     initializeReviewChannel(channel);
@@ -117,8 +106,26 @@ describe('initReviewChannel', () => {
     expect(emitted).toEqual([]);
   });
 
+  it('logs and keeps state unchanged when a pushed review is invalid', async () => {
+    const service = registerService();
+    const { channel } = createMockChannel();
+
+    initializeReviewChannel(channel);
+    await channel.fire(REVIEW_EVENTS.PUSH_REVIEW, {
+      ...sampleReview,
+      collections: [{ ...sampleReview.collections[0], storyIds: ['missing--story'] }],
+    });
+
+    await vi.waitFor(() => {
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to apply PUSH_REVIEW payload')
+      );
+    });
+    expect(service.queries.current.get(undefined)).toBeNull();
+  });
+
   it('relays dismissal navigation without mutating review state again', async () => {
-    const service = registerReviewService({ getIndex });
+    const service = registerService();
     const dismissReview = vi.spyOn(service.commands, 'dismissReview');
     const { channel, emitted } = createMockChannel();
 
@@ -138,92 +145,25 @@ describe('initReviewChannel', () => {
   });
 
   it('keeps only the legacy push and dismissal listeners', () => {
-    registerReviewService({ getIndex });
+    registerService();
     const { channel } = createMockChannel();
 
-    initializeReviewChannel(channel, {
-      subscribeToModuleGraphChanges: vi.fn(() => () => {}),
-    });
+    initializeReviewChannel(channel);
 
     expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.PUSH_REVIEW, expect.any(Function));
     expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.DISMISS_REVIEW, expect.any(Function));
     expect(channel.on).toHaveBeenCalledTimes(2);
   });
 
-  it('marks review state stale after the grace window', async () => {
-    const service = registerReviewService({ getIndex });
+  it('tears down both channel listeners', () => {
+    registerService();
     const { channel } = createMockChannel();
-    const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
-    initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
-    await channel.fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
 
-    vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
-    fireChange();
-
-    await vi.waitFor(() => {
-      expect(service.queries.current.get(undefined)?.stale).toBe(true);
-    });
-  });
-
-  it('forwards graph changes during the grace window without marking stale', async () => {
-    const service = registerReviewService({ getIndex });
-    const markStale = vi.spyOn(service.commands, 'markStale');
-    const { channel } = createMockChannel();
-    const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
-    initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
-    await channel.fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
-
-    fireChange();
-
-    expect(markStale).toHaveBeenCalledWith(undefined);
-    expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
-  });
-
-  it('forwards graph changes with no current review as a markStale no-op', () => {
-    const service = registerReviewService({ getIndex });
-    const markStale = vi.spyOn(service.commands, 'markStale');
-    const { channel } = createMockChannel();
-    const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
-    initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
-
-    fireChange();
-
-    expect(markStale).toHaveBeenCalledWith(undefined);
-    expect(service.queries.current.get(undefined)).toBeNull();
-  });
-
-  it('forwards graph changes when the current review is already stale', async () => {
-    const service = registerReviewService({ getIndex });
-    const { channel } = createMockChannel();
-    const { subscribeToModuleGraphChanges, fireChange } = createMockSubscribe();
-    initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
-    await channel.fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
-
-    vi.spyOn(Date, 'now').mockReturnValue(NOW + 12_000);
-    fireChange();
-    await vi.waitFor(() => {
-      expect(service.queries.current.get(undefined)?.stale).toBe(true);
-    });
-
-    const markStale = vi.spyOn(service.commands, 'markStale');
-    fireChange();
-
-    expect(markStale).toHaveBeenCalledWith(undefined);
-    expect(service.queries.current.get(undefined)?.stale).toBe(true);
-  });
-
-  it('tears down channel and module-graph listeners', () => {
-    registerReviewService({ getIndex });
-    const { channel } = createMockChannel();
-    const unsubscribe = vi.fn();
-    const subscribeToModuleGraphChanges = vi.fn(() => unsubscribe);
-
-    const teardown = initializeReviewChannel(channel, { subscribeToModuleGraphChanges });
+    const teardown = initializeReviewChannel(channel);
     teardown();
     teardowns.pop();
 
     expect(channel.off).toHaveBeenCalledWith(REVIEW_EVENTS.PUSH_REVIEW, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(REVIEW_EVENTS.DISMISS_REVIEW, expect.any(Function));
-    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 });

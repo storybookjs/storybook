@@ -13,13 +13,9 @@ const review: ReviewState = {
   collections: [{ title: 'A', rationale: '', storyIds: ['story--default'] }],
 };
 
-const updatedReview: ReviewState = {
-  ...review,
-  title: 'Updated review',
-  createdAt: review.createdAt! + 60_000,
-};
-
-const derived: ReviewDerivedState = {
+const emptyDerived: ReviewDerivedState = {
+  review: null,
+  pendingReview: null,
   storyInfo: {},
   flattenedEntries: [],
   newlyAddedStoryIds: new Set(),
@@ -34,46 +30,14 @@ beforeEach(() => {
   reviewStore.reset();
 });
 
-describe('displayReview', () => {
-  it('shows the review as the held display payload', () => {
-    reviewStore.displayReview({ ...review, stale: true });
-    expect(reviewStore.getState().state?.title).toBe('Example review');
-    expect(reviewStore.getState().state?.stale).toBe(true);
-
-    reviewStore.displayReview(updatedReview);
-    expect(reviewStore.getState().state).toBe(updatedReview);
-  });
-
-  it('clears any deferred payload', () => {
-    reviewStore.displayReview(review);
-    reviewStore.deferReview(updatedReview);
-    reviewStore.displayReview(updatedReview);
+describe('setDerived', () => {
+  it('projects the pushed review payloads into the snapshot', () => {
+    reviewStore.setDerived({ ...emptyDerived, review, pendingReview: null });
+    expect(reviewStore.getState().review).toBe(review);
     expect(reviewStore.getState().pendingReview).toBeNull();
-  });
-});
 
-describe('deferReview', () => {
-  it('holds the update without replacing the displayed review', () => {
-    reviewStore.displayReview(review);
-    reviewStore.deferReview(updatedReview);
-    expect(reviewStore.getState().state).toBe(review);
-    expect(reviewStore.getState().pendingReview).toBe(updatedReview);
-  });
-});
-
-describe('clearReview', () => {
-  it('drops displayed, deferred, and review-mode state', () => {
-    reviewStore.displayReview({ ...review, stale: true });
-    reviewStore.deferReview(updatedReview);
-    reviewStore.setReviewMode(true);
-
-    reviewStore.clearReview();
-
-    const state = reviewStore.getState();
-    expect(state.state).toBeNull();
-    expect(state.pendingReview).toBeNull();
-    expect(state.isInReviewMode).toBe(false);
-    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+    reviewStore.setDerived(emptyDerived);
+    expect(reviewStore.getState().review).toBeNull();
   });
 });
 
@@ -95,12 +59,12 @@ describe('subscribe', () => {
     const unsubscribe = reviewStore.subscribe(listener);
 
     const before = reviewStore.getState();
-    reviewStore.displayReview(review);
+    reviewStore.setReviewMode(true);
     expect(listener).toHaveBeenCalledTimes(1);
     expect(reviewStore.getState()).not.toBe(before);
 
     unsubscribe();
-    reviewStore.setDerived(derived);
+    reviewStore.setDerived(emptyDerived);
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });

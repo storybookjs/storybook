@@ -64,7 +64,7 @@ export const navigateOutOfReview = async (
   returnSearch: string | null | undefined,
   { recordVisit = true }: NavigateOutOfReviewOptions = {}
 ): Promise<void> => {
-  const visitCreatedAt = recordVisit ? reviewStore.getState().state?.createdAt : undefined;
+  const visitCreatedAt = recordVisit ? reviewStore.getState().review?.createdAt : undefined;
 
   api.setQueryParams({ [REVIEW_COLLECTION_QUERY_PARAM]: null });
 
@@ -99,22 +99,27 @@ export const dismissReview = async (api: Pick<API, 'emit'>): Promise<void> => {
 };
 
 /**
- * Swap in the deferred review payload, enter review mode and navigate to the
- * summary screen. No-op when there is nothing pending.
+ * Promote the deferred review through the review service, enter review mode
+ * and navigate to the summary screen. No-op when there is nothing pending.
  */
-export const acceptPendingReview = (
+export const acceptPendingReview = async (
   api: API,
   navigate: NavigateFunction,
   filters: ReviewModeFilters
-): void => {
+): Promise<void> => {
   const accepted = reviewStore.getState().pendingReview;
   if (!accepted) {
+    return;
+  }
+  try {
+    await getService('core/review', { internal: true }).commands.acceptPending(undefined);
+  } catch (error) {
+    logger.error('Failed to accept pending review', error);
     return;
   }
   acceptReviewNotification(api, accepted.createdAt);
   // A fresh payload re-arms the one-time auto-enter.
   sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-  reviewStore.displayReview(accepted);
   void enterReviewMode(api, filters);
   navigate(buildReviewChangesSummaryHref(), { plain: true });
 };

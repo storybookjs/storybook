@@ -93,7 +93,7 @@ const componentName = (componentTitle: string): string =>
 
 export const ReviewToolbarHeader: FC = () => {
   const {
-    state,
+    review,
     banner,
     storyInfo,
     flattenedEntries,
@@ -102,11 +102,11 @@ export const ReviewToolbarHeader: FC = () => {
     activeIndex,
   } = useReview();
 
-  if (!state || !activeEntry || activeIndex < 0) {
+  if (!review || !activeEntry || activeIndex < 0) {
     return null;
   }
 
-  const collection = state.collections[activeEntry.collectionIndex];
+  const collection = review.collections[activeEntry.collectionIndex];
   const collectionTitle = collection?.title ?? 'Review';
   const totalStories = flattenedEntries.length;
   // Prev/next are disabled (not wrapping) at the ends of the flattened sequence.

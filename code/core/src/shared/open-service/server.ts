@@ -4,11 +4,12 @@ import { dirname, join } from 'pathe';
 
 import { toMerged } from 'es-toolkit/object';
 
+import type { ServerCoreServices, TypedGetService } from './core-service-types.ts';
 import {
   clearRegistry,
   describeService,
   getRegisteredServices,
-  getService,
+  getService as getServiceCore,
   listServices,
   registerService as registerServiceCore,
   serviceRegistryApi,
@@ -30,7 +31,9 @@ import type {
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
-export { clearRegistry, describeService, getRegisteredServices, getService, listServices };
+export const getService = getServiceCore as TypedGetService<ServerCoreServices>;
+
+export { clearRegistry, describeService, getRegisteredServices, listServices };
 
 /**
  * Registers a service on the dev server and returns its runtime surface.

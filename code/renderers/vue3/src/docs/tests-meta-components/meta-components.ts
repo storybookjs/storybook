@@ -1,10 +1,146 @@
 import { TypeSystem } from 'storybook/internal/docs-tools';
 
 import type { VueDocgenInfo } from '../../../../../frameworks/vue3-vite/src';
+import type { Declaration } from 'vue-component-meta';
+import type ts from 'typescript';
 
 type TestComponent = { __docgenInfo: VueDocgenInfo<'vue-component-meta'> };
+type LooseTestComponent = {
+  __docgenInfo: {
+    type: number;
+    props: unknown[];
+    events: unknown[];
+    slots: unknown[];
+    exposed: unknown[];
+  };
+};
 
-export const referenceTypeProps: TestComponent = {
+const ensureArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+
+const ensureMetaMethods = (entry: Record<string, unknown>, allowUndefinedType = false) => {
+  if (!Array.isArray(entry.declarations)) {
+    entry.declarations = [];
+  }
+
+  if (typeof entry.getDeclarations !== 'function') {
+    entry.getDeclarations = () => entry.declarations as Declaration[];
+  }
+
+  if (typeof entry.getTypeObject !== 'function') {
+    entry.getTypeObject = () => {
+      if (allowUndefinedType) {
+        return undefined;
+      }
+
+      return entry.rawType as ts.Type;
+    };
+  }
+};
+
+const normalizePropertySchema = (schema: unknown) => {
+  if (!schema || typeof schema !== 'object') {
+    return;
+  }
+
+  const schemaEntry = schema as Record<string, unknown>;
+  if (
+    schemaEntry.kind === 'object' &&
+    schemaEntry.schema &&
+    typeof schemaEntry.schema === 'object'
+  ) {
+    Object.values(schemaEntry.schema as Record<string, unknown>).forEach((property) => {
+      normalizeProperty(property);
+    });
+    return;
+  }
+
+  const nestedSchema = ensureArray(schemaEntry.schema);
+  nestedSchema.forEach((nested) => {
+    if (!nested || typeof nested !== 'object') {
+      return;
+    }
+
+    normalizePropertySchema(nested);
+  });
+};
+
+const normalizeProperty = (property: unknown) => {
+  if (!property || typeof property !== 'object') {
+    return;
+  }
+
+  const propertyEntry = property as Record<string, unknown>;
+  ensureMetaMethods(propertyEntry);
+  normalizePropertySchema(propertyEntry.schema);
+};
+
+const normalizeEvent = (event: unknown) => {
+  if (!event || typeof event !== 'object') {
+    return;
+  }
+
+  const eventEntry = event as Record<string, unknown>;
+  if (!Array.isArray(eventEntry.tags)) {
+    eventEntry.tags = [];
+  }
+  ensureMetaMethods(eventEntry, true);
+
+  ensureArray(eventEntry.schema).forEach((schema) => {
+    normalizePropertySchema(schema);
+  });
+};
+
+const normalizeSlotOrExpose = (entry: unknown) => {
+  if (!entry || typeof entry !== 'object') {
+    return;
+  }
+
+  const slotOrExposeEntry = entry as Record<string, unknown>;
+  if (!Array.isArray(slotOrExposeEntry.tags)) {
+    slotOrExposeEntry.tags = [];
+  }
+  ensureMetaMethods(slotOrExposeEntry);
+  normalizePropertySchema(slotOrExposeEntry.schema);
+};
+
+const hasMetaMethods = (entry: unknown) => {
+  if (!entry || typeof entry !== 'object') {
+    return false;
+  }
+
+  const value = entry as Record<string, unknown>;
+  return typeof value.getDeclarations === 'function' && typeof value.getTypeObject === 'function';
+};
+
+const isTestComponent = (component: LooseTestComponent): component is TestComponent => {
+  const { __docgenInfo } = component;
+
+  const propsOk = __docgenInfo.props.every(hasMetaMethods);
+  const eventsOk = __docgenInfo.events.every(hasMetaMethods);
+  const slotsOk = __docgenInfo.slots.every(
+    (slot) => hasMetaMethods(slot) && Array.isArray((slot as Record<string, unknown>).tags)
+  );
+  const exposedOk = __docgenInfo.exposed.every(hasMetaMethods);
+
+  return propsOk && eventsOk && slotsOk && exposedOk;
+};
+
+const normalizeComponentMetaFixture = (component: LooseTestComponent): TestComponent => {
+  const { __docgenInfo } = component;
+
+  __docgenInfo.props.forEach(normalizeProperty);
+  __docgenInfo.events.forEach(normalizeEvent);
+  __docgenInfo.slots.forEach(normalizeSlotOrExpose);
+  __docgenInfo.exposed.forEach(normalizeSlotOrExpose);
+
+  if (!isTestComponent(component)) {
+    throw new TypeError('Failed to normalize vue-component-meta fixture.');
+  }
+
+  return component;
+};
+
+export const referenceTypeProps: TestComponent = normalizeComponentMetaFixture({
   __docgenInfo: {
     type: 1,
     props: [
@@ -473,7 +609,7 @@ export const referenceTypeProps: TestComponent = {
     slots: [],
     exposed: [],
   },
-};
+});
 
 export const mockExtractComponentPropsReturn = [
   {
@@ -1211,7 +1347,7 @@ export const mockExtractComponentPropsReturn = [
   },
 ];
 
-export const referenceTypeEvents: TestComponent = {
+export const referenceTypeEvents: TestComponent = normalizeComponentMetaFixture({
   __docgenInfo: {
     type: 1,
     props: [],
@@ -1298,7 +1434,7 @@ export const referenceTypeEvents: TestComponent = {
     slots: [],
     exposed: [],
   },
-};
+});
 
 export const mockExtractComponentEventsReturn = [
   {
@@ -1408,7 +1544,7 @@ export const mockExtractComponentEventsReturn = [
   },
 ];
 
-export const templateSlots: TestComponent = {
+export const templateSlots: TestComponent = normalizeComponentMetaFixture({
   __docgenInfo: {
     type: 1,
     props: [],
@@ -1504,7 +1640,7 @@ export const templateSlots: TestComponent = {
     ],
     exposed: [],
   },
-};
+});
 
 export const mockExtractComponentSlotsReturn = [
   {

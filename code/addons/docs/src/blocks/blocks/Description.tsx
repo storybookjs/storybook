@@ -5,10 +5,10 @@ import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { DocsContext } from './DocsContext';
 import { Markdown } from './Markdown';
+import { useServiceDocgen } from './use-service-docgen.ts';
+import { useServiceStoryDoc } from './use-service-story-docs.ts';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { useServiceDocgen } from './useServiceDocgen';
-import { useServiceStoryDoc } from './use-service-story-docs.ts';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export enum DescriptionType {
@@ -73,47 +73,91 @@ const getDescriptionFromResolvedOf = (
   }
 };
 
-/**
- * Resolves the component-level description from the `core/docgen` service when
- * `experimentalDocgenServer` is enabled. In that mode the renderer no longer injects `__docgenInfo`,
- * so `extractComponentDescription` can't read the component's leading comment — the service payload
- * carries it instead. Story- and meta-parameter descriptions are unaffected and keep their sources.
- */
-const useServiceComponentDescription = (
-  resolvedOf: ReturnType<typeof useOf>
-): string | undefined => {
-  const context = useContext(DocsContext);
+type ResolvedOf = ReturnType<typeof useOf>;
 
-  let componentId: string | undefined;
-  if (globalThis.FEATURES?.experimentalDocgenServer) {
-    if (resolvedOf.type === 'meta') {
-      componentId = resolvedOf.preparedMeta.componentId;
-    } else if (resolvedOf.type === 'component') {
-      componentId = context.getComponentId(resolvedOf.component);
-    }
-  }
-
-  return useServiceDocgen(componentId)?.description || undefined;
-};
-
-const DescriptionImpl: FC<DescriptionProps> = (props) => {
-  const { of } = props;
-
-  if ('of' in props && of === undefined) {
-    throw new InvalidBlockOfPropError();
-  }
-  const resolvedOf = useOf(of || 'meta');
-  const serviceComponentDescription = useServiceComponentDescription(resolvedOf);
-  const storyDocsDescription = useServiceStoryDoc(
-    resolvedOf.type === 'story' ? resolvedOf.story.id : undefined
-  )?.description;
+const DescriptionBody: FC<{
+  resolvedOf: ResolvedOf;
+  serviceComponentDescription?: string;
+  lang?: string;
+  storyDocsDescription?: string | null;
+}> = ({ resolvedOf, serviceComponentDescription, lang, storyDocsDescription }) => {
   const markdown = getDescriptionFromResolvedOf(
     resolvedOf,
     serviceComponentDescription,
     storyDocsDescription
   );
 
-  return markdown ? <Markdown>{markdown}</Markdown> : null;
+  return markdown ? <Markdown lang={lang}>{markdown}</Markdown> : null;
+};
+
+const DescriptionStoryWithServices: FC<{
+  resolvedOf: Extract<ResolvedOf, { type: 'story' }>;
+}> = ({ resolvedOf }) => {
+  const storyDocsDescription = useServiceStoryDoc(resolvedOf.story.id).data?.description;
+  const lang = resolvedOf.story.parameters.docs?.lang || 'en';
+  return (
+    <DescriptionBody
+      resolvedOf={resolvedOf}
+      storyDocsDescription={storyDocsDescription}
+      lang={lang}
+    />
+  );
+};
+
+const DescriptionComponentWithServices: FC<{
+  resolvedOf: Extract<ResolvedOf, { type: 'meta' | 'component' }>;
+  componentId: string;
+}> = ({ resolvedOf, componentId }) => {
+  const serviceComponentDescription = useServiceDocgen(componentId).data?.description || undefined;
+  const lang =
+    resolvedOf.type === 'meta'
+      ? resolvedOf.preparedMeta.parameters.docs?.lang || 'en'
+      : resolvedOf.projectAnnotations.parameters?.docs?.lang || 'en';
+  return (
+    <DescriptionBody
+      resolvedOf={resolvedOf}
+      serviceComponentDescription={serviceComponentDescription}
+      lang={lang}
+    />
+  );
+};
+
+const DescriptionImpl: FC<DescriptionProps> = (props) => {
+  const { of } = props;
+  const context = useContext(DocsContext);
+
+  if ('of' in props && of === undefined) {
+    throw new InvalidBlockOfPropError();
+  }
+  const resolvedOf = useOf(of || 'meta');
+
+  // The docgen service contributes a fallback description, but its two sources need different hooks
+  // (story-docs by story id, docgen by component id), so each lives in its own child component to
+  // keep the hook call unconditional. When the feature is off — or a bare `of={Component}` has no
+  // resolvable component id — render without a service fallback.
+  if (globalThis.FEATURES?.experimentalDocgenServer) {
+    if (resolvedOf.type === 'story') {
+      return <DescriptionStoryWithServices resolvedOf={resolvedOf} />;
+    }
+
+    const componentId =
+      resolvedOf.type === 'meta'
+        ? resolvedOf.preparedMeta.componentId
+        : context.getComponentId(resolvedOf.component);
+
+    if (componentId) {
+      return <DescriptionComponentWithServices resolvedOf={resolvedOf} componentId={componentId} />;
+    }
+  }
+
+  const parameters =
+    resolvedOf.type === 'story'
+      ? resolvedOf.story.parameters
+      : resolvedOf.type === 'meta'
+        ? resolvedOf.preparedMeta.parameters
+        : resolvedOf.projectAnnotations.parameters;
+  const lang = parameters?.docs?.lang || 'en';
+  return <DescriptionBody resolvedOf={resolvedOf} lang={lang} />;
 };
 
 export const Description = withMdxComponentOverride('Description', DescriptionImpl);

@@ -3,7 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineService } from './index.ts';
 import { type MutableRecordLookupService, mutableRecordLookupServiceDef } from './fixtures.ts';
-import { registerService } from './server.ts';
+import { getService, registerService } from './server.ts';
 import type { RuntimeService } from './types.ts';
 
 const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -15,7 +15,7 @@ const registrationOnlyServiceDef = defineService({
     valuesById: {} as Record<string, string | undefined>,
   },
   queries: {
-    getValue: {
+    value: {
       input: entryIdInputSchema,
       output: v.nullable(v.string()),
       handler: (input, ctx) => {
@@ -53,7 +53,7 @@ const registrationOnlyServiceDef = defineService({
 
 const registeredService = registerService(registrationOnlyServiceDef, {
   queries: {
-    getValue: {
+    value: {
       staticInputs: () => [{ entryId: 'entry-a' }],
     },
   },
@@ -79,11 +79,11 @@ const registeredService = registerService(registrationOnlyServiceDef, {
 
 describe('open-service registration types', () => {
   it('infers registration overrides and the registered runtime surface', () => {
-    expectTypeOf(registeredService.queries.getValue).parameter(0).toEqualTypeOf<{
+    expectTypeOf(registeredService.queries.value.get).parameter(0).toEqualTypeOf<{
       entryId: string;
     }>();
-    expectTypeOf(registeredService.queries.getValue).returns.toEqualTypeOf<string | null>();
-    expectTypeOf(registeredService.queries.getValue.loaded).returns.toEqualTypeOf<
+    expectTypeOf(registeredService.queries.value.get).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(registeredService.queries.value.loaded).returns.toEqualTypeOf<
       Promise<string | null>
     >();
 
@@ -102,7 +102,7 @@ describe('open-service registration types', () => {
   it('rejects invalid registration overrides', () => {
     registerService(registrationOnlyServiceDef, {
       queries: {
-        getValue: {
+        value: {
           // @ts-expect-error query handlers belong on the definition, not at registration
           handler: () => 'wrong',
         },
@@ -111,7 +111,7 @@ describe('open-service registration types', () => {
 
     registerService(registrationOnlyServiceDef, {
       queries: {
-        getValue: {
+        value: {
           // @ts-expect-error load must be declared on the definition, not at registration
           load: async () => {},
         },
@@ -137,7 +137,7 @@ describe('open-service registration types', () => {
         id: 'internal-fixture/open-service-registration-cross-service',
         initialState: { valuesById: {} as Record<string, string | undefined> },
         queries: {
-          getValue: {
+          value: {
             input: entryIdInputSchema,
             output: v.nullable(v.string()),
             handler: (_input, ctx) => {
@@ -145,14 +145,14 @@ describe('open-service registration types', () => {
                 'internal-fixture/mutable-record-lookup'
               );
 
-              expectTypeOf(lookup.queries.getRecordFields).returns.toEqualTypeOf<Record<
+              expectTypeOf(lookup.queries.recordFields.get).returns.toEqualTypeOf<Record<
                 string,
                 string
               > | null>();
               const missingService = ctx.getService('internal-fixture/missing-service');
               expectTypeOf(missingService).toEqualTypeOf<RuntimeService>();
-              // @ts-expect-error getRecordFields requires an entryId string
-              lookup.queries.getRecordFields({});
+              // @ts-expect-error recordFields requires an entryId string
+              lookup.queries.recordFields.get({});
 
               return null;
             },
@@ -161,5 +161,27 @@ describe('open-service registration types', () => {
         commands: {},
       })
     );
+  });
+});
+
+describe('typed core getService (server)', () => {
+  it('types known core service ids without an explicit generic', () => {
+    expectTypeOf(getService('core/docgen').queries.docgen.get).parameter(0).toEqualTypeOf<{
+      id: string;
+    }>();
+    expectTypeOf(getService('core/story-docs').queries.storyDocs.get).parameter(0).toEqualTypeOf<{
+      id: string;
+    }>();
+    expectTypeOf(
+      getService('core/module-graph').queries.latestStoryChanges.subscribe
+    ).toBeFunction();
+  });
+
+  it('falls back to RuntimeService for unknown ids', () => {
+    expectTypeOf(getService('addon-docs/mdx')).toEqualTypeOf<RuntimeService>();
+  });
+
+  it('honors an explicit generic over a known core id', () => {
+    expectTypeOf(getService<RuntimeService>('core/docgen')).toEqualTypeOf<RuntimeService>();
   });
 });

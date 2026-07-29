@@ -7,6 +7,14 @@ import { globalsNameValueMap } from './globals/runtime.ts';
 import { maybeSetupPreviewNavigator } from './preview-navigator.ts';
 import { prepareForTelemetry } from './utils.ts';
 
+function setInert(inert: boolean) {
+  if (inert) {
+    document.body?.setAttribute('inert', 'true');
+  } else {
+    document.body?.removeAttribute('inert');
+  }
+}
+
 function errorListener(args: any) {
   const error = args.error || args;
   if (error.fromStorybook) {
@@ -35,6 +43,14 @@ export function setup() {
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
 
+  // This gate only drives `inert` (interaction blocking) and keys on `freeze`
+  // alone. Whether the preview is actually frozen is gated separately (and more
+  // strictly, on viewMode=story) in setupStoryFreezer.shouldFreeze.
+  const freeze = new URLSearchParams(global.location?.search ?? '').get('freeze') === 'finished';
+  if (freeze) {
+    setInert(true);
+  }
+
   /**
    * Ensure we synchronise the preview runtime's inert state with the manager's. The inert attribute
    * used to be propagated into iframes, but this has changed, breaking focus trap implementations
@@ -43,17 +59,17 @@ export function setup() {
    * could reach a deadlock state and be unusable.
    */
   document.addEventListener('DOMContentLoaded', () => {
+    if (freeze) {
+      setInert(true);
+    }
+
     const channel = getChannel();
     if (!channel) {
       return;
     }
 
     channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
-      if (isInert) {
-        document.body.setAttribute('inert', 'true');
-      } else {
-        document.body.removeAttribute('inert');
-      }
+      setInert(freeze || isInert);
     });
   });
 

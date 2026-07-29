@@ -123,7 +123,7 @@ export const SidebarBottomBase = ({
 
   useEffect(() => {
     const filter = getFilter(warningCount > 0 && warningsActive, errorCount > 0 && errorsActive);
-    api.experimental_setFilter('sidebar-bottom-filter', filter);
+    api.experimental_setFilters({ 'sidebar-bottom-filter': filter });
   }, [api, warningCount, errorCount, warningsActive, errorsActive]);
 
   if (

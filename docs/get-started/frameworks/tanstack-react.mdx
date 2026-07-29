@@ -183,6 +183,10 @@ TanStack Query is not automatically set up. The recommended approach is to creat
 
 <CodeSnippets path="tanstack-react-query-setup.md" />
 
+This setup keeps the router context and React provider pointed at the same `QueryClient` no matter how Storybook renders the story: in the sidebar, in the Docs page, through portable stories, or in a test run. Clearing the cache before each story gives every story fresh query state while preserving one predictable integration point for loaders, route context, decorators, and story-level setup.
+
+You can create a separate `QueryClient` for each story when you need stronger isolation, such as rendering several stories with the same query keys on one Docs page and keeping their cached responses independent. The tradeoff is that you must make the per-story client available to both the router context and the `QueryClientProvider` for that story. If those two places receive different clients, route loaders and components can read different caches, and story setup that calls `setQueryData` may not affect the component being rendered. Per-story clients also require explicit cleanup of timers, subscriptions, and cached data owned by each client.
+
 #### Seeding query data per story
 
 In individual stories, use [`beforeEach`](../../writing-tests/interaction-testing.mdx#beforeeach) to call [`setQueryData`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetquerydata) on the shared `QueryClient` before the component renders. Access it from `parameters.tanstack.router.context`:

@@ -220,5 +220,5 @@ export async function loadMdxPayloadsFromServiceIfNeeded(
   }
 
   const mdxService = getService<MdxServiceContract>(MDX_SERVICE_ID);
-  return mdxService.queries.getMdxForAllComponents.loaded();
+  return mdxService.queries.mdxForAllComponents.loaded();
 }

@@ -4,6 +4,7 @@ import type {
   API_LayoutCustomisations,
   API_PanelPositions,
   API_UI,
+  API_ViewMode,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -14,6 +15,7 @@ import type { ThemeVars } from 'storybook/theming';
 import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
@@ -35,6 +37,16 @@ export interface SubState {
   selectedPanel: string | undefined;
   theme: ThemeVars;
 }
+
+/**
+ * Availability of the sidebar/nav: 'unavailable' means the current route suppresses the nav
+ * entirely (review routes), otherwise it is 'shown' or 'hidden' based on the layout state.
+ */
+export type NavAvailability = 'shown' | 'hidden' | 'unavailable';
+
+/** True when the route renders a full-screen page (e.g. settings) instead of the preview canvas. */
+export const isPagesViewMode = (viewMode: API_ViewMode): boolean =>
+  viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs' && viewMode !== 'review';
 
 export interface SubAPI {
   /**
@@ -88,6 +100,11 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetNavAvailability - Returns whether the sidebar/nav is shown, hidden (but can be shown by the
+   * user), or unavailable because the current route suppresses it entirely (review routes).
+   */
+  getNavAvailability: () => NavAvailability;
   /**
    * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
@@ -544,6 +561,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
     getIsNavShown() {
       return getIsNavShown(store.getState());
+    },
+    getNavAvailability(): NavAvailability {
+      const state = store.getState();
+      if (isReviewManagerRoute(state.path, state.customQueryParams)) {
+        return 'unavailable';
+      }
+      return getIsNavShown(state) ? 'shown' : 'hidden';
     },
 
     getShowToolbarWithCustomisations(showToolbar: boolean) {

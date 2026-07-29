@@ -50,11 +50,16 @@ export class WebsocketTransport implements ChannelTransport {
     this.socket.onmessage = ({ data }) => {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
-      this.handler(event);
+
+      this.heartbeat();
+
       if (event.type === 'ping') {
-        this.heartbeat();
+        // Pings are internal to the transport and have no channel listeners.
         this.send({ type: 'pong' });
+        return;
       }
+
+      this.handler(event);
     };
     this.socket.onerror = (e) => {
       if (onError) {

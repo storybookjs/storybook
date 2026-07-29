@@ -110,11 +110,11 @@ export function applyStatePatch(
     }
 
     const sourceValue = source[key];
-    const targetValue = target[key];
+    const tarvalue = target[key];
 
-    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
-      applyStatePatch(targetValue, sourceValue, options);
-    } else if (targetValue !== sourceValue) {
+    if (isPlainObject(sourceValue) && isPlainObject(tarvalue)) {
+      applyStatePatch(tarvalue, sourceValue, options);
+    } else if (tarvalue !== sourceValue) {
       target[key] = sourceValue;
     }
   }

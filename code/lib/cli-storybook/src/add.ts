@@ -1,7 +1,6 @@
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
-import { logger as nodeLogger } from 'storybook/internal/node-logger';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import SemVer from 'semver';
@@ -17,6 +16,14 @@ export interface PostinstallOptions {
   prompt: typeof prompt;
   yes?: boolean;
   skipInstall?: boolean;
+  /**
+   * Whether nested `storybook` CLI invocations must fetch the package into an ephemeral
+   * environment (dlx/npx) instead of running the locally installed binary. Defaults to
+   * `skipInstall`, since a skipped install is the one case where no local binary exists; the init
+   * command overrides it because it installs dependencies before postinstall scripts run while
+   * still passing `skipInstall: true` to keep dependency handling to itself.
+   */
+  useRemotePkg?: boolean;
   /**
    * Skip all dependency management (collecting, adding to package.json, installing). Used when the
    * caller (e.g., init command) has already handled dependencies.
@@ -92,6 +99,7 @@ export async function add(
     await getStorybookData({
       configDir: userSpecifiedConfigDir,
       packageManagerName: pkgMgr,
+      skipCache: true,
     });
 
   if (typeof configDir === 'undefined') {

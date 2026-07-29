@@ -32,7 +32,7 @@ export const mutableRecordLookupServiceDef = defineService({
   description: 'Provides a mutable record lookup keyed by entry id.',
   initialState: {} as MutableRecordState,
   queries: {
-    getRecordFields: {
+    recordFields: {
       description: 'Returns all stored fields for one entry, or null when absent.',
       input: entryIdInputSchema,
       output: recordFieldsOutputSchema,
@@ -64,7 +64,7 @@ export const awaitedPreloadValueServiceDef = defineService({
   description: 'Loads a value on demand via a command and reads it back from state.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: {
+    preloadedValue: {
       description: 'Returns the value for an entry; load triggers a command to populate state.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
@@ -99,7 +99,7 @@ export const fireAndForgetPreloadValueServiceDef = defineService({
   description: 'Loads a value in the background without awaiting it.',
   initialState: {} as PreloadedValueState,
   queries: {
-    getPreloadedValue: {
+    preloadedValue: {
       description:
         'Returns the current value; load fires a command in the background when missing.',
       input: entryIdInputSchema,
@@ -148,7 +148,7 @@ export const rebuiltEqualValueOnLoadServiceDef = defineService({
   description: 'Rewrites a deeply-equal but freshly-allocated object value on every load.',
   initialState: {} as RebuiltValueState,
   queries: {
-    getRebuiltValue: {
+    rebuiltValue: {
       description: 'Returns the value for an entry; load always rewrites a fresh-but-equal value.',
       input: entryIdInputSchema,
       output: rebuiltValueOutputSchema,
@@ -185,7 +185,7 @@ export function createSharedStaticFileServiceDef() {
     description: 'Builds two independent query outputs into one shared static file.',
     initialState: {} as SharedStaticFileState,
     queries: {
-      getLeftValue: {
+      leftValue: {
         description: 'Loads the left value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -196,7 +196,7 @@ export function createSharedStaticFileServiceDef() {
         staticPath: () => 'shared.json',
         staticInputs: async () => [undefined],
       },
-      getRightValue: {
+      rightValue: {
         description: 'Loads the right value into the shared file state.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -256,7 +256,7 @@ export function createDerivedBooleanFromChildQueryServiceDef() {
           const source = ctx.getService<MutableRecordLookupService>(
             mutableRecordLookupServiceDef.id
           );
-          const record = source.queries.getRecordFields({
+          const record = source.queries.recordFields.get({
             entryId: input.entryId,
           });
 
@@ -279,7 +279,7 @@ export const undefinedOutputQueryServiceDef = defineService({
   description: 'Exposes a query that always returns undefined.',
   initialState: {} as Record<string, never>,
   queries: {
-    getNothing: {
+    nothing: {
       description: 'Always returns undefined.',
       input: noInputSchema,
       output: voidOutputSchema,
@@ -296,7 +296,7 @@ export function createInvalidQueryOutputServiceDef() {
     description: 'Returns an invalid query output on purpose.',
     initialState: {} as Record<string, never>,
     queries: {
-      getBrokenValue: {
+      brokenValue: {
         description: 'Returns a string-shaped output that is actually a number.',
         input: noInputSchema,
         output: preloadedValueOutputSchema,
@@ -332,7 +332,7 @@ export function createInvalidStaticInputServiceDef() {
     description: 'Provides an invalid static load input on purpose.',
     initialState: {} as PreloadedValueState,
     queries: {
-      getPreloadedValue: {
+      preloadedValue: {
         description: 'Validates static inputs before load runs.',
         input: entryIdInputSchema,
         output: preloadedValueOutputSchema,
@@ -352,7 +352,7 @@ export const unimplementedOperationsServiceDef = defineService({
   description: 'Leaves handlers undefined so registration can supply them later.',
   initialState: {} as Record<string, never>,
   queries: {
-    getValue: {
+    value: {
       description: 'Reads a value that is not implemented in this environment.',
       input: v.undefined(),
       output: v.string(),
@@ -375,7 +375,7 @@ export const registeredCommandOverrideServiceDef = defineService({
   description: 'Provides a command handler at registration time.',
   initialState: { count: 0 } satisfies RegisteredCommandOverrideState,
   queries: {
-    getCount: {
+    count: {
       description: 'Reads the current count.',
       input: v.undefined(),
       output: v.number(),
@@ -404,7 +404,7 @@ export const registrationOnlyStaticBuildServiceDef = defineService({
   description: 'Declares staticPath in the definition and load at registration.',
   initialState: { value: null } as RegistrationOnlyStaticBuildState,
   queries: {
-    getValue: {
+    value: {
       description: 'Returns one statically built value.',
       input: v.object({ build: v.literal('once') }),
       output: v.nullable(v.string()),
@@ -430,13 +430,13 @@ export const mixedVisibilityServiceDef = defineService({
   description: 'Exposes one public and one internal operation per family.',
   initialState: { value: 0 } satisfies MixedVisibilityState,
   queries: {
-    getValue: {
+    value: {
       description: 'Public query.',
       input: v.undefined(),
       output: v.number(),
       handler: (_input, ctx) => ctx.self.state.value,
     },
-    _getInternalValue: {
+    _internalValue: {
       internal: true,
       description: 'Internal query.',
       input: v.undefined(),
@@ -478,7 +478,7 @@ export const hiddenServiceDef = defineService({
   description: 'Hidden from listServices.',
   initialState: { secret: true } satisfies HiddenServiceState,
   queries: {
-    getSecret: {
+    secret: {
       description: 'Returns the secret flag.',
       input: v.undefined(),
       output: v.boolean(),
@@ -496,7 +496,7 @@ export const internalStaticBuildServiceDef = defineService({
   description: 'Internal query participates in static builds.',
   initialState: { value: null } as InternalStaticBuildState,
   queries: {
-    _getValue: {
+    _value: {
       internal: true,
       description: 'Internal statically built query.',
       input: v.object({ build: v.literal('once') }),

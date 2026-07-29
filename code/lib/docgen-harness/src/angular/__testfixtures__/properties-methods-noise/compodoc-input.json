@@ -1,0 +1,168 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "PropertiesMethodsNoiseComponent",
+      "id": "component-PropertiesMethodsNoiseComponent-6d8f11599bef17c0ba839c2f891b8720044f22ef8a5893157453b76b86f6e04164eeaa2818fb2a8839dfbfd343973f7a9587c7f57c82c545c7f842fd748fdaec",
+      "file": "properties-methods-noise.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-properties-methods-noise",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<div #panel>{{ title }} {{ currentPage }}</div>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "title",
+          "defaultValue": "''",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 9,
+          "type": "string",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [
+        {
+          "name": "currentPage",
+          "coverageIgnore": false,
+          "defaultValue": "1",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "number",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 11,
+          "rawdescription": "\n"
+        },
+        {
+          "name": "isActive",
+          "coverageIgnore": false,
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "unknown",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 15,
+          "rawdescription": "\n",
+          "decorators": [
+            {
+              "name": "HostBinding",
+              "stringifiedArguments": "'class.active'"
+            }
+          ],
+          "modifierKind": [171]
+        },
+        {
+          "name": "panel",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "ElementRef<HTMLDivElement>",
+          "indexKey": "",
+          "optional": true,
+          "description": "",
+          "line": 13,
+          "rawdescription": "\n",
+          "decorators": [
+            {
+              "name": "ViewChild",
+              "stringifiedArguments": "'panel'"
+            }
+          ],
+          "modifierKind": [171]
+        }
+      ],
+      "methodsClass": [
+        {
+          "name": "nextPage",
+          "coverageIgnore": false,
+          "args": [],
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": [],
+          "line": 17,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": ""
+        }
+      ],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [
+        {
+          "coverageIgnore": false,
+          "name": "class.active",
+          "actualName": "isActive",
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 15,
+          "type": "boolean",
+          "decorators": []
+        }
+      ],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import type { ElementRef } from '@angular/core';\nimport { Component, HostBinding, Input, ViewChild } from '@angular/core';\n\n@Component({\n  selector: 'sb-properties-methods-noise',\n  template: '<div #panel>{{ title }} {{ currentPage }}</div>',\n})\nexport class PropertiesMethodsNoiseComponent {\n  @Input() title = '';\n\n  currentPage = 1;\n\n  @ViewChild('panel') panel?: ElementRef<HTMLDivElement>;\n\n  @HostBinding('class.active') isActive = false;\n\n  nextPage(): void {\n    this.currentPage += 1;\n  }\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "properties-methods-noise.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "PropertiesMethodsNoiseComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/7",
+        "status": "low"
+      }
+    ]
+  }
+}

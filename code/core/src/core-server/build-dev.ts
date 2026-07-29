@@ -314,6 +314,7 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    configDir: options.configDir,
     mcp,
     port,
     storybookVersion,

@@ -42,7 +42,7 @@ export const mdxServiceDef = defineService({
   internal: true, // this service really only ensures that the MDX docs are available in manifests, so there is no need to expose it to the public API
   initialState: { components: {} } as MdxServiceState,
   queries: {
-    getMdxForComponent: {
+    mdxForComponent: {
       input: mdxInputSchema,
       output: mdxOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.id],
@@ -51,7 +51,7 @@ export const mdxServiceDef = defineService({
       },
       staticPath: (input) => mdxQueryStaticPath(input.id),
     },
-    getMdxForAllComponents: {
+    mdxForAllComponents: {
       input: v.void(),
       output: v.record(v.string(), mdxPayloadSchema),
       handler: (_input, ctx) => ctx.self.state.components,

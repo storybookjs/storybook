@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
@@ -108,7 +108,8 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
-  sourceContext: SourceContextProps
+  sourceContext: SourceContextProps,
+  serviceSnippet = ''
 ): PureSourceProps => {
   const { of } = props;
 
@@ -133,8 +134,6 @@ export const useSourceProps = (
     : storyContext.unmappedArgs;
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
-
-  const serviceSnippet = useServiceStorySnippet(story?.id) ?? '';
 
   const transformedCode = useCode({
     snippet: source ? source.code : '',
@@ -177,15 +176,51 @@ export const useSourceProps = (
   };
 };
 
+const SourceWithStoryDocsSnippet: FC<
+  SourceProps & {
+    docsContext: DocsContextProps;
+    sourceContext: SourceContextProps;
+    storyId: string;
+  }
+> = ({ storyId, docsContext, sourceContext, ...props }) => {
+  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  return <PureSource {...sourceProps} />;
+};
+
 /**
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
 const SourceWithStorySnippet = (props: SourceProps) => {
+  const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
 
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+    }
+  }, [docsContext, of]);
+
+  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+    return (
+      <SourceWithStoryDocsSnippet
+        {...props}
+        docsContext={docsContext}
+        sourceContext={sourceContext}
+        storyId={story.id}
+      />
+    );
+  }
+
+  const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 

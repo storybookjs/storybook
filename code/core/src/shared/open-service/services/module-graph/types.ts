@@ -29,7 +29,7 @@ export type ModuleGraphServiceState = {
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
-   * story at snapshot time so scoped `getGraphRevision` reads observe existing keys.
+   * story at snapshot time so scoped `graphRevision` reads observe existing keys.
    */
   storyChangeRevisions: Record<string, number>;
   latestChangedStoryFiles: string[];

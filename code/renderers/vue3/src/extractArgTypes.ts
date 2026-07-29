@@ -214,10 +214,18 @@ export const convertVueComponentMetaProp = (
         return { name: 'boolean', required };
       }
 
-      if (isLiteralUnionSchema(definedSchemas) || isEnumSchema(definedSchemas)) {
+      if (isLiteralUnionSchema(definedSchemas)) {
         // remove quotes from literals
         const literals = definedSchemas.map((literal) => literal.replace(/"/g, ''));
         return { name: 'enum', value: literals, required };
+      }
+
+      // TS enum members arrive as reference strings ("MyEnum.Foo") without their runtime
+      // values, and an enum sbType would make Controls inject those names verbatim
+      // (the string "MyEnum.Foo" instead of the member's value). Keep the type documented
+      // via the table but not selectable until the values are available.
+      if (isEnumSchema(definedSchemas)) {
+        return fallbackSbType;
       }
 
       if (definedSchemas.length === 1) {

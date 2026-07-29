@@ -99,7 +99,7 @@ beforeEach(() => {
 });
 
 describe('docs API', () => {
-  it('returns compact Markdown by default after loading services through context', async () => {
+  it('returns the MCP list Markdown by default after loading services through context', async () => {
     await expect(
       docsToolset.methods.list.handler(
         v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
@@ -108,11 +108,13 @@ describe('docs API', () => {
     ).resolves.toBe(
       [
         '# Components',
+        '',
         '- Button (button): A button',
-        '  - button--primary',
+        '  - Primary (button--primary)',
         '',
         '# Docs',
-        '- Getting started (guide--docs): Intro',
+        '',
+        '- Guide (guide--docs): Intro',
       ].join('\n')
     );
     expect(ctx.getService).toHaveBeenCalledWith('core/docgen', { internal: true });

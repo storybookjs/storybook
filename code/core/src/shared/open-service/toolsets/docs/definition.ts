@@ -1,14 +1,29 @@
 import * as v from 'valibot';
 
 import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
-import { defineToolset, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
+import { defineToolset, type ToolsetCtx } from '../../toolset-definition.ts';
 import { classifyServices } from './classify-services.ts';
-import { formatDocsList, formatDocsShow, formatDocsShowStory } from './format.ts';
+import {
+  adaptCoreComponent,
+  adaptCoreDoc,
+  adaptCoreStories,
+} from './manifest-formatter/adapt-core-manifest.ts';
+import type {
+  AllManifests,
+  ComponentManifestV1,
+  DocV1,
+} from './manifest-formatter/manifest-types.ts';
+import {
+  formatComponentManifest,
+  formatDocsManifest,
+  formatManifestsToLists,
+  formatStoryDocumentation,
+} from './manifest-formatter/markdown.ts';
 import { mapDocsList, mapDocsShow, mapDocsShowStory, type MdxPayload } from './map.ts';
 
-/** Stable addon-docs MDX service id. Kept local so the public docs API does not import core-server. */
+/** Stable addon-docs MDX service id. Kept local so the docs toolset does not import core-server. */
 const MDX_SERVICE_ID = 'addon-docs/mdx';
 
 type MdxService = {
@@ -52,6 +67,13 @@ async function loadDocsListServices(ctx: ToolsetCtx) {
   };
 }
 
+/** Not-found message matching `@storybook/mcp`'s `get-documentation` for the MCP consumer. */
+function formatEntryNotFound(id: string, ctx: ToolsetCtx): string {
+  return ctx.consumer === 'mcp'
+    ? `Component or Docs Entry not found: "${id}". Use the list-all-documentation tool to see available components and documentation entries.`
+    : `Component or Docs Entry not found: "${id}".`;
+}
+
 export const docsToolset = defineToolset({
   id: 'docs',
   description: 'Storybook component and docs documentation.',
@@ -67,15 +89,50 @@ export const docsToolset = defineToolset({
         'Lists components and standalone docs entries. Optionally includes story ids per component.',
       handler: async (input, ctx) => {
         const { classification, allDocgen, allStoryDocs, allMdx } = await loadDocsListServices(ctx);
-        const data = mapDocsList({
-          classification,
-          allDocgen,
-          allStoryDocs,
-          allMdx,
-          withStoryIds: input.withStoryIds,
-        });
 
-        return ctx.format === 'json' ? data : formatDocsList(data);
+        if (ctx.format === 'json') {
+          return mapDocsList({
+            classification,
+            allDocgen,
+            allStoryDocs,
+            allMdx,
+            withStoryIds: input.withStoryIds,
+          });
+        }
+
+        // Mirrors the manifest index addon-mcp builds in-process for `list-all-documentation`:
+        // shallow component rows, stories inlined only when story ids are requested.
+        const components: Record<string, ComponentManifestV1> = {};
+        for (const id of classification.componentIds) {
+          const payload = allDocgen[id];
+          const stories =
+            input.withStoryIds && classification.storyBasedIds.has(id)
+              ? (adaptCoreStories(allStoryDocs[id]?.stories) ?? [])
+              : undefined;
+          components[id] = {
+            id,
+            name: payload?.name ?? id,
+            ...(payload?.description !== undefined ? { description: payload.description } : {}),
+            ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+            ...(stories ? { stories } : {}),
+          };
+        }
+
+        const docs: Record<string, DocV1> = {};
+        for (const [docId, name] of classification.unattachedDocs) {
+          const payload = allMdx[docId]?.docs?.[docId];
+          docs[docId] = {
+            id: docId,
+            name,
+            ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+          };
+        }
+
+        const manifests: AllManifests = {
+          componentManifest: { v: 1, components },
+          ...(Object.keys(docs).length > 0 ? { docsManifest: { v: 1, docs } } : {}),
+        };
+        return formatManifestsToLists(manifests, { withStoryIds: input.withStoryIds });
       },
     },
     show: {
@@ -99,14 +156,52 @@ export const docsToolset = defineToolset({
           allMdx: mdxPayload ? { [input.id]: mdxPayload } : {},
         });
 
-        const data = mapDocsShow({
-          id: input.id,
-          classification,
-          docgen: docgenPayload,
-          storyDocs: storyDocsPayload,
-          mdx: mdxPayload,
-        });
-        return ctx.format === 'json' ? data : formatDocsShow(data);
+        if (ctx.format === 'json') {
+          return mapDocsShow({
+            id: input.id,
+            classification,
+            docgen: docgenPayload,
+            storyDocs: storyDocsPayload,
+            mdx: mdxPayload,
+          });
+        }
+
+        // Mirrors addon-mcp's in-process `resolveEntry`: standalone docs render through the docs
+        // formatter, components assemble docgen + story-docs + attached MDX.
+        if (classification.unattachedDocs.has(input.id)) {
+          const doc = mdxPayload?.docs?.[input.id];
+          if (!doc) {
+            return formatEntryNotFound(input.id, ctx);
+          }
+          return formatDocsManifest(adaptCoreDoc(doc));
+        }
+
+        if (!classification.componentIds.includes(input.id)) {
+          return formatEntryNotFound(input.id, ctx);
+        }
+
+        const attached = classification.attachedDocsByComponent.get(input.id) ?? [];
+        let docs: Record<string, MdxPayload['docs'][string]> | undefined;
+        if (attached.length > 0 && mdxPayload?.docs) {
+          docs = {};
+          for (const docsId of attached) {
+            const doc = mdxPayload.docs[docsId];
+            if (doc) {
+              docs[docsId] = doc;
+            }
+          }
+        }
+
+        return formatComponentManifest(
+          adaptCoreComponent({
+            ...docgenPayload,
+            id: input.id,
+            name: docgenPayload?.name ?? input.id,
+            ...(storyDocsPayload?.stories ? { stories: storyDocsPayload.stories } : {}),
+            ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
+            ...(docs ? { docs } : {}),
+          })
+        );
       },
     },
     showStory: {
@@ -123,46 +218,68 @@ export const docsToolset = defineToolset({
           docgen.queries.docgen.loaded({ id: input.componentId }),
         ]);
 
-        if (!storyDocsPayload && !docgenPayload) {
-          const data = mapDocsShowStory({
+        if (ctx.format === 'json') {
+          if (!storyDocsPayload && !docgenPayload) {
+            return mapDocsShowStory({
+              componentId: input.componentId,
+              storyName: input.storyName,
+              show: { kind: 'not-found', id: input.componentId },
+            });
+          }
+
+          const stories = storyDocsPayload?.stories
+            ? Object.values(storyDocsPayload.stories).map((story) => ({
+                ...(story.id !== undefined ? { id: story.id } : {}),
+                name: story.name,
+                ...(story.description !== undefined ? { description: story.description } : {}),
+                ...(story.summary !== undefined ? { summary: story.summary } : {}),
+                ...(story.snippet !== undefined ? { snippet: story.snippet } : {}),
+                ...(story.error !== undefined ? { error: story.error } : {}),
+              }))
+            : [];
+
+          const importStatement =
+            typeof storyDocsPayload?.import === 'string'
+              ? storyDocsPayload.import
+              : typeof docgenPayload?.import === 'string'
+                ? docgenPayload.import
+                : undefined;
+
+          return mapDocsShowStory({
             componentId: input.componentId,
             storyName: input.storyName,
-            show: { kind: 'not-found', id: input.componentId },
+            show: {
+              kind: 'component',
+              id: input.componentId,
+              name: docgenPayload?.name ?? storyDocsPayload?.name ?? input.componentId,
+              ...(importStatement !== undefined ? { import: importStatement } : {}),
+              stories,
+            },
           });
-          return ctx.format === 'json' ? data : formatDocsShowStory(data);
         }
 
-        const stories = storyDocsPayload?.stories
-          ? Object.values(storyDocsPayload.stories).map((story) => ({
-              ...(story.id !== undefined ? { id: story.id } : {}),
-              name: story.name,
-              ...(story.description !== undefined ? { description: story.description } : {}),
-              ...(story.summary !== undefined ? { summary: story.summary } : {}),
-              ...(story.snippet !== undefined ? { snippet: story.snippet } : {}),
-              ...(story.error !== undefined ? { error: story.error } : {}),
-            }))
-          : [];
+        // Mirrors `@storybook/mcp`'s `get-documentation-for-story`, including its miss messages.
+        if (!storyDocsPayload && !docgenPayload) {
+          return ctx.consumer === 'mcp'
+            ? `Component not found: "${input.componentId}". Use the list-all-documentation tool to see available components.`
+            : `Component not found: "${input.componentId}".`;
+        }
 
-        const importStatement =
-          typeof storyDocsPayload?.import === 'string'
-            ? storyDocsPayload.import
-            : typeof docgenPayload?.import === 'string'
-              ? docgenPayload.import
-              : undefined;
-
-        const data = mapDocsShowStory({
-          componentId: input.componentId,
-          storyName: input.storyName,
-          show: {
-            kind: 'component',
-            id: input.componentId,
-            name: docgenPayload?.name ?? storyDocsPayload?.name ?? input.componentId,
-            ...(importStatement !== undefined ? { import: importStatement } : {}),
-            stories,
-          },
+        const component = adaptCoreComponent({
+          ...docgenPayload,
+          id: input.componentId,
+          name: docgenPayload?.name ?? input.componentId,
+          ...(storyDocsPayload?.stories ? { stories: storyDocsPayload.stories } : {}),
+          ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
         });
 
-        return ctx.format === 'json' ? data : formatDocsShowStory(data);
+        const story = component.stories?.find((entry) => entry.name === input.storyName);
+        if (!story) {
+          const availableStories = component.stories?.map((entry) => entry.name).join(', ');
+          return `Story "${input.storyName}" not found for component "${input.componentId}". Available stories: ${availableStories || 'none'}`;
+        }
+
+        return formatStoryDocumentation(component, input.storyName);
       },
     },
   },

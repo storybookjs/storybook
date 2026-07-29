@@ -1,16 +1,16 @@
-import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
 import { executeCommand } from 'storybook/internal/common';
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
+import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
 import { dedent } from 'ts-dedent';
 
-import {
-  type ReactNativeEntrypointTemplateVariant,
-  generateReactNativeEntrypoint,
-} from './generateEntrypoint.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import {
+  generateReactNativeEntrypoint,
+  type ReactNativeEntrypointTemplateVariant,
+} from './generateEntrypoint.ts';
 import {
   deriveStorybookPlatformScripts,
   type StorybookPlatformScriptDerivationResult,
@@ -131,10 +131,8 @@ export default defineGeneratorModule({
     ];
 
     const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
-    const babelDependencies = await getBabelDependencies(packageManager as any);
 
     const packages: string[] = [
-      ...babelDependencies,
       ...versionedPackages,
       ...(missingReactDom && reactVersion ? [`react-dom@${reactVersion}`] : []),
     ];

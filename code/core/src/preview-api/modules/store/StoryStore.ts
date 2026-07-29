@@ -1,5 +1,4 @@
 import type { CleanupCallback } from 'storybook/internal/csf';
-import { getCoreAnnotations, hasCoreAnnotations } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
@@ -28,7 +27,7 @@ import { ArgsStore } from './ArgsStore.ts';
 import { GlobalsStore } from './GlobalsStore.ts';
 import { StoryIndexStore } from './StoryIndexStore.ts';
 import {
-  composeConfigs,
+  composeProjectAnnotationsWithCore,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
@@ -45,20 +44,13 @@ export function picky<T extends Record<string, any>, K extends keyof T>(
 }
 
 /**
- * Compose and normalize the project annotations for the store, prepending the core annotations.
- *
- * CSF4 previews (created with `definePreview`) already compose the core annotations into their
- * `composed` result and flag it via {@link hasCoreAnnotations}. In that case we must NOT prepend
- * core annotations again, otherwise every core decorator/loader/beforeEach/beforeAll would run
- * twice for non-factory (CSF1/2/3) stories that fall back to `store.projectAnnotations`.
+ * Compose and normalize the project annotations for the store, prepending the core annotations via
+ * {@link composeProjectAnnotationsWithCore} (CSF4 previews are detected and not double-composed).
  */
 function composeProjectAnnotations<TRenderer extends Renderer>(
   projectAnnotations: ProjectAnnotations<TRenderer>
 ): NormalizedProjectAnnotations<TRenderer> {
-  if (hasCoreAnnotations(projectAnnotations)) {
-    return normalizeProjectAnnotations(projectAnnotations);
-  }
-  return normalizeProjectAnnotations(composeConfigs([...getCoreAnnotations(), projectAnnotations]));
+  return normalizeProjectAnnotations(composeProjectAnnotationsWithCore([projectAnnotations]));
 }
 
 // TODO -- what are reasonable values for these?

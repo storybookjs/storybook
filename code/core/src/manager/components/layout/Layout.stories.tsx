@@ -99,6 +99,7 @@ const mockManagerStore: any = {
     getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
     }),
+    getNavAvailability: fn(() => 'shown'),
   },
 };
 
@@ -506,5 +507,37 @@ export const MobileDocs = {
   ...Mobile,
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
+  },
+};
+
+export const MobileReview: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'review' },
+  },
+  decorators: [
+    (Story) => (
+      <ManagerContext.Provider
+        value={{
+          ...mockManagerStore,
+          state: {
+            ...mockManagerStore.state,
+            path: '/review/',
+            viewMode: 'review',
+            customQueryParams: {},
+          },
+          api: {
+            ...mockManagerStore.api,
+            getNavAvailability: fn(() => 'unavailable'),
+          },
+        }}
+      >
+        <Story />
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
+    expect(canvas.getByTestId('preview')).toBeInTheDocument();
   },
 };

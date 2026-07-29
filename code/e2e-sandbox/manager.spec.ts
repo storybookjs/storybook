@@ -237,6 +237,48 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
 
+    test('Isolation mode preserves args', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+
+      // Navigate to a story and change its args via controls
+      await sbPage.navigateToStory('example/button', 'primary');
+      await sbPage.viewAddonPanel('Controls');
+
+      const label = sbPage.panelContent().locator('textarea[name=label]');
+      await label.fill('Hello world');
+
+      // Use generic text locator instead of tag selector to support multi-framework sandboxes
+      await expect(sbPage.previewRoot().getByText('Hello world')).toBeVisible();
+
+      // Wait for args to appear in the URL (robust URL-decoding logic)
+      await page.waitForURL((url) => {
+        const args = new URL(url).searchParams.get('args');
+        return !!args && decodeURIComponent(args).includes('label:Hello world');
+      });
+
+      // Click "Open in isolation mode" and capture the new window
+      const isolationButton = page.locator('[aria-label="Open in isolation mode"]');
+      const [newPage] = await Promise.all([
+        page.context().waitForEvent('page'),
+        isolationButton.click(),
+      ]);
+
+      // Wait for any child element inside story container to be attached
+      await newPage
+        .locator('#storybook-root > *')
+        .first()
+        .waitFor({ state: 'attached', timeout: 10000 });
+
+      // The new window URL should contain the args
+      const newArgs = new URL(newPage.url()).searchParams.get('args');
+      expect((newArgs ?? '').replace(/\+/g, ' ')).toContain('label:Hello world');
+
+      // Verify text presence dynamically without asserting strict HTML tag names
+      await expect(newPage.locator('#storybook-root').getByText('Hello world')).toBeVisible();
+
+      await newPage.close();
+    });
+
     test('Settings page', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
       await sbPage.page.locator('[aria-label="Settings"]').click();
@@ -255,7 +297,7 @@ test.describe('Manager UI', () => {
     test.describe.configure({ retries: 3 });
     // TODO: remove this when SSV6 templates have been removed
     // Some assertions in these tests are not compatible with SSV6
-    // GIven that SSV6 will be removed before the new mobile UI released, it doesn't make sense to fix them
+    // Given that SSV6 will be removed before the new mobile UI released, it doesn't make sense to fix them
     test.skip(templateName?.includes('ssv6') || false, 'Skip mobile UI tests for SSV6');
 
     // standard iPhone viewport size

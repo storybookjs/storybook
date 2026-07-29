@@ -1,0 +1,95 @@
+{
+  "currentPage": {
+    "description": "
+",
+    "name": "currentPage",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": 1,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "isActive": {
+    "description": "
+",
+    "name": "isActive",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "nextPage": {
+    "description": "
+",
+    "name": "nextPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "panel": {
+    "description": "
+",
+    "name": "panel",
+    "table": {
+      "category": "view child",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "ElementRef<HTMLDivElement>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "title": {
+    "description": "
+",
+    "name": "title",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

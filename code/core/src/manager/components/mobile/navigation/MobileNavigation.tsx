@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
 import type { ComponentProps, FC } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
@@ -18,6 +18,7 @@ import { MobileMenuDrawer } from './MobileMenuDrawer.tsx';
 interface MobileNavigationProps {
   menu?: React.ReactNode;
   panel?: React.ReactNode;
+  showMenu?: boolean;
   showPanel: boolean;
 }
 
@@ -69,17 +70,33 @@ const useFullStoryName = () => {
   return fullStoryName;
 };
 
-export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
-  menu,
-  panel,
-  showPanel,
-  ...props
-}) => {
-  const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
-    useLayout();
-  const fullStoryName = useFullStoryName();
-  const headingId = useId();
+interface MobileBottomBarContentProps {
+  fullStoryName: string;
+  isMobileMenuOpen: boolean;
+  setMobileMenuOpen: (isOpen: boolean) => void;
+  isMobilePanelOpen: boolean;
+  setMobilePanelOpen: (isOpen: boolean) => void;
+  showMenu: boolean;
+  showPanel: boolean;
+}
 
+/**
+ * The mobile bottom bar is split into its own component so that `useLandmark` is only invoked while
+ * the underlying DOM element is mounted. Calling `useLandmark` unconditionally from a parent that
+ * conditionally renders the bar leaves a stale landmark with a null `ref.current` in
+ * `@react-aria/landmark`'s manager, which crashes the binary-search position comparison the next
+ * time another landmark is registered.
+ */
+const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
+  fullStoryName,
+  isMobileMenuOpen,
+  setMobileMenuOpen,
+  isMobilePanelOpen,
+  setMobilePanelOpen,
+  showMenu,
+  showPanel,
+}) => {
+  const headingId = useId();
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': headingId, role: 'banner' },
@@ -87,14 +104,70 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   );
 
   return (
+    <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
+      <h2 id={headingId} className="sb-sr-only">
+        Navigation controls
+      </h2>
+      {showMenu && (
+        <BottomBarButton
+          padding="small"
+          variant="ghost"
+          onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+          ariaLabel="Open navigation menu"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="storybook-mobile-menu"
+        >
+          <MenuIcon />
+          <Text>{fullStoryName}</Text>
+        </BottomBarButton>
+      )}
+      <span className="sb-sr-only" aria-current="page">
+        {fullStoryName}
+      </span>
+      {showPanel && (
+        <BottomBarButton
+          padding="small"
+          variant="ghost"
+          onClick={() => setMobilePanelOpen(true)}
+          ariaLabel="Open addon panel"
+          aria-expanded={isMobilePanelOpen}
+          aria-controls="storybook-mobile-addon-panel"
+        >
+          <BottomBarToggleIcon />
+        </BottomBarButton>
+      )}
+    </MobileBottomBar>
+  );
+};
+
+export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
+  menu,
+  panel,
+  showMenu = true,
+  showPanel,
+  ...props
+}) => {
+  const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
+    useLayout();
+  const fullStoryName = useFullStoryName();
+
+  useLayoutEffect(() => {
+    if (!showMenu) {
+      setMobileMenuOpen(false);
+    }
+  }, [showMenu, setMobileMenuOpen]);
+
+  return (
     <Container {...props}>
-      <MobileMenuDrawer
-        id="storybook-mobile-menu"
-        isOpen={isMobileMenuOpen}
-        onOpenChange={setMobileMenuOpen}
-      >
-        {menu}
-      </MobileMenuDrawer>
+      {showMenu && (
+        <MobileMenuDrawer
+          id="storybook-mobile-menu"
+          isOpen={isMobileMenuOpen}
+          onOpenChange={setMobileMenuOpen}
+        >
+          {menu}
+        </MobileMenuDrawer>
+      )}
 
       <MobileAddonsDrawer
         id="storybook-mobile-addon-panel"
@@ -104,38 +177,16 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
         {panel}
       </MobileAddonsDrawer>
 
-      {!isMobilePanelOpen && (
-        <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
-          <h2 id={headingId} className="sb-sr-only">
-            Navigation controls
-          </h2>
-          <BottomBarButton
-            padding="small"
-            variant="ghost"
-            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            ariaLabel="Open navigation menu"
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="storybook-mobile-menu"
-          >
-            <MenuIcon />
-            <Text>{fullStoryName}</Text>
-          </BottomBarButton>
-          <span className="sb-sr-only" aria-current="page">
-            {fullStoryName}
-          </span>
-          {showPanel && (
-            <BottomBarButton
-              padding="small"
-              variant="ghost"
-              onClick={() => setMobilePanelOpen(true)}
-              ariaLabel="Open addon panel"
-              aria-expanded={isMobilePanelOpen}
-              aria-controls="storybook-mobile-addon-panel"
-            >
-              <BottomBarToggleIcon />
-            </BottomBarButton>
-          )}
-        </MobileBottomBar>
+      {!isMobilePanelOpen && (showMenu || showPanel) && (
+        <MobileBottomBarContent
+          fullStoryName={fullStoryName}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          isMobilePanelOpen={isMobilePanelOpen}
+          setMobilePanelOpen={setMobilePanelOpen}
+          showMenu={showMenu}
+          showPanel={showPanel}
+        />
       )}
     </Container>
   );

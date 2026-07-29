@@ -19,7 +19,7 @@ export const remoteCommandSyncServiceDef = defineService({
   description: 'Internal demo service for validating remote command execution and state sync.',
   initialState: { value: '' } satisfies RemoteCommandState,
   queries: {
-    getValue: {
+    value: {
       description: 'Returns the current synchronized text value.',
       input: v.void(),
       output: v.string(),

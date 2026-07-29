@@ -26,7 +26,7 @@ import {
 } from '@tanstack/react-router';
 import type { Navigate as _Navigate } from '@tanstack/react-router';
 import { onNavigate } from './spies.ts';
-import { normalizeFileRoutePath } from '../routing/path-utils.ts';
+import { isPathlessFileRouteId, normalizeFileRoutePath } from '../routing/path-utils.ts';
 
 // Mock navigation hooks — backed by real implementations so they work in stories
 export const useNavigate = fn(_useNavigate).mockName('@tanstack/react-router::useNavigate');
@@ -83,17 +83,22 @@ export const Link = ({
  * because the org `createFileRoute` doesn't set the path in the Route
  */
 export function createFileRoute(path: string) {
-  const normalizedPath = normalizeFileRoutePath(path);
-
   return (options: any) => {
+    // A pure-pathless id (`/_authed`, `/(group)`) yields an id-only route: a
+    // layout with `path: '/'` never matches its children and collides with a
+    // sibling index route (see routing/duplicate-tree.test.ts). An explicit
+    // `path` in the options keeps the route pathful and wins over the id.
+    const pathless = isPathlessFileRouteId(path) && options?.path == null;
+    const routePath = options?.path ?? normalizeFileRoutePath(path);
     return createRoute({
-      path: normalizedPath,
+      ...(pathless ? { id: path } : { path: routePath }),
       ...options,
       isRoot: false,
     }).update({
+      // routeTree.gen re-updates these later; set them here so route files
+      // imported without the generated tree still carry their identity
       id: path,
-      path: normalizedPath,
-      fullPath: normalizedPath,
+      ...(pathless ? {} : { path: routePath, fullPath: routePath }),
       // any because tanstack router does that
     } as any);
   };

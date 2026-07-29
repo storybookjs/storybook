@@ -206,7 +206,10 @@ export class BUNProxy extends JsPackageManager {
     }
   }
 
-  protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
+  protected getResolutions(
+    packageJson: PackageJson,
+    versions: Record<string, string>
+  ): Record<string, any> {
     return {
       overrides: {
         ...packageJson.overrides,
@@ -359,7 +362,7 @@ export class BUNProxy extends JsPackageManager {
       cwd: this.cwd,
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
-      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+      args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
     });
     const result = await process;
     const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();

@@ -154,6 +154,32 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
   });
 
+  // Regression test for #28333: `useArgs` called from a story rendered in a <Stories>
+  // block must update that story, not the page's primary story. The <Stories> renders
+  // never re-render on their own arg changes, so the only live render is the primary.
+  // We click Story B, then do a known update to the primary and wait for it: since args
+  // updates are processed in order, once the primary shows its own marker Story B's
+  // earlier click has been applied too — so it must not have leaked into the primary.
+  test('useArgs updates the correct story inside a Stories block', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'Controlled useArgs render is React-specific');
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('stories/renderers/react/use-args', 'docs');
+    const root = sbPage.previewRoot();
+
+    // Autodocs renders Story A in <Primary>, then Story A and Story B in <Stories>.
+    const primaryStory = root.locator('[data-testid="value"]').nth(0);
+    const storyBInStoriesBlock = root.locator('[data-testid="value"]').nth(2);
+    await expect(primaryStory).toHaveText('A: none');
+    await expect(storyBInStoriesBlock).toHaveText('B: none');
+
+    await storyBInStoriesBlock.click();
+    await primaryStory.click();
+
+    await expect(primaryStory).toContainText('clickedA');
+    await expect(primaryStory).not.toContainText('clickedB');
+  });
+
   test('should not run autoplay stories without parameter', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/autoplay', 'docs');

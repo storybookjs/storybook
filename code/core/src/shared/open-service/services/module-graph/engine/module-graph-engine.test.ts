@@ -28,7 +28,6 @@ function setup(options?: {
   const callbacks = {
     onSnapshot: vi.fn(),
     onUpdate: vi.fn(),
-    onStoryIndexInvalidated: vi.fn(),
     onError: vi.fn(),
     onUnavailable: vi.fn(),
   };
@@ -230,8 +229,32 @@ describe('ModuleGraphEngine', () => {
     await vi.runAllTimersAsync();
 
     expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
-    // The index changed, so the service wrapper is notified to bump graph revision.
-    expect(callbacks.onStoryIndexInvalidated).toHaveBeenCalled();
+    // The replayed add flows through the normal patch path, so the new story is reported as a
+    // targeted update — no separate untargeted index-invalidation bump is needed.
+    expect(callbacks.onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ bumpedStoryFiles: ['./src/B.stories.tsx'] })
+    );
+  });
+
+  it('does not emit an update when an invalidation leaves the story set unchanged', async () => {
+    // A content-only story edit (or a config invalidation) re-fires the index without changing the
+    // set of story files. The builder's own file-change event carries any content change; the
+    // invalidation itself must not produce an untargeted update.
+    installDependencyGraphMocks(buildReverseIndex([]));
+    const { service, adapter, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'a--default', importPath: './src/A.stories.tsx', title: 'A' },
+      ]),
+    });
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+
+    service.onStoryIndexInvalidated();
+    await vi.runAllTimersAsync();
+
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
   });
 
   it('guards duplicate onStoryIndexInvalidated so a newly-added story is replayed only once', async () => {

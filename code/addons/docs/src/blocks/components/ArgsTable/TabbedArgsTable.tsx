@@ -30,7 +30,7 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
     // are subcomponents, never controllable, so we filter out the props indicating
     // controllability. Pass a stable element (not an inline function component) so React
     // reconciles the tab panel instead of remounting it on every args update.
-    const argsTableProps = index === 0 ? props : { sort: props.sort };
+    const argsTableProps = index === 0 ? props : { sort: props.sort, docsLang: props.docsLang };
 
     return {
       id: `prop_table_div_${label}`,

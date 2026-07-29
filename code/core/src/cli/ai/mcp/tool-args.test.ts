@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolArgs, scanCwdToken } from './tool-args.ts';
+import { parsePort, parseToolArgs } from './tool-args.ts';
 
-function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
+function args(tokens: string[], defaults?: { json?: string }) {
   const result = parseToolArgs(tokens, defaults);
   if (!result.ok) {
     throw new Error(`expected ok, got error: ${result.error}`);
@@ -10,7 +10,7 @@ function args(tokens: string[], defaults?: { cwd?: string; port?: string; json?:
   return result;
 }
 
-function error(tokens: string[], defaults?: { cwd?: string; port?: string; json?: string }) {
+function error(tokens: string[], defaults?: { json?: string }) {
   const result = parseToolArgs(tokens, defaults);
   if (result.ok) {
     throw new Error(`expected error, got ok: ${JSON.stringify(result.args)}`);
@@ -20,7 +20,11 @@ function error(tokens: string[], defaults?: { cwd?: string; port?: string; json?
 
 describe('parseToolArgs', () => {
   it('returns empty args for no tokens', () => {
-    expect(args([])).toEqual({ ok: true, cwd: undefined, port: undefined, help: false, args: {} });
+    expect(args([])).toEqual({
+      ok: true,
+      help: false,
+      args: {},
+    });
   });
 
   it('consumes --help and -h as a help request instead of forwarding them', () => {
@@ -78,56 +82,22 @@ describe('parseToolArgs', () => {
     expect(args(['--id', 'a', '--id', 'b']).args).toEqual({ id: 'b' });
   });
 
-  describe('--cwd', () => {
-    it('consumes --cwd instead of forwarding it', () => {
-      expect(args(['--cwd', '/projects/foo', '--id', 'x'])).toEqual({
-        ok: true,
-        cwd: '/projects/foo',
-        port: undefined,
-        help: false,
-        args: { id: 'x' },
-      });
-    });
-
-    it('uses the commander-parsed default when not repeated in the tokens', () => {
-      expect(args(['--id', 'x'], { cwd: '/projects/foo' }).cwd).toBe('/projects/foo');
-    });
-
-    it('prefers a --cwd token over the commander-parsed default', () => {
-      expect(args(['--cwd', '/b'], { cwd: '/a' }).cwd).toBe('/b');
-    });
-
-    it('errors when --cwd has no value', () => {
-      expect(error(['--cwd'])).toContain('`--cwd` requires a value');
+  it('treats target-looking long flags after the command name as tool arguments', () => {
+    expect(
+      args(['--cwd', '/projects/foo', '--config-dir', 'config/storybook', '--port', '6006']).args
+    ).toEqual({
+      cwd: '/projects/foo',
+      'config-dir': 'config/storybook',
+      port: 6006,
     });
   });
 
-  describe('--port', () => {
-    it('consumes --port as a number instead of forwarding it', () => {
-      expect(args(['--port', '6006', '--id', 'x'])).toEqual({
-        ok: true,
-        cwd: undefined,
-        port: 6006,
-        help: false,
-        args: { id: 'x' },
-      });
-    });
+  it('allows bare target-looking long flags as boolean tool arguments', () => {
+    expect(args(['--cwd', '--port']).args).toEqual({ cwd: true, port: true });
+  });
 
-    it('uses the commander-parsed default and lets a token override it', () => {
-      expect(args(['--id', 'x'], { port: '6006' }).port).toBe(6006);
-      expect(args(['--port', '6007'], { port: '6006' }).port).toBe(6007);
-    });
-
-    it('errors on non-numeric or out-of-range ports', () => {
-      expect(error(['--port', 'abc'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '0'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '65536'])).toContain('`--port` must be a port number');
-      expect(error(['--port', '6006.5'])).toContain('`--port` must be a port number');
-    });
-
-    it('errors when --port has no value', () => {
-      expect(error(['--port'])).toContain('`--port` requires a value');
-    });
+  it('rejects short flags after the command name', () => {
+    expect(error(['-c', 'config/storybook'])).toContain('Unexpected argument `-c`');
   });
 
   describe('--json escape hatch', () => {
@@ -139,7 +109,7 @@ describe('parseToolArgs', () => {
       expect(args(['--json', '{"id":"x","n":1}', '--id', 'y']).args).toEqual({ id: 'y', n: 1 });
     });
 
-    it('accepts --json parsed by commander before the tool name', () => {
+    it('accepts --json parsed by commander before the command name', () => {
       expect(args(['--id', 'y'], { json: '{"id":"x","n":1}' }).args).toEqual({ id: 'y', n: 1 });
     });
 
@@ -171,26 +141,19 @@ describe('parseToolArgs', () => {
   });
 });
 
-describe('scanCwdToken', () => {
-  it('finds `--cwd value` and `--cwd=value`', () => {
-    expect(scanCwdToken(['--cwd', '/x'])).toBe('/x');
-    expect(scanCwdToken(['--cwd=/x'])).toBe('/x');
+describe('parsePort', () => {
+  it('returns undefined when no port is provided', () => {
+    expect(parsePort(undefined)).toEqual({ ok: true, port: undefined });
   });
 
-  it('returns undefined without a --cwd token or without its value', () => {
-    expect(scanCwdToken([])).toBeUndefined();
-    expect(scanCwdToken(['--id', 'x'])).toBeUndefined();
-    expect(scanCwdToken(['--cwd'])).toBeUndefined();
-    expect(scanCwdToken(['--cwd', '--id'])).toBeUndefined();
+  it('parses valid port values', () => {
+    expect(parsePort('6006')).toEqual({ ok: true, port: 6006 });
   });
 
-  it('lets the last occurrence win, matching the full parser', () => {
-    expect(scanCwdToken(['--cwd', '/a', '--cwd=/b'])).toBe('/b');
-  });
-
-  it('tolerates tokens the full parser rejects', () => {
-    expect(parseToolArgs(['positional', '--cwd', '/x'])).toMatchObject({ ok: false });
-    expect(scanCwdToken(['positional', '--cwd', '/x'])).toBe('/x');
-    expect(scanCwdToken(['--cwd', '/x', '--json', '{bad'])).toBe('/x');
+  it('rejects non-numeric or out-of-range ports', () => {
+    expect(parsePort('abc')).toMatchObject({ ok: false });
+    expect(parsePort('0')).toMatchObject({ ok: false });
+    expect(parsePort('65536')).toMatchObject({ ok: false });
+    expect(parsePort('6006.5')).toMatchObject({ ok: false });
   });
 });

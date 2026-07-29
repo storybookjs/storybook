@@ -35,6 +35,7 @@ export * from './utils/template.ts';
 export * from './utils/validate-config.ts';
 export * from './utils/validate-configuration-files.ts';
 export * from './utils/satisfies.ts';
+export * from './utils/babel.ts';
 export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';
 export * from './utils/component-id.ts';

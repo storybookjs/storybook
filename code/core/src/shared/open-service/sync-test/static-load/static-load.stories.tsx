@@ -21,6 +21,7 @@ const store = createDemoStore<StaticLoadSnapshot>({
 });
 
 function StaticLoadDemo() {
+  // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (
@@ -28,8 +29,8 @@ function StaticLoadDemo() {
       <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>Open service static load demo</h1>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
         This story shares static-load query results with the manager Open Service panel. In a
-        production build, <code>getEntry</code> loads prebuilt JSON snapshots;{' '}
-        <code>getUnbacked</code> has no static file and exercises the no-ack remote-command path.
+        production build, <code>entry</code> loads prebuilt JSON snapshots; <code>unbacked</code>{' '}
+        has no static file and exercises the no-ack remote-command path.
       </p>
 
       <section style={{ marginTop: 16 }}>
@@ -91,35 +92,37 @@ const meta = {
   beforeEach: () => {
     let active = true;
     const initialValue: StaticLoadSnapshot = {
-      alpha: staticLoadSyncService.queries.getEntry({ id: 'alpha' }),
-      beta: staticLoadSyncService.queries.getEntry({ id: 'beta' }),
+      alpha: staticLoadSyncService.queries.entry.get({ id: 'alpha' }),
+      beta: staticLoadSyncService.queries.entry.get({ id: 'beta' }),
       unbackedStatus: 'pending',
     };
     store.set(initialValue);
 
-    const unsubscribeAlpha = staticLoadSyncService.queries.getEntry.subscribe(
+    const unsubscribeAlpha = staticLoadSyncService.queries.entry.subscribe(
       { id: 'alpha' },
-      (alpha) => {
+      ({ data: alpha }) => {
         if (active) {
           store.set({ ...store.get(), alpha });
         }
       }
     );
-    const unsubscribeBeta = staticLoadSyncService.queries.getEntry.subscribe(
+    const unsubscribeBeta = staticLoadSyncService.queries.entry.subscribe(
       { id: 'beta' },
-      (beta) => {
+      ({ data: beta }) => {
         if (active) {
           store.set({ ...store.get(), beta });
         }
       }
     );
-    const unsubscribeUnbacked = staticLoadSyncService.queries.getUnbacked.subscribe((unbacked) => {
-      if (active && unbacked !== null) {
-        store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+    const unsubscribeUnbacked = staticLoadSyncService.queries.unbacked.subscribe(
+      ({ data: unbacked }) => {
+        if (active && unbacked != null) {
+          store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
+        }
       }
-    });
+    );
 
-    void staticLoadSyncService.queries.getUnbacked
+    void staticLoadSyncService.queries.unbacked
       .loaded()
       .then((unbacked) => {
         if (active) {

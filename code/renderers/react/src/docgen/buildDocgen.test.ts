@@ -92,12 +92,6 @@ describe('buildDocgenPayload', () => {
         name: 'disabled',
         type: { name: 'boolean', required: false },
       });
-      expect(payload!.stories).toHaveLength(1);
-      expect(payload!.stories?.[0]).toMatchObject({
-        id: expect.stringMatching(/--primary$/),
-        name: 'Primary',
-      });
-      expect(payload!.stories?.[0].snippet).toMatch(/<Button label="hi"/);
     }
   );
 

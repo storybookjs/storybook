@@ -2,7 +2,7 @@ import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import * as esbuild from 'esbuild';
+import type * as esbuild from 'esbuild';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
@@ -23,6 +23,13 @@ export type BuildEntries = {
    * Each platform is optional
    */
   entries: BuildEntriesByPlatform;
+  /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
   /**
    * The map of extra outputs to be added to the package.json's exports
    *
@@ -89,6 +96,11 @@ export const getExternal = async (cwd: string) => {
   const typesExternal = [
     ...runtimeExternalInclude,
     'ast-types',
+    // react-syntax-highlighter ships no type declarations and TS 6.0 no longer falls back to
+    // @types/react-syntax-highlighter for its deep ESM entrypoints. Keep it out of the d.ts
+    // bundle so rollup-plugin-dts doesn't walk its (CJS) source (which fails on refractor/core
+    // and exhausts the heap). It stays bundled in the JS output, like ast-types.
+    'react-syntax-highlighter',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

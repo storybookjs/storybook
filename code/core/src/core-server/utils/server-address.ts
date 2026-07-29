@@ -1,6 +1,7 @@
 import os from 'node:os';
 
 import { logger } from 'storybook/internal/node-logger';
+import { NoFreePortError } from 'storybook/internal/server-errors';
 
 import detectFreePort from 'detect-port';
 
@@ -33,15 +34,23 @@ interface PortOptions {
 
 export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
   detectFreePort(port)
-    .then((freePort) => {
-      if (freePort !== port && exactPort) {
-        process.exit(-1);
-      }
-      return freePort;
-    })
     .catch((error) => {
       logger.error(error);
       process.exit(-1);
+    })
+    .then((freePort) => {
+      // detect-port resolves `undefined` instead of rejecting when the environment refuses
+      // every bind attempt, e.g. sandboxed shells that deny listening on network ports.
+      // Throwing (instead of exiting) lets `storybook dev` report the error through telemetry
+      // and lets `storybook init`, which probes for a port opportunistically, recover from it.
+      if (!freePort) {
+        throw new NoFreePortError({ requestedPort: port });
+      }
+      if (exactPort && port != null && freePort !== port) {
+        logger.error(`Port ${port} is not available. Exiting because --exact-port was provided.`);
+        process.exit(-1);
+      }
+      return freePort;
     });
 
 export const getServerChannelUrl = (port: number, { https }: { https?: boolean }) => {

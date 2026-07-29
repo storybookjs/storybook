@@ -61,4 +61,21 @@ export const executors = {
     resource_class: '<<parameters.class>>',
     working_directory: `${LINUX_ROOT_DIR}/${WORKING_DIR}`,
   },
+  sb_barebones: {
+    docker: [
+      {
+        image: 'cimg/base:stable',
+      },
+    ],
+    parameters: {
+      class: {
+        default: 'small',
+        description: 'The Resource class',
+        enum: ['small', 'medium', 'medium+', 'large', 'xlarge'],
+        type: 'enum',
+      },
+    },
+    resource_class: '<<parameters.class>>',
+    working_directory: `${LINUX_ROOT_DIR}/${WORKING_DIR}`,
+  },
 } as const;

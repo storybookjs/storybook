@@ -19,6 +19,7 @@ export const TEST_PACKAGES = [
   'miragejs',
   'sinon',
   'chromatic',
+  '@chromatic-com/*',
 ] as const;
 
 export const STYLING_PACKAGES = [

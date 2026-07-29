@@ -20,6 +20,7 @@ import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -87,10 +88,14 @@ const command = (name: string) =>
           logger.outro(`Debug logs are written to: ${logFile}`);
         } catch {}
       }
+      // Exit explicitly so Node won't hang on Windows due to lingering file handles
+      if (command.name() === 'build') {
+        process.exit(0);
+      }
     });
 
 command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-p, --port <number>', 'Port to run Storybook')
   .option('-h, --host <string>', 'Host to run Storybook')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
@@ -134,21 +139,15 @@ command('dev')
 
     logger.intro(`${packageJson.name} v${packageJson.version}`);
 
-    // The key is the field created in `options` variable for
-    // each command line argument. Value is the env variable.
-    getEnvConfig(options, {
-      port: 'SBCONFIG_PORT',
-      host: 'SBCONFIG_HOSTNAME',
-      staticDir: 'SBCONFIG_STATIC_DIR',
-      configDir: 'SBCONFIG_CONFIG_DIR',
-      ci: 'CI',
-    });
-
-    if (parseInt(`${options.port}`, 10)) {
-      options.port = parseInt(`${options.port}`, 10);
+    let resolvedOptions: typeof options;
+    try {
+      resolvedOptions = resolveDevCommandOptions(options);
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      return handleCommandFailure(options.logfile);
     }
 
-    await dev({ ...options, packageJson }).catch(() => {
+    await dev({ ...resolvedOptions, packageJson }).catch(() => {
       handleCommandFailure(options.logfile);
     });
   });

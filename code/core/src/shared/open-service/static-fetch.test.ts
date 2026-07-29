@@ -18,7 +18,7 @@ const staticFetchServiceDef = defineService({
   description: 'Fixture for browser static snapshot loading.',
   initialState: { entries: {} } as { entries: Record<string, string> },
   queries: {
-    getEntry: {
+    entry: {
       description: 'Reads one entry; load normally calls a command.',
       input: v.object({ id: v.string() }),
       output: v.optional(v.string()),
@@ -45,7 +45,7 @@ const staticFetchServiceDef = defineService({
 
 const staticLoaderContext = {
   serviceId: staticFetchServiceDef.id,
-  queryName: 'getEntry',
+  queryName: 'entry',
   input: { id: 'alpha' },
 } satisfies StaticLoaderContext;
 
@@ -94,7 +94,7 @@ describe('createBrowserStaticLoader', () => {
     expect(error).toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'missing.json',
         url: '/services/missing.json',
@@ -120,7 +120,7 @@ describe('createBrowserStaticLoader', () => {
     await expect(loader!('network.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'network.json',
         url: '/services/network.json',
@@ -147,7 +147,7 @@ describe('createBrowserStaticLoader', () => {
     await expect(loader!('broken.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'broken.json',
         url: '/services/broken.json',
@@ -176,7 +176,7 @@ describe('createBrowserStaticLoader', () => {
     expect(error).toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'invalid.json',
         url: '/services/invalid.json',
@@ -204,19 +204,19 @@ describe('static loader in service runtime', () => {
       structuredClone(staticFetchServiceDef.initialState)
     );
 
-    await runtime.queries.getEntry.loaded({ id: 'alpha' });
-    await runtime.queries.getEntry.loaded({ id: 'beta' });
+    await runtime.queries.entry.loaded({ id: 'alpha' });
+    await runtime.queries.entry.loaded({ id: 'beta' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('static-alpha');
-    expect(runtime.queries.getEntry({ id: 'beta' })).toBe('static-beta');
+    expect(runtime.queries.entry.get({ id: 'alpha' })).toBe('static-alpha');
+    expect(runtime.queries.entry.get({ id: 'beta' })).toBe('static-beta');
     expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/alpha.json', {
       serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
+      queryName: 'entry',
       input: { id: 'alpha' },
     });
     expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/beta.json', {
       serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
+      queryName: 'entry',
       input: { id: 'beta' },
     });
   });
@@ -258,9 +258,7 @@ describe('static loader in service runtime', () => {
 
     const service = registerPreviewService(staticLoadSyncServiceDef);
 
-    await expect(service.queries.getEntry.loaded({ id: 'alpha' })).resolves.toBe(
-      'static-load:alpha'
-    );
+    await expect(service.queries.entry.loaded({ id: 'alpha' })).resolves.toBe('static-load:alpha');
   });
 
   it('runs the authored load when no static loader is configured', async () => {
@@ -270,8 +268,8 @@ describe('static loader in service runtime', () => {
       structuredClone(staticFetchServiceDef.initialState)
     );
 
-    await runtime.queries.getEntry.loaded({ id: 'alpha' });
+    await runtime.queries.entry.loaded({ id: 'alpha' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('live');
+    expect(runtime.queries.entry.get({ id: 'alpha' })).toBe('live');
   });
 });

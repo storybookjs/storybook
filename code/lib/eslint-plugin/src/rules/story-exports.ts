@@ -4,7 +4,7 @@
  */
 import type { IncludeExcludeOptions } from 'storybook/internal/csf';
 
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   getAllNamedExports,

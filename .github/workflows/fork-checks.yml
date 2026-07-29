@@ -48,7 +48,7 @@ jobs:
           install-code-deps: true
 
       - name: oxfmt
-        run: cd code && yarn lint:fmt
+        run: cd code && yarn fmt:check
 
   test:
     strategy:

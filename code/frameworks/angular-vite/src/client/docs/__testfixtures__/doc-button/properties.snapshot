@@ -1,0 +1,230 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`angular component properties doc-button 1`] = `
+Object {
+  "sections": Object {
+    "inputs": Array [
+      Object {
+        "defaultValue": Object {
+          "summary": "'secondary'",
+        },
+        "description": "<p>Appearance style of the button. </p>
+",
+        "name": "appearance",
+        "required": true,
+        "type": Object {
+          "summary": "\\"primary\\" | \\"secondary\\"",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": "<p>Setter for <code>inputValue</code> that is also an <code>@Input</code>. </p>
+",
+        "name": "inputValue",
+        "required": true,
+        "type": Object {
+          "summary": "string",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "false",
+        },
+        "description": "<p>Sets the button to a disabled state. </p>
+",
+        "name": "isDisabled",
+        "required": true,
+        "type": Object {
+          "summary": undefined,
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": undefined,
+        "name": "item",
+        "required": true,
+        "type": Object {
+          "summary": "[]",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": "<p>The inner text of the button.</p>
+",
+        "name": "label",
+        "required": true,
+        "type": Object {
+          "summary": "string",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": undefined,
+        "name": "showKeyAlias",
+        "required": true,
+        "type": Object {
+          "summary": "",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "'medium'",
+        },
+        "description": "<p>Size of the button. </p>
+",
+        "name": "size",
+        "required": true,
+        "type": Object {
+          "summary": "ButtonSize",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "false",
+        },
+        "description": "<p>Some input you shouldn&#39;t use.</p>
+",
+        "name": "somethingYouShouldNotUse",
+        "required": true,
+        "type": Object {
+          "summary": undefined,
+        },
+      },
+    ],
+    "methods": Array [
+      Object {
+        "defaultValue": Object {
+          "summary": "",
+        },
+        "description": "<p>An internal calculation method which adds <code>x</code> and <code>y</code> together.</p>
+",
+        "name": "calc",
+        "required": false,
+        "type": Object {
+          "summary": "(x: number, y: string | number) => number",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "",
+        },
+        "description": "<p>A private method.</p>
+",
+        "name": "privateMethod",
+        "required": false,
+        "type": Object {
+          "summary": "(password: string) => void",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "",
+        },
+        "description": "<p>A protected method.</p>
+",
+        "name": "protectedMethod",
+        "required": false,
+        "type": Object {
+          "summary": "(id?: number) => void",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "",
+        },
+        "description": "<p>A public method using an interface. </p>
+",
+        "name": "publicMethod",
+        "required": false,
+        "type": Object {
+          "summary": "(things: ISomeInterface) => void",
+        },
+      },
+    ],
+    "outputs": Array [
+      Object {
+        "defaultValue": Object {
+          "summary": "new EventEmitter<Event>()",
+        },
+        "description": "<p>Handler to be called when the button is clicked by a user.</p>
+<p>Will also block the emission of the event if <code>isDisabled</code> is true.</p>
+",
+        "name": "onClick",
+        "required": true,
+        "type": Object {
+          "summary": "EventEmitter",
+        },
+      },
+    ],
+    "properties": Array [
+      Object {
+        "defaultValue": Object {
+          "summary": "'some value'",
+        },
+        "description": "",
+        "name": "_inputValue",
+        "required": true,
+        "type": Object {
+          "summary": "string",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "'Private hello'",
+        },
+        "description": "<p>Private value. </p>
+",
+        "name": "_value",
+        "required": true,
+        "type": Object {
+          "summary": "string",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": "'Public hello'",
+        },
+        "description": "<p>Public value. </p>
+",
+        "name": "internalProperty",
+        "required": true,
+        "type": Object {
+          "summary": "string",
+        },
+      },
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": "",
+        "name": "processedItem",
+        "required": true,
+        "type": Object {
+          "summary": "T[]",
+        },
+      },
+    ],
+    "view child": Array [
+      Object {
+        "defaultValue": Object {
+          "summary": undefined,
+        },
+        "description": "",
+        "name": "buttonRef",
+        "required": true,
+        "type": Object {
+          "summary": "ElementRef",
+        },
+      },
+    ],
+  },
+}
+`;

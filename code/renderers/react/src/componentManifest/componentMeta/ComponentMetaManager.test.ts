@@ -1,7 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { once } from 'storybook/internal/node-logger';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 import ts from 'typescript';
@@ -339,6 +341,140 @@ describe('multi-project management', () => {
 
     expect(project).toBeDefined();
   });
+
+  it(
+    'recycles the shared program when heap usage crosses the threshold',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string }) => <button />;
+      `,
+        'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button };
+      `,
+      });
+
+      // ratio 0 → threshold 0 → heapUsed is always ≥ 0 → recycle fires after every batchExtract.
+      manager = new ComponentMetaManager(ts, 0);
+      const componentPath = path.join(tempDir, 'Button.tsx');
+      const before = manager.getProjectForFile(componentPath);
+
+      const entries: StoryRef[] = [
+        {
+          storyPath: files['Button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importName: 'Button',
+            path: componentPath,
+            isPackage: false,
+          },
+        },
+      ];
+      manager.batchExtract(entries);
+
+      // The disposed program was cleared, so the next lookup rebuilds a fresh instance.
+      const after = manager.getProjectForFile(componentPath);
+      expect(after).not.toBe(before);
+    }
+  );
+
+  it(
+    'warns once, with guidance to raise the memory limit, when it recycles under pressure',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string }) => <button />;
+      `,
+        'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button };
+      `,
+      });
+
+      // Spy on the one-time `once.warn` channel: routing the warning through it is what makes it
+      // surface once per process (the dedupe itself is node-logger's responsibility, tested there).
+      const onceWarnSpy = vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+      try {
+        // ratio 0 → threshold 0 → recycle fires on every batchExtract.
+        manager = new ComponentMetaManager(ts, 0);
+        const componentPath = path.join(tempDir, 'Button.tsx');
+        manager.getProjectForFile(componentPath);
+
+        const entries: StoryRef[] = [
+          {
+            storyPath: files['Button.stories.tsx'],
+            component: {
+              componentName: 'Button',
+              importName: 'Button',
+              path: componentPath,
+              isPackage: false,
+            },
+          },
+        ];
+
+        manager.batchExtract(entries);
+
+        expect(onceWarnSpy).toHaveBeenCalled();
+        expect(onceWarnSpy.mock.calls[0][0]).toContain('--max-old-space-size');
+      } finally {
+        onceWarnSpy.mockRestore();
+        once.clear();
+      }
+    }
+  );
+
+  it(
+    'keeps the shared program while heap usage stays below the threshold',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string }) => <button />;
+      `,
+        'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button };
+      `,
+      });
+
+      // ratio Infinity → threshold Infinity → heapUsed is always below it → recycle never fires.
+      manager = new ComponentMetaManager(ts, Number.POSITIVE_INFINITY);
+      const componentPath = path.join(tempDir, 'Button.tsx');
+      const before = manager.getProjectForFile(componentPath);
+
+      const entries: StoryRef[] = [
+        {
+          storyPath: files['Button.stories.tsx'],
+          component: {
+            componentName: 'Button',
+            importName: 'Button',
+            path: componentPath,
+            isPackage: false,
+          },
+        },
+      ];
+      manager.batchExtract(entries);
+
+      // No recycle → the same program instance is reused across extractions.
+      const after = manager.getProjectForFile(componentPath);
+      expect(after).toBe(before);
+    }
+  );
 
   it('extracts via Path 1 (importId + JSX in story file)', { timeout: 30_000 }, () => {
     tempDir = createTempDir();

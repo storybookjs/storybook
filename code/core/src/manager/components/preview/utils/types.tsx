@@ -20,6 +20,7 @@ export interface PreviewProps {
     showToolbar: boolean;
   };
   id?: string;
+  path: State['path'];
   queryParams: State['customQueryParams'];
   customCanvas?: CustomCanvasRenderer;
   description: string;

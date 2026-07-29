@@ -1,17 +1,25 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('empathic/find', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+// Spy-only mock: keep the real `node:fs` shape, then redirect the sync reads used by
+// `cachedReadTextFileSync` to `memfs` so the mtime-aware cache is exercised in-memory.
+vi.mock('node:fs', { spy: true });
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 
+import { readFileSync, statSync } from 'node:fs';
+
+import { fs as memfs, vol } from 'memfs';
+
 import {
   asyncCache,
   cached,
+  cachedReadTextFileSync,
   findTsconfigPath,
   groupBy,
   invalidateCache,
@@ -192,6 +200,50 @@ test('invalidateCache clears async module-level memo store', async () => {
   invalidateCache();
   expect(await m(2)).toBe(4);
   expect(c.count()).toBe(2);
+});
+
+describe('cachedReadTextFileSync', () => {
+  beforeEach(() => {
+    vol.reset();
+    invalidateCache();
+    // `cachedReadTextFileSync` reads via sync `node:fs`; point those calls at the in-memory volume.
+    vi.mocked(readFileSync).mockImplementation(
+      memfs.readFileSync as unknown as typeof readFileSync
+    );
+    vi.mocked(statSync).mockImplementation(memfs.statSync as unknown as typeof statSync);
+  });
+
+  afterEach(() => {
+    vol.reset();
+  });
+
+  test('returns cached content while the file is unchanged', () => {
+    const file = '/a.txt';
+    const stamp = new Date('2020-01-01T00:00:00Z');
+    memfs.writeFileSync(file, 'first');
+    memfs.utimesSync(file, stamp, stamp);
+
+    // First read caches the content against the file's mtime.
+    expect(cachedReadTextFileSync(file)).toBe('first');
+
+    // Rewrite the bytes but restore the original mtime: an identical mtime must serve the cached
+    // content rather than re-reading the tampered bytes.
+    memfs.writeFileSync(file, 'tampered');
+    memfs.utimesSync(file, stamp, stamp);
+    expect(cachedReadTextFileSync(file)).toBe('first');
+  });
+
+  test('re-reads the file when its mtime changes', () => {
+    const file = '/b.txt';
+    memfs.writeFileSync(file, 'before');
+    expect(cachedReadTextFileSync(file)).toBe('before');
+
+    memfs.writeFileSync(file, 'after');
+    const future = new Date(Date.now() + 1000);
+    memfs.utimesSync(file, future, future);
+
+    expect(cachedReadTextFileSync(file)).toBe('after');
+  });
 });
 
 describe('findTsconfigPath', () => {

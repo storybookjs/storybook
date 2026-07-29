@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "title": "Build Storybook",
+  "description": "Serve up storybook in development mode.",
+  "type": "object",
+  "properties": {
+    "tsConfig": {
+      "type": "string",
+      "description": "The full path for the TypeScript configuration file, relative to the current workspace."
+    },
+    "outputDir": {
+      "type": "string",
+      "description": "Directory where to store built files.",
+      "default": "storybook-static"
+    },
+    "configDir": {
+      "type": "string",
+      "description": "Directory where to load Storybook configurations from.",
+      "default": ".storybook"
+    },
+    "loglevel": {
+      "type": "string",
+      "description": "Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent].",
+      "pattern": "(silly|verbose|info|warn|silent)"
+    },
+    "enableProdMode": {
+      "type": "boolean",
+      "description": "Disable Angular's development mode, which turns off assertions and other checks within the framework.",
+      "default": true
+    },
+    "quiet": {
+      "type": "boolean",
+      "description": "Suppress verbose build output.",
+      "default": false
+    },
+    "docs": {
+      "type": "boolean",
+      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/writing-docs/build-documentation#preview-storybooks-documentation.",
+      "default": false
+    },
+    "test": {
+      "type": "boolean",
+      "description": "Build the static version of the sandbox optimized for testing purposes",
+      "default": false
+    },
+    "compodoc": {
+      "type": "boolean",
+      "description": "Execute compodoc before.",
+      "default": true
+    },
+    "compodocArgs": {
+      "type": "array",
+      "description": "Compodoc options : https://compodoc.app/guides/options.html. Options `-p` with tsconfig path and `-d` with workspace root is always given.",
+      "default": ["-e", "json"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "statsJson": {
+      "type": ["boolean", "string"],
+      "description": "Write stats JSON to disk",
+      "default": false
+    },
+    "previewUrl": {
+      "type": "string",
+      "description": "Disables the default storybook preview and lets you use your own"
+    },
+    "zoneless": {
+      "type": "boolean",
+      "description": "Use zoneless change detection.",
+      "default": true
+    },
+    "styles": {
+      "type": "array",
+      "description": "Global styles to be included in the build.",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "stylePreprocessorOptions": {
+      "description": "Options to pass to style preprocessors.",
+      "type": "object",
+      "properties": {
+        "loadPaths": {
+          "description": "Paths to include.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sass": {
+          "description": "Options to pass to the sass preprocessor.",
+          "type": "object",
+          "properties": {
+            "fatalDeprecations": {
+              "description": "A set of deprecations to treat as fatal. If a deprecation warning of any provided type is encountered during compilation, the compiler will error instead. If a Version is provided, then all deprecations that were active in that compiler version will be treated as fatal.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "silenceDeprecations": {
+              "description": " A set of active deprecations to ignore. If a deprecation warning of any provided type is encountered during compilation, the compiler will ignore it instead.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "futureDeprecations": {
+              "description": "A set of future deprecations to opt into early. Future deprecations passed here will be treated as active by the compiler, emitting warnings as necessary.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

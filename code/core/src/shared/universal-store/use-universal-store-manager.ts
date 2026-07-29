@@ -74,6 +74,7 @@ export const useUniversalStore: {
     return snapshotRef.current;
   }, [universalStore, selector]);
 
+  // Manager-only, safe to use React 18 API
   const state = React.useSyncExternalStore(subscribe, getSnapshot);
 
   return [state, universalStore.setState];

@@ -1,8 +1,6 @@
 export type ParsedToolArgs =
   | {
       ok: true;
-      cwd: string | undefined;
-      port: number | undefined;
       help: boolean;
       args: Record<string, unknown>;
     }
@@ -16,18 +14,18 @@ export type ParsedToolArgs =
  * - A bare `--key` (no value) becomes `true`.
  * - `--json '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
  *   flags override its entries.
- * - `--cwd <path>`, `--port <number>` and `--help`/`-h` are consumed by the CLI itself and never
- *   forwarded to the tool.
+ * - `--help`/`-h` is consumed by the CLI itself and never forwarded to the tool.
  *
- * `defaults` carries `--cwd`/`--port`/`--json` values that commander already parsed before the
- * tool name; the same flags appearing after the tool name take precedence.
+ * Target-selection options (`--cwd`, `--config-dir`, `--port`) are commander-owned and must
+ * appear before the command name; the same-looking flags after the command name are normal tool
+ * arguments.
  */
 export function parseToolArgs(
   tokens: string[],
-  defaults: { cwd?: string; port?: string; json?: string } = {}
+  defaults: {
+    json?: string;
+  } = {}
 ): ParsedToolArgs {
-  let cwd = defaults.cwd;
-  let rawPort = defaults.port;
   let rawJson = defaults.json;
   let help = false;
   const flagArgs: Record<string, unknown> = {};
@@ -64,22 +62,6 @@ export function parseToolArgs(
       return { ok: false, error: `Invalid flag \`${token}\`.` };
     }
 
-    if (key === 'cwd') {
-      if (value === undefined) {
-        return { ok: false, error: '`--cwd` requires a value.' };
-      }
-      cwd = value;
-      continue;
-    }
-
-    if (key === 'port') {
-      if (value === undefined) {
-        return { ok: false, error: '`--port` requires a value.' };
-      }
-      rawPort = value;
-      continue;
-    }
-
     if (key === 'json') {
       if (value === undefined) {
         return { ok: false, error: '`--json` requires a value.' };
@@ -89,17 +71,6 @@ export function parseToolArgs(
     }
 
     flagArgs[key] = value === undefined ? true : coerceValue(value);
-  }
-
-  let port: number | undefined;
-  if (rawPort !== undefined) {
-    port = Number(rawPort);
-    if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      return {
-        ok: false,
-        error: `\`--port\` must be a port number (1-65535), got \`${rawPort}\`.`,
-      };
-    }
   }
 
   let jsonArgs: Record<string, unknown> = {};
@@ -122,28 +93,23 @@ export function parseToolArgs(
     jsonArgs = parsed as Record<string, unknown>;
   }
 
-  return { ok: true, cwd, port, help, args: { ...jsonArgs, ...flagArgs } };
+  return { ok: true, help, args: { ...jsonArgs, ...flagArgs } };
 }
 
-/**
- * Extract only the `--cwd` value from pass-through tokens, tolerating tokens that
- * {@link parseToolArgs} would reject. Telemetry opt-out resolution must locate the target project
- * even when the invocation itself fails as `invalid-arguments` — that intercept still fires an
- * event (storybookjs/storybook#35131). Mirrors the full parser's `--cwd` grammar: `--cwd value`
- * or `--cwd=value`, last occurrence wins.
- */
-export function scanCwdToken(tokens: string[]): string | undefined {
-  let cwd: string | undefined;
-  for (let i = 0; i < tokens.length; i += 1) {
-    const token = tokens[i];
-    if (token === '--cwd' && i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
-      cwd = tokens[i + 1];
-      i += 1;
-    } else if (token.startsWith('--cwd=')) {
-      cwd = token.slice('--cwd='.length);
-    }
+export function parsePort(
+  rawPort: string | undefined
+): { ok: true; port: number | undefined } | { ok: false; error: string } {
+  if (rawPort === undefined) {
+    return { ok: true, port: undefined };
   }
-  return cwd;
+  const port = Number(rawPort);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    return {
+      ok: false,
+      error: `\`--port\` must be a port number (1-65535), got \`${rawPort}\`.`,
+    };
+  }
+  return { ok: true, port };
 }
 
 function coerceValue(raw: string): unknown {

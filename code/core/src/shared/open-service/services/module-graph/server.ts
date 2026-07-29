@@ -78,9 +78,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     onUpdate: ({ storiesByFile, bumpedStoryFiles }) => {
       void runtime.commands._applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
     },
-    onStoryIndexInvalidated: () => {
-      void runtime.commands._bumpGraphRevision(undefined);
-    },
     onError: (error) => {
       void runtime.commands._setStatus({ value: 'error', error: errorToErrorLike(error) });
     },

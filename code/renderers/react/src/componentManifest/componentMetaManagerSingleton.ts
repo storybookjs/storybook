@@ -5,13 +5,16 @@ import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
 
 /**
- * Process-wide {@link ComponentMetaManager} shared by the experimental manifest generator and the
- * docgen provider so static builds do not construct duplicate TypeScript language services.
+ * Process-wide {@link ComponentMetaManager} for the experimental manifest generator: building a full
+ * TypeScript program over every tsconfig project in the workspace is expensive, so the manifest
+ * generator keeps a single set of programs (and one file-snapshot cache) hot for the lifetime of the
+ * process rather than rebuilding per request.
  *
- * Both features build full TypeScript programs over every tsconfig project in the workspace. When
- * each owned its own manager, enabling both at once kept two complete sets of programs resident
- * simultaneously and exhausted the heap. Sharing one manager keeps a single set of programs (and
- * one file-snapshot cache) hot for the lifetime of the process.
+ * `experimentalDocgenServer` deliberately does NOT share this manager: its extraction runs in a
+ * worker thread ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program
+ * build stays off the main event loop. Worker threads have separate V8 heaps but share process RSS,
+ * so enabling both the manifest generator and the docgen server keeps two full program sets resident
+ * at once — acceptable today, but the reason this singleton is scoped to the manifest path only.
  */
 export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
   if (!componentMetaManagerPromise) {

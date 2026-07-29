@@ -9,6 +9,11 @@ export { REVIEW_NAMESPACE as ADDON_ID, REVIEW_EVENTS as EVENTS };
 export const PAGE_ID = `${REVIEW_NAMESPACE}/page`;
 export const REVIEW_CHANGES_URL = '/review/';
 
+// Persisted flag marking this tab as being in review mode. Review mode is
+// interaction-driven (never inferred from the URL) and survives reloads via
+// this key. ReviewProvider owns the only write path.
+export const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
+
 // sessionStorage key for the canvas search to return to when leaving review
 // mode (both summary back-to-Storybook and dismiss). Captured while browsing
 // stories/docs outside review mode, so it points at the pre-review canvas.

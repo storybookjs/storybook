@@ -40,8 +40,8 @@ import {
   buildReviewStoryHref,
   buildSummaryBackHref,
 } from '../review-navigation.ts';
+import type { ReviewBanner } from '../review-context.ts';
 import type { ReviewState } from '../review-state.ts';
-import type { ReviewBanner } from '../review-store.ts';
 import type { StoryInfo } from '../review-types.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({

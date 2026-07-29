@@ -19,7 +19,10 @@ const storyEntry = {
 
 const index = {
   v: 5,
-  entries: { 'button--primary': storyEntry },
+  entries: {
+    'button--primary': storyEntry,
+    'card--basic': { ...storyEntry, id: 'card--basic', name: 'Basic', title: 'Card' },
+  },
 } as StoryIndex;
 
 const review = {
@@ -211,6 +214,51 @@ describe('registerReviewService', () => {
     await service.commands.markStale(undefined);
 
     expect(service.queries.current.get(undefined)).toBeNull();
+  });
+
+  it('derives flattened navigation entries from the current review in display order', async () => {
+    const service = registerReviewService({ getIndex });
+
+    expect(service.queries.flattenedEntries.get(undefined)).toEqual([]);
+
+    await service.commands.setReview({
+      ...review,
+      collections: [
+        { title: 'Buttons', rationale: 'edited', storyIds: ['button--primary', 'card--basic'] },
+        { title: 'Revisit', rationale: 'related', storyIds: ['button--primary'] },
+      ],
+    });
+
+    expect(service.queries.flattenedEntries.get(undefined)).toEqual([
+      { storyId: 'button--primary', collectionIndex: 0 },
+      { storyId: 'card--basic', collectionIndex: 0 },
+      { storyId: 'button--primary', collectionIndex: 1 },
+    ]);
+
+    await service.commands.dismissReview(undefined);
+
+    expect(service.queries.flattenedEntries.get(undefined)).toEqual([]);
+  });
+
+  it('reports the banner kind with pending-update outranking stale', async () => {
+    const service = registerReviewService({ getIndex });
+
+    expect(service.queries.bannerKind.get(undefined)).toBeNull();
+
+    await service.commands.setReview(review);
+    expect(service.queries.bannerKind.get(undefined)).toBeNull();
+
+    now = 12_000;
+    await service.commands.markStale(undefined);
+    expect(service.queries.bannerKind.get(undefined)).toBe('stale');
+
+    now = 13_000;
+    await service.commands.setReview({ ...review, title: 'Updated review' });
+    expect(service.queries.bannerKind.get(undefined)).toBe('pending-update');
+
+    // The promoted review is fresh, so accepting supersedes the stale warning.
+    await service.commands.acceptPending(undefined);
+    expect(service.queries.bannerKind.get(undefined)).toBeNull();
   });
 
   it('marks the current review stale on module-graph changes after the grace window', async () => {

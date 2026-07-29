@@ -34,6 +34,14 @@ export const reviewStateSchema = v.object({
   stale: v.optional(v.boolean()),
 });
 
+const reviewNavEntrySchema = v.object({
+  storyId: v.pipe(v.string(), v.description('Story id of this navigation slot.')),
+  collectionIndex: v.pipe(
+    v.number(),
+    v.description('Index of the collection this slot belongs to.')
+  ),
+});
+
 export type ReviewServiceState = {
   current: ReviewState | null;
   /** An updated review held back until a reviewer accepts it, so in-progress reviews aren't yanked. */
@@ -62,6 +70,28 @@ export const reviewServiceDef = defineService({
       input: v.undefined(),
       output: v.nullable(reviewStateSchema),
       handler: (_input, ctx) => ctx.self.state.pending,
+    },
+    flattenedEntries: {
+      description:
+        'Returns the current review flattened into navigable story slots, walking collections in order (a story repeats when curated into several collections). Empty when no review is active.',
+      input: v.undefined(),
+      output: v.array(reviewNavEntrySchema),
+      handler: (_input, ctx) =>
+        (ctx.self.state.current?.collections ?? []).flatMap((collection, collectionIndex) =>
+          collection.storyIds.map((storyId) => ({ storyId, collectionIndex }))
+        ),
+    },
+    bannerKind: {
+      description:
+        'Returns which attention banner review surfaces should show: pending-update outranks stale (accepting the update supersedes the warning); null when neither applies.',
+      input: v.undefined(),
+      output: v.nullable(v.picklist(['pending-update', 'stale'])),
+      handler: (_input, ctx) =>
+        ctx.self.state.pending !== null
+          ? 'pending-update'
+          : ctx.self.state.current?.stale
+            ? 'stale'
+            : null,
     },
   },
   commands: {

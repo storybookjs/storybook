@@ -124,38 +124,17 @@ describe('initReviewChannel', () => {
     expect(service.queries.current.get(undefined)).toBeNull();
   });
 
-  it('relays dismissal navigation without mutating review state again', async () => {
-    const service = registerService();
-    const dismissReview = vi.spyOn(service.commands, 'dismissReview');
-    const { channel, emitted } = createMockChannel();
-
-    initializeReviewChannel(channel);
-    await channel.fire(REVIEW_EVENTS.PUSH_REVIEW, sampleReview);
-    dismissReview.mockClear();
-    await channel.fire(REVIEW_EVENTS.DISMISS_REVIEW, '?path=/story/foo');
-
-    expect(dismissReview).not.toHaveBeenCalled();
-    expect(service.queries.current.get(undefined)).toEqual({
-      ...sampleReview,
-      createdAt: NOW,
-    });
-    expect(emitted).toEqual([
-      { event: REVIEW_EVENTS.REVIEW_DISMISSED, payload: '?path=/story/foo' },
-    ]);
-  });
-
-  it('keeps only the legacy push and dismissal listeners', () => {
+  it('keeps only the legacy push listener', () => {
     registerService();
     const { channel } = createMockChannel();
 
     initializeReviewChannel(channel);
 
     expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.PUSH_REVIEW, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(REVIEW_EVENTS.DISMISS_REVIEW, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledTimes(2);
+    expect(channel.on).toHaveBeenCalledTimes(1);
   });
 
-  it('tears down both channel listeners', () => {
+  it('tears down the channel listener', () => {
     registerService();
     const { channel } = createMockChannel();
 
@@ -164,6 +143,6 @@ describe('initReviewChannel', () => {
     teardowns.pop();
 
     expect(channel.off).toHaveBeenCalledWith(REVIEW_EVENTS.PUSH_REVIEW, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(REVIEW_EVENTS.DISMISS_REVIEW, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledTimes(1);
   });
 });

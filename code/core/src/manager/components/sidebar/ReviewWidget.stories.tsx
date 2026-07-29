@@ -11,11 +11,7 @@ import { expect, fn, userEvent, waitFor } from 'storybook/test';
 import { ReviewProvider } from '../review/components/ReviewProvider.tsx';
 import { REVIEW_COLLECTION_QUERY_PARAM } from '../review/review-navigation.ts';
 import { reviewServiceForStories as reviewService } from '../review/review-service-story-helpers.ts';
-import { reviewStore } from '../review/review-store.ts';
 import { ReviewWidget } from './ReviewWidget.tsx';
-
-const REVIEW_ADDON_ID = 'storybook/review';
-const DISMISS_REVIEW = `${REVIEW_ADDON_ID}/dismiss-review`;
 
 type EventListener = (payload?: unknown) => void;
 
@@ -140,21 +136,30 @@ const meta = {
   decorators: [
     (Story, { parameters }) => {
       const options = parameters?.contextOptions ?? {};
+      const content = (
+        <>
+          <Location>
+            {({ path }) => (
+              <span data-testid="router-path" hidden>
+                {path}
+              </span>
+            )}
+          </Location>
+          <div style={{ padding: '8px', width: '280px' }}>
+            <Story />
+          </div>
+        </>
+      );
       return (
         <MemoryRouter initialEntries={['/']}>
           <ManagerContext.Provider value={makeManagerContext(options)}>
-            <ReviewProvider>
-              <Location>
-                {({ path }) => (
-                  <span data-testid="router-path" hidden>
-                    {path}
-                  </span>
-                )}
-              </Location>
-              <div style={{ padding: '8px', width: '280px' }}>
-                <Story />
-              </div>
-            </ReviewProvider>
+            {/* withReviewProvider: false models the review feature being disabled:
+                no provider is mounted and consumers see the context default. */}
+            {parameters?.withReviewProvider === false ? (
+              content
+            ) : (
+              <ReviewProvider>{content}</ReviewProvider>
+            )}
           </ManagerContext.Provider>
         </MemoryRouter>
       );
@@ -162,6 +167,7 @@ const meta = {
   ],
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
+    sessionStorage.clear();
   },
 } satisfies Meta<typeof ReviewWidget>;
 
@@ -179,7 +185,6 @@ export const Default: Story = {
     },
   },
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
     await reviewService.commands.setReview(
       buildReviewPayload('Button style changes on Shop screen', storyIds)
@@ -201,7 +206,6 @@ export const SingleStory: Story = {
     },
   },
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
     await reviewService.commands.setReview(
       buildReviewPayload('Primary button visual refresh', ['s1'])
@@ -216,7 +220,6 @@ export const SingleStory: Story = {
 
 export const HiddenWhenZeroCounts: Story = {
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
     internal_fullStatusStore.unset();
   },
@@ -246,9 +249,7 @@ export const OpenReview: Story = {
     },
   },
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
-    sessionStorage.clear();
     navigateMock.mockClear();
     setQueryParamsMock.mockClear();
     toggleNavMock.mockClear();
@@ -271,32 +272,42 @@ export const OpenReview: Story = {
   },
 };
 
-const dismissEmitMock = fn((eventName: string, payload?: unknown) => {
-  eventListeners.get(eventName)?.forEach((listener) => {
-    listener(payload);
-  });
-}).mockName('api::emit');
-
 export const DismissReview: Story = {
   parameters: {
     contextOptions: {
       storyIds: ['s1'],
       reviewTitle: 'Button prop rename',
-      emit: dismissEmitMock,
     },
   },
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
-    dismissEmitMock.mockClear();
-    sessionStorage.clear();
     await reviewService.commands.setReview(buildReviewPayload('Button prop rename', ['s1']));
     return setReviewingStatuses(['s1']);
   },
   play: async ({ canvas }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Dismiss review' }));
-    await expect(dismissEmitMock).toHaveBeenCalledWith(DISMISS_REVIEW, null);
     await waitFor(() => expect(canvas.queryByText('Quick review')).toBeNull());
+    // A tab that never entered the review stays where it is.
+    await expect(canvas.getByTestId('router-path')).toHaveTextContent('/');
+  },
+};
+
+export const FeatureOffRendersNothing: Story = {
+  parameters: {
+    withReviewProvider: false,
+    contextOptions: {
+      storyIds: ['s1'],
+    },
+  },
+  beforeEach: async () => {
+    eventListeners.clear();
+    // Even with an active review in the service, no provider means consumers
+    // read the context default: the widget renders nothing.
+    await reviewService.commands.setReview(buildReviewPayload('Hidden review', ['s1']));
+    return setReviewingStatuses(['s1']);
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByText('Quick review')).toBeNull();
   },
 };
 
@@ -311,9 +322,7 @@ export const KeepsDisplayedTitleDuringPendingUpdate: Story = {
     },
   },
   beforeEach: async () => {
-    reviewStore.reset();
     eventListeners.clear();
-    sessionStorage.clear();
     await reviewService.commands.setReview(
       buildReviewPayload('First review title', ['s1', 's2'], INITIAL_CREATED_AT)
     );

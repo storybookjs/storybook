@@ -12,7 +12,6 @@ import preview from '../../../../../../.storybook/preview.tsx';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
 import { reviewServiceForStories as reviewService } from '../review-service-story-helpers.ts';
 import type { ReviewState } from '../review-state.ts';
-import { reviewStore } from '../review-store.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 
@@ -125,7 +124,6 @@ const meta = preview.meta({
   ],
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
-    reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();

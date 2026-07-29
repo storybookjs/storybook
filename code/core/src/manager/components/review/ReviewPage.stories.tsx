@@ -19,13 +19,14 @@ import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
 import {
   NOTIFIED_REVIEW_CREATED_AT_KEY,
+  PRE_REVIEW_RETURN_KEY,
+  REVIEW_MODE_SESSION_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
   reviewAvailableNotificationId,
 } from './constants.ts';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 import { reviewServiceForStories as reviewService } from './review-service-story-helpers.ts';
-import { reviewStore } from './review-store.ts';
 import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
 type EventListener = (payload?: unknown) => void;
@@ -54,6 +55,7 @@ const navigateMock = fn().mockName('api::navigate');
 const setQueryParamsMock = fn().mockName('api::setQueryParams');
 const addNotificationMock = fn().mockName('api::addNotification');
 const clearNotificationMock = fn().mockName('api::clearNotification');
+const selectFirstStoryMock = fn().mockName('api::selectFirstStory');
 let mockUrlState = { path: '/review/', queryParams: {} as Record<string, string> };
 const managerState: State = {
   index: {
@@ -102,6 +104,7 @@ const managerApi: API = {
   setQueryParams: setQueryParamsMock,
   addNotification: addNotificationMock,
   clearNotification: clearNotificationMock,
+  selectFirstStory: selectFirstStoryMock,
   getUrlState: () => mockUrlState,
 } as unknown as API;
 
@@ -275,7 +278,6 @@ const meta = preview.meta({
   ],
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
-    reviewStore.reset();
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();
@@ -285,6 +287,7 @@ const meta = preview.meta({
     setQueryParamsMock.mockReset();
     addNotificationMock.mockReset();
     clearNotificationMock.mockReset();
+    selectFirstStoryMock.mockReset();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
     // Mark one reviewed story as newly added (via change detection) so the
@@ -591,6 +594,60 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
     expect(addNotificationMock).not.toHaveBeenCalled();
     await reviewService.commands.setReview(freshReviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
+  },
+});
+
+const RouterPathProbe = () => (
+  <Location>
+    {({ path }) => (
+      <span data-testid="router-path" hidden>
+        {path}
+      </span>
+    )}
+  </Location>
+);
+
+export const DismissalReturnsEachTabToItsOwnStory = meta.story({
+  render: () => (
+    <>
+      <ReviewHarness />
+      <RouterPathProbe />
+    </>
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  // This tab entered the review from its own story; both facts are tab-local
+  // sessionStorage, seeded before the provider mounts.
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-aboutscreen--default'
+    );
+    sessionStorage.setItem(REVIEW_MODE_SESSION_KEY, '1');
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+    await expect(await canvas.findByTestId('review-toolbar-header')).toBeInTheDocument();
+
+    // Dismissal arrives through the service (as from another tab): this tab must
+    // return to the story it browsed before the review, not anyone else's.
+    await reviewService.commands.dismissReview(undefined);
+
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-aboutscreen--default'
+      )
+    );
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+    expect(canvas.queryByTestId('review-toolbar-header')).not.toBeInTheDocument();
   },
 });
 

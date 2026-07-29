@@ -10,7 +10,7 @@ import {
   buildReviewStoryHref,
   type ReviewNavEntry,
 } from '../review-navigation.ts';
-import { useReview } from '../review-store.ts';
+import { useReviewContext } from '../review-context.ts';
 import { AttentionBanner } from './AttentionBanner.tsx';
 import { ReviewCollectionPicker } from './ReviewCollectionPicker.tsx';
 import { ReviewHeader } from './ReviewHeader.tsx';
@@ -100,7 +100,7 @@ export const ReviewToolbarHeader: FC = () => {
     newlyAddedStoryIds,
     activeEntry,
     activeIndex,
-  } = useReview();
+  } = useReviewContext();
 
   if (!review || !activeEntry || activeIndex < 0) {
     return null;

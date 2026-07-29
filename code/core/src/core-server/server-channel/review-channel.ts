@@ -7,11 +7,10 @@ import { REVIEW_EVENTS } from '../../shared/review/events.ts';
 import type { ReviewState } from '../../shared/review/review-state.ts';
 
 /**
- * Adapts legacy review channel events into the authoritative review service.
+ * Adapts the legacy review ingest channel event into the authoritative review service.
  *
- * `PUSH_REVIEW` remains for the unchanged production MCP implementation; delete that adapter in
- * Milestone 4 when addon-mcp calls the review toolset directly. Dismissal events only relay
- * tab-specific return navigation.
+ * `PUSH_REVIEW` remains for the unchanged production MCP implementation; delete this adapter in
+ * Milestone 4 when addon-mcp calls the review toolset directly.
  */
 export function initReviewChannel(channel: Channel) {
   const reviewService = getService<ReviewService>('core/review', { internal: true });
@@ -26,15 +25,9 @@ export function initReviewChannel(channel: Channel) {
     }
   };
 
-  const onDismissReview = (returnSearch?: string | null) => {
-    channel.emit(REVIEW_EVENTS.REVIEW_DISMISSED, returnSearch ?? null);
-  };
-
   channel.on(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
-  channel.on(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
 
   return () => {
     channel.off(REVIEW_EVENTS.PUSH_REVIEW, onPushReview);
-    channel.off(REVIEW_EVENTS.DISMISS_REVIEW, onDismissReview);
   };
 }

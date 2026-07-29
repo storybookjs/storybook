@@ -202,10 +202,6 @@ const config: BuildEntries = {
         exportEntries: ['./open-service'],
         entryPoint: './src/shared/open-service/index.ts',
       },
-      {
-        exportEntries: ['./public-api'],
-        entryPoint: './src/shared/public-api/index.ts',
-      },
     ],
     runtime: [
       {

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ToolsetCtx } from '../../../public-api/index.ts';
+import type { ToolsetCtx } from '../../toolset-definition.ts';
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import { reviewApi } from './api.ts';
+import { reviewToolset } from './definition.ts';
 
 const input = {
   title: 'Button tweaks',
@@ -23,10 +23,10 @@ let ctx: ToolsetCtx;
 let serviceError: Error | undefined;
 
 function createReview(
-  overrides: Partial<v.InferInput<typeof reviewApi.methods.create.schema>> = {}
+  overrides: Partial<v.InferInput<typeof reviewToolset.methods.create.schema>> = {}
 ) {
-  return reviewApi.methods.create.handler(
-    v.parse(reviewApi.methods.create.schema, { ...input, ...overrides }),
+  return reviewToolset.methods.create.handler(
+    v.parse(reviewToolset.methods.create.schema, { ...input, ...overrides }),
     ctx
   );
 }
@@ -43,12 +43,13 @@ describe('review API', () => {
     ctx = {
       consumer: 'cli',
       origin: 'http://localhost:6006/',
+      format: 'markdown',
       getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
     };
   });
 
   it('rejects with a missing-origin error when no server origin is configured', async () => {
-    ctx.origin = '';
+    ctx.origin = undefined;
 
     await expect(createReview()).rejects.toBeInstanceOf(OpenServiceMissingOriginError);
     expect(setReview).not.toHaveBeenCalled();
@@ -79,16 +80,18 @@ describe('review API', () => {
     );
   });
 
-  it('returns structured data with json true', async () => {
-    await expect(createReview({ json: true })).resolves.toEqual({
+  it('returns structured data when the adapter requests JSON', async () => {
+    ctx.format = 'json';
+
+    await expect(createReview()).resolves.toEqual({
       reviewUrl: 'http://localhost:6006/?path=/review/',
     });
     expect(setReview).toHaveBeenCalledWith(input);
   });
 
   it('contains only public API fields', () => {
-    expect(Object.keys(reviewApi)).toEqual(['id', 'description', 'methods']);
-    expect(Object.keys(reviewApi.methods.create).sort()).toEqual([
+    expect(Object.keys(reviewToolset)).toEqual(['id', 'description', 'methods']);
+    expect(Object.keys(reviewToolset.methods.create).sort()).toEqual([
       'description',
       'handler',
       'schema',

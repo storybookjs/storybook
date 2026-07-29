@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineToolset } from '../index.ts';
+import { defineToolset } from '../../toolset-definition.ts';
 import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
 import { formatTestRun } from './format.ts';
@@ -82,7 +82,7 @@ const testRunOutputSchema = v.variant('status', [
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 
-export type CreateTestApiOptions = {
+export type CreateTestToolsetOptions = {
   channel: TestChannel;
   storyIndex: StoryIndexAccess;
 };
@@ -91,7 +91,7 @@ export type CreateTestApiOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
+export function createTestToolset({ channel, storyIndex }: CreateTestToolsetOptions) {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -113,17 +113,10 @@ export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
             ),
             true
           ),
-          json: v.optional(
-            v.pipe(
-              v.boolean(),
-              v.description('When true, return structured JSON instead of Markdown.')
-            ),
-            false
-          ),
         }),
         description:
           'Runs story tests for the given selectors, or all stories when stories is omitted.',
-        handler: async (input) => {
+        handler: async (input, ctx) => {
           const done = await queue.wait();
           try {
             const result = await runStoryTests({
@@ -132,7 +125,7 @@ export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
               stories: input.stories,
               a11y: input.a11y,
             });
-            return input.json ? result : formatTestRun(result);
+            return ctx.format === 'json' ? result : formatTestRun(result);
           } finally {
             done();
           }
@@ -142,4 +135,4 @@ export function createTestApi({ channel, storyIndex }: CreateTestApiOptions) {
   });
 }
 
-export type TestApi = ReturnType<typeof createTestApi>;
+export type TestToolset = ReturnType<typeof createTestToolset>;

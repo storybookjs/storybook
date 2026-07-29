@@ -3,9 +3,9 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ToolsetCtx } from '../index.ts';
+import type { ToolsetCtx } from '../../toolset-definition.ts';
 import type { TestRunOutput } from './definition.ts';
-import { createTestApi } from './definition.ts';
+import { createTestToolset } from './definition.ts';
 import { runStoryTests } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
@@ -16,6 +16,7 @@ const storyIndex = { getIndex };
 const ctx = {
   consumer: 'cli',
   origin: 'http://localhost:6006',
+  format: 'json',
   getService: vi.fn() as ToolsetCtx['getService'],
 } satisfies ToolsetCtx;
 
@@ -46,10 +47,13 @@ beforeEach(() => {
 describe('test API', () => {
   it('returns a useful Markdown summary by default', async () => {
     const channel = {} as never;
-    const testApi = createTestApi({ channel, storyIndex });
+    const testToolset = createTestToolset({ channel, storyIndex });
 
     await expect(
-      testApi.methods.run.handler(v.parse(testApi.methods.run.schema, {}), ctx)
+      testToolset.methods.run.handler(v.parse(testToolset.methods.run.schema, {}), {
+        ...ctx,
+        format: 'markdown',
+      })
     ).resolves.toBe(
       [
         '# Test run completed',
@@ -66,26 +70,26 @@ describe('test API', () => {
     });
   });
 
-  it('returns the existing TestRunOutput when json is true', async () => {
-    const testApi = createTestApi({ channel: {} as never, storyIndex });
+  it('returns the existing TestRunOutput when the adapter requests JSON', async () => {
+    const testToolset = createTestToolset({ channel: {} as never, storyIndex });
 
     await expect(
-      testApi.methods.run.handler(v.parse(testApi.methods.run.schema, { json: true }), ctx)
+      testToolset.methods.run.handler(v.parse(testToolset.methods.run.schema, {}), ctx)
     ).resolves.toEqual(completedRun);
   });
 
   it('serializes concurrent test runs for one API registration', async () => {
-    const testApi = createTestApi({ channel: {} as never, storyIndex });
+    const testToolset = createTestToolset({ channel: {} as never, storyIndex });
     let completePendingRun!: () => void;
     pendingRun = new Promise((resolve) => {
       completePendingRun = () => resolve(completedRun);
     });
 
-    const input = v.parse(testApi.methods.run.schema, { json: true });
-    const firstRun = testApi.methods.run.handler(input, ctx);
+    const input = v.parse(testToolset.methods.run.schema, {});
+    const firstRun = testToolset.methods.run.handler(input, ctx);
     await vi.waitFor(() => expect(runStoryTests).toHaveBeenCalledOnce());
 
-    const secondRun = testApi.methods.run.handler(input, ctx);
+    const secondRun = testToolset.methods.run.handler(input, ctx);
     await Promise.resolve();
     expect(runStoryTests).toHaveBeenCalledOnce();
 
@@ -96,10 +100,10 @@ describe('test API', () => {
   });
 
   it('creates a definition containing only public API fields', () => {
-    const testApi = createTestApi({ channel: {} as never, storyIndex });
+    const testToolset = createTestToolset({ channel: {} as never, storyIndex });
 
-    expect(Object.keys(testApi)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(testApi.methods)) {
+    expect(Object.keys(testToolset)).toEqual(['id', 'description', 'methods']);
+    for (const method of Object.values(testToolset.methods)) {
       expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
     }
   });

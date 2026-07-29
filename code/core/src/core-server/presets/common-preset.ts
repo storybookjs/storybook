@@ -30,14 +30,15 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { docsApi } from '../../shared/public-api/docs/definition.ts';
-import type { AnyToolsetDefinition } from '../../shared/public-api/definition.ts';
+import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
-import { reviewApi } from '../../shared/open-service/services/review/api.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
+import { docsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
 
 import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
@@ -348,29 +349,9 @@ export const managerEntries = async (existing: any) => {
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
-/**
- * Public toolsets contributed by core. Addons append via the same preset property
- * (`export const experimental_toolsets = [myToolset]`). Stories/test join when their
- * boot-time deps are wired (stories factory; test moves to addon-vitest).
- * Adapters should `presets.apply('experimental_toolsets', [])` when they need the list.
- */
-export const experimental_toolsets = async (
-  existing: AnyToolsetDefinition[] = [],
-  options: Options
-): Promise<AnyToolsetDefinition[]> => {
-  const features = await options.presets.apply('features');
-  const toolsets = [...existing, docsApi];
-  if (isReviewFeatureEnabled(features)) {
-    toolsets.push(reviewApi);
-  }
-  return toolsets;
-};
-
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
-    throw new Error(
-      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
-    );
+    throw new OpenServiceServicesAppliedTwiceError();
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
@@ -386,12 +367,18 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     presets: options.presets,
   });
 
+  // Toolsets register imperatively alongside their services: addons contribute both from their own
+  // `services` hook. The stories and test toolsets join once their boot-time dependencies are wired
+  // (stories factory; test moves to addon-vitest).
+  registerToolset(docsToolset);
+
   const features = await options.presets.apply('features');
 
   if (isReviewFeatureEnabled(features)) {
     registerReviewService({
       getIndex: () => storyIndexGenerator.getIndex(),
     });
+    registerToolset(reviewToolset);
   }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,

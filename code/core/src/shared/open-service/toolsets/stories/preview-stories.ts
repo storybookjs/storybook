@@ -1,6 +1,6 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { buildArgsParam } from '../../../router/utils.ts';
+import { buildArgsParam } from '../../../../router/utils.ts';
 import type { PreviewStoriesOutput } from './definition.ts';
 import { findStoryIds } from './find-story-ids.ts';
 import type { StoryInput } from './story-input.ts';

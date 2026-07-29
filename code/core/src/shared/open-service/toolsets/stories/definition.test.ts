@@ -6,9 +6,9 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 import { vol } from 'memfs';
 
-import type { ToolsetCtx } from '../index.ts';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../status-store/index.ts';
-import { createStoriesApi } from './definition.ts';
+import type { ToolsetCtx } from '../../toolset-definition.ts';
+import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import { createStoriesToolset } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -52,8 +52,8 @@ let statusesFixture: Record<string, Record<string, unknown>>;
 let graphMatchesByFile: Map<string, Array<{ storyFile: string; depth: number }>>;
 let ctx: ToolsetCtx;
 
-function createApi() {
-  return createStoriesApi({
+function createToolset() {
+  return createStoriesToolset({
     storyIndex,
     git,
     changeStatuses,
@@ -75,6 +75,7 @@ beforeEach(async () => {
   ctx = {
     consumer: 'cli',
     origin: 'http://localhost:6006',
+    format: 'markdown',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
   };
   getIndex.mockResolvedValue(index);
@@ -97,11 +98,11 @@ afterAll(() => {
 
 describe('stories API', () => {
   it('returns compact Markdown preview URLs by default', async () => {
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
     await expect(
-      storiesApi.methods.preview.handler(
-        v.parse(storiesApi.methods.preview.schema, {
+      storiesToolset.methods.preview.handler(
+        v.parse(storiesToolset.methods.preview.schema, {
           stories: [{ storyId: 'button--primary' }],
         }),
         ctx
@@ -115,14 +116,14 @@ describe('stories API', () => {
     );
   });
 
-  it('returns the structured preview result with json true', async () => {
-    const storiesApi = createApi();
+  it('returns the structured preview result when the adapter requests JSON', async () => {
+    ctx.format = 'json';
+    const storiesToolset = createToolset();
 
     await expect(
-      storiesApi.methods.preview.handler(
-        v.parse(storiesApi.methods.preview.schema, {
+      storiesToolset.methods.preview.handler(
+        v.parse(storiesToolset.methods.preview.schema, {
           stories: [{ storyId: 'button--primary' }],
-          json: true,
         }),
         ctx
       )
@@ -139,11 +140,11 @@ describe('stories API', () => {
   });
 
   it('formats component matches using the module graph from context', async () => {
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
     await expect(
-      storiesApi.methods.findByComponent.handler(
-        v.parse(storiesApi.methods.findByComponent.schema, { componentPaths: [componentPath] }),
+      storiesToolset.methods.findByComponent.handler(
+        v.parse(storiesToolset.methods.findByComponent.schema, { componentPaths: [componentPath] }),
         ctx
       )
     ).resolves.toBe(
@@ -167,10 +168,13 @@ describe('stories API', () => {
         },
       },
     };
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
     await expect(
-      storiesApi.methods.changed.handler(v.parse(storiesApi.methods.changed.schema, {}), ctx)
+      storiesToolset.methods.changed.handler(
+        v.parse(storiesToolset.methods.changed.schema, {}),
+        ctx
+      )
     ).resolves.toBe(
       [
         '# Changed stories',
@@ -191,9 +195,12 @@ describe('stories API', () => {
   });
 
   it('anchors Git-relative paths when Storybook runs below the repository root', async () => {
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
-    await storiesApi.methods.changed.handler(v.parse(storiesApi.methods.changed.schema, {}), ctx);
+    await storiesToolset.methods.changed.handler(
+      v.parse(storiesToolset.methods.changed.schema, {}),
+      ctx
+    );
 
     expect(process.cwd()).toBe(storybookWorkingDir);
     expect(storiesForFiles).toHaveBeenCalledWith({
@@ -201,7 +208,8 @@ describe('stories API', () => {
     });
   });
 
-  it('returns structured changed stories with json true', async () => {
+  it('returns structured changed stories when the adapter requests JSON', async () => {
+    ctx.format = 'json';
     statusesFixture = {
       'button--primary': {
         [CHANGE_DETECTION_STATUS_TYPE_ID]: {
@@ -210,11 +218,11 @@ describe('stories API', () => {
         },
       },
     };
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
     await expect(
-      storiesApi.methods.changed.handler(
-        v.parse(storiesApi.methods.changed.schema, { json: true }),
+      storiesToolset.methods.changed.handler(
+        v.parse(storiesToolset.methods.changed.schema, {}),
         ctx
       )
     ).resolves.toEqual({
@@ -233,10 +241,10 @@ describe('stories API', () => {
   });
 
   it('creates a definition containing only public API fields', () => {
-    const storiesApi = createApi();
+    const storiesToolset = createToolset();
 
-    expect(Object.keys(storiesApi)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(storiesApi.methods)) {
+    expect(Object.keys(storiesToolset)).toEqual(['id', 'description', 'methods']);
+    for (const method of Object.values(storiesToolset.methods)) {
       expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
     }
   });

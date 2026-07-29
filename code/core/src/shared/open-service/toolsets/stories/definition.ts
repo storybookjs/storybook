@@ -3,10 +3,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
-import { OpenServiceMissingOriginError } from '../../../server-errors.ts';
-import type { ModuleGraphService } from '../../open-service/services/module-graph/definition.ts';
-import { defineToolset } from '../index.ts';
-import type { StatusesByStoryIdAndTypeId } from '../../status-store/index.ts';
+import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import { defineToolset } from '../../toolset-definition.ts';
+import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
@@ -105,20 +105,19 @@ export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
 
-export type CreateStoriesApiOptions = {
+export type CreateStoriesToolsetOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
 };
 
-const jsonSchema = v.optional(
-  v.pipe(v.boolean(), v.description('When true, return structured JSON instead of Markdown.')),
-  false
-);
-
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
-export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStoriesApiOptions) {
+export function createStoriesToolset({
+  storyIndex,
+  git,
+  changeStatuses,
+}: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
@@ -129,7 +128,6 @@ export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStor
             storyInputArraySchema,
             v.description('Stories to preview. Prefer { storyId } when available.')
           ),
-          json: jsonSchema,
         }),
         description: 'Resolves story selectors to preview URLs.',
         handler: async (input, ctx) => {
@@ -145,11 +143,11 @@ export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStor
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
-          return input.json ? data : formatPreviewStories(data);
+          return ctx.format === 'json' ? data : formatPreviewStories(data);
         },
       },
       changed: {
-        schema: v.object({ json: jsonSchema }),
+        schema: v.object({}),
         description:
           'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
         handler: async (input, ctx) => {
@@ -177,7 +175,7 @@ export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStor
             ...getChangedStories({ statuses, index }),
             unreachableFiles,
           };
-          return input.json ? data : formatChangedStories(data);
+          return ctx.format === 'json' ? data : formatChangedStories(data);
         },
       },
       findByComponent: {
@@ -191,7 +189,6 @@ export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStor
             v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
             v.description('Maximum import-graph distance to include. Defaults to 3.')
           ),
-          json: jsonSchema,
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
         handler: async (input, ctx) => {
@@ -205,11 +202,11 @@ export function createStoriesApi({ storyIndex, git, changeStatuses }: CreateStor
             index,
             moduleGraph,
           });
-          return input.json ? data : formatFindByComponent(data);
+          return ctx.format === 'json' ? data : formatFindByComponent(data);
         },
       },
     },
   });
 }
 
-export type StoriesApi = ReturnType<typeof createStoriesApi>;
+export type StoriesToolset = ReturnType<typeof createStoriesToolset>;

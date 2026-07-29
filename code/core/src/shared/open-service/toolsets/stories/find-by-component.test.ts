@@ -5,7 +5,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
-import type { ModuleGraphService } from '../../open-service/services/module-graph/definition.ts';
+import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
 import { findStoriesByComponent, resolveComponentMatches } from './find-by-component.ts';
 
 vi.mock('node:fs', { spy: true });

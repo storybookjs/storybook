@@ -3,7 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineToolset, type ToolsetDefinition } from './index.ts';
 
-const exampleApi = defineToolset({
+const exampleToolset = defineToolset({
   id: 'example',
   description: 'Example API',
   methods: {
@@ -19,7 +19,7 @@ const exampleApi = defineToolset({
   },
 });
 
-const reviewApi = defineToolset({
+const reviewToolset = defineToolset({
   id: 'review',
   description: 'Create a review',
   methods: {
@@ -29,7 +29,8 @@ const reviewApi = defineToolset({
       handler: async (input, ctx) => {
         expectTypeOf(input.title).toEqualTypeOf<string>();
         expectTypeOf(ctx.consumer).toEqualTypeOf<'cli' | 'mcp'>();
-        expectTypeOf(ctx.origin).toEqualTypeOf<string>();
+        expectTypeOf(ctx.origin).toEqualTypeOf<string | undefined>();
+        expectTypeOf(ctx.format).toEqualTypeOf<'markdown' | 'json'>();
         expectTypeOf(
           ctx.getService<{ ok: true }>('core/review', { internal: true })
         ).toEqualTypeOf<{
@@ -44,11 +45,11 @@ const reviewApi = defineToolset({
 
 describe('defineToolset types', () => {
   it('preserves method schema output types in handlers', () => {
-    expectTypeOf(exampleApi).toMatchTypeOf<ToolsetDefinition>();
-    expectTypeOf(exampleApi.methods.greet.handler).parameter(0).toEqualTypeOf<{
+    expectTypeOf(exampleToolset).toMatchTypeOf<ToolsetDefinition>();
+    expectTypeOf(exampleToolset.methods.greet.handler).parameter(0).toEqualTypeOf<{
       name: string;
     }>();
-    expectTypeOf(reviewApi.methods.create.handler).parameter(0).toEqualTypeOf<{
+    expectTypeOf(reviewToolset.methods.create.handler).parameter(0).toEqualTypeOf<{
       title: string;
     }>();
   });

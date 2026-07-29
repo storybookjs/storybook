@@ -1,7 +1,7 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { OpenServiceTestRunTimeoutError } from '../../../server-errors.ts';
+import { OpenServiceTestRunTimeoutError } from '../../../../server-errors.ts';
 import { findStoryIds, type FoundStory, type NotFoundStory } from '../stories/find-story-ids.ts';
 import type { StoryInput } from '../stories/story-input.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';

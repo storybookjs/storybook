@@ -1,10 +1,16 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-import type { GetServiceOptions } from '../open-service/types.ts';
+import type { GetServiceOptions } from './types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
 export type ToolsetConsumer = 'cli' | 'mcp';
+
+/**
+ * Output representation requested by the adapter. Methods never declare the format themselves;
+ * adapters own the mapping (CLI `--json` flag, MCP `json` tool input).
+ */
+export type ToolsetFormat = 'markdown' | 'json';
 
 /**
  * Service lookup for toolset handlers. Intentionally not keyed to ServerCoreServices:
@@ -16,7 +22,9 @@ export type ToolsetGetService = {
 
 export type ToolsetCtx = {
   consumer: ToolsetConsumer;
-  origin: string;
+  /** Storybook server origin. Absent when running from a CLI without a live Storybook. */
+  origin?: string;
+  format: ToolsetFormat;
   getService: ToolsetGetService;
 };
 

@@ -332,7 +332,7 @@ export class OpenServiceUnknownStoryIdsError extends StorybookError {
   }
 }
 
-// CORE_COMMON error codes 19 and 20 were retired with the stateless core/docs OSA facade.
+// CORE_COMMON error code 20 was retired with the stateless core/docs OSA facade.
 export class OpenServiceTestRunTimeoutError extends StorybookError {
   constructor(public data: { timeoutMs: number; requestId: string }) {
     super({
@@ -340,6 +340,18 @@ export class OpenServiceTestRunTimeoutError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 21,
       message: `Timed out after ${data.timeoutMs}ms waiting for addon-vitest response to test run "${data.requestId}". Ensure @storybook/addon-vitest is installed and responding.`,
+    });
+  }
+}
+
+export class OpenServiceServicesAppliedTwiceError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceServicesAppliedTwiceError',
+      category: Category.CORE_COMMON,
+      code: 22,
+      message: dedent`The "services" preset property was applied twice, but should only be applied once.
+        Multiple code paths applying it will cause service and toolset registration to fail.`,
     });
   }
 }

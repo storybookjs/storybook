@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
-import type { ToolsetCtx } from '../index.ts';
-import { docsApi } from './definition.ts';
+import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
+import type { ToolsetCtx } from '../../toolset-definition.ts';
+import { docsToolset } from './definition.ts';
 
 const docgenForAllComponents = vi.fn();
 const storyDocsForAllComponents = vi.fn();
@@ -42,6 +42,7 @@ beforeEach(() => {
   ctx = {
     consumer: 'cli',
     origin: 'http://localhost:6006',
+    format: 'markdown',
     getService: vi.fn((id) => {
       if (id === 'addon-docs/mdx' && !mdxAvailable) {
         throw new OpenServiceMissingServiceError({ serviceId: 'addon-docs/mdx' });
@@ -100,8 +101,8 @@ beforeEach(() => {
 describe('docs API', () => {
   it('returns compact Markdown by default after loading services through context', async () => {
     await expect(
-      docsApi.methods.list.handler(
-        v.parse(docsApi.methods.list.schema, { withStoryIds: true }),
+      docsToolset.methods.list.handler(
+        v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
         ctx
       )
     ).resolves.toBe(
@@ -119,10 +120,11 @@ describe('docs API', () => {
     expect(ctx.getService).toHaveBeenCalledWith('addon-docs/mdx', { internal: true });
   });
 
-  it('returns structured JSON when json is true', async () => {
+  it('returns structured JSON when the adapter requests it', async () => {
+    ctx.format = 'json';
     await expect(
-      docsApi.methods.list.handler(
-        v.parse(docsApi.methods.list.schema, { withStoryIds: true, json: true }),
+      docsToolset.methods.list.handler(
+        v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
         ctx
       )
     ).resolves.toEqual({
@@ -140,14 +142,17 @@ describe('docs API', () => {
 
   it('shows component and story documentation via per-id loaders', async () => {
     await expect(
-      docsApi.methods.show.handler(v.parse(docsApi.methods.show.schema, { id: 'button' }), ctx)
+      docsToolset.methods.show.handler(
+        v.parse(docsToolset.methods.show.schema, { id: 'button' }),
+        ctx
+      )
     ).resolves.toContain('Button');
     expect(docgen).toHaveBeenCalledWith({ id: 'button' });
     expect(storyDocs).toHaveBeenCalledWith({ id: 'button' });
 
     await expect(
-      docsApi.methods.showStory.handler(
-        v.parse(docsApi.methods.showStory.schema, {
+      docsToolset.methods.showStory.handler(
+        v.parse(docsToolset.methods.showStory.schema, {
           componentId: 'button',
           storyName: 'Primary',
         }),
@@ -169,19 +174,21 @@ describe('docs API', () => {
   });
 
   it('returns the existing not-found result for unknown ids', async () => {
+    ctx.format = 'json';
     await expect(
-      docsApi.methods.show.handler(
-        v.parse(docsApi.methods.show.schema, { id: 'missing', json: true }),
+      docsToolset.methods.show.handler(
+        v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
         ctx
       )
     ).resolves.toEqual({ kind: 'not-found', id: 'missing' });
   });
 
   it('continues without MDX when the optional service is unavailable', async () => {
+    ctx.format = 'json';
     mdxAvailable = false;
 
     await expect(
-      docsApi.methods.list.handler(v.parse(docsApi.methods.list.schema, { json: true }), ctx)
+      docsToolset.methods.list.handler(v.parse(docsToolset.methods.list.schema, {}), ctx)
     ).resolves.toEqual({
       components: [{ id: 'button', name: 'Button', summary: 'A button' }],
       docs: [],
@@ -189,8 +196,8 @@ describe('docs API', () => {
   });
 
   it('creates a definition containing only public API fields', () => {
-    expect(Object.keys(docsApi)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(docsApi.methods)) {
+    expect(Object.keys(docsToolset)).toEqual(['id', 'description', 'methods']);
+    for (const method of Object.values(docsToolset.methods)) {
       expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
     }
   });

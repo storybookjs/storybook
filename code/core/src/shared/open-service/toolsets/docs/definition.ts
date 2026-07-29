@@ -1,9 +1,9 @@
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../server-errors.ts';
-import { defineToolset, type ToolsetCtx } from '../index.ts';
-import type { DocgenService } from '../../open-service/services/docgen/definition.ts';
-import type { StoryDocsService } from '../../open-service/services/story-docs/definition.ts';
+import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
+import { defineToolset, type ToolsetCtx } from '../../toolset-definition.ts';
+import type { DocgenService } from '../../services/docgen/definition.ts';
+import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import { classifyServices } from './classify-services.ts';
 import { formatDocsList, formatDocsShow, formatDocsShowStory } from './format.ts';
 import { mapDocsList, mapDocsShow, mapDocsShowStory, type MdxPayload } from './map.ts';
@@ -52,7 +52,7 @@ async function loadDocsListServices(ctx: ToolsetCtx) {
   };
 }
 
-export const docsApi = defineToolset({
+export const docsToolset = defineToolset({
   id: 'docs',
   description: 'Storybook component and docs documentation.',
   methods: {
@@ -60,13 +60,6 @@ export const docsApi = defineToolset({
       schema: v.object({
         withStoryIds: v.optional(
           v.pipe(v.boolean(), v.description('When true, include story ids under each component.')),
-          false
-        ),
-        json: v.optional(
-          v.pipe(
-            v.boolean(),
-            v.description('When true, return structured JSON instead of Markdown.')
-          ),
           false
         ),
       }),
@@ -82,19 +75,12 @@ export const docsApi = defineToolset({
           withStoryIds: input.withStoryIds,
         });
 
-        return input.json ? data : formatDocsList(data);
+        return ctx.format === 'json' ? data : formatDocsList(data);
       },
     },
     show: {
       schema: v.object({
         id: v.pipe(v.string(), v.description('Component or docs entry id.')),
-        json: v.optional(
-          v.pipe(
-            v.boolean(),
-            v.description('When true, return structured JSON instead of Markdown.')
-          ),
-          false
-        ),
       }),
       description: 'Returns documentation for one component or standalone docs entry by id.',
       handler: async (input, ctx) => {
@@ -120,20 +106,13 @@ export const docsApi = defineToolset({
           storyDocs: storyDocsPayload,
           mdx: mdxPayload,
         });
-        return input.json ? data : formatDocsShow(data);
+        return ctx.format === 'json' ? data : formatDocsShow(data);
       },
     },
     showStory: {
       schema: v.object({
         componentId: v.pipe(v.string(), v.description('Component id.')),
         storyName: v.pipe(v.string(), v.description('Story display name (not story id).')),
-        json: v.optional(
-          v.pipe(
-            v.boolean(),
-            v.description('When true, return structured JSON instead of Markdown.')
-          ),
-          false
-        ),
       }),
       description: 'Returns documentation for one story of a component.',
       handler: async (input, ctx) => {
@@ -150,7 +129,7 @@ export const docsApi = defineToolset({
             storyName: input.storyName,
             show: { kind: 'not-found', id: input.componentId },
           });
-          return input.json ? data : formatDocsShowStory(data);
+          return ctx.format === 'json' ? data : formatDocsShowStory(data);
         }
 
         const stories = storyDocsPayload?.stories
@@ -183,10 +162,10 @@ export const docsApi = defineToolset({
           },
         });
 
-        return input.json ? data : formatDocsShowStory(data);
+        return ctx.format === 'json' ? data : formatDocsShowStory(data);
       },
     },
   },
 });
 
-export type DocsApi = typeof docsApi;
+export type DocsToolset = typeof docsToolset;

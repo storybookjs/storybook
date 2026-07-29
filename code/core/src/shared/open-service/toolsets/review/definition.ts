@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
-import { defineToolset } from '../../../public-api/index.ts';
-import { reviewStateSchema, type ReviewService } from './definition.ts';
+import { defineToolset } from '../../toolset-definition.ts';
+import { reviewStateSchema, type ReviewService } from '../../services/review/definition.ts';
 
 const reviewCreateInputSchema = v.object({
   ...v.omit(reviewStateSchema, ['createdAt', 'stale', 'changedFiles']).entries,
@@ -12,20 +12,16 @@ const reviewCreateInputSchema = v.object({
       'Changed file paths, most central first. Pass an empty array when nothing changed.'
     )
   ),
-  json: v.optional(
-    v.pipe(v.boolean(), v.description('When true, return structured JSON instead of Markdown.')),
-    false
-  ),
 });
 
-export const reviewApi = defineToolset({
+export const reviewToolset = defineToolset({
   id: 'review',
   description: 'Create a curated Storybook review.',
   methods: {
     create: {
       schema: reviewCreateInputSchema,
       description: 'Validates story ids, publishes review state, and returns the review page URL.',
-      handler: async ({ json, ...review }, ctx) => {
+      handler: async (review, ctx) => {
         if (!ctx.origin) {
           throw new OpenServiceMissingOriginError({
             serviceId: 'review',
@@ -38,7 +34,7 @@ export const reviewApi = defineToolset({
           .commands.setReview(review);
 
         const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
-        if (json) {
+        if (ctx.format === 'json') {
           return { reviewUrl };
         }
 
@@ -51,4 +47,4 @@ export const reviewApi = defineToolset({
   },
 });
 
-export type ReviewApi = typeof reviewApi;
+export type ReviewToolset = typeof reviewToolset;

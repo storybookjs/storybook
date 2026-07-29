@@ -89,6 +89,10 @@ const config: BuildEntries = {
         entryPoint: './src/common/index.ts',
       },
       {
+        exportEntries: ['./internal/component-meta'],
+        entryPoint: './src/component-meta/index.ts',
+      },
+      {
         entryPoint: './src/cli/index.ts',
         exportEntries: ['./internal/cli'],
       },

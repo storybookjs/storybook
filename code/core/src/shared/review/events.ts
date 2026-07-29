@@ -7,6 +7,8 @@ export const REVIEW_NAMESPACE = 'storybook/review';
 /** Channel events exchanged between the MCP producer, core-server, and the manager. */
 export const REVIEW_EVENTS = {
   // `@storybook/addon-mcp` display-review tool → core-server: the raw agent payload.
+  // Delete in Milestone 4: addon-mcp's display-review moves onto the review toolset
+  // (`review.create`), removing this event's last producer and its channel adapter.
   PUSH_REVIEW: `${REVIEW_NAMESPACE}/push-review`,
   // core-server → tabs: display the (createdAt-stamped) review.
   DISPLAY_REVIEW: `${REVIEW_NAMESPACE}/display-review`,

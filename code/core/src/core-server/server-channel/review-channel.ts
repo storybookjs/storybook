@@ -9,8 +9,9 @@ import type { ReviewState } from '../../shared/review/review-state.ts';
 /**
  * Adapts legacy review channel events into the authoritative review service.
  *
- * `PUSH_REVIEW` remains for the unchanged production MCP implementation.
- * Dismissal events only relay tab-specific return navigation.
+ * `PUSH_REVIEW` remains for the unchanged production MCP implementation; delete that adapter in
+ * Milestone 4 when addon-mcp calls the review toolset directly. Dismissal events only relay
+ * tab-specific return navigation.
  */
 export function initReviewChannel(channel: Channel) {
   const reviewService = getService<ReviewService>('core/review', { internal: true });

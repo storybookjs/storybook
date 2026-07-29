@@ -24,8 +24,8 @@ export const reviewToolset = defineToolset({
       handler: async (review, ctx) => {
         if (!ctx.origin) {
           throw new OpenServiceMissingOriginError({
-            serviceId: 'review',
-            operationName: 'create',
+            toolsetId: 'review',
+            methodName: 'create',
           });
         }
 

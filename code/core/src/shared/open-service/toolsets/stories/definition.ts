@@ -134,8 +134,8 @@ export function createStoriesToolset({
           const origin = ctx.origin;
           if (!origin) {
             throw new OpenServiceMissingOriginError({
-              serviceId: 'stories',
-              operationName: 'preview',
+              toolsetId: 'stories',
+              methodName: 'preview',
             });
           }
           const data = previewStories({

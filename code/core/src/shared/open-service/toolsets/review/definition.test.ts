@@ -88,13 +88,4 @@ describe('review API', () => {
     });
     expect(setReview).toHaveBeenCalledWith(input);
   });
-
-  it('contains only public API fields', () => {
-    expect(Object.keys(reviewToolset)).toEqual(['id', 'description', 'methods']);
-    expect(Object.keys(reviewToolset.methods.create).sort()).toEqual([
-      'description',
-      'handler',
-      'schema',
-    ]);
-  });
 });

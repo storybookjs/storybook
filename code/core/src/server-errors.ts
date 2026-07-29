@@ -309,12 +309,12 @@ export class OpenServiceOperationNameCollisionError extends StorybookError {
 }
 
 export class OpenServiceMissingOriginError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+  constructor(public data: { toolsetId: string; methodName: string }) {
     super({
       name: 'OpenServiceMissingOriginError',
       category: Category.CORE_COMMON,
       code: 17,
-      message: `Operation "${data.serviceId}.${data.operationName}" requires a Storybook server origin. Ensure registration provides a non-empty getOrigin().`,
+      message: `Method "${data.toolsetId}.${data.methodName}" requires a Storybook server origin. Run it against a live Storybook so the adapter can provide ctx.origin.`,
     });
   }
 }

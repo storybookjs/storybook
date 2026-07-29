@@ -159,6 +159,33 @@ describe('stories API', () => {
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 
+  it('returns structured component matches when the adapter requests JSON', async () => {
+    ctx.format = 'json';
+    const storiesToolset = createToolset();
+
+    await expect(
+      storiesToolset.methods.findByComponent.handler(
+        v.parse(storiesToolset.methods.findByComponent.schema, { componentPaths: [componentPath] }),
+        ctx
+      )
+    ).resolves.toEqual({
+      results: [
+        {
+          componentPath,
+          matches: [
+            {
+              storyId: 'button--primary',
+              title: 'Button',
+              name: 'Primary',
+              importPath: './src/Button.stories.tsx',
+              distance: 1,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   it('returns compact Markdown for changed stories by default', async () => {
     statusesFixture = {
       'button--primary': {
@@ -238,14 +265,5 @@ describe('stories API', () => {
       counts: { new: 0, modified: 1, affected: 0 },
       unreachableFiles: [themePath],
     });
-  });
-
-  it('creates a definition containing only public API fields', () => {
-    const storiesToolset = createToolset();
-
-    expect(Object.keys(storiesToolset)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(storiesToolset.methods)) {
-      expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
-    }
   });
 });

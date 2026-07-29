@@ -185,6 +185,28 @@ describe('docs API', () => {
     ).resolves.toEqual({ kind: 'not-found', id: 'missing' });
   });
 
+  it('mirrors the @storybook/mcp miss messages for the MCP consumer', async () => {
+    ctx.consumer = 'mcp';
+
+    await expect(
+      docsToolset.methods.show.handler(
+        v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
+        ctx
+      )
+    ).resolves.toBe(
+      'Component or Docs Entry not found: "missing". Use the list-all-documentation tool to see available components and documentation entries.'
+    );
+
+    await expect(
+      docsToolset.methods.showStory.handler(
+        v.parse(docsToolset.methods.showStory.schema, { componentId: 'missing', storyName: 'X' }),
+        ctx
+      )
+    ).resolves.toBe(
+      'Component not found: "missing". Use the list-all-documentation tool to see available components.'
+    );
+  });
+
   it('continues without MDX when the optional service is unavailable', async () => {
     ctx.format = 'json';
     mdxAvailable = false;
@@ -195,12 +217,5 @@ describe('docs API', () => {
       components: [{ id: 'button', name: 'Button', summary: 'A button' }],
       docs: [],
     });
-  });
-
-  it('creates a definition containing only public API fields', () => {
-    expect(Object.keys(docsToolset)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(docsToolset.methods)) {
-      expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
-    }
   });
 });

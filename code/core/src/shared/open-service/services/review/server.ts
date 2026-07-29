@@ -1,10 +1,15 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
-import type { ReviewState } from '../../../review/review-state.ts';
 import { getService, registerService } from '../../server.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
-import { REVIEW_STALE_GRACE_MS, reviewServiceDef, type ReviewService } from './definition.ts';
+import { reviewServiceDef, type ReviewService } from './definition.ts';
+import {
+  applyAcceptPending,
+  applyDismiss,
+  applyMarkStale,
+  applyPublishedReview,
+} from './state-transitions.ts';
 
 type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 
@@ -38,22 +43,6 @@ export interface RegisterReviewServiceOptions {
   subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
 }
 
-/**
- * Deep-copies a review read through the deepSignal state proxy into plain objects. Assigning
- * proxied values back into state would leave wrappers that `structuredClone` cannot snapshot
- * (the same constraint behind `markStale`'s in-place mutation).
- */
-function toPlainReview(review: ReviewState): ReviewState {
-  return {
-    ...review,
-    collections: review.collections.map((collection) => ({
-      ...collection,
-      storyIds: [...collection.storyIds],
-    })),
-    ...(review.changedFiles ? { changedFiles: [...review.changedFiles] } : {}),
-  };
-}
-
 /** Registers the stateful `core/review` service in the server realm. */
 export function registerReviewService({
   getIndex,
@@ -74,49 +63,28 @@ export function registerReviewService({
           }
 
           ctx.self.setState((state) => {
-            const stamped = { ...review, createdAt: Date.now() };
-            // Defer while a review is current so an in-progress review isn't yanked; the latest
-            // update wins over any previously held one.
-            if (state.current === null) {
-              state.current = stamped;
-              state.pending = null;
-            } else {
-              state.pending = stamped;
-            }
+            applyPublishedReview(state, { ...review, createdAt: Date.now() });
           });
         },
       },
       acceptPending: {
         handler: async (_input, ctx) => {
           ctx.self.setState((state) => {
-            if (state.pending !== null) {
-              state.current = toPlainReview(state.pending);
-              state.pending = null;
-            }
+            applyAcceptPending(state);
           });
         },
       },
       markStale: {
         handler: async (_input, ctx) => {
           ctx.self.setState((state) => {
-            const current = state.current;
-            if (
-              current?.createdAt !== undefined &&
-              !current.stale &&
-              Date.now() >= current.createdAt + REVIEW_STALE_GRACE_MS
-            ) {
-              // Mutate in place: replacing `current` with a shallow copy leaves proxied
-              // nested arrays that `structuredClone` cannot snapshot.
-              current.stale = true;
-            }
+            applyMarkStale(state, Date.now());
           });
         },
       },
       dismissReview: {
         handler: async (_input, ctx) => {
           ctx.self.setState((state) => {
-            state.current = null;
-            state.pending = null;
+            applyDismiss(state);
           });
         },
       },

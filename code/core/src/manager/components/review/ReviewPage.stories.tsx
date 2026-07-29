@@ -108,7 +108,8 @@ const managerApi: API = {
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  createdAt: new Date().getTime(),
+  // A minute in the past so the service's staleness grace window has already passed.
+  createdAt: new Date().getTime() - 60_000,
   collections: [
     {
       title: 'Settings',

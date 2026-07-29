@@ -4,6 +4,7 @@ import { reviewServiceDef } from './services/review/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
 import type {
   AnyServiceDefinition,
+  GetServiceOptions,
   RuntimeService,
   ServiceId,
   ServiceInstanceOf,
@@ -46,8 +47,6 @@ export type PreviewCoreServices = CoreServices<typeof previewCoreServiceDefs>;
 
 /** Core services registered on the dev server. */
 export type ServerCoreServices = CoreServices<typeof serverCoreServiceDefs>;
-
-import type { GetServiceOptions } from './types.ts';
 
 /** Module-level `getService` overloads keyed by a per-runtime core-service map. */
 export interface TypedGetService<TMap> {

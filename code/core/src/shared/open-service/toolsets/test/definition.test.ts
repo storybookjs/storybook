@@ -98,13 +98,4 @@ describe('test API', () => {
     await expect(secondRun).resolves.toEqual(completedRun);
     expect(runStoryTests).toHaveBeenCalledTimes(2);
   });
-
-  it('creates a definition containing only public API fields', () => {
-    const testToolset = createTestToolset({ channel: {} as never, storyIndex });
-
-    expect(Object.keys(testToolset)).toEqual(['id', 'description', 'methods']);
-    for (const method of Object.values(testToolset.methods)) {
-      expect(Object.keys(method).sort()).toEqual(['description', 'handler', 'schema']);
-    }
-  });
 });

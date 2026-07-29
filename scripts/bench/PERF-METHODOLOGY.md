@@ -62,12 +62,12 @@ Memory budgets stay in absolute megabytes, with enough headroom on CI so that th
 
 ## Budgets table skeleton
 
-| Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Negative control | Tier  |
-| ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ---------------- | ----- |
-| react-legacy (react-docgen, control)      | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD              | TBD   |
-| react-osa (ComponentMetaManager, control) | TBD             | TBD             | n/a                | 90MB                    | 60MB            | 3MB/save       | OOM (gate.ts)    | daily |
-| vue-docgen-api (legacy, current default)  | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD              | TBD   |
-| vue-component-meta                        | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD              | TBD   |
-| compodoc                                  | TBD             | TBD             | TBD                | TBD                     | TBD             | TBD            | TBD              | TBD   |
-| svelte (stretch)                          | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD              | TBD   |
-| cem (stretch)                             | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD              | TBD   |
+| Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Tier  |
+| ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ----- |
+| react-legacy (react-docgen, control)      | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+| react-osa (ComponentMetaManager, control) | TBD             | TBD             | n/a                | 90MB                    | 60MB            | 3MB/save       | daily |
+| vue-docgen-api (legacy, current default)  | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+| vue-component-meta                        | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+| compodoc                                  | TBD             | TBD             | TBD                | TBD                     | TBD             | TBD            | TBD   |
+| svelte (stretch)                          | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+| cem (stretch)                             | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |

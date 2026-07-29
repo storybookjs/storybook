@@ -5,7 +5,7 @@
  * Run:
  *   yarn bench:docgen-perf                # from scripts/, full profile
  *   yarn bench:docgen-perf --quick        # smoke profile; results marked non-comparable
- *   yarn bench:docgen-perf --engine compodoc     # one engine
+ *   yarn bench:docgen-perf --engine react-legacy --engine react-osa
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';

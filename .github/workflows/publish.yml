@@ -112,10 +112,14 @@ jobs:
         if: steps.publish-needed.outputs.published == 'false'
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
+      # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
+      # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
       - name: Register stable release in DX
+        id: register-dx-release
         if: |
           steps.publish-needed.outputs.published == 'false' &&
           steps.is-prerelease.outputs.prerelease == 'false'
+        continue-on-error: true
         env:
           DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
           DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
@@ -168,6 +172,15 @@ jobs:
             jq . "$RESPONSE_FILE" || true
             exit 1
           fi
+
+      - name: Report DX registration failure to Discord
+        if: |
+          steps.register-dx-release.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but registering the stable release in DX failed. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
       - name: Get target branch
         id: target

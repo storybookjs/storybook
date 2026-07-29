@@ -160,6 +160,16 @@ export function defineMcpTestStorybook() {
       steps: [
         ...workflow.restoreLinux(),
         {
+          // Yarn's file: protocol checksums the whole package directory (including
+          // nested node_modules/.cache). A bloated jiti cache under code/core OOMs
+          // libzip with "Malloc failure" during resolution.
+          run: {
+            name: 'Clear nested package caches before file: install',
+            command:
+              'find code -type d -path "*/node_modules/.cache" -prune -exec rm -rf {} +',
+          },
+        },
+        {
           run: {
             name: 'Install dependencies',
             working_directory: 'test-storybooks/mcp',

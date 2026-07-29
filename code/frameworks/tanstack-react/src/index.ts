@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-import type { AddonTypes, InferTypes, PreviewAddon } from 'storybook/internal/csf';
+import type { AddonTypes, InferTypes, PreviewAddonEntry } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -57,7 +57,7 @@ export type Preview<TRoute extends AnyRoute | undefined = undefined> = ProjectAn
 export function definePreview<
   TRoute extends AnyRoute | undefined = undefined,
   const TPath extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
-  Addons extends PreviewAddon<never>[] = [],
+  Addons extends PreviewAddonEntry[] = [],
 >(
   preview: {
     addons?: Addons;

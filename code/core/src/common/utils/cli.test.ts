@@ -20,7 +20,7 @@ describe('UTILS', () => {
     });
   });
 
-  it('classifies @storybook/addon-mcp only as a monorepo package', () => {
+  it('classifies @storybook/addon-mcp as a core monorepo package, not a satellite addon', () => {
     expect(isCorePackage('@storybook/addon-mcp')).toBe(true);
     expect(isSatelliteAddon('@storybook/addon-mcp')).toBe(false);
   });

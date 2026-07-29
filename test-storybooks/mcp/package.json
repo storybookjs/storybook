@@ -1,8 +1,8 @@
 {
-  "name": "@storybook/mcp-internal-storybook",
+  "name": "@storybook/test-storybook-mcp",
   "version": "0.0.0",
   "private": true,
-  "description": "The Storybook used to test the MCP packages in the monorepo",
+  "description": "Test Storybook for the MCP packages in the monorepo",
   "scripts": {
     "build-storybook": "storybook build",
     "storybook": "storybook dev --port 6006 --loglevel debug --no-open",

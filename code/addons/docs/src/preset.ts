@@ -241,5 +241,5 @@ const optimizeViteDeps = [
   'react',
 ];
 
+export { webpackX as webpack, docsX as docs, optimizeViteDeps };
 export { manifests as experimental_manifests } from './manifest';
-export { docsX as docs, optimizeViteDeps, webpackX as webpack };

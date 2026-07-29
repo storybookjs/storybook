@@ -1,6 +1,5 @@
 declare const BROWSER_CONFIG: object;
-/** Mirrors SupportedBuilder string values without importing the enum (avoids dual-identity under --no-link). */
-declare var STORYBOOK_BUILDER: 'webpack5' | 'vite' | 'rsbuild' | undefined;
+declare var STORYBOOK_BUILDER: import('storybook/internal/types').SupportedBuilder | undefined;
 
 interface ImportMetaEnv {
   __STORYBOOK_URL__?: string;

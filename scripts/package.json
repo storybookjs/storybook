@@ -6,6 +6,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
+    "bench:docgen-perf": "node ./bench/docgen-perf/run.ts",
     "build-package": "jiti ./build-package.ts",
     "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",

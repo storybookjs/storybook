@@ -11,11 +11,12 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
-import { executeCommand } from '../utils/command.ts';
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
@@ -39,6 +40,16 @@ import {
  * and `pnpm install` can fail with ERR_PNPM_IGNORED_BUILDS.
  */
 const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
+
+/** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
+const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
+/** `pnpm add --allow-build` support (docs: Added in v10.4.0). */
+const PNPM_ALLOW_BUILD_ADD_MIN = '10.4.0';
+/**
+ * Lowest pnpm that accepts a `pnpm-workspace.yaml` with `allowBuilds` and no `packages` field.
+ * Older versions error with "packages field missing or empty".
+ */
+const PNPM_ALLOW_BUILDS_YAML_MIN = '10.5.0';
 
 const getPnpmAllowBuildArgs = (): string[] =>
   PNPM_ALLOWED_BUILD_DEPENDENCIES.map((pkg) => `--allow-build=${pkg}`);
@@ -69,6 +80,9 @@ export class PNPMProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
+  /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
+  #pnpmVersion: string | null | undefined;
+
   detectWorkspaceRoot() {
     const CWD = process.cwd();
 
@@ -89,12 +103,41 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   async getPnpmVersion(): Promise<string> {
-    const result = await executeCommand({
-      cwd: this.cwd,
-      command: 'pnpm',
-      args: ['--version'],
-    });
-    return typeof result.stdout === 'string' ? result.stdout : '';
+    return this.#readPnpmVersion() ?? '';
+  }
+
+  #readPnpmVersion(): string | null {
+    if (this.#pnpmVersion !== undefined) {
+      return this.#pnpmVersion;
+    }
+
+    try {
+      const stdout = executeCommandSync({
+        cwd: this.cwd,
+        command: 'pnpm',
+        args: ['--version'],
+        stdio: 'pipe',
+      });
+      this.#pnpmVersion = stdout.trim();
+    } catch {
+      this.#pnpmVersion = null;
+    }
+
+    return this.#pnpmVersion;
+  }
+
+  #pnpmGte(minimum: string): boolean {
+    const version = coerce(this.#readPnpmVersion());
+    return version != null && gte(version, minimum);
+  }
+
+  /**
+   * `--allow-build` is not accepted by `pnpm install` (even on pnpm 11). Use only on commands that
+   * document the flag, and only when the local pnpm is new enough to recognize it.
+   */
+  #allowBuildArgsFor(command: 'add' | 'dlx'): string[] {
+    const minimum = command === 'add' ? PNPM_ALLOW_BUILD_ADD_MIN : PNPM_ALLOW_BUILD_DLX_MIN;
+    return this.#pnpmGte(minimum) ? getPnpmAllowBuildArgs() : [];
   }
 
   getInstallArgs(): string[] {
@@ -122,7 +165,7 @@ export class PNPMProxy extends JsPackageManager {
   }): ResultPromise {
     // Flag before `dlx`: `pnpm --allow-build=esbuild dlx <pkg>` (required on some pnpm versions).
     const pnpmArgs = useRemotePkg
-      ? [...getPnpmAllowBuildArgs(), 'dlx', ...args]
+      ? [...this.#allowBuildArgsFor('dlx'), 'dlx', ...args]
       : ['exec', ...args];
 
     return executeCommand({
@@ -376,14 +419,11 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    // Do not pass `--allow-build` here: `pnpm install` rejects it on every current pnpm major
+    // (including 11). Mode B is handled by seeding `allowBuilds` before install instead.
     return executeCommand({
       command: 'pnpm',
-      args: [
-        'install',
-        ...getPnpmAllowBuildArgs(),
-        ...this.getInstallArgs(),
-        ...(options?.force ? ['--force'] : []),
-      ],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
@@ -522,7 +562,12 @@ export class PNPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...getPnpmAllowBuildArgs(), ...args, ...this.getInstallArgs()];
+    const commandArgs = [
+      'add',
+      ...this.#allowBuildArgsFor('add'),
+      ...args,
+      ...this.getInstallArgs(),
+    ];
 
     return executeCommand({
       command: 'pnpm',
@@ -534,10 +579,14 @@ export class PNPMProxy extends JsPackageManager {
 
   /**
    * Persist `allowBuilds` for Storybook's native deps in `pnpm-workspace.yaml` (pnpm 11+ config
-   * home). CLI `--allow-build` covers the current command; writing the map keeps later user
-   * installs from failing with ERR_PNPM_IGNORED_BUILDS.
+   * home). Needed so plain `pnpm install` (which cannot take `--allow-build`) does not fail with
+   * ERR_PNPM_IGNORED_BUILDS. Skipped on older pnpm that reject allowBuilds-only workspace files.
    */
   #ensureAllowBuilds(): void {
+    if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_YAML_MIN)) {
+      return;
+    }
+
     const workspacePath =
       find.up('pnpm-workspace.yaml', {
         cwd: this.primaryPackageJson.operationDir,

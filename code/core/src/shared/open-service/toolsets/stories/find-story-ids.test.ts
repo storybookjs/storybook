@@ -44,7 +44,9 @@ describe('findStoryIds', () => {
 
     const result = findStoryIds(mockStoryIndex, stories);
 
-    expect(result).toEqual([{ id: 'button--primary', input: stories[0] }]);
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
   });
 
   it('returns not found for a missing storyId', () => {
@@ -68,7 +70,9 @@ describe('findStoryIds', () => {
 
     const result = findStoryIds(mockStoryIndex, stories);
 
-    expect(result).toEqual([{ id: 'button--primary', input: stories[0] }]);
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
   });
 
   it('finds a story by explicitStoryName when it differs from exportName', () => {
@@ -82,7 +86,9 @@ describe('findStoryIds', () => {
 
     const result = findStoryIds(mockStoryIndex, stories);
 
-    expect(result).toEqual([{ id: 'button--primary', input: stories[0] }]);
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
   });
 
   it('hints about explicitStoryName when path+exportName miss', () => {
@@ -130,8 +136,8 @@ describe('findStoryIds', () => {
     expect((result[0] as { errorMessage: string }).errorMessage).toContain(
       'button--does-not-exist'
     );
-    expect((result[1] as { id: string }).id).toBe('button--primary');
-    expect((result[2] as { id: string }).id).toBe('input--default');
+    expect((result[1] as { entry: { id: string } }).entry.id).toBe('button--primary');
+    expect((result[2] as { entry: { id: string } }).entry.id).toBe('input--default');
     expect((result[3] as { errorMessage: string }).errorMessage).toContain('Missing');
   });
 
@@ -147,7 +153,9 @@ describe('findStoryIds', () => {
 
     const result = findStoryIds(mockStoryIndex, stories);
 
-    expect(result).toEqual([{ id: 'button--primary', input: stories[0] }]);
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
 
     cwdSpy.mockRestore();
   });

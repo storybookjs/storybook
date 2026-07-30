@@ -33,16 +33,8 @@ export function previewStories({
       continue;
     }
 
-    const indexEntry = index.entries[story.id];
-    if (!indexEntry) {
-      result.push({
-        input: story.input,
-        error: `No story found for story ID "${story.id}"`,
-      });
-      continue;
-    }
-
-    let previewUrl = `${origin}/?path=/story/${story.id}`;
+    const indexEntry = story.entry;
+    let previewUrl = `${origin}/?path=/story/${indexEntry.id}`;
 
     const argsParam = buildArgsParam({}, story.input.props ?? {});
     if (argsParam) {

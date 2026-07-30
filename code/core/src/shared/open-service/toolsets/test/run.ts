@@ -168,7 +168,7 @@ export async function runStoryTests({
   if (stories) {
     const index = await getIndex();
     const resolved = findStoryIds(index, stories);
-    const unresolved = resolved.filter((story): story is NotFoundStory => !('id' in story));
+    const unresolved = resolved.filter((story): story is NotFoundStory => !('entry' in story));
 
     if (unresolved.length > 0) {
       return {
@@ -179,7 +179,9 @@ export async function runStoryTests({
       };
     }
 
-    storyIds = resolved.filter((story): story is FoundStory => 'id' in story).map((s) => s.id);
+    storyIds = resolved
+      .filter((story): story is FoundStory => 'entry' in story)
+      .map((s) => s.entry.id);
 
     if (storyIds.length === 0) {
       return { status: 'no-stories' };

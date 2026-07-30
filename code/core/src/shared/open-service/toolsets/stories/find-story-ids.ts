@@ -2,12 +2,13 @@ import path from 'node:path';
 
 import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { StoryIndex } from 'storybook/internal/types';
+import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 import type { StoryInput } from './story-input.ts';
 
 export interface FoundStory {
-  id: string;
+  /** The matched index entry — carrying it proves the id exists in the index. */
+  entry: IndexEntry;
   input: StoryInput;
 }
 
@@ -48,7 +49,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
       if (foundEntry) {
         result.push({
-          id: foundEntry.id,
+          entry: foundEntry,
           input: storyInput,
         });
       } else {
@@ -76,7 +77,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
 
     if (foundEntry) {
       result.push({
-        id: foundEntry.id,
+        entry: foundEntry,
         input: storyInput,
       });
     } else {

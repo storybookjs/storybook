@@ -97,7 +97,7 @@ export const reviewServiceDef = defineService({
   commands: {
     setReview: {
       description:
-        'Publishes a review and assigns its server creation time. Defers to pending while a different review is current. Implemented by the server.',
+        'Publishes a review and assigns its server creation time. Defers to pending while any review is current. Implemented by the server.',
       input: reviewStateSchema,
       output: v.void(),
     },

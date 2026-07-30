@@ -144,6 +144,30 @@ export function mapDocsList(params: {
   return { components, docs };
 }
 
+/** Maps story-docs entries to the transport-neutral story shape, omitting absent fields. */
+export function mapStoryDocsEntries(stories: NonNullable<StoryDocsPayload['stories']>) {
+  return Object.values(stories).map((story) => ({
+    ...(story.id !== undefined ? { id: story.id } : {}),
+    name: story.name,
+    ...(story.description !== undefined ? { description: story.description } : {}),
+    ...(story.summary !== undefined ? { summary: story.summary } : {}),
+    ...(story.snippet !== undefined ? { snippet: story.snippet } : {}),
+    ...(story.error !== undefined ? { error: story.error } : {}),
+  }));
+}
+
+/** A story-docs import statement wins over docgen's; either may be absent. */
+export function resolveImportStatement(
+  storyDocs?: StoryDocsPayload,
+  docgen?: DocgenPayload
+): string | undefined {
+  return typeof storyDocs?.import === 'string'
+    ? storyDocs.import
+    : typeof docgen?.import === 'string'
+      ? docgen.import
+      : undefined;
+}
+
 /** Builds the transport-neutral `docs.show` payload for one id. */
 export function mapDocsShow(params: {
   id: string;
@@ -187,23 +211,9 @@ export function mapDocsShow(params: {
     }
   }
 
-  const stories = storyDocs?.stories
-    ? Object.values(storyDocs.stories).map((story) => ({
-        ...(story.id !== undefined ? { id: story.id } : {}),
-        name: story.name,
-        ...(story.description !== undefined ? { description: story.description } : {}),
-        ...(story.summary !== undefined ? { summary: story.summary } : {}),
-        ...(story.snippet !== undefined ? { snippet: story.snippet } : {}),
-        ...(story.error !== undefined ? { error: story.error } : {}),
-      }))
-    : undefined;
+  const stories = storyDocs?.stories ? mapStoryDocsEntries(storyDocs.stories) : undefined;
 
-  const importStatement =
-    typeof storyDocs?.import === 'string'
-      ? storyDocs.import
-      : typeof docgen?.import === 'string'
-        ? docgen.import
-        : undefined;
+  const importStatement = resolveImportStatement(storyDocs, docgen);
 
   return {
     kind: 'component',

@@ -21,7 +21,14 @@ import {
   formatManifestsToLists,
   formatStoryDocumentation,
 } from './manifest-formatter/markdown.ts';
-import { mapDocsList, mapDocsShow, mapDocsShowStory, type MdxPayload } from './map.ts';
+import {
+  mapDocsList,
+  mapDocsShow,
+  mapDocsShowStory,
+  mapStoryDocsEntries,
+  resolveImportStatement,
+  type MdxPayload,
+} from './map.ts';
 
 /** Stable addon-docs MDX service id. Kept local so the docs toolset does not import core-server. */
 const MDX_SERVICE_ID = 'addon-docs/mdx';
@@ -228,22 +235,10 @@ export const docsToolset = defineToolset({
           }
 
           const stories = storyDocsPayload?.stories
-            ? Object.values(storyDocsPayload.stories).map((story) => ({
-                ...(story.id !== undefined ? { id: story.id } : {}),
-                name: story.name,
-                ...(story.description !== undefined ? { description: story.description } : {}),
-                ...(story.summary !== undefined ? { summary: story.summary } : {}),
-                ...(story.snippet !== undefined ? { snippet: story.snippet } : {}),
-                ...(story.error !== undefined ? { error: story.error } : {}),
-              }))
+            ? mapStoryDocsEntries(storyDocsPayload.stories)
             : [];
 
-          const importStatement =
-            typeof storyDocsPayload?.import === 'string'
-              ? storyDocsPayload.import
-              : typeof docgenPayload?.import === 'string'
-                ? docgenPayload.import
-                : undefined;
+          const importStatement = resolveImportStatement(storyDocsPayload, docgenPayload);
 
           return mapDocsShowStory({
             componentId: input.componentId,

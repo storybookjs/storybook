@@ -327,7 +327,7 @@ export class OpenServiceUnknownStoryIdsError extends StorybookError {
       name: 'OpenServiceUnknownStoryIdsError',
       category: Category.CORE_COMMON,
       code: 18,
-      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not in the live Storybook index:\n${list}`,
+      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):\n${list}`,
     });
   }
 }

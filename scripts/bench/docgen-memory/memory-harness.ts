@@ -37,7 +37,7 @@ import ts from 'typescript';
 
 import { z } from 'zod';
 
-import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
+import { countOption, parseHarnessOptions, positiveCountOption } from '../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 import { type StoryRefLike, loadReactRendererModule } from '../docgen-shared/react-renderer-module.ts';
 import { MB, gcAvailable } from '../docgen-shared/sampling.ts';
@@ -99,7 +99,7 @@ const SCHEMA = z.object({
     .default('on')
     .transform((recycle) => (recycle === 'off' ? Number.POSITIVE_INFINITY : undefined)),
   heavyTypes: z.boolean().default(false),
-  heavyFactor: countOption(1),
+  heavyFactor: positiveCountOption(1),
   base64Kb: countOption(0),
   forceGc: z.boolean().default(true),
   outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),

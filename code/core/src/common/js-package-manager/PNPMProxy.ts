@@ -37,8 +37,6 @@ import {
  * Packages Storybook needs to run install scripts under pnpm 11+.
  * Without these, `pnpm dlx` can block on an interactive approve-builds picker (TTY),
  * and `pnpm install` can fail with ERR_PNPM_IGNORED_BUILDS.
- *
- * @see https://github.com/storybookjs/storybook/issues/35668
  */
 const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
 

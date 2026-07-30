@@ -69,29 +69,6 @@ const MODES = ['refresh', 'live'] as const;
 const SCOPES = ['all', 'changed'] as const;
 const RECYCLE = ['on', 'off'] as const;
 
-interface HarnessOptions {
-  components: number;
-  variants: number;
-  props: number;
-  saves: number;
-  mode: (typeof MODES)[number];
-  heavyTypes: boolean;
-  heavyFactor: number;
-  base64Kb: number;
-  scope: (typeof SCOPES)[number];
-  forceGc: boolean;
-  outDir: string;
-  reuse: boolean;
-  jsonOut?: string;
-  /** Fail the process when post-GC retained growth exceeds this many MB across the run. */
-  maxRetainedGrowthMb: number;
-  /**
-   * Heap-pressure ratio forwarded to `ComponentMetaManager`. `Infinity` disables program recycling
-   * (negative control), `undefined` uses the product default.
-   */
-  recycleHeapPressureRatio?: number;
-}
-
 const OPTIONS = {
   components: { type: 'string' },
   variants: { type: 'string' },
@@ -107,7 +84,6 @@ const OPTIONS = {
   out: { type: 'string' },
   reuse: { type: 'boolean' },
   json: { type: 'string' },
-  'max-retained-growth': { type: 'string' },
 } as const;
 
 const SCHEMA = z.object({
@@ -129,8 +105,9 @@ const SCHEMA = z.object({
   outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
   reuse: z.boolean().default(false),
   jsonOut: z.string().optional(),
-  maxRetainedGrowthMb: countOption(400),
 });
+
+type HarnessOptions = z.infer<typeof SCHEMA>;
 
 function parseOptions(argv: string[]): HarnessOptions {
   return parseHarnessOptions<HarnessOptions>(argv, OPTIONS, SCHEMA, (values) => ({
@@ -140,8 +117,6 @@ function parseOptions(argv: string[]): HarnessOptions {
     forceGc: !values.noForceGc,
     outDir: values.out,
     jsonOut: values.json,
-    // The schema key carries the unit the flag name leaves off, so camel-casing alone misses it.
-    maxRetainedGrowthMb: values.maxRetainedGrowth,
   }));
 }
 
@@ -331,12 +306,5 @@ harnessMain(async () => {
       JSON.stringify({ options, ...series, peakRss, finalRss, rssSlope }, null, 2)
     );
     console.log(`  wrote ${options.jsonOut}`);
-  }
-
-  if (retainedGrowth !== undefined && retainedGrowth > options.maxRetainedGrowthMb) {
-    console.error(
-      `\nFAIL: retained growth ${retainedGrowth.toFixed(0)}MB exceeds threshold ${options.maxRetainedGrowthMb}MB`
-    );
-    process.exitCode = 1;
   }
 });

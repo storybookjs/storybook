@@ -6,10 +6,11 @@ import { ImageContext as ImageContextValue } from '@storybook/nextjs/image-conte
 
 import type * as _NextImage from 'next/image';
 // @ts-ignore import is aliased in webpack config
+import imageLoader from '@storybook/nextjs/image-loader';
+// @ts-ignore import is aliased in webpack config
 import * as NextImageNamespace from 'sb-original/next/image';
 
 import { type ImageContext as ImageContextType } from '../image-context.ts';
-import { defaultLoader } from './next-image-default-loader.tsx';
 
 const OriginalNextImage = NextImageNamespace.default;
 const { getImageProps: originalGetImageProps } = NextImageNamespace;
@@ -20,12 +21,7 @@ const MockedNextImage = React.forwardRef<HTMLImageElement, _NextImage.ImageProps
     const imageParameters = React.useContext(ImageContext);
 
     return (
-      <OriginalNextImage
-        ref={ref}
-        {...imageParameters}
-        {...props}
-        loader={loader ?? defaultLoader}
-      />
+      <OriginalNextImage ref={ref} {...imageParameters} {...props} loader={loader ?? imageLoader} />
     );
   }
 );
@@ -33,6 +29,6 @@ const MockedNextImage = React.forwardRef<HTMLImageElement, _NextImage.ImageProps
 MockedNextImage.displayName = 'NextImage';
 
 export const getImageProps = (props: _NextImage.ImageProps) =>
-  originalGetImageProps?.({ loader: defaultLoader, ...props });
+  originalGetImageProps?.({ loader: imageLoader, ...props });
 
 export default MockedNextImage;

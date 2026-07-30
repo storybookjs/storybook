@@ -37,3 +37,5 @@ export const defaultLoader = ({ src, width, quality = 75 }: _NextImage.ImageLoad
 
   return url.toString();
 };
+
+export default defaultLoader;

@@ -52,6 +52,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./image-loader'],
+        entryPoint: './src/images/next-image-default-loader.tsx',
+        dts: false,
+      },
+      {
         exportEntries: ['./images/next-image'],
         entryPoint: './src/images/next-image.tsx',
         dts: false,

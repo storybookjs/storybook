@@ -45,6 +45,7 @@
       "default": "./dist/export-mocks/headers/index.js"
     },
     "./image-context": "./dist/image-context.js",
+    "./image-loader": "./dist/images/next-image-default-loader.js",
     "./images/next-image": "./dist/images/next-image.js",
     "./images/next-legacy-image": "./dist/images/next-legacy-image.js",
     "./link.mock": {

@@ -42,6 +42,10 @@ Performance questions are answered by ratios between runs executed on one machin
 - A new engine against its legacy counterpart
   Both are measured inside the same run. Paired runs also alternate their order across repetitions so that neither a warm cache nor a machine that has heated up can consistently favor one side.
 
+The pinned N has to be even for that alternation to cancel anything.
+Each side leads on half the repetitions, so an odd N gives one of them the lead once more than the other, and the cold figure is a median, which then lands on a repetition from whichever side led more often.
+That would turn the very effect the alternation exists to remove into a systematic bias on the ratio, so the parity is asserted in `ratios.test.ts` rather than left to whoever next edits the constant.
+
 ## Budget shape
 
 Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, `vue-docgen-api` against `vue-component-meta`) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.

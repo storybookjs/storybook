@@ -11,10 +11,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
-import { designatedRep } from './aggregate.ts';
 import { parseCliOptions } from './cli.ts';
 import { DEFAULT_PROFILE, QUICK_PROFILE, type SuiteProfile } from './config.ts';
-import type { ScenarioSpec } from './engine.ts';
 import { computeRatios, engineOrderForRep } from './ratios.ts';
 import { engineById } from './registry.ts';
 import { renderRatios, renderResults } from './report.ts';
@@ -23,8 +21,11 @@ import type { EngineId, EngineResult, ScenarioResult, SuiteResults } from './typ
 
 const WORK_ROOT = path.join(SANDBOX_DIRECTORY, 'docgen-perf');
 
-/** Raw repetition samples, keyed by `engine/scenario`. */
-type SampleStore = Map<string, unknown[]>;
+/**
+ * Raw repetition samples, keyed by `engine/scenario`. Only the cold duration is common to every
+ * engine's sample; the rest stays known to the engine that produced it, which is what reads it back.
+ */
+type SampleStore = Map<string, Array<{ coldMs: number }>>;
 
 function scenarioKey(engineId: EngineId, scenarioName: string): string {
   return `${engineId}/${scenarioName}`;
@@ -51,27 +52,6 @@ async function measureEngine(
     );
     store.set(key, [...(store.get(key) ?? []), sample]);
   }
-}
-
-function assembleScenario(
-  engineId: EngineId,
-  scenario: ScenarioSpec,
-  profile: SuiteProfile,
-  store: SampleStore
-): ScenarioResult {
-  const engine = engineById(engineId);
-  const samples = store.get(scenarioKey(engineId, scenario.name)) ?? [];
-  const metrics = engine.aggregate(samples, profile.n);
-  // Member counts come from the same repetition as the warm and memory metrics, so every figure
-  // reported for a scenario describes one run.
-  const designated = designatedRep(samples as Array<{ coldMs: number }>);
-  return {
-    params: scenario.params,
-    metrics,
-    coldMembers: engine.coldMembers(designated),
-    warmMembers: engine.warmMembers(designated),
-    coldOpaqueTypes: engine.coldOpaqueTypes(designated),
-  };
 }
 
 async function main() {
@@ -137,7 +117,8 @@ async function main() {
     try {
       const scenarios: Record<string, ScenarioResult> = {};
       for (const scenario of engine.scenarios(profile)) {
-        scenarios[scenario.name] = assembleScenario(engineId, scenario, profile, store);
+        const samples = store.get(scenarioKey(engineId, scenario.name)) ?? [];
+        scenarios[scenario.name] = engine.assemble(samples, profile.n, scenario);
       }
       engineResults[engineId] = { status: 'measured', scenarios } satisfies EngineResult;
     } catch (err) {

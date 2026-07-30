@@ -29,30 +29,30 @@ export const CONTROL_PAIRS: ControlPair[] = [
 ];
 
 /**
- * Each control pair swaps sides on even repetitions so cache warming and thermal drift do not
- * consistently favour whichever engine is listed first.
+ * Even repetitions run the engines back to front, so cache warming and thermal drift do not
+ * consistently favour whichever side of a pair is listed first.
+ *
+ * Reversing the whole list rather than swapping each pair in place is what makes that hold for
+ * *every* pair at once. Pairs can share an engine - `vue-component-meta` is the new side of the vue
+ * pair and the legacy side of the version pair - and swapping such a chain pairwise moves the shared
+ * engine twice, which puts the first pair back in its original relative order.
  */
 export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] {
-  const order = [...engines];
-  if (rep % 2 !== 0) {
-    return order;
-  }
-  for (const { legacy, next } of CONTROL_PAIRS) {
-    const legacyIdx = order.indexOf(legacy);
-    const nextIdx = order.indexOf(next);
-    if (legacyIdx >= 0 && nextIdx >= 0) {
-      order[legacyIdx] = next;
-      order[nextIdx] = legacy;
-    }
-  }
-  return order;
+  return rep % 2 === 0 ? [...engines].reverse() : [...engines];
 }
 
-/** Undefined unless both sides measured: dividing by a skipped or failed side is not a comparison. */
+/**
+ * Undefined unless both sides measured: dividing by a skipped or failed side is not a comparison.
+ *
+ * A zero denominator is treated the same way. It means the new engine's median landed below the
+ * clock's resolution, and Infinity would then be rendered and stored as if it were a ratio.
+ */
 function medianRatio(legacy: LatencyMetric | NotApplicable, next: LatencyMetric | NotApplicable) {
-  return legacy.status === 'measured' && next.status === 'measured'
-    ? legacy.median / next.median
-    : undefined;
+  if (legacy.status !== 'measured' || next.status !== 'measured') {
+    return undefined;
+  }
+  const ratio = legacy.median / next.median;
+  return Number.isFinite(ratio) ? ratio : undefined;
 }
 
 /**

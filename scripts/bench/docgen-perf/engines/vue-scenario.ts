@@ -25,7 +25,6 @@ import {
 } from '../generators/vue.ts';
 
 export const VUE_SCENARIOS = ['flat', 'workspace', 'base-type-touch'] as const;
-export type VueScenario = (typeof VUE_SCENARIOS)[number];
 
 const OPTIONS = {
   scenario: { type: 'string' },
@@ -55,17 +54,7 @@ const schemaFor = (engineDirName: string) =>
     jsonOut: z.string().optional(),
   });
 
-export interface VueHarnessOptions {
-  scenario: VueScenario;
-  packages: number;
-  componentsPerPackage: number;
-  chainDepth: number;
-  fanOut: number;
-  heavyLib: boolean;
-  saves: number;
-  outDir: string;
-  jsonOut?: string;
-}
+export type VueHarnessOptions = z.infer<ReturnType<typeof schemaFor>>;
 
 export function parseVueOptions(argv: string[], engineDirName: string): VueHarnessOptions {
   return parseHarnessOptions<VueHarnessOptions>(argv, OPTIONS, schemaFor(engineDirName), (values) => ({

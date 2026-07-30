@@ -1,11 +1,4 @@
 /**
- * ComponentMetaManager — multi-project manager for component metadata extraction.
- *
- * Generic over the project type: renderers supply a {@link ComponentMetaProjectFactory} that turns
- * tsconfigs into projects (React: a TS LanguageService project; Vue: a `vue-component-meta`
- * checker), while everything below — tsconfig discovery and matching, project-reference chains,
- * configured/inferred project lifecycle, file watching, heap-pressure recycling — is shared.
- *
  * Mirrors Volar-style project management patterns:
  *
  * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L18-L390

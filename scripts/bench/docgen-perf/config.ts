@@ -22,6 +22,13 @@ export const QUICK_N = 2;
 /** Sampling interval for the compodoc child's externally-polled peak RSS. */
 export const RSS_POLL_INTERVAL_MS = 100;
 
+/**
+ * How long one compodoc run may take before it is killed. Compodoc can hang rather than exit on
+ * some inputs, and the orchestrator waits on the child's close event, so a hang without this would
+ * stall the whole suite indefinitely instead of failing the one engine.
+ */
+export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
+
 export interface AngularScenarioConfig {
   components: number;
   props: number;

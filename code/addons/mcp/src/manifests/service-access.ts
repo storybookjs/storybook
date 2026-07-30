@@ -55,7 +55,8 @@ async function getServiceSafely<T>(id: string): Promise<T | undefined> {
     return undefined;
   }
   try {
-    return getService<T>(id);
+    // Deliberate internal-OSA dependency until the toolset registry replaces it in Milestone 4.
+    return getService<T>(id, { internal: true });
   } catch {
     // Service not registered (e.g. addon-docs absent, or feature off).
     return undefined;

@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -6,6 +10,12 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
+
+const createTempProject = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pnpm-proxy-test-'));
+  writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'test', private: true })}\n`);
+  return dir;
+};
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -63,7 +73,19 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('should run `pnpm install`', async () => {
+    let tempProjectDir: string;
+
+    beforeEach(() => {
+      tempProjectDir = createTempProject();
+      pnpmProxy = new PNPMProxy({ cwd: tempProjectDir });
+      vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+    });
+
+    afterEach(() => {
+      rmSync(tempProjectDir, { recursive: true, force: true });
+    });
+
+    it('should run `pnpm install --allow-build=esbuild` and seed allowBuilds', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -73,7 +95,13 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install', '--allow-build=esbuild'],
+        })
+      );
+      expect(readFileSync(join(tempProjectDir, 'pnpm-workspace.yaml'), 'utf8')).toContain(
+        'esbuild: true'
       );
     });
 
@@ -111,10 +139,38 @@ describe('PNPM Proxy', () => {
         })
       );
     });
+
+    it('should pass --allow-build=esbuild before dlx for remote packages', () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      pnpmProxy.runPackageCommand({
+        args: ['create-storybook@10.5.5', '-y'],
+        useRemotePkg: true,
+      });
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
+        })
+      );
+    });
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `pnpm add -D storybook`', async () => {
+    let tempProjectDir: string;
+
+    beforeEach(() => {
+      tempProjectDir = createTempProject();
+      pnpmProxy = new PNPMProxy({ cwd: tempProjectDir });
+      vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+    });
+
+    afterEach(() => {
+      rmSync(tempProjectDir, { recursive: true, force: true });
+    });
+
+    it('with devDep it should run `pnpm add --allow-build=esbuild -D storybook`', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
 
       await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
@@ -122,7 +178,7 @@ describe('PNPM Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['add', '-D', 'storybook'],
+          args: ['add', '--allow-build=esbuild', '-D', 'storybook'],
         })
       );
     });

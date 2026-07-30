@@ -33,6 +33,18 @@ import {
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
+/**
+ * Packages Storybook needs to run install scripts under pnpm 11+.
+ * Without these, `pnpm dlx` can block on an interactive approve-builds picker (TTY),
+ * and `pnpm install` can fail with ERR_PNPM_IGNORED_BUILDS.
+ *
+ * @see https://github.com/storybookjs/storybook/issues/35668
+ */
+const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
+
+const getPnpmAllowBuildArgs = (): string[] =>
+  PNPM_ALLOWED_BUILD_DEPENDENCIES.map((pkg) => `--allow-build=${pkg}`);
+
 type PnpmDependency = {
   from: string;
   version: string;
@@ -110,9 +122,14 @@ export class PNPMProxy extends JsPackageManager {
     args: string[];
     useRemotePkg?: boolean;
   }): ResultPromise {
+    // Flag before `dlx`: `pnpm --allow-build=esbuild dlx <pkg>` (required on some pnpm versions).
+    const pnpmArgs = useRemotePkg
+      ? [...getPnpmAllowBuildArgs(), 'dlx', ...args]
+      : ['exec', ...args];
+
     return executeCommand({
       command: 'pnpm',
-      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
+      args: pnpmArgs,
       ...options,
     });
   }
@@ -363,13 +380,20 @@ export class PNPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        ...getPnpmAllowBuildArgs(),
+        ...this.getInstallArgs(),
+        ...(options?.force ? ['--force'] : []),
+      ],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
 
   async installDependencies(options?: { force?: boolean }) {
+    this.#ensureAllowBuilds();
+
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -492,13 +516,15 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+    this.#ensureAllowBuilds();
+
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+    const commandArgs = ['add', ...getPnpmAllowBuildArgs(), ...args, ...this.getInstallArgs()];
 
     return executeCommand({
       command: 'pnpm',
@@ -506,6 +532,43 @@ export class PNPMProxy extends JsPackageManager {
       stdio: prompt.getPreferredStdio(),
       cwd: this.primaryPackageJson.operationDir,
     });
+  }
+
+  /**
+   * Persist `allowBuilds` for Storybook's native deps in `pnpm-workspace.yaml` (pnpm 11+ config
+   * home). CLI `--allow-build` covers the current command; writing the map keeps later user
+   * installs from failing with ERR_PNPM_IGNORED_BUILDS.
+   */
+  #ensureAllowBuilds(): void {
+    const workspacePath =
+      find.up('pnpm-workspace.yaml', {
+        cwd: this.primaryPackageJson.operationDir,
+        last: getProjectRoot(),
+      }) ?? join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml');
+
+    try {
+      const doc = existsSync(workspacePath)
+        ? parseDocument(readFileSync(workspacePath, 'utf8'))
+        : parseDocument('');
+
+      if (doc.errors.length > 0) {
+        throw doc.errors[0];
+      }
+
+      let changed = false;
+      for (const pkg of PNPM_ALLOWED_BUILD_DEPENDENCIES) {
+        if (doc.getIn(['allowBuilds', pkg]) !== true) {
+          doc.setIn(['allowBuilds', pkg], true);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        writeFileSync(workspacePath, doc.toString(), 'utf8');
+      }
+    } catch (error) {
+      logger.debug(`Could not update allowBuilds in ${workspacePath}: ${String(error)}`);
+    }
   }
 
   protected async runGetVersions<T extends boolean>(

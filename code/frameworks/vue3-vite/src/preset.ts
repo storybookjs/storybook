@@ -2,10 +2,11 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
+import { resolveDocgenOptions } from './docgen/options.ts';
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
-import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types.ts';
+import type { FrameworkOptions, StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),
@@ -34,23 +35,4 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   return mergeConfig(config, {
     plugins,
   });
-};
-
-/** Resolves the docgen framework option. */
-const resolveDocgenOptions = (
-  docgen?: FrameworkOptions['docgen']
-): false | { plugin: VueDocgenPlugin; tsconfig?: string } => {
-  if (docgen === false) {
-    return false;
-  }
-
-  if (docgen === undefined || docgen === true) {
-    return { plugin: 'vue-docgen-api' };
-  }
-
-  if (typeof docgen === 'string') {
-    return { plugin: docgen };
-  }
-
-  return docgen;
 };

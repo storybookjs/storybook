@@ -1,102 +1,53 @@
-import { parseLocalBindings } from 'storybook/internal/oxc-parser';
+/**
+ * Shared `vue-component-meta` extraction used by both Vue docgen paths.
+ *
+ * The legacy path is the Vite plugin in `../plugins/vue-component-meta.ts`, which injects the
+ * extracted meta into the preview bundle as `__docgenInfo`. The server path is the docgen provider in
+ * `./docgen-worker.ts`, which keeps the meta on the server and ships converted argTypes over the
+ * `core/docgen` open service. Both must see identical meta, so all checker setup and normalization
+ * lives here rather than in either caller.
+ */
+import { readFile, stat } from 'node:fs/promises';
+import { join, parse } from 'node:path';
 
-import MagicString from 'magic-string';
-import type { ModuleNode, Plugin } from 'vite';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import {
-  collectComponentMetaSources,
-  createVueComponentMetaChecker,
-} from '@storybook/vue3/internal/docgen-engine';
+  type ComponentMeta,
+  type ComponentMetaChecker,
+  type MetaCheckerOptions,
+  type PropertyMetaSchema,
+  TypeMeta,
+  createChecker,
+  createCheckerByJson,
+} from 'vue-component-meta';
+import { parseMulti } from 'vue-docgen-api';
 
-export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
-  const { createFilter } = await import('vite');
+type Serializable<T> = T extends object
+  ? { [K in keyof T]: Serializable<T[K]> }
+  : T extends Function
+    ? never
+    : T;
 
-  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
-  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
-  const exclude =
-    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
-  const include = /\.(vue|ts|js|tsx|jsx)$/;
-  const filter = createFilter(include, exclude);
+/** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
+export type MetaSource = {
+  exportName: string;
+  displayName: string;
+  sourceFiles: string;
+} & Serializable<ComponentMeta> &
+  MetaCheckerOptions['schema'];
 
-  const checker = await createVueComponentMetaChecker(tsconfigPath);
-
-  return {
-    name: 'storybook:vue-component-meta-plugin',
-    transform: {
-      order: 'post',
-      filter: { id: { include, exclude } },
-      async handler(src, id) {
-        if (!filter(id)) {
-          return undefined;
-        }
-
-        try {
-          const metaSources = await collectComponentMetaSources(checker, id);
-
-          // if there is no component meta, return undefined
-          if (metaSources.length === 0) {
-            return undefined;
-          }
-
-          const s = new MagicString(src);
-
-          // Names with a local binding in this module that we can safely attach "__docgenInfo" to.
-          // Re-exports (e.g. "export { default as MyComponent } from './MyComponent.vue'" or
-          // "export * from './Tabs'") resolve via checker.getExportNames but have no local binding
-          // here, so attaching to them would reference an undefined variable at runtime.
-          const localBindings = await parseLocalBindings(id, src);
-
-          metaSources.forEach((meta) => {
-            const isDefaultExport = meta.exportName === 'default';
-            const name = isDefaultExport ? '_sfc_main' : meta.exportName;
-
-            if (!localBindings.has(name)) {
-              return;
-            }
-
-            if (!id.endsWith('.vue') && isDefaultExport) {
-              // we can not add the __docgenInfo if the component is default exported directly
-              // so we need to safe it to a variable instead and export default it instead
-              s.replace('export default ', 'const _sfc_main = ');
-              s.append('\nexport default _sfc_main;');
-            }
-
-            s.append(`\n;${name}.__docgenInfo = Object.assign({
-            displayName: ${name}.name ?? ${name}.__name
-          }, ${JSON.stringify(meta)})`);
-          });
-
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: true, source: id }).toString(),
-          };
-        } catch (e) {
-          return undefined;
-        }
-      },
-    },
-    // handle hot updates to update the component meta on file changes
-    async handleHotUpdate({ file, read, server, modules, timestamp }) {
-      const content = await read();
-      checker.updateFile(file, content);
-      // Invalidate modules manually
-      const invalidatedModules = new Set<ModuleNode>();
-
-      for (const mod of modules) {
-        server.moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true);
-      }
-
-      server.ws.send({ type: 'full-reload' });
-      return [];
-    },
-  };
+function toSerializableMeta<T>(obj: T): Serializable<T> {
+  return JSON.parse(JSON.stringify(obj)) as Serializable<T>;
 }
 
 /**
  * Creates the `vue-component-meta` checker to use for extracting component meta/docs. Considers the
  * given tsconfig file (will use a fallback checker if it does not exist or is not supported).
  */
-async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
+export async function createVueComponentMetaChecker(
+  tsconfigPath = 'tsconfig.json'
+): Promise<ComponentMetaChecker> {
   const checkerOptions: MetaCheckerOptions = {
     forceUseTs: true,
     noDeclarations: true,
@@ -124,6 +75,93 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   }
 
   return defaultChecker;
+}
+
+/**
+ * Extracts and normalizes the meta of every documentable export in one file.
+ *
+ * Exports whose meta is empty or of an unknown type are dropped, so a file with one non-component
+ * export cannot suppress the docgen of its siblings.
+ */
+export async function collectComponentMetaSources(
+  checker: ComponentMetaChecker,
+  id: string
+): Promise<MetaSource[]> {
+  const exportNames: string[] = [];
+  let componentsMeta: ComponentMeta[] = [];
+
+  for (const name of checker.getExportNames(id)) {
+    try {
+      const meta = checker.getComponentMeta(id, name);
+      exportNames.push(name);
+      componentsMeta.push(meta);
+    } catch {}
+  }
+
+  if (componentsMeta.length === 0) {
+    return [];
+  }
+
+  componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
+
+  const metaSources: MetaSource[] = [];
+
+  componentsMeta.forEach((meta, index) => {
+    // filter out empty meta
+    const isEmpty =
+      !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
+
+    if (isEmpty || meta.type === TypeMeta.Unknown) {
+      return;
+    }
+
+    const exportName = exportNames[index];
+
+    // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
+    // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
+    // it also reduced the bundle size when running "storybook build" when such schemas are used
+    (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
+      meta[key].forEach((value) => {
+        if (Array.isArray(value.schema)) {
+          value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
+        } else {
+          removeNestedSchemas(value.schema);
+        }
+      });
+    });
+
+    const exposed = meta.exposed
+      .filter((expose) => {
+        let nameWithoutOnPrefix = expose.name;
+
+        if (nameWithoutOnPrefix.startsWith('on')) {
+          nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+        }
+
+        const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
+        return !hasEvent;
+      })
+      // remove duplicated "$slots" expose
+      .filter((expose) => {
+        if (expose.name === '$slots') {
+          const slotNames = meta.slots.map((slot) => slot.name);
+          return !slotNames.every((slotName) => expose.type.includes(slotName));
+        }
+        return true;
+      });
+
+    metaSources.push(
+      toSerializableMeta({
+        exportName,
+        displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+        ...meta,
+        exposed,
+        sourceFiles: id,
+      })
+    );
+  });
+
+  return metaSources;
 }
 
 /** Gets the filename without file extension. */
@@ -226,10 +264,6 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
     // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
-    return;
-  }
-  if (schema.kind === 'literal') {
-    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
     return;
   }
   delete schema.schema;

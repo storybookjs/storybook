@@ -1,0 +1,7 @@
+// Fixture read from disk by the docgen tests: deliberately unparseable, to pin the parse-failure
+// error payload. Kept as `.txt` so neither the package program nor the story indexer picks it up;
+// the test reads it through `resolvePath`, which never looks at the extension.
+export default {
+  title: 'Example/Broken',
+  component: (
+};

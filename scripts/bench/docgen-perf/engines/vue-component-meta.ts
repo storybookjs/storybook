@@ -13,13 +13,19 @@
 import * as fs from 'node:fs';
 
 import type { MetaCheckerOptions } from 'vue-component-meta';
+import { z } from 'zod';
 
+import { parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
 import {
+  VUE_OPTIONS,
+  VUE_SCHEMA,
   type VueHarnessOptions,
-  parseVueOptions,
+  type VueOptionsInput,
   setUpVueScenario,
   vueBanner,
+  vueOutDir,
+  vueToInput,
 } from './vue-scenario.ts';
 
 /** Both pins are the same package, so the current one's types describe either install. */
@@ -36,18 +42,27 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
 const PINS = ['current', 'next'] as const;
 type Pin = (typeof PINS)[number];
 
-/** Pulls --pin out of argv before the shared parseVueOptions ever sees it, so vue-scenario.ts
- * and vue-docgen-api.ts stay unaware this flag exists. */
-function parsePin(argv: string[]): { pin: Pin; rest: string[] } {
-  const idx = argv.indexOf('--pin');
-  if (idx === -1) {
-    return { pin: 'current', rest: argv };
-  }
-  const value = argv[idx + 1];
-  if (!PINS.includes(value as Pin)) {
-    throw new Error(`invalid --pin value: ${value}`);
-  }
-  return { pin: value as Pin, rest: [...argv.slice(0, idx), ...argv.slice(idx + 2)] };
+/** Each pin is a separate install, so each gets its own scratch directory. */
+const PIN_DIR: Record<Pin, string> = {
+  current: 'vue-component-meta',
+  next: 'vue-component-meta-next',
+};
+
+/**
+ * `--pin` is this harness's only flag of its own, so it extends the shared Vue table rather than
+ * being read out of argv beforehand: it is validated by the same strict parser as every other flag,
+ * accepts `--pin=next` like they do, and lands in the options the result JSON records.
+ */
+const SCHEMA = VUE_SCHEMA.extend({ pin: z.enum(PINS).default('current') });
+
+function parseOptions(argv: string[]): VueHarnessOptions & { pin: Pin } {
+  const parsed = parseHarnessOptions<VueOptionsInput & { pin: Pin }>(
+    argv,
+    { ...VUE_OPTIONS, pin: { type: 'string' } },
+    SCHEMA,
+    vueToInput
+  );
+  return { ...parsed, outDir: parsed.outDir ?? vueOutDir(PIN_DIR[parsed.pin]) };
 }
 
 /**
@@ -114,15 +129,14 @@ async function createEngine(options: VueHarnessOptions, pin: Pin): Promise<Serie
 }
 
 harnessMain(async () => {
-  const { pin, rest } = parsePin(process.argv.slice(2));
-  const options = parseVueOptions(rest, pin === 'next' ? 'vue-component-meta-next' : 'vue-component-meta');
+  const options = parseOptions(process.argv.slice(2));
   await runSeriesHarness({
-    title: `vue-component-meta harness (${options.scenario}, pin=${pin})`,
+    title: `vue-component-meta harness (${options.scenario}, pin=${options.pin})`,
     options,
     banner: vueBanner(options),
     saves: options.saves,
     coldLabel: `${options.componentsPerPackage} components, checker creation included`,
     jsonOut: options.jsonOut,
-    setup: async () => createEngine(options, pin),
+    setup: async () => createEngine(options, options.pin),
   });
 });

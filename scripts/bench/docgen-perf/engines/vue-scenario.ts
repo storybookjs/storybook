@@ -26,7 +26,11 @@ import {
 
 export const VUE_SCENARIOS = ['flat', 'workspace', 'base-type-touch'] as const;
 
-const OPTIONS = {
+/**
+ * The flags both Vue harnesses accept. A harness with a flag of its own spreads this and extends
+ * {@link VUE_SCHEMA}, so every flag still reaches one strict parser and one schema.
+ */
+export const VUE_OPTIONS = {
   scenario: { type: 'string' },
   packages: { type: 'string' },
   'components-per-package': { type: 'string' },
@@ -38,30 +42,39 @@ const OPTIONS = {
   json: { type: 'string' },
 } as const;
 
-/** `engineDirName` only supplies the default scratch directory, so it is bound per harness. */
-const schemaFor = (engineDirName: string) =>
-  z.object({
-    scenario: z.enum(VUE_SCENARIOS).default('workspace'),
-    packages: countOption(4),
-    componentsPerPackage: countOption(10),
-    chainDepth: countOption(3),
-    fanOut: countOption(4),
-    heavyLib: z.boolean().default(false),
-    saves: countOption(15),
-    outDir: z
-      .string()
-      .default(path.join(SANDBOX_DIRECTORY, 'docgen-perf', engineDirName, 'project')),
-    jsonOut: z.string().optional(),
-  });
+export const VUE_SCHEMA = z.object({
+  scenario: z.enum(VUE_SCENARIOS).default('workspace'),
+  packages: countOption(4),
+  componentsPerPackage: countOption(10),
+  chainDepth: countOption(3),
+  fanOut: countOption(4),
+  heavyLib: z.boolean().default(false),
+  saves: countOption(15),
+  // Resolved after parsing, because a harness can only know which scratch directory it defaults to
+  // once its own flags are parsed - the pinned vue-component-meta install being the case in point.
+  outDir: z.string().optional(),
+  jsonOut: z.string().optional(),
+});
 
-export type VueHarnessOptions = z.infer<ReturnType<typeof schemaFor>>;
+/** parseArgs keys these as written; the schema names them as the harnesses read them. */
+export const vueToInput = (values: Record<string, unknown>) => ({
+  ...values,
+  outDir: values.out,
+  jsonOut: values.json,
+});
+
+/** Where a harness generates its project when `--out` was not given. */
+export const vueOutDir = (engineDirName: string): string =>
+  path.join(SANDBOX_DIRECTORY, 'docgen-perf', engineDirName, 'project');
+
+/** Straight off the shared flags, before a harness has resolved its scratch directory. */
+export type VueOptionsInput = z.infer<typeof VUE_SCHEMA>;
+
+export type VueHarnessOptions = VueOptionsInput & { outDir: string };
 
 export function parseVueOptions(argv: string[], engineDirName: string): VueHarnessOptions {
-  return parseHarnessOptions<VueHarnessOptions>(argv, OPTIONS, schemaFor(engineDirName), (values) => ({
-    ...values,
-    outDir: values.out,
-    jsonOut: values.json,
-  }));
+  const parsed = parseHarnessOptions<VueOptionsInput>(argv, VUE_OPTIONS, VUE_SCHEMA, vueToInput);
+  return { ...parsed, outDir: parsed.outDir ?? vueOutDir(engineDirName) };
 }
 
 export function vueBanner(options: VueHarnessOptions): Record<string, unknown> {

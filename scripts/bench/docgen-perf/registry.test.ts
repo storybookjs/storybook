@@ -142,8 +142,21 @@ describe('what the series engines spawn', () => {
     }
   });
 
-  it('resolves a real version for both sides of the version pair', () => {
-    expect(engineById('vue-component-meta').version()).toMatch(/^\d+\.\d+\.\d+/);
-    expect(engineById('vue-component-meta-next').version()).toBe('3.3.8');
+  it('resolves the two sides of the version pair to two different installs', () => {
+    // The invariant, rather than the literal the alias happens to pin today: a caret range on the
+    // current side is enough for both sides to land on one release, and the pair then compares an
+    // engine against itself for a ratio of 1.00 that reads exactly like a clean result.
+    const current = engineById('vue-component-meta').version();
+    const next = engineById('vue-component-meta-next').version();
+    expect(current).toMatch(/^\d+\.\d+\.\d+/);
+    expect(next).toMatch(/^\d+\.\d+\.\d+/);
+    expect(next).not.toBe(current);
+  });
+
+  it('skips a version-pinned engine whose install is missing, rather than losing its provenance', () => {
+    // Both sides must report a version or the run cannot say whether it compared two installs.
+    for (const id of ['vue-component-meta', 'vue-component-meta-next'] as EngineId[]) {
+      expect(engineById(id).preflight(), id).toBeUndefined();
+    }
   });
 });

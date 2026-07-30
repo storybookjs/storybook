@@ -123,6 +123,20 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
     return this.#config.scenarios(profile);
   }
 
+  /**
+   * A declared `versionPackage` is one the child imports, so failing to resolve it means a partial
+   * install. Skipping here rather than letting `version()` quietly answer undefined is what keeps a
+   * version pair from running with no way to tell its two installs apart - the one failure that
+   * comparison exists to catch.
+   */
+  preflight(): string | undefined {
+    const { versionPackage } = this.#config;
+    if (versionPackage && resolvePackageVersion(versionPackage) === undefined) {
+      return `${versionPackage} did not resolve; it is pinned in scripts/package.json, so run yarn install`;
+    }
+    return undefined;
+  }
+
   version(): string | undefined {
     return this.#config.versionPackage ? resolvePackageVersion(this.#config.versionPackage) : undefined;
   }

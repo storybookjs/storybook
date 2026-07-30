@@ -6,8 +6,15 @@
  * non-comparable.
  */
 
-/** Fresh-process spawns per cold/scan median. One value for all engines. */
-export const PINNED_N = 5;
+/**
+ * Fresh-process spawns per cold/scan median. One value for all engines.
+ *
+ * Must stay even. The two sides of a control pair alternate which one runs first on odd and even
+ * repetitions, so an odd N gives one side the first slot once more than the other, and the cold
+ * figure - a median - then lands on a repetition from the majority slot. That turns the ordering
+ * effect the alternation exists to cancel into a systematic, directional bias on the headline ratio.
+ */
+export const PINNED_N = 6;
 
 /** Spawns for --quick smoke runs. Never comparable with PINNED_N results. */
 export const QUICK_N = 2;

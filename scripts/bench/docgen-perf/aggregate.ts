@@ -43,7 +43,9 @@ export function seriesMetrics(reps: SeriesResult[], expectedN: number): EngineMe
     designated.retainedGrowth === undefined ||
     designated.retainedSlope === undefined
   ) {
-    throw new Error('retained metrics missing (child must run under --expose-gc)');
+    throw new Error(
+      'retained metrics missing: the child must run under --expose-gc, over at least two saves'
+    );
   }
 
   return {
@@ -60,7 +62,8 @@ export function seriesMetrics(reps: SeriesResult[], expectedN: number): EngineMe
 export interface OneShotRepetition {
   coldMs: number;
   warmMs: number;
-  peakRssMb: number;
+  /** Undefined when the engine's external sampler never read the child's memory. */
+  peakRssMb?: number;
   coldMembers?: number;
   warmMembers?: number;
   /** Of the cold pass's members, how many carry a type the engine never resolved. */
@@ -75,12 +78,17 @@ export function oneShotMetrics(reps: OneShotRepetition[], expectedN: number): En
   assertRepetitionCount(reps, expectedN);
   const coldSamples = reps.map((r) => r.coldMs);
   const warmSamples = reps.map((r) => r.warmMs);
-  const peaks = reps.map((r) => r.peakRssMb);
+  // Every repetition must have been sampled, or the mean describes a different N than the one
+  // recorded. A partially-sampled series is reported as no measurement rather than as a low one.
+  const peaks = reps.map((r) => r.peakRssMb).filter((mb) => mb !== undefined);
   return {
     coldExtractionMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
     warmExtractionMs: { status: 'measured', samples: warmSamples, median: median(warmSamples) },
     wholeProjectScanMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
-    peakTransientMb: { status: 'measured', samples: peaks, mean: mean(peaks) },
+    peakTransientMb:
+      peaks.length === reps.length
+        ? { status: 'measured', samples: peaks, mean: mean(peaks) }
+        : NOT_APPLICABLE,
     retainedGrowthMb: NOT_APPLICABLE,
     retainedSlopeMbPerSave: NOT_APPLICABLE,
   };

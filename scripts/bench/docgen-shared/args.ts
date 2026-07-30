@@ -17,6 +17,14 @@ function toCamelCase(flag: string): string {
   return flag.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
+/**
+ * `Out` is asserted rather than inferred from the schema, which is not the obvious choice: returning
+ * `z.infer<Schema>` would make the two check against each other. It does not work here. `scripts`
+ * compiles with `strictNullChecks: false`, and under that flag Zod's `addQuestionMarks` finds no
+ * required keys, so every inferred field comes back optional and satisfies no caller's option type.
+ * Prefer `type Options = z.infer<typeof SCHEMA>` at the call site where the schema is the whole
+ * contract - that removes the second declaration this cast could drift from.
+ */
 export function parseHarnessOptions<Out>(
   argv: string[],
   options: OptionsConfig,

@@ -22,7 +22,9 @@ import * as path from 'node:path';
 
 import { type MemoryBudgets, memoryBudgetsFor } from '../docgen-shared/budgets.ts';
 import { outputTail } from '../docgen-shared/child-output.ts';
-import { SANDBOX_DIRECTORY } from '../../utils/constants.ts';
+// The same SANDBOX_DIRECTORY the harness resolves its own default from, so the gate cannot write
+// its projects somewhere the harness would not have put them.
+import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 
 interface HarnessResult {
   baseline: { rssMb: number; heapUsedMb: number; retainedHeapMb?: number };

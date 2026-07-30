@@ -30,6 +30,7 @@ import {
   PRE_REVIEW_RETURN_KEY,
   REVIEW_MODE_SESSION_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
+  autoEnteredLatchValue,
   reviewAvailableNotificationId,
 } from './constants.ts';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
@@ -614,7 +615,9 @@ export const AutoEntersReviewModeOnFirstSummaryVisit = meta.story({
     // Landing on the summary with a fresh review enters review mode once and
     // arms the one-time latch that keeps reloads from re-entering.
     await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
-    expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe('1');
+    expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe(
+      autoEnteredLatchValue(reviewState.createdAt)
+    );
   },
 });
 
@@ -664,6 +667,68 @@ export const DoesNotReenterReviewModeAfterExit = meta.story({
     expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
 
     // Returning to the summary (browser back) must not drag the reviewer back in.
+    await userEvent.click(canvas.getByTestId('history-back'));
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+  },
+});
+
+/** Remounts the provider subtree, reproducing a page reload: refs reset, sessionStorage survives. */
+const RemountableReviewSurface = () => {
+  const [generation, setGeneration] = useState(0);
+  return (
+    <>
+      <ReviewProvider key={generation}>
+        <ReviewPersistentLayer />
+      </ReviewProvider>
+      <RouterPathProbe />
+      <HistoryBackProbe />
+      <button
+        data-testid="remount"
+        hidden
+        onClick={() => setGeneration((value) => value + 1)}
+        type="button"
+      >
+        remount
+      </button>
+    </>
+  );
+};
+
+export const DoesNotReenterReviewModeAfterReload = meta.story({
+  render: () => <RemountableReviewSurface />,
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-guidepage--default'
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+
+    await userEvent.click(await canvas.findByRole('link', { name: 'Exit review' }));
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-guidepage--default'
+      )
+    );
+
+    // A reload re-projects the unchanged review. The latch is keyed to the review
+    // it was armed for, so re-projection must not re-arm it.
+    await userEvent.click(canvas.getByTestId('remount'));
+    await waitFor(() =>
+      expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe(
+        autoEnteredLatchValue(reviewState.createdAt)
+      )
+    );
+
+    // Returning to the summary after that reload must not drag the reviewer back in.
     await userEvent.click(canvas.getByTestId('history-back'));
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();

@@ -2,7 +2,11 @@ import type { NavigateFunction } from 'storybook/internal/router';
 import { logger } from 'storybook/internal/client-logger';
 import { getService, type API } from 'storybook/manager-api';
 
-import { AUTO_ENTERED_SESSION_KEY, REVIEW_CHANGES_URL } from './constants.ts';
+import {
+  AUTO_ENTERED_SESSION_KEY,
+  REVIEW_CHANGES_URL,
+  autoEnteredLatchValue,
+} from './constants.ts';
 import {
   enterReviewMode,
   exitReviewMode,
@@ -124,8 +128,9 @@ export const acceptPendingReview = async (
     return;
   }
   acceptReviewNotification(api, pending.createdAt);
-  // A fresh payload re-arms the one-time auto-enter.
-  sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
+  // Accepting enters the promoted review here, so arm its latch: landing on the
+  // summary later must not auto-enter a review the reviewer already left.
+  sessionStore.write(AUTO_ENTERED_SESSION_KEY, autoEnteredLatchValue(pending.createdAt));
   void enterReviewMode(api, filters, mode);
   navigate(buildReviewChangesSummaryHref(), { plain: true });
 };

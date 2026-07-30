@@ -20,8 +20,15 @@ export const REVIEW_MODE_SESSION_KEY = `${REVIEW_NAMESPACE}/review-mode`;
 export const PRE_REVIEW_RETURN_KEY = `${REVIEW_NAMESPACE}/pre-review-return`;
 
 // sessionStorage marker deduplicating the one-time auto-enter on first landing
-// on the review summary. Reset on dismiss and when a new review payload arrives.
+// on the review summary. Cleared on dismiss. It holds the `createdAt` of the
+// review it was armed for rather than a bare flag: the manager re-projects the
+// active review on every mount, so a flag compared against in-memory state
+// would be re-armed by an ordinary page reload and drag a reviewer who already
+// left back into review mode.
 export const AUTO_ENTERED_SESSION_KEY = `${REVIEW_NAMESPACE}/auto-entered`;
+
+export const autoEnteredLatchValue = (createdAt: number | undefined): string =>
+  String(createdAt ?? 'unknown');
 
 // sessionStorage marker for the server `createdAt` of the review the user has
 // opened. Non-review routes only surface a new-review notification while this

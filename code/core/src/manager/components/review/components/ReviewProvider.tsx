@@ -25,6 +25,7 @@ import {
   EVENTS,
   PRE_REVIEW_RETURN_KEY,
   REVIEW_MODE_SESSION_KEY,
+  autoEnteredLatchValue,
 } from '../constants.ts';
 import {
   acceptPendingReview,
@@ -155,12 +156,6 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }
       return;
     }
-
-    if (currentData.createdAt !== previous.current?.createdAt) {
-      // A new review became current (first display or an accepted update):
-      // re-arm the one-time summary auto-enter.
-      sessionStore.remove(AUTO_ENTERED_SESSION_KEY);
-    }
   }, [api, navigate, mode, setExiting, currentData, pendingData]);
 
   // Tag every story in the active review so the sidebar shows reviewing status
@@ -268,7 +263,8 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [review, isSummaryVisible, isInReviewMode, activeEntry, api]);
 
   // First landing on the summary with a clean, newly available review enters
-  // review mode once. Deduplicated so reloads and post-exit returns don't re-enter.
+  // review mode once. The latch stores the review it was armed for, so reloads and
+  // post-exit returns don't re-enter while a later review still auto-enters once.
   useEffect(() => {
     if (!review || !isSummaryVisible || mode.isActive()) {
       return;
@@ -276,10 +272,11 @@ export const ReviewProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (isExitingRef.current) {
       return;
     }
-    if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === '1') {
+    const latch = autoEnteredLatchValue(review.createdAt);
+    if (sessionStore.read(AUTO_ENTERED_SESSION_KEY) === latch) {
       return;
     }
-    sessionStore.write(AUTO_ENTERED_SESSION_KEY, '1');
+    sessionStore.write(AUTO_ENTERED_SESSION_KEY, latch);
     void enterReviewMode(api, filtersRef.current, mode);
   }, [review, isSummaryVisible, api, filtersRef, mode]);
 

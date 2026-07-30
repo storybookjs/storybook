@@ -42,9 +42,11 @@ export interface EngineMetrics {
   retainedSlopeMbPerSave: ValueMetric | NotApplicable;
 }
 
-export interface ScenarioResult {
-  params: Record<string, number | string | boolean>;
-  metrics: EngineMetrics;
+/**
+ * What one repetition documented. Every field is optional because an engine that cannot report a
+ * count must leave it out; a zero would read as "documented nothing", which is a different claim.
+ */
+export interface MemberCounts {
   /**
    * Members the cold pass documented, when the engine reports it. Two engines over the same project
    * can differ by an order of magnitude here, and a timing ratio between them means nothing without
@@ -59,6 +61,11 @@ export interface ScenarioResult {
    * member count off very different work, so equal counts alone do not make a ratio like-for-like.
    */
   coldOpaqueTypes?: number;
+}
+
+export interface ScenarioResult extends MemberCounts {
+  params: Record<string, number | string | boolean>;
+  metrics: EngineMetrics;
 }
 
 export type EngineResult =

@@ -9,7 +9,7 @@ import { type DocumentationCounts, countDocumentation } from './compodoc-doc.ts'
 import { type AngularScenarioConfig, RSS_POLL_INTERVAL_MS, type SuiteProfile } from '../config.ts';
 import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.ts';
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
-import type { EngineId, EngineMetrics } from '../types.ts';
+import type { EngineId, EngineMetrics, MemberCounts } from '../types.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -34,7 +34,12 @@ function resolveCompodoc(): ResolvedCompodoc | undefined {
 
 interface CompodocRun extends DocumentationCounts {
   durMs: number;
-  peakRssMb: number;
+  /**
+   * Undefined when no poll ever read the child's RSS - `ps` is POSIX-only, and a run shorter than
+   * one interval is never sampled. Reporting the initial 0 instead would put a fabricated peak in
+   * the results, which is the one thing a floor may not become.
+   */
+  peakRssMb: number | undefined;
 }
 
 function runCompodocOnce(
@@ -49,7 +54,7 @@ function runCompodocOnce(
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const child = spawn(process.execPath, args, { cwd: projectDir });
-    let peakRssKb = 0;
+    let peakRssKb: number | undefined;
     let output = '';
     child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -64,7 +69,7 @@ function runCompodocOnce(
         return;
       }
       const rssKb = Number(ps.stdout.trim());
-      if (Number.isFinite(rssKb) && rssKb > peakRssKb) {
+      if (Number.isFinite(rssKb) && (peakRssKb === undefined || rssKb > peakRssKb)) {
         peakRssKb = rssKb;
       }
     }, pollIntervalMs);
@@ -88,7 +93,7 @@ function runCompodocOnce(
       // Counted before the next run overwrites the file, which both runs share.
       const counts = countDocumentation(documentationJson);
       // The polled peak misses spikes shorter than the interval; the recorded value is a floor.
-      resolve({ durMs, peakRssMb: peakRssKb / 1024, ...counts });
+      resolve({ durMs, peakRssMb: peakRssKb === undefined ? undefined : peakRssKb / 1024, ...counts });
     });
   });
 }
@@ -117,10 +122,13 @@ export async function runCompodocRepetition(
   fs.writeFileSync(project.componentPaths[0], angularComponentSource(0, scenario.props + 1));
   const warm = await runCompodocOnce(cli, project.outDir, docsOutDir, pollIntervalMs);
 
+  const peaks = [cold.peakRssMb, warm.peakRssMb].filter((mb) => mb !== undefined);
+
   return {
     coldMs: cold.durMs,
     warmMs: warm.durMs,
-    peakRssMb: Math.max(cold.peakRssMb, warm.peakRssMb),
+    // Nothing sampled means no peak, not a peak of zero.
+    peakRssMb: peaks.length ? Math.max(...peaks) : undefined,
     coldMembers: cold.members,
     // A second whole-project pass, so this counts the project, not the one file that changed. It is
     // not comparable with a series engine's warm count, which covers only the re-extracted member.
@@ -162,7 +170,9 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
       this.#resolved.cli,
       { components: Number(scenario.params.components), props: Number(scenario.params.props) },
       ctx.scenarioDir,
-      Number(scenario.params.rssPollIntervalMs)
+      // Read from the constant, not back out of `params`. `params` carries it so a stored run says
+      // how wide the sampling gap was; the run itself has no reason to round-trip through it.
+      RSS_POLL_INTERVAL_MS
     );
   }
 
@@ -170,15 +180,11 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
     return oneShotMetrics(samples, expectedN);
   }
 
-  coldMembers(sample: OneShotRepetition): number | undefined {
-    return sample.coldMembers;
-  }
-
-  warmMembers(sample: OneShotRepetition): number | undefined {
-    return sample.warmMembers;
-  }
-
-  coldOpaqueTypes(sample: OneShotRepetition): number | undefined {
-    return sample.coldOpaqueTypes;
+  members(sample: OneShotRepetition): MemberCounts {
+    return {
+      coldMembers: sample.coldMembers,
+      warmMembers: sample.warmMembers,
+      coldOpaqueTypes: sample.coldOpaqueTypes,
+    };
   }
 }

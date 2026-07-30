@@ -60,6 +60,21 @@ function initSourceTree(route: AnyRoute, counter: { i: number }): void {
   }
 }
 
+/**
+ * The layout id behind a file-route id.
+ *
+ * A file-route index keeps its trailing slash (`/_app/` is the index *of*
+ * `/_app`). A story that imports such a route standalone hands us that id with
+ * no path, so preserving it verbatim makes the clone's own identity `/_app/` —
+ * the very id the index child synthesized for it derives
+ * (`joinPaths(['/_app/', '/'])` is `/_app/` again), which TanStack rejects with
+ * `Duplicate routes found with id: /_app/`. Dropping the trailing slash gives
+ * back the layout/index id pair a generated route tree would have.
+ */
+function layoutIdFor(id: string): string {
+  return id.length > 1 && id.endsWith('/') ? id.slice(0, -1) : id;
+}
+
 function cloneChild(
   oldRoute: AnyRoute,
   parent: AnyRoute,
@@ -87,7 +102,7 @@ function cloneChild(
   // identity from; its explicit id IS its identity, so preserve it. The falsy
   // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...(!merged.path && explicitId != null ? { id: explicitId } : {}),
+    ...(!merged.path && explicitId != null ? { id: layoutIdFor(explicitId) } : {}),
     ...merged,
     getParentRoute: () => parent as any,
   } as any);

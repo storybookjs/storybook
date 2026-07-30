@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRootRoute, createRoute } from '@tanstack/react-router';
 
+import { createFileRoute } from '../export-mocks/react-router.ts';
 import { createStoryRouter } from './decorator.tsx';
 
 // Regression coverage for mounting a story directly on a pathless layout
@@ -96,6 +97,26 @@ describe('createStoryRouter with a pathless layout that already has an index chi
     const ids = router.state.matches.map((m: any) => m.routeId).join(',');
     expect(ids).toContain('authed');
     expect(router.state.location.pathname).toBe('/products');
+  });
+});
+
+// A page story imports its route straight from the route file, so a layout's
+// index (`_app/index.tsx`) arrives standalone: id `/_app/` (trailing slash) and
+// no path of its own. Preserving that id verbatim makes the cloned leaf collide
+// with the index child synthesized for it — both derive `/_app/` — so the clone
+// drops the trailing slash and the pair becomes the `/_app` + `/_app/` a
+// generated route tree would have.
+describe('createStoryRouter with a standalone index file route', () => {
+  it('mounts without colliding with the synthesized index child', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(createFileRoute('/_app/')({}) as any),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('/_app');
+    expect(router.state.location.pathname).toBe('/');
   });
 });
 

@@ -45,7 +45,7 @@ async function composeProvider(descriptors: DocgenProviderDescriptor[]): Promise
         `docgen worker module "${descriptor.moduleSpecifier}" does not export createDocgenProvider`
       );
     }
-    const middleware: DocgenMiddleware = await mod.createDocgenProvider(descriptor.options);
+    const middleware: DocgenMiddleware = await mod.createDocgenProvider();
     provider = middleware(provider);
   }
   return provider;

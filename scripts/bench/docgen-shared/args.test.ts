@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { countOption, parseHarnessOptions } from './args.ts';
+import { countOption, parseHarnessOptions, positiveCountOption } from './args.ts';
 
 const OPTIONS = {
   components: { type: 'string' },
   scope: { type: 'string' },
   heavy: { type: 'boolean' },
+  'heavy-factor': { type: 'string' },
   out: { type: 'string' },
   'components-per-package': { type: 'string' },
   'max-retained-growth': { type: 'string' },
@@ -16,6 +17,7 @@ const SCHEMA = z.object({
   components: countOption(300),
   scope: z.enum(['all', 'changed']).default('changed'),
   heavy: z.boolean().default(false),
+  heavyFactor: positiveCountOption(1),
   outDir: z.string().default('/default'),
   componentsPerPackage: countOption(10),
   maxRetainedGrowthMb: countOption(400),
@@ -34,6 +36,7 @@ describe('parseHarnessOptions', () => {
       components: 300,
       scope: 'changed',
       heavy: false,
+      heavyFactor: 1,
       outDir: '/default',
       componentsPerPackage: 10,
       maxRetainedGrowthMb: 400,
@@ -88,6 +91,20 @@ describe('parseHarnessOptions', () => {
 
     it('rejects a negative', () => {
       expect(() => parse(['--components', '-3'])).toThrow(/--components/);
+    });
+
+    it('accepts zero, which is a meaningful count for most flags', () => {
+      expect(parse(['--components', '0']).components).toBe(0);
+    });
+  });
+
+  describe('positiveCountOption', () => {
+    it('rejects zero, so a multiplier cannot be accepted and then quietly raised', () => {
+      expect(() => parse(['--heavy-factor', '0'])).toThrow(/--heavyFactor/);
+    });
+
+    it('accepts one and above', () => {
+      expect(parse(['--heavy-factor', '3']).heavyFactor).toBe(3);
     });
   });
 });

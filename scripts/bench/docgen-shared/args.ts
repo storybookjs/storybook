@@ -9,6 +9,13 @@ export const countOption = (fallback: number) =>
   z.coerce.number().int().nonnegative().default(fallback);
 
 /**
+ * A count a run cannot be made of zero of - a multiplier, say. Rejecting it here is what stops the
+ * flag being accepted and then quietly raised to something the caller did not ask for.
+ */
+export const positiveCountOption = (fallback: number) =>
+  z.coerce.number().int().positive().default(fallback);
+
+/**
  * parseArgs keys flags as written, so `--fan-out` arrives as `fan-out`; schema keys are camelCase.
  * A schema key that is not exactly its flag's camelCase — `maxRetainedGrowthMb` for
  * `--max-retained-growth` — must still be renamed in `toInput`, or Zod silently uses its default.

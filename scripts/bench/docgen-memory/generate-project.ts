@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
 
 import { z } from 'zod';
 
-import { countOption, parseHarnessOptions } from '../docgen-shared/args.ts';
+import { countOption, parseHarnessOptions, positiveCountOption } from '../docgen-shared/args.ts';
 import type { ComponentRefLike, StoryRefLike } from '../docgen-shared/react-renderer-module.ts';
 
 const require = createRequire(import.meta.url);
@@ -204,7 +204,7 @@ export function componentSource(
   opts: { heavyTypes?: boolean; heavyFactor?: number; base64Kb?: number } = {}
 ): string {
   const heavy = opts.heavyTypes
-    ? heavyTypeBlock(i, Math.max(1, opts.heavyFactor ?? 1))
+    ? heavyTypeBlock(i, opts.heavyFactor ?? 1)
     : undefined;
   const base64 = opts.base64Kb ? base64Block(i, opts.base64Kb) : '';
   return `import * as React from 'react';
@@ -319,7 +319,7 @@ function parseOptions(argv: string[]): GenerateOptions {
       variants: countOption(4),
       props: countOption(8),
       heavyTypes: z.boolean().default(false),
-      heavyFactor: countOption(1),
+      heavyFactor: positiveCountOption(1),
       base64Kb: countOption(0),
       withNodeModules: z.boolean().default(true),
     }),

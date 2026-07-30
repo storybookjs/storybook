@@ -84,16 +84,7 @@ const SCHEMA = z.object({
   jsonOut: z.string().optional(),
 });
 
-interface HarnessOptions {
-  parser: (typeof PARSERS)[number];
-  components: number;
-  variants: number;
-  props: number;
-  saves: number;
-  scope: (typeof SCOPES)[number];
-  outDir: string;
-  jsonOut?: string;
-}
+type HarnessOptions = z.infer<typeof SCHEMA>;
 
 function parseOptions(argv: string[]): HarnessOptions {
   return parseHarnessOptions<HarnessOptions>(argv, OPTIONS, SCHEMA, (values) => ({

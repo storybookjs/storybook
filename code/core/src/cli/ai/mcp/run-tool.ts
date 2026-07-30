@@ -84,7 +84,7 @@ export type AiToolOptions = {
 /**
  * Run a Storybook AI command and return its result as markdown. Commands exposed as local metadata
  * run without a dev server; runtime-bound commands still go through the running Storybook MCP
- * server and use the same repair-instruction markdown as `@storybook/mcp-proxy`.
+ * server and use {@link getInterceptMarkdown} when routing fails.
  */
 export async function runAiTool(
   toolName: string,

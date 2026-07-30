@@ -1,8 +1,8 @@
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
 /**
- * Repair-instruction markdown for agents, mirroring `@storybook/mcp-proxy` (storybookjs/mcp) so
- * the CLI and the proxy give the same guidance — keep the two in sync when updating either.
+ * Repair-instruction markdown returned when `storybook ai` cannot reach a usable MCP endpoint
+ * (no matching instance, port mismatch, missing addon, or MCP not ready).
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
 

@@ -94,7 +94,6 @@ export type DocgenMiddleware = (nextDocgen: DocgenProvider) => DocgenProvider;
 export interface DocgenProviderDescriptor {
   /** Absolute path to a module that exports {@link DocgenWorkerModule.createDocgenProvider}. */
   moduleSpecifier: string;
-  options?: Record<string, unknown>;
 }
 
 /**
@@ -103,7 +102,5 @@ export interface DocgenProviderDescriptor {
  * the provider chain. Integrations implement only this factory — they never touch threading.
  */
 export interface DocgenWorkerModule {
-  createDocgenProvider: (
-    options?: DocgenProviderDescriptor['options']
-  ) => DocgenMiddleware | Promise<DocgenMiddleware>;
+  createDocgenProvider: () => DocgenMiddleware | Promise<DocgenMiddleware>;
 }

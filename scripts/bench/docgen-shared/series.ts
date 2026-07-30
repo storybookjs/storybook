@@ -49,11 +49,12 @@ export async function runSeries(
   const forceGc = options.forceGc ?? true;
 
   console.log(`  full extraction over ${options.coldLabel} (cold pass)…`);
-  const coldStart = Date.now();
+  const coldStart = performance.now();
   const coldMembers = await engine.cold();
-  const coldMs = Date.now() - coldStart;
+  const coldMs = performance.now() - coldStart;
   console.log(
-    `  cold pass: ${coldMs}ms` + (coldMembers !== undefined ? ` (${coldMembers} documented members)` : '')
+    `  cold pass: ${coldMs.toFixed(0)}ms` +
+      (coldMembers !== undefined ? ` (${coldMembers} documented members)` : '')
   );
 
   const baseline = sampleMemory(forceGc);
@@ -63,9 +64,12 @@ export async function runSeries(
   for (let save = 1; save <= options.saves; save++) {
     await engine.applySave(save);
 
-    const saveStart = Date.now();
+    // performance.now(), not Date.now(): a warm re-extraction of a single component runs in single
+    // -digit milliseconds, and at Date.now()'s 1ms granularity a whole series can median to 0 - a
+    // number every ratio taken against it then divides by.
+    const saveStart = performance.now();
     warmMembers = await engine.reextract(save);
-    const durMs = Date.now() - saveStart;
+    const durMs = performance.now() - saveStart;
 
     const mem = sampleMemory(forceGc);
     samples.push({ save, durMs, ...mem });
@@ -79,11 +83,11 @@ export async function runSeries(
 
 export function printSeriesSummary(result: SeriesResult, saves: number): void {
   console.log('\nsummary');
-  console.log(`  cold pass:           ${result.coldMs}ms`);
+  console.log(`  cold pass:           ${result.coldMs.toFixed(0)}ms`);
   if (result.coldMembers !== undefined) {
-    console.log(
-      `  documented members:  ${result.coldMembers} cold, ${result.warmMembers ?? 0} on the last save`
-    );
+    // `n/a` rather than 0: an engine that reports no count did not document nothing.
+    const warm = result.warmMembers ?? 'n/a';
+    console.log(`  documented members:  ${result.coldMembers} cold, ${warm} on the last save`);
   }
   if (result.avgTransient !== undefined) {
     console.log(`  avg transient/save:  ${result.avgTransient.toFixed(0)}MB`);

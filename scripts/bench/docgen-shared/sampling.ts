@@ -30,7 +30,7 @@ export function sampleMemory(forceGc: boolean): MemorySample {
 /** The one per-save log line every harness prints, so their output stays comparable by eye. */
 export function formatSampleLine(save: number, durMs: number, mem: MemorySample): string {
   return (
-    `  save ${String(save).padStart(3)}: ${String(durMs).padStart(5)}ms  ` +
+    `  save ${String(save).padStart(3)}: ${durMs.toFixed(1).padStart(7)}ms  ` +
     `rss=${mem.rssMb.toFixed(0).padStart(5)}MB  heapUsed=${mem.heapUsedMb.toFixed(0).padStart(5)}MB` +
     (mem.retainedHeapMb !== undefined
       ? `  retained=${mem.retainedHeapMb.toFixed(0).padStart(5)}MB`

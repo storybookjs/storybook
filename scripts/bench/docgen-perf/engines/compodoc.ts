@@ -6,7 +6,12 @@ import * as path from 'node:path';
 import { outputTail } from '../../docgen-shared/child-output.ts';
 import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
 import { type DocumentationCounts, countDocumentation } from './compodoc-doc.ts';
-import { type AngularScenarioConfig, RSS_POLL_INTERVAL_MS, type SuiteProfile } from '../config.ts';
+import {
+  type AngularScenarioConfig,
+  COMPODOC_TIMEOUT_MS,
+  RSS_POLL_INTERVAL_MS,
+  type SuiteProfile,
+} from '../config.ts';
 import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.ts';
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
 import type { EngineId, EngineMetrics, MemberCounts } from '../types.ts';
@@ -56,8 +61,16 @@ function runCompodocOnce(
     const child = spawn(process.execPath, args, { cwd: projectDir });
     let peakRssKb: number | undefined;
     let output = '';
+    let timedOut = false;
     child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
     child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
+
+    // Killed rather than waited on: the close handler below is the only thing that settles this
+    // promise, so a compodoc that hangs would otherwise stall the whole suite with no way out.
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGKILL');
+    }, COMPODOC_TIMEOUT_MS);
 
     const poll = setInterval(() => {
       if (child.pid === undefined) {
@@ -74,13 +87,28 @@ function runCompodocOnce(
       }
     }, pollIntervalMs);
 
-    child.on('error', (err) => {
+    const stopWatching = () => {
       clearInterval(poll);
+      clearTimeout(timeout);
+    };
+
+    child.on('error', (err) => {
+      stopWatching();
       reject(err);
     });
     child.on('close', (status) => {
-      clearInterval(poll);
+      stopWatching();
       const durMs = Date.now() - start;
+      // Before the status check: a killed child closes with a null status, which would otherwise be
+      // reported as an ordinary non-zero exit and hide why the run really ended.
+      if (timedOut) {
+        reject(
+          new Error(
+            `compodoc did not finish within ${COMPODOC_TIMEOUT_MS}ms:\n${outputTail(output, 8)}`
+          )
+        );
+        return;
+      }
       if (status !== 0) {
         reject(new Error(`compodoc exited with status ${status}:\n${outputTail(output, 8)}`));
         return;

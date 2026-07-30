@@ -5,10 +5,10 @@
 import * as path from 'node:path';
 
 import type { SeriesResult } from '../docgen-shared/series.ts';
-import { seriesMetrics } from './aggregate.ts';
+import { designatedRep, seriesMetrics } from './aggregate.ts';
 import type { SuiteProfile } from './config.ts';
 import type { SeriesChildSpec } from './spawn.ts';
-import type { EngineId, EngineMetrics } from './types.ts';
+import type { EngineId, EngineMetrics, MemberCounts, ScenarioResult } from './types.ts';
 
 export interface ScenarioSpec {
   name: string;
@@ -23,8 +23,12 @@ export interface MeasureContext {
   runSeriesChild(spec: SeriesChildSpec, outDir: string, jsonPath: string): SeriesResult;
 }
 
-/** `Sample` is whatever one repetition of this engine produces. */
-export abstract class BenchEngine<Sample = unknown> {
+/**
+ * `Sample` is whatever one repetition of this engine produces. Every engine's sample carries the
+ * cold-pass duration, because that is what picks the one repetition every single-run figure is read
+ * from.
+ */
+export abstract class BenchEngine<Sample extends { coldMs: number } = { coldMs: number }> {
   abstract readonly id: EngineId;
 
   /** Engines outside the default run only measure when named with `--engine`. */
@@ -50,23 +54,26 @@ export abstract class BenchEngine<Sample = unknown> {
     return undefined;
   }
 
-  /** Members the cold pass documented. Undefined when the engine cannot report a count. */
-  coldMembers(_sample: Sample): number | undefined {
-    return undefined;
-  }
-
-  /** Members the timed re-extraction documented. */
-  warmMembers(_sample: Sample): number | undefined {
-    return undefined;
+  /**
+   * What one repetition documented. An engine that cannot report a count leaves it out, which is
+   * what keeps a missing count from being read as a measured zero. The counts an engine does report
+   * are what establishes whether a ratio against it compared equal work.
+   */
+  members(_sample: Sample): MemberCounts {
+    return {};
   }
 
   /**
-   * Of the cold pass's members, how many the engine documented under a type name it never resolved.
-   * Two engines can agree on {@link coldMembers} and still have done entirely different work, so a
-   * member count alone does not establish like-for-like; this is what separates them.
+   * One scenario's complete result. `Sample` is still bound here, so the orchestrator never has to
+   * name - or cast to - the sample shape a particular engine happens to produce.
    */
-  coldOpaqueTypes(_sample: Sample): number | undefined {
-    return undefined;
+  assemble(samples: Sample[], expectedN: number, scenario: ScenarioSpec): ScenarioResult {
+    // aggregate() first: it is what rejects a run that never reached the pinned N, and there is
+    // nothing for designatedRep to pick from until that has passed.
+    const metrics = this.aggregate(samples, expectedN);
+    // The counts are read from the same repetition as the warm and memory metrics, so every figure
+    // reported for a scenario describes one run.
+    return { params: scenario.params, metrics, ...this.members(designatedRep(samples)) };
   }
 }
 
@@ -117,11 +124,7 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
     return seriesMetrics(samples, expectedN);
   }
 
-  coldMembers(sample: SeriesResult): number | undefined {
-    return sample.coldMembers;
-  }
-
-  warmMembers(sample: SeriesResult): number | undefined {
-    return sample.warmMembers;
+  members(sample: SeriesResult): MemberCounts {
+    return { coldMembers: sample.coldMembers, warmMembers: sample.warmMembers };
   }
 }

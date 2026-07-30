@@ -106,4 +106,11 @@ describe('oneShotMetrics', () => {
   it('enforces the pinned repetition count', () => {
     expect(() => oneShotMetrics(reps, 5)).toThrow('expected the pinned 5');
   });
+
+  it('reports no peak rather than a low one when a repetition went unsampled', () => {
+    // `ps` is POSIX-only and a short run can finish inside one poll interval, so a repetition can
+    // come back with nothing sampled. Averaging that in would report a peak nobody measured.
+    const partial = [{ coldMs: 300, warmMs: 280, peakRssMb: 500 }, { coldMs: 100, warmMs: 120 }];
+    expect(oneShotMetrics(partial, 2).peakTransientMb).toEqual({ status: 'n/a' });
+  });
 });

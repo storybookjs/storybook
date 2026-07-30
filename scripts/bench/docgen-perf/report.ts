@@ -3,7 +3,16 @@ import type { Comparability, EngineId, EngineMetrics, EngineResult, Ratios } fro
 
 const HEADER = ['engine/scenario', 'cold', 'warm', 'scan', 'peak', 'ret-growth', 'ret-slope'];
 
-export function formatCell(metric: EngineMetrics[keyof EngineMetrics], unit: 'ms' | 'MB'): string {
+/**
+ * Decimals for a single-valued metric, per unit. A slope needs two to say anything at all, while a
+ * sub-millisecond difference between two aggregates is noise.
+ */
+const VALUE_PRECISION = { ms: 0, MB: 1, 'MB/save': 2 } as const;
+
+export function formatCell(
+  metric: EngineMetrics[keyof EngineMetrics],
+  unit: keyof typeof VALUE_PRECISION
+): string {
   if (metric.status === 'n/a') {
     return 'n/a';
   }
@@ -13,7 +22,7 @@ export function formatCell(metric: EngineMetrics[keyof EngineMetrics], unit: 'ms
   if ('mean' in metric) {
     return `${metric.mean.toFixed(0)}${unit}`;
   }
-  return `${metric.value.toFixed(unit === 'MB' ? 1 : 0)}${unit}`;
+  return `${metric.value.toFixed(VALUE_PRECISION[unit])}${unit}`;
 }
 
 export interface RenderedResults {
@@ -50,9 +59,7 @@ export function renderResults(
         formatCell(m.wholeProjectScanMs, 'ms'),
         formatCell(m.peakTransientMb, 'MB'),
         formatCell(m.retainedGrowthMb, 'MB'),
-        m.retainedSlopeMbPerSave.status === 'measured'
-          ? `${m.retainedSlopeMbPerSave.value.toFixed(2)}MB/save`
-          : 'n/a',
+        formatCell(m.retainedSlopeMbPerSave, 'MB/save'),
       ]);
     }
   }

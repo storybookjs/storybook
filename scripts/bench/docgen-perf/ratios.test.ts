@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { PINNED_N } from './config.ts';
 import { CONTROL_PAIRS, computeRatios, engineOrderForRep } from './ratios.ts';
 import { type EngineId, type EngineResult, NOT_APPLICABLE, type ScenarioResult } from './types.ts';
 
@@ -32,22 +33,38 @@ function measured(scenarios: Record<string, ScenarioResult>): EngineResult {
 describe('engineOrderForRep', () => {
   const engines: EngineId[] = ['react-legacy', 'react-osa', 'vue-docgen-api', 'vue-component-meta'];
 
+  /**
+   * Every engine named by a control pair. The two properties below are asserted against this rather
+   * than a fixed list, so they keep holding as pairs are added - including a pair that shares an
+   * engine with another, which a pairwise swap cannot alternate.
+   */
+  const paired = [...new Set(CONTROL_PAIRS.flatMap((pair) => [pair.legacy, pair.next]))];
+
+  /** Which of the two runs first, which is the bias the alternation exists to cancel. */
+  const runsFirst = (order: EngineId[], pair: { legacy: EngineId; next: EngineId }) => {
+    const legacy = order.indexOf(pair.legacy);
+    const next = order.indexOf(pair.next);
+    if (legacy < 0 || next < 0) {
+      throw new Error(`${pair.legacy} and ${pair.next} must both be running to have an order`);
+    }
+    return legacy < next ? pair.legacy : pair.next;
+  };
+
   it('keeps the listed order on odd repetitions', () => {
     expect(engineOrderForRep(engines, 1)).toEqual(engines);
     expect(engineOrderForRep(engines, 3)).toEqual(engines);
   });
 
-  it('swaps every control pair on even repetitions', () => {
-    expect(engineOrderForRep(engines, 2)).toEqual([
-      'react-osa',
-      'react-legacy',
-      'vue-component-meta',
-      'vue-docgen-api',
-    ]);
+  it('reverses the order on even repetitions', () => {
+    expect(engineOrderForRep(engines, 2)).toEqual([...engines].reverse());
   });
 
-  it('leaves a pair alone when only one of its sides is running', () => {
-    expect(engineOrderForRep(['react-legacy', 'compodoc'], 2)).toEqual(['react-legacy', 'compodoc']);
+  it('flips which side of every control pair goes first', () => {
+    for (const pair of CONTROL_PAIRS) {
+      expect(runsFirst(engineOrderForRep(paired, 2), pair), pair.name).not.toBe(
+        runsFirst(engineOrderForRep(paired, 1), pair)
+      );
+    }
   });
 
   it('does not mutate its input', () => {
@@ -56,9 +73,19 @@ describe('engineOrderForRep', () => {
     expect(input).toEqual(['react-legacy', 'react-osa']);
   });
 
-  it('gives each side of a pair the first slot at least once across the pinned five', () => {
-    const firsts = [1, 2, 3, 4, 5].map((rep) => engineOrderForRep(engines, rep)[0]);
-    expect(new Set(firsts)).toEqual(new Set(['react-legacy', 'react-osa']));
+  it('gives each side of a pair the first slot equally often across the pinned N', () => {
+    // The alternation only cancels the ordering effect when both sides lead the same number of
+    // times. An odd N leaves a 3-2 split, and the cold median - the headline figure - then lands on
+    // a repetition from whichever side led more often. Driven off PINNED_N so making it odd fails
+    // here rather than silently biasing every ratio.
+    for (const pair of CONTROL_PAIRS) {
+      const firsts = Array.from({ length: PINNED_N }, (_, i) =>
+        runsFirst(engineOrderForRep(paired, i + 1), pair)
+      );
+      expect(firsts.filter((id) => id === pair.legacy).length, pair.name).toBe(
+        firsts.filter((id) => id === pair.next).length
+      );
+    }
   });
 });
 
@@ -70,6 +97,17 @@ describe('computeRatios', () => {
     });
     expect(ratios.react.default.cold).toBe(4);
     expect(ratios.react.default.warm).toBe(2);
+  });
+
+  it('produces no ratio when the new engine median rounded to zero', () => {
+    // A warm re-extraction can finish below the clock's resolution. Dividing by it yields Infinity,
+    // which would render as a ratio and serialize into the results file as null.
+    const ratios = computeRatios({
+      'react-legacy': measured({ default: scenario(400, 40) }),
+      'react-osa': measured({ default: scenario(100, 0) }),
+    });
+    expect(ratios.react.default.warm).toBeUndefined();
+    expect(ratios.react.default.cold).toBe(4);
   });
 
   it('produces nothing when one side did not measure', () => {

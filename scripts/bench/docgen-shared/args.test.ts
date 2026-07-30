@@ -21,17 +21,8 @@ const SCHEMA = z.object({
   maxRetainedGrowthMb: countOption(400),
 });
 
-interface Options {
-  components: number;
-  scope: 'all' | 'changed';
-  heavy: boolean;
-  outDir: string;
-  componentsPerPackage: number;
-  maxRetainedGrowthMb: number;
-}
-
 const parse = (argv: string[]) =>
-  parseHarnessOptions<Options>(argv, OPTIONS, SCHEMA, (values) => ({
+  parseHarnessOptions<z.infer<typeof SCHEMA>>(argv, OPTIONS, SCHEMA, (values) => ({
     ...values,
     outDir: values.out,
     maxRetainedGrowthMb: values.maxRetainedGrowth,
@@ -59,8 +50,8 @@ describe('parseHarnessOptions', () => {
 
   it('carries a flag whose schema key is not its camelCase', () => {
     // `--max-retained-growth` camel-cases to `maxRetainedGrowth`, but the schema names the unit.
-    // Without the rename in `toInput` the flag is accepted and then silently ignored, which is how
-    // the memory harness lost its threshold flag once already.
+    // Without the rename in `toInput` the flag is accepted and then silently ignored - the flag
+    // parses, the schema falls back to its default, and the run measures something nobody asked for.
     expect(parse(['--max-retained-growth', '50']).maxRetainedGrowthMb).toBe(50);
   });
 

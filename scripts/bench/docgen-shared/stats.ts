@@ -62,7 +62,9 @@ export function summarizeSeries(samples: SaveSample[], baseline: MemorySample): 
   const transients = gcSampled.map((s) => s.heapUsedMb - s.retainedHeapMb);
   const last = retained.at(-1);
   return {
-    retainedSlope: retained.length ? leastSquaresSlope(retained) : undefined,
+    // A slope needs two points. `leastSquaresSlope` answers 0 for a shorter series, which is
+    // indistinguishable from a measured flat one, so a series that short reports nothing instead.
+    retainedSlope: retained.length >= 2 ? leastSquaresSlope(retained) : undefined,
     retainedGrowth:
       last !== undefined && baseline.retainedHeapMb !== undefined
         ? last - baseline.retainedHeapMb

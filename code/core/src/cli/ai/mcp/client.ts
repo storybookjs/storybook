@@ -3,11 +3,11 @@ import { versions } from 'storybook/internal/common';
 import * as v from 'valibot';
 
 import {
-  type McpToolDescriptor,
   McpToolDescriptorSchema,
+  ToolCallResultSchema,
+  type McpToolDescriptor,
   type StorybookInstanceRecord,
   type ToolCallResult,
-  ToolCallResultSchema,
 } from './types.ts';
 
 /**
@@ -165,9 +165,8 @@ async function initializeMcpSession(
  * `clientInfo` for telemetry (see {@link initializeMcpSession}) — there is no protocol-version
  * negotiation, capability handling, or session lifecycle beyond this one follow-up request. The
  * downstream is always `@storybook/addon-mcp`, whose tmcp HttpTransport serves `tools/*`
- * per-request — the same local shortcut `@storybook/mcp-proxy` takes in its proxy-client. If the
- * CLI ever needs to talk to arbitrary MCP servers, replace this with a real client instead of
- * extending it.
+ * per-request. If the CLI ever needs to talk to arbitrary MCP servers, replace this with a real
+ * client instead of extending it.
  *
  * tmcp hardcodes `text/event-stream` for any request with an id, so we accept both content-types
  * and parse the SSE envelope when needed.

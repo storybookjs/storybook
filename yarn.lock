@@ -13031,6 +13031,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
+    oxc-resolver: "npm:^11.19.1"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"

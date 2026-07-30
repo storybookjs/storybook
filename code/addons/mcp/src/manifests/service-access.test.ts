@@ -15,7 +15,7 @@ describe('service-access getService guard', () => {
 
     const { getDocgenService } = await import('./service-access.ts');
     await expect(getDocgenService()).resolves.toBe(service);
-    expect(getService).toHaveBeenCalledWith('core/docgen');
+    expect(getService).toHaveBeenCalledWith('core/docgen', { internal: true });
   });
 
   it('resolves to undefined on older Storybook without a getService export', async () => {

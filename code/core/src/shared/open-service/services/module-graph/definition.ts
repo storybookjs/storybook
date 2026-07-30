@@ -69,6 +69,7 @@ export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({
   id: 'core/module-graph',
+  internal: true,
   description:
     'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
   initialState: {

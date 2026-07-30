@@ -164,13 +164,15 @@ async function collectUnknownStoryIds(
   if (inOrder.length === 0) return [];
 
   const index = await getStoryIndex(options);
-  return inOrder.filter((id) => !index.entries[id]);
+  // Docs entries share the index but cannot be review slots, and the review service rejects
+  // them — catch them here so the agent gets the actionable message instead of a dropped review.
+  return inOrder.filter((id) => index.entries[id]?.type !== 'story');
 }
 
 function formatUnknownStoryIdsError(unknownIds: string[]): string {
   const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
   const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
-  return `Refusing to publish review: ${unknownIds.length} story ${plural} not in the live Storybook index:\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
 export async function addDisplayReviewTool(

@@ -172,6 +172,41 @@ export default [
 ];
 ```
 
+### Usage with oxlint
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter) can run this plugin through its [JS plugins support](https://oxc.rs/docs/guide/usage/linter/js-plugins.html) (an alpha oxlint feature). Reference the plugin in your `.oxlintrc.json` and enable rules for your stories files. The following mirrors the `flat/recommended` config:
+
+```jsonc
+{
+  "jsPlugins": ["eslint-plugin-storybook"],
+  "overrides": [
+    {
+      "files": ["**/*.stories.{ts,tsx,js,jsx,mjs,cjs}", "**/*.story.{ts,tsx,js,jsx,mjs,cjs}"],
+      "rules": {
+        "storybook/await-interactions": "error",
+        "storybook/context-in-play-function": "error",
+        "storybook/default-exports": "error",
+        "storybook/hierarchy-separator": "warn",
+        "storybook/no-redundant-story-name": "warn",
+        "storybook/no-renderer-packages": "error",
+        "storybook/prefer-pascal-case": "warn",
+        "storybook/story-exports": "error",
+        "storybook/use-storybook-expect": "error",
+        "storybook/use-storybook-testing-library": "error"
+      }
+    },
+    {
+      "files": [".storybook/main.{js,cjs,mjs,ts}"],
+      "rules": {
+        "storybook/no-uninstalled-addons": "error"
+      }
+    }
+  ]
+}
+```
+
+Note that oxlint's `files` patterns do not support ESLint's `@(ts|tsx)` extglob syntax — patterns using it are silently ignored. Use `{ts,tsx}` braces instead, as shown above.
+
 ### MDX Support
 
 This plugin does not support MDX files.

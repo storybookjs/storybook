@@ -3,6 +3,7 @@ import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 import { supportedExtensions } from 'storybook/internal/common';
+import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
@@ -16,7 +17,6 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { type ComponentRef } from './getComponentImports.ts';
-import { extractJSDocInfo } from './jsdocTags.ts';
 import actualNameHandler from './reactDocgen/actualNameHandler.ts';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver.ts';
 import exportNameHandler from './reactDocgen/exportNameHandler.ts';

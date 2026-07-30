@@ -1,6 +1,9 @@
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
+import {
+  OpenServiceDocgenMissingComponentError,
+  OpenServiceMissingServiceError,
+} from '../../../../server-errors.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import { defineToolset, type ToolsetCtx } from '../../toolset-definition.ts';
@@ -27,6 +30,7 @@ import {
   mapDocsShowStory,
   mapStoryDocsEntries,
   resolveImportStatement,
+  selectAttachedDocs,
   type MdxPayload,
 } from './map.ts';
 
@@ -49,6 +53,24 @@ function tryGetService<T>(ctx: ToolsetCtx, serviceId: string): T | undefined {
     return ctx.getService<T>(serviceId, { internal: true });
   } catch (error) {
     if (error instanceof OpenServiceMissingServiceError) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Component payload loads throw when an id has no component entry in the index. Standalone docs
+ * ids and ids that don't exist at all both land there, and both are answered by absence rather
+ * than a failure, so the typed error becomes `undefined`.
+ */
+async function loadOptionalComponentPayload<T>(
+  load: Promise<T | undefined>
+): Promise<T | undefined> {
+  try {
+    return await load;
+  } catch (error) {
+    if (error instanceof OpenServiceDocgenMissingComponentError) {
       return undefined;
     }
     throw error;
@@ -152,8 +174,8 @@ export const docsToolset = defineToolset({
         const storyDocs = ctx.getService<StoryDocsService>('core/story-docs', { internal: true });
         const mdx = tryGetService<MdxService>(ctx, MDX_SERVICE_ID);
         const [docgenPayload, storyDocsPayload, mdxPayload] = await Promise.all([
-          docgen.queries.docgen.loaded({ id: input.id }),
-          storyDocs.queries.storyDocs.loaded({ id: input.id }),
+          loadOptionalComponentPayload(docgen.queries.docgen.loaded({ id: input.id })),
+          loadOptionalComponentPayload(storyDocs.queries.storyDocs.loaded({ id: input.id })),
           mdx?.queries.mdxForComponent.loaded({ id: input.id }) ?? Promise.resolve(undefined),
         ]);
 
@@ -187,17 +209,7 @@ export const docsToolset = defineToolset({
           return formatEntryNotFound(input.id, ctx);
         }
 
-        const attached = classification.attachedDocsByComponent.get(input.id) ?? [];
-        let docs: Record<string, MdxPayload['docs'][string]> | undefined;
-        if (attached.length > 0 && mdxPayload?.docs) {
-          docs = {};
-          for (const docsId of attached) {
-            const doc = mdxPayload.docs[docsId];
-            if (doc) {
-              docs[docsId] = doc;
-            }
-          }
-        }
+        const docs = selectAttachedDocs(classification, input.id, mdxPayload);
 
         return formatComponentManifest(
           adaptCoreComponent({
@@ -221,8 +233,10 @@ export const docsToolset = defineToolset({
         const storyDocs = ctx.getService<StoryDocsService>('core/story-docs', { internal: true });
         const docgen = ctx.getService<DocgenService>('core/docgen', { internal: true });
         const [storyDocsPayload, docgenPayload] = await Promise.all([
-          storyDocs.queries.storyDocs.loaded({ id: input.componentId }),
-          docgen.queries.docgen.loaded({ id: input.componentId }),
+          loadOptionalComponentPayload(
+            storyDocs.queries.storyDocs.loaded({ id: input.componentId })
+          ),
+          loadOptionalComponentPayload(docgen.queries.docgen.loaded({ id: input.componentId })),
         ]);
 
         if (ctx.format === 'json') {

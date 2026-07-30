@@ -18,6 +18,31 @@ export type MdxPayload = {
   docs: Record<string, MdxDoc>;
 };
 
+/**
+ * Picks a component's attached MDX docs out of its payload, shared by the Markdown and JSON docs
+ * paths so the two cannot drift. `undefined` when the component has no attached docs, letting
+ * callers omit the key entirely.
+ */
+export function selectAttachedDocs(
+  classification: DocsClassification,
+  id: string,
+  mdx: MdxPayload | undefined
+): Record<string, MdxDoc> | undefined {
+  const attached = classification.attachedDocsByComponent.get(id) ?? [];
+  if (attached.length === 0 || !mdx?.docs) {
+    return undefined;
+  }
+
+  const docs: Record<string, MdxDoc> = {};
+  for (const docsId of attached) {
+    const doc = mdx.docs[docsId];
+    if (doc) {
+      docs[docsId] = doc;
+    }
+  }
+  return docs;
+}
+
 export type DocsListResult = {
   components: Array<{
     id: string;
@@ -199,17 +224,7 @@ export function mapDocsShow(params: {
     return { kind: 'not-found', id };
   }
 
-  const attached = classification.attachedDocsByComponent.get(id) ?? [];
-  let docs: Record<string, MdxDoc> | undefined;
-  if (attached.length > 0 && mdx?.docs) {
-    docs = {};
-    for (const docsId of attached) {
-      const doc = mdx.docs[docsId];
-      if (doc) {
-        docs[docsId] = doc;
-      }
-    }
-  }
+  const docs = selectAttachedDocs(classification, id, mdx);
 
   const stories = storyDocs?.stories ? mapStoryDocsEntries(storyDocs.stories) : undefined;
 

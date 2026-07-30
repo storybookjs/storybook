@@ -28,8 +28,6 @@ export type ChangedStoriesParams = {
   /** Change-detection statuses keyed by storyId → typeId → status. */
   statuses: StatusesByStoryIdAndTypeId;
   index: StoryIndex;
-  /** Defaults to `storybook/change-detection`. */
-  changeDetectionTypeId?: string;
 };
 
 export type ChangedStoriesResult = Omit<ChangedStoriesOutput, 'unreachableFiles'>;
@@ -38,14 +36,10 @@ export type ChangedStoriesResult = Omit<ChangedStoriesOutput, 'unreachableFiles'
  * Filters change-detection statuses to new/modified/affected, enriches from the story index,
  * and sorts by priority then storyId.
  */
-export function getChangedStories({
-  statuses,
-  index,
-  changeDetectionTypeId = CHANGE_DETECTION_STATUS_TYPE_ID,
-}: ChangedStoriesParams): ChangedStoriesResult {
+export function getChangedStories({ statuses, index }: ChangedStoriesParams): ChangedStoriesResult {
   const changedFromStatusStore: Status[] = [];
   for (const byType of Object.values(statuses)) {
-    const status = byType?.[changeDetectionTypeId];
+    const status = byType?.[CHANGE_DETECTION_STATUS_TYPE_ID];
     if (status?.value && isChangeStatusValue(status.value)) {
       changedFromStatusStore.push(status);
     }

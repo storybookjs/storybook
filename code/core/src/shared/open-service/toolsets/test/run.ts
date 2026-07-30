@@ -113,8 +113,12 @@ export function triggerTestRun({
         case 'cancelled':
           settle(() => resolve(payload));
           break;
-        default:
-          settle(() => reject(new Error('Unexpected test run response')));
+        default: {
+          // Type-only: a new response status must be handled here rather than silently
+          // rejected. The runtime branch still guards against malformed channel payloads.
+          const _exhaustive: never = payload.status;
+          settle(() => reject(new Error(`Unexpected test run response: ${_exhaustive}`)));
+        }
       }
     };
 
@@ -229,10 +233,14 @@ export async function runStoryTests({
       };
     case 'cancelled':
       return { status: 'cancelled' };
-    default:
+    default: {
+      // Type-only: a new response status must be mapped here rather than collapsing into a
+      // generic error. The runtime branch still guards against malformed channel payloads.
+      const _exhaustive: never = response.status;
       return {
         status: 'error',
-        error: { message: 'Unexpected test run response' },
+        error: { message: `Unexpected test run response: ${_exhaustive}` },
       };
+    }
   }
 }

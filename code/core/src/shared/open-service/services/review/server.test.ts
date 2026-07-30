@@ -22,6 +22,15 @@ const index = {
   entries: {
     'button--primary': storyEntry,
     'card--basic': { ...storyEntry, id: 'card--basic', name: 'Basic', title: 'Card' },
+    'button--docs': {
+      type: 'docs',
+      id: 'button--docs',
+      name: 'Docs',
+      title: 'Button',
+      importPath: './src/Button.mdx',
+      storiesImports: [],
+      tags: ['docs'] as string[],
+    },
   },
 } as StoryIndex;
 
@@ -80,6 +89,24 @@ describe('registerReviewService', () => {
     await expect(publish).rejects.toMatchObject({
       data: { unknownIds: ['missing--story'] },
     });
+    expect(service.queries.current.get(undefined)).toBeNull();
+  });
+
+  it('rejects docs entries, which cannot be navigated as review slots', async () => {
+    const service = registerReviewService({ getIndex });
+
+    const publish = service.commands.setReview({
+      ...review,
+      collections: [
+        {
+          ...review.collections[0],
+          storyIds: ['button--primary', 'button--docs'],
+        },
+      ],
+    });
+
+    await expect(publish).rejects.toBeInstanceOf(OpenServiceUnknownStoryIdsError);
+    await expect(publish).rejects.toMatchObject({ data: { unknownIds: ['button--docs'] } });
     expect(service.queries.current.get(undefined)).toBeNull();
   });
 

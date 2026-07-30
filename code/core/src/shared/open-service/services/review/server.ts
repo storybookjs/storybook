@@ -57,7 +57,9 @@ export function registerReviewService({
             ...new Set(review.collections.flatMap((collection) => collection.storyIds)),
           ];
           const index = await getIndex();
-          const unknownIds = storyIds.filter((storyId) => !index.entries[storyId]);
+          // Docs entries share the index but cannot be review slots: navigation and
+          // previews resolve review entries as stories.
+          const unknownIds = storyIds.filter((storyId) => index.entries[storyId]?.type !== 'story');
           if (unknownIds.length > 0) {
             throw new OpenServiceUnknownStoryIdsError({ unknownIds });
           }

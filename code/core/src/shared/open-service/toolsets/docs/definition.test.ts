@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { OpenServiceMissingServiceError } from '../../../../server-errors.ts';
+import {
+  OpenServiceDocgenMissingComponentError,
+  OpenServiceMissingServiceError,
+} from '../../../../server-errors.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import { docsToolset } from './definition.ts';
 
@@ -87,12 +90,20 @@ beforeEach(() => {
   docgenForAllComponents.mockResolvedValue({ button: buttonDocgen });
   storyDocsForAllComponents.mockResolvedValue({ button: buttonStoryDocs });
   mdxForAllComponents.mockResolvedValue({ 'guide--docs': guideMdx });
-  docgen.mockImplementation(async ({ id }: { id: string }) =>
-    id === 'button' ? buttonDocgen : undefined
-  );
-  storyDocs.mockImplementation(async ({ id }: { id: string }) =>
-    id === 'button' ? buttonStoryDocs : undefined
-  );
+  // Per-id component loads throw when the id has no component entry, like the real
+  // extraction service — standalone docs ids and unknown ids both hit that path.
+  docgen.mockImplementation(async ({ id }: { id: string }) => {
+    if (id !== 'button') {
+      throw new OpenServiceDocgenMissingComponentError({ id });
+    }
+    return buttonDocgen;
+  });
+  storyDocs.mockImplementation(async ({ id }: { id: string }) => {
+    if (id !== 'button') {
+      throw new OpenServiceDocgenMissingComponentError({ id });
+    }
+    return buttonStoryDocs;
+  });
   mdxForComponent.mockImplementation(async ({ id }: { id: string }) =>
     id === 'guide--docs' ? guideMdx : undefined
   );
@@ -183,6 +194,17 @@ describe('docs API', () => {
         ctx
       )
     ).resolves.toEqual({ kind: 'not-found', id: 'missing' });
+  });
+
+  it('shows a standalone docs entry, whose id has no component payloads', async () => {
+    ctx.format = 'json';
+
+    await expect(
+      docsToolset.methods.show.handler(
+        v.parse(docsToolset.methods.show.schema, { id: 'guide--docs' }),
+        ctx
+      )
+    ).resolves.toMatchObject({ kind: 'docs', id: 'guide--docs' });
   });
 
   it('mirrors the @storybook/mcp miss messages for the MCP consumer', async () => {

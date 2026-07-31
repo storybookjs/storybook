@@ -28,19 +28,9 @@ import {
 
 import { createParsedCommandLine, getAllExtensions } from '@vue/language-core';
 import type ts from 'typescript';
-import {
-  type ComponentMetaChecker,
-  type MetaCheckerOptions,
-  createChecker,
-  createCheckerByJson,
-} from 'vue-component-meta';
+import { type ComponentMetaChecker, createChecker, createCheckerByJson } from 'vue-component-meta';
 
-const CHECKER_OPTIONS: MetaCheckerOptions = {
-  forceUseTs: true,
-  noDeclarations: true,
-  printer: { newLine: 1 },
-  schema: true,
-};
+import { CHECKER_OPTIONS } from './component-meta.ts';
 
 /**
  * Raw-JSON compiler options for files no discovered tsconfig covers (`createCheckerByJson` parses

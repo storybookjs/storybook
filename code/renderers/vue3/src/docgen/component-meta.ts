@@ -41,6 +41,14 @@ function toSerializableMeta<T>(obj: T): Serializable<T> {
   return JSON.parse(JSON.stringify(obj)) as Serializable<T>;
 }
 
+/** Checker options shared by every path so legacy and server extraction produce identical meta. */
+export const CHECKER_OPTIONS: MetaCheckerOptions = {
+  forceUseTs: true,
+  noDeclarations: true,
+  printer: { newLine: 1 },
+  schema: true,
+};
+
 /**
  * Creates the `vue-component-meta` checker to use for extracting component meta/docs. Considers the
  * given tsconfig file (will use a fallback checker if it does not exist or is not supported).
@@ -48,18 +56,11 @@ function toSerializableMeta<T>(obj: T): Serializable<T> {
 export async function createVueComponentMetaChecker(
   tsconfigPath = 'tsconfig.json'
 ): Promise<ComponentMetaChecker> {
-  const checkerOptions: MetaCheckerOptions = {
-    forceUseTs: true,
-    noDeclarations: true,
-    printer: { newLine: 1 },
-    schema: true,
-  };
-
   const projectRoot = getProjectRoot();
 
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
-  const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
+  const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, CHECKER_OPTIONS);
 
   // prefer the tsconfig.json file of the project to support alias resolution etc.
   if (await fileExists(projectTsConfigPath)) {
@@ -71,7 +72,7 @@ export async function createVueComponentMetaChecker(
     if (references.length > 0) {
       return defaultChecker;
     }
-    return createChecker(projectTsConfigPath, checkerOptions);
+    return createChecker(projectTsConfigPath, CHECKER_OPTIONS);
   }
 
   return defaultChecker;

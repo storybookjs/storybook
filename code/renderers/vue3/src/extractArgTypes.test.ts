@@ -28,7 +28,11 @@ vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   };
 });
 
-describe('extractArgTypes (vue-docgen-api)', () => {
+// referenceTypeProps/Events and templateSlots are vue-component-meta fixtures. This block used
+// to be named after the other engine, which put its snapshots in the same namespace as the real
+// vue-docgen-api block below - both spell "should extract props for component", so the two
+// engines' props snapshots were told apart only by a trailing 1/2.
+describe('extractArgTypes (vue-component-meta)', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });

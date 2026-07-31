@@ -253,8 +253,8 @@ export class VueComponentMetaManager extends ComponentMetaManager<
   VueComponentMetaProject,
   ts.ParsedCommandLine
 > {
-  constructor(typescript: typeof ts, recycleHeapPressureRatio?: number) {
-    super(typescript, createVueProjectFactory(typescript), recycleHeapPressureRatio);
+  constructor(typescript: typeof ts) {
+    super(typescript, createVueProjectFactory(typescript));
   }
 
   /**

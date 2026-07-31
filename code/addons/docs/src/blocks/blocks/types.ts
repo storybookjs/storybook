@@ -12,4 +12,5 @@ export type DocsStoryProps = {
   withToolbar?: boolean;
   __forceInitialArgs?: boolean;
   __primary?: boolean;
+  forceInitialArgs?: boolean;
 };

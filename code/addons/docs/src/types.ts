@@ -46,6 +46,14 @@ type StoriesBlockParameters = {
     Story: PreparedStory<TRenderer>,
     Context: ReturnType<DocsContextProps['getStoryContext']>
   ) => boolean;
+  /**
+   * When true, story args are frozen at their initial values so the story does not re-render
+   * when the user changes controls. Set to false to make stories fully interactive in autodocs.
+   *
+   * @default true
+   * @see https://github.com/storybookjs/storybook/issues/22195
+   */
+  forceInitialArgs?: boolean;
 };
 
 type ControlsBlockParameters = {

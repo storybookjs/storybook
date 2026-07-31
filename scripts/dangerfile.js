@@ -15,11 +15,6 @@
  */
 import { danger, fail, schedule, warn } from 'danger';
 
-const {
-  createIsTrustedReviewer,
-  evaluateCoreDxApproval,
-} = require('./danger/core-dx-approval.cjs');
-
 /**
  * Returns the intersection of two arrays
  *
@@ -42,6 +37,7 @@ const Versions = {
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
+const trustedReviewerTeams = ['core', 'developer-experience'];
 
 const { labels } = danger.github.issue;
 
@@ -222,19 +218,112 @@ const checkTargetBranch = () => {
  * Drafts are skipped; membership API failures warn and allow (fail open).
  */
 const checkCoreDxApproval = async () => {
-  const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
-  const result = await evaluateCoreDxApproval({
-    draft: Boolean(danger.github.pr.draft),
-    authorLogin: danger.github.pr.user.login,
-    reviews: danger.github.reviews ?? [],
-    isTrustedReviewer: createIsTrustedReviewer({ token }),
-  });
-
-  if (result.decision === 'fail' && result.message) {
-    fail(result.message);
-  } else if (result.decision === 'warn' && result.message) {
-    warn(result.message);
+  if (danger.github.pr.draft) {
+    return;
   }
+
+  const authorLogin = danger.github.pr.user.login.toLowerCase();
+  const reviews = danger.github.reviews ?? [];
+
+  /** @type {Map<string, (typeof reviews)[number]>} */
+  const latestByUser = new Map();
+  for (const review of reviews) {
+    const login = review.user?.login;
+    if (!login) {
+      continue;
+    }
+
+    const key = login.toLowerCase();
+    const existing = latestByUser.get(key);
+    if (!existing) {
+      latestByUser.set(key, review);
+      continue;
+    }
+
+    const existingTime = Date.parse(existing.submitted_at ?? '') || 0;
+    const nextTime = Date.parse(review.submitted_at ?? '') || 0;
+    if (
+      nextTime > existingTime ||
+      (nextTime === existingTime && (review.id ?? 0) > (existing.id ?? 0))
+    ) {
+      latestByUser.set(key, review);
+    }
+  }
+
+  const approvedLogins = [];
+  for (const [loginKey, review] of latestByUser) {
+    if (loginKey === authorLogin) {
+      continue;
+    }
+    if (review.state === 'APPROVED' && review.user?.login) {
+      approvedLogins.push(review.user.login);
+    }
+  }
+
+  const failMessage =
+    'This PR needs an approving review from a Storybook Core or Developer Experience team member before it can be merged.';
+
+  if (approvedLogins.length === 0) {
+    fail(failMessage);
+    return;
+  }
+
+  const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
+  if (!token || typeof fetch !== 'function') {
+    warn(
+      'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
+    );
+    return;
+  }
+
+  let sawUnknown = false;
+  for (const login of approvedLogins) {
+    try {
+      let isTrusted = false;
+      for (const team of trustedReviewerTeams) {
+        const response = await fetch(
+          `https://api.github.com/orgs/storybookjs/teams/${team}/memberships/${encodeURIComponent(login)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+          }
+        );
+
+        if (response.status === 404) {
+          continue;
+        }
+        if (!response.ok) {
+          sawUnknown = true;
+          isTrusted = false;
+          break;
+        }
+
+        const body = await response.json();
+        if (body?.state === 'active') {
+          isTrusted = true;
+          break;
+        }
+      }
+
+      if (isTrusted) {
+        return;
+      }
+    } catch {
+      sawUnknown = true;
+    }
+  }
+
+  if (sawUnknown) {
+    warn(
+      'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
+    );
+    return;
+  }
+
+  fail(failMessage);
 };
 
 checkTargetBranch();

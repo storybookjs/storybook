@@ -23,9 +23,11 @@ type Story = StoryObj<WithoutSelectorComponent>;
 @Component({
   standalone: false,
   selector: 'ng-component-outlet-wrapper',
-  template: `<ng-container
-  *ngComponentOutlet="componentOutlet; injector: componentInjector; content: componentContent"
-></ng-container>`,
+  template: `
+    <ng-container
+      *ngComponentOutlet="componentOutlet; injector: componentInjector; content: componentContent"
+    ></ng-container>
+  `,
 })
 class NgComponentOutletWrapperComponent implements OnInit {
   @Input()

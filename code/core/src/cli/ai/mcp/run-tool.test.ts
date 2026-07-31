@@ -742,6 +742,154 @@ describe('runAiToolHelp', () => {
     expect(result.outcome).toEqual({ kind: 'help' });
   });
 
+  it('recurses into array item and object property schemas so nested fields self-document', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'display-review',
+          description: 'Publish a review.',
+          inputSchema: {
+            properties: {
+              collections: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'What the group is' },
+                    storyIds: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'IDs the group renders',
+                    },
+                  },
+                  required: ['title', 'storyIds'],
+                },
+              },
+              changedFiles: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Paths you changed',
+              },
+            },
+            required: ['collections', 'changedFiles'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('display-review', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    // Nested array-item fields self-document; the primitive `changedFiles` array
+    // stays flat (no "each item:" expansion).
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai display-review [--key value ...]
+
+      Publish a review.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--collections\` (array of object, required)
+        each item:
+          - \`title\` (string, required): What the group is
+          - \`storyIds\` (array of string, required): IDs the group renders
+      - \`--changedFiles\` (array of string, required): Paths you changed"
+    `);
+  });
+
+  it('describes anyOf/oneOf union variants in help', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'preview-stories',
+          description: 'Preview stories.',
+          inputSchema: {
+            properties: {
+              stories: {
+                type: 'array',
+                items: {
+                  anyOf: [
+                    {
+                      type: 'object',
+                      properties: { storyId: { type: 'string', description: 'A story id' } },
+                      required: ['storyId'],
+                    },
+                    {
+                      type: 'object',
+                      properties: {
+                        exportName: { type: 'string', description: 'An export name' },
+                      },
+                      required: ['exportName'],
+                    },
+                  ],
+                },
+                description: 'Stories to preview',
+              },
+            },
+            required: ['stories'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('preview-stories', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai preview-stories [--key value ...]
+
+      Preview stories.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--stories\` (array, required): Stories to preview
+        each item:
+          option 1
+            - \`storyId\` (string, required): A story id
+          option 2
+            - \`exportName\` (string, required): An export name"
+    `);
+  });
+
+  it('falls back to the top-level type and description when an argument schema cannot be modeled', async () => {
+    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
+      instructions: 'Follow the story workflow.',
+      tools: [
+        {
+          name: 'exotic-tool',
+          description: 'Has an unmodeled schema.',
+          inputSchema: {
+            properties: {
+              // `items: false` is valid JSON Schema but outside the node schema, so
+              // validation fails and the help must degrade rather than throw or drop it.
+              weird: { type: 'string', description: 'An odd one', items: false },
+            },
+            required: ['weird'],
+          },
+        },
+      ],
+    });
+
+    const result = await runAiToolHelp('exotic-tool', { cwd: '/projects/foo' });
+
+    expect(result.exitCode).toBe(0);
+    // Degrades to the top-level type/description; no crash, no dropped argument.
+    expect(result.output).toMatchInlineSnapshot(`
+      "Usage: storybook ai exotic-tool [--key value ...]
+
+      Has an unmodeled schema.
+
+      Execution: requires a running Storybook.
+
+      Arguments:
+      - \`--weird\` (string, required): An odd one"
+    `);
+  });
+
   it('marks local commands in single-command help', async () => {
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       instructions: 'Follow the story workflow.',

@@ -12,8 +12,11 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
 - **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
+- **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting — `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
+- **Formatting**: oxfmt (root `.oxfmtrc.json`)
 - **CI environment**: Linux and Windows
 - **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
+- **Type checking**: Per-package checks (`yarn task check`, `scripts/check/check-package.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias); diagnostics are filtered to the checked package. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (e.g. no `baseUrl`).
 
 ## Repository Structure
 
@@ -83,6 +86,31 @@ Internal exports include:
 - Story selection loads the module, prepares the story, and renders it
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
+
+### Open services and toolsets
+
+- OSA hosts two sibling constructs behind the `storybook/open-service` entry: **services**
+  (`defineService`/`registerService`) own internal state, synchronization, queries, commands, and
+  loading; **toolsets** (`defineToolset`/`registerToolset`) are the public agent surface for CLI/MCP.
+  They live in mirrored trees: `open-service/services/` and `open-service/toolsets/`.
+- All core OSA services are `internal: true` and may change without a public semver bump. Resolve
+  internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws when
+  the service is internal.
+- A toolset has an `id`, description, and methods with only `schema`, `description`, and `handler`.
+- Toolsets register imperatively via `registerToolset`, called from the same place the paired
+  service registers (the `services` preset hook for core and addons; the mechanism itself does not
+  depend on the Node preset system). Feature gating is shared: a disabled feature registers neither
+  the service nor its toolset. Adapters read the set via `getRegisteredToolsets()`; nothing consumes
+  it before Milestone 4.
+- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), optional `origin`, required
+  `format` (`'markdown' | 'json'`), and `getService`. Methods never declare the output format;
+  adapters own the mapping (CLI `--json` flag, MCP `json` tool input).
+- The docs toolset's Markdown is a verbatim port of the `@storybook/mcp` manifest formatter
+  (`toolsets/docs/manifest-formatter/`); the two copies must not drift until Milestone 4 deletes the
+  original. MCP consumer + Markdown is the parity-tested cell.
+- The toolset surface remains experimental. Production MCP migration is Milestone 4. CLI generation
+  and production `storybook tools` wiring are Milestone 5. MCP tools remain hand-authored in
+  `addon-mcp` until Milestone 4.
 
 ## Common Commands
 

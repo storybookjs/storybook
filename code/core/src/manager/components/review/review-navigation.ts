@@ -3,7 +3,6 @@ import {
   isReviewSummaryPath,
 } from '../../../shared/review/routes.ts';
 import { REVIEW_CHANGES_URL } from './constants.ts';
-import type { ReviewState } from './review-state.ts';
 
 export { REVIEW_COLLECTION_QUERY_PARAM, isReviewSummaryPath };
 
@@ -58,17 +57,6 @@ export const parseReviewStoryHref = (href: string): ReviewNavEntry | null => {
     return null;
   }
   return { storyId, collectionIndex };
-};
-
-/** Walk collections in order, pushing every story occurrence. */
-export const buildFlattenedNavEntries = (state: ReviewState): ReviewNavEntry[] => {
-  const entries: ReviewNavEntry[] = [];
-  state.collections.forEach((collection, collectionIndex) => {
-    for (const storyId of collection.storyIds) {
-      entries.push({ storyId, collectionIndex });
-    }
-  });
-  return entries;
 };
 
 /** True when a manager search string points back at a review route (not a canvas). */
@@ -129,18 +117,18 @@ export const resolveNavIndex = (entries: ReviewNavEntry[], active: ReviewNavEntr
     (entry) => entry.storyId === active.storyId && entry.collectionIndex === active.collectionIndex
   );
 
-/** Previous/next targets in the flattened review sequence, wrapping at the ends. */
+/** Previous/next targets in the flattened review sequence; null at the ends (no wrap). */
 export const getAdjacentReviewEntries = (
   entries: readonly ReviewNavEntry[],
   index: number
-): { previous: ReviewNavEntry; next: ReviewNavEntry } | null => {
+): { previous: ReviewNavEntry | null; next: ReviewNavEntry | null } | null => {
   const total = entries.length;
   if (total === 0 || index < 0 || index >= total) {
     return null;
   }
   return {
-    previous: entries[(index - 1 + total) % total],
-    next: entries[(index + 1) % total],
+    previous: index > 0 ? entries[index - 1] : null,
+    next: index < total - 1 ? entries[index + 1] : null,
   };
 };
 
@@ -167,8 +155,10 @@ export const getAdjacentCollectionFirstStory = (
 /** Keyboard shortcut targets for the active reviewed story, as ready-to-navigate hrefs. */
 export interface ReviewShortcutHrefs {
   back: string;
-  previous: string;
-  next: string;
+  /** Null at the first story so the shortcut does not wrap to the last one. */
+  previous: string | null;
+  /** Null at the last story so the shortcut does not wrap to the first one. */
+  next: string | null;
   previousCollection: string;
   nextCollection: string;
 }
@@ -191,8 +181,8 @@ export const buildReviewShortcutHrefs = (
 
   return {
     back: buildReviewChangesSummaryHref(),
-    previous: buildReviewStoryHref(neighbors?.previous ?? fallback),
-    next: buildReviewStoryHref(neighbors?.next ?? fallback),
+    previous: neighbors?.previous ? buildReviewStoryHref(neighbors.previous) : null,
+    next: neighbors?.next ? buildReviewStoryHref(neighbors.next) : null,
     previousCollection: buildReviewStoryHref(previousCollection),
     nextCollection: buildReviewStoryHref(nextCollection),
   };

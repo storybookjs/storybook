@@ -213,7 +213,6 @@ export class Preview<TRenderer extends Renderer> {
   protected initializeWithStoryIndex(storyIndex: StoryIndex): void {
     if (!this.projectAnnotationsBeforeInitialization) {
       // This is a protected method and so shouldn't be called out of order by users
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('Cannot call initializeWithStoryIndex until project annotations resolve');
     }
 

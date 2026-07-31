@@ -225,7 +225,9 @@ Type: `boolean`
 
 Default: `false`
 
-Enable the agentic review workflow: the review UI in the Storybook manager and the server-side review channel that AI agents (via the [MCP server](../../ai/mcp/overview.mdx)) use to push a curated review of their code changes. Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
+Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
+
+Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
 
 <CodeSnippets path="main-config-features-experimental-review.md" />
 

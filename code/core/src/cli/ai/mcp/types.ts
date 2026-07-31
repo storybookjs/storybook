@@ -1,15 +1,14 @@
 /**
- * Reader-side types for the `storybook ai <tool>` MCP passthrough, copied from
- * `@storybook/mcp-proxy` (storybookjs/mcp) per storybookjs/storybook#35124. The
- * writer side lives in `code/core/src/core-server/utils/runtime-instance-registry.ts`;
- * this reader is intentionally more lenient (extra statuses, optional fields) so it
- * also accepts records written by other Storybook versions and wrappers.
+ * Reader-side types for the `storybook ai <tool>` MCP passthrough. The writer side lives in
+ * `code/core/src/core-server/utils/runtime-instance-registry.ts`; this reader is intentionally more
+ * lenient (extra statuses, optional fields) so it also accepts records written by older Storybook
+ * versions and external wrappers.
  */
 import * as v from 'valibot';
 
 /**
- * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` are written by
- * external wrappers (e.g. the storybookjs/mcp launch script) and must keep being dispatched here.
+ * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` may appear on
+ * records from older writers / external wrappers and must keep being dispatched here.
  */
 export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready', 'error']);
 export type McpStatus = v.InferOutput<typeof McpStatusSchema>;
@@ -66,6 +65,34 @@ export const ToolCallResultSchema = v.looseObject({
   isError: v.optional(v.boolean()),
 });
 export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
+
+/**
+ * A JSON Schema node, as far as the `storybook ai <tool> --help` renderer walks it:
+ * object `properties`, array `items`, and `anyOf`/`oneOf` variants. Recursive, so the
+ * schema is built with `v.lazy` and annotated with the interface (valibot can't infer
+ * a recursive type). Kept a `looseObject` so unknown JSON Schema keywords pass through.
+ */
+export interface JsonSchemaNode {
+  type?: string;
+  description?: string;
+  properties?: Record<string, JsonSchemaNode>;
+  required?: string[];
+  items?: JsonSchemaNode | JsonSchemaNode[];
+  anyOf?: JsonSchemaNode[];
+  oneOf?: JsonSchemaNode[];
+}
+
+export const JsonSchemaNodeSchema: v.GenericSchema<JsonSchemaNode> = v.lazy(() =>
+  v.looseObject({
+    type: v.optional(v.string()),
+    description: v.optional(v.string()),
+    properties: v.optional(v.record(v.string(), JsonSchemaNodeSchema)),
+    required: v.optional(v.array(v.string())),
+    items: v.optional(v.union([JsonSchemaNodeSchema, v.array(JsonSchemaNodeSchema)])),
+    anyOf: v.optional(v.array(JsonSchemaNodeSchema)),
+    oneOf: v.optional(v.array(JsonSchemaNodeSchema)),
+  })
+);
 
 /** A tool descriptor from an MCP `tools/list` response. */
 export const McpToolDescriptorSchema = v.looseObject({

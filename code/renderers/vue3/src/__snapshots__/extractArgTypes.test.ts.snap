@@ -230,13 +230,9 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
       },
     },
     "type": {
-      "name": "enum",
+      "name": "other",
       "required": true,
-      "value": [
-        "MyEnum.Small",
-        "MyEnum.Medium",
-        "MyEnum.Large",
-      ],
+      "value": "MyEnum",
     },
   },
   "foo": {

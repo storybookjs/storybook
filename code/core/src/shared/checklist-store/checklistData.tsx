@@ -158,7 +158,7 @@ const subscribeToIndex: (
     }
   };
 
-export const checklistData = {
+export const checklistData: ChecklistData = {
   sections: [
     {
       id: 'basics',

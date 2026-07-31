@@ -1,0 +1,72 @@
+{
+  "checked": {
+    "description": "
+",
+    "name": "checked",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "checkedChange": {
+    "action": "checkedChange",
+    "description": "
+",
+    "name": "checkedChange",
+    "table": {
+      "category": "outputs",
+      "type": {
+        "required": true,
+        "summary": "(e: boolean) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "value": {
+    "description": "
+Current text value of the field.",
+    "name": "value",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "start",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "valueChange": {
+    "action": "valueChange",
+    "description": "
+Current text value of the field.",
+    "name": "valueChange",
+    "table": {
+      "category": "outputs",
+      "type": {
+        "required": true,
+        "summary": "(e: string) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+}

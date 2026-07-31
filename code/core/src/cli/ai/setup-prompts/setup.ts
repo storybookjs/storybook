@@ -10,6 +10,8 @@
  * Update this header when iterating: bump the iteration number and link the
  * latest eval run so reviewers can compare variants without spelunking git.
  */
+import { getVitestStorybookRunCommand } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 
 import type { ProjectInfo } from '../types.ts';
@@ -153,6 +155,11 @@ function getNeedsWorkTagExample(projectInfo: ProjectInfo): string {
 
 export function instructions(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
+  const { packageManager } = projectInfo;
+  const vitestRunFile = getVitestStorybookRunCommand(packageManager, '<path-to-story-file>');
+  const vitestRunAll = getVitestStorybookRunCommand(packageManager);
+  const storybookBuild = packageManager.getPackageCommand(['storybook', 'build']);
+  const storybookDoctor = packageManager.getPackageCommand(['storybook', 'doctor']);
 
   return dedent`
     Attention: The following instructions must be followed in order to successfully set up Storybook in this project. Do not skip steps or attempt to do them out of order.
@@ -237,13 +244,13 @@ export function instructions(projectInfo: ProjectInfo): string {
     After writing each story file, immediately verify it:
 
     \`\`\`bash
-    npx vitest --project storybook <path-to-story-file>
+    ${vitestRunFile}
     \`\`\`
 
     **Self-healing loop — repeat for every story file:**
 
     1. Write/update the story file
-    2. Run \`npx vitest --project storybook <path-to-story-file>\`
+    2. Run \`${vitestRunFile}\`
     3. If it fails: read the error output carefully
        - Missing provider → add a decorator in \`${configDir}/preview.tsx\` or in the story meta
        - Missing prop → add the required prop to \`args\`
@@ -255,18 +262,18 @@ export function instructions(projectInfo: ProjectInfo): string {
     After all 9 story files pass individually, run the full suite:
 
     \`\`\`bash
-    npx vitest --project storybook
+    ${vitestRunAll}
     \`\`\`
 
     Once all stories pass, run a full Storybook build as a final check:
 
     \`\`\`bash
-    npx storybook build
+    ${storybookBuild}
     \`\`\`
 
     If the build fails, fix the issue before finishing.
 
-    Finally, run \`npx storybook doctor\` to check for common issues
+    Finally, run \`${storybookDoctor}\` to check for common issues
     (version mismatches, duplicated deps, etc.) and fix anything it reports.
 
     ### Checklist
@@ -283,9 +290,9 @@ export function instructions(projectInfo: ProjectInfo): string {
     - [ ] Complex component 1: story written and passing
     - [ ] Complex component 2: story written and passing
     - [ ] Complex component 3: story written and passing
-    - [ ] Full Vitest suite passes: \`npx vitest --project storybook\`
-    - [ ] \`npx storybook build\` succeeds
-    - [ ] \`npx storybook doctor\` reports no remaining issues
+    - [ ] Full Vitest suite passes: \`${vitestRunAll}\`
+    - [ ] \`${storybookBuild}\` succeeds
+    - [ ] \`${storybookDoctor}\` reports no remaining issues
     - [ ] All passing stories have \`tags: ['ai-generated']\` in their meta
     - [ ] Any stories that still need work have \`tags: ['ai-generated', 'needs-work']\` in their meta
   `;

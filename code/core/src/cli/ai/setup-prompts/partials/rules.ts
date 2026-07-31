@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
-import type { SetupInstructionsContext } from '../../types.ts';
 import { getMonorepoType } from '../../../../shared/utils/get-monorepo-type.ts';
+import type { SetupInstructionsContext } from '../../types.ts';
 
 export function toolsVsShellRule(ctx: SetupInstructionsContext): string {
   return dedent`**Discover with Glob/Grep/Read, not shell.** Never use \`ls\`, \`find\`, \`cat\`, \`head\`, \`tail\`, shell \`grep\`, \`sed\`, or \`node -e\` for discovery or for editing files in bulk — these are slower per call and violate caching. Substitute bash commands for the specific tool names listed below, or available tools with the closest semantics:
@@ -21,11 +21,15 @@ export function monorepoRule(ctx: SetupInstructionsContext): string | undefined 
   }
 }
 
-export function packageManagerRule({ packageManagerName }: SetupInstructionsContext): string {
+export function packageManagerRule({
+  packageManager,
+  packageManagerName,
+}: SetupInstructionsContext): string {
+  const storybookCmd = packageManager.getPackageCommand(['storybook']);
   if (packageManagerName) {
-    return dedent`**Use \`${packageManagerName}\` for every install** (detected from this project's lockfile).`;
+    return dedent`**Use \`${packageManagerName}\` for installs and \`${storybookCmd}\` for Storybook/Vitest CLI commands** (detected from this project's lockfile). Do not use \`npx\` — it invokes npm and fails when the repo enforces a different package manager.`;
   }
-  return '**Detect the package manager once** from the lockfile (`pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun, otherwise npm) and use it for every install in this trial.';
+  return dedent`**Detect the package manager once** from the lockfile (\`pnpm-lock.yaml\` → pnpm, \`yarn.lock\` → yarn, \`bun.lockb\` → bun, otherwise npm) and use it for every install and CLI command in this trial. Do not use \`npx\` when the project uses pnpm, yarn, or bun.`;
 }
 
 export function editOverWriteRule({ configDir, tsx }: SetupInstructionsContext): string {

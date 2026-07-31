@@ -12295,16 +12295,25 @@ __metadata:
     "@angular/core": "npm:^21.2.14"
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
+    "@compodoc/compodoc": "npm:2.0.0"
     "@storybook/angular-vite": "workspace:*"
+    "@storybook/react": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@testing-library/vue": "npm:^8.0.0"
+    "@types/react": "npm:^18.0.37"
     "@vitejs/plugin-vue": "npm:^4.6.2"
+    jiti: "npm:^2.6.1"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.4.0"
+    storybook: "workspace:*"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.3.9"
+    vue-component-meta-next: "npm:vue-component-meta@3.3.8"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
+    zod: "npm:^3.25.76"
     zone.js: "npm:^0.16.2"
   languageName: unknown
   linkType: soft
@@ -12758,14 +12767,12 @@ __metadata:
   dependencies:
     "@actions/core": "npm:^1.11.1"
     "@anthropic-ai/claude-agent-sdk": "npm:^0.2.85"
-    "@compodoc/compodoc": "npm:2.0.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"
     "@openai/codex-sdk": "npm:^0.117.0"
     "@polka/parse": "npm:^1.0.0-next.28"
-    "@storybook/react": "workspace:*"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.0.0"
@@ -12869,10 +12876,6 @@ __metadata:
     verdaccio: "npm:^5.33.0"
     verdaccio-auth-memory: "npm:^10.3.1"
     vitest: "npm:^4.1.5"
-    vue: "npm:^3.2.47"
-    vue-component-meta: "npm:^3.2.7"
-    vue-component-meta-next: "npm:vue-component-meta@3.3.8"
-    vue-docgen-api: "npm:^4.75.1"
     wait-on: "npm:^8.0.3"
     window-size: "npm:^1.1.1"
     yaml: "npm:^2.8.1"
@@ -39748,7 +39751,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

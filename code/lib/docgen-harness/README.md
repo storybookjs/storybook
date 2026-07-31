@@ -50,7 +50,12 @@ src/
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
 ├── svelte/                       # planned
-└── web-components/               # planned
+├── web-components/               # planned
+└── perf/                         # the performance bench, see below
+    ├── PERF-METHODOLOGY.md       # the measurement contract
+    ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
+    ├── docgen-memory/            # the docgen-server memory regression gate
+    └── docgen-shared/            # sampling, stats, budgets and paths shared by both
 ```
 
 ## The comparator
@@ -165,7 +170,27 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ.
 
+## The performance bench
+
+`src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.
+It is a set of CLIs rather than part of this package's exported API, so nothing in `src/perf/` is re-exported from `src/index.ts`.
+
+Both commands run from `code/lib/docgen-harness`:
+
+```bash
+yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile
+yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
+yarn bench:docgen-memory          # the docgen-server memory regression gate CI runs daily
+```
+
+`bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
+`bench:docgen-memory` asserts both that re-extraction is leak-free and that the program-recycle fix still flips a tight-heap run from OOM to survival.
+
+Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
+It is the contract the numbers are only meaningful under.
+
+The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
+
 ## What does not live here
 
-- The performance harness stays under `scripts/`.
 - Framework provider code lives in each framework's own package.

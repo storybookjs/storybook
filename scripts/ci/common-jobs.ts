@@ -445,7 +445,7 @@ export const docgenMemoryGate = defineJob(
       {
         run: {
           name: 'Docgen-server re-extraction memory gate',
-          working_directory: 'scripts',
+          working_directory: 'code/lib/docgen-harness',
           command: 'yarn bench:docgen-memory',
         },
       },

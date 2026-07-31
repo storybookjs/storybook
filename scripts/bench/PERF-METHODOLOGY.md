@@ -56,6 +56,79 @@ One failure is specific to this shape. If both sides resolve to the same install
 
 A bump proposed in a pull request is fully covered by this. Catching a regression on the day it ships is not, because nothing here fetches the newest published version on its own, so moving the candidate forward still waits on a person or on a scheduled job that does not exist yet.
 
+#### Running a version comparison
+
+The pair that exists today is `vue-component-meta` against `vue-component-meta-next`, which are two installs of one package: the second is an alias in `scripts/package.json` pinned to an exact version.
+
+**1. Point the alias at the version you want to test.**
+Edit `scripts/package.json` and install, so the candidate is on disk:
+
+```jsonc
+"vue-component-meta": "^3.2.7",                          // the current side
+"vue-component-meta-next": "npm:vue-component-meta@3.3.8" // the candidate, pinned exactly
+```
+
+```bash
+yarn install
+```
+
+Pin the candidate exactly rather than with a range.
+A range on both sides can resolve to one install, and then the run compares an engine against itself.
+
+**2. Run both sides in one invocation, naming each explicitly.**
+From `scripts/`:
+
+```bash
+yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+```
+
+Both ids are required.
+`vue-component-meta-next` is out of the default run because it carries no budget row, and a control pair only produces a ratio when both of its sides measured in the same invocation - naming one gives you a table row and no comparison.
+Add `--quick` for a smoke run that proves the wiring; its numbers are marked non-comparable and must not be read as a result.
+
+**3. Read the three guards on the ratio lines before reading the ratio.**
+A real run prints one cold and one warm line per scenario:
+
+```text
+ratio cold legacy/new (vue-component-meta-version/flat): 1.04  [documented members 70 vs 70]  [3.3.2 vs 3.3.8]
+ratio warm legacy/new (vue-component-meta-version/flat): 1.01  [documented members 15 vs 15]  [3.3.2 vs 3.3.8]
+```
+
+- **Two different versions.**
+  `[3.3.2 vs 3.3.8]` is what says two installs were actually compared.
+  `[both sides resolved 3.3.8 - NOT a comparison]` means the current side's range drifted onto the pin, and the roughly-1.00 ratio beside it means nothing.
+  Pin the current side too, or move the candidate.
+- **Equal work.**
+  A bare `[documented members 70 vs 70]` with no note after it is like-for-like.
+  A `NOT like-for-like` note means the two sides did not do equal work, and the note says which way: `documented more` / `documented less` is a difference in member counts, while `same members, but ...` is the subtler one, where the counts agree and the two versions resolved different amounts of the type graph behind them.
+  Either way the ratio is measuring a behaviour change rather than a cost change, and that behaviour change is the finding.
+- **Above 1.00 is the candidate winning.**
+  The ratio is the current side's median over the candidate's, so `1.04` means the candidate was 4% faster on that scenario.
+  A number below 1.00 is the candidate costing more.
+
+An engine whose package does not resolve is reported as skipped with a reason rather than measured, so a forgotten `yarn install` cannot quietly turn into a missing comparison.
+
+#### Adding a version pair for another engine
+
+This works only for an engine whose child imports the versioned package directly, the way `engines/vue-component-meta.ts` does.
+Where the harness reaches the engine through repo source instead - `react-legacy` goes via `loadReactRendererModule` into `code/renderers/react`, which imports `react-docgen` by bare specifier - no child flag can redirect that import, and a version pair needs a different approach entirely.
+
+Four data edits:
+
+1. An alias in `scripts/package.json` pinned to the candidate version.
+2. The new id added to the `EngineId` union in `docgen-shared/engine-ids.ts`, which is hand-maintained: a registry entry naming an id that is not in the union does not compile.
+3. A second registry entry in `docgen-perf/registry.ts` reusing the same child, with `inDefaultRun: false`, `versionPackage` naming the alias, and the flag that tells the child which install to load.
+4. An entry in `CONTROL_PAIRS` in `docgen-perf/ratios.ts` naming the current side as `legacy` and the alias as `next`.
+
+Plus one code edit, unless the child already has it: the child needs a flag that selects the install, which is what `--pin` is on the vue-component-meta child.
+That took a small union of allowed values, an extension of the shared option schema, a per-pin scratch directory so the two runs do not share a generated project, and a conditional import of the aliased package.
+
+One easily-missed prerequisite: the *current* side's existing registry entry must declare `versionPackage` too.
+`versionNote` prints nothing unless both sides resolved a version, so without it every ratio line silently loses its version note - and with it the guard against both sides being the same install.
+
+Nothing else changes: aggregation, member counts and the ordering alternation are already shared by every pair.
+A pair that shares an engine with another pair is fine, because the alternation reverses the whole engine list and so flips every pair at once.
+
 ## Budget shape
 
 Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, `vue-docgen-api` against `vue-component-meta`) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.

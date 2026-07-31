@@ -13,7 +13,12 @@
  * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
  * build processes.
  */
-import { danger, fail, warn } from 'danger';
+import { danger, fail, schedule, warn } from 'danger';
+
+const {
+  createIsTrustedReviewer,
+  evaluateCoreDxApproval,
+} = require('./danger/core-dx-approval.cjs');
 
 /**
  * Returns the intersection of two arrays
@@ -212,6 +217,26 @@ const checkTargetBranch = () => {
   }
 };
 
+/**
+ * Require at least one approving review from Core or Developer Experience.
+ * Drafts are skipped; membership API failures warn and allow (fail open).
+ */
+const checkCoreDxApproval = async () => {
+  const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
+  const result = await evaluateCoreDxApproval({
+    draft: Boolean(danger.github.pr.draft),
+    authorLogin: danger.github.pr.user.login,
+    reviews: danger.github.reviews ?? [],
+    isTrustedReviewer: createIsTrustedReviewer({ token }),
+  });
+
+  if (result.decision === 'fail' && result.message) {
+    fail(result.message);
+  } else if (result.decision === 'warn' && result.message) {
+    warn(result.message);
+  }
+};
+
 checkTargetBranch();
 checkReleaseChecklist(danger.github.pr.body);
 
@@ -220,3 +245,5 @@ if (prLogConfig) {
   checkPrTitle(danger.github.pr.title);
   checkManualTestingSection(danger.github.pr.body);
 }
+
+schedule(checkCoreDxApproval);

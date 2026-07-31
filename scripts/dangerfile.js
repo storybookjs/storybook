@@ -255,8 +255,8 @@ const checkCoreDxApproval = async () => {
     if (loginKey === authorLogin) {
       continue;
     }
-    if (review.state === 'APPROVED' && review.user?.login) {
-      approvedLogins.push(review.user.login);
+    if (review.state === 'APPROVED') {
+      approvedLogins.push(loginKey);
     }
   }
 
@@ -312,7 +312,7 @@ const checkCoreDxApproval = async () => {
     return;
   }
 
-  if (approvedLogins.some((login) => trustedLogins.has(login.toLowerCase()))) {
+  if (approvedLogins.some((login) => trustedLogins.has(login))) {
     return;
   }
 

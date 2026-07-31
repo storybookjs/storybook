@@ -115,6 +115,7 @@ An engine whose package does not resolve is reported as skipped with a reason ra
 
 This works only for an engine whose child imports the versioned package directly, the way `engines/vue-component-meta.ts` does.
 Where the harness reaches the engine through repo source instead - `react-legacy` goes via `loadReactRendererModule` into `code/renderers/react`, which imports `react-docgen` by bare specifier - no child flag can redirect that import, and a version pair needs a different approach entirely.
+Declaring `@storybook/react` as a dependency of `scripts` is what makes that source reachable in the first place, but it does not make the specifier redirectable: pointing the renderer at a second `react-docgen` would take a module resolution hook registered in the child, which is not built.
 
 Four data edits:
 

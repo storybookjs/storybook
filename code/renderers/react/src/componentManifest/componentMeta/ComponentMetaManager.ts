@@ -11,10 +11,10 @@
 import {
   ComponentMetaManager as BaseComponentMetaManager,
   type ComponentMetaProjectFactory,
+  parseTsconfigCommandLine,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as path from 'path';
 import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';
@@ -34,31 +34,6 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
 type FsFileSnapshots = Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>;
 
 /**
- * Parse a tsconfig with TypeScript's own machinery, the way `tsc` would. Lives here rather than in
- * core because core's component-meta module deliberately names no types from the `typescript`
- * package — its consumers each resolve their own copy, and `typeof ts` across two copies is not
- * assignable (nor cheaply comparable).
- *
- * Adapted from:
- * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L262-L353
- */
-function parseTsconfigCommandLine(typescript: typeof ts, tsconfig: string): ts.ParsedCommandLine {
-  const config = typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile);
-  const content = typescript.parseJsonSourceFileConfigFileContent(
-    config,
-    typescript.sys,
-    path.dirname(tsconfig),
-    {},
-    tsconfig
-  );
-  // fix https://github.com/johnsoncodehk/volar/issues/1786
-  // https://github.com/microsoft/TypeScript/issues/30457
-  content.options.outDir = undefined;
-  content.fileNames = content.fileNames.map((fileName) => fileName.replace(/\\/g, '/'));
-  return content;
-}
-
-/**
  * Builds the React project factory plus the snapshot cache it closes over. The cache is shared
  * across every project the factory creates (Volar Kit checker pattern) and returned separately so
  * the manager can expose it to tests; it is cleared through the factory's `dispose`.
@@ -74,7 +49,8 @@ function createReactProjectFactory(typescript: typeof ts): {
   return {
     fsFileSnapshots,
     factory: {
-      parseCommandLine: (tsconfig) => parseTsconfigCommandLine(typescript, tsconfig),
+      parseCommandLine: (tsconfig) =>
+        parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
       createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
         new ComponentMetaProject(
           typescript,

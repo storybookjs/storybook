@@ -1,26 +1,21 @@
-import { createRequire } from 'node:module';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import * as fs from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 
+import { fs as memfs, vol } from 'memfs';
 import type { NextConfig } from 'next';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import webpack, { type Configuration as WebpackConfig } from 'webpack';
 
+import { getNextjsVersion } from '../utils.ts';
 import { configureImages } from './webpack.ts';
 
-vi.mock('../utils.ts', () => ({
-  getNextjsVersion: () => '15.0.0',
-}));
+vi.mock('../utils.ts', { spy: true });
 
-let tempDir: string | undefined;
-
-afterEach(async () => {
-  if (tempDir) {
-    await rm(tempDir, { recursive: true, force: true });
-    tempDir = undefined;
-  }
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(getNextjsVersion).mockReturnValue('15.0.0');
 });
 
 const getImageLoaderAlias = (nextConfig: NextConfig = {}) => {
@@ -33,6 +28,29 @@ const getImageLoaderAlias = (nextConfig: NextConfig = {}) => {
 
   return (baseConfig.resolve?.alias as Record<string, string>)['@storybook/nextjs/image-loader'];
 };
+
+const createWebpackInputFileSystem = (virtualRoot: string) =>
+  new Proxy(fs, {
+    get(target, property, receiver) {
+      const diskImplementation = Reflect.get(target, property, receiver);
+      const memoryImplementation = Reflect.get(memfs, property);
+
+      if (typeof diskImplementation !== 'function' || typeof memoryImplementation !== 'function') {
+        return diskImplementation;
+      }
+
+      return (...args: unknown[]) => {
+        const filePath = args[0];
+        const isVirtualPath =
+          typeof filePath === 'string' &&
+          (filePath === virtualRoot || filePath.startsWith(`${virtualRoot}${sep}`));
+        const implementation = isVirtualPath ? memoryImplementation : diskImplementation;
+        const implementationContext = isVirtualPath ? memfs : target;
+
+        return Reflect.apply(implementation, implementationContext, args);
+      };
+    },
+  });
 
 describe('configureImages', () => {
   it('aliases the image loader to the Storybook default', () => {
@@ -49,25 +67,20 @@ describe('configureImages', () => {
   });
 
   it('lets webpack compile a TypeScript custom loader and its imports', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'storybook-nextjs-image-loader-'));
-    const entryFile = join(tempDir, 'entry.ts');
-    const loaderFile = join(tempDir, 'image-loader.ts');
-    const helperFile = join(tempDir, 'loader-helper.ts');
-    const outputPath = join(tempDir, 'dist');
+    const virtualRoot = resolve('.storybook-nextjs-image-loader-test');
+    const entryFile = join(virtualRoot, 'entry.ts');
+    const loaderFile = join(virtualRoot, 'image-loader.ts');
+    const helperFile = join(virtualRoot, 'loader-helper.ts');
+    const outputPath = join(virtualRoot, 'dist');
     const outputFile = join(outputPath, 'bundle.cjs');
 
-    await Promise.all([
-      writeFile(
-        entryFile,
-        `
+    vol.fromJSON({
+      [entryFile]: `
           import imageLoader from '@storybook/nextjs/image-loader';
 
           export default imageLoader({ src: '/hero.png', width: 640, quality: 80 });
-        `
-      ),
-      writeFile(
-        loaderFile,
-        `
+        `,
+      [loaderFile]: `
           import type { ImageLoaderProps } from 'next/image';
 
           import { prefix } from './loader-helper.ts';
@@ -75,10 +88,9 @@ describe('configureImages', () => {
           export default function customLoader({ src, width }: ImageLoaderProps) {
             return \`\${prefix}\${src}?w=\${width}\`;
           }
-        `
-      ),
-      writeFile(helperFile, `export const prefix = 'custom:';`),
-    ]);
+        `,
+      [helperFile]: `export const prefix = 'custom:';`,
+    });
 
     const config: WebpackConfig = {
       mode: 'production',
@@ -115,18 +127,29 @@ describe('configureImages', () => {
     configureImages(config, { images: { loaderFile } });
 
     await new Promise<void>((resolve, reject) => {
-      webpack(config, (error, stats) => {
-        if (error) {
-          reject(error);
-        } else if (stats?.hasErrors()) {
-          reject(new Error(stats.toString({ all: false, errors: true })));
-        } else {
-          resolve();
-        }
+      const compiler = webpack(config);
+      compiler.inputFileSystem = createWebpackInputFileSystem(
+        virtualRoot
+      ) as typeof compiler.inputFileSystem;
+      compiler.outputFileSystem = memfs as typeof compiler.outputFileSystem;
+
+      compiler.run((error, stats) => {
+        compiler.close((closeError) => {
+          if (error || closeError) {
+            reject(error ?? closeError);
+          } else if (stats?.hasErrors()) {
+            reject(new Error(stats.toString({ all: false, errors: true })));
+          } else {
+            resolve();
+          }
+        });
       });
     });
 
-    const result = createRequire(import.meta.url)(outputFile) as { default: string };
+    const bundle = memfs.readFileSync(outputFile, 'utf8') as string;
+    const module = { exports: {} };
+    runInNewContext(bundle, { module, exports: module.exports });
+    const result = module.exports as { default: string };
 
     expect(result.default).toBe('custom:/hero.png?w=640');
   });

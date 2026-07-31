@@ -131,6 +131,7 @@
     "@types/loader-utils": "^2.0.5",
     "@types/node": "^22.19.1",
     "@types/react-refresh": "^0",
+    "memfs": "^4.11.1",
     "next": "^15.2.3",
     "typescript": "^6.0.3",
     "webpack": "^5.65.0"

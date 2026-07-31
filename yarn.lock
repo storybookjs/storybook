@@ -12341,6 +12341,7 @@ __metadata:
     css-loader: "npm:^6.7.3"
     image-size: "npm:^2.0.2"
     loader-utils: "npm:^3.2.1"
+    memfs: "npm:^4.11.1"
     next: "npm:^15.2.3"
     node-polyfill-webpack-plugin: "npm:^2.0.1"
     postcss: "npm:^8.4.38"

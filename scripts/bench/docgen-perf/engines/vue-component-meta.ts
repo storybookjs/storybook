@@ -31,6 +31,13 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
   printer: { newLine: 1 },
 };
 
+/**
+ * Both checker calls stay inside the timed path on purpose, re-extraction included. The production
+ * plugin's `transform` hook runs `getExportNames` then `getComponentMeta` on every transform, so
+ * hoisting the export lookup into `cold()` would time a sequence Storybook never performs. The
+ * vue-docgen-api harness makes one `parse()` call for the same reason - its plugin makes one too -
+ * and the cost of that difference is part of what the comparison is for.
+ */
 function extractOne(checker: Checker, sfcPath: string): number {
   const exportNames = checker.getExportNames(sfcPath);
   if (!exportNames.includes('default')) {

@@ -23,25 +23,19 @@ export interface BuildDocgenContext {
   resolvePath?: (importPath: string) => string;
 }
 
-const UNRESOLVED_COMPONENT_ERRORS = new Map<
+const UNRESOLVED_COMPONENT_ERRORS: Record<
   UnresolvedComponentReason,
   { name: string; message: string }
->([
-  [
-    'no-meta-component',
-    {
-      name: 'No component found',
-      message: 'We could not detect the component from your story file. Specify meta.component.',
-    },
-  ],
-  [
-    'no-component-import',
-    {
-      name: 'No component import found',
-      message: 'No component file found for the component declared in meta.component.',
-    },
-  ],
-]);
+> = {
+  'no-meta-component': {
+    name: 'No component found',
+    message: 'We could not detect the component from your story file. Specify meta.component.',
+  },
+  'no-component-import': {
+    name: 'No component import found',
+    message: 'No component file found for the component declared in meta.component.',
+  },
+};
 
 /**
  * Get last segment of a story title
@@ -104,7 +98,7 @@ export async function buildDocgenPayload(
 
   const resolved = resolveMetaComponent(csf, storyPath);
   if ('reason' in resolved) {
-    const error = UNRESOLVED_COMPONENT_ERRORS.get(resolved.reason)!;
+    const error = UNRESOLVED_COMPONENT_ERRORS[resolved.reason];
     return {
       ...base,
       error: {

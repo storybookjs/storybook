@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
 
 import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
+import { inferControls } from 'storybook/internal/preview-api';
 
 import {
   mockExtractComponentEventsReturn,
@@ -254,6 +255,38 @@ describe('extractFromVueComponentMeta', () => {
       control: { labels: { info: 'Severity.Info', warning: 'Severity.Warning' } },
       // the docs table documents the enum, not the values behind it
       table: { type: { summary: 'Severity' } },
+    });
+  });
+
+  it('should hand Controls a labelled option set once inferControls has run', () => {
+    // the labels are only useful if they survive next to the control type inferControls picks,
+    // which is what lets a TS enum reach the same radio/select treatment as a literal union
+    const argType = extractFromVueComponentMeta(
+      propInfo({
+        type: 'Severity',
+        schema: {
+          kind: 'enum',
+          type: 'Severity',
+          schema: [
+            { kind: 'literal', type: 'Severity.Info', value: '"info"' },
+            { kind: 'literal', type: 'Severity.Warning', value: '"warning"' },
+          ],
+        },
+      }),
+      'props'
+    );
+
+    const inferred = inferControls({
+      argTypes: { severity: argType } as any,
+      parameters: { __isArgsStory: true } as any,
+    });
+
+    expect(inferred.severity).toMatchObject({
+      control: {
+        type: 'radio',
+        labels: { info: 'Severity.Info', warning: 'Severity.Warning' },
+      },
+      options: ['info', 'warning'],
     });
   });
 

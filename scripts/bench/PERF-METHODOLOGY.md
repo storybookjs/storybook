@@ -52,7 +52,10 @@ There is a third comparison that follows the same two rules: two installs of one
 
 Like-for-like still applies here, and it earns its keep. A newer version that legitimately documents more members costs more, and we want that to show up as a member count mismatch rather than as a regression.
 
-One failure is specific to this shape. If both sides resolve to the same install, and a single caret range is enough for that to happen, then we compare an engine against itself and get a ratio of roughly one, which reads exactly like a clean result. So both resolved versions are printed beside every ratio, and two equal ones are called out as not being a comparison at all.
+One failure is specific to this shape.
+The two aliases are always separate installs, but they can still resolve to the same published version, and a single caret range is enough for that to happen.
+Then we compare a version against itself and get a ratio of roughly one, which reads exactly like a clean result.
+So both resolved versions are printed beside every ratio, and two equal ones are called out as not being a comparison at all.
 
 A bump proposed in a pull request is fully covered by this. Catching a regression on the day it ships is not, because nothing here fetches the newest published version on its own, so moving the candidate forward still waits on a person or on a scheduled job that does not exist yet.
 
@@ -95,7 +98,7 @@ ratio warm legacy/new (vue-component-meta-version/flat): 1.01  [documented membe
 ```
 
 - **Two different versions.**
-  `[3.3.2 vs 3.3.8]` is what says two installs were actually compared.
+  `[3.3.2 vs 3.3.8]` is what says two different versions were actually compared.
   `[both sides resolved 3.3.8 - NOT a comparison]` means the current side's range drifted onto the pin, and the roughly-1.00 ratio beside it means nothing.
   Pin the current side too, or move the candidate.
 - **Equal work.**
@@ -124,7 +127,7 @@ Plus one code edit, unless the child already has it: the child needs a flag that
 That took a small union of allowed values, an extension of the shared option schema, a per-pin scratch directory so the two runs do not share a generated project, and a conditional import of the aliased package.
 
 One easily-missed prerequisite: the *current* side's existing registry entry must declare `versionPackage` too.
-`versionNote` prints nothing unless both sides resolved a version, so without it every ratio line silently loses its version note - and with it the guard against both sides being the same install.
+`versionNote` prints nothing unless both sides resolved a version, so without it every ratio line silently loses its version note - and with it the guard against both sides resolving to the same version.
 
 Nothing else changes: aggregation, member counts and the ordering alternation are already shared by every pair.
 A pair that shares an engine with another pair is fine, because the alternation reverses the whole engine list and so flips every pair at once.

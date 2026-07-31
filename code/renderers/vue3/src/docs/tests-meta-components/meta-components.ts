@@ -523,7 +523,11 @@ export const referenceTypeProps: TestComponent = normalizeComponentMetaFixture({
         schema: {
           kind: 'enum',
           type: 'MyEnum',
-          schema: ['MyEnum.Small', 'MyEnum.Medium', 'MyEnum.Large'],
+          schema: [
+            { kind: 'literal', type: 'MyEnum.Small', value: '0' },
+            { kind: 'literal', type: 'MyEnum.Medium', value: '1' },
+            { kind: 'literal', type: 'MyEnum.Large', value: '2' },
+          ],
         },
       },
       {
@@ -1223,7 +1227,11 @@ export const mockExtractComponentPropsReturn = [
       schema: {
         kind: 'enum',
         type: 'MyEnum',
-        schema: ['MyEnum.Small', 'MyEnum.Medium', 'MyEnum.Large'],
+        schema: [
+          { kind: 'literal', type: 'MyEnum.Small', value: '0' },
+          { kind: 'literal', type: 'MyEnum.Medium', value: '1' },
+          { kind: 'literal', type: 'MyEnum.Large', value: '2' },
+        ],
       },
     },
     typeSystem: TypeSystem.JAVASCRIPT,

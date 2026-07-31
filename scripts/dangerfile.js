@@ -276,50 +276,43 @@ const checkCoreDxApproval = async () => {
     return;
   }
 
-  let sawUnknown = false;
-  for (const login of approvedLogins) {
-    try {
-      let isTrusted = false;
-      for (const team of trustedReviewerTeams) {
-        const response = await fetch(
-          `https://api.github.com/orgs/storybookjs/teams/${team}/memberships/${encodeURIComponent(login)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/vnd.github+json',
-              'X-GitHub-Api-Version': '2022-11-28',
-            },
-          }
+  /** @type {Set<string>} */
+  const trustedLogins = new Set();
+  try {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    for (const team of trustedReviewerTeams) {
+      const response = await fetch(
+        `https://api.github.com/orgs/storybookjs/teams/${team}/members?per_page=100`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        warn(
+          'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
         );
-
-        if (response.status === 404) {
-          continue;
-        }
-        if (!response.ok) {
-          sawUnknown = true;
-          isTrusted = false;
-          break;
-        }
-
-        const body = await response.json();
-        if (body?.state === 'active') {
-          isTrusted = true;
-          break;
-        }
-      }
-
-      if (isTrusted) {
         return;
       }
-    } catch {
-      sawUnknown = true;
-    }
-  }
 
-  if (sawUnknown) {
+      const members = await response.json();
+      for (const member of members) {
+        if (member?.login) {
+          trustedLogins.add(member.login.toLowerCase());
+        }
+      }
+    }
+  } catch {
     warn(
       'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
     );
+    return;
+  }
+
+  if (approvedLogins.some((login) => trustedLogins.has(login.toLowerCase()))) {
     return;
   }
 

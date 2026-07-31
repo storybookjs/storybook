@@ -41,14 +41,43 @@ export declare class EventEmitter<T> {
 }
 `;
 
-function emitFakeAngularCore(projectDir: string): void {
-  const dir = path.join(projectDir, 'node_modules', '@angular', 'core');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(
-    path.join(dir, 'package.json'),
-    JSON.stringify({ name: '@angular/core', version: '0.0.0-bench', types: 'index.d.ts' }, null, 2)
-  );
-  fs.writeFileSync(path.join(dir, 'index.d.ts'), FAKE_ANGULAR_CORE);
+/** The generated tree, as paths relative to the output directory. */
+export interface AngularProjectFiles {
+  /** Every file the generator emits, keyed by its path relative to the output directory. */
+  files: Record<string, string>;
+  /** The component files, in component order. */
+  componentPaths: string[];
+}
+
+/**
+ * The project as data, before anything touches disk. Everything this generator emits is here, so
+ * the shape of the tree - and how a component reaches the fake framework types - can be read
+ * without generating one.
+ */
+export function angularProjectFiles(
+  options: Pick<AngularGenerateOptions, 'components' | 'props'>
+): AngularProjectFiles {
+  const files: Record<string, string> = {
+    // A fake `@angular/core` inside the project's own node_modules keeps the tree hermetic: compodoc
+    // resolves the decorators it needs without the real framework being installed.
+    'node_modules/@angular/core/package.json': JSON.stringify(
+      { name: '@angular/core', version: '0.0.0-bench', types: 'index.d.ts' },
+      null,
+      2
+    ),
+    'node_modules/@angular/core/index.d.ts': FAKE_ANGULAR_CORE,
+    // The compodoc adapter passes `-p tsconfig.json` with the project dir as cwd.
+    'tsconfig.json': JSON.stringify(TSCONFIG, null, 2),
+  };
+
+  const componentPaths: string[] = [];
+  for (let i = 0; i < options.components; i++) {
+    const componentPath = `src/app/comp${i}.component.ts`;
+    files[componentPath] = angularComponentSource(i, options.props);
+    componentPaths.push(componentPath);
+  }
+
+  return { files, componentPaths };
 }
 
 /**
@@ -102,21 +131,15 @@ const TSCONFIG = {
 export function generateAngularProject(options: AngularGenerateOptions): GeneratedAngularProject {
   const outDir = path.resolve(options.outDir);
   fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(path.join(outDir, 'src', 'app'), { recursive: true });
 
-  emitFakeAngularCore(outDir);
-
-  // The compodoc adapter passes `-p tsconfig.json` with the project dir as cwd.
-  fs.writeFileSync(path.join(outDir, 'tsconfig.json'), JSON.stringify(TSCONFIG, null, 2));
-
-  const componentPaths: string[] = [];
-  for (let i = 0; i < options.components; i++) {
-    const componentPath = path.join(outDir, 'src', 'app', `comp${i}.component.ts`);
-    fs.writeFileSync(componentPath, angularComponentSource(i, options.props));
-    componentPaths.push(componentPath);
+  const { files, componentPaths } = angularProjectFiles(options);
+  for (const [relativePath, contents] of Object.entries(files)) {
+    const filePath = path.join(outDir, relativePath);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, contents);
   }
 
-  return { outDir, componentPaths };
+  return { outDir, componentPaths: componentPaths.map((p) => path.join(outDir, p)) };
 }
 
 function parseOptions(argv: string[]): AngularGenerateOptions {

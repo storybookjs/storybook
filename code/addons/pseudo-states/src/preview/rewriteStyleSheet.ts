@@ -10,6 +10,47 @@ const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
 
+const getZeroSpecificityIndexes = (selector: string) => {
+  const indexes = new Set<number>();
+  const zeroSpecificityStack: boolean[] = [];
+  let quote: '"' | "'" | undefined;
+
+  for (let index = 0; index < selector.length; index++) {
+    const character = selector[index];
+
+    if (character === '\\') {
+      index++;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === '(') {
+      const parentHasZeroSpecificity = zeroSpecificityStack.at(-1) ?? false;
+      zeroSpecificityStack.push(
+        parentHasZeroSpecificity || selector.slice(0, index).endsWith(':where')
+      );
+      continue;
+    }
+    if (character === ')') {
+      zeroSpecificityStack.pop();
+      continue;
+    }
+    if (zeroSpecificityStack.at(-1)) {
+      indexes.add(index);
+    }
+  }
+
+  return indexes;
+};
+
 const warnings = new Set();
 const warnOnce = (message: string) => {
   if (warnings.has(message)) {
@@ -43,7 +84,14 @@ const replacePseudoStatesWithAncestorSelector = (
     return selector;
   }
 
-  const selectors = `${additionalHostSelectors ?? ''}${extracted.states.map((s) => `.pseudo-${s}-all`).join('')}`;
+  const selectors = `${additionalHostSelectors ?? ''}${extracted.states
+    .filter((state) => !extracted.zeroSpecificityStates.includes(state))
+    .map((state) => `.pseudo-${state}-all`)
+    .join('')}${
+    extracted.zeroSpecificityStates.length > 0
+      ? `:where(${extracted.zeroSpecificityStates.map((state) => `.pseudo-${state}-all`).join('')})`
+      : ''
+  }`;
 
   // If there was a :host-context() containing only pseudo-states, we will later add a :host selector that replaces it.
   let { withoutPseudoStates } = extracted;
@@ -59,11 +107,16 @@ const replacePseudoStatesWithAncestorSelector = (
 };
 
 const extractPseudoStates = (selector: string) => {
-  const states = new Set();
+  const states = new Set<string>();
+  const statesWithSpecificity = new Set<string>();
+  const zeroSpecificityIndexes = getZeroSpecificityIndexes(selector);
   const withoutPseudoStates =
     selector
-      .replace(matchAll, (_, state) => {
+      .replace(matchAll, (_, state: string, index: number) => {
         states.add(state);
+        if (!zeroSpecificityIndexes.has(index)) {
+          statesWithSpecificity.add(state);
+        }
         return '';
       })
       // If removing pseudo-state selectors from inside a functional selector left it empty (thus invalid), must fix it by adding '*'.
@@ -73,10 +126,13 @@ const extractPseudoStates = (selector: string) => {
       // keep the selector valid by targeting any child/sibling.
       .replace(/([>+~])\s*(?=$|[,)])/g, '$1 *')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-      .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
+      .replace(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '')
+      // A :where() containing only pseudo-states no longer constrains the target element.
+      .replaceAll(':where(*)', '') || '*';
 
   return {
     states: Array.from(states),
+    zeroSpecificityStates: Array.from(states).filter((state) => !statesWithSpecificity.has(state)),
     withoutPseudoStates,
   };
 };

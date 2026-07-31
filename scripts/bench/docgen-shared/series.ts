@@ -5,7 +5,7 @@
  * differ only in what those steps mean, so they implement {@link SeriesEngine} and this module owns
  * the timing.
  */
-import * as fs from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 import type { MemorySample, SaveSample } from './samples.ts';
 import { formatSampleLine, gcAvailable, sampleMemory } from './sampling.ts';
@@ -130,7 +130,7 @@ export async function runSeriesHarness(spec: SeriesHarnessSpec): Promise<void> {
   printSeriesSummary(result, spec.saves);
 
   if (spec.jsonOut) {
-    fs.writeFileSync(spec.jsonOut, JSON.stringify({ options: spec.options, ...result }, null, 2));
+    writeFileSync(spec.jsonOut, JSON.stringify({ options: spec.options, ...result }, null, 2));
     console.log(`  wrote ${spec.jsonOut}`);
   }
 }

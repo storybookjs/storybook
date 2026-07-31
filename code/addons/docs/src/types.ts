@@ -36,6 +36,14 @@ type StoryBlockParameters = {
    * attached, the primary (first) story will be rendered.
    */
   of: ModuleExport;
+  /**
+   * When true, story args are frozen at their initial values so the story does not re-render
+   * when the user changes controls. Set to false to make stories fully interactive.
+   *
+   * @default false
+   * @see https://github.com/storybookjs/storybook/issues/22195
+   */
+  forceInitialArgs?: boolean;
 };
 
 type StoriesBlockParameters = {

@@ -52,7 +52,14 @@ type StoryParameters = {
   height?: string;
   /** Whether to run the story's play function */
   autoplay?: boolean;
-  /** Internal prop to control if a story re-renders on args updates */
+  /**
+   * Control if a story re-renders on args updates. When true, args are frozen at
+   * their initial values. Set to false to make stories fully interactive.
+   *
+   * @default false
+   */
+  forceInitialArgs?: boolean;
+  /** @deprecated Use `forceInitialArgs` instead */
   __forceInitialArgs?: boolean;
   /** Internal prop if this story is the primary story */
   __primary?: boolean;
@@ -94,12 +101,14 @@ export const getStoryProps = <TFramework extends Renderer>(
   if (inline) {
     const height = props.height ?? storyParameters.height;
     const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
+    // Public forceInitialArgs prop takes precedence over deprecated __forceInitialArgs
+    const forceInitialArgs = props.forceInitialArgs ?? props.__forceInitialArgs ?? false;
     return {
       story: story as any,
       inline: true,
       height,
       autoplay,
-      forceInitialArgs: !!props.__forceInitialArgs,
+      forceInitialArgs: !!forceInitialArgs,
       primary: !!props.__primary,
       renderStoryToElement: context.renderStoryToElement as any,
     };
@@ -115,7 +124,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   };
 };
 
-const StoryImpl: FC<StoryProps> = (props = { __forceInitialArgs: false, __primary: false }) => {
+const StoryImpl: FC<StoryProps> = (props = { forceInitialArgs: false, __primary: false }) => {
   const context = useContext(DocsContext);
   const storyId = getStoryId(props, context);
   const story = useStory(storyId, context);

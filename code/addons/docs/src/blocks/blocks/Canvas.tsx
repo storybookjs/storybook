@@ -60,7 +60,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
   /** @see {SourceProps} */
   source?: Omit<SourceProps, 'dark'>;
   /** @see {StoryProps} */
-  story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | '__forceInitialArgs' | '__primary'>;
+  story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | 'forceInitialArgs' | '__forceInitialArgs' | '__primary'>;
 };
 
 const CanvasImpl: FC<CanvasProps> = (props) => {

@@ -193,6 +193,6 @@ export const ForceInitialArgs: Story = {
   args: {
     of: ButtonStories.Primary,
     storyExport: ButtonStories.Primary,
-    __forceInitialArgs: true,
+    forceInitialArgs: true,
   } as any,
 };

@@ -65,7 +65,11 @@ export function renderResults(
   }
 
   const widths = HEADER.map((_, col) => Math.max(...rows.map((row) => row[col].length)));
-  const table = rows.map((row) => `  ${row.map((cell, col) => cell.padEnd(widths[col])).join('  ')}`);
+  // trimEnd because the last column is padded like every other one, and a run's output should not
+  // carry trailing spaces on every line.
+  const table = rows.map(
+    (row) => `  ${row.map((cell, col) => cell.padEnd(widths[col])).join('  ')}`.trimEnd()
+  );
   return { table, statusLines };
 }
 

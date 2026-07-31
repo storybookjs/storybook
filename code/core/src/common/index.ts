@@ -2,6 +2,7 @@ import versions from './versions.ts';
 
 /// <reference types="@types/compression" />
 
+export { jsTsSourceExtensions } from '../shared/constants/extensions.ts';
 export * from './presets.ts';
 export * from './utils/cache.ts';
 export * from './utils/cli.ts';
@@ -24,6 +25,7 @@ export * from './utils/load-main-config.ts';
 export * from './utils/load-manager-or-addons-file.ts';
 export * from './utils/load-preview-or-config-file.ts';
 export * from './utils/log-config.ts';
+export * from './utils/module-resolver.ts';
 export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';

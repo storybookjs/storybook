@@ -1,7 +1,6 @@
 import { types as t } from 'storybook/internal/babel';
+import { createModuleResolver, jsTsSourceExtensions } from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
-
-import { ResolverFactory } from 'oxc-resolver';
 
 /** The component a story file documents, located on disk. */
 export interface ResolvedVueComponent {
@@ -15,8 +14,8 @@ export interface ResolvedVueComponent {
   exportName: string;
 }
 
-const componentResolver = new ResolverFactory({
-  extensions: ['.vue', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+const componentResolver = createModuleResolver({
+  extensions: ['.vue', ...jsTsSourceExtensions],
   mainFields: ['module', 'main'],
   tsconfig: 'auto',
 });
@@ -43,7 +42,7 @@ export function resolveMetaComponent(
 
   let resolvedPath: string | undefined;
   try {
-    resolvedPath = componentResolver.resolveFileSync(storyPath, imported.importId).path;
+    resolvedPath = componentResolver.resolveFileSync(storyPath, imported.importId);
   } catch {
     resolvedPath = undefined;
   }

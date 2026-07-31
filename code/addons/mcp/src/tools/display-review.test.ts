@@ -204,6 +204,22 @@ describe('displayReviewTool', () => {
     expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review/');
   });
 
+  it('uses the same proxied root for the review URL and the running-at message', async () => {
+    const response = await callTool(
+      sampleReview,
+      makeContext({ request: new Request('https://example.com/storybook/mcp') })
+    );
+    const result = getResult(response);
+
+    expect(result?.isError).toBeFalsy();
+    expect(result?.structuredContent?.reviewUrl).toBe(
+      'http://localhost:6006/storybook/?path=/review/'
+    );
+    expect(result?.content?.[0]?.text).toContain(
+      'already running at http://localhost:6006/storybook'
+    );
+  });
+
   it('uses singular nouns for a single collection and story', async () => {
     const response = await callTool(
       {

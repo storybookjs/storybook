@@ -164,8 +164,8 @@ async function renderComponentsHtmlFromService(
   manifestComponentIds: string[],
   docsManifest?: DocsManifest
 ) {
-  const docgenService = getService('core/docgen');
-  const storyDocsService = getService('core/story-docs');
+  const docgenService = getService('core/docgen', { internal: true });
+  const storyDocsService = getService('core/story-docs', { internal: true });
   const startTime = performance.now();
 
   const [allDocgenPayloads, allStoryDocsPayloads, mdxPayloads] = await Promise.all([

@@ -17,6 +17,9 @@ Each framework has three test files:
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
+vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
+It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
+
 ## Layout
 
 ```text
@@ -34,9 +37,11 @@ src/
 │   └── types.ts
 ├── vue3/
 │   ├── vue3-baselines.test.ts
+│   ├── vue3-component-meta-baselines.test.ts
 │   ├── vue3-legacy-gaps.test.ts
 │   ├── vue3-render.test.ts
-│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot
+│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot,
+│                                 # cm-argtypes.snapshot, cm-snippet-<story>.snapshot
 ├── angular/
 │   ├── angular-baselines.test.ts
 │   ├── angular-legacy-gaps.test.ts
@@ -68,6 +73,18 @@ src/
 - The committed `argtypes*.snapshot` files are pretty-format text, not JSON.
   `parseArgTypesSnapshot` reads them back and verifies itself by re-serializing every parse byte-for-byte; anything outside that grammar throws.
 - Adding a framework: extend the `Framework` union and compilation fails at the switch in `snippets.ts` until the new matcher exists.
+
+## The vue-component-meta recorder (vue3)
+
+`vue3-component-meta-baselines.test.ts` replicates the vue3-vite vite plugin's meta processing exactly - checker options, empty-meta skip, nested-schema pruning, exposed de-duplication, and the vue-docgen-api event-description backfill - so the `cm-` snapshots show what a `vue-component-meta` user actually gets today.
+Keeping that copy in step with `frameworks/vue3-vite/src/plugins/vue-component-meta.ts` is manual; nothing detects drift.
+
+- The `cm-` prefix keeps each recorder's stale-snippet guard scoped to its own files.
+- `sourceFiles` records `<sfc>` because production stores the absolute module id and snapshots must stay path-free; nothing downstream reads it.
+- Like the legacy recorder, it self-compares every committed baseline through the comparator, so a checker or plugin change that loses extraction quality fails with named violations instead of landing as an unremarkable diff.
+  Whether the OSA Vue engine is also held to these baselines - rather than only to the legacy ones - is a separate, later decision.
+- Plugin and checker changes land here as reviewed snapshot diffs instead of silent drift - #35565 (`schema: true`) moved 17 of the 25 `cm-argtypes.snapshot` files and left every `cm-snippet-*` byte-identical.
+  The recorded state is whatever the lockfile resolves `vue-component-meta` to (3.3.9 today), so a dependency bump is a reviewed baseline change too.
 
 ## Adding a fixture
 
@@ -120,6 +137,9 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options.
 - #24270 (partial) -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted; the issue's own snippet repro is not covered here.
 - #26465 (partial) -> `slots/`: scoped-slot binding types must be extracted; the marker covers only this symptom, not the issue's `vue-component-meta` repro.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under `vue-component-meta` - does not occur at 3.3.9.
+  `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact; a regression baseline, no marker.
+  The issue's secondary HMR symptom is dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options.
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` argument must resolve its props.
 

@@ -156,7 +156,10 @@ async function main() {
     for (const [engineId, reason] of failed) {
       console.error(`  - ${engineId}: ${reason}`);
     }
-    process.exit(1);
+    // Not `process.exit`: writes to a pipe are async, so exiting here can truncate the reasons
+    // printed just above - exactly the output someone is reading when the suite fails under `tee`.
+    process.exitCode = 1;
+    return;
   }
   console.log('\ndocgen-perf suite completed.');
 }

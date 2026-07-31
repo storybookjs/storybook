@@ -9,22 +9,6 @@ This document outlines some of the processes that the maintainers should adhere 
 
 Non-draft PRs must have an **approving review** from at least one active member of the Storybook **Core** or **Developer Experience** GitHub teams before merge. Maintainers (and other teams) do not satisfy this gate. Self-approvals do not count. One Core/DX approval is enough even if other Core/DX members requested changes. Approvals are not treated as stale when new commits are pushed.
 
-This is enforced by Danger ([`scripts/dangerfile.js`](scripts/dangerfile.js)); reviewers are **not** auto-requested. The failure comment is plain text and does not `@`-mention the teams.
-
-## Setup (org / repo admins)
-
-These steps are outside the repository and must stay correct for the gate to work:
-
-1. **Repo secret** — Keep `STORYBOOKJS_ORG_MEMBERSHIP_TOKEN` configured with `read:org` (same secret used for CircleCI trusted-author checks). Danger prefers this token when checking team membership.
-2. **Required status check** — Branch protection / rulesets for merge targets (for example `next`) must require the **Danger JS** check. Otherwise a Danger `fail()` does not block merge.
-3. **Do not auto-request reviewers** — Do not add `@storybookjs/core` or `@storybookjs/developer-experience` as a blanket CODEOWNERS owner or required-reviewer team. That would request reviews on every matching PR.
-4. **Fork PRs and review events** — Custom secrets are often withheld on `pull_request_review` for fork PRs.
-   - Primary path: membership checks on `pull_request_target` runs (secrets available).
-   - Fallback: `GITHUB_TOKEN` (may be unable to read org team membership).
-   - If membership cannot be verified, Danger **warns and allows** the PR (fail open by design).
-   - If an approval does not clear the check on a fork PR, re-run the **Danger JS** workflow or toggle a label to force a `pull_request_target` re-run with the membership token.
-5. **Optional hardening** — To help `GITHUB_TOKEN` succeed more often on fork review events, make the `core` and `developer-experience` teams **Visible** (not secret) under the org’s Teams settings, and confirm an authenticated membership API call works with a repo-scoped Actions token. Keep the PAT secret either way.
-
 # Labels
 
 | label name                     | purpose                                                                                                                                              |

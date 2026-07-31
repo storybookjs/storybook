@@ -85,6 +85,7 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
  */
 export const docgenServiceDef = defineService({
   id: 'core/docgen',
+  internal: true,
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
   initialState: { components: {} } as DocgenServiceState,

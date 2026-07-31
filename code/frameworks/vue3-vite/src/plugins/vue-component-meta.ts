@@ -44,8 +44,21 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames = checker.getExportNames(id);
-          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
+          const exportNames: string[] = [];
+          let componentsMeta: ComponentMeta[] = [];
+
+          for (const name of checker.getExportNames(id)) {
+            try {
+              const meta = checker.getComponentMeta(id, name);
+              exportNames.push(name);
+              componentsMeta.push(meta);
+            } catch {}
+          }
+
+          if (componentsMeta.length === 0) {
+            return undefined;
+          }
+
           componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
 
           const metaSources: MetaSource[] = [];
@@ -302,6 +315,10 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
     // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
+    return;
+  }
+  if (schema.kind === 'literal') {
+    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
     return;
   }
   delete schema.schema;

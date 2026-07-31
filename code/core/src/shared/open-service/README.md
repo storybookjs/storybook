@@ -31,6 +31,8 @@ client/server registration API.
 The environment-agnostic API consists of:
 
 - `defineService`
+- `defineToolset`, `registerToolset`, `getRegisteredToolsets` — the public toolset construct (see
+  [Toolset](#toolset))
 - the exported type aliases from [types.ts](./types.ts)
 
 The server-only API consists of:
@@ -61,6 +63,10 @@ Internal tests and implementation code may import from the individual modules di
 - [preview.ts](./preview.ts): preview entrypoint (`relay: false`, leaf) re-exported via `storybook/preview-api`; registration only, no React hooks
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
+- [toolset-definition.ts](./toolset-definition.ts): `defineToolset()` typing for public toolsets and their handler context
+- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
+- `services/`: core OSA service definitions and per-runtime registration helpers
+- `toolsets/`: public toolsets (docs, stories, test, review), mirroring the services tree
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
@@ -89,6 +95,21 @@ A service is a state container with:
 - optional descriptions on the service and each operation
 
 Use `defineService()` to preserve the concrete query and command map types.
+
+### Toolset
+
+Services and toolsets are sibling constructs behind this one entry: **services** own internal state
+and synchronization; **toolsets** are the public agent surface for CLI and MCP adapters. A toolset
+(`defineToolset`) has an `id`, a description, and methods carrying only `schema`, `description`, and
+`handler`. Handlers receive `(input, ctx)` where `ctx` has `consumer` (`'cli' | 'mcp'`), an optional
+`origin`, a required `format` (`'markdown' | 'json'` — adapters own the mapping; methods never
+declare the format), and `getService` for calling OSA services (with `{ internal: true }`).
+
+Toolsets register imperatively via `registerToolset`, called from the same place the paired service
+registers (for core and addons, the `services` preset hook — the mechanism itself is
+preset-independent so manager- or preview-realm toolsets can use it later). Adapters obtain the
+registered set via `getRegisteredToolsets()`; the MCP server consumes it from Milestone 4 and the
+`storybook tools` CLI from Milestone 5.
 
 ### Query
 
@@ -185,11 +206,17 @@ still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
 Services and operations can be hidden from discovery APIs without disabling them at runtime:
 
-- Set `internal: true` on a **service** to omit it from `listServices()`. `describeService(id)` and
-  `getService(id)` still work when the id is known.
+- Set `internal: true` on a **service** to omit it from `listServices()`. Callers must use
+  `getService(id, { internal: true })` to resolve it — a plain `getService(id)` throws
+  `OpenServiceInternalServiceError`. `describeService(id)` still works when the id is known.
 - Set `internal: true` on a **query or command** to omit it from `describeService()` output (and
   therefore from `queryNames` / `commandNames` in `listServices()` summaries). Runtime callers can
   still invoke the operation through a service handle, and TypeScript types remain available.
+  Operations may be marked internal even on a non-internal service.
+
+All core Storybook OSA services are currently `internal: true`. Treat them as unstable: Storybook
+may break their ids, state shapes, and operations without a public semver bump. Prefer public
+toolsets (`defineToolset`) for MCP/CLI surfaces.
 
 `internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
 be overridden at `registerService()` time. Static snapshot building is unaffected.

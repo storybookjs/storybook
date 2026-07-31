@@ -9,7 +9,7 @@ This document outlines some of the processes that the maintainers should adhere 
 
 Non-draft PRs must have an **approving review** from at least one active member of the Storybook **Core** or **Developer Experience** GitHub teams before merge. Maintainers (and other teams) do not satisfy this gate. Self-approvals do not count. One Core/DX approval is enough even if other Core/DX members requested changes. Approvals are not treated as stale when new commits are pushed.
 
-This is enforced by Danger ([`scripts/dangerfile.js`](scripts/dangerfile.js) / [`scripts/danger/core-dx-approval.cjs`](scripts/danger/core-dx-approval.cjs)); reviewers are **not** auto-requested. The failure comment is plain text and does not `@`-mention the teams.
+This is enforced by Danger ([`scripts/dangerfile.js`](scripts/dangerfile.js)); reviewers are **not** auto-requested. The failure comment is plain text and does not `@`-mention the teams.
 
 ## Setup (org / repo admins)
 

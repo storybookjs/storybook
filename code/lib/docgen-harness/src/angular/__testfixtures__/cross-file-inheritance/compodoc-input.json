@@ -1,0 +1,181 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [
+    {
+      "name": "BaseAlertComponent",
+      "id": "class-BaseAlertComponent-456480b84d05e90cef808138d41d57b91979d3adba5b134d9d2a7028cffe398c20d688217be568620f6809342d3e94af7554c902a46c11990a0d0141c9f95e43",
+      "file": "base.component.ts",
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "type": "class",
+      "sourceCode": "import { EventEmitter, Input, Output } from '@angular/core';\n\nexport abstract class BaseAlertComponent {\n  /** Whether the alert shows a close button. */\n  @Input() dismissible = false;\n\n  @Output() dismissed = new EventEmitter<void>();\n}\n",
+      "displayName": "BaseAlertComponent",
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "dismissible",
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\nWhether the alert shows a close button.",
+          "description": "<p>Whether the alert shows a close button.</p>\n",
+          "line": 5,
+          "type": "boolean",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "dismissed",
+          "coverageIgnore": false,
+          "defaultValue": "new EventEmitter<void>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 7,
+          "type": "EventEmitter"
+        }
+      ],
+      "properties": [],
+      "methods": [],
+      "indexSignatures": [],
+      "extends": [],
+      "hostBindings": [],
+      "hostListeners": [],
+      "relationships": {
+        "incoming": [
+          {
+            "name": "CrossFileInheritanceComponent",
+            "type": "component"
+          }
+        ],
+        "outgoing": []
+      }
+    }
+  ],
+  "directives": [],
+  "components": [
+    {
+      "name": "CrossFileInheritanceComponent",
+      "id": "component-CrossFileInheritanceComponent-76bbf65a6cdab052222602861c3fe7252096a37d2ebfcfa8d5d8c9ee7d44ad6e033f62b9e0f69400ad84ba4fdc103f293635c430f37a405e7026beba76315e47",
+      "file": "cross-file-inheritance.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-cross-file-inheritance",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<div role=\"alert\" (click)=\"dismissed.emit()\">{{ heading }} {{ dismissible }}</div>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "heading",
+          "defaultValue": "''",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 10,
+          "type": "string",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "dismissible",
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\nWhether the alert shows a close button.",
+          "description": "<p>Whether the alert shows a close button.</p>\n",
+          "line": 5,
+          "type": "boolean",
+          "decorators": [],
+          "inheritance": {
+            "file": "BaseAlertComponent"
+          }
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "dismissed",
+          "coverageIgnore": false,
+          "defaultValue": "new EventEmitter<void>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 7,
+          "type": "EventEmitter",
+          "inheritance": {
+            "file": "BaseAlertComponent"
+          }
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\nimport { BaseAlertComponent } from './base.component.ts';\n\n@Component({\n  selector: 'sb-cross-file-inheritance',\n  template: '<div role=\"alert\" (click)=\"dismissed.emit()\">{{ heading }} {{ dismissible }}</div>',\n})\nexport class CrossFileInheritanceComponent extends BaseAlertComponent {\n  @Input() heading = '';\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": ["BaseAlertComponent"],
+      "relationships": {
+        "incoming": [],
+        "outgoing": [
+          {
+            "name": "BaseAlertComponent",
+            "type": "class"
+          }
+        ]
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 12,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "base.component.ts",
+        "type": "class",
+        "linktype": "classe",
+        "name": "BaseAlertComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/1",
+        "status": "low"
+      },
+      {
+        "filePath": "cross-file-inheritance.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "CrossFileInheritanceComponent",
+        "coveragePercent": 25,
+        "coverageCount": "1/4",
+        "status": "low"
+      }
+    ]
+  }
+}

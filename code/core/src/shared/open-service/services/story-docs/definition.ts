@@ -45,6 +45,7 @@ export type StoryDocsServiceState = {
  */
 export const storyDocsServiceDef = defineService({
   id: 'core/story-docs',
+  internal: true,
   description: 'Story documentation (snippets, descriptions, imports) keyed by component id.',
   initialState: { components: {} } as StoryDocsServiceState,
   queries: {

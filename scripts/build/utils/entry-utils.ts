@@ -24,6 +24,13 @@ export type BuildEntries = {
    */
   entries: BuildEntriesByPlatform;
   /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  /**
    * The map of extra outputs to be added to the package.json's exports
    *
    * This can be useful to expose non-compiled/non-js files such as Svelte components,
@@ -94,6 +101,10 @@ export const getExternal = async (cwd: string) => {
     // bundle so rollup-plugin-dts doesn't walk its (CJS) source (which fails on refractor/core
     // and exhausts the heap). It stays bundled in the JS output, like ast-types.
     'react-syntax-highlighter',
+    // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
+    // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
+    // external lets treeshaking drop the import when the kept types don't use it.
+    'typescript',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

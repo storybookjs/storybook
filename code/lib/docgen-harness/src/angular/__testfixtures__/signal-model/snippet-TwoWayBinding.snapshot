@@ -1,0 +1,1 @@
+<sb-signal-model [value]="'hello'" [checked]="true" (valueChange)="valueChange($event)" (checkedChange)="checkedChange($event)"></sb-signal-model>

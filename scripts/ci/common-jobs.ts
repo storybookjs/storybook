@@ -6,6 +6,7 @@ import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants
 import {
   CACHE_KEYS,
   CACHE_PATHS,
+  PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
   git,
@@ -22,6 +23,11 @@ import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
+const packageDirs = glob.sync(['*/src', '*/*/src'], {
+  cwd: join(dirname, '../../code'),
+  onlyDirectories: true,
+});
+
 export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   executor: {
     name: 'sb_node_22_classic',
@@ -33,6 +39,25 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     npm.install('.'),
     ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
     npm.check(),
+    workspace.pack(
+      [
+        // Workspace-root node_modules folders. Yarn hoists shared/singleton
+        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
+        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
+        // jobs otherwise only receive these via the shared `save_cache`, which is
+        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
+        // freshly-built `dist` but no root `node_modules`, producing errors like
+        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
+        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+        `${WORKING_DIR}/node_modules`,
+        `${WORKING_DIR}/code/node_modules`,
+        `${WORKING_DIR}/scripts/node_modules`,
+        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
+        // so downstream checks need its node_modules packed explicitly.
+        `${WORKING_DIR}/agent-eval/node_modules`,
+      ],
+      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
+    ),
     {
       run: {
         name: 'Compile',
@@ -50,27 +75,10 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     git.check(),
     ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
+    workspace.awaitPack(),
     workspace.persist([
-      // Workspace-root node_modules folders. Yarn hoists shared/singleton
-      // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-      // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-      // jobs otherwise only receive these via the shared `save_cache`, which is
-      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-      // freshly-built `dist` but no root `node_modules`, producing errors like
-      // `Cannot find package 'oxc-parser'`. Persisting them to the (pipeline-
-      // scoped, un-gated) workspace makes downstream jobs correct for every PR.
-      `${WORKING_DIR}/node_modules`,
-      `${WORKING_DIR}/code/node_modules`,
-      `${WORKING_DIR}/scripts/node_modules`,
-      ...glob
-        .sync(['*/src', '*/*/src'], {
-          cwd: join(dirname, '../../code'),
-          onlyDirectories: true,
-        })
-        .flatMap((p) => [
-          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
-          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
-        ]),
+      PACKED_NODE_MODULES_ARCHIVE,
+      ...packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'dist')}`),
       `${WORKING_DIR}/.verdaccio-cache`,
       `${WORKING_DIR}/code/bench`,
     ]),
@@ -115,15 +123,10 @@ export const build_windows = defineJob('Build (windows)', () => ({
     verdaccio.start(),
     workspace.persist(
       [
-        ...glob
-          .sync(['*/src', '*/*/src'], {
-            cwd: join(dirname, '../../code'),
-            onlyDirectories: true,
-          })
-          .flatMap((p) => [
-            `code/${p.replace('src', 'dist')}`,
-            `code/${p.replace('src', 'node_modules')}`,
-          ]),
+        ...packageDirs.flatMap((p) => [
+          `code/${p.replace('src', 'dist')}`,
+          `code/${p.replace('src', 'node_modules')}`,
+        ]),
         `.verdaccio-cache`,
         `code/bench`,
       ],
@@ -245,9 +248,13 @@ export const internalStorybookBuildE2e = defineJob(
 export const check = defineJob(
   'TypeScript validation',
   (workflowName) => ({
+    // xlarge because each of the 4 concurrent native-tsc processes in the
+    // check task is itself multi-threaded (~4 threads), so throughput still
+    // wants the full 8 vCPUs; roughly cost-neutral vs the previous serial run
+    // on medium+ and much faster feedback for the cancel-on-failure gate.
     executor: {
       name: 'sb_node_22_classic',
-      class: 'medium+',
+      class: 'xlarge',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -334,7 +341,7 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },

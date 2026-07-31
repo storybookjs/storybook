@@ -5,7 +5,7 @@ import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 import { JsxEmit, ScriptTarget } from 'typescript';
 
-import { getExternal } from './entry-utils';
+import { getExternal } from './entry-utils.ts';
 
 async function run() {
   const [entryPoint] = process.argv.slice(2);

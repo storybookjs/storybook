@@ -150,7 +150,7 @@ export class ChangeDetectionService {
   }
 
   private getModuleGraph() {
-    return getService('core/module-graph');
+    return getService('core/module-graph', { internal: true });
   }
 
   /** True while the service is live and change-detection status publishing is enabled. */

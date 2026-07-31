@@ -317,5 +317,9 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
     return;
   }
+  if (schema.kind === 'literal') {
+    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
+    return;
+  }
   delete schema.schema;
 }

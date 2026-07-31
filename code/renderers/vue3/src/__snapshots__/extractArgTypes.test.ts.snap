@@ -219,9 +219,21 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "enumValue": {
+    "control": {
+      "labels": {
+        "0": "MyEnum.Small",
+        "1": "MyEnum.Medium",
+        "2": "MyEnum.Large",
+      },
+    },
     "defaultValue": undefined,
     "description": "description enum value",
     "name": "enumValue",
+    "options": [
+      0,
+      1,
+      2,
+    ],
     "table": {
       "category": "props",
       "defaultValue": undefined,
@@ -230,9 +242,13 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": true,
-      "value": "MyEnum",
+      "value": [
+        0,
+        1,
+        2,
+      ],
     },
   },
   "foo": {

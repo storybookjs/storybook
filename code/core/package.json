@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.6.0-alpha.1",
+  "version": "10.6.0-alpha.3",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -247,7 +247,7 @@
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",
@@ -260,7 +260,7 @@
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
-    "ws": "^8.18.0"
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",

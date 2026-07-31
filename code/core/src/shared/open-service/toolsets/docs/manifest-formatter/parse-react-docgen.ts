@@ -1,0 +1,170 @@
+/**
+ * Verbatim port of `@storybook/mcp`'s `packages/mcp/src/utils/parse-react-docgen.ts`. Both copies
+ * must not drift until Milestone 4 deletes the original. Deviation: core does not depend on
+ * `react-docgen` / `react-docgen-typescript`, so the type-only imports are replaced with the
+ * structural subsets the parsers actually read.
+ */
+
+/** Structural subset of react-docgen's `tsType` / `type` prop descriptor field. */
+type TsType = {
+  name?: string;
+  raw?: string;
+  value?: string;
+  type?: string;
+  elements?: TsType[];
+  signature?: {
+    arguments?: Array<{ name: string; type?: TsType }>;
+    return?: TsType;
+    properties?: Array<{ key: unknown; value?: TsType & { required?: boolean } }>;
+  };
+};
+
+/** Structural subset of react-docgen's `Documentation` output. */
+type Documentation = {
+  props?: Record<
+    string,
+    {
+      description?: string;
+      required?: boolean;
+      tsType?: TsType;
+      type?: TsType;
+      defaultValue?: { value?: string };
+    }
+  >;
+};
+
+type PropDescriptor = NonNullable<Documentation['props']>[string];
+
+/** Structural subset of react-docgen-typescript's `ComponentDoc` output. */
+type ComponentDoc = {
+  props?: Record<
+    string,
+    {
+      description?: string;
+      required?: boolean;
+      type?: { name?: string; raw?: string };
+      defaultValue?: { value?: string } | null;
+    }
+  >;
+};
+
+export type ParsedDocgen = {
+  props: Record<
+    string,
+    {
+      description?: string;
+      type?: string;
+      defaultValue?: string;
+      required?: boolean;
+    }
+  >;
+};
+
+// Storybook's `reactComponentMeta` payload is not the same full schema as
+// `react-docgen-typescript`'s `ComponentDoc`, but `props` has the same type shape.
+type ComponentDocLike = Pick<ComponentDoc, 'props'>;
+
+// Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
+function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
+  if (!tsType) return undefined;
+  // Prefer raw if provided
+  if ('raw' in tsType && typeof tsType.raw === 'string' && tsType.raw.trim().length > 0) {
+    return tsType.raw;
+  }
+
+  if (!tsType.name) return undefined;
+
+  if ('elements' in tsType) {
+    const serializeElements = () =>
+      (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+
+    switch (tsType.name) {
+      case 'union':
+        return serializeElements().join(' | ');
+      case 'intersection':
+        return serializeElements().join(' & ');
+      case 'Array': {
+        const inner = serializeTsType((tsType.elements ?? [])[0]) ?? 'unknown';
+        return `${inner}[]`;
+      }
+      case 'tuple':
+        return `[${serializeElements().join(', ')}]`;
+    }
+  }
+  if ('value' in tsType && tsType.name === 'literal') {
+    return tsType.value;
+  }
+  if ('signature' in tsType && tsType.name === 'signature') {
+    if (tsType.type === 'function') {
+      const args = (tsType.signature?.arguments ?? []).map((a: any) => {
+        const argType = serializeTsType(a.type) ?? 'any';
+        return `${a.name}: ${argType}`;
+      });
+      const ret = serializeTsType(tsType.signature?.return) ?? 'void';
+      return `(${args.join(', ')}) => ${ret}`;
+    }
+    if (tsType.type === 'object') {
+      const props = (tsType.signature?.properties ?? []).map((p) => {
+        const req: boolean = Boolean(p.value?.required);
+        const propType = serializeTsType(p.value) ?? 'any';
+        return `${p.key as string}${req ? '' : '?'}: ${propType}`;
+      });
+      return `{ ${props.join('; ')} }`;
+    }
+    return 'unknown';
+  }
+  // Default case (Generic like Item<TMeta>)
+  if ('elements' in tsType) {
+    const inner = (tsType.elements ?? []).map((el) => serializeTsType(el) ?? 'unknown');
+    if (inner.length > 0) return `${tsType.name}<${inner.join(', ')}>`;
+  }
+
+  return tsType.name;
+}
+
+export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
+  const props: Record<string, any> = (reactDocgen as any)?.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
+          type: serializeTsType(prop.tsType ?? prop.type),
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+/**
+ * Parse react-docgen-typescript output into the same simplified ParsedDocgen format.
+ * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
+ * nested tsType structure, so no serialization is needed.
+ */
+const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
+  const props = componentDoc.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description || undefined,
+          // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
+          // For enums, prefer prop.type.raw which has the full union
+          type: prop.type?.raw ?? prop.type?.name,
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen =>
+  parseComponentDocLike(reactDocgenTypescript);
+
+export const parseReactComponentMeta = (reactComponentMeta: ComponentDocLike): ParsedDocgen =>
+  parseComponentDocLike(reactComponentMeta);

@@ -27,7 +27,8 @@ function makeComponentMeta() {
 
 async function getTransformHandler() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const plugin = await vueComponentMeta();
+  const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
+  const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
 
   const handler =
     typeof plugin.transform === 'function'

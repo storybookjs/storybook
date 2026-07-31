@@ -3,7 +3,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { Plugin } from 'vite';
 
 import { resolveDocgenOptions } from './docgen/options.ts';
-import { vueComponentMeta } from './plugins/vue-component-meta.ts';
+import { type VueDocgenEngine, vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
@@ -25,7 +25,8 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   // add docgen plugin depending on framework option
   if (docgen !== false) {
     if (docgen.plugin === 'vue-component-meta') {
-      plugins.push(await vueComponentMeta(docgen.tsconfig));
+      const engine: VueDocgenEngine = await options.presets.apply('experimental_vueDocgenEngine');
+      plugins.push(await vueComponentMeta(engine, docgen.tsconfig));
     } else {
       plugins.push(await vueDocgen());
     }

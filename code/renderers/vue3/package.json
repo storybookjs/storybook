@@ -37,13 +37,12 @@
       "code": "./src/playwright.ts",
       "default": "./dist/playwright.js"
     },
-    "./internal/docgen-engine": {
-      "types": "./dist/docgen/component-meta.d.ts",
-      "code": "./src/docgen/component-meta.ts",
-      "default": "./dist/docgen/component-meta.js"
-    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "code": "./src/preset.ts",
+      "default": "./dist/preset.js"
+    }
   },
   "files": [
     "dist/**/*",

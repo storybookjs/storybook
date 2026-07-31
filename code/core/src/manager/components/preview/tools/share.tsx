@@ -6,7 +6,7 @@ import { SHARE_ISOLATE_MODE } from 'storybook/internal/core-events';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { PopOutIcon, StarIcon as QRIcon } from '@storybook/icons';
+import { PopOutIcon, QRIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
@@ -135,7 +135,7 @@ export const qrTool: Addon_BaseType = {
             <QRToolContent api={api} storyId={storyId} refId={refId} onHide={onHide} />
           )}
         >
-          <Button padding="small" variant="ghost" ariaLabel="Open story via QR code">
+          <Button padding="small" variant="ghost" ariaLabel="Open on other device">
             <QRIcon />
           </Button>
         </PopoverProvider>

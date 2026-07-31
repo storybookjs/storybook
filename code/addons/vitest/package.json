@@ -79,7 +79,7 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^2.0.2"
+    "@storybook/icons": "^2.1.0"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",

@@ -7,8 +7,12 @@ import path from "node:path";
 export default defineConfig({
   testDir: "./e2e-tests",
   outputDir: "./test-results",
-  /* Maximum time one test can run for. */
-  timeout: (process.env.CI ? 60 : 30) * 1000,
+  /* Maximum time one test can run for. It caps the sum of a test's own waits, so it has to
+   * clear the longest chain any test declares - today 90s in component-testing.spec.ts, which
+   * waits up to 30s for a story to render and then up to 60s for its test results. At 60s
+   * those tests could time out while still making progress, which is how the coverage case
+   * kept flaking. Passing runs are unaffected; Playwright only spends what a test needs. */
+  timeout: (process.env.CI ? 120 : 30) * 1000,
   /* Run tests in files in parallel */
   fullyParallel: false,
 

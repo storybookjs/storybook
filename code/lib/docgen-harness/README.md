@@ -17,7 +17,7 @@ Each framework has three test files:
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
-vue3 has a fourth: `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
+vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
 It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
 
 ## Layout
@@ -81,9 +81,10 @@ Keeping that copy in step with `frameworks/vue3-vite/src/plugins/vue-component-m
 
 - The `cm-` prefix keeps each recorder's stale-snippet guard scoped to its own files.
 - `sourceFiles` records `<sfc>` because production stores the absolute module id and snapshots must stay path-free; nothing downstream reads it.
-- These are plain recordings, deliberately outside the comparator: `expectCurrentOrBetter` encodes the legacy engine's vocabulary, and the two engines resolve the same fixture differently by design.
-  Wiring the vue-component-meta path into the OSA floor is a separate, later decision.
-- Plugin and checker changes land here as reviewed snapshot diffs instead of silent drift - #35565 (`schema: true`) moved 15 of the 25 fixtures.
+- Like the legacy recorder, it self-compares every committed baseline through the comparator, so a checker or plugin change that loses extraction quality fails with named violations instead of landing as an unremarkable diff.
+  Whether the OSA Vue engine is also held to these baselines - rather than only to the legacy ones - is a separate, later decision.
+- Plugin and checker changes land here as reviewed snapshot diffs instead of silent drift - #35565 (`schema: true`) moved 17 of the 25 `cm-argtypes.snapshot` files and left every `cm-snippet-*` byte-identical.
+  The recorded state is whatever the lockfile resolves `vue-component-meta` to (3.3.2 today), so a dependency bump is a reviewed baseline change too.
 
 ## Adding a fixture
 
@@ -136,7 +137,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options.
 - #24270 (partial) -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted; the issue's own snippet repro is not covered here.
 - #26465 (partial) -> `slots/`: scoped-slot binding types must be extracted; the marker covers only this symptom, not the issue's `vue-component-meta` repro.
-- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under `vue-component-meta` - does not occur at 3.2.7.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under `vue-component-meta` - does not occur at 3.3.2.
   `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact; a regression baseline, no marker.
   The issue's secondary HMR symptom is dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options.

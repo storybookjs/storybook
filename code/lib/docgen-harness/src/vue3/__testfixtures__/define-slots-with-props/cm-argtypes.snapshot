@@ -29,9 +29,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "boolean",
       "required": false,
-      "value": "boolean | undefined",
     },
   },
   "icon": {
@@ -64,9 +63,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "string",
       "required": false,
-      "value": "string | undefined",
     },
   },
 }

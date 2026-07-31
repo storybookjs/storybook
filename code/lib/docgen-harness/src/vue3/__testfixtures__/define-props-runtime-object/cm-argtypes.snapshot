@@ -15,9 +15,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "number",
       "required": false,
-      "value": "number | undefined",
     },
   },
   "format": {

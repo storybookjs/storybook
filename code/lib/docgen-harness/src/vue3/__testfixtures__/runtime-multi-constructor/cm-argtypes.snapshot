@@ -15,9 +15,18 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "union",
       "required": false,
-      "value": "string | number | undefined",
+      "value": [
+        {
+          "name": "string",
+          "required": false,
+        },
+        {
+          "name": "number",
+          "required": false,
+        },
+      ],
     },
   },
 }

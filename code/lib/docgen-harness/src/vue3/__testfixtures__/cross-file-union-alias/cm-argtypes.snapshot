@@ -29,9 +29,13 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": false,
-      "value": "ButtonSize | undefined",
+      "value": [
+        "medium",
+        "small",
+        "large",
+      ],
     },
   },
   "variant": {
@@ -50,9 +54,13 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": false,
-      "value": "ButtonVariant | undefined",
+      "value": [
+        "primary",
+        "secondary",
+        "danger",
+      ],
     },
   },
 }

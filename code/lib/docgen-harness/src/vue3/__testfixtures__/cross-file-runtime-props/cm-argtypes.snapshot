@@ -15,9 +15,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "number",
       "required": false,
-      "value": "number | undefined",
     },
   },
   "label": {
@@ -32,9 +31,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "string",
       "required": true,
-      "value": "string | undefined",
     },
   },
 }

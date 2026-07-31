@@ -11,9 +11,13 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": true,
-      "value": ""medium" | "small" | "large"",
+      "value": [
+        "medium",
+        "small",
+        "large",
+      ],
     },
   },
   "status": {
@@ -28,9 +32,22 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "union",
       "required": false,
-      "value": "string | number | boolean | undefined",
+      "value": [
+        {
+          "name": "string",
+          "required": false,
+        },
+        {
+          "name": "number",
+          "required": false,
+        },
+        {
+          "name": "boolean",
+          "required": false,
+        },
+      ],
     },
   },
 }

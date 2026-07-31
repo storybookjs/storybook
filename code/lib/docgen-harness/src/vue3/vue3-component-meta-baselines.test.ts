@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +15,9 @@ import { parseMulti } from 'vue-docgen-api';
 
 import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -158,8 +161,25 @@ describe('vue3 vue-component-meta baselines', () => {
       delete component.__docgenInfo;
     }
 
+    const argTypesPath = join(testDir, 'cm-argtypes.snapshot');
+    const committedArgTypes = existsSync(argTypesPath)
+      ? readFileSync(argTypesPath, 'utf8')
+      : undefined;
+
     const argTypes = extractArgTypes(component);
-    await expect(argTypes).toMatchFileSnapshot(join(testDir, 'cm-argtypes.snapshot'));
+    await expect(argTypes).toMatchFileSnapshot(argTypesPath);
+
+    if (committedArgTypes !== undefined) {
+      const parsed = parseArgTypesSnapshot(
+        committedArgTypes,
+        `${fixtureCase}/cm-argtypes.snapshot`
+      );
+      if (!isSnapshotUpdateRun()) {
+        // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
+        expect(parsed).toEqual(argTypes);
+      }
+      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: argTypes! });
+    }
 
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
       const ctx = {
@@ -167,8 +187,20 @@ describe('vue3 vue-component-meta baselines', () => {
         component,
         args: { ...meta.args, ...story.args },
       };
+      const snippetPath = join(testDir, `cm-snippet-${exportName}.snapshot`);
+      const committedSnippet = existsSync(snippetPath)
+        ? readFileSync(snippetPath, 'utf8')
+        : undefined;
       const snippet = generateSourceCode(ctx);
-      await expect(snippet).toMatchFileSnapshot(join(testDir, `cm-snippet-${exportName}.snapshot`));
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
+      if (committedSnippet !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'vue3',
+          baseline: committedSnippet,
+          candidate: snippet,
+        });
+      }
     }
 
     // same stale-file guard as the legacy recorder, scoped to the cm- prefix

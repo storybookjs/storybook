@@ -11,9 +11,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "string",
       "required": false,
-      "value": "string | undefined",
     },
   },
   "title": {
@@ -28,9 +27,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "string",
       "required": false,
-      "value": "string | undefined",
     },
   },
 }

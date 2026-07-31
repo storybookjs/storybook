@@ -28,9 +28,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "object",
       "required": false,
-      "value": "{ theme: string; dense: boolean; } | undefined",
+      "value": {},
     },
   },
   "count": {
@@ -49,9 +49,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "number",
       "required": false,
-      "value": "number | undefined",
     },
   },
   "enabled": {
@@ -70,9 +69,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "boolean",
       "required": false,
-      "value": "boolean | undefined",
     },
   },
   "formatter": {
@@ -141,9 +139,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "symbol",
       "required": false,
-      "value": "symbol | undefined",
     },
   },
 }

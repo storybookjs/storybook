@@ -11,9 +11,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "object",
       "required": true,
-      "value": "SharedProps & { extra: boolean; }",
+      "value": {},
     },
   },
 }

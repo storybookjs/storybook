@@ -11,9 +11,8 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "boolean",
       "required": false,
-      "value": "boolean | undefined",
     },
   },
   "modelValue": {

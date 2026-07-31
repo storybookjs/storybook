@@ -1,8 +1,8 @@
 /**
  * The scenario plumbing both Vue engine harnesses share: option parsing, project generation, the
  * measured component set, and the per-save mutation. Both engines must see identical projects and
- * touch the same files in the same order, or the ratio between their medians measures the generator
- * instead of the engines.
+ * touch the same files in the same order, or a paired effect measures different workloads instead
+ * of the engines.
  *
  * Scenarios:
  *   flat             single package; the measured set is every component.

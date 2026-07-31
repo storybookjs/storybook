@@ -1,5 +1,5 @@
 /**
- * Series harness for the vue-docgen-api engine - Vue's legacy docgen and still the default
+ * Latency harness for the vue-docgen-api engine - Vue's legacy docgen and still the default
  * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/preset.ts`), the Vue equivalent of the
  * react-docgen control.
  *
@@ -7,14 +7,15 @@
  * needs no invalidation step.
  *
  * Run from code/lib/docgen-harness:
- *   node --expose-gc src/perf/docgen-perf/engines/vue-docgen-api.ts \
+ *   node src/perf/docgen-perf/engines/vue-docgen-api.ts \
  *     --scenario workspace --packages 4 --components-per-package 10 --heavy-lib --json /tmp/result.json
  */
 import * as fs from 'node:fs';
 
 import { parse } from 'vue-docgen-api';
 
-import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
+import { runLatencySeriesHarness } from '../../docgen-shared/latency-series.ts';
+import { type SeriesEngine, harnessMain } from '../../docgen-shared/series.ts';
 import {
   type VueHarnessOptions,
   parseVueOptions,
@@ -61,7 +62,7 @@ function createEngine(options: VueHarnessOptions): SeriesEngine {
 
 harnessMain(async () => {
   const options = parseVueOptions(process.argv.slice(2), 'vue-docgen-api');
-  await runSeriesHarness({
+  await runLatencySeriesHarness({
     title: `vue-docgen-api harness (${options.scenario})`,
     options,
     banner: vueBanner(options),

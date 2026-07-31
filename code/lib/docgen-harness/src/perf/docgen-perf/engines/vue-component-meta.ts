@@ -1,5 +1,5 @@
 /**
- * Series harness for the vue-component-meta engine - Vue's opt-in successor to vue-docgen-api.
+ * Latency harness for the vue-component-meta engine - Vue's opt-in successor to vue-docgen-api.
  *
  * The checker never re-stats files on its own; a disk rewrite must be followed by
  * `checker.updateFile(path, content)` or the re-extraction measures a stale-cache no-op. Checker
@@ -7,16 +7,18 @@
  * `createCheckerByJson`, the workspace scenarios use `createChecker` on the deepest package.
  *
  * Run from code/lib/docgen-harness:
- *   node --expose-gc src/perf/docgen-perf/engines/vue-component-meta.ts \
+ *   node src/perf/docgen-perf/engines/vue-component-meta.ts \
  *     --scenario workspace --packages 4 --components-per-package 10 --heavy-lib --json /tmp/result.json
  */
 import * as fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 import type { MetaCheckerOptions } from 'vue-component-meta';
 import { z } from 'zod';
 
 import { parseHarnessOptions } from '../../docgen-shared/args.ts';
-import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
+import { runLatencySeriesHarness } from '../../docgen-shared/latency-series.ts';
+import { type SeriesEngine, harnessMain } from '../../docgen-shared/series.ts';
 import {
   VUE_OPTIONS,
   VUE_SCHEMA,
@@ -29,7 +31,7 @@ import {
 } from './vue-scenario.ts';
 
 /** Both pins are the same package, so the current one's types describe either install. */
-type CheckerModule = typeof import('vue-component-meta');
+export type CheckerModule = typeof import('vue-component-meta');
 type Checker = ReturnType<CheckerModule['createCheckerByJson']>;
 
 /** Mirrors the production Vite plugin's checker options. */
@@ -40,7 +42,7 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
 };
 
 const PINS = ['current', 'next'] as const;
-type Pin = (typeof PINS)[number];
+export type Pin = (typeof PINS)[number];
 
 /** Each pin is a separate install, so each gets its own scratch directory. */
 const PIN_DIR: Record<Pin, string> = {
@@ -66,12 +68,17 @@ function parseOptions(argv: string[]): VueHarnessOptions & { pin: Pin } {
 }
 
 /**
- * Only the pin being measured is loaded. Importing both copies would leave the other one's module
- * graph on the heap of every run, including the runs that feed the standing vue pair, which would
- * shift a memory number that has nothing to do with this comparison.
+ * Only the pin being measured is loaded. Importing both copies would initialize and retain the
+ * other implementation before a fresh-process observation that is meant to exercise one pin.
  */
-function loadCheckers(pin: Pin): Promise<CheckerModule> {
+export function loadCheckers(pin: Pin): Promise<CheckerModule> {
   return pin === 'next' ? import('vue-component-meta-next') : import('vue-component-meta');
+}
+
+export interface VueComponentMetaEngine extends SeriesEngine {
+  cold(): number;
+  applySave(save: number): void;
+  reextract(): number;
 }
 
 /**
@@ -95,14 +102,16 @@ function extractOne(checker: Checker, sfcPath: string): number {
   return meta.props.length + meta.events.length + meta.slots.length + meta.exposed.length;
 }
 
-async function createEngine(options: VueHarnessOptions, pin: Pin): Promise<SeriesEngine> {
+export function createVueComponentMetaEngine(
+  options: VueHarnessOptions,
+  fns: CheckerModule
+): VueComponentMetaEngine {
   const scenario = setUpVueScenario(options);
-  const fns = await loadCheckers(pin);
   let checker: Checker | undefined;
   let measuredPath = scenario.targetPaths[0];
 
   return {
-    async cold() {
+    cold() {
       checker =
         options.scenario === 'flat'
           ? fns.createCheckerByJson(scenario.project.outDir, { include: ['**/*'] }, CHECKER_OPTIONS)
@@ -116,27 +125,35 @@ async function createEngine(options: VueHarnessOptions, pin: Pin): Promise<Serie
       }
       return members;
     },
-    async applySave(save) {
+    applySave(save) {
       const mutation = scenario.mutationFor(save);
       fs.writeFileSync(mutation.filePath, mutation.content);
       checker!.updateFile(mutation.filePath, mutation.content);
       measuredPath = mutation.measuredPath;
     },
-    async reextract() {
+    reextract() {
       return extractOne(checker!, measuredPath);
+    },
+    dispose() {
+      const activeChecker = checker;
+      checker = undefined;
+      activeChecker?.clearCache();
     },
   };
 }
 
-harnessMain(async () => {
-  const options = parseOptions(process.argv.slice(2));
-  await runSeriesHarness({
-    title: `vue-component-meta harness (${options.scenario}, pin=${options.pin})`,
-    options,
-    banner: vueBanner(options),
-    saves: options.saves,
-    coldLabel: `${options.componentsPerPackage} components, checker creation included`,
-    jsonOut: options.jsonOut,
-    setup: async () => createEngine(options, options.pin),
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  harnessMain(async () => {
+    const options = parseOptions(process.argv.slice(2));
+    const checkers = await loadCheckers(options.pin);
+    await runLatencySeriesHarness({
+      title: `vue-component-meta harness (${options.scenario}, pin=${options.pin})`,
+      options,
+      banner: vueBanner(options),
+      saves: options.saves,
+      coldLabel: `${options.componentsPerPackage} components, checker creation included`,
+      jsonOut: options.jsonOut,
+      setup: () => createVueComponentMetaEngine(options, checkers),
+    });
   });
-});
+}

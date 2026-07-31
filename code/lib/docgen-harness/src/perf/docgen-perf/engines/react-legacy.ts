@@ -1,6 +1,6 @@
 /**
- * Series harness for the legacy React docgen engines: `react-docgen` (the budgeted legacy control)
- * and `react-docgen-typescript` (measurable, no budget row).
+ * Latency harness for the legacy React docgen engines: `react-docgen` (the default legacy control)
+ * and `react-docgen-typescript` (an opt-in diagnostic engine).
  *
  * Both cache per file for the process lifetime and expose only global invalidation, so every save
  * must invalidate before re-extracting or the sample is a cache hit.
@@ -9,7 +9,7 @@
  * require under that loader ("jsReleases.map is not a function").
  *
  * Run from code/lib/docgen-harness:
- *   node --expose-gc src/perf/docgen-perf/engines/react-legacy.ts \
+ *   node src/perf/docgen-perf/engines/react-legacy.ts \
  *     --parser react-docgen --components 300 --saves 20 --json /tmp/result.json
  */
 import * as fs from 'node:fs';
@@ -25,11 +25,12 @@ import {
 } from '../../docgen-memory/generate-project.ts';
 import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
+import { runLatencySeriesHarness } from '../../docgen-shared/latency-series.ts';
 import {
   type ComponentRefLike,
   loadReactRendererModule,
 } from '../../docgen-shared/react-renderer-module.ts';
-import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
+import { type SeriesEngine, harnessMain } from '../../docgen-shared/series.ts';
 
 /** The renderer module surfaces this harness loads, narrowed to what it calls. */
 interface UtilsModule {
@@ -185,7 +186,7 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
 
 harnessMain(async () => {
   const options = parseOptions(process.argv.slice(2));
-  await runSeriesHarness({
+  await runLatencySeriesHarness({
     title: `react-legacy harness (${options.parser})`,
     options,
     banner: {

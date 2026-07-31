@@ -1,166 +1,218 @@
 # Docgen performance methodology
 
-This document sets out how the per-engine docgen performance suite measures things. It elaborates on the metrics we record, the rules that make a run repeatable, the shape a budget may take, and the CI tier a budget is intended to gate once baselines exist.
+This document is the measurement contract for the docgen harness. The harness has three separate
+lanes because correctness, latency, and memory need different execution rules. Do not reuse a
+memory sample as a latency result or turn a descriptive latency run into a gate implicitly.
 
-## Scope
+## Scope and lanes
 
-The performance tests run in plain Node.js, and we deliberately decided to not run them in the browser or start a Storybook dev server. We also did not involve the builders to be able to have metrics in place without huge variances between runs. This means, as a side effect, though, that some docgen engines which are currently part of builder plugins have to be called in a way where the extraction logic is called directly. This is so that we measure the docgen engines' performance rather than the performance of Storybooks' whole end-to-end docgen delivery pipeline.
+The harness calls docgen engines directly in Node.js against deterministic synthetic projects. It
+does not start Storybook, a browser, or a builder, so the results describe extraction rather than
+the full product pipeline.
 
-## Metrics
+- **Correctness:** the framework baseline tests compare extracted argTypes and snippets. They are
+  the authority on whether an implementation documents at least the committed behavior.
+- **Macro latency:** `bench:docgen-perf` measures cold extraction and stateful save trajectories in
+  fresh child processes. It is descriptive unless a comparison and budget are explicitly supplied.
+- **Resettable latency:** `bench:docgen-latency` uses Tinybench for the narrow Vue current/next
+  operation that can create, prime, mutate, measure, and dispose a fresh engine every iteration.
+- **Memory:** `bench:docgen-memory` retains the daily post-GC/RSS/OOM regression gate. Forced GC is
+  useful here and forbidden in both latency lanes.
 
-We are collecting five metrics per engine:
+Mitata and Vitest benchmark mode are intentionally not used. The macro suite needs process
+isolation, ordered stateful saves, package-version provenance, and nonfatal tool preflights rather
+than a tight in-process microbenchmark loop. Tinybench is used only where the measured operation is
+fully resettable.
 
-1. Cold extraction: that's the time a fresh process takes over its full extraction, including starting the typescript program where an engine needs one.
-2. Warm extraction: the time to re-extract one changed component after a simulated save once the process is warm. In theory, an already booted typescript program's delay shouldn't be visible in the warm extraction anymore, and therefore warm extractions are faster than cold ones.
-3. Whole project scan: that's the time for one batch pass over the entire project. Currently, only Compodoc works this way, so the metric applies to Compodoc for Angular alone.
-4. Peak memory: the memory a save claims above the retained baseline
-5. Leak detection: How much retained heap is still held after the save series, together with how steeply it climbed from one save to the next?
+## Deterministic workloads
 
-## Determinism method
+The generators fix component counts, prop counts, type-import chains, and other scenario levers.
+Scenario parameters are written into the result artifact. A save mutates a known component and is
+applied before re-extraction; save order is part of the workload and must not be shuffled or treated
+as independent samples.
 
-### Fixed synthetic projects
+Package versions are resolved from the installed package metadata and stored with results. A
+current/next version comparison is invalid when both aliases resolve to the same version.
 
-We are using a generator to generate projects for the different frameworks with a fixed set of component count props per components and also a different set of levers to, for example, cover type imports and the ability of an engine to follow these imports. This is, for example, the case if a TypeScript program is used to infer a type, whereas for Compodoc, which uses static extraction, hits a limit.
+## Fresh-process macro latency
 
-### Warmup
-
-Every run goes through one full cold execution pass before a warm extraction is measured.
-
-### Median-of-N for latency
-
-Every latency metric records a median for cold extractions. We need to make sure that these are triggered in fresh processes, so there are n samples that come from n separate spawns, while warm extracts takes the median of the per-save durations inside one run.
-
-### Fresh process per measurement
-
-Every measure process is spawned fresh so that it starts from a clean heap.
-
-### Relative comparison on the same machine
-
-Performance questions are answered by ratios between runs executed on one machine, either on CI or on a local machine. We are not comparing across jobs, runs, or PRs. Two comparisons stand today:
-
-- The docgen server flag: on vs off
-- A new engine against its legacy counterpart
-  Both are measured inside the same run. Paired runs also alternate their order across repetitions so that neither a warm cache nor a machine that has heated up can consistently favor one side.
-
-The pinned N has to be even for that alternation to cancel anything.
-Each side leads on half the repetitions, so an odd N gives one of them the lead once more than the other, and the cold figure is a median, which then lands on a repetition from whichever side led more often.
-That would turn the very effect the alternation exists to remove into a systematic bias on the ratio, so the parity is asserted in `ratios.test.ts` rather than left to whoever next edits the constant.
-
-### Comparing an engine against another release of itself
-
-There is a third comparison that follows the same two rules: two installs of one engine, measured against each other rather than against a different engine. This is how we check a version bump, because storing last week's milliseconds and diffing against them today would break the same-machine rule. Both sides run inside the same invocation, in the same alternating order, through the same control pair machinery, so nothing new was needed to compare them.
-
-Like-for-like still applies here, and it earns its keep. A newer version that legitimately documents more members costs more, and we want that to show up as a member count mismatch rather than as a regression.
-
-One failure is specific to this shape.
-The two aliases are always separate installs, but they can still resolve to the same published version, and a single caret range is enough for that to happen.
-Then we compare a version against itself and get a ratio of roughly one, which reads exactly like a clean result.
-So both resolved versions are printed beside every ratio, and two equal ones are called out as not being a comparison at all.
-
-A bump proposed in a pull request is fully covered by this. Catching a regression on the day it ships is not, because nothing here fetches the newest published version on its own, so moving the candidate forward still waits on a person or on a scheduled job that does not exist yet.
-
-#### Running a version comparison
-
-The pair that exists today is `vue-component-meta` against `vue-component-meta-next`, which are two installs of one package: the second is an alias in `code/lib/docgen-harness/package.json` pinned to an exact version.
-
-**1. Point the alias at the version you want to test.**
-Edit `code/lib/docgen-harness/package.json` and install, so the candidate is on disk:
-
-```jsonc
-"vue-component-meta": "^3.2.7",                          // the current side
-"vue-component-meta-next": "npm:vue-component-meta@3.3.8" // the candidate, pinned exactly
-```
+Run from the repository root:
 
 ```bash
-yarn install
+yarn workspace @storybook/docgen-harness bench:docgen-perf
+yarn workspace @storybook/docgen-harness bench:docgen-perf --quick
 ```
 
-Pin the candidate exactly rather than with a range.
-A range on both sides can resolve to one install, and then the run compares an engine against itself.
+The default selection and repeated `--engine` selection remain supported. Each engine/scenario
+repetition runs in a fresh child process. Source children use their existing execution requirement:
+native Node.js for the parser children and the jiti import only for the React OSA source child.
+Missing optional tools or packages are reported as nonfatal skips; an engine that starts measuring
+but does not produce every requested repetition fails.
 
-**2. Run both sides in one invocation, naming each explicitly.**
-From `code/lib/docgen-harness/`:
+That preflight rule also applies to an explicit comparison: if either side is unavailable, neither
+side runs and no gate verdict is produced. CI jobs that require a timing gate must install both
+declared sides; the harness does not turn an unavailable optional tool into a performance failure.
+
+One raw repetition contains:
+
+- one timed cold extraction;
+- every timed warm re-extraction in chronological save order; and
+- a whole-project scan observation for engines such as Compodoc that naturally report one.
+
+Project generation, applying a save, and disposal are outside the timed region. No latency process
+uses `--expose-gc` or asks V8 to collect. Compodoc is normalized to the same raw shape by running
+fresh one-shot child processes rather than polling process RSS in the latency suite.
+
+The JSON artifact is owned and versioned by Storybook (`schemaVersion: 1`). It keeps all raw
+repetitions and ordered warm observations. Summaries are conveniences, not replacements for raw
+data:
+
+- cold and scan summaries use one observation from each fresh process;
+- each process contributes the median of its own warm trajectory to the warm headline; and
+- the headline is the median of those process-level values.
+
+This avoids pretending saves from one evolving program are independent observations. Results are
+written to the existing `docgen-perf/results.json` sandbox location unless `--json` overrides it.
+`--quick` uses a smaller smoke workload and fewer descriptive repetitions; its numbers never form a
+timing verdict.
+
+The top-level `gating` field is true only for a full paired comparison. It remains false for
+descriptive runs and paired `--quick` smoke runs, even though the latter still records its method,
+seed, blocks, and configured limit.
+
+## Proving equal work
+
+A faster engine may simply have documented less. Each repetition therefore records documented
+member counts for cold extraction and every ordered warm save. Engines that can distinguish
+unresolved types also record an opaque-type count.
+
+Before comparing timing, the suite constructs stable cold and warm work profiles across all fresh
+processes and reports one of these statuses for each metric:
+
+- `same-work`: cold and every ordered warm signature agree;
+- `different-work`: a count, save count, or ordered warm signature differs;
+- `unknown-work`: a required count is missing, varies across repetitions, or only one side reports
+  an opaque-type count; or
+- `same-version`: a version pair resolved identical package versions.
+
+When neither engine reports opaque-type counts, matching documented-member counts can still prove
+equal work. When both report opaque-type counts, those counts must match. A timing effect is omitted
+unless that metric's result is `same-work` and any required version distinction is valid. A cold
+mismatch does not suppress an otherwise valid warm comparison, or vice versa. Descriptive runs
+report the statuses but deliberately carry `not-configured` instead of calculating an effect.
+
+## Explicit paired gate
+
+A timing gate is opt-in and runs exactly one named pair:
 
 ```bash
-yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+yarn workspace @storybook/docgen-harness bench:docgen-perf \
+  --compare vue-component-meta-version \
+  --seed 42 --repetitions 10 --max-regression 0.10
 ```
 
-Both ids are required.
-`vue-component-meta-next` is out of the default run because it carries no budget row, and a control pair only produces a ratio when both of its sides measured in the same invocation - naming one gives you a table row and no comparison.
-Add `--quick` for a smoke run that proves the wiring; its numbers are marked non-comparable and must not be read as a result.
+Available pair names live in `docgen-perf/comparison.ts`. `--max-regression` is a required
+fractional candidate slowdown; `0.10` permits at most 10%. Repetitions are paired blocks, must be
+even, and must be at least 10. Omitting `--seed` creates and prints a random 32-bit seed, which is
+stored in the artifact so the schedule can be replayed.
 
-**3. Read the three guards on the ratio lines before reading the ratio.**
-A real run prints one cold and one warm line per scenario:
+The Vue current/next pair is the initial gateable workload. The React pair currently has unknown
+work counts, and the cross-engine Vue pair currently performs different work; selecting either as
+a full gate therefore produces `invalid-gate` until its adapters can prove equivalence.
+
+For each scenario, a stable derived seed builds two-block strata. Each stratum contains one block
+that runs control then candidate and one that runs candidate then control; the seed decides which
+comes first. The two sides of every block remain adjacent. Only a complete two-sided block is
+published.
+
+For block `i`, the effect sample is:
 
 ```text
-ratio cold legacy/new (vue-component-meta-version/flat): 1.04  [documented members 70 vs 70]  [3.3.2 vs 3.3.8]
-ratio warm legacy/new (vue-component-meta-version/flat): 1.01  [documented members 15 vs 15]  [3.3.2 vs 3.3.8]
+d_i = log(candidate_i / control_i)
 ```
 
-- **Two different versions.**
-  `[3.3.2 vs 3.3.8]` is what says two different versions were actually compared.
-  `[both sides resolved 3.3.8 - NOT a comparison]` means the current side's range drifted onto the pin, and the roughly-1.00 ratio beside it means nothing.
-  Pin the current side too, or move the candidate.
-- **Equal work.**
-  A bare `[documented members 70 vs 70]` with no note after it is like-for-like.
-  A `NOT like-for-like` note means the two sides did not do equal work, and the note says which way: `documented more` / `documented less` is a difference in member counts, while `same members, but ...` is the subtler one, where the counts agree and the two versions resolved different amounts of the type graph behind them.
-  Either way the ratio is measuring a behaviour change rather than a cost change, and that behaviour change is the finding.
-- **Above 1.00 is the candidate winning.**
-  The ratio is the current side's median over the candidate's, so `1.04` means the candidate was 4% faster on that scenario.
-  A number below 1.00 is the candidate costing more.
+Cold uses the block's cold observations. Warm uses one trajectory median per side and block. The
+reported candidate/control estimate is `exp(mean(d))`; its two-sided 95% interval is
+`exp(mean(d) +/- t_0.975,n-1 * standardError(d))`.
 
-An engine whose package does not resolve is reported as skipped with a reason rather than measured, so a forgotten `yarn install` cannot quietly turn into a missing comparison.
+The 95% level describes each scenario/metric interval, not a family-wise confidence level for the
+whole command. A future CI policy that treats many cells as one statistical decision must declare a
+primary cell or add an explicit multiple-comparison correction rather than relabel these intervals.
 
-#### Adding a version pair for another engine
+Let `L = 1 + maxRegression`:
 
-This works only for an engine whose child imports the versioned package directly, the way `engines/vue-component-meta.ts` does.
-Where the harness reaches the engine through repo source instead - `react-legacy` goes via `loadReactRendererModule` into `code/renderers/react`, which imports `react-docgen` by bare specifier - no child flag can redirect that import, and a version pair needs a different approach entirely.
-Declaring `@storybook/react` as a dependency of `@storybook/docgen-harness` is what makes that source reachable in the first place, but it does not make the specifier redirectable: pointing the renderer at a second `react-docgen` would take a module resolution hook registered in the child, which is not built.
+- lower interval bound greater than `L`: `regression` and a failing exit status;
+- upper interval bound at or below `L`: `within-budget`; and
+- interval overlapping `L`: `inconclusive`, not a failure.
 
-Four data edits:
+Invalid configuration, incomplete data, unequal/unknown work, or a same-version pair produces an
+invalid gate and fails without publishing a timing effect. A paired `--quick` run remains a smoke
+result even though the CLI still requires an explicit budget.
 
-1. An alias in `code/lib/docgen-harness/package.json` pinned to the candidate version.
-2. The new id added to the `EngineId` union in `docgen-shared/engine-ids.ts`, which is hand-maintained: a registry entry naming an id that is not in the union does not compile.
-3. A second registry entry in `docgen-perf/registry.ts` reusing the same child, with `inDefaultRun: false`, `versionPackage` naming the alias, and the flag that tells the child which install to load.
-4. An entry in `CONTROL_PAIRS` in `docgen-perf/ratios.ts` naming the current side as `legacy` and the alias as `next`.
+## Resettable Tinybench lane
 
-Plus one code edit, unless the child already has it: the child needs a flag that selects the install, which is what `--pin` is on the vue-component-meta child.
-That took a small union of allowed values, an extension of the shared option schema, a per-pin scratch directory so the two runs do not share a generated project, and a conditional import of the aliased package.
+Run the isolated Vue version benchmark with:
 
-One easily-missed prerequisite: the *current* side's existing registry entry must declare `versionPackage` too.
-`versionNote` prints nothing unless both sides resolved a version, so without it every ratio line silently loses its version note - and with it the guard against both sides resolving to the same version.
+```bash
+yarn workspace @storybook/docgen-harness bench:docgen-latency
+yarn workspace @storybook/docgen-harness bench:docgen-latency --quick
+yarn workspace @storybook/docgen-harness bench:docgen-latency --iterations 20
+```
 
-Nothing else changes: aggregation, member counts and the ordering alternation are already shared by every pair.
-A pair that shares an engine with another pair is fine, because the alternation reverses the whole engine list and so flips every pair at once.
+The full workload uses 15 iterations per pin and quick uses exactly 3; custom runs require at least
+2 so their uncertainty fields are not derived from one observation. For every iteration and pin,
+the harness:
 
-## Budget shape
+1. constructs a fresh synchronous `vue-component-meta` engine;
+2. performs cold extraction to prime it;
+3. applies save 1 outside the timer;
+4. times only synchronous re-extraction; and
+5. verifies the work signature and disposes the engine.
 
-Timing budgets are ratios or slopes rather than absolute milliseconds because absolute wall clock on a shared CI executor is far too noisy to gate on. A timing ratio divides the median of one side by the median of another. An engine that has a second implementation to compare against (for example, `vue-docgen-api` against `vue-component-meta`) uses that pair as its reference. An engine without one has its reference picked when its baselines are recorded.
+Tinybench is configured with `iterations: K`, `time: 0`, no warmup, retained samples, no task
+concurrency, and throwing errors. Tasks explicitly set `async: false` so registration cannot invoke
+the measured function while probing whether it returns a promise. The command checks exactly K
+engines and K retained samples per pin, equivalent work within and across pins, complete task
+results, and distinct resolved versions.
 
-### Like-for-like comparison
+The output is descriptive and not a timing gate. A narrow mapper copies only Storybook's latency
+summary fields and retained samples into a versioned JSON artifact; Tinybench-native task objects
+are never the persistent contract. The default artifact lives at `docgen-latency/results.json` in
+the shared sandbox directory. Tinybench executes the two tasks sequentially in the recorded order,
+so these distributions are shadow data; the harness deliberately does not turn them into a
+current/candidate ratio or confidence claim between pins.
 
-A ratio only means something when both sides did the same amount of work. Engines resolve types to different depths, and a shallower one finishes sooner precisely because it documented less, which makes speed and thoroughness very easy to mistake for one another.
+## Daily memory gate
 
-Therefore, every engine reports how many members it documented, and the suite prints those counts beside every ratio, warm as well as cold. Where the two sides disagree, we do not just flag the ratio, we say which way it went, because the direction is what tells you how to read the number. An engine that documented less is fast for the wrong reason and its ratio is worthless. An engine that documented more and still won has a ratio that undersells it. Only a pair that did equal work may ever become a budget.
+Run:
 
-Cold and warm get their own verdict, since a pair can document the same members on the cold pass and different ones on the save it was timed on. When either side reports no count at all we record that as unknown rather than treating it as agreement, because marking a pair equal on the strength of a number nobody measured is exactly how a bad ratio would slip through.
+```bash
+yarn workspace @storybook/docgen-harness bench:docgen-memory
+```
 
-Even the member count is not enough on its own. An engine that records a type's name without ever looking through it documents exactly as many members as one that expanded the whole chain, and it does so at a fraction of the cost. So an engine that works that way also reports how many of its documented members carry a type it never resolved, and that second count has to agree as well before the two sides count as having done equal work.
+The memory lane intentionally samples after forced GC to detect retained heap growth and separately
+tracks transient/RSS pressure. Its fresh-process gate preserves two protections:
 
-What we do not have yet is the gate. Once baselines exist, a ratio that moves the wrong way should fail CI, so that a human intercepts and decides what to do next.
+- changed-scope steady state stays below the existing retained-growth, transient-memory, and
+  retained-slope budgets; and
+- under the fixed heap cap, recycling enabled must survive while the otherwise identical recycling
+  disabled negative control must fail with a V8 heap-OOM signature.
 
-### Memory budgets
+Memory samples remain ordered by save. Do not alter the budgets, heap cap, RSS behavior, or OOM
+positive/negative controls as part of latency work.
 
-Memory budgets stay in absolute megabytes, with enough headroom on CI so that the gate is not flaky while still failing hard on real regressions.
+## Changing the harness
 
-## Budgets table skeleton
+When adding an engine or version pair:
 
-| Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Tier  |
-| ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ----- |
-| react-legacy (react-docgen, control)      | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| react-osa (ComponentMetaManager, control) | TBD             | TBD             | n/a                | 90MB                    | 60MB            | 3MB/save       | daily |
-| vue-docgen-api (legacy, current default)  | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| vue-component-meta                        | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| compodoc                                  | TBD             | TBD             | TBD                | TBD                     | TBD             | TBD            | TBD   |
-| svelte (stretch)                          | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| cem (stretch)                             | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+1. add its id and registry adapter, preserving the child's native or jiti requirement;
+2. record its package version when an installed package provides the implementation;
+3. emit documented-member counts for cold and every warm save, plus opaque-type counts where the
+   engine can compute them faithfully;
+4. add the comparison pair only when both sides share identical scenarios and parameters; and
+5. test scheduling, raw-result completeness, work mismatch/version collision, effect direction,
+   interval boundaries, and reporting.
+
+Never gate stored milliseconds from another machine or historical run. Timing budgets apply only
+to explicit paired observations from the same invocation. Keep correctness changes in the baseline
+lane and memory changes in the memory lane so each signal retains its intended meaning.

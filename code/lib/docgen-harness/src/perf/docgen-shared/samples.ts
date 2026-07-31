@@ -12,4 +12,6 @@ export interface SaveSample extends MemorySample {
   save: number;
   /** The duration of the save's re-extraction, in milliseconds. */
   durMs: number;
+  /** Members documented by this exact re-extraction, when the engine reports it. */
+  documentedMembers?: number;
 }

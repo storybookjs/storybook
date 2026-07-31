@@ -68,6 +68,7 @@ const baseConfig = {
     'lib/docgen-harness': {
       entry: [
         'src/index.ts',
+        'src/perf/docgen-latency/vue-component-meta.ts',
         'src/perf/docgen-perf/run.ts',
         'src/perf/docgen-perf/engines/{react-legacy,vue-component-meta,vue-docgen-api}.ts',
         'src/perf/docgen-perf/generators/{angular,vue}.ts',

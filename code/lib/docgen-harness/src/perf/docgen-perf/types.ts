@@ -1,71 +1,38 @@
-/**
- * Result shapes for the per-engine docgen performance suite. The measurement contract behind these
- * shapes is ../PERF-METHODOLOGY.md.
- */
+/** Storybook-owned result shapes for the docgen latency suite. */
 import type { EngineId } from '../docgen-shared/engine-ids.ts';
+import type {
+  LatencyObservation,
+  LatencyRepetition,
+  WarmLatencyObservation,
+} from '../docgen-shared/latency-series.ts';
+import type {
+  BudgetVerdict,
+  ComparisonSide,
+  PairedEffectResult,
+  WorkAssessment,
+} from './comparison.ts';
 
-export type { EngineId };
+export type { EngineId, LatencyObservation, LatencyRepetition, WarmLatencyObservation };
 
-/** A latency metric: median of repeated samples (fresh process each, for cold/scan). */
-export interface LatencyMetric {
-  status: 'measured';
-  samples: number[];
-  median: number;
+export interface ProcessLatencySummary {
+  /** One independent value per fresh process. */
+  processSamplesMs: number[];
+  medianMs: number;
 }
 
-/** A memory metric aggregated as the mean of a per-save (or per-run) series. */
-export interface SeriesMeanMetric {
-  status: 'measured';
-  samples: number[];
-  mean: number;
+export interface ScenarioLatencySummary {
+  cold: ProcessLatencySummary;
+  /** Each process contributes the median of its ordered save trajectory. */
+  warm: ProcessLatencySummary;
+  /** Only whole-project one-shot engines report this. */
+  scan?: ProcessLatencySummary;
 }
 
-/** A single-valued metric read from one run's series (retained growth, retained slope). */
-export interface ValueMetric {
-  status: 'measured';
-  value: number;
-}
-
-/** The explicit marker for a metric that does not apply to an engine; never a faked equivalent. */
-export interface NotApplicable {
-  status: 'n/a';
-}
-
-export const NOT_APPLICABLE: NotApplicable = { status: 'n/a' };
-
-export interface EngineMetrics {
-  coldExtractionMs: LatencyMetric | NotApplicable;
-  warmExtractionMs: LatencyMetric | NotApplicable;
-  wholeProjectScanMs: LatencyMetric | NotApplicable;
-  peakTransientMb: SeriesMeanMetric | NotApplicable;
-  retainedGrowthMb: ValueMetric | NotApplicable;
-  retainedSlopeMbPerSave: ValueMetric | NotApplicable;
-}
-
-/**
- * What one repetition documented. Every field is optional because an engine that cannot report a
- * count must leave it out; a zero would read as "documented nothing", which is a different claim.
- */
-export interface MemberCounts {
-  /**
-   * Members the cold pass documented, when the engine reports it. Two engines over the same project
-   * can differ by an order of magnitude here, and a timing ratio between them means nothing without
-   * it.
-   */
-  coldMembers?: number;
-  /** Members the timed re-extraction documented. Warm ratios need this for the same reason. */
-  warmMembers?: number;
-  /**
-   * Of {@link coldMembers}, how many the engine documented under a type name it never resolved.
-   * An engine that prints `Hop19Shape` and one that expands it into its fields report the same
-   * member count off very different work, so equal counts alone do not make a ratio like-for-like.
-   */
-  coldOpaqueTypes?: number;
-}
-
-export interface ScenarioResult extends MemberCounts {
+export interface ScenarioResult {
   params: Record<string, number | string | boolean>;
-  metrics: EngineMetrics;
+  /** Ordered by fresh-process repetition; each warm trajectory remains ordered by save. */
+  repetitions: LatencyRepetition[];
+  summary: ScenarioLatencySummary;
 }
 
 export type EngineResult =
@@ -73,61 +40,47 @@ export type EngineResult =
   | { status: 'skipped'; reason: string }
   | { status: 'failed'; reason: string };
 
-/**
- * Whether a ratio compared equal work, and when it did not, which side did more.
- *
- * The direction decides how to read the number. A new engine that did less is fast for the wrong
- * reason and its ratio is worthless; one that did more and still won has a ratio that understates
- * it. Only `like-for-like` may become a budget.
- *
- * The two `resolves` cases exist because equal member counts are not enough on their own: an engine
- * that records a type's name without looking through it documents exactly as many members as one
- * that expanded the whole chain, off a fraction of the work.
- */
-export type Comparability =
-  | 'unknown'
-  | 'like-for-like'
-  | 'next-documents-more'
-  | 'next-documents-less'
-  | 'next-resolves-more'
-  | 'next-resolves-less';
-
-/**
- * One control pair's comparison for one scenario: the legacy engine's median over the new engine's,
- * both measured in the same invocation.
- *
- * Cold and warm carry their own verdict because they are independent measurements - a pair can
- * document the same members cold and different ones on the save it was timed on.
- */
-export interface RatioEntry {
-  cold?: number;
-  warm?: number;
-  legacyColdMembers?: number;
-  nextColdMembers?: number;
-  legacyWarmMembers?: number;
-  nextWarmMembers?: number;
-  coldComparability: Comparability;
-  warmComparability: Comparability;
-  /**
-   * The versions the two sides resolved to. Only meaningful for a pair whose sides are the same
-   * package, where two equal versions mean nothing was compared at all.
-   */
-  legacyVersion?: string;
-  nextVersion?: string;
+export interface RawPairedBlock {
+  block: number;
+  order: readonly [ComparisonSide, ComparisonSide];
+  control: LatencyRepetition;
+  candidate: LatencyRepetition;
 }
 
-/** Keyed by control-pair name, then by scenario name. */
-export type Ratios = Record<string, Record<string, RatioEntry>>;
+export interface ComparisonMetricResult {
+  work: WorkAssessment;
+  effect?: PairedEffectResult;
+  gate: BudgetVerdict;
+}
+
+export interface ComparisonScenarioResult {
+  seed?: number;
+  blocks: RawPairedBlock[];
+  cold: ComparisonMetricResult;
+  warm: ComparisonMetricResult;
+}
+
+export interface ComparisonResult {
+  mode: 'descriptive' | 'paired-gate';
+  control: EngineId;
+  candidate: EngineId;
+  controlVersion?: string;
+  candidateVersion?: string;
+  scenarios: Record<string, ComparisonScenarioResult>;
+}
 
 export interface SuiteResults {
+  schemaVersion: 1;
   generatedAt: string;
   nodeVersion: string;
-  /** The one pinned N; numbers taken at different N are not comparable. */
-  pinnedN: number;
-  /** False for --quick smoke runs, whose numbers must never be compared against real runs. */
-  comparable: boolean;
-  /** Resolved versions of externally-installed engines, when they ran. */
+  profile: 'full' | 'quick';
+  repetitions: number;
+  mode: 'descriptive' | 'paired-gate';
+  /** False for descriptive and --quick smoke runs, even when paired blocks were requested. */
+  gating: boolean;
+  comparisonMethod?: 'paired-log-ratio-t95-v1';
+  seed?: number;
   engineVersions: Partial<Record<EngineId, string>>;
   engines: Partial<Record<EngineId, EngineResult>>;
-  ratios: Ratios;
+  comparisons: Record<string, ComparisonResult>;
 }

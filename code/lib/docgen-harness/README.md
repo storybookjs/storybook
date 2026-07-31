@@ -53,9 +53,10 @@ src/
 ├── web-components/               # planned
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
-    ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
+    ├── docgen-perf/              # fresh-process macro latency suite, engines, and generators
+    ├── docgen-latency/           # resettable Vue current/next Tinybench workload
     ├── docgen-memory/            # the docgen-server memory regression gate
-    └── docgen-shared/            # sampling, stats, budgets and paths shared by both
+    └── docgen-shared/            # latency/memory loops, stats, budgets, and shared paths
 ```
 
 ## The comparator
@@ -175,21 +176,39 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 `src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.
 It is a set of CLIs rather than part of this package's exported API, so nothing in `src/perf/` is re-exported from `src/index.ts`.
 
-Both commands run from `code/lib/docgen-harness`:
+All commands can run from `code/lib/docgen-harness`:
 
 ```bash
-yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile
-yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
+yarn bench:docgen-perf            # descriptive fresh-process cold/warm latency suite
+yarn bench:docgen-perf --quick    # smaller smoke workload; never a timing gate
+yarn bench:docgen-latency         # resettable Vue current/next re-extraction benchmark
+yarn bench:docgen-latency --quick # exact three-iteration smoke workload per pin
 yarn bench:docgen-memory          # the docgen-server memory regression gate CI runs daily
 ```
 
-`bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
+`bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs every repetition in a fresh child process without forced GC, and writes a Storybook-owned results JSON next to them.
+The artifact keeps every cold observation and every ordered warm save; its headline warm value is the median of each process's trajectory median.
+Comparisons are descriptive by default: cold and warm work are independently reported as `same-work`, `different-work`, `unknown-work`, or `same-version`, and no timing effect is calculated unless the sides prove equivalent for that metric.
+
+An opt-in timing gate runs a single configured pair in adjacent, seeded, balanced blocks:
+
+```bash
+yarn bench:docgen-perf --compare vue-component-meta-version \
+  --seed 42 --repetitions 10 --max-regression 0.10
+```
+
+`--max-regression` is a fractional candidate slowdown and is mandatory with `--compare`.
+The gate uses paired candidate/control log ratios and a 95% Student-t interval; only an interval wholly beyond the limit fails, while overlap is inconclusive.
+
+`bench:docgen-latency` is the narrow resettable case where Tinybench fits: each pin gets exactly K fresh engines, cold extraction primes the engine before the timer, save 1 is applied outside the timer, and only synchronous re-extraction is timed.
+Its JSON maps the retained samples into this harness's own schema instead of exposing Tinybench's result objects.
 `bench:docgen-memory` asserts both that re-extraction is leak-free and that the program-recycle fix still flips a tight-heap run from OOM to survival.
+It remains the daily performance gate and retains its post-GC, RSS, budget, and OOM semantics.
 
 Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
 It is the contract the numbers are only meaningful under.
 
-The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
+The bench also carries unit tests for its scheduling, work checks, statistics, result mapping, reporting, and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
 
 ## What does not live here
 

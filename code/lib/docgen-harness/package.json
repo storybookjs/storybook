@@ -26,8 +26,10 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "bench:docgen-latency": "node ./src/perf/docgen-latency/vue-component-meta.ts",
     "bench:docgen-memory": "node --import jiti/register ./src/perf/docgen-memory/gate.ts",
-    "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts"
+    "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts",
+    "check": "vue-tsc --noEmit"
   },
   "devDependencies": {
     "@angular/common": "^21.2.14",
@@ -47,6 +49,7 @@
     "react-dom": "^18.2.0",
     "rxjs": "^7.4.0",
     "storybook": "workspace:*",
+    "tinybench": "6.1.2",
     "typescript": "^6.0.3",
     "vue": "^3.2.47",
     "vue-component-meta": "^3.3.9",

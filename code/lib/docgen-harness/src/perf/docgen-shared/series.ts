@@ -1,27 +1,25 @@
 /**
- * The save-series harness every docgen engine child runs:
+ * The memory save-series harness:
  * one timed cold pass, then K simulated saves that mutate the project on disk, invalidate the
  * engine's caches, and re-extract, with memory sampled around forced GC after every save. Engines
  * differ only in what those steps mean, so they implement {@link SeriesEngine} and this module owns
  * the timing.
  */
-import { writeFileSync } from 'node:fs';
-
 import type { MemorySample, SaveSample } from './samples.ts';
-import { formatSampleLine, gcAvailable, sampleMemory } from './sampling.ts';
+import { formatSampleLine, sampleMemory } from './sampling.ts';
 import { type SeriesSummary, summarizeSeries } from './stats.ts';
 
 export interface SeriesEngine {
   /**
    * One full extraction over the measured set, from a cold start. Returns how many members it
    * documented, when the engine can report that; two engines over one project can differ by an order
-   * of magnitude, and a timing ratio between them means nothing without it.
+   * of magnitude, and a timing comparison between them means nothing without it.
    */
-  cold(): Promise<number | undefined>;
+  cold(): number | undefined | Promise<number | undefined>;
   /** Mutate the project on disk for save `save` and invalidate the engine's caches. Never timed. */
-  applySave(save: number): Promise<void>;
+  applySave(save: number): void | Promise<void>;
   /** Re-extract after save `save`. This call, and only this call, is the warm sample. */
-  reextract(save: number): Promise<number | undefined>;
+  reextract(save: number): number | undefined | Promise<number | undefined>;
   dispose?(): void;
 }
 
@@ -66,13 +64,13 @@ export async function runSeries(
 
     // performance.now(), not Date.now(): a warm re-extraction of a single component runs in single
     // -digit milliseconds, and at Date.now()'s 1ms granularity a whole series can median to 0 - a
-    // number every ratio taken against it then divides by.
+    // number any comparison against it would then divide by.
     const saveStart = performance.now();
     warmMembers = await engine.reextract(save);
     const durMs = performance.now() - saveStart;
 
     const mem = sampleMemory(forceGc);
-    samples.push({ save, durMs, ...mem });
+    samples.push({ save, durMs, documentedMembers: warmMembers, ...mem });
     console.log(formatSampleLine(save, durMs, mem));
   }
 
@@ -102,43 +100,6 @@ export function printSeriesSummary(result: SeriesResult, saves: number): void {
   if (result.retainedSlope !== undefined && result.retainedGrowth !== undefined) {
     console.log(`  retained slope:      ${result.retainedSlope.toFixed(2)}MB/save`);
     console.log(`  retained growth:     ${result.retainedGrowth.toFixed(0)}MB over ${saves} saves`);
-  }
-}
-
-export interface SeriesHarnessSpec extends SeriesOptions {
-  /** Banner line, e.g. `vue-component-meta harness (workspace)`. */
-  title: string;
-  /** The resolved options, recorded in the result JSON so a stored run is self-describing. */
-  options: object;
-  /** The subset echoed under the banner. Defaults to {@link options}. */
-  banner?: Record<string, unknown>;
-  jsonOut?: string;
-  /** Build the project and the engine. Runs before the cold pass, so its cost is not measured. */
-  setup(): Promise<SeriesEngine>;
-}
-
-/**
- * Children own only their {@link SeriesEngine}; everything the orchestrator reads back is produced
- * here so the children cannot drift apart in what they report.
- */
-export async function runSeriesHarness(spec: SeriesHarnessSpec): Promise<void> {
-  console.log(spec.title);
-  console.log(
-    `  ${Object.entries(spec.banner ?? spec.options)
-      .map(([key, value]) => `${key}=${String(value)}`)
-      .join(' ')}`
-  );
-  if ((spec.forceGc ?? true) && !gcAvailable()) {
-    console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
-  }
-
-  const engine = await spec.setup();
-  const result = await runSeries(engine, spec);
-  printSeriesSummary(result, spec.saves);
-
-  if (spec.jsonOut) {
-    writeFileSync(spec.jsonOut, JSON.stringify({ options: spec.options, ...result }, null, 2));
-    console.log(`  wrote ${spec.jsonOut}`);
   }
 }
 

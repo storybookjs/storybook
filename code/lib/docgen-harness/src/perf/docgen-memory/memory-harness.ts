@@ -38,6 +38,7 @@ import ts from 'typescript';
 import { z } from 'zod';
 
 import { countOption, parseHarnessOptions, positiveCountOption } from '../docgen-shared/args.ts';
+import { runLatencySeries } from '../docgen-shared/latency-series.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 import {
   type StoryRefLike,
@@ -89,6 +90,7 @@ const OPTIONS = {
   out: { type: 'string' },
   reuse: { type: 'boolean' },
   json: { type: 'string' },
+  latency: { type: 'boolean' },
 } as const;
 
 const SCHEMA = z.object({
@@ -110,6 +112,7 @@ const SCHEMA = z.object({
   outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-memory-stress')),
   reuse: z.boolean().default(false),
   jsonOut: z.string().optional(),
+  latency: z.boolean().default(false),
 });
 
 type HarnessOptions = z.infer<typeof SCHEMA>;
@@ -122,6 +125,7 @@ function parseOptions(argv: string[]): HarnessOptions {
     forceGc: !values.noForceGc,
     outDir: values.out,
     jsonOut: values.json,
+    latency: values.latency,
   }));
 }
 
@@ -260,14 +264,18 @@ function refreshEngine(
 
 harnessMain(async () => {
   const options = parseOptions(process.argv.slice(2));
+  if (options.latency && options.mode !== 'refresh') {
+    throw new Error('--latency requires --mode refresh');
+  }
 
   console.log('docgen-memory harness');
   console.log(
     `  components=${options.components} variants=${options.variants} props=${options.props} ` +
       `saves=${options.saves} mode=${options.mode} scope=${options.scope} ` +
-      `forceGc=${options.forceGc && gcAvailable()}`
+      `lane=${options.latency ? 'latency' : 'memory'} ` +
+      `forceGc=${options.latency ? 'n/a' : options.forceGc && gcAvailable()}`
   );
-  if (options.forceGc && !gcAvailable()) {
+  if (!options.latency && options.forceGc && !gcAvailable()) {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
   }
 
@@ -275,6 +283,18 @@ harnessMain(async () => {
   const ComponentMetaManager = await loadComponentMetaManager();
   const manager = new ComponentMetaManager(ts, options.recycleHeapPressureRatio);
   const entries = buildStoryRefs(project.componentPaths, project.storyPaths);
+
+  if (options.latency) {
+    const latency = await runLatencySeries(refreshEngine(manager, entries, project, options), {
+      saves: options.saves,
+      coldLabel: `${entries.length} components`,
+    });
+    if (options.jsonOut) {
+      fs.writeFileSync(options.jsonOut, JSON.stringify({ options, ...latency }, null, 2));
+      console.log(`  wrote ${options.jsonOut}`);
+    }
+    return;
+  }
 
   if (options.mode === 'live') {
     runLiveMode(manager, entries, options);

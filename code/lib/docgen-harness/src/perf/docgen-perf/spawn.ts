@@ -1,42 +1,78 @@
-/**
- * Spawning one measured child process and reading its result back.
- *
- * Every measurement runs in a fresh process so it starts from a clean heap; an engine measured after
- * another engine's garbage would report that garbage as its own.
- */
+/** Fresh-process execution for one latency repetition. */
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { outputTail } from '../docgen-shared/child-output.ts';
-import type { SeriesResult } from '../docgen-shared/series.ts';
+import type { LatencyRepetition } from '../docgen-shared/latency-series.ts';
 
-export interface SeriesChildSpec {
+export interface LatencyChildSpec {
   childPath: string;
   args: string[];
-  /**
-   * Run the child under the jiti loader. Only the reused docgen-memory harness needs it: under
-   * jiti, react-docgen's browserslist dependency fails on its JSON data require
-   * ("jsReleases.map is not a function"), so the legacy child must run on native type stripping.
-   */
+  /** Scenario parameters the child must echo after parsing its CLI flags. */
+  expectedWorkload: Record<string, number | string | boolean>;
+  /** The React OSA source child requires jiti; legacy parser children must remain native. */
   jiti?: boolean;
 }
 
-/**
- * Run one series-harness child and parse its result JSON. A non-zero exit, or a missing or
- * unreadable result, is a failure - never a silently empty measurement.
- */
-export function runSeriesChild(
-  spec: SeriesChildSpec,
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function childOptionName(scenarioParam: string): string {
+  return scenarioParam === 'name' ? 'scenario' : scenarioParam;
+}
+
+/** Validates the child's echoed CLI workload and narrows its envelope to persisted latency data. */
+export function parseLatencyChildResult(
+  json: string,
+  expectedWorkload: Record<string, number | string | boolean>
+): LatencyRepetition {
+  const envelope: unknown = JSON.parse(json);
+  if (!isRecord(envelope) || !isRecord(envelope.options)) {
+    throw new Error('child result is missing its parsed options envelope');
+  }
+
+  for (const [scenarioParam, expected] of Object.entries(expectedWorkload)) {
+    const option = childOptionName(scenarioParam);
+    if (!Object.hasOwn(envelope.options, option)) {
+      throw new Error(`child result is missing echoed workload option "${option}"`);
+    }
+    const actual = envelope.options[option];
+    if (actual !== expected) {
+      throw new Error(
+        `child echoed workload option "${option}" as ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`
+      );
+    }
+  }
+
+  if (!isRecord(envelope.cold) || !Array.isArray(envelope.warm)) {
+    throw new Error('child result is missing cold or warm latency observations');
+  }
+  if (envelope.scan !== undefined && !isRecord(envelope.scan)) {
+    throw new Error('child result has an invalid scan latency observation');
+  }
+
+  return {
+    cold: envelope.cold as unknown as LatencyRepetition['cold'],
+    warm: envelope.warm as LatencyRepetition['warm'],
+    ...(envelope.scan === undefined
+      ? {}
+      : {
+          scan: envelope.scan as unknown as NonNullable<LatencyRepetition['scan']>,
+        }),
+  };
+}
+
+export function runLatencyChild(
+  spec: LatencyChildSpec,
   outDir: string,
   jsonPath: string
-): SeriesResult {
+): LatencyRepetition {
   fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
-  // Remove any stale result so a crashed run cannot be mistaken for a prior success.
   fs.rmSync(jsonPath, { force: true });
 
   const nodeArgs = [
-    '--expose-gc',
     ...(spec.jiti ? ['--import', 'jiti/register'] : []),
     spec.childPath,
     ...spec.args,
@@ -45,8 +81,10 @@ export function runSeriesChild(
     '--json',
     jsonPath,
   ];
-
-  const proc = spawnSync(process.execPath, nodeArgs, { encoding: 'utf8' });
+  const proc = spawnSync(process.execPath, nodeArgs, {
+    encoding: 'utf8',
+    maxBuffer: 4 * 1024 * 1024,
+  });
   const output = `${proc.stdout ?? ''}${proc.stderr ?? ''}`;
 
   if (proc.status !== 0) {
@@ -55,5 +93,5 @@ export function runSeriesChild(
   if (!fs.existsSync(jsonPath)) {
     throw new Error(`child wrote no result JSON at ${jsonPath}:\n${outputTail(output, 4)}`);
   }
-  return JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as SeriesResult;
+  return parseLatencyChildResult(fs.readFileSync(jsonPath, 'utf8'), spec.expectedWorkload);
 }

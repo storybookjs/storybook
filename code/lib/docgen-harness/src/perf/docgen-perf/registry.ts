@@ -43,15 +43,15 @@ const vueArgs = ({ params }: ScenarioSpec): string[] => [
 ];
 
 export const ENGINES: BenchEngine[] = [
-  // --scope changed on both sides of the React pair compares the engines on equal work; that is
-  // not what a real legacy save costs - see the calibration caveat in PERF-METHODOLOGY.md.
+  // Both sides mutate and extract one changed component per save. Their missing member counts keep
+  // timing effects disabled until the harness can also prove the extracted output is equivalent.
   new SeriesChildEngine({
     id: 'react-legacy',
     child: 'engines/react-legacy.ts',
     scenarios: reactScenarios,
     args: (scenario) => [...reactArgs(scenario), '--parser', 'react-docgen', '--scope', 'changed'],
   }),
-  // Measurable through the same child, but it carries no budget row, so it stays out by default.
+  // Measurable through the same child, but kept as an opt-in diagnostic engine.
   new SeriesChildEngine({
     id: 'react-legacy-rdt',
     child: 'engines/react-legacy.ts',
@@ -70,7 +70,14 @@ export const ENGINES: BenchEngine[] = [
     child: '../docgen-memory/memory-harness.ts',
     scenarios: reactScenarios,
     jiti: true,
-    args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
+    args: (scenario) => [
+      ...reactArgs(scenario),
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--latency',
+    ],
   }),
   new SeriesChildEngine({
     id: 'vue-docgen-api',
@@ -85,9 +92,8 @@ export const ENGINES: BenchEngine[] = [
     args: vueArgs,
     versionPackage: 'vue-component-meta',
   }),
-  // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
-  // control rather than an engine-vs-engine one. No budget row yet, so it stays out of the
-  // default run; a contributor testing a bump runs both ids with --engine explicitly.
+  // Same child, pinned to a second, explicitly-versioned copy of the package for the opt-in
+  // vue-component-meta-version comparison. It stays out of descriptive runs by default.
   new SeriesChildEngine({
     id: 'vue-component-meta-next',
     child: 'engines/vue-component-meta.ts',

@@ -12307,6 +12307,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.4.0"
     storybook: "workspace:*"
+    tinybench: "npm:6.1.2"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.3.9"
@@ -37576,6 +37577,13 @@ __metadata:
   version: 1.3.3
   resolution: "tiny-invariant@npm:1.3.3"
   checksum: 10c0/65af4a07324b591a059b35269cd696aba21bef2107f29b9f5894d83cc143159a204b299553435b03874ebb5b94d019afa8b8eff241c8a4cfee95872c2e1c1c4a
+  languageName: node
+  linkType: hard
+
+"tinybench@npm:6.1.2":
+  version: 6.1.2
+  resolution: "tinybench@npm:6.1.2"
+  checksum: 10c0/5573a48afd54ac0506f9dbca8beb46b47032d029e5ee8ff931aba55e65146283b7ef9aa73af7060ccbb8ec88642898feee1bcf7037f45e372530bf4ce194ea4e
   languageName: node
   linkType: hard
 

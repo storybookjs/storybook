@@ -161,7 +161,13 @@ yarn storybook:vitest
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
+| Run the resettable docgen bench | `yarn workspace @storybook/docgen-harness bench:docgen-latency`                |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
+
+The docgen harness keeps latency and memory as separate measurement lanes. Latency runs must not
+force GC; `bench:docgen-perf` stores fresh-process raw trajectories and only gates with an explicit
+seeded `--compare` budget, while `bench:docgen-latency` uses Tinybench only for its resettable Vue
+version workload. Preserve the existing post-GC/RSS/OOM semantics in `bench:docgen-memory`.
 
 ## NX and `yarn task`
 

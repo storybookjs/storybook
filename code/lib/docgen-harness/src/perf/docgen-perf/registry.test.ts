@@ -1,23 +1,26 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import type { SeriesResult } from '../docgen-shared/series.ts';
-import { QUICK_PROFILE } from './config.ts';
+import { COMPARISON_PAIRS } from './comparison.ts';
+import { DEFAULT_PROFILE, QUICK_PROFILE } from './config.ts';
 import { type MeasureContext, type ScenarioSpec, SeriesChildEngine } from './engine.ts';
-import { CONTROL_PAIRS } from './ratios.ts';
 import { ALL_ENGINE_IDS, DEFAULT_ENGINE_IDS, ENGINES, engineById } from './registry.ts';
 import type { EngineId } from './types.ts';
 
 /** Captures what an engine would have spawned, without spawning it. */
 function captureSpawn() {
-  const calls: Array<{ spec: Parameters<MeasureContext['runSeriesChild']>[0]; jsonPath: string }> =
+  const calls: Array<{ spec: Parameters<MeasureContext['runLatencyChild']>[0]; jsonPath: string }> =
     [];
   const ctx: MeasureContext = {
-    scenarioDir: '/tmp/scenario',
-    runSeriesChild(spec, _outDir, jsonPath) {
+    scenarioDir: path.resolve('scenario'),
+    runLatencyChild(spec, _outDir, jsonPath) {
       calls.push({ spec, jsonPath });
-      return {} as SeriesResult;
+      return {
+        cold: { durationMs: 1 },
+        warm: [{ save: 1, durationMs: 1 }],
+      };
     },
   };
   return { ctx, calls };
@@ -39,7 +42,7 @@ describe('the engine table', () => {
     expect(new Set(ALL_ENGINE_IDS).size).toBe(ALL_ENGINE_IDS.length);
   });
 
-  it('keeps the unbudgeted react-docgen-typescript engine out of the default run', () => {
+  it('keeps the diagnostic react-docgen-typescript engine out of the default run', () => {
     expect(DEFAULT_ENGINE_IDS).not.toContain('react-legacy-rdt');
     expect(ALL_ENGINE_IDS).toContain('react-legacy-rdt');
   });
@@ -56,22 +59,40 @@ describe('the engine table', () => {
     }
   });
 
-  it('registers both sides of every control pair', () => {
-    // A pair naming an unregistered engine would silently never produce a ratio.
-    for (const pair of CONTROL_PAIRS) {
-      expect(ALL_ENGINE_IDS, pair.name).toContain(pair.legacy);
-      expect(ALL_ENGINE_IDS, pair.name).toContain(pair.next);
+  it('registers both sides of every comparison pair', () => {
+    for (const pair of COMPARISON_PAIRS) {
+      expect(ALL_ENGINE_IDS, pair.name).toContain(pair.control);
+      expect(ALL_ENGINE_IDS, pair.name).toContain(pair.candidate);
     }
   });
 
-  it('runs both sides of every control pair that is on by default', () => {
-    // A ratio needs both sides measured in the same invocation.
-    for (const pair of CONTROL_PAIRS) {
-      if (!DEFAULT_ENGINE_IDS.includes(pair.next)) {
-        continue; // e.g. vue-component-meta-version: opt-in, no budget row yet
+  it.each([
+    ['quick', QUICK_PROFILE],
+    ['full', DEFAULT_PROFILE],
+  ] as const)('keeps every comparison pair on identical %s scenarios', (_name, profile) => {
+    for (const pair of COMPARISON_PAIRS) {
+      const control = engineById(pair.control).scenarios(profile);
+      const candidate = engineById(pair.candidate).scenarios(profile);
+      expect(
+        candidate.map(({ name }) => name),
+        pair.name
+      ).toEqual(control.map(({ name }) => name));
+      for (const scenario of control) {
+        expect(
+          candidate.find(({ name }) => name === scenario.name)?.params,
+          `${pair.name}/${scenario.name}`
+        ).toEqual(scenario.params);
       }
-      expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.legacy);
-      expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.next);
+    }
+  });
+
+  it('runs both sides of every comparison pair that is on by default', () => {
+    for (const pair of COMPARISON_PAIRS) {
+      if (!DEFAULT_ENGINE_IDS.includes(pair.candidate)) {
+        continue; // e.g. vue-component-meta-version: explicitly selected with --compare
+      }
+      expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.control);
+      expect(DEFAULT_ENGINE_IDS, pair.name).toContain(pair.candidate);
     }
   });
 });
@@ -107,17 +128,24 @@ describe('what the series engines spawn', () => {
   });
 
   it('measures both React engines on one changed component per save', async () => {
-    // Equal work on both sides is what makes the React ratio an engine comparison.
+    // Matching the scripted scope is necessary even though missing member counts keep the pair's
+    // timing effect disabled today.
     for (const id of ['react-legacy', 'react-osa'] as EngineId[]) {
       const { spec } = await specFor(id, reactScenario);
-      expect(spec.args.slice(spec.args.indexOf('--scope')), id).toEqual(['--scope', 'changed']);
+      const scope = spec.args.indexOf('--scope');
+      expect(spec.args.slice(scope, scope + 2), id).toEqual(['--scope', 'changed']);
     }
+  });
+
+  it('puts the reused React OSA harness on the latency-only lane', async () => {
+    expect((await specFor('react-osa', reactScenario)).spec.args).toContain('--latency');
   });
 
   it('passes the scenario size through to the child', async () => {
     const { spec } = await specFor('react-legacy', reactScenario);
     const components = spec.args[spec.args.indexOf('--components') + 1];
     expect(components).toBe(String(QUICK_PROFILE.react.components));
+    expect(spec.expectedWorkload).toEqual(reactScenario.params);
   });
 
   it('passes --heavy-lib only for scenarios that ask for it', async () => {
@@ -126,9 +154,12 @@ describe('what the series engines spawn', () => {
     const workspace = scenarios.find((s) => s.name === 'workspace')!;
     expect((await specFor('vue-component-meta', flat)).spec.args).not.toContain('--heavy-lib');
     expect((await specFor('vue-component-meta', workspace)).spec.args).toContain('--heavy-lib');
+    expect((await specFor('vue-component-meta', flat)).spec.expectedWorkload).toEqual(
+      vueFlatScenario.params
+    );
   });
 
-  it('gives the two Vue engines identical flags, so the ratio compares engines not projects', async () => {
+  it('gives the two Vue engines identical flags, so a pair compares engines not projects', async () => {
     for (const scenario of engineById('vue-docgen-api').scenarios(QUICK_PROFILE)) {
       const legacy = await specFor('vue-docgen-api', scenario);
       const meta = await specFor('vue-component-meta', scenario);
@@ -160,7 +191,7 @@ describe('what the series engines spawn', () => {
   it('resolves the two sides of the version pair to two different installs', () => {
     // The invariant, rather than the literal the alias happens to pin today: a caret range on the
     // current side is enough for both sides to land on one release, and the pair then compares an
-    // engine against itself for a ratio of 1.00 that reads exactly like a clean result.
+    // engine against itself and could otherwise look like a clean result.
     const current = engineById('vue-component-meta').version();
     const next = engineById('vue-component-meta-next').version();
     expect(current).toMatch(/^\d+\.\d+\.\d+/);

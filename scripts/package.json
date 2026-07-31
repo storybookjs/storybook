@@ -6,6 +6,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
+    "bench:docgen-perf": "node ./bench/docgen-perf/run.ts",
     "build-package": "jiti ./build-package.ts",
     "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
@@ -49,6 +50,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@anthropic-ai/claude-agent-sdk": "^0.2.85",
+    "@compodoc/compodoc": "2.0.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@google-cloud/bigquery": "^6.2.1",
     "@octokit/graphql": "^5.0.6",
@@ -153,6 +155,9 @@
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
     "vitest": "^4.1.5",
+    "vue": "^3.2.47",
+    "vue-component-meta": "^3.2.7",
+    "vue-docgen-api": "^4.75.1",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",

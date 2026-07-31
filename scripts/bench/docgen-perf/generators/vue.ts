@@ -40,6 +40,9 @@ export interface VueGenerateOptions {
   heavyLib: boolean;
 }
 
+/** Everything that shapes the generated tree. The output directory is not part of it. */
+export type VueProjectShape = Omit<VueGenerateOptions, 'outDir'>;
+
 export interface GeneratedVueProject {
   outDir: string;
   /** Per-package tsconfig paths, in package order. */
@@ -94,16 +97,6 @@ function heavyLibSource(): string {
   return `${components.join('\n\n')}\n`;
 }
 
-function emitHeavyLib(projectDir: string): void {
-  const libDir = path.join(projectDir, 'node_modules', '@bench', 'heavy-ui');
-  fs.mkdirSync(libDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(libDir, 'package.json'),
-    JSON.stringify({ name: '@bench/heavy-ui', version: '1.0.0', types: 'index.d.ts' }, null, 2)
-  );
-  fs.writeFileSync(path.join(libDir, 'index.d.ts'), heavyLibSource());
-}
-
 /**
  * The shared types package's module source. `extraBaseProps` grows `BaseProps` by one optional
  * prop per base-type-touch save, so every dependent package's props type genuinely changes.
@@ -130,7 +123,7 @@ ${auxTypes}
 `;
 }
 
-function packageTypesSource(p: number, options: VueGenerateOptions): string {
+function packageTypesSource(p: number, options: VueProjectShape): string {
   const auxNames = Array.from({ length: options.fanOut }, (_, k) => `Aux${k}`);
   const parentImport =
     p === 0
@@ -193,76 +186,105 @@ const BASE_COMPILER_OPTIONS = {
   lib: ['ESNext', 'DOM'],
 };
 
-export function generateVueProject(options: VueGenerateOptions): GeneratedVueProject {
-  const outDir = path.resolve(options.outDir);
-  fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(outDir, { recursive: true });
+/** The generated tree, as paths relative to the output directory. */
+export interface VueProjectFiles {
+  /** Every file the generator emits, keyed by its path relative to the output directory. */
+  files: Record<string, string>;
+  packageConfigPaths: string[];
+  baseTypesPath: string;
+  componentPaths: string[];
+}
 
-  copyVueNodeModules(outDir);
+/**
+ * The project as data, before anything touches disk. The cross-package type chain this generator
+ * exists to build - each package's props extending the one below it, through `paths` aliases - is
+ * spread over a workspace of small files, so it is far easier to read here than in a directory.
+ *
+ * The real Vue runtime types are the one thing missing: those are copied in, not generated.
+ */
+export function vueProjectFiles(options: VueProjectShape): VueProjectFiles {
+  const files: Record<string, string> = {};
+
   if (options.heavyLib) {
-    emitHeavyLib(outDir);
+    files['node_modules/@bench/heavy-ui/package.json'] = JSON.stringify(
+      { name: '@bench/heavy-ui', version: '1.0.0', types: 'index.d.ts' },
+      null,
+      2
+    );
+    files['node_modules/@bench/heavy-ui/index.d.ts'] = heavyLibSource();
   }
 
-  const typesDir = path.join(outDir, 'packages', 'types');
-  fs.mkdirSync(typesDir, { recursive: true });
-  const baseTypesPath = path.join(typesDir, 'index.ts');
-  fs.writeFileSync(baseTypesPath, baseTypesSource(options.fanOut, 0));
+  const baseTypesPath = 'packages/types/index.ts';
+  files[baseTypesPath] = baseTypesSource(options.fanOut, 0);
 
   const paths: Record<string, string[]> = { '@bench/types': ['packages/types/index.ts'] };
   for (let p = 0; p < options.packages; p++) {
     paths[`@bench/pkg${p}`] = [`packages/pkg${p}/types.ts`];
   }
-  fs.writeFileSync(
-    path.join(outDir, 'tsconfig.base.json'),
-    JSON.stringify({ compilerOptions: { ...BASE_COMPILER_OPTIONS, baseUrl: '.', paths } }, null, 2)
+  files['tsconfig.base.json'] = JSON.stringify(
+    { compilerOptions: { ...BASE_COMPILER_OPTIONS, baseUrl: '.', paths } },
+    null,
+    2
   );
 
   const componentPaths: string[] = [];
   const packageConfigPaths: string[] = [];
 
   for (let p = 0; p < options.packages; p++) {
-    const pkgDir = path.join(outDir, 'packages', `pkg${p}`);
-    fs.mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
-    fs.writeFileSync(path.join(pkgDir, 'types.ts'), packageTypesSource(p, options));
+    files[`packages/pkg${p}/types.ts`] = packageTypesSource(p, options);
 
-    const pkgConfigPath = path.join(pkgDir, 'tsconfig.json');
-    fs.writeFileSync(
-      pkgConfigPath,
-      JSON.stringify(
-        {
-          extends: '../../tsconfig.base.json',
-          include: ['types.ts', 'src/**/*.ts', 'src/**/*.vue'],
-        },
-        null,
-        2
-      )
+    const pkgConfigPath = `packages/pkg${p}/tsconfig.json`;
+    files[pkgConfigPath] = JSON.stringify(
+      { extends: '../../tsconfig.base.json', include: ['types.ts', 'src/**/*.ts', 'src/**/*.vue'] },
+      null,
+      2
     );
     packageConfigPaths.push(pkgConfigPath);
 
     for (let i = 0; i < options.componentsPerPackage; i++) {
-      const componentPath = path.join(pkgDir, 'src', `Comp${p}x${i}.vue`);
-      fs.writeFileSync(componentPath, vueComponentSource(p, i, 0));
+      const componentPath = `packages/pkg${p}/src/Comp${p}x${i}.vue`;
+      files[componentPath] = vueComponentSource(p, i, 0);
       componentPaths.push(componentPath);
     }
   }
 
   // The root config declares `references` but no package sets `composite`, so `tsc -b` would reject
   // this tree. It is here because the production Vite plugin branches on `references` being present.
-  fs.writeFileSync(
-    path.join(outDir, 'tsconfig.json'),
-    JSON.stringify(
-      {
-        files: [],
-        references: Array.from({ length: options.packages }, (_, p) => ({
-          path: `./packages/pkg${p}`,
-        })),
-      },
-      null,
-      2
-    )
+  files['tsconfig.json'] = JSON.stringify(
+    {
+      files: [],
+      references: Array.from({ length: options.packages }, (_, p) => ({
+        path: `./packages/pkg${p}`,
+      })),
+    },
+    null,
+    2
   );
 
-  return { outDir, packageConfigPaths, baseTypesPath, componentPaths };
+  return { files, packageConfigPaths, baseTypesPath, componentPaths };
+}
+
+export function generateVueProject(options: VueGenerateOptions): GeneratedVueProject {
+  const outDir = path.resolve(options.outDir);
+  fs.rmSync(outDir, { recursive: true, force: true });
+  fs.mkdirSync(outDir, { recursive: true });
+
+  copyVueNodeModules(outDir);
+
+  const { files, packageConfigPaths, baseTypesPath, componentPaths } = vueProjectFiles(options);
+  for (const [relativePath, contents] of Object.entries(files)) {
+    const filePath = path.join(outDir, relativePath);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, contents);
+  }
+
+  const absolute = (relativePath: string) => path.join(outDir, relativePath);
+  return {
+    outDir,
+    packageConfigPaths: packageConfigPaths.map(absolute),
+    baseTypesPath: absolute(baseTypesPath),
+    componentPaths: componentPaths.map(absolute),
+  };
 }
 
 function parseOptions(argv: string[]): VueGenerateOptions {

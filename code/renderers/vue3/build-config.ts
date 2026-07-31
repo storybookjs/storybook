@@ -26,11 +26,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
-        dts: false,
-      },
-      {
-        exportEntries: ['./internal/docgen-engine'],
-        entryPoint: './src/docgen/component-meta.ts',
       },
     ],
   },

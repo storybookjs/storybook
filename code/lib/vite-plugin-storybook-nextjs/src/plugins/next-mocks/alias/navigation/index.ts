@@ -63,6 +63,24 @@ export const getRouter = () => {
 // re-exports of the actual module
 export * from "next/dist/client/components/navigation.js";
 
+// That module is CommonJS, so the `export *` above only exists at runtime and is invisible
+// to static ESM analysis. In dev Vite serves this mock as native ESM, where the browser
+// rejects named imports it cannot see, hence the explicit re-exports.
+// See https://github.com/storybookjs/storybook/issues/34688.
+export {
+  ReadonlyURLSearchParams,
+  RedirectType,
+  ServerInsertedHTMLContext,
+} from "next/dist/client/components/navigation.js";
+
+// Newer than our minimum supported Next.js, hence via the namespace: that keeps the export
+// statically declared but resolves to `undefined` on older releases instead of breaking
+// resolution of the whole module.
+export const forbidden: typeof actual.forbidden = actual.forbidden; // Next 15.1
+export const unauthorized: typeof actual.unauthorized = actual.unauthorized; // Next 15.1
+export const unstable_isUnrecognizedActionError: typeof actual.unstable_isUnrecognizedActionError =
+  actual.unstable_isUnrecognizedActionError; // Next 15.5
+
 // mock utilities/overrides (as of Next v14.2.0)
 export const redirect: Mock<
   (url: string, type?: actual.RedirectType) => never

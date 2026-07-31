@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -91,12 +91,16 @@ function createChecker(meta: ComponentMeta | undefined): ComponentMetaChecker {
 }
 
 const build = (checker: ComponentMetaChecker, entry: IndexEntry = storyEntry) =>
-  buildDocgenPayload(
-    { entry },
-    { getChecker: () => checker, resolvePath: (importPath) => join(fixturesDir, importPath) }
-  );
+  buildDocgenPayload({ entry }, { getChecker: () => checker });
 
 describe('buildDocgenPayload', () => {
+  beforeEach(() => {
+    vi.spyOn(process, 'cwd').mockReturnValue(fixturesDir);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('builds the UI-facing payload from the component meta', async () => {
     const payload = await build(createChecker(buttonMeta));
 

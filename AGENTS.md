@@ -160,6 +160,8 @@ yarn storybook:vitest
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
+| Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
+| Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 
 ## NX and `yarn task`
 

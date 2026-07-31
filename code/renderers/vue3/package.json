@@ -59,7 +59,6 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "oxc-resolver": "^11.19.1",
     "type-fest": "^5.6.0",
     "vue-component-meta": "^3.2.7",
     "vue-component-type-helpers": "^3.2.9",

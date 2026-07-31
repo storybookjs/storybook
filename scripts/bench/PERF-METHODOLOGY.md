@@ -1,6 +1,6 @@
 # Docgen performance methodology
 
-This document sets out how the per-engine docgen performance suite measures things. It elaborates on the metrics we record, the rules that make a run repeatable, the shape a budget may take, and the CI tier that gates.
+This document sets out how the per-engine docgen performance suite measures things. It elaborates on the metrics we record, the rules that make a run repeatable, the shape a budget may take, and the CI tier a budget is intended to gate once baselines exist.
 
 ## Scope
 

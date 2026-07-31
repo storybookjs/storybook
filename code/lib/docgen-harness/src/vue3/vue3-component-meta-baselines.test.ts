@@ -46,6 +46,9 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
     return;
   }
+  if (schema.kind === 'literal') {
+    return;
+  }
   delete schema.schema;
 }
 

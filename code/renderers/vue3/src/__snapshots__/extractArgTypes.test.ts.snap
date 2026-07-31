@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue component 1`] = `
+exports[`extractArgTypes (vue-component-meta) > should extract events for Vue component 1`] = `
 {
   "bar": {
     "control": {
@@ -56,89 +56,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue compon
 }
 `;
 
-exports[`extractArgTypes (vue-docgen-api) > should extract events for component 1`] = `
-{
-  "bar": {
-    "control": {
-      "disable": true,
-    },
-    "description": "Test description bar",
-    "name": "bar",
-    "table": {
-      "category": "events",
-      "defaultValue": undefined,
-      "jsDocTags": undefined,
-      "type": {
-        "summary": "{ year: number; title?: any }",
-      },
-    },
-    "type": {
-      "name": "other",
-      "required": false,
-      "value": "{ year: number; title?: any }",
-    },
-  },
-  "baz": {
-    "control": {
-      "disable": true,
-    },
-    "description": "Test description baz",
-    "name": "baz",
-    "table": {
-      "category": "events",
-      "defaultValue": undefined,
-      "jsDocTags": undefined,
-      "type": undefined,
-    },
-    "type": {
-      "name": "other",
-      "required": false,
-      "value": "",
-    },
-  },
-}
-`;
-
-exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 1`] = `
-{
-  "count": {
-    "control": {
-      "disable": true,
-    },
-    "description": "a count number",
-    "name": "count",
-    "table": {
-      "category": "expose",
-      "defaultValue": undefined,
-      "jsDocTags": undefined,
-      "type": undefined,
-    },
-    "type": {
-      "name": "other",
-      "value": "",
-    },
-  },
-  "label": {
-    "control": {
-      "disable": true,
-    },
-    "description": "a label string",
-    "name": "label",
-    "table": {
-      "category": "expose",
-      "defaultValue": undefined,
-      "jsDocTags": undefined,
-      "type": undefined,
-    },
-    "type": {
-      "name": "other",
-      "value": "",
-    },
-  },
-}
-`;
-
-exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1`] = `
+exports[`extractArgTypes (vue-component-meta) > should extract props for component 1`] = `
 {
   "array": {
     "defaultValue": undefined,
@@ -219,9 +137,21 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "enumValue": {
+    "control": {
+      "labels": {
+        "0": "MyEnum.Small",
+        "1": "MyEnum.Medium",
+        "2": "MyEnum.Large",
+      },
+    },
     "defaultValue": undefined,
     "description": "description enum value",
     "name": "enumValue",
+    "options": [
+      0,
+      1,
+      2,
+    ],
     "table": {
       "category": "props",
       "defaultValue": undefined,
@@ -230,9 +160,13 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": true,
-      "value": "MyEnum",
+      "value": [
+        0,
+        1,
+        2,
+      ],
     },
   },
   "foo": {
@@ -454,7 +388,150 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
 }
 `;
 
-exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2`] = `
+exports[`extractArgTypes (vue-component-meta) > should extract slots type for Vue component 1`] = `
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ num: number; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ num: number; }",
+    },
+  },
+  "named": {
+    "description": "",
+    "name": "named",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ str: string; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ str: string; }",
+    },
+  },
+  "no-bind": {
+    "description": "",
+    "name": "no-bind",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "vbind": {
+    "description": "",
+    "name": "vbind",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ num: number; str: string; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ num: number; str: string; }",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract events for component 1`] = `
+{
+  "bar": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Test description bar",
+    "name": "bar",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ year: number; title?: any }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ year: number; title?: any }",
+    },
+  },
+  "baz": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Test description baz",
+    "name": "baz",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 1`] = `
+{
+  "count": {
+    "control": {
+      "disable": true,
+    },
+    "description": "a count number",
+    "name": "count",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+  "label": {
+    "control": {
+      "disable": true,
+    },
+    "description": "a label string",
+    "name": "label",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1`] = `
 {
   "array": {
     "description": "description required array object",
@@ -812,67 +889,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1
       "name": "other",
       "required": false,
       "value": "{ num: unknown; str: unknown }",
-    },
-  },
-}
-`;
-
-exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue component 1`] = `
-{
-  "default": {
-    "description": "",
-    "name": "default",
-    "table": {
-      "category": "slots",
-      "type": {
-        "summary": "{ num: number; }",
-      },
-    },
-    "type": {
-      "name": "other",
-      "value": "{ num: number; }",
-    },
-  },
-  "named": {
-    "description": "",
-    "name": "named",
-    "table": {
-      "category": "slots",
-      "type": {
-        "summary": "{ str: string; }",
-      },
-    },
-    "type": {
-      "name": "other",
-      "value": "{ str: string; }",
-    },
-  },
-  "no-bind": {
-    "description": "",
-    "name": "no-bind",
-    "table": {
-      "category": "slots",
-      "type": {
-        "summary": "{}",
-      },
-    },
-    "type": {
-      "name": "other",
-      "value": "{}",
-    },
-  },
-  "vbind": {
-    "description": "",
-    "name": "vbind",
-    "table": {
-      "category": "slots",
-      "type": {
-        "summary": "{ num: number; str: string; }",
-      },
-    },
-    "type": {
-      "name": "other",
-      "value": "{ num: number; str: string; }",
     },
   },
 }

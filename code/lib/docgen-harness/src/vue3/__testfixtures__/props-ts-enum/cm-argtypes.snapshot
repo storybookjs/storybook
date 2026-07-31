@@ -14,9 +14,19 @@
     },
   },
   "level": {
+    "control": {
+      "labels": {
+        "0": "Level.Low",
+        "1": "Level.High",
+      },
+    },
     "defaultValue": undefined,
     "description": "Priority, a locally declared numeric enum.",
     "name": "level",
+    "options": [
+      0,
+      1,
+    ],
     "table": {
       "category": "props",
       "defaultValue": undefined,
@@ -25,15 +35,30 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": false,
-      "value": "Level | undefined",
+      "value": [
+        0,
+        1,
+      ],
     },
   },
   "severity": {
+    "control": {
+      "labels": {
+        "error": "Severity.Error",
+        "info": "Severity.Info",
+        "warning": "Severity.Warning",
+      },
+    },
     "defaultValue": undefined,
     "description": "Alert severity, an imported string enum.",
     "name": "severity",
+    "options": [
+      "info",
+      "warning",
+      "error",
+    ],
     "table": {
       "category": "props",
       "defaultValue": undefined,
@@ -42,9 +67,13 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "enum",
       "required": true,
-      "value": "Severity",
+      "value": [
+        "info",
+        "warning",
+        "error",
+      ],
     },
   },
 }

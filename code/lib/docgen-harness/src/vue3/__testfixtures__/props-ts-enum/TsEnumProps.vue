@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// TypeScript enum props record only the bare enum NAME (sbType "other"), both for
-// an imported and for a locally declared enum - the members never reach Controls,
-// which fall back to a free-text input.
+// The legacy vue-docgen-api path records only the bare enum NAME (sbType "other"), both for
+// an imported and for a locally declared enum - the members never reach Controls, which fall
+// back to a free-text input. vue-component-meta enumerates them (see cm-argtypes.snapshot).
 import { Severity } from './severity.ts';
 
 enum Level {

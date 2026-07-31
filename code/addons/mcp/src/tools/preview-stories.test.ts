@@ -104,6 +104,35 @@ describe('previewStoriesTool', () => {
     expect(getStoryIndexSpy).toHaveBeenCalledWith(testContext.options);
   });
 
+  it('should return story URLs under the basePath Storybook is served from', async () => {
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: PREVIEW_STORIES_TOOL_NAME,
+        arguments: {
+          stories: [{ storyId: 'button--primary' }],
+        },
+      },
+    };
+
+    const response = await server.receive(request, {
+      sessionId: 'test-session',
+      custom: { ...testContext, origin: 'http://localhost:5173', basePath: '/__storybook/' },
+    });
+
+    expect(response.result?.structuredContent).toEqual({
+      stories: [
+        {
+          title: 'Button',
+          name: 'Primary',
+          previewUrl: 'http://localhost:5173/__storybook/?path=/story/button--primary',
+        },
+      ],
+    });
+  });
+
   it('should return story URL when input uses storyId', async () => {
     const request = {
       jsonrpc: '2.0' as const,

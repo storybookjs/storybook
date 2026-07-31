@@ -269,6 +269,29 @@ describe('experimental_devServer', () => {
     );
   });
 
+  it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {
+    vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+    stubPrivateRefDiscovery();
+
+    await (experimental_devServer as any)(mockApp, {
+      ...createOptionsWithPrivateRef(),
+      port: 5173,
+      basePath: '/__storybook/',
+    } as unknown as Options);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await mcpHandler({ headers: {} }, mockRes);
+
+    expect(mockRes.writeHead).toHaveBeenCalledWith(
+      401,
+      expect.objectContaining({
+        'WWW-Authenticate': expect.stringContaining(
+          'resource_metadata="http://localhost:5173/__storybook/.well-known/oauth-protected-resource"'
+        ),
+      })
+    );
+  });
+
   it('should keep direct unauthenticated requests on the OAuth challenge path', async () => {
     const mcpServerHandler = vi
       .spyOn(mcpHandlerModule, 'mcpServerHandler')

@@ -1,6 +1,6 @@
-import * as v from 'valibot';
-import type { Options } from 'storybook/internal/types';
 import { GET_TOOL_NAME, LIST_TOOL_NAME, type StorybookContext } from '@storybook/mcp';
+import type { Options } from 'storybook/internal/types';
+import * as v from 'valibot';
 import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tools/tool-names.ts';
 
 const isLiteralEndpointPathname = (endpoint: string) => {
@@ -58,6 +58,12 @@ export type AddonContext = StorybookContext & {
    * Typically http://localhost:{port}
    */
   origin: string;
+
+  /**
+   * The basePath the Storybook instance is served from, starting and ending with a slash.
+   * @default '/'
+   */
+  basePath?: string;
 
   /**
    * Whether telemetry collection is disabled.

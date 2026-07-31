@@ -87,6 +87,22 @@ describe('buildReviewUrl', () => {
     ).toBe('http://localhost:6006/storybook/?path=/review/');
   });
 
+  it('includes the basePath Storybook is served from', () => {
+    expect(buildReviewUrl({ origin: 'http://localhost:5173', basePath: '/__storybook/' })).toBe(
+      'http://localhost:5173/__storybook/?path=/review/'
+    );
+  });
+
+  it('prefers the configured basePath over a request whose prefix was stripped by the proxy', () => {
+    expect(
+      buildReviewUrl({
+        origin: 'http://localhost:5173',
+        basePath: '/__storybook/',
+        request: new Request('http://127.0.0.1:41234/mcp'),
+      })
+    ).toBe('http://localhost:5173/__storybook/?path=/review/');
+  });
+
   it('strips a multi-segment endpoint with a trailing slash on the request', () => {
     expect(
       buildReviewUrl({

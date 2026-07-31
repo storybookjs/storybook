@@ -1,20 +1,21 @@
-import { mcpServerHandler } from './mcp-handler.ts';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import path from 'node:path';
+import { logger } from 'storybook/internal/node-logger';
 import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
-import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
+import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
+import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { createDocgenServerManifestAccess } from './manifests/in-process-provider.ts';
+import { mcpServerHandler } from './mcp-handler.ts';
+import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
+import htmlTemplate from './template.html';
+import { AddonOptions, type AddonOptionsInput } from './types.ts';
+import { resolveBaseUrl } from './utils/base-url.ts';
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
 } from './utils/get-tool-availability.ts';
-import htmlTemplate from './template.html';
-import path from 'node:path';
-import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
-import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
-import { logger } from 'storybook/internal/node-logger';
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
-import { createDocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -35,6 +36,8 @@ export const experimental_devServer: PresetPropertyFn<
   });
 
   const origin = `http://localhost:${options.port}`;
+  const basePath = options.basePath ?? '/';
+  const baseUrl = resolveBaseUrl({ origin, basePath });
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
   const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
@@ -79,7 +82,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   // Serve .well-known/oauth-protected-resource for MCP auth
   app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
-    const wellKnown = compositionAuth.buildWellKnown(origin);
+    const wellKnown = compositionAuth.buildWellKnown(baseUrl);
     if (!wellKnown) {
       res.writeHead(404);
       res.end('Not found');
@@ -95,7 +98,7 @@ export const experimental_devServer: PresetPropertyFn<
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
         'Content-Type': 'text/plain',
-        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
+        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
       });
       res.end('401 - Unauthorized');
       return true;
@@ -222,7 +225,7 @@ export const experimental_devServer: PresetPropertyFn<
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',
         rawAvailability.docsEnabled
-          ? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
+          ? `<p>View the <a href="${basePath}manifests/components.html">component manifest debugger</a>.</p>`
           : ''
       )
       .replace('{{A11Y_BADGE}}', a11yBadge);

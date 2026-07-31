@@ -15,6 +15,7 @@ import type Channel from 'storybook/internal/channels';
 import type { StoryId } from 'storybook/internal/csf';
 import type { A11yReport } from '@storybook/addon-a11y';
 import { RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
+import { resolveBaseUrl } from '../utils/base-url.ts';
 
 /**
  * Check if addon-vitest is available by trying to import its constants.
@@ -138,7 +139,7 @@ export async function addRunStoryTestsTool(
         done = await testRunQueue.wait();
         const runA11y = input.a11y ?? true;
 
-        const { origin, options, disableTelemetry } = server.ctx.custom ?? {};
+        const { origin, basePath, options, disableTelemetry } = server.ctx.custom ?? {};
 
         if (!origin) {
           throw new Error('Origin is required in addon context');
@@ -221,7 +222,7 @@ ${errorMessages}`,
         const { text, summary } = formatRunStoryTestResults({
           testResults,
           runA11y,
-          origin,
+          baseUrl: resolveBaseUrl({ origin, basePath }),
         });
 
         if (!disableTelemetry) {
@@ -386,11 +387,11 @@ type TestRunResult = NonNullable<TriggerTestRunResponsePayload['result']>;
 function formatRunStoryTestResults({
   testResults,
   runA11y,
-  origin,
+  baseUrl,
 }: {
   testResults: TestRunResult;
   runA11y: boolean;
-  origin: string;
+  baseUrl: string;
 }): { text: string; summary: RunStoryTestsSummary } {
   const sections: string[] = [];
   const componentTestStatuses = testResults.componentTestStatuses;
@@ -413,7 +414,7 @@ function formatRunStoryTestResults({
   const a11yReports = testResults.a11yReports as Record<StoryId, A11yReport[]>;
   const a11yViolationCount = runA11y ? countA11yViolations(a11yReports) : 0;
   if (runA11y && a11yReports && Object.keys(a11yReports).length > 0) {
-    const a11ySection = formatA11yReportsSection({ a11yReports, origin });
+    const a11ySection = formatA11yReportsSection({ a11yReports, baseUrl });
     if (a11ySection) {
       sections.push(a11ySection);
     }
@@ -457,10 +458,10 @@ ${entries.join('\n\n')}`;
 
 function formatA11yReportsSection({
   a11yReports,
-  origin,
+  baseUrl,
 }: {
   a11yReports: Record<StoryId, A11yReport[]>;
-  origin: string;
+  baseUrl: string;
 }): string | undefined {
   const a11yViolationSections: string[] = [];
 
@@ -481,7 +482,7 @@ ${report.error.message}`);
       for (const violation of violations) {
         const nodes = violation.nodes
           .map((node) => {
-            const inspectLink = node.linkPath ? `${origin}${node.linkPath}` : undefined;
+            const inspectLink = node.linkPath ? `${baseUrl}${node.linkPath}` : undefined;
             const parts = [] as string[];
 
             if (node.impact) {

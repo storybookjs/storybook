@@ -569,6 +569,62 @@ describe('runStoryTestsTool', () => {
 		`);
   });
 
+  it('should point a11y inspect links at the basePath Storybook is served from', async () => {
+    const testContext = {
+      ...createTestContext(),
+      origin: 'http://localhost:5173',
+      basePath: '/__storybook/',
+    };
+
+    setupChannelResponse({
+      status: 'completed',
+      result: {
+        triggeredBy: 'external:addon-mcp',
+        config: { coverage: false, a11y: true },
+        storyIds: ['button--primary'],
+        totalTestCount: 1,
+        startedAt: Date.now(),
+        finishedAt: Date.now(),
+        coverageSummary: undefined,
+        componentTestCount: { success: 1, error: 0 },
+        a11yCount: { success: 0, warning: 1, error: 1 },
+        componentTestStatuses: [],
+        a11yStatuses: [],
+        a11yReports: {
+          'button--primary': [
+            {
+              violations: [
+                {
+                  id: 'color-contrast',
+                  description: 'Color contrast ratio is insufficient',
+                  nodes: [
+                    {
+                      html: '<button>Click me</button>',
+                      impact: 'critical',
+                      failureSummary: '2.5:1 (required: 4.5:1)',
+                      linkPath: '/inspect/button--primary?inspectPath=button.0',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        reports: {},
+        unhandledErrors: [],
+      },
+    });
+
+    const response = await callTool(
+      [{ exportName: 'Primary', relativePath: 'src/Button.stories.tsx' }],
+      testContext
+    );
+
+    expect(response.result?.content[0].text).toContain(
+      '**Inspect**: http://localhost:5173/__storybook/inspect/button--primary?inspectPath=button.0'
+    );
+  });
+
   it('should include a11y violations when a11y input is omitted (defaults to true)', async () => {
     const testContext = createTestContext();
 

@@ -126,6 +126,7 @@ Nothing detects drift between a fixture's sources and its committed capture, so 
 - Reactive-props-destructure defaults are invisible; only `withDefaults()` is extracted.
 - `defineModel('name')` named models are invisible; snippets render a bare attribute instead of `v-model:name`.
 - Scoped-slot binding types are never extracted, only their names.
+- `defineExpose` members record no type at all - name and description only, where `vue-component-meta` resolves the same members to `number` and `() => void`.
 - Bigints beyond `Number.MAX_SAFE_INTEGER` lose precision in snippets.
 - Thin baselines by design: `Pick`-composed props record `{}`, recursive types a name-only stub, runtime array props `type: undefined`.
 - `defineProps<ReturnType<typeof useComposable>>()` does not build in the legacy toolchain; a statement-block event expression crashes `parse()` outright (#23851). No baselines can exist for either.

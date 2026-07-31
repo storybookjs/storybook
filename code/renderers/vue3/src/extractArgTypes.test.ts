@@ -5,15 +5,6 @@ import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools'
 import { inferControls } from 'storybook/internal/preview-api';
 
 import {
-  mockExtractComponentEventsReturn,
-  mockExtractComponentPropsReturn,
-  mockExtractComponentSlotsReturn,
-  referenceTypeEvents,
-  referenceTypeProps,
-  templateSlots,
-  vueDocgenMocks,
-} from './docs/tests-meta-components/meta-components.ts';
-import {
   convertVueComponentMetaProp,
   extractArgTypes,
   extractFromVueComponentMeta,
@@ -28,11 +19,10 @@ vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   };
 });
 
-// referenceTypeProps/Events and templateSlots are vue-component-meta fixtures. This block used
-// to be named after the other engine, which put its snapshots in the same namespace as the real
-// vue-docgen-api block below - both spell "should extract props for component", so the two
-// engines' props snapshots were told apart only by a trailing 1/2.
-describe('extractArgTypes (vue-component-meta)', () => {
+// What each engine extracts from a real component is recorded per fixture in
+// @storybook/docgen-harness, which runs both Vue docgen pipelines end to end. Only the
+// docgen-less guard is unit-tested here, because no fixture can produce it.
+describe('extractArgTypes', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -42,101 +32,6 @@ describe('extractArgTypes (vue-component-meta)', () => {
     (extractComponentProps as Mock).mockReturnValueOnce([] as any);
 
     expect(extractArgTypes({} as any)).toBeNull();
-  });
-
-  it('should extract props for component', () => {
-    const component = referenceTypeProps;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'props' ? mockExtractComponentPropsReturn : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-
-  it('should extract events for Vue component', () => {
-    const component = referenceTypeEvents;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'events' ? mockExtractComponentEventsReturn : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-
-  it('should extract slots type for Vue component', () => {
-    const component = templateSlots;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'slots' ? mockExtractComponentSlotsReturn : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-});
-
-describe('extractArgTypes (vue-docgen-api)', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it('should extract props for component', async () => {
-    const component = vueDocgenMocks.props.component;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'props' ? vueDocgenMocks.props.extractedProps : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-
-  it('should extract events for component', async () => {
-    const component = vueDocgenMocks.events.component;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'events' ? vueDocgenMocks.events.extractedProps : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-
-  it('should extract slots for component', async () => {
-    const component = vueDocgenMocks.slots.component;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'slots' ? vueDocgenMocks.slots.extractedProps : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
-  });
-
-  it('should extract expose for component', async () => {
-    const component = vueDocgenMocks.expose.component;
-    (hasDocgen as unknown as Mock).mockReturnValueOnce(true);
-
-    (extractComponentProps as Mock).mockImplementation((_, section) => {
-      return section === 'expose' ? vueDocgenMocks.expose.extractedProps : [];
-    });
-
-    const argTypes = extractArgTypes(component);
-
-    expect(argTypes).toMatchSnapshot();
   });
 });
 

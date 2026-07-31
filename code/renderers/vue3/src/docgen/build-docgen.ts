@@ -44,13 +44,6 @@ function componentNameFromTitle(title: string): string {
 }
 
 /**
- * Get last segment of a story title
- */
-function componentNameFromTitle(title: string): string {
-  return title.split('/').at(-1)!.replace(/\s+/g, '');
-}
-
-/**
  * Builds a {@link DocgenPayload} for the component one CSF story file documents.
  */
 export async function buildDocgenPayload(

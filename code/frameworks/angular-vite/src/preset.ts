@@ -17,6 +17,8 @@ import type { UserConfig, Plugin } from 'vite';
 
 export const addons: PresetProperty<'addons'> = [];
 
+export { experimental_docgenProvider } from './docgen/preset.ts';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options

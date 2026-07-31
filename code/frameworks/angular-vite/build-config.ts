@@ -52,6 +52,14 @@ const config: BuildEntries = {
         entryPoint: './src/builders/build-storybook/index.ts',
         dts: false,
       },
+      {
+        // Worker-target docgen module imported by core's docgen worker. Exposed as an internal
+        // export so the preset resolves it via import.meta.resolve (package map) instead of a
+        // hard-coded dist path.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/docgen/docgen-worker.ts',
+        dts: false,
+      },
     ],
   },
 };

@@ -30,6 +30,7 @@ const checkerOptions: MetaCheckerOptions = {
   forceUseTs: true,
   noDeclarations: true,
   printer: { newLine: 1 },
+  schema: true,
 };
 const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, checkerOptions);
 

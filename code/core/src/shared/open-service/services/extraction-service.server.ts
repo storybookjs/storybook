@@ -203,7 +203,7 @@ export function registerExtractionService<
     },
   } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
 
-  const moduleGraph = getService('core/module-graph');
+  const moduleGraph = getService('core/module-graph', { internal: true });
   subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
     getIndex,

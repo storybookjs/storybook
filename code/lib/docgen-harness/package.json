@@ -1,6 +1,6 @@
 {
   "name": "@storybook/docgen-harness",
-  "version": "10.6.0-alpha.2",
+  "version": "10.6.0-alpha.3",
   "private": true,
   "description": "Test harness for docgen/snippet baselines across frameworks (internal, not published)",
   "keywords": [

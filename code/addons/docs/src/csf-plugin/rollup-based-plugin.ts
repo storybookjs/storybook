@@ -20,15 +20,12 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
       try {
         const makeTitle = (userTitle: string) => userTitle || 'default';
         const csf = loadCsf(code, { makeTitle }).parse();
-        const csfSource = loadCsf(sourceCode, {
-          makeTitle,
-        }).parse();
+        const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
         await enrichCsf(csf, csfSource, options);
         const inputSourceMap = this.getCombinedSourcemap();
         return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
       } catch (err: any) {
-        // This can be called on legacy storiesOf files, so just ignore
-        // those errors. But warn about other errors.
+        // This can be called on legacy storiesOf files, so ignore CSF parse errors.
         if (!err.message?.startsWith('CSF:')) {
           logger.warn(err.message);
         }

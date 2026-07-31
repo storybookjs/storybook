@@ -83,7 +83,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
   // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
   // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
-  // plugins run in registration order. builder-vite registers `plugin-csf`
+  // plugins run in registration order. addon-docs registers `plugin-csf`
   // first, then this preset adds analogjs, so analogjs's transform — which
   // discards the incoming `code` and re-emits from its own TS file emitter —
   // silently overwrites the csf enrichment that adds
@@ -94,7 +94,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // upstream `code`), so the JSDoc/source extraction is unaffected.
   // Drop any analogjs plugin loaded from the user's vite.config(.m)ts file —
   // we register our own pinned-to-`enforce: 'pre'` instance below. Demote
-  // builder-vite's csf-plugin out of the `pre` bucket so analogjs (also
+  // addon-docs' csf-plugin out of the `pre` bucket so analogjs (also
   // `enforce: 'pre'`) doesn't overwrite csf-plugin's docs/story enrichment.
   // The post-analogjs `angularViteRedirectReapplyPlugin` handles every mock
   // contract (redirects + automock) on top of analogjs's emitted JS, so we

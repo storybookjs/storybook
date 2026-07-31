@@ -11769,7 +11769,6 @@ __metadata:
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
-    "@storybook/csf-plugin": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
@@ -11789,6 +11788,7 @@ __metadata:
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
+    unplugin: "npm:^2.3.5"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -12042,7 +12042,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
-    "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
@@ -12155,7 +12154,6 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/codemod": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf-plugin": "workspace:*"
     "@storybook/ember": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
@@ -12275,30 +12273,6 @@ __metadata:
     webpack: "npm:5"
   peerDependencies:
     storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/csf-plugin@workspace:*, @storybook/csf-plugin@workspace:code/lib/csf-plugin":
-  version: 0.0.0-use.local
-  resolution: "@storybook/csf-plugin@workspace:code/lib/csf-plugin"
-  dependencies:
-    typescript: "npm:^6.0.3"
-    unplugin: "npm:^2.3.5"
-  peerDependencies:
-    esbuild: "*"
-    rollup: "*"
-    storybook: "workspace:^"
-    vite: "*"
-    webpack: "*"
-  peerDependenciesMeta:
-    esbuild:
-      optional: true
-    rollup:
-      optional: true
-    vite:
-      optional: true
-    webpack:
-      optional: true
   languageName: unknown
   linkType: soft
 

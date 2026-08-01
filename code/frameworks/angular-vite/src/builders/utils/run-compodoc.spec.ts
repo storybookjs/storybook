@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { runCompodoc } from './run-compodoc.ts';
+import { resolve } from 'node:path';
+
+import { getCompodocOutputDir, runCompodoc } from './run-compodoc.ts';
 
 const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
 
@@ -89,5 +91,42 @@ describe('runCompodoc', () => {
       args: ['compodoc', '-p', 'path/to/tsconfig.json', '-d', 'path/to/customFolder'],
       cwd: 'path/to/project',
     });
+  });
+});
+
+describe('getCompodocOutputDir', () => {
+  // Paths are wrapped in `resolve` so the expectations hold on Windows too.
+  const workspaceRoot = '/path/to/project';
+
+  it('defaults to the workspace root when no output flag is present', () => {
+    expect(getCompodocOutputDir([], workspaceRoot)).toBe(resolve(workspaceRoot));
+    expect(getCompodocOutputDir(['-e', 'json'], workspaceRoot)).toBe(resolve(workspaceRoot));
+  });
+
+  it('resolves a relative -d output directory against the workspace root', () => {
+    expect(getCompodocOutputDir(['-e', 'json', '-d', 'libs/storybook-host/'], workspaceRoot)).toBe(
+      resolve(workspaceRoot, 'libs/storybook-host')
+    );
+  });
+
+  it('resolves a relative --output directory against the workspace root', () => {
+    expect(getCompodocOutputDir(['--output', 'docs'], workspaceRoot)).toBe(
+      resolve(workspaceRoot, 'docs')
+    );
+  });
+
+  it('keeps an absolute -d output directory as-is', () => {
+    expect(getCompodocOutputDir(['-d', '/abs/docs'], workspaceRoot)).toBe(resolve('/abs/docs'));
+  });
+
+  it('uses the last output flag when several are given', () => {
+    expect(getCompodocOutputDir(['-d', 'first', '--output', 'second'], workspaceRoot)).toBe(
+      resolve(workspaceRoot, 'second')
+    );
+  });
+
+  it('falls back to the workspace root for a dangling output flag', () => {
+    expect(getCompodocOutputDir(['-d'], workspaceRoot)).toBe(resolve(workspaceRoot));
+    expect(getCompodocOutputDir(['--output', '-e'], workspaceRoot)).toBe(resolve(workspaceRoot));
   });
 });

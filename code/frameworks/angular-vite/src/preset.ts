@@ -114,14 +114,23 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // Generate compodoc's documentation.json on cold start when no builder
   // path has produced it yet (e.g. addon-vitest child, ng run without the
-  // Angular CLI builder). Skipped when the file already exists or when the
-  // user opts out via framework.options.compodoc === false.
+  // Angular CLI builder). Skipped when the file already exists at the output
+  // directory configured via compodocArgs (-d / --output) or when the user
+  // opts out via framework.options.compodoc === false. Checking the
+  // configured location (rather than the workspace root) keeps a custom
+  // output dir from regenerating on every launch and stops a stray root
+  // documentation.json from suppressing regeneration.
   if (framework.options?.compodoc !== false) {
     const { existsSync } = await import('node:fs');
     const path = await import('node:path');
     const workspaceRoot =
       (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
-    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
+    const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
+    const { getCompodocOutputDir } = await import('./builders/utils/run-compodoc.ts');
+    const documentationJsonPath = path.resolve(
+      getCompodocOutputDir(compodocArgs, workspaceRoot),
+      'documentation.json'
+    );
     if (!existsSync(documentationJsonPath)) {
       const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
       const tsconfig =
@@ -129,7 +138,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         (options as any)?.tsConfig ??
         (options as any)?.angularBuilderOptions?.tsConfig ??
         path.resolve(workspaceRoot, 'tsconfig.json');
-      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
       try {
         await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
       } catch (err) {

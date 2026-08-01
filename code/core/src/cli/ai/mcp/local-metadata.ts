@@ -29,7 +29,10 @@ export type StorybookAiMetadataOptions = {
   configDir?: string;
 };
 
-export function resolveStorybookConfigDir({ cwd, configDir }: StorybookAiMetadataOptions = {}) {
+export function resolveStorybookConfigDir({
+  cwd,
+  configDir,
+}: StorybookAiMetadataOptions = {}): string {
   const projectCwd = resolve(cwd ?? process.cwd());
   if (configDir) {
     return isAbsolute(configDir) ? configDir : resolve(projectCwd, configDir);

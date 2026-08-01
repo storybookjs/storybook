@@ -41,7 +41,7 @@ export const AddonPanel = ({
   children,
   hasScrollbar = true,
   hasHorizontalScrollbar = false,
-}: AddonPanelProps) => {
+}: AddonPanelProps): React.JSX.Element => {
   return (
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
     <Div hidden={!active}>

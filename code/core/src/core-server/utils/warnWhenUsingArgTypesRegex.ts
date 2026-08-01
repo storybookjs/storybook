@@ -10,7 +10,7 @@ import { dedent } from 'ts-dedent';
 export async function warnWhenUsingArgTypesRegex(
   previewConfigPath: string | undefined,
   config: StorybookConfig
-) {
+): Promise<void> {
   const previewContent = previewConfigPath
     ? await readFile(previewConfigPath, { encoding: 'utf8' })
     : '';

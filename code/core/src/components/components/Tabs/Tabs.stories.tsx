@@ -125,7 +125,7 @@ export default {
 type Story = StoryObj<typeof TabsState>;
 
 export const StatefulStatic = {
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <TabsState {...args} initial={args.initial ?? 'test2'}>
       <div id="test1" title="With a function">
         {
@@ -141,7 +141,7 @@ export const StatefulStatic = {
 } satisfies Story;
 
 export const StatefulStaticWithSetButtonTextColors = {
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div>
       <TabsState {...args} initial={args.initial ?? 'test2'}>
         <div id="test1" title="With a function" color="#e00000">
@@ -159,7 +159,7 @@ export const StatefulStaticWithSetButtonTextColors = {
 } satisfies Story;
 
 export const StatefulStaticWithSetBackgroundColor = {
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div>
       <TabsState
         {...args}
@@ -191,11 +191,11 @@ const customViewports = {
 };
 
 export const StatefulNoInitial = {
-  render: (args) => <TabsState {...args}>{content}</TabsState>,
+  render: (args): React.JSX.Element => <TabsState {...args}>{content}</TabsState>,
 } satisfies Story;
 
 export const StatelessBordered = {
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       {...args}
       bordered={args.bordered ?? true}
@@ -232,7 +232,7 @@ export const StatelessWithTools = {
   args: {
     tools: <AddonTools />,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       bordered
       selected="test3"
@@ -251,7 +251,7 @@ export const StatelessAbsolute = {
   parameters: {
     layout: 'fullscreen',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       absolute
       selected="test3"
@@ -270,7 +270,7 @@ export const StatelessAbsoluteBordered = {
   parameters: {
     layout: 'fullscreen',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       absolute
       bordered
@@ -294,7 +294,7 @@ export const StatelessEmptyWithTools = {
   parameters: {
     layout: 'fullscreen',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       actions={{
         onSelect,
@@ -315,7 +315,7 @@ export const StatelessWithCustomEmpty = {
   parameters: {
     layout: 'fullscreen',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Tabs
       actions={{
         onSelect,
@@ -329,7 +329,7 @@ export const StatelessWithCustomEmpty = {
 } satisfies StoryObj<typeof Tabs>;
 
 export const StatefulWithStatefulPanel = {
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [update, setUpdate] = React.useState(0);
     return (
       <div>
@@ -354,7 +354,7 @@ export const WithErrorBoundary = {
       dangerouslyIgnoreUnhandledErrors: true,
     },
   },
-  play: async ({ mount, args, canvas }) => {
+  play: async ({ mount, args, canvas }): Promise<void> => {
     spyOn(console, 'error').mockImplementation(() => {});
     await mount(
       <TabsState {...args} initial="test1">

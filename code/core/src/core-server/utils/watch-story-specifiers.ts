@@ -155,5 +155,5 @@ export function watchStorySpecifiers(
     queueEvent(filePath, true);
   });
 
-  return () => wp.close();
+  return (): any => wp.close();
 }

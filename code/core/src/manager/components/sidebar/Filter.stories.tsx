@@ -56,7 +56,7 @@ const meta = {
   tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   decorators: [
     IconSymbolsDecorator,
-    (Story, { args, parameters }) => {
+    (Story, { args, parameters }): React.JSX.Element => {
       const [state, setState] = useState(() =>
         createInitialState(parameters?.initialStoryState as Record<string, unknown> | undefined)
       );
@@ -217,7 +217,7 @@ export const ClosedWithSelection: Story = {
 
 export const Clear = {
   ...ClosedWithSelection,
-  beforeEach: () => {
+  beforeEach: (): (() => void) => {
     internal_fullStatusStore.set([
       {
         storyId: 'c1-s1',
@@ -243,7 +243,7 @@ export const Clear = {
     ]);
     return () => internal_fullStatusStore.unset();
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
 
@@ -296,7 +296,7 @@ export const NoUserTags = {
       } as StoryIndex,
     },
   },
-  beforeEach: () => {
+  beforeEach: (): (() => void) => {
     internal_fullStatusStore.set([
       {
         storyId: 'c1-s1',
@@ -322,7 +322,7 @@ export const NoUserTags = {
     ]);
     return () => internal_fullStatusStore.unset();
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
 
@@ -334,7 +334,7 @@ export const NoUserTags = {
 
 export const WithSelection = {
   ...ClosedWithSelection,
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
   },
@@ -355,7 +355,7 @@ export const WithSelectionInverted = {
       excludedTagFilters: ['A', 'B'],
     },
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
   },
@@ -376,7 +376,7 @@ export const WithSelectionMixed = {
       excludedTagFilters: ['B'],
     },
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = await canvas.findByRole('button', {}, { timeout: 3000 });
     button.click();
   },

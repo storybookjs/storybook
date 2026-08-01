@@ -82,7 +82,7 @@ export function ensurePanel(
   panels: Addon_Collection<Addon_BaseType> | null | undefined,
   selectedPanel?: string,
   currentPanel?: string
-) {
+): string | undefined {
   const keys = Object.keys(panels ?? {});
 
   if (keys.indexOf(selectedPanel!) >= 0) {

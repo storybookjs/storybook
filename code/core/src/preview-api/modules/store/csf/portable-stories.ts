@@ -46,7 +46,7 @@ declare global {
 
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
   _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
-) {
+): void {
   // Use a variable once we figure out the ESM/CJS issues
   globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
 }
@@ -277,7 +277,7 @@ export function composeStories<TModule extends Store_CSFExports>(
   storiesImport: TModule,
   globalConfig: ProjectAnnotations<Renderer>,
   composeStoryFn: ComposeStoryFn = defaultComposeStory
-) {
+): {} {
   const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
   let meta = metaExport;
 

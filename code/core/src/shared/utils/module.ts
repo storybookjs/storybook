@@ -14,7 +14,7 @@ import { jsModuleExtensions } from '../constants/extensions.ts';
  *
  * @see https://github.com/vitest-dev/vitest/issues/6953
  */
-export const importMetaResolve = (...args: Parameters<ImportMeta['resolve']>) => {
+export const importMetaResolve = (...args: Parameters<ImportMeta['resolve']>): string => {
   if (typeof import.meta.resolve !== 'function' && process.env.VITEST === 'true') {
     // This should only ever happen in our internal Vitest unit tests. This specific warning is silenced globally in vitest-setup.ts.
     // If anyone sees this warning, it means that this function was used in Vitest, but not our Vitest.
@@ -30,7 +30,7 @@ export const importMetaResolve = (...args: Parameters<ImportMeta['resolve']>) =>
 export const resolvePackageDir = (
   pkg: Parameters<ImportMeta['resolve']>[0],
   parent?: Parameters<ImportMeta['resolve']>[0]
-) => {
+): string => {
   try {
     return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
   } catch {
@@ -67,7 +67,7 @@ let isTypescriptLoaderRegistered = false;
 export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
-) {
+): Promise<any> {
   if (!isTypescriptLoaderRegistered) {
     const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
     register(typescriptLoaderUrl, import.meta.url);
@@ -133,7 +133,7 @@ export const safeResolveModule = ({
   specifier: string;
   parent?: string;
   extensions?: string[];
-}) => {
+}): string | undefined => {
   try {
     const resolvedPath = resolveModulePath(specifier, {
       from: parent,

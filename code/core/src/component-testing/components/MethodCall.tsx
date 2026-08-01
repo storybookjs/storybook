@@ -109,7 +109,7 @@ export const Node = ({
   showObjectInspector?: boolean;
   callsById?: Map<Call['id'], Call>;
   [props: string]: any;
-}) => {
+}): React.JSX.Element => {
   switch (true) {
     case value === null:
       return <NullNode {...props} />;
@@ -155,7 +155,7 @@ export const Node = ({
   }
 };
 
-export const NullNode = (props: object) => {
+export const NullNode = (props: object): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.nullish }} {...props}>
@@ -164,7 +164,7 @@ export const NullNode = (props: object) => {
   );
 };
 
-export const UndefinedNode = (props: object) => {
+export const UndefinedNode = (props: object): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.nullish }} {...props}>
@@ -173,7 +173,7 @@ export const UndefinedNode = (props: object) => {
   );
 };
 
-export const StringNode = ({ value, ...props }: { value: string }) => {
+export const StringNode = ({ value, ...props }: { value: string }): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.string }} {...props}>
@@ -182,7 +182,7 @@ export const StringNode = ({ value, ...props }: { value: string }) => {
   );
 };
 
-export const NumberNode = ({ value, ...props }: { value: number }) => {
+export const NumberNode = ({ value, ...props }: { value: number }): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.number }} {...props}>
@@ -191,7 +191,7 @@ export const NumberNode = ({ value, ...props }: { value: number }) => {
   );
 };
 
-export const BooleanNode = ({ value, ...props }: { value: boolean }) => {
+export const BooleanNode = ({ value, ...props }: { value: boolean }): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.boolean }} {...props}>
@@ -208,7 +208,7 @@ export const ArrayNode = ({
   value: any[];
   nested?: boolean;
   callsById?: Map<Call['id'], Call>;
-}) => {
+}): React.JSX.Element => {
   const colors = useThemeColors();
   if (nested) {
     return <span style={{ color: colors.base }}>[…]</span>;
@@ -239,7 +239,7 @@ export const ObjectNode = ({
   value: object;
   nested?: boolean;
   callsById?: Map<Call['id'], Call>;
-}) => {
+}): React.JSX.Element => {
   const isDarkMode = useTheme().base === 'dark';
   const colors = useThemeColors();
 
@@ -288,12 +288,12 @@ export const ObjectNode = ({
   );
 };
 
-export const ClassNode = ({ name }: { name: string }) => {
+export const ClassNode = ({ name }: { name: string }): React.JSX.Element => {
   const colors = useThemeColors();
   return <span style={{ color: colors.instance }}>{name}</span>;
 };
 
-export const FunctionNode = ({ name }: { name: string }) => {
+export const FunctionNode = ({ name }: { name: string }): React.JSX.Element => {
   const colors = useThemeColors();
   return name ? (
     <span style={{ color: colors.function }}>{name}</span>
@@ -308,7 +308,7 @@ export const ElementNode = ({
   id,
   classNames = [],
   innerText,
-}: ElementRef['__element__']) => {
+}: ElementRef['__element__']): React.JSX.Element => {
   const name = prefix ? `${prefix}:${localName}` : localName;
   const colors = useThemeColors();
   return (
@@ -343,7 +343,7 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string | Date }) => {
+export const DateNode = ({ value }: { value: string | Date }): React.JSX.Element => {
   let parsed: Date | null = new Date(value);
   if (isNaN(Number(parsed))) {
     logger.warn('Invalid date value:', value);
@@ -367,7 +367,13 @@ export const DateNode = ({ value }: { value: string | Date }) => {
   );
 };
 
-export const ErrorNode = ({ name, message }: { name: string; message: string }) => {
+export const ErrorNode = ({
+  name,
+  message,
+}: {
+  name: string;
+  message: string;
+}): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ color: colors.error.name }}>
@@ -382,7 +388,13 @@ export const ErrorNode = ({ name, message }: { name: string; message: string }) 
   );
 };
 
-export const RegExpNode = ({ flags, source }: { flags: string; source: string }) => {
+export const RegExpNode = ({
+  flags,
+  source,
+}: {
+  flags: string;
+  source: string;
+}): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.regex.flags }}>
@@ -391,7 +403,7 @@ export const RegExpNode = ({ flags, source }: { flags: string; source: string })
   );
 };
 
-export const SymbolNode = ({ description }: { description: string }) => {
+export const SymbolNode = ({ description }: { description: string }): React.JSX.Element => {
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.instance }}>
@@ -401,12 +413,12 @@ export const SymbolNode = ({ description }: { description: string }) => {
   );
 };
 
-export const OtherNode = ({ value }: { value: any }) => {
+export const OtherNode = ({ value }: { value: any }): React.JSX.Element => {
   const colors = useThemeColors();
   return <span style={{ color: colors.meta }}>{stringify(value)}</span>;
 };
 
-export const StepNode = ({ label }: { label: string }) => {
+export const StepNode = ({ label }: { label: string }): React.JSX.Element => {
   const colors = useThemeColors();
   const { typography } = useTheme();
   return (
@@ -428,7 +440,7 @@ export const MethodCall = ({
 }: {
   call?: Call;
   callsById?: Map<Call['id'], Call>;
-}) => {
+}): React.JSX.Element | null => {
   // Call might be undefined during initial render, can be safely ignored.
   if (!call) {
     return null;

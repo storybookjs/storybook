@@ -5,7 +5,11 @@ import { SaveStoryError } from './utils.ts';
 
 type In = ReturnType<CsfFile['parse']>;
 
-export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newStoryName: string) => {
+export const duplicateStoryWithNewName = (
+  csfFile: In,
+  storyName: string,
+  newStoryName: string
+): t.VariableDeclarator => {
   const node = csfFile._storyExports[storyName];
   const cloned = t.cloneNode(node) as t.VariableDeclarator;
 

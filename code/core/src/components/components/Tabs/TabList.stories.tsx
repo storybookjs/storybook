@@ -7,6 +7,7 @@ import { TabList } from './TabList.tsx';
 import { TabPanel } from './TabPanel.tsx';
 import type { TabProps } from './TabsView.tsx';
 import { useTabsState } from './TabsView.tsx';
+import { JSX } from 'react';
 
 const DEFAULT_TABS: TabProps[] = [
   {
@@ -91,7 +92,7 @@ export const WithDisabledTab = meta.story({
         {
           id: 'tab4',
           title: 'Disabled Tab',
-          children: () => <div>Content for Disabled Tab</div>,
+          children: (): JSX.Element => <div>Content for Disabled Tab</div>,
           isDisabled: true,
         },
       ],
@@ -125,7 +126,7 @@ export const WithFixedWidth = meta.story({
     },
   },
   decorators: [
-    (Story, { args }) => {
+    (Story, { args }): JSX.Element => {
       return (
         <Bar
           border
@@ -142,7 +143,7 @@ export const WithFixedWidth = meta.story({
 
 export const PreservesAriaLabels = meta.story({
   name: 'Preserves ARIA Labels',
-  play: ({ canvas }) => {
+  play: ({ canvas }): void => {
     const tabOne = canvas.getAllByRole('tab')[0];
     expect(tabOne).toHaveAttribute('aria-label', 'Tab one');
   },

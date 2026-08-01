@@ -65,7 +65,7 @@ export function useList(list: ChildrenListComplete) {
       actions?: {
         onSelect: (id: string) => void;
       } & Record<string, any>;
-    }) => {
+    }): React.JSX.Element => {
       const isAddonsActive = invisibleList.some(({ active }) => active);
       const [isTooltipVisible, setTooltipVisible] = useState(false);
       return (

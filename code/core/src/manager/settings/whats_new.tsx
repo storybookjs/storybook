@@ -55,7 +55,7 @@ export const WhatsNewFooter = ({
   isNotificationsEnabled: boolean;
   onToggleNotifications?: () => void;
   copyContent: string;
-}) => {
+}): React.JSX.Element => {
   const theme = useTheme();
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton({
     children: 'Copy Link',

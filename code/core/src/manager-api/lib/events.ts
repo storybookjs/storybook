@@ -14,7 +14,17 @@ interface Meta {
   type: string;
 }
 
-export const getEventMetadata = (context: Meta, fullAPI: API) => {
+export const getEventMetadata = (
+  context: Meta,
+  fullAPI: API
+): {
+  source: string | undefined;
+  sourceType: string | null;
+  sourceLocation: string | null;
+  refId: string | undefined;
+  ref: API_ComposedRef | undefined;
+  type: string;
+} | null => {
   const { source, refId, type } = context;
   const [sourceType, sourceLocation] = getSourceType(source!, refId);
 

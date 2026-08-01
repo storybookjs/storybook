@@ -1,4 +1,4 @@
-import { definePreviewAddon } from 'storybook/internal/csf';
+import { definePreviewAddon, PreviewAddon } from 'storybook/internal/csf';
 
 import { PARAM_KEY } from './constants.ts';
 import type { OutlineTypes } from './types.ts';
@@ -12,4 +12,5 @@ export const initialGlobals = {
 
 export type { OutlineTypes };
 
-export default () => definePreviewAddon<OutlineTypes>({ decorators, initialGlobals });
+export default (): PreviewAddon<OutlineTypes> =>
+  definePreviewAddon<OutlineTypes>({ decorators, initialGlobals });

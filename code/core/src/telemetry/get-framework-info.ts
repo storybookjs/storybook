@@ -13,7 +13,17 @@ const cleanAndSanitizePath = (path: string) => {
   return pnpmDir ? pnpmDir[1].replace('+', '/') : cleaned;
 };
 
-export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {
+export async function getFrameworkInfo(
+  mainConfig: StorybookConfig,
+  configDir: string
+): Promise<{
+  framework: {
+    name: string | undefined;
+    options: any;
+  };
+  builder: string | undefined;
+  renderer: string | undefined;
+}> {
   const { frameworkPackage, rendererPackage, builderPackage } = await getStorybookInfo(configDir);
 
   const frameworkOptions =

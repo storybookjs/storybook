@@ -39,33 +39,37 @@ export type ChecklistStoreEnvironment = 'server' | 'manager' | 'preview';
 export const createChecklistStore = (
   universalChecklistStore: UniversalStore<StoreState, StoreEvent>
 ) => ({
-  getValue: (id: ItemId) =>
-    universalChecklistStore.getState().items[id] ?? { status: 'open', mutedAt: undefined },
-  accept: (id: ItemId) => {
+  getValue: (
+    id: ItemId
+  ): {
+    status?: 'done' | 'open' | 'accepted' | 'skipped' | undefined;
+    mutedAt?: number | undefined;
+  } => universalChecklistStore.getState().items[id] ?? { status: 'open', mutedAt: undefined },
+  accept: (id: ItemId): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       items: { ...state.items, [id]: { ...state.items[id], status: 'accepted' } },
     }));
   },
-  done: (id: ItemId) => {
+  done: (id: ItemId): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       items: { ...state.items, [id]: { ...state.items[id], status: 'done' } },
     }));
   },
-  skip: (id: ItemId) => {
+  skip: (id: ItemId): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       items: { ...state.items, [id]: { ...state.items[id], status: 'skipped' } },
     }));
   },
-  reset: (id: ItemId) => {
+  reset: (id: ItemId): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       items: { ...state.items, [id]: { ...state.items[id], status: 'open' } },
     }));
   },
-  mute: (itemIds: Array<ItemId>) => {
+  mute: (itemIds: Array<ItemId>): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       items: itemIds.reduce(
@@ -74,7 +78,7 @@ export const createChecklistStore = (
       ),
     }));
   },
-  disable: (value: boolean) => {
+  disable: (value: boolean): void => {
     universalChecklistStore.setState((state) => ({
       ...state,
       widget: { ...state.widget, disable: value },

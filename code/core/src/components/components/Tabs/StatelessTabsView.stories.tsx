@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 
 import { Button, EmptyTabContent } from 'storybook/internal/components';
 
@@ -12,7 +12,7 @@ import { StatelessTabList } from './StatelessTabList.tsx';
 import { StatelessTabPanel } from './StatelessTabPanel.tsx';
 import { StatelessTabsView, type StatelessTabsViewProps } from './StatelessTabsView.tsx';
 
-const RenderDefault = (args: StatelessTabsViewProps) => (
+const RenderDefault = (args: StatelessTabsViewProps): JSX.Element => (
   <StatelessTabsView {...args}>
     <StatelessTabList>
       <StatelessTab name="tab1">Tab 1</StatelessTab>
@@ -31,7 +31,7 @@ const RenderDefault = (args: StatelessTabsViewProps) => (
   </StatelessTabsView>
 );
 
-const RenderEmpty = (args: StatelessTabsViewProps) => (
+const RenderEmpty = (args: StatelessTabsViewProps): JSX.Element => (
   <StatelessTabsView {...args}>
     <StatelessTabList></StatelessTabList>
   </StatelessTabsView>
@@ -121,7 +121,7 @@ export const ControlledState = meta.story({
     selected: 'tab2',
     onSelectionChange: fn(),
   },
-  render: (args) => {
+  render: (args): JSX.Element => {
     const [selected, setSelected] = useState(args.selected);
     return (
       <>

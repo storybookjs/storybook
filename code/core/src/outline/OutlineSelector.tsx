@@ -9,7 +9,7 @@ import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api
 import { ADDON_ID, PARAM_KEY } from './constants.ts';
 import type { OutlineParameters } from './types.ts';
 
-export const OutlineSelector = memo(function OutlineSelector() {
+export const OutlineSelector = memo(function OutlineSelector(): React.JSX.Element | null {
   const isDisabled = useParameter<OutlineParameters['outline']>(PARAM_KEY)?.disable;
   const [globals, updateGlobals] = useGlobals();
   const api = useStorybookApi();

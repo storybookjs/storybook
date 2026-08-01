@@ -14,7 +14,7 @@ const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
  * function <name>() {}
  * ```
  */
-export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
+export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string): boolean {
   return (
     (t.isVariableDeclaration(node) &&
       node.declarations.length === 1 &&
@@ -54,7 +54,7 @@ function getReferenceToGetAbsolutePathWrapper(config: ConfigFile, value: string)
  *
  * @returns Name of the getAbsolutePath wrapper function (e.g. `getAbsolutePath`).
  */
-export function getAbsolutePathWrapperName(config: ConfigFile) {
+export function getAbsolutePathWrapperName(config: ConfigFile): string | null {
   const declarationName = config
     .getBodyDeclarations()
     .flatMap((node) =>
@@ -76,7 +76,7 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
 export function isGetAbsolutePathWrapperNecessary(
   node: t.Node,
   cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
-) {
+): boolean {
   if (t.isStringLiteral(node)) {
     // value will be converted from StringLiteral to CallExpression.
     cb(node);
@@ -188,7 +188,7 @@ export function getAbsolutePathWrapperAsCallExpression(
   return functionDeclaration;
 }
 
-export function wrapValueWithGetAbsolutePathWrapper(config: ConfigFile, node: t.Node) {
+export function wrapValueWithGetAbsolutePathWrapper(config: ConfigFile, node: t.Node): void {
   isGetAbsolutePathWrapperNecessary(node, (n) => {
     if (t.isStringLiteral(n)) {
       const wrapperNode = getReferenceToGetAbsolutePathWrapper(config, n.value);

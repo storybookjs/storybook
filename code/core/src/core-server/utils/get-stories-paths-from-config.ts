@@ -24,7 +24,7 @@ export const getStoriesPathsFromConfig = async ({
   stories: StorybookConfigRaw['stories'];
   configDir: string;
   workingDir: string;
-}) => {
+}): Promise<string[]> => {
   if (stories.length === 0) {
     return [];
   }

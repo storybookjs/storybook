@@ -74,7 +74,7 @@ export const PopoverProvider = ({
   visible,
   onVisibleChange,
   ...props
-}: PopoverProviderProps) => {
+}: PopoverProviderProps): React.JSX.Element => {
   if (!ariaLabel) {
     deprecate(
       "The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose."

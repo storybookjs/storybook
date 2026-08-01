@@ -132,7 +132,7 @@ function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) 
   );
 }
 
-export function OpenServiceDemoPanel({ services }: Props) {
+export function OpenServiceDemoPanel({ services }: Props): React.JSX.Element {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <CommandDemoSection

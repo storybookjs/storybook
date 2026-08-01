@@ -10,10 +10,11 @@ import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
 import { resolveMock } from './resolve.ts';
+import { n } from '../../dist/chunk-wK3zEWUl';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
 
-export function isModuleDirectory(path: string) {
+export function isModuleDirectory(path: string): boolean {
   const normalizedPath = normalize(path);
   return DEFAULT_MODULE_DIRECTORIES.some((dir: string) => normalizedPath.includes(dir));
 }
@@ -41,7 +42,7 @@ interface ExtractMockCallsOptions {
  * @param code - The code to parse.
  * @returns The parsed code.
  */
-export const babelParser = (code: string) => {
+export const babelParser = (code: string): t.Program => {
   return parser.parse(code, {
     sourceType: 'module',
     // Enable plugins to handle modern JavaScript features, including TSX.
@@ -51,7 +52,7 @@ export const babelParser = (code: string) => {
 };
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string) {
+export function rewriteSbMockImportCalls(code: string): n {
   const ast = babelParser(code);
 
   walk(ast as any, {

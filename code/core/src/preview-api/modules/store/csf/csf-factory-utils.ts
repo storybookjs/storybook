@@ -3,8 +3,10 @@ import type {
   Args,
   ComponentAnnotations,
   LegacyStoryAnnotationsOrFn,
+  NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
+  StoryAnnotations,
 } from 'storybook/internal/types';
 
 export function getCsfFactoryAnnotations<
@@ -14,7 +16,20 @@ export function getCsfFactoryAnnotations<
   story: LegacyStoryAnnotationsOrFn<TRenderer> | Story<Renderer>,
   meta?: ComponentAnnotations<TRenderer, TArgs> | Meta<Renderer>,
   projectAnnotations?: ProjectAnnotations<TRenderer>
-) {
+):
+  | {
+      story: StoryAnnotations<Renderer, unknown>;
+      meta: ComponentAnnotations<Renderer, unknown>;
+      preview: NormalizedProjectAnnotations<Renderer>;
+    }
+  | {
+      story: LegacyStoryAnnotationsOrFn<TRenderer>;
+      meta:
+        | ComponentAnnotations<TRenderer, TArgs>
+        | ComponentAnnotations<Renderer, unknown>
+        | undefined;
+      preview: ProjectAnnotations<TRenderer> | undefined;
+    } {
   return isStory(story)
     ? {
         story: story.input,

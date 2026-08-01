@@ -49,7 +49,7 @@ const removeExtraNewlines = (code: string, name: string) => {
     : code;
 };
 
-export function initializeSaveStory(channel: Channel, options: Options) {
+export function initializeSaveStory(channel: Channel, options: Options): void {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
     const { csfId, importPath, args, name } = payload;
 

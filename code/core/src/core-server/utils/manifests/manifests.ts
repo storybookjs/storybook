@@ -318,7 +318,7 @@ async function writeLegacyManifests(
 }
 
 /** Writes manifest JSON (and HTML when applicable) to `outputDir/manifests/`. */
-export async function writeManifests(outputDir: string, presets: Presets) {
+export async function writeManifests(outputDir: string, presets: Presets): Promise<void> {
   try {
     const features = await presets.apply('features');
     const manifestEntries = await getManifestEntries(presets);
@@ -348,7 +348,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
  * When `experimentalDocgenServer` is enabled, `components.json` is not served (404) and
  * `components.html` is rendered from the docgen service instead of the inline manifest.
  */
-export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
+export function registerManifests({ app, presets }: { app: Polka; presets: Presets }): void {
   let useDocgenServerPromise: Promise<boolean> | undefined;
 
   const isDocgenServerEnabled = () => {

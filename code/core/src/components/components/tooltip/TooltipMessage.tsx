@@ -44,7 +44,7 @@ export interface TooltipMessageProps {
   }[];
 }
 
-export const TooltipMessage = ({ title, desc, links }: TooltipMessageProps) => {
+export const TooltipMessage = ({ title, desc, links }: TooltipMessageProps): React.JSX.Element => {
   deprecate(
     '`TooltipMessage` is deprecated and will be removed in Storybook 11, use `Popover` and `PopoverProvider` instead.'
   );

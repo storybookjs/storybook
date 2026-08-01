@@ -7,7 +7,7 @@ import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-ap
 
 import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
 
-export function Title() {
+export function Title(): React.JSX.Element {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
   const [{ count }, setCount] = useAddonState(ADDON_ID, { count: 0 });

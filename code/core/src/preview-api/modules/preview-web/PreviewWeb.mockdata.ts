@@ -77,7 +77,7 @@ export const teardownrenderToCanvas: Mock<(teardown: TeardownRenderToCanvas) => 
 const rawProjectAnnotations = {
   initialGlobals: { a: 'b' },
   globalTypes: {},
-  decorators: [vi.fn((s) => s())],
+  decorators: [vi.fn((s): any => s())],
   render: vi.fn(),
   renderToCanvas: vi.fn().mockReturnValue(teardownrenderToCanvas),
   parameters: { docs: { renderer: () => docsRenderer } },
@@ -161,7 +161,7 @@ export const storyIndex: StoryIndex = {
     },
   },
 };
-export const getStoryIndex = () => storyIndex;
+export const getStoryIndex = (): StoryIndex => storyIndex;
 
 export const emitter = new EventEmitter();
 export const mockChannel = {
@@ -176,7 +176,7 @@ export const waitForEvents = (
   events: string[],
   predicate: (...args: any[]) => boolean = () => true,
   debugLabel?: string
-) => {
+): Promise => {
   // We've already emitted a render event. NOTE if you want to test a second call,
   // ensure you call `mockChannel.emit.mockClear()` before `waitFor...`
   if (
@@ -206,7 +206,7 @@ export const waitForEvents = (
 
 // The functions on the preview that trigger rendering don't wait for
 // the async parts, so we need to listen for the "done" events
-export const waitForRender = () =>
+export const waitForRender = (): Promise =>
   waitForEvents([
     DOCS_RENDERED,
     STORY_FINISHED,
@@ -215,11 +215,11 @@ export const waitForRender = () =>
     STORY_THREW_EXCEPTION,
   ]);
 
-export const waitForRenderPhase = (phase: RenderPhase) => {
+export const waitForRenderPhase = (phase: RenderPhase): Promise => {
   const label = `${STORY_RENDER_PHASE_CHANGED} to ${phase}`;
   return waitForEvents([STORY_RENDER_PHASE_CHANGED], ({ newPhase }) => newPhase === phase, label);
 };
 
 // A little trick to ensure that we always call the real `setTimeout` even when timers are mocked
 const realSetTimeout = setTimeout;
-export const waitForQuiescence = async () => new Promise((r) => realSetTimeout(r, 1_000));
+export const waitForQuiescence = async (): Promise => new Promise((r) => realSetTimeout(r, 1_000));

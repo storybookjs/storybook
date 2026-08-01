@@ -88,7 +88,7 @@ function BaseModal({
   transitionDuration = 200,
   variant = 'dialog',
   ...props
-}: ModalProps) {
+}: ModalProps): React.JSX.Element | null {
   let deprecated = undefined;
   if (ariaLabel === undefined || ariaLabel === '') {
     deprecated = 'ariaLabel';

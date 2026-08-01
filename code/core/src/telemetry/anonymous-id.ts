@@ -7,7 +7,7 @@ import slash from 'slash';
 
 import { oneWayHash } from './one-way-hash.ts';
 
-export function normalizeGitUrl(rawUrl: string) {
+export function normalizeGitUrl(rawUrl: string): string {
   // I don't *think* its possible to set a hash on a origin URL, but just in case
   const urlWithoutHash = rawUrl.trim().replace(/#.*$/, '');
 
@@ -34,7 +34,7 @@ export function unhashedProjectId(remoteUrl: string, projectRootPath: string) {
 let anonymousProjectId: string;
 let getProjectSinceResult: Date | undefined;
 
-export const getAnonymousProjectId = () => {
+export const getAnonymousProjectId = (): string => {
   if (anonymousProjectId) {
     return anonymousProjectId;
   }
@@ -56,7 +56,7 @@ export const getAnonymousProjectId = () => {
   return anonymousProjectId;
 };
 
-export const getProjectSince = () => {
+export const getProjectSince = (): Date | undefined => {
   try {
     if (getProjectSinceResult) {
       return getProjectSinceResult;

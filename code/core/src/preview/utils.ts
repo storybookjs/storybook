@@ -22,7 +22,14 @@ export function prepareForTelemetry(
     srcElement?: any;
     browserInfo?: BrowserInfo;
   }
-) {
+): Error & {
+  fromStorybook?: boolean;
+  category?: string;
+  target?: any;
+  currentTarget?: any;
+  srcElement?: any;
+  browserInfo?: BrowserInfo;
+} {
   error.browserInfo = getBrowserInfo();
 
   return error;

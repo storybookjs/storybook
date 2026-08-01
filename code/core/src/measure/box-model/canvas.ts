@@ -61,24 +61,24 @@ function setCanvasWidthAndHeight(
 
 let state: CanvasState = {};
 
-export function init() {
+export function init(): void {
   if (!state.canvas) {
     state = createCanvas();
   }
 }
 
-export function clear() {
+export function clear(): void {
   if (state.context) {
     state.context.clearRect(0, 0, state.width ?? 0, state.height ?? 0);
   }
 }
 
-export function draw(callback: (context?: CanvasRenderingContext2D) => void) {
+export function draw(callback: (context?: CanvasRenderingContext2D) => void): void {
   clear();
   callback(state.context);
 }
 
-export function rescale() {
+export function rescale(): void {
   invariant(state.canvas, 'Canvas should exist in the state.');
   invariant(state.context, 'Context should exist in the state.');
   // First reset so that the canvas size doesn't impact the container size
@@ -92,7 +92,7 @@ export function rescale() {
   state.height = height;
 }
 
-export function destroy() {
+export function destroy(): void {
   if (state.canvas) {
     clear();
     state.canvas.parentNode?.removeChild(state.canvas);

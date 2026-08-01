@@ -9,7 +9,7 @@ import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api
 import { ADDON_ID, TOOL_ID } from './constants.ts';
 import type { MeasureParameters } from './types.ts';
 
-export const Tool = () => {
+export const Tool = (): React.JSX.Element | null => {
   const isDisabled = useParameter<MeasureParameters['measure']>('measure')?.disable;
   const [globals, updateGlobals] = useGlobals();
   const { measureEnabled } = globals || {};

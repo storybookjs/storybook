@@ -2,7 +2,7 @@ import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { Options } from 'storybook/internal/types';
+import type { Options, Stats } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
@@ -30,7 +30,18 @@ import { summarizeIndex } from './utils/summarizeIndex.ts';
 export async function storybookDevServer(
   options: Options,
   server: Awaited<ReturnType<typeof getServer>>
-) {
+): Promise<{
+  previewResult: void | {
+    stats?: Stats | undefined;
+    totalTime: ReturnType<typeof process.hrtime>;
+    bail: (e?: Error) => Promise<void>;
+  };
+  managerResult: void | {
+    stats?: Stats | undefined;
+    totalTime: ReturnType<typeof process.hrtime>;
+    bail: (e?: Error) => Promise<void>;
+  };
+}> {
   const core = await options.presets.apply('core');
 
   const app = polka({ server });

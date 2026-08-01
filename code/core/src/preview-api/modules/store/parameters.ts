@@ -8,7 +8,7 @@ import { isPlainObject } from 'es-toolkit/predicate';
  * overwrite the existing value UNLESS both values are plain objects. In this case flag the key as
  * "special" and handle it with a heuristic.
  */
-export const combineParameters = (...parameterSets: (Parameters | undefined)[]) => {
+export const combineParameters = (...parameterSets: (Parameters | undefined)[]): Parameters => {
   const mergeKeys: Record<string, boolean> = {};
   const definedParametersSets = parameterSets.filter(Boolean) as Parameters[];
   const combined = definedParametersSets.reduce((acc, parameters) => {

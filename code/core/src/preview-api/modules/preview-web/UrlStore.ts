@@ -9,7 +9,7 @@ import { parseArgsParam } from './parseArgsParam.ts';
 
 const { history, document } = global;
 
-export function pathToId(path: string) {
+export function pathToId(path: string): string {
   const match = (path || '').match(/^\/story\/(.+)/);
   if (!match) {
     throw new Error(`Invalid path '${path}',  must start with '/story/'`);
@@ -34,7 +34,7 @@ const getQueryString = ({
   return `?${queryStr}`;
 };
 
-export const setPath = (selection?: Selection) => {
+export const setPath = (selection?: Selection): void => {
   if (!selection) {
     return;
   }

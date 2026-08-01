@@ -7,7 +7,9 @@ import { runTelemetryOperation } from './run-telemetry-operation.ts';
 const nameMatches = ['page', 'screen'];
 const extensions = ['js', 'jsx', 'ts', 'tsx'];
 
-export const getApplicationFilesCountUncached = async (basePath: string) => {
+export const getApplicationFilesCountUncached = async (
+  basePath: string
+): Promise<number | undefined> => {
   const bothCasesNameMatches = nameMatches.flatMap((match) => [
     match,
     [match[0].toUpperCase(), ...match.slice(1)].join(''),
@@ -24,7 +26,7 @@ export const getApplicationFilesCountUncached = async (basePath: string) => {
   }
 };
 
-export const getApplicationFileCount = async (path: string) => {
+export const getApplicationFileCount = async (path: string): Promise<number | undefined> => {
   return runTelemetryOperation('applicationFiles', async () =>
     getApplicationFilesCountUncached(path)
   );

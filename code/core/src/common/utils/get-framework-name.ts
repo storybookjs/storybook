@@ -6,7 +6,7 @@ import { frameworkPackages } from './get-storybook-info.ts';
 import { normalizePath } from './normalize-path.ts';
 
 /** Framework can be a string or an object. This utility always returns the string name. */
-export async function getFrameworkName(options: Options) {
+export async function getFrameworkName(options: Options): Promise<string> {
   const framework = await options.presets.apply('framework', '', options);
 
   if (!framework) {
@@ -31,7 +31,7 @@ export async function getFrameworkName(options: Options) {
  * extractFrameworkPackageName('@third-party/framework'); // => '@third-party/framework'
  * ```
  */
-export const extractFrameworkPackageName = (framework: string) => {
+export const extractFrameworkPackageName = (framework: string): string => {
   const normalizedPath = normalizePath(framework);
   const frameworkName = Object.keys(frameworkPackages).find(
     (pkg) =>

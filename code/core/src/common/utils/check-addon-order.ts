@@ -36,7 +36,12 @@ const isCorrectOrder = (
   return beforeIndex !== -1 && afterIndex !== -1 && beforeIndex <= afterIndex;
 };
 
-export const checkAddonOrder = async ({ before, after, configFile, getConfig }: Options) => {
+export const checkAddonOrder = async ({
+  before,
+  after,
+  configFile,
+  getConfig,
+}: Options): Promise<void> => {
   try {
     const config = await getConfig(configFile);
 

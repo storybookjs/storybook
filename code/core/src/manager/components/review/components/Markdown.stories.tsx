@@ -11,7 +11,7 @@ export const Inline = meta.story({
   args: {
     children: 'A **bold** word, an *italic* word, and some `inline code`.',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('bold').tagName).toBe('STRONG');
     await expect(canvas.getByText('italic').tagName).toBe('EM');
@@ -23,7 +23,7 @@ export const UnderscoreItalic = meta.story({
   args: {
     children: 'An _underscored_ italic word.',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('underscored').tagName).toBe('EM');
   },
@@ -33,7 +33,7 @@ export const Paragraphs = meta.story({
   args: {
     children: 'First paragraph.\n\nSecond paragraph.',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     await expect(canvasElement.querySelectorAll('p')).toHaveLength(2);
   },
 });
@@ -42,7 +42,7 @@ export const RawHtmlIsEscaped = meta.story({
   args: {
     children: 'Not a <strong>tag</strong>.',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     // The angle brackets are rendered as literal text, not parsed into markup.
     await expect(canvas.getByText(/Not a <strong>tag<\/strong>\./)).toBeInTheDocument();

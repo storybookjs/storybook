@@ -114,7 +114,7 @@ export const Particles = memo(function Particles({
   anchor: Anchor,
 }: {
   anchor: React.ElementType;
-}) {
+}): React.JSX.Element {
   const anchorRef = useRef<HTMLDivElement>(null);
   const [left, setLeft] = useState(0);
   const [top, setTop] = useState(0);

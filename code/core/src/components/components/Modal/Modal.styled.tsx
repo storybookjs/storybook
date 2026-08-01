@@ -187,7 +187,7 @@ interface CloseProps {
   onClick?: (event: React.MouseEvent) => void;
 }
 
-export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
+export const Close = ({ asChild, children, onClick, ...props }: CloseProps): React.JSX.Element => {
   const { close } = useContext(ModalContext);
 
   if (asChild && React.isValidElement(children)) {
@@ -218,13 +218,16 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 };
 
 export const Dialog = {
-  Close: () => {
+  Close: (): React.JSX.Element => {
     deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
     return <Close data-deprecated="Modal.Dialog.Close" />;
   },
 };
 
-export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof Button>) => {
+export const CloseButton = ({
+  ariaLabel,
+  ...props
+}: React.ComponentProps<typeof Button>): React.JSX.Element => {
   deprecate('Modal.CloseButton is deprecated, please use Modal.Close instead.');
 
   return (
@@ -259,7 +262,10 @@ export const Header = ({
   hasClose = true,
   onClose,
   ...props
-}: React.ComponentProps<typeof Col> & { hasClose?: boolean; onClose?: () => void }) => (
+}: React.ComponentProps<typeof Col> & {
+  hasClose?: boolean;
+  onClose?: () => void;
+}): React.JSX.Element => (
   <Row>
     <Col {...props} />
     {hasClose && <Close onClick={onClose} />}
@@ -308,7 +314,7 @@ export const ErrorWrapper = styled.div(({ theme }) => ({
 export const Error = ({
   children,
   ...props
-}: { children: React.ReactNode } & ComponentProps<typeof ErrorWrapper>) => (
+}: { children: React.ReactNode } & ComponentProps<typeof ErrorWrapper>): React.JSX.Element => (
   <ErrorWrapper {...props}>
     <div>{children}</div>
   </ErrorWrapper>

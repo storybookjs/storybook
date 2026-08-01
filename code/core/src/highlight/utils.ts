@@ -11,7 +11,11 @@ import type {
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
-export const createElement = (type: string, props: Record<string, any> = {}, children?: any[]) => {
+export const createElement = (
+  type: string,
+  props: Record<string, any> = {},
+  children?: any[]
+): HTMLElement | SVGElement => {
   const element = svgElements.includes(type)
     ? document.createElementNS('http://www.w3.org/2000/svg', type)
     : document.createElement(type);
@@ -52,7 +56,7 @@ export const createElement = (type: string, props: Record<string, any> = {}, chi
   return element;
 };
 
-export const createIcon = (name: IconName) =>
+export const createIcon = (name: IconName): HTMLElement | SVGElement =>
   iconPaths[name] &&
   createElement(
     'svg',
@@ -110,7 +114,7 @@ export const useStore = <T>(initialValue?: T) => {
   state.set(key, initialValue);
 
   const get = () => state.get(key) as T;
-  const set = (update: T | ((state: T) => T)) => {
+  const set = (update: T | ((state: T) => T)): void => {
     const current = state.get(key) as T;
     const next = isFunction(update) ? update(current) : update;
     if (next !== current) {
@@ -123,7 +127,7 @@ export const useStore = <T>(initialValue?: T) => {
   };
   const subscribe = (listener: Listener<T>) => {
     listeners.get(key)?.push(listener);
-    return () => {
+    return (): void => {
       const list = listeners.get(key);
       if (list) {
         listeners.set(
@@ -133,7 +137,7 @@ export const useStore = <T>(initialValue?: T) => {
       }
     };
   };
-  const teardown = () => {
+  const teardown = (): void => {
     listeners.get(key)?.forEach((listener) => {
       teardowns.get(listener)?.();
       teardowns.delete(listener);
@@ -195,7 +199,10 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
-export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {
+export const isOverMenu = (
+  menuElement: HTMLElement,
+  coordinates: { x: number; y: number }
+): boolean | 0 => {
   const menu = menuElement.getBoundingClientRect();
   const { x, y } = coordinates;
   return (
@@ -212,7 +219,7 @@ export const isTargeted = (
   box: Box,
   boxElement: HTMLElement,
   coordinates: { x: number; y: number }
-) => {
+): boolean => {
   if (!boxElement || !coordinates) {
     return false;
   }
@@ -237,7 +244,7 @@ export const keepInViewport = (
   element: HTMLElement,
   targetCoordinates: { x: number; y: number },
   options: { margin?: number; topOffset?: number; centered?: boolean } = {}
-) => {
+): void => {
   const { x, y } = targetCoordinates;
   const { margin = 5, topOffset = 0, centered = false } = options;
   const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
@@ -262,13 +269,13 @@ export const keepInViewport = (
   });
 };
 
-export const showPopover = (element: HTMLElement) => {
+export const showPopover = (element: HTMLElement): void => {
   if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.showPopover();
   }
 };
 
-export const hidePopover = (element: HTMLElement) => {
+export const hidePopover = (element: HTMLElement): void => {
   if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.hidePopover();
   }

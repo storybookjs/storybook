@@ -1,4 +1,4 @@
-import type { StrictArgTypes } from 'storybook/internal/types';
+import type { Args, StrictArgTypes } from 'storybook/internal/types';
 
 import { pickBy } from 'es-toolkit/object';
 
@@ -11,7 +11,7 @@ export const filterArgTypes = (
   argTypes: StrictArgTypes,
   include?: PropDescriptor,
   exclude?: PropDescriptor
-) => {
+): Partial<StrictArgTypes<Args>> => {
   if (!include && !exclude) {
     return argTypes;
   }

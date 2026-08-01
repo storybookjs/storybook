@@ -37,7 +37,7 @@ export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
   BuilderOptions & { outputDir: string };
 
-export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
+export async function buildStaticStandalone(options: BuildStaticStandaloneOptions): Promise<void> {
   options.configType = 'PRODUCTION';
 
   if (options.outputDir === '') {

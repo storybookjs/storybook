@@ -17,7 +17,7 @@ const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem'
 const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
 export const All = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <Stack>
       <Row>
         <InteractiveTooltipWrapper>

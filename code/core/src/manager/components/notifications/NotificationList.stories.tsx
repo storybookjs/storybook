@@ -11,7 +11,7 @@ const meta = {
   component: NotificationList,
   title: 'Notifications/NotificationList',
   decorators: [
-    (StoryFn) => (
+    (StoryFn): React.JSX.Element => (
       <LocationProvider>
         <StoryFn />
       </LocationProvider>

@@ -2,7 +2,7 @@ import type { ArgTypes, SBType } from 'storybook/internal/csf';
 
 export { trySelectStory as trySelectNewStory } from '../../utils/trySelectStory.ts';
 
-export function extractSeededRequiredArgs(argTypes: ArgTypes) {
+export function extractSeededRequiredArgs(argTypes: ArgTypes): Record<string, any> {
   const extractedArgTypes = Object.keys(argTypes).reduce(
     (acc, key: keyof typeof argTypes) => {
       const argType = argTypes[key];

@@ -9,7 +9,11 @@ interface Shortcuts {
   reset: ToolbarShortcutConfig & { action: () => void };
 }
 
-export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcuts) => {
+export const registerShortcuts = async (
+  api: API,
+  id: string,
+  shortcuts: Shortcuts
+): Promise<void> => {
   if (shortcuts.next) {
     await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.next.label,

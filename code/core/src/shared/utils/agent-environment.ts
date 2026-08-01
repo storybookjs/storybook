@@ -3,6 +3,6 @@ export type AgentEnvironment = {
   CLAUDE_AGENT_SDK_VERSION?: string;
 };
 
-export function isClaudePreviewLaunch(env: AgentEnvironment = process.env) {
+export function isClaudePreviewLaunch(env: AgentEnvironment = process.env): boolean {
   return !!env.CLAUDE_AGENT_SDK_VERSION && !env.AI_AGENT;
 }

@@ -16,13 +16,13 @@ import {
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce, satisfies } from 'semver';
+import { coerce, satisfies, SemVer } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs.ts';
 
-export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
+export function readFileAsJson(jsonPath: string, allowComments?: boolean): any {
   const filePath = resolve(jsonPath);
   if (!existsSync(filePath)) {
     return false;
@@ -39,7 +39,7 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   }
 }
 
-export const writeFileAsJson = (jsonPath: string, content: unknown) => {
+export const writeFileAsJson = (jsonPath: string, content: unknown): boolean => {
   const filePath = resolve(jsonPath);
   if (!existsSync(filePath)) {
     return false;
@@ -70,7 +70,7 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
  * @param packageJson The current package.json so we can inspect its contents
  * @returns Contains the packages and versions that need to be installed
  */
-export async function getBabelDependencies(packageManager: JsPackageManager) {
+export async function getBabelDependencies(packageManager: JsPackageManager): Promise<string[]> {
   const dependenciesToAdd = [];
   let babelLoaderVersion = '^8.0.0-0';
 
@@ -107,7 +107,7 @@ export function addToDevDependenciesIfNotPresent(
   packageJson: PackageJson,
   name: string,
   packageVersion: string
-) {
+): void {
   if (!packageJson.dependencies?.[name] && !packageJson.devDependencies?.[name]) {
     if (packageJson.devDependencies) {
       packageJson.devDependencies[name] = packageVersion;
@@ -119,7 +119,7 @@ export function addToDevDependenciesIfNotPresent(
   }
 }
 
-export function copyTemplate(templateRoot: string, destination = '.') {
+export function copyTemplate(templateRoot: string, destination = '.'): void {
   const templateDir = resolve(templateRoot, `template-csf/`);
 
   if (!existsSync(templateDir)) {
@@ -142,7 +142,10 @@ type CopyTemplateFilesOptions = {
  * Return the installed version of a package, or the coerced version specifier from package.json if
  * it's a dependency but not installed (e.g. in a fresh project)
  */
-export async function getVersionSafe(packageManager: JsPackageManager, packageName: string) {
+export async function getVersionSafe(
+  packageManager: JsPackageManager,
+  packageName: string
+): Promise<string | undefined> {
   try {
     let version = await packageManager.getInstalledVersion(packageName);
     if (!version) {
@@ -158,7 +161,7 @@ export async function getVersionSafe(packageManager: JsPackageManager, packageNa
   return undefined;
 }
 
-export const cliStoriesTargetPath = async () => {
+export const cliStoriesTargetPath = async (): Promise<'./src/stories' | './stories'> => {
   if (existsSync('./src')) {
     return './src/stories';
   }
@@ -172,7 +175,7 @@ export async function copyTemplateFiles({
   destination,
   commonAssetsDir,
   features,
-}: CopyTemplateFilesOptions) {
+}: CopyTemplateFilesOptions): Promise<void> {
   const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     [SupportedLanguage.JAVASCRIPT]: 'js',
     [SupportedLanguage.TYPESCRIPT]: 'ts',
@@ -227,7 +230,10 @@ export async function copyTemplateFiles({
   }
 }
 
-export async function adjustTemplate(templatePath: string, templateData: Record<string, any>) {
+export async function adjustTemplate(
+  templatePath: string,
+  templateData: Record<string, any>
+): Promise<void> {
   // for now, we're just doing a simple string replace
   // in the future we might replace this with a proper templating engine
   let template = await readFile(templatePath, { encoding: 'utf8' });
@@ -239,13 +245,13 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   await writeFile(templatePath, template);
 }
 
-export function coerceSemver(version: string) {
+export function coerceSemver(version: string): SemVer {
   const coercedSemver = coerce(version);
   invariant(coercedSemver != null, `Could not coerce ${version} into a semver.`);
   return coercedSemver;
 }
 
-export function hasStorybookDependencies(packageManager: JsPackageManager) {
+export function hasStorybookDependencies(packageManager: JsPackageManager): boolean {
   const currentPackageDeps = packageManager.getAllDependencies();
 
   return Object.keys(currentPackageDeps).some((dep) => dep.includes('storybook'));

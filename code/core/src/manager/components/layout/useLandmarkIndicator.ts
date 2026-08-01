@@ -19,7 +19,7 @@ function findActiveLandmarkElement() {
   return landmarkElement;
 }
 
-export function useRegionFocusAnimation() {
+export function useRegionFocusAnimation(): (elementToAnimate: HTMLElement | null) => void {
   const theme = useTheme();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const currentAnimationRef = useRef<Animation | null>(null);
@@ -59,7 +59,7 @@ export function useRegionFocusAnimation() {
 // users who navigate through landmark shortcuts more quickly visualise
 // which region of the UI they landed into.
 // Call this once at the app root.
-export function useLandmarkIndicator() {
+export function useLandmarkIndicator(): void {
   const animateLandmark = useRegionFocusAnimation();
 
   useEffect(() => {

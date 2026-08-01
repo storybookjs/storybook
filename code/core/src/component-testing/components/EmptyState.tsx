@@ -15,7 +15,7 @@ const Links = styled.div(({ theme }) => ({
   gap: 25,
 }));
 
-export const Empty = () => {
+export const Empty = (): React.JSX.Element | null => {
   const [isLoading, setIsLoading] = useState(true);
   const api = useStorybookApi();
   const docsUrl = api.getDocsUrl({

@@ -24,5 +24,5 @@ export function watchConfig(
     await onInvalidate(filePath, true);
   });
 
-  return () => wp.close();
+  return (): any => wp.close();
 }

@@ -17,7 +17,7 @@ export const DEBOUNCE = 100;
 export async function writeIndexJson(
   outputFile: string,
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator>
-) {
+): Promise<void> {
   const generator = await initializedStoryIndexGenerator;
   const storyIndex = await generator.getIndex();
   await writeFile(outputFile, JSON.stringify(storyIndex));
@@ -37,7 +37,7 @@ export function registerIndexJsonRoute({
   workingDir?: string;
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
-}) {
+}): void {
   const maybeInvalidate = debounce(
     () => {
       channel.emit(STORY_INDEX_INVALIDATED);

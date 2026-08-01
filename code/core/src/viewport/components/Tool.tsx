@@ -19,7 +19,7 @@ const Dimensions = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-export const ViewportTool = () => {
+export const ViewportTool = (): React.JSX.Element => {
   const {
     name,
     value,

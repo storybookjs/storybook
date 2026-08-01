@@ -1,4 +1,4 @@
-import type { LoaderFunction } from 'storybook/internal/csf';
+import type { LoaderFunction, PreviewAddon } from 'storybook/internal/csf';
 import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
@@ -183,7 +183,7 @@ export interface TestTypes {
   parameters: TestParameters;
 }
 
-export default () =>
+export default (): PreviewAddon<TestTypes> =>
   definePreviewAddon<TestTypes>({
     loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
   });

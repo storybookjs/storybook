@@ -12,7 +12,7 @@ const action3 = action('action3');
 export default {
   component: ActionBar,
   decorators: [
-    (storyFn: () => ReactNode) => (
+    (storyFn: () => ReactNode): React.JSX.Element => (
       <div
         style={{
           position: 'relative',
@@ -29,9 +29,11 @@ export default {
   ],
 };
 
-export const SingleItem = () => <ActionBar actionItems={[{ title: 'Clear', onClick: action1 }]} />;
+export const SingleItem = (): React.JSX.Element => (
+  <ActionBar actionItems={[{ title: 'Clear', onClick: action1 }]} />
+);
 
-export const ManyItems = () => (
+export const ManyItems = (): React.JSX.Element => (
   <ActionBar
     actionItems={[
       { title: 'Action string', onClick: action1 },

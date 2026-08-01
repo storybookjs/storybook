@@ -307,7 +307,7 @@ export class TabsState extends Component<TabsStateProps, TabsStateState> {
   }
 
   handlers = {
-    onSelect: (id: string) => this.setState({ selected: id }),
+    onSelect: (id: string): void => this.setState({ selected: id }),
   };
 
   render(): React.JSX.Element {

@@ -17,29 +17,29 @@ import type { UniversalStore } from '../index.ts';
 class MockInstancesMap {
   environments = new Map<string, Map<string, UniversalStore<any, any>>>();
 
-  set = vi.fn((key: string, value: UniversalStore<any, any>) => {
+  set = vi.fn((key: string, value: UniversalStore<any, any>): this => {
     const { environment, instanceKey } = this.getKeys(key);
     environment.set(instanceKey, value);
 
     return this;
   });
 
-  get = vi.fn((key: string) => {
+  get = vi.fn((key: string): UniversalStore<any, any> | undefined => {
     const { environment, instanceKey } = this.getKeys(key);
     return environment.get(instanceKey);
   });
 
-  has = vi.fn((key: string) => {
+  has = vi.fn((key: string): boolean => {
     const { environment, instanceKey } = this.getKeys(key);
     return environment.has(instanceKey);
   });
 
-  delete = vi.fn((key: string) => {
+  delete = vi.fn((key: string): boolean => {
     const { environment, instanceKey } = this.getKeys(key);
     return environment.delete(instanceKey);
   });
 
-  clear = vi.fn((environmentKey: string) => {
+  clear = vi.fn((environmentKey: string): void => {
     invariant(
       this.environments.has(environmentKey),
       'Environment key is required when clearing instances. To clear all environments, use `clearAllEnvironments`'
@@ -47,11 +47,11 @@ class MockInstancesMap {
     return this.environments.get(environmentKey)!.clear();
   });
 
-  environmentSize = vi.fn((environmentKey: string) => {
+  environmentSize = vi.fn((environmentKey: string): number => {
     return this.environments.get(environmentKey)?.size ?? 0;
   });
 
-  clearAllEnvironments = vi.fn(() => {
+  clearAllEnvironments = vi.fn((): void => {
     this.environments.clear();
   });
 

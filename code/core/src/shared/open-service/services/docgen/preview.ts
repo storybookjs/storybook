@@ -1,4 +1,4 @@
-import { definePreviewAddon } from 'storybook/internal/csf';
+import { AddonTypes, definePreviewAddon, PreviewAddon } from 'storybook/internal/csf';
 
 import type { ServiceInstanceOf } from 'storybook/open-service';
 
@@ -7,7 +7,7 @@ import { docgenServiceDef } from './definition.ts';
 
 export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
 
-export default () =>
+export default (): PreviewAddon<AddonTypes> =>
   definePreviewAddon({
     beforeAll: () => {
       if (globalThis.FEATURES?.experimentalDocgenServer) {

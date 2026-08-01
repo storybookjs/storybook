@@ -83,7 +83,7 @@ export const Dynamic = meta.story({
     dynamic: true,
     highlights: [{ selectors: ['div', 'input'] }],
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const scaling = canvasElement.querySelector('#scaling') as HTMLElement;
     const moving = canvasElement.querySelector('#moving') as HTMLElement;
 
@@ -126,7 +126,7 @@ export const Styles = meta.story({
 
 export const ScrollIntoView = meta.story({
   decorators: [
-    (storyFn) => {
+    (storyFn): React.JSX.Element => {
       const emit = useChannel({});
       React.useEffect(() => emit(SCROLL_INTO_VIEW, '#footer'), [emit]);
       return storyFn();
@@ -138,7 +138,7 @@ export const Selectable = meta.story({
   parameters: {
     highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
@@ -182,7 +182,7 @@ export const Menu = meta.story({
       },
     ],
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
@@ -212,7 +212,7 @@ export const OnPopover = meta.story({
     highlights: [{ selectors: ['[popover]'], options: { menu: [] } }],
     withPopover: true,
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const button = within(canvasElement).getByText('Open Popover 1');
     await userEvent.click(button);
 
@@ -229,5 +229,5 @@ export const LayoutCentered = meta.story({
     highlights: [{ selectors: ['div'] }],
     layout: 'centered',
   },
-  render: () => <div style={{ padding: 10 }}>Content</div>,
+  render: (): React.JSX.Element => <div style={{ padding: 10 }}>Content</div>,
 });

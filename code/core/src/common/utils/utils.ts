@@ -2,7 +2,7 @@
 export const groupBy = <K extends PropertyKey, T>(
   items: T[],
   keySelector: (item: T, index: number) => K
-) => {
+): Record<K, T[]> => {
   return items.reduce<Record<K, T[]>>(
     (acc, item, index) => {
       const key = keySelector(item, index);

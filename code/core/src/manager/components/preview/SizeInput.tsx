@@ -51,7 +51,7 @@ export const SizeInput = ({
   prefix?: string;
   value: string;
   setValue: (value: string) => void;
-} & Omit<ComponentProps<typeof Form.Input>, 'value'>) => {
+} & Omit<ComponentProps<typeof Form.Input>, 'value'>): React.JSX.Element => {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(value.replace(/px$/, ''));

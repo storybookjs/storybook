@@ -14,6 +14,6 @@ import { posix } from 'node:path';
  * @param p The path to normalize
  * @returns The normalized path
  */
-export function normalizePath(p: string) {
+export function normalizePath(p: string): string {
   return posix.normalize(p.replace(/\\/g, '/'));
 }

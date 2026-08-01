@@ -2,7 +2,14 @@ import { buildDevStandalone } from './build-dev.ts';
 import { buildIndexStandalone } from './build-index.ts';
 import { buildStaticStandalone } from './build-static.ts';
 
-async function build(options: any = {}, frameworkOptions: any = {}) {
+async function build(
+  options: any = {},
+  frameworkOptions: any = {}
+): Promise<void | {
+  port: number;
+  address: string;
+  networkAddress: string;
+}> {
   const { mode = 'dev' } = options;
 
   const { default: packageJson } = await import('storybook/package.json', {

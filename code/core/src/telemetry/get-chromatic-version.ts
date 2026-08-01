@@ -1,6 +1,6 @@
 import type { PackageJson } from 'storybook/internal/types';
 
-export function getChromaticVersionSpecifier(packageJson: PackageJson) {
+export function getChromaticVersionSpecifier(packageJson: PackageJson): string | undefined {
   const dependency =
     packageJson.dependencies?.chromatic ||
     packageJson.devDependencies?.chromatic ||

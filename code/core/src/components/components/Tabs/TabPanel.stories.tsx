@@ -85,7 +85,7 @@ export const RenderOnlySelected = meta.story({
   args: {
     renderAllChildren: false,
   },
-  play: ({ canvasElement }) => {
+  play: ({ canvasElement }): void => {
     const canvas = within(canvasElement);
 
     const panel = canvas.getByRole('tabpanel');
@@ -103,7 +103,7 @@ export const RenderAllChildren = meta.story({
   args: {
     renderAllChildren: true,
   },
-  play: ({ canvasElement }) => {
+  play: ({ canvasElement }): void => {
     const canvas = within(canvasElement);
 
     const panel = canvas.getByRole('tabpanel');
@@ -128,7 +128,7 @@ export const PreserveState = meta.story({
   args: {
     renderAllChildren: true,
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
     const panel = canvas.getByRole('tabpanel');
 

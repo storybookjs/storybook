@@ -36,7 +36,12 @@ export async function getNewStoryFile(
     componentExportCount,
   }: CreateNewStoryRequestPayload,
   options: Options
-) {
+): Promise<{
+  storyFilePath: string;
+  exportedStoryName: string;
+  storyFileContent: string;
+  dirname: string;
+}> {
   const frameworkPackageName = await getFrameworkName(options);
   const sanitizedFrameworkPackageName = extractFrameworkPackageName(frameworkPackageName);
 
@@ -163,7 +168,7 @@ export const getStoryMetadata = (componentFilePath: string) => {
   };
 };
 
-export const doesStoryFileExist = (parentFolder: string, storyFileName: string) => {
+export const doesStoryFileExist = (parentFolder: string, storyFileName: string): boolean => {
   return (
     existsSync(join(parentFolder, `${storyFileName}.ts`)) ||
     existsSync(join(parentFolder, `${storyFileName}.tsx`)) ||

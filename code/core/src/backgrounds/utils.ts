@@ -1,6 +1,6 @@
 const { document } = globalThis;
 
-export const isReduceMotionEnabled = () => {
+export const isReduceMotionEnabled = (): boolean => {
   if (!globalThis?.matchMedia) {
     return false;
   }
@@ -8,7 +8,7 @@ export const isReduceMotionEnabled = () => {
   return !!prefersReduceMotion?.matches;
 };
 
-export const clearStyles = (selector: string | string[]) => {
+export const clearStyles = (selector: string | string[]): void => {
   const selectors = Array.isArray(selector) ? selector : [selector];
   selectors.forEach(clearStyle);
 };
@@ -24,7 +24,7 @@ const clearStyle = (selector: string) => {
   }
 };
 
-export const addGridStyle = (selector: string, css: string) => {
+export const addGridStyle = (selector: string, css: string): void => {
   if (!document) {
     return;
   }
@@ -42,7 +42,7 @@ export const addGridStyle = (selector: string, css: string) => {
   }
 };
 
-export const addBackgroundStyle = (selector: string, css: string, storyId: string | null) => {
+export const addBackgroundStyle = (selector: string, css: string, storyId: string | null): void => {
   if (!document) {
     return;
   }

@@ -27,7 +27,7 @@ const ZoomResetButton = styled(ActionList.Button)<{ $isInitialValue: boolean }>(
   })
 );
 
-const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number) => {} });
+const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number): void => {} });
 
 const ZoomInput: React.FC<React.ComponentProps<typeof NumericInput> & { theme?: Theme }> = styled(
   NumericInput
@@ -47,7 +47,7 @@ export class ZoomProvider extends Component<
     value: INITIAL_ZOOM_LEVEL,
   };
 
-  set = (value: number) => this.setState({ value });
+  set = (value: number): void => this.setState({ value });
 
   render(): React.JSX.Element {
     const { children, shouldScale } = this.props;

@@ -62,4 +62,4 @@ export const LayoutProvider: FC<
   return <LayoutContext.Provider value={contextValue}>{children}</LayoutContext.Provider>;
 };
 
-export const useLayout = () => useContext(LayoutContext);
+export const useLayout = (): LayoutContextType => useContext(LayoutContext);

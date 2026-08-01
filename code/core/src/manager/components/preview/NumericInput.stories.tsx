@@ -25,7 +25,7 @@ export const Default = meta.story({
   args: {
     value: '10',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });
@@ -41,7 +41,7 @@ export const WithParsedUnit = meta.story({
   args: {
     value: '10em',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });
@@ -58,7 +58,7 @@ export const WithExplicitUnit = meta.story({
     value: '10',
     unit: 'vw',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });
@@ -75,7 +75,7 @@ export const WithBaseUnit = meta.story({
     value: '10em',
     baseUnit: 'em',
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });
@@ -93,7 +93,7 @@ export const WithMinAndMax = meta.story({
     minValue: 9,
     maxValue: 11,
   },
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const input = await canvas.findByRole('textbox');
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });

@@ -5,12 +5,24 @@ import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types.ts';
 
-export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
+export const getActualPackageVersions = async (
+  packages: Record<string, Partial<Dependency>>
+): Promise<
+  {
+    name: string;
+    version: string | null;
+  }[]
+> => {
   const packageNames = Object.keys(packages);
   return Promise.all(packageNames.map(getActualPackageVersion));
 };
 
-export const getActualPackageVersion = async (packageName: string) => {
+export const getActualPackageVersion = async (
+  packageName: string
+): Promise<{
+  name: string;
+  version: string | null;
+}> => {
   try {
     const packageJson = await getActualPackageJson(packageName);
     return {

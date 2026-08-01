@@ -62,7 +62,7 @@ const TooltipProvider = ({
   visible,
   onVisibleChange,
   ...props
-}: TooltipProviderProps) => {
+}: TooltipProviderProps): React.JSX.Element => {
   const placement = convertToReactAriaPlacement(placementProp);
   const child = React.Children.only(children);
 

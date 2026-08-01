@@ -31,13 +31,13 @@ export type Tag = string;
  * manager UI and in the manager API stories module.
  */
 export const BUILT_IN_FILTERS = {
-  _docs: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
+  _docs: (entry: API_PreparedIndexEntry, excluded?: boolean): boolean =>
     excluded ? entry.type !== 'docs' : entry.type === 'docs',
-  _play: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
+  _play: (entry: API_PreparedIndexEntry, excluded?: boolean): boolean =>
     excluded
       ? entry.type !== 'story' || !entry.tags?.includes(Tag.PLAY_FN)
       : entry.type === 'story' && !!entry.tags?.includes(Tag.PLAY_FN),
-  _test: (entry: API_PreparedIndexEntry, excluded?: boolean) =>
+  _test: (entry: API_PreparedIndexEntry, excluded?: boolean): boolean =>
     excluded
       ? entry.type !== 'story' || entry.subtype !== 'test'
       : entry.type === 'story' && entry.subtype === 'test',
@@ -47,5 +47,7 @@ export const BUILT_IN_FILTERS = {
  * Logic to resolve whether a tag filters a given entry, based on whether the tag is excluded or
  * included. Shared by the manager UI and manager API stories module.
  */
-export const USER_TAG_FILTER = (tag: Tag) => (entry: API_PreparedIndexEntry, excluded?: boolean) =>
-  excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);
+export const USER_TAG_FILTER =
+  (tag: Tag) =>
+  (entry: API_PreparedIndexEntry, excluded?: boolean): boolean =>
+    excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);

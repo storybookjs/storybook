@@ -32,7 +32,7 @@ const getTypeSystem = (docgenInfo: DocgenInfo): TypeSystem => {
   return TypeSystem.UNKNOWN;
 };
 
-export const extractComponentSectionArray = (docgenSection: any) => {
+export const extractComponentSectionArray = (docgenSection: any): any => {
   const typeSystem = getTypeSystem(docgenSection[0]);
   const createPropDef = getPropDefFactory(typeSystem);
 
@@ -51,7 +51,7 @@ export const extractComponentSectionArray = (docgenSection: any) => {
   });
 };
 
-export const extractComponentSectionObject = (docgenSection: any) => {
+export const extractComponentSectionObject = (docgenSection: any): (ExtractedProp | null)[] => {
   const docgenPropsKeys = Object.keys(docgenSection);
   const typeSystem = getTypeSystem(docgenSection[docgenPropsKeys[0]]);
   const createPropDef = getPropDefFactory(typeSystem);

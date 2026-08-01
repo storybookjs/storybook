@@ -11,7 +11,10 @@ import type { Compilation } from '../types.ts';
 export async function readOrderedFiles(
   addonsDir: string,
   outputFiles: Compilation['outputFiles'] | undefined
-) {
+): Promise<{
+  cssFiles: string[];
+  jsFiles: string[];
+}> {
   const files = await Promise.all(
     outputFiles?.map(async (file) => {
       // convert deeply nested paths to a single level, also remove special characters

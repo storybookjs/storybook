@@ -145,7 +145,7 @@ const mapper = ({
 const PreviewConnected = React.memo(function PreviewConnected(props: {
   id: string;
   withLoader: boolean;
-}) {
+}): React.JSX.Element {
   return (
     <Consumer filter={mapper}>{(fromState) => <Preview {...props} {...fromState} />}</Consumer>
   );

@@ -6,4 +6,4 @@ export default {
   component: StorybookLogo,
 };
 
-export const Normal = () => <StorybookLogo alt="Storybook logo" />;
+export const Normal = (): React.JSX.Element => <StorybookLogo alt="Storybook logo" />;

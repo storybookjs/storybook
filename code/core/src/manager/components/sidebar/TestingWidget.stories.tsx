@@ -82,7 +82,7 @@ const meta = {
     successCount: 0,
   },
   decorators: [
-    (StoryFn) => (
+    (StoryFn): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext}>
         <Wrapper>
           <StoryFn />

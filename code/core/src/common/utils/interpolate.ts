@@ -7,7 +7,7 @@
  *   `escaped(value)`
  * @returns {String} Filled template
  */
-export const interpolate = (template: string, bindings: Record<string, string>) => {
+export const interpolate = (template: string, bindings: Record<string, string>): string => {
   return Object.entries(bindings).reduce((acc, [k, v]) => {
     const escapedString = v.replace(/\\/g, '/').replace(/\$/g, '$$$');
     return acc.replace(new RegExp(`{{${k}}}`, 'g'), escapedString);

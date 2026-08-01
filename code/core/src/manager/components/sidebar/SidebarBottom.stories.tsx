@@ -102,7 +102,7 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],

@@ -11,7 +11,7 @@ const meta = {
   component: UpgradeBlock,
   title: 'UpgradeBlock',
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider
         value={
           {

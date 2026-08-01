@@ -128,7 +128,12 @@ const BarWithoutPadding: React.FC<React.ComponentProps<typeof Bar> & { theme?: T
   paddingInline: 0,
 });
 
-export const FlexBar = ({ children, backgroundColor, className = '', ...rest }: FlexBarProps) => {
+export const FlexBar = ({
+  children,
+  backgroundColor,
+  className = '',
+  ...rest
+}: FlexBarProps): React.JSX.Element => {
   deprecate('FlexBar is deprecated. Use Bar with justifyContent: "space-between" instead.');
   const [left, right] = Children.toArray(children);
   return (

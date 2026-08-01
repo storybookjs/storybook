@@ -32,14 +32,16 @@ export default {
   component: Loader,
 };
 
-export const InfiniteState = () => <Loader role="progressbar" />;
+export const InfiniteState = (): React.JSX.Element => <Loader role="progressbar" />;
 InfiniteState.decorators = [withBackground];
 
-export const SizeAdjusted = () => <Loader size={64} role="progressbar" />;
+export const SizeAdjusted = (): React.JSX.Element => <Loader size={64} role="progressbar" />;
 SizeAdjusted.decorators = [withBackground];
 
-export const ProgressBar = () => (
+export const ProgressBar = (): React.JSX.Element => (
   <Loader progress={{ value: 0.3, message: 'Building', modules: { complete: 500, total: 1337 } }} />
 );
 
-export const ProgressError = () => <Loader error={new Error('Connection closed')} />;
+export const ProgressError = (): React.JSX.Element => (
+  <Loader error={new Error('Connection closed')} />
+);

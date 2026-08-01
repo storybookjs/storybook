@@ -5,7 +5,7 @@ import type { Args, Conditional, Globals, InputType } from './story.ts';
 
 const count = (vals: any[]) => vals.map((v) => typeof v !== 'undefined').filter(Boolean).length;
 
-export const testValue = (cond: Omit<Conditional, 'arg' | 'global'>, value: any) => {
+export const testValue = (cond: Omit<Conditional, 'arg' | 'global'>, value: any): any => {
   const { exists, eq, neq, truthy } = cond as any;
   if (count([exists, eq, neq, truthy]) > 1) {
     throw new Error(`Invalid conditional test ${JSON.stringify({ exists, eq, neq })}`);
@@ -28,7 +28,7 @@ export const testValue = (cond: Omit<Conditional, 'arg' | 'global'>, value: any)
  * Helper function to include/exclude an arg based on the value of other other args aka "conditional
  * args"
  */
-export const includeConditionalArg = (argType: InputType, args: Args, globals: Globals) => {
+export const includeConditionalArg = (argType: InputType, args: Args, globals: Globals): any => {
   if (!argType.if) {
     return true;
   }

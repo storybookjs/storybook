@@ -34,7 +34,7 @@ const meta = {
   },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext}>
         <IconSymbols />
         {storyFn()}
@@ -187,7 +187,7 @@ const refs: Record<string, RefType> = {
   },
 };
 
-export const Optimized = () => (
+export const Optimized = (): React.JSX.Element => (
   <Ref
     {...refs.optimized}
     hasEntries={true}
@@ -198,7 +198,7 @@ export const Optimized = () => (
     setHighlighted={() => {}}
   />
 );
-export const NoEntries = () => (
+export const NoEntries = (): React.JSX.Element => (
   <Ref
     {...refs.empty}
     hasEntries={false}
@@ -209,7 +209,7 @@ export const NoEntries = () => (
     setHighlighted={() => {}}
   />
 );
-export const IsEmpty = () => (
+export const IsEmpty = (): React.JSX.Element => (
   <Ref
     {...refs.empty}
     hasEntries={true}
@@ -220,7 +220,7 @@ export const IsEmpty = () => (
     setHighlighted={() => {}}
   />
 );
-export const StartInjectedUnknown = () => (
+export const StartInjectedUnknown = (): React.JSX.Element => (
   <Ref
     {...refs.startInjected_unknown}
     hasEntries={true}
@@ -231,7 +231,7 @@ export const StartInjectedUnknown = () => (
     setHighlighted={() => {}}
   />
 );
-export const StartInjectedLoading = () => (
+export const StartInjectedLoading = (): React.JSX.Element => (
   <Ref
     {...refs.startInjected_loading}
     hasEntries={true}
@@ -242,7 +242,7 @@ export const StartInjectedLoading = () => (
     setHighlighted={() => {}}
   />
 );
-export const StartInjectedReady = () => (
+export const StartInjectedReady = (): React.JSX.Element => (
   <Ref
     {...refs.startInjected_ready}
     hasEntries={true}
@@ -253,7 +253,7 @@ export const StartInjectedReady = () => (
     setHighlighted={() => {}}
   />
 );
-export const Versions = () => (
+export const Versions = (): React.JSX.Element => (
   <Ref
     {...refs.versions}
     hasEntries={true}
@@ -264,7 +264,7 @@ export const Versions = () => (
     setHighlighted={() => {}}
   />
 );
-export const VersionsMissingCurrent = () => (
+export const VersionsMissingCurrent = (): React.JSX.Element => (
   <Ref
     {...refs.versionsMissingCurrent}
     hasEntries={true}
@@ -275,7 +275,7 @@ export const VersionsMissingCurrent = () => (
     setHighlighted={() => {}}
   />
 );
-export const Errored = () => (
+export const Errored = (): React.JSX.Element => (
   <Ref
     {...refs.error}
     hasEntries={true}
@@ -286,7 +286,7 @@ export const Errored = () => (
     setHighlighted={() => {}}
   />
 );
-export const ErroredMobile = () => (
+export const ErroredMobile = (): React.JSX.Element => (
   <Ref
     {...refs.error}
     hasEntries={true}
@@ -332,7 +332,7 @@ export const ErroredMobileWithIndicatorOpen: StoryObj = {
     await userEvent.click(button);
   },
 };
-export const Auth = () => (
+export const Auth = (): React.JSX.Element => (
   <Ref
     {...refs.auth}
     hasEntries={true}
@@ -343,7 +343,7 @@ export const Auth = () => (
     setHighlighted={() => {}}
   />
 );
-export const Long = () => (
+export const Long = (): React.JSX.Element => (
   <Ref
     {...refs.long}
     hasEntries={true}
@@ -355,7 +355,7 @@ export const Long = () => (
   />
 );
 
-export const WithSourceCode = () => (
+export const WithSourceCode = (): React.JSX.Element => (
   <Ref
     {...refs.withSourceCode}
     hasEntries={true}

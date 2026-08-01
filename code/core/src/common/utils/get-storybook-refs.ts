@@ -44,7 +44,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-export const checkRef = (url: string) =>
+export const checkRef = (url: string): Promise<boolean> =>
   fetch(`${url}/iframe.html`).then(
     async ({ ok, status }) => {
       if (ok) {
@@ -78,7 +78,7 @@ const toTitle = (input: string) => {
   return `${result.substring(0, 1).toUpperCase()}${result.substring(1)}`.trim();
 };
 
-export async function getRefs(options: Options) {
+export async function getRefs(options: Options): Promise<Record<string, Ref>> {
   if (options.test) {
     return {};
   }

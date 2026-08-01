@@ -60,7 +60,7 @@ const userSettingSchema = z.object({
 });
 
 let settings: Settings | undefined;
-export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
+export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH): Promise<Settings> {
   if (settings) {
     return settings;
   }
@@ -82,7 +82,7 @@ export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
 }
 
 // For testing
-export function _clearGlobalSettings() {
+export function _clearGlobalSettings(): void {
   settings = undefined;
 }
 

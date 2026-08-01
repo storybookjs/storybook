@@ -34,7 +34,9 @@ interface TestDiscrepancyMessageProps {
   browserTestStatus?: CallStates;
 }
 
-export const TestDiscrepancyMessage = ({ browserTestStatus }: TestDiscrepancyMessageProps) => {
+export const TestDiscrepancyMessage = ({
+  browserTestStatus,
+}: TestDiscrepancyMessageProps): React.JSX.Element => {
   const api = useStorybookApi();
   const docsUrl = api.getDocsUrl({
     subpath: DOCUMENTATION_DISCREPANCY_LINK,

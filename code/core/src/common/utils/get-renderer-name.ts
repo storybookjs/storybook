@@ -1,4 +1,4 @@
-import type { Options } from 'storybook/internal/types';
+import type { Options, SupportedRenderer } from 'storybook/internal/types';
 
 import { frameworkToRenderer } from './framework.ts';
 import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name.ts';
@@ -8,7 +8,7 @@ import { frameworkPackages } from './get-storybook-info.ts';
  * Render is set as a string on core. It must be set by the framework It falls back to the framework
  * name if not set
  */
-export async function getRendererName(options: Options) {
+export async function getRendererName(options: Options): Promise<string> {
   const core = await options.presets.apply('core', {}, options);
 
   if (!core || !core.renderer) {
@@ -34,7 +34,7 @@ export async function getRendererName(options: Options) {
  * @param frameworkName The name of the framework.
  * @returns The name of the renderer.
  */
-export async function extractRenderer(frameworkName: string) {
+export async function extractRenderer(frameworkName: string): Promise<SupportedRenderer | null> {
   const extractedFrameworkName = extractFrameworkPackageName(frameworkName);
   const framework = frameworkPackages[extractedFrameworkName];
 

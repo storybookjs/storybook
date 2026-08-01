@@ -19,7 +19,7 @@ const meta = {
   component: NotificationItem,
   title: 'Notifications/NotificationItem',
   decorators: [
-    (Story) => (
+    (Story): React.JSX.Element => (
       <LocationProvider>
         <Story />
       </LocationProvider>
@@ -32,7 +32,7 @@ const meta = {
   ],
   excludeStories: /.*Data$/,
   args: {
-    onDismissNotification: () => {},
+    onDismissNotification: (): void => {},
   },
 } satisfies Meta<typeof NotificationItem>;
 

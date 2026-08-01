@@ -463,12 +463,12 @@ const meta = preview.meta({
       ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
-  args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: () => {} },
+  args: { getStoryPreviewHref, storyInfo: demoStoryInfo, onDismiss: (): void => {} },
 });
 
 export const Empty = meta.story({
   args: { state: null },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
   },
@@ -476,7 +476,7 @@ export const Empty = meta.story({
 
 export const Minimal = meta.story({
   args: { state: minimal },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Button prop rename')).toBeInTheDocument();
     await expect(await canvas.findByText(/2 stories for quick review/i)).toBeInTheDocument();
@@ -511,7 +511,7 @@ export const Full = meta.story({
       'components-togglebutton--sizes': { title: 'ToggleButton', name: 'Sizes' },
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Primary button visual refresh')).toBeInTheDocument();
 
@@ -527,7 +527,7 @@ export const Full = meta.story({
 
 export const LargeCascade = meta.story({
   args: { state: largeCascade },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Theme token cascade review')).toBeInTheDocument();
     await expect(await canvas.findByText('Storybook manager surfaces')).toBeInTheDocument();
@@ -536,7 +536,7 @@ export const LargeCascade = meta.story({
 
 export const PagesAndBench = meta.story({
   args: { state: pagesAndBench },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Page components and bench analyzer')).toBeInTheDocument();
     await expect(await canvas.findByText('Manager pages + Bench')).toBeInTheDocument();
@@ -545,7 +545,7 @@ export const PagesAndBench = meta.story({
 
 export const RealAtomicChange = meta.story({
   args: { state: atomicChange },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(
       await canvas.findByText('Round up Button border-radius: 4px → 12px (3× theme multiplier)')
@@ -556,7 +556,7 @@ export const RealAtomicChange = meta.story({
 
 export const Stale = meta.story({
   args: { state: full, banner: { kind: 'stale' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
     await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
@@ -566,7 +566,7 @@ export const Stale = meta.story({
 
 export const PendingUpdate = meta.story({
   args: { state: full, banner: { kind: 'pending-update', onAccept: fn() } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('A new review is available.')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
@@ -578,7 +578,7 @@ export const PendingUpdate = meta.story({
 // "Review all 40" button in the last slot until the user expands it.
 export const LargeCollectionOverflow = meta.story({
   args: { state: fortyStoryCollection },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Large collection overflow')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: /Review all 40/i })).toBeInTheDocument();
@@ -588,7 +588,7 @@ export const LargeCollectionOverflow = meta.story({
 export const ManyCollections = meta.story({
   args: { state: manyCollections },
   parameters: { chromatic: { disableSnapshot: true } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(
       await canvas.findByText('Large review surface: many collections and stories')

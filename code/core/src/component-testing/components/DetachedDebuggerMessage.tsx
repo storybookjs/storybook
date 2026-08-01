@@ -19,7 +19,7 @@ const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   position: 'relative',
 }));
 
-export const DetachedDebuggerMessage = ({ storyUrl }: { storyUrl: string }) => {
+export const DetachedDebuggerMessage = ({ storyUrl }: { storyUrl: string }): React.JSX.Element => {
   return (
     <Wrapper>
       Debugger controls are not available on composed Storybooks.{' '}

@@ -47,7 +47,7 @@ export const STATUS_DISPLAY_ORDER: StatusValue[] = [
  * Equality check for filter arrays. Works on the basis that there are no duplicates.
  * We use arrays because we need arrays for data persistence in the layout module.
  */
-export const areFiltersEqual = (left: string[], right: string[]) =>
+export const areFiltersEqual = (left: string[], right: string[]): boolean =>
   left.length === right.length && new Set([...left, ...right]).size === left.length;
 
 export const getFilterFunction = (tag: Tag): FilterFunction | null => {

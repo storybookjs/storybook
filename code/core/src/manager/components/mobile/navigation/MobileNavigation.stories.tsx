@@ -80,7 +80,7 @@ const meta = {
   component: MobileNavigation,
   title: 'Mobile/Navigation',
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={mockManagerStore}>
         <LayoutProvider>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100svh' }}>

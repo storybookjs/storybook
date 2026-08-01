@@ -28,7 +28,7 @@ const SCRIPT = 'script';
 const SCRIPTS_ROOT_ID = 'scripts-root';
 
 // trigger DOMContentLoaded
-export function simulateDOMContentLoaded() {
+export function simulateDOMContentLoaded(): void {
   const DOMContentLoadedEvent = document.createEvent('Event');
   DOMContentLoadedEvent.initEvent('DOMContentLoaded', true, true);
   document.dispatchEvent(DOMContentLoadedEvent);
@@ -80,7 +80,7 @@ function insertScriptsSequentially(scriptsToExecute: any[], callback: any, index
   });
 }
 
-export function simulatePageLoad($container: any) {
+export function simulatePageLoad($container: any): void {
   let $scriptsRoot = document.getElementById(SCRIPTS_ROOT_ID);
   if (!$scriptsRoot) {
     $scriptsRoot = document.createElement('div');

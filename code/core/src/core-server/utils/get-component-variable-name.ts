@@ -4,7 +4,7 @@
  * @param name The name of the component.
  * @returns A valid variable name.
  */
-export const getComponentVariableName = async (name: string) => {
+export const getComponentVariableName = async (name: string): Promise<string> => {
   const camelCase = await import('camelcase');
 
   const camelCased = camelCase.default(name.replace(/^[^a-zA-Z_$]*/, ''), { pascalCase: true });

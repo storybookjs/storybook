@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import type { useCollapsible } from './Collapsible.tsx';
@@ -10,7 +10,7 @@ const toggle = ({
 }: {
   isCollapsed: boolean;
   toggleProps: ReturnType<typeof useCollapsible>['toggleProps'];
-}) => <button {...toggleProps}>{isCollapsed ? 'Open' : 'Close'}</button>;
+}): JSX.Element => <button {...toggleProps}>{isCollapsed ? 'Open' : 'Close'}</button>;
 
 const content = <div style={{ background: 'papayawhip', padding: 16 }}>Peekaboo!</div>;
 
@@ -37,11 +37,12 @@ export const Disabled = meta.story({
 });
 
 export const Toggled = meta.story({
-  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Close' })),
+  play: ({ canvas, userEvent }): Promise<void> =>
+    userEvent.click(canvas.getByRole('button', { name: 'Close' })),
 });
 
 export const Controlled = meta.story({
-  render: () => {
+  render: (): JSX.Element => {
     const [collapsed, setCollapsed] = useState(true);
     return (
       <>
@@ -50,5 +51,6 @@ export const Controlled = meta.story({
       </>
     );
   },
-  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Toggle' })),
+  play: ({ canvas, userEvent }): Promise<void> =>
+    userEvent.click(canvas.getByRole('button', { name: 'Toggle' })),
 });

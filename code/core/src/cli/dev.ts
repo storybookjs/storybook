@@ -34,7 +34,7 @@ function printError(error: any) {
   );
 }
 
-export const dev = async (cliOptions: CLIOptions) => {
+export const dev = async (cliOptions: CLIOptions): Promise<void> => {
   const { env } = process;
   env.NODE_ENV = env.NODE_ENV || 'development';
 

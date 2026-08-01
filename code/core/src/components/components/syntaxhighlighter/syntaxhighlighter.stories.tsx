@@ -121,7 +121,7 @@ div.parent {
 }`,
   },
   loaders: [
-    async () => {
+    async (): Promise<void> => {
       const scss = (await import('react-syntax-highlighter/dist/esm/languages/prism/scss')).default;
       SyntaxHighlighter.registerLanguage('scss', scss);
     },
@@ -170,7 +170,7 @@ export const UnsupportedDark = {
       }
     }`,
   },
-  render: (args: ComponentProps<typeof SyntaxHighlighter>) => (
+  render: (args: ComponentProps<typeof SyntaxHighlighter>): React.JSX.Element => (
     <ThemeProvider theme={ensure(themes.dark)}>
       <SyntaxHighlighter {...args} />
     </ThemeProvider>

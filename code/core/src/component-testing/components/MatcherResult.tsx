@@ -36,14 +36,20 @@ const StyledReceived = styled.span(({ theme }) => ({
   color: theme.base === 'light' ? theme.color.negativeText : theme.color.negative,
 }));
 
-export const Received = ({ value, parsed }: { value: any; parsed?: boolean }) =>
+export const Received = ({ value, parsed }: { value: any; parsed?: boolean }): React.JSX.Element =>
   parsed ? (
     <Node showObjectInspector value={value} style={{ color: '#D43900' }} />
   ) : (
     <StyledReceived>{value}</StyledReceived>
   );
 
-export const Expected = ({ value, parsed }: { value: any; parsed?: boolean }) => {
+export const Expected = ({
+  value,
+  parsed,
+}: {
+  value: any;
+  parsed?: boolean;
+}): React.JSX.Element => {
   if (parsed) {
     if (typeof value === 'string' && value.startsWith('called with')) {
       return <>{value}</>;
@@ -59,7 +65,7 @@ export const MatcherResult = ({
 }: {
   message: string;
   style?: React.CSSProperties;
-}) => {
+}): React.JSX.Element => {
   const filter = useAnsiToHtmlFilter();
   const lines = message.split('\n');
   return (

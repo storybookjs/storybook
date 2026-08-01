@@ -16,4 +16,4 @@ export default {
   ],
 };
 
-export const Basic = () => <SettingsFooter />;
+export const Basic = (): React.JSX.Element => <SettingsFooter />;

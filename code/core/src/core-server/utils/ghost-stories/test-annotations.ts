@@ -1,4 +1,4 @@
-import type { AfterEach } from 'storybook/internal/csf';
+import type { AddonTypes, AfterEach, PreviewAddon } from 'storybook/internal/csf';
 import { definePreviewAddon } from 'storybook/internal/csf';
 
 const isEmptyRender = (element: Element) => {
@@ -37,4 +37,4 @@ const afterEach: AfterEach = async ({ reporting, canvasElement, globals }) => {
   } catch {}
 };
 
-export default () => definePreviewAddon({ afterEach });
+export default (): PreviewAddon<AddonTypes> => definePreviewAddon({ afterEach });

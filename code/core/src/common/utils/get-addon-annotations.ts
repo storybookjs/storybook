@@ -24,7 +24,15 @@ export function getAnnotationsName(addonName: string): string {
 }
 
 // TODO: test this
-export async function getAddonAnnotations(addon: string, configDir: string) {
+export async function getAddonAnnotations(
+  addon: string,
+  configDir: string
+): Promise<{
+  // core addons will have a function as default export in index entrypoint
+  importPath: string;
+  importName: string;
+  isCoreAddon: boolean;
+} | null> {
   const data = {
     // core addons will have a function as default export in index entrypoint
     importPath: addon,

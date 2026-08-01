@@ -8,7 +8,10 @@ import picocolors from 'picocolors';
 
 import { parseStaticDir } from './server-statics.ts';
 
-export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDir: string) {
+export async function copyAllStaticFiles(
+  staticDirs: any[] | undefined,
+  outputDir: string
+): Promise<void> {
   if (staticDirs && staticDirs.length > 0) {
     await Promise.all(
       staticDirs.map(async (dir) => {
@@ -47,7 +50,7 @@ export async function copyAllStaticFilesRelativeToMain(
   staticDirs: any[] | undefined,
   outputDir: string,
   configDir: string
-) {
+): Promise<any> {
   const workingDir = process.cwd();
 
   return staticDirs?.reduce(async (acc, dir) => {

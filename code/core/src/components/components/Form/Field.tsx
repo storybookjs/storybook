@@ -28,7 +28,7 @@ export interface FieldProps {
   label?: ReactNode;
 }
 
-export const Field = ({ label, children, ...props }: FieldProps) => (
+export const Field = ({ label, children, ...props }: FieldProps): React.JSX.Element => (
   <Wrapper {...props}>
     {label ? (
       <Label>

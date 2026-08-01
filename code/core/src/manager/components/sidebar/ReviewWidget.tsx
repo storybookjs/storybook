@@ -62,7 +62,7 @@ const DismissIcon: React.FC<React.ComponentProps<typeof CloseAltIcon> & { theme?
 });
 
 /** Story count for the displayed review payload, not the sidebar status store. */
-export const useActiveReviewStoryCount = () => {
+export const useActiveReviewStoryCount = (): number => {
   const { state } = useReview();
 
   return useMemo(() => (state ? collectReviewStoryIds(state).size : 0), [state]);
@@ -73,7 +73,7 @@ const useActiveReviewTitle = () => {
   return state?.title ?? null;
 };
 
-export const ReviewWidget = () => {
+export const ReviewWidget = (): React.JSX.Element | null => {
   const api = useStorybookApi();
   const navigate = useNavigate();
   const storyCount = useActiveReviewStoryCount();

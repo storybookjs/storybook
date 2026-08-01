@@ -4,6 +4,7 @@ import { Badge, Form, ProgressSpinner } from '../../index.ts';
 import preview from '../../../../../.storybook/preview.tsx';
 import { Shortcut } from '../../../manager/components/Shortcut.tsx';
 import { ActionList } from './ActionList.tsx';
+import { JSX } from 'react';
 
 const meta = preview.meta({
   component: ActionList,
@@ -13,7 +14,7 @@ const meta = preview.meta({
 export default meta;
 
 export const Default = meta.story({
-  render: () => (
+  render: (): JSX.Element => (
     <ActionList>
       <ActionList.Item>
         <ActionList.Text>Text item</ActionList.Text>
@@ -106,7 +107,7 @@ export const Default = meta.story({
 });
 
 export const Listbox = meta.story({
-  render: () => (
+  render: (): JSX.Element => (
     <>
       <ActionList role="listbox" aria-label="Sample listbox">
         <ActionList.Item role="option" aria-selected="false">
@@ -133,7 +134,7 @@ export const Listbox = meta.story({
 });
 
 export const Groups = meta.story({
-  render: () => (
+  render: (): JSX.Element => (
     <>
       <ActionList>
         <ActionList.Item>

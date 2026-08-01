@@ -7,7 +7,7 @@ export function hasDocgen<T = any>(
   return !!component.__docgenInfo;
 }
 
-export function isValidDocgenSection(docgenSection: any) {
+export function isValidDocgenSection(docgenSection: any): boolean {
   return docgenSection != null && Object.keys(docgenSection).length > 0;
 }
 

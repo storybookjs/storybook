@@ -72,7 +72,7 @@ const meta = preview.meta({
  * stays stuck on the ref's Storybook (it is only set once) and host stories never render.
  */
 export const RefStoryKeepsLocalPreviewOnHost = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const localFrame = canvasElement.querySelector<HTMLIFrameElement>('#storybook-preview-iframe');
     await expect(localFrame).not.toBeNull();
 

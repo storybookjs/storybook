@@ -15,7 +15,9 @@ interface TypeScriptTemplateData {
   args?: Record<string, any>;
 }
 
-export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTemplateData) {
+export async function getTypeScriptTemplateForNewStoryFile(
+  data: TypeScriptTemplateData
+): Promise<string> {
   const importName = data.componentIsDefaultExport
     ? await getComponentVariableName(data.basenameWithoutExtension)
     : data.componentExportName;

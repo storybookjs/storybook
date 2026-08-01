@@ -32,5 +32,7 @@ export default {
   ],
 };
 
-export const Defaults = () => <ShortcutsScreen shortcutKeys={defaultShortcuts} {...actions} />;
+export const Defaults = (): React.JSX.Element => (
+  <ShortcutsScreen shortcutKeys={defaultShortcuts} {...actions} />
+);
 Defaults.storyName = 'default shortcuts';

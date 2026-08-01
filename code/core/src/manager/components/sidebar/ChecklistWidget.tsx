@@ -211,7 +211,7 @@ const CopyButton = ({
   );
 };
 
-export const ChecklistWidget = () => {
+export const ChecklistWidget = (): React.JSX.Element | null => {
   const api = useStorybookApi();
   const { loaded, ready, allItems, nextItems, progress, accept, mute, items } = useChecklist();
   const [renderItems, setRenderItems] = useState<ChecklistItem[]>(nextItems);

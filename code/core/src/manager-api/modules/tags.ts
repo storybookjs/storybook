@@ -68,7 +68,7 @@ export const computeStaticFilterFn = (tagPresets: TagsOptions) => {
     {} as Record<string, boolean>
   );
 
-  return (item: API_PreparedIndexEntry) => {
+  return (item: API_PreparedIndexEntry): boolean => {
     const tags = item.tags ?? [];
     // Docs entry kinds are distinguished by system tags at index time:
     // - autodocs: type `docs`, no `attached-mdx` / `unattached-mdx` (importPath is the CSF file)

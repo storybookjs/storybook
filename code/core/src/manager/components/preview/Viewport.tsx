@@ -229,7 +229,7 @@ export const Viewport = ({
   id: string;
   src: string;
   scale: number;
-}) => {
+}): React.JSX.Element => {
   const { width, height, isCustom, isDefault, lastSelectedOption, resize, rotate, select } =
     useViewport();
 

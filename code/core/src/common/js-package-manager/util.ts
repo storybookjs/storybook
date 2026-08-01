@@ -17,7 +17,7 @@ const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|
 const packagePatternToRegex = (pattern: string) =>
   new RegExp(`^${escapePatternForRegex(pattern).replace(/\\\*/g, '.*')}$`);
 
-export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) => {
+export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]): boolean => {
   return STORYBOOK_PACKAGE_PATTERNS.every((storybookPattern) =>
     configuredPatterns.some((configuredPattern) =>
       packagePatternToRegex(configuredPattern).test(storybookPattern)
@@ -39,7 +39,9 @@ export const parsePackageData = (packageName = '') => {
   return { name, value };
 };
 
-export const parsePositiveIntegerConfigValue = (value: string | null | undefined) => {
+export const parsePositiveIntegerConfigValue = (
+  value: string | null | undefined
+): number | null => {
   const normalizedValue = value?.trim() ?? '';
 
   if (
@@ -83,7 +85,7 @@ export const parsePackageTimeMap = (value: unknown): Record<string, string> | nu
   return timeMap;
 };
 
-export const getAgeInMinutes = (publishedAt: Date, now = new Date()) => {
+export const getAgeInMinutes = (publishedAt: Date, now = new Date()): number => {
   return Math.floor((now.getTime() - publishedAt.getTime()) / 60_000);
 };
 
@@ -135,7 +137,10 @@ export function getRemotePackageRunnerArgs(
   return usesNpx ? ['--yes', pkgWithVersion, ...args] : [pkgWithVersion, ...args];
 }
 
-export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
+export function getVitestStorybookRunCommand(
+  packageManager: JsPackageManager,
+  file?: string
+): string {
   const args = ['vitest', '--project', 'storybook', 'run'];
   if (file) {
     args.push(file);
@@ -143,14 +148,14 @@ export function getVitestStorybookRunCommand(packageManager: JsPackageManager, f
   return packageManager.getPackageCommand(args);
 }
 
-export function getMswInitCommand(packageManager: JsPackageManager) {
+export function getMswInitCommand(packageManager: JsPackageManager): string {
   return packageManager.getPackageCommand(['msw', 'init', './public', '--save']);
 }
 
 export const getStorybookRerunCommand = (
   installContext: StorybookInstallContext,
   compatibleVersion: string | null
-) => {
+): string => {
   if (installContext === 'create') {
     return compatibleVersion
       ? `npx create-storybook@${compatibleVersion}`
@@ -162,7 +167,9 @@ export const getStorybookRerunCommand = (
     : 'npx storybook@<compatible-version> upgrade';
 };
 
-export const getStorybookRerunInstruction = (installContext: StorybookInstallContext) => {
+export const getStorybookRerunInstruction = (
+  installContext: StorybookInstallContext
+): 'Please rerun Storybook creation with:' | 'Please rerun the Storybook upgrade with:' => {
   return installContext === 'create'
     ? 'Please rerun Storybook creation with:'
     : 'Please rerun the Storybook upgrade with:';

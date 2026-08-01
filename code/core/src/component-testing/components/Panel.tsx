@@ -8,7 +8,7 @@ import {
   STORY_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
+import type { StatusValue, StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -28,6 +28,7 @@ import {
 import { EVENTS } from '../../instrumenter/EVENTS.ts';
 import {
   type Call,
+  CallRef,
   CallStates,
   type ControlStates,
   type LogItem,
@@ -87,7 +88,32 @@ export const getInteractions = ({
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
   setCollapsed: Dispatch<SetStateAction<Set<string>>>;
-}) => {
+}): {
+  status: CallStates | undefined;
+  childCallIds: string[] | undefined;
+  isCollapsed: boolean;
+  toggleCollapsed: () => void;
+  isHidden: boolean;
+  id: string;
+  cursor: number;
+  storyId: StoryId;
+  ancestors: Call['id'][];
+  path: Array<string | CallRef>;
+  method: string;
+  args: any[];
+  interceptable: boolean;
+  retain: boolean;
+  exception?: {
+    name: Error['name'];
+    message: Error['message'];
+    stack: Error['stack'];
+    callId: Call['id'];
+    showDiff?: boolean;
+    diff?: string;
+    actual?: unknown;
+    expected?: unknown;
+  };
+}[] => {
   const callsById = new Map<Call['id'], Call>();
   const childCallMap = new Map<Call['id'], Call['id'][]>();
 

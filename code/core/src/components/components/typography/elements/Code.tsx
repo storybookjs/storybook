@@ -45,7 +45,7 @@ export const Code = ({
   className,
   children,
   ...props
-}: ComponentProps<typeof DefaultCodeBlock>) => {
+}: ComponentProps<typeof DefaultCodeBlock>): React.JSX.Element => {
   const language = (className || '').match(/lang-(\S+)/);
   const childrenArray = Children.toArray(children);
   const isInlineCode = !childrenArray

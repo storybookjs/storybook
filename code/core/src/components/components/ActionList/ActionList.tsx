@@ -182,7 +182,7 @@ const ActionListAction: React.FC<
 
 const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
-) => <ActionListAction as="a" {...props} />;
+): React.JSX.Element => <ActionListAction as="a" {...props} />;
 
 const ActionListText = styled.div(({ theme }) => ({
   display: 'flex',

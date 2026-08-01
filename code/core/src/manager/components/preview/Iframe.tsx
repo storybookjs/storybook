@@ -26,7 +26,9 @@ export interface IFrameProps {
   active: boolean;
 }
 
-export function IFrame(props: IFrameProps & IframeHTMLAttributes<HTMLIFrameElement>) {
+export function IFrame(
+  props: IFrameProps & IframeHTMLAttributes<HTMLIFrameElement>
+): React.JSX.Element {
   const { active, id, title, src, allowFullScreen, scale, ...rest } = props;
   const iFrameRef = React.useRef<HTMLIFrameElement>(null);
   return (

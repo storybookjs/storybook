@@ -15,7 +15,9 @@ interface CsfFactoryTemplateData {
   args?: Record<string, any>;
 }
 
-export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTemplateData) {
+export async function getCsfFactoryTemplateForNewStoryFile(
+  data: CsfFactoryTemplateData
+): Promise<string> {
   const importName = data.componentIsDefaultExport
     ? await getComponentVariableName(data.basenameWithoutExtension)
     : data.componentExportName;

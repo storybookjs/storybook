@@ -29,7 +29,7 @@ export async function initializeChecklist(
   channel?: Channel,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined,
   configDir?: string
-) {
+): Promise<void> {
   try {
     const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
       ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,

@@ -15,7 +15,7 @@ const meta = preview.meta({
 
 export const Stale = meta.story({
   args: { kind: 'stale' },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
     await expect(await canvas.findByText('Ask your agent to refresh it.')).toBeInTheDocument();
@@ -31,7 +31,7 @@ export const Stale = meta.story({
 
 export const PendingUpdate = meta.story({
   args: { kind: 'pending-update', onAccept },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('A new review is available.')).toBeInTheDocument();
 

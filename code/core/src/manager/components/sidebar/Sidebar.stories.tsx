@@ -115,7 +115,7 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn, { args, globals, title, parameters }) => (
+    (storyFn, { args, globals, title, parameters }): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext(args, parameters?.contextOptions ?? {})}>
         <LayoutProvider
           forceDesktop={
@@ -130,7 +130,7 @@ const meta = {
     ),
   ],
   globals: { sb_theme: 'side-by-side' },
-  beforeEach: () => {
+  beforeEach: (): void => {
     internal_fullStatusStore.unset();
     internal_universalChecklistStore.setState({
       loaded: true,

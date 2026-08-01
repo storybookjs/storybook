@@ -32,7 +32,7 @@ interface PortOptions {
   exactPort?: boolean;
 }
 
-export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
+export const getServerPort = (port?: number, { exactPort }: PortOptions = {}): Promise<number> =>
   detectFreePort(port)
     .catch((error) => {
       logger.error(error);

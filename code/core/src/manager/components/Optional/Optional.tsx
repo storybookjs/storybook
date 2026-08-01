@@ -24,7 +24,7 @@ export const Optional = ({
 }: {
   content: ReactElement;
   fallback?: ReactElement;
-}) => {
+}): React.JSX.Element => {
   const contentRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [hidden, setHidden] = useState<boolean | null>(null);

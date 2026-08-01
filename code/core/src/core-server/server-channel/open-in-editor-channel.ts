@@ -8,7 +8,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import launch from 'launch-editor';
 
-export async function initOpenInEditorChannel(channel: Channel) {
+export async function initOpenInEditorChannel(channel: Channel): Promise<Channel> {
   channel.on(OPEN_IN_EDITOR_REQUEST, async (payload: OpenInEditorRequestPayload) => {
     const sendTelemetry = (data: { success: boolean; error?: string }) => {
       telemetry('open-in-editor', data);

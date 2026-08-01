@@ -21,7 +21,7 @@ const StyleDecorator: DecoratorFunction = (Story) => (
   </>
 );
 
-const Component = ({ id, header, detail }: any) => {
+const Component = ({ id, header, detail }: any): React.JSX.Element => {
   const element = document.querySelector('.' + id);
   if (!element) {
     throw new Error('Element not found');

@@ -7,10 +7,10 @@ export default {
   component: Placeholder,
 };
 
-export const SingleChild = () => (
+export const SingleChild = (): React.JSX.Element => (
   <Placeholder>This is a placeholder with single child, it's bolded</Placeholder>
 );
-export const TwoChildren = () => (
+export const TwoChildren = (): React.JSX.Element => (
   <Placeholder>
     <Fragment key="title">This has two children, the first bold</Fragment>
     <Fragment key="desc">

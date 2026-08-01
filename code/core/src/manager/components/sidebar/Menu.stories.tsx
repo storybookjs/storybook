@@ -68,13 +68,13 @@ const meta = {
   },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>{storyFn()}</LayoutProvider>
       </ManagerContext.Provider>
     ),
   ],
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     mockStore.setState({
       loaded: true,
       widget: {},

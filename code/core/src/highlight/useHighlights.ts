@@ -31,7 +31,7 @@ const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';
 const storybookRootId = 'storybook-root';
 
-export const useHighlights = (channel: Channel) => {
+export const useHighlights = (channel: Channel): void => {
   if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
     return;
   }

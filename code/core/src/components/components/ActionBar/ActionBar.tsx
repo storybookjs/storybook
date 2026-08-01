@@ -92,7 +92,11 @@ export interface ActionBarProps {
   flexLayout?: boolean;
 }
 
-export const ActionBar = ({ actionItems, flexLayout = false, ...props }: ActionBarProps) => {
+export const ActionBar = ({
+  actionItems,
+  flexLayout = false,
+  ...props
+}: ActionBarProps): React.JSX.Element => {
   return (
     <Container {...props} $flexLayout={flexLayout}>
       {actionItems.map(({ title, ariaLabel, className, onClick, disabled }, index: number) => (

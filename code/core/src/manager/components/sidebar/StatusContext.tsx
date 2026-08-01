@@ -18,7 +18,12 @@ export const StatusContext = createContext<{
   groupStatus?: Record<StoryId, StatusValue>;
 }>({});
 
-export const useStatusSummary = (item: Item) => {
+export const useStatusSummary = (
+  item: Item
+): {
+  counts: Record<StatusValue, number>;
+  statusesByValue: Record<StatusValue, Record<StoryId, Status[]>>;
+} => {
   const { data, allStatuses, groupStatus } = useContext(StatusContext);
   const summary: {
     counts: Record<StatusValue, number>;

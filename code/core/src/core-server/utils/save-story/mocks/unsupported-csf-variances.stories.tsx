@@ -15,6 +15,6 @@ const MyComponent: FC<{ absolute: boolean; bordered: boolean; initial: string }>
   <pre>{JSON.stringify(props)}</pre>
 );
 
-export const CSF2 = () => <MyComponent absolute bordered initial="test2" />;
+export const CSF2 = (): React.JSX.Element => <MyComponent absolute bordered initial="test2" />;
 
 export const CSF2b = CSF2.bind({});

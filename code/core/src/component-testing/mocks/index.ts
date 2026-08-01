@@ -1,8 +1,9 @@
-import { type Call, CallStates } from 'storybook/internal/instrumenter';
+import { type Call, CallRef, CallStates } from 'storybook/internal/instrumenter';
 
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { StoryId } from '../../types/index.ts';
 
-export const getCalls = (finalStatus: CallStates, slice?: number) => {
+export const getCalls = (finalStatus: CallStates, slice?: number): Call[] => {
   let calls: Call[] = [
     {
       id: INTERNAL_RENDER_CALL_ID,
@@ -165,7 +166,34 @@ export const getCalls = (finalStatus: CallStates, slice?: number) => {
   return calls;
 };
 
-export const getInteractions = (finalStatus: CallStates) =>
+export const getInteractions = (
+  finalStatus: CallStates
+): {
+  childCallIds: never[];
+  isCollapsed: boolean;
+  isHidden: boolean;
+  toggleCollapsed: () => void;
+  id: string;
+  cursor: number;
+  storyId: StoryId;
+  ancestors: Call['id'][];
+  path: Array<string | CallRef>;
+  method: string;
+  args: any[];
+  interceptable: boolean;
+  retain: boolean;
+  status?: CallStates.DONE | CallStates.ERROR | CallStates.ACTIVE | CallStates.WAITING;
+  exception?: {
+    name: Error['name'];
+    message: Error['message'];
+    stack: Error['stack'];
+    callId: Call['id'];
+    showDiff?: boolean;
+    diff?: string;
+    actual?: unknown;
+    expected?: unknown;
+  };
+}[] =>
   getCalls(finalStatus)
     .filter((call) => call.interceptable)
     .map((call) => ({

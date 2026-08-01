@@ -31,7 +31,7 @@ const style: CSSProperties = {
 };
 
 export const WorkingStory = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <IFrame
       active
       id="iframe"
@@ -48,7 +48,7 @@ export const WorkingStory = {
 };
 
 export const WorkingDocs = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <IFrame
       active
       id="iframe"
@@ -65,7 +65,7 @@ export const WorkingDocs = {
 };
 
 export const MissingStory = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <IFrame
       active
       id="iframe"
@@ -83,7 +83,7 @@ export const MissingStory = {
 };
 
 export const PreparingStory = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <IFrame
       active
       id="iframe"
@@ -100,7 +100,7 @@ export const PreparingStory = {
 };
 
 export const PreparingDocs = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <IFrame
       active
       id="iframe"

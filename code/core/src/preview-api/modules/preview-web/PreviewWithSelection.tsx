@@ -504,10 +504,11 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // UTILITIES
   mainStoryCallbacks(storyId: StoryId) {
     return {
-      showStoryDuringRender: () => this.view.showStoryDuringRender(),
-      showMain: () => this.view.showMain(),
-      showError: (err: { title: string; description: string }) => this.renderError(storyId, err),
-      showException: (err: Error) => this.renderException(storyId, err),
+      showStoryDuringRender: (): void => this.view.showStoryDuringRender(),
+      showMain: (): void => this.view.showMain(),
+      showError: (err: { title: string; description: string }): void =>
+        this.renderError(storyId, err),
+      showException: (err: Error): void => this.renderException(storyId, err),
     };
   }
 

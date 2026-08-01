@@ -4,7 +4,7 @@ type StorybookLogoProps = {
   alt: string;
 } & React.SVGAttributes<SVGSVGElement>;
 
-export const StorybookLogo = ({ alt, ...props }: StorybookLogoProps) => (
+export const StorybookLogo = ({ alt, ...props }: StorybookLogoProps): React.JSX.Element => (
   <svg width="200px" height="40px" viewBox="0 0 200 40" {...props} role="img">
     {alt ? <title>{alt}</title> : null}
     <defs>

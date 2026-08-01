@@ -19,7 +19,7 @@ export default {
   component: Spaced,
 };
 
-export const Default = (args: ComponentProps<typeof Spaced>) => (
+export const Default = (args: ComponentProps<typeof Spaced>): React.JSX.Element => (
   <div>
     <PlaceholderBlock color="silver" />
     <Spaced {...args}>
@@ -32,7 +32,7 @@ export const Default = (args: ComponentProps<typeof Spaced>) => (
 );
 
 export const Column = {
-  render: (args: ComponentProps<typeof Spaced>) => (
+  render: (args: ComponentProps<typeof Spaced>): React.JSX.Element => (
     <div>
       <PlaceholderBlock color="silver" />
       <Spaced {...args}>
@@ -45,7 +45,7 @@ export const Column = {
   ),
 };
 export const Row = {
-  render: (args: ComponentProps<typeof Spaced>) => (
+  render: (args: ComponentProps<typeof Spaced>): React.JSX.Element => (
     <div>
       <PlaceholderInline color="silver" />
       <Spaced {...args}>

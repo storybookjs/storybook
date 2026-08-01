@@ -67,7 +67,7 @@ const lastEvent = (lastEvents: Partial<Record<EventType, CacheEntry>>, eventType
 
 export const getPrecedingUpgrade = async (
   events: Partial<Record<EventType, CacheEntry>> | undefined = undefined
-) => {
+): Promise<UpgradeSummary | undefined> => {
   const lastEvents =
     events || ((await cache.get('lastEvents')) as Partial<Record<EventType, CacheEntry>>) || {};
   const lastUpgradeEvent = lastEvent(lastEvents, UPGRADE_EVENTS);

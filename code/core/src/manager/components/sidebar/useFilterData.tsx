@@ -47,7 +47,10 @@ const BUILT_IN_FILTER_DEFS: Array<{
   { id: '_test', title: 'Testing', icon: <BeakerIcon color={color.green} />, tag: '_test' },
 ];
 
-export function useTagFilterEntries(indexJson: StoryIndex) {
+export function useTagFilterEntries(indexJson: StoryIndex): {
+  builtInEntries: TagFilterEntry[];
+  tagEntries: TagFilterEntry[];
+} {
   return useMemo(() => {
     const entries = Object.values(indexJson.entries);
 
@@ -83,7 +86,12 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
   }, [indexJson.entries]);
 }
 
-export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) {
+export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId): {
+  statusValue: StatusValue;
+  shortName: string;
+  description: string;
+  count: number;
+}[] {
   return useMemo(() => {
     const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
     const counts = countStatusesByValue(allStatuses);

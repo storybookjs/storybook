@@ -18,7 +18,7 @@ export default {
   globals: { sb_theme: 'side-by-side' },
   component: StoryLeafNode,
   decorators: [
-    (StoryFn: any) => (
+    (StoryFn: any): React.JSX.Element => (
       <>
         <IconSymbols />
         <StoryFn />
@@ -27,7 +27,7 @@ export default {
   ],
 };
 
-export const Types = () => (
+export const Types = (): React.JSX.Element => (
   <>
     <ComponentNode>Component</ComponentNode>
     <GroupNode>Group</GroupNode>
@@ -38,7 +38,7 @@ export const Types = () => (
   </>
 );
 
-export const Expandable = () => (
+export const Expandable = (): React.JSX.Element => (
   <>
     <ComponentNode isExpandable>Collapsed component</ComponentNode>
     <ComponentNode isExpandable isExpanded>
@@ -51,7 +51,7 @@ export const Expandable = () => (
   </>
 );
 
-export const ExpandableLongName = () => (
+export const ExpandableLongName = (): React.JSX.Element => (
   <>
     <ComponentNode isExpandable>
       Collapsed component with a very very very very very very very very very very very very very
@@ -88,7 +88,7 @@ export const ExpandableLongName = () => (
   </>
 );
 
-export const Nested = () => (
+export const Nested = (): React.JSX.Element => (
   <>
     <DocumentNode docsMode={false} depth={0}>
       Zero
@@ -109,7 +109,7 @@ export const Nested = () => (
   </>
 );
 
-export const NestedLongName = () => (
+export const NestedLongName = (): React.JSX.Element => (
   <>
     <DocumentNode docsMode={false} depth={0}>
       A very very very very very very very very very very very very very very very very very very
@@ -170,7 +170,7 @@ export const NestedLongName = () => (
   </>
 );
 
-export const Selection = () => (
+export const Selection = (): React.JSX.Element => (
   <>
     <HighlightStyles refId="foo" itemId="bar" />
     <LeafNodeStyleWrapper
@@ -248,7 +248,7 @@ export const Selection = () => (
   </>
 );
 
-export const SelectionWithLongName = () => (
+export const SelectionWithLongName = (): React.JSX.Element => (
   <>
     <HighlightStyles refId="foo" itemId="bar" />
     <LeafNodeStyleWrapper

@@ -17,7 +17,7 @@ export default {
   title: 'MatcherResult',
   component: MatcherResult,
   decorators: [
-    (Story: any) => (
+    (Story: any): React.JSX.Element => (
       <StyledWrapper>
         <Story />
       </StyledWrapper>

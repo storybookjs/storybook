@@ -16,7 +16,18 @@ export const VisuallyHidden = styled.div<VisuallyHiddenProps>(({ active }) =>
   active ? { display: 'block' } : { display: 'none' }
 );
 
-export const childrenToList = (children: TabsProps['children']) => {
+export const childrenToList = (
+  children: TabsProps['children']
+): {
+  render: FC<
+    Addon_RenderOptions & {
+      children?: ReactNode | undefined;
+    }
+  >;
+  color?: string | undefined;
+  title: FC | ReactChild | null;
+  id: string;
+}[] => {
   deprecate('The `childrenToList` tabs helper is deprecated. Use `TabsView` instead.');
   return Children.toArray(children).map(
     // @ts-expect-error (non strict)

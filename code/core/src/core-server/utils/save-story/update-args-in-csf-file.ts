@@ -3,7 +3,10 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
 
-export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
+export const updateArgsInCsfFile = async (
+  node: t.Node,
+  input: Record<string, any>
+): Promise<void> => {
   let found = false;
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {

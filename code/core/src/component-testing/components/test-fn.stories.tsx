@@ -34,7 +34,7 @@ export const TestFunctionTypes = meta.story({
 });
 
 export const PlayFunction = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     const button = canvas.getByText('Default');
     await userEvent.click(button);
   },
@@ -104,7 +104,7 @@ export const ExtendedStorySinglePlayExample = TestFunctionTypes.extend({
   args: {
     children: 'Arg from extended story',
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const button = canvas.getByText('Arg from extended story');
     await expect(button).not.toHaveAttribute('aria-disabled', 'true');
   },

@@ -48,7 +48,7 @@ export const Placements = meta.story({
     children: <Trigger>ignored</Trigger>,
     popover: 'ignored',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div
       style={{
         display: 'grid',
@@ -152,7 +152,7 @@ export const AlwaysOpen = meta.story({
     popover: <SamplePopover />,
     placement: 'right-start',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const popover = screen.getByText('Lorem ipsum dolor sit amet');
     await expect(popover).toBeInTheDocument();
@@ -166,7 +166,7 @@ export const NeverOpen = meta.story({
     popover: <SamplePopover />,
     placement: 'right-start',
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
   },
@@ -178,7 +178,7 @@ export const WithVisibilityCallback = meta.story({
     popover: <SamplePopover />,
     onVisibleChange: fn(),
   },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ args, canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByText('Click me!');
 
@@ -195,7 +195,7 @@ export const InteractivePopoverKB = meta.story({
     children: <Trigger>Click me!</Trigger>,
     popover: <SamplePopover />,
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByText('Click me!');
 
@@ -223,13 +223,13 @@ export const InteractivePopoverMouse = meta.story({
     children: <Trigger>Click me!</Trigger>,
     popover: <SamplePopover />,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div>
       <PopoverProvider {...args} />
       <button>Sibling Button</button>
     </div>
   ),
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
 
     await step('Open popover', async () => {

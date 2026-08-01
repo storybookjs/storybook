@@ -194,7 +194,7 @@ export const SyntaxHighlighter = ({
   className = undefined,
   showLineNumbers = false,
   ...rest
-}: SyntaxHighlighterProps) => {
+}: SyntaxHighlighterProps): React.JSX.Element | null => {
   if (typeof children !== 'string' || !children.trim()) {
     return null;
   }
@@ -255,6 +255,6 @@ export const SyntaxHighlighter = ({
 
 SyntaxHighlighter.registerLanguage = (
   ...args: Parameters<typeof ReactSyntaxHighlighter.registerLanguage>
-) => ReactSyntaxHighlighter.registerLanguage(...args);
+): void => ReactSyntaxHighlighter.registerLanguage(...args);
 
 export default SyntaxHighlighter;

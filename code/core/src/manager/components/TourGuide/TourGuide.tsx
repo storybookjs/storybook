@@ -49,7 +49,7 @@ export const TourGuide = ({
   onNext?: ({ next }: { next: () => void }) => void;
   onComplete?: () => void;
   onDismiss?: () => void;
-}) => {
+}): React.JSX.Element | null => {
   const [stepIndex, setStepIndex] = useState<number | null>(step ? null : 0);
   const theme = useTheme();
 
@@ -172,7 +172,7 @@ export const TourGuide = ({
 
 let root: ReturnType<typeof createRoot> | null = null;
 
-TourGuide.render = (props: ComponentProps<typeof TourGuide> | null) => {
+TourGuide.render = (props: ComponentProps<typeof TourGuide> | null): void => {
   let container = document.getElementById('storybook-tour');
   if (!container) {
     container = document.createElement('div');

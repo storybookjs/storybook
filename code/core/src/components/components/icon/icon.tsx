@@ -39,7 +39,7 @@ export const Icons = ({
   useSymbol,
   __suppressDeprecationWarning = false,
   ...props
-}: IconsProps) => {
+}: IconsProps): React.JSX.Element | null => {
   if (!__suppressDeprecationWarning) {
     deprecate(
       `Use of the deprecated Icons ${

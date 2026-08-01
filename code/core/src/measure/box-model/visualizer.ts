@@ -308,6 +308,6 @@ function drawBoxModel(element: HTMLElement) {
   };
 }
 
-export function drawSelectedElement(element: HTMLElement) {
+export function drawSelectedElement(element: HTMLElement): void {
   draw(drawBoxModel(element));
 }

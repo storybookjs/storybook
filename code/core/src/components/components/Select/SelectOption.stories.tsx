@@ -55,7 +55,7 @@ export const WithChildren = meta.story({
 });
 
 export const PseudoStates = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <>
       <SelectOption {...args} id="inactive">
         Inactive
@@ -103,7 +103,7 @@ export const PseudoStates = meta.story({
 
 export const Active = meta.story({
   args: { isActive: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('tabindex', '0');
@@ -112,7 +112,7 @@ export const Active = meta.story({
 
 export const Selected = meta.story({
   args: { isSelected: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('aria-selected', 'true');
@@ -120,7 +120,7 @@ export const Selected = meta.story({
 });
 export const SelectedActive = meta.story({
   args: { isSelected: true, isActive: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('aria-selected', 'true');
@@ -130,7 +130,7 @@ export const SelectedActive = meta.story({
 
 export const Disabled = meta.story({
   args: { shouldLookDisabled: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('aria-disabled', 'true');
@@ -139,7 +139,7 @@ export const Disabled = meta.story({
 
 export const SelectedDisabled = meta.story({
   args: { isSelected: true, shouldLookDisabled: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('aria-disabled', 'true');
@@ -149,7 +149,7 @@ export const SelectedDisabled = meta.story({
 
 export const SelectedDisabledActive = meta.story({
   args: { isSelected: true, shouldLookDisabled: true, isActive: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const option = canvas.getByRole('option');
     await expect(option).toHaveAttribute('aria-disabled', 'true');

@@ -29,7 +29,7 @@ const meta = {
     chromatic: { viewports: [320] },
   },
   decorators: [
-    (storyFn) => {
+    (storyFn): React.JSX.Element => {
       return (
         <ManagerContext.Provider
           value={

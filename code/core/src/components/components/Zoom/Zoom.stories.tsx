@@ -25,7 +25,7 @@ const EXAMPLE_ELEMENT = (
   />
 );
 
-const TemplateElement = (args: any) => <Zoom.Element {...args} />;
+const TemplateElement = (args: any): React.JSX.Element => <Zoom.Element {...args} />;
 
 export const ElementActualSize = TemplateElement.bind({});
 
@@ -58,7 +58,7 @@ const style: CSSProperties = {
   position: 'relative',
 };
 
-const TemplateIFrame = (args: any) => {
+const TemplateIFrame = (args: any): React.JSX.Element => {
   const iFrameRef = React.useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState(1);
   const [loaded, hasLoaded] = useState(false);

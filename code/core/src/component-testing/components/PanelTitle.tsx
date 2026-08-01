@@ -9,7 +9,7 @@ import { ADDON_ID, PANEL_ID } from '../constants.ts';
 import type { PanelState } from './Panel.tsx';
 import { StatusIcon } from './StatusIcon.tsx';
 
-export function PanelTitle() {
+export function PanelTitle(): React.JSX.Element {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
   const [addonState = {}] = useAddonState<PanelState>(ADDON_ID);

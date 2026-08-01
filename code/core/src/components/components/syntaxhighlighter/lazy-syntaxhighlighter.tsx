@@ -21,7 +21,9 @@ const LazySyntaxHighlighter = lazy(async () => {
   }
 
   return {
-    default: (props: ComponentProps<typeof SyntaxHighlighter>) => <SyntaxHighlighter {...props} />,
+    default: (props: ComponentProps<typeof SyntaxHighlighter>): React.JSX.Element => (
+      <SyntaxHighlighter {...props} />
+    ),
   };
 });
 
@@ -43,7 +45,7 @@ const LazySyntaxHighlighterWithFormatter = lazy(async () => {
   }
 
   return {
-    default: (props: ComponentProps<typeof SyntaxHighlighter>) => (
+    default: (props: ComponentProps<typeof SyntaxHighlighter>): React.JSX.Element => (
       <SyntaxHighlighter {...props} formatter={formatter} />
     ),
   };
@@ -53,7 +55,7 @@ export const SyntaxHighlighter = (
   props:
     | ComponentProps<typeof LazySyntaxHighlighter>
     | ComponentProps<typeof LazySyntaxHighlighterWithFormatter>
-) => (
+): React.JSX.Element => (
   <Suspense fallback={<div />}>
     {props.format !== false ? (
       <LazySyntaxHighlighterWithFormatter {...props} />
@@ -65,7 +67,7 @@ export const SyntaxHighlighter = (
 
 SyntaxHighlighter.registerLanguage = (
   ...args: Parameters<typeof ReactSyntaxHighlighter.registerLanguage>
-) => {
+): void => {
   if (Comp !== null) {
     Comp.registerLanguage(...args);
     return;

@@ -89,7 +89,7 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
   );
 };
 
-export function renderStorybookUI(domNode: HTMLElement, provider: Provider) {
+export function renderStorybookUI(domNode: HTMLElement, provider: Provider): void {
   if (!(provider instanceof Provider)) {
     throw new ProviderDoesNotExtendBaseProviderError();
   }

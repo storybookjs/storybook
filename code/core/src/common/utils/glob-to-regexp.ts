@@ -1,6 +1,6 @@
 import * as pico from 'picomatch';
 
-export function globToRegexp(glob: string) {
+export function globToRegexp(glob: string): RegExp {
   const regex = pico.makeRe(glob, {
     fastpaths: false,
     noglobstar: false,

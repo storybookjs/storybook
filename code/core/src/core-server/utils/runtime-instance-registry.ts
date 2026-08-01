@@ -54,11 +54,11 @@ export type RuntimeInstanceRegistryCleanupDecision =
   | { action: 'remove' }
   | { action: 'check-pid'; pid: number };
 
-export function getDefaultRuntimeInstanceRegistryDir() {
+export function getDefaultRuntimeInstanceRegistryDir(): string {
   return join(homedir(), '.storybook', 'instances');
 }
 
-export function getOrigin(address: string) {
+export function getOrigin(address: string): string {
   return new URL(address).origin;
 }
 
@@ -135,7 +135,7 @@ export function createRuntimeInstanceRecord({
 export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
   registryDir = getDefaultRuntimeInstanceRegistryDir()
-) {
+): Promise<string> {
   await mkdir(registryDir, { recursive: true });
   await cleanupRuntimeInstanceRegistry(registryDir);
 

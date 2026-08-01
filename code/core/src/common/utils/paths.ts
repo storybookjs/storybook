@@ -8,7 +8,7 @@ import { LOCK_FILES } from '../js-package-manager/constants.ts';
 
 let projectRoot: string | undefined;
 
-export const getProjectRoot = () => {
+export const getProjectRoot = (): string => {
   if (projectRoot) {
     return projectRoot;
   }
@@ -56,12 +56,12 @@ export const getProjectRoot = () => {
   return projectRoot;
 };
 
-export const invalidateProjectRootCache = () => {
+export const invalidateProjectRootCache = (): void => {
   projectRoot = undefined;
 };
 
 /** Finds files in the directory tree up to the project root */
-export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
+export const findFilesUp = (matchers: string[], baseDir = process.cwd()): string[] => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(baseDir, { last: getProjectRoot() })) {
     matchingFiles.push(...globSync(matchers, { cwd: directory, absolute: true }));
@@ -70,7 +70,7 @@ export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
   return matchingFiles;
 };
 
-export const nodePathsToArray = (nodePath: string) =>
+export const nodePathsToArray = (nodePath: string): string[] =>
   nodePath
     .split(process.platform === 'win32' ? ';' : ':')
     .filter(Boolean)
@@ -79,7 +79,7 @@ export const nodePathsToArray = (nodePath: string) =>
 const relativePattern = /^\.{1,2}([/\\]|$)/;
 
 /** Ensures that a path starts with `./` or `../`, or is entirely `.` or `..` */
-export function normalizeStoryPath(filename: string) {
+export function normalizeStoryPath(filename: string): string {
   if (relativePattern.test(filename)) {
     return filename;
   }

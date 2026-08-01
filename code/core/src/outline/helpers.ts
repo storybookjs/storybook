@@ -1,6 +1,6 @@
 import { global } from '@storybook/global';
 
-export const clearStyles = (selector: string | string[]) => {
+export const clearStyles = (selector: string | string[]): void => {
   const selectors = Array.isArray(selector) ? selector : [selector];
   selectors.forEach(clearStyle);
 };
@@ -13,7 +13,7 @@ const clearStyle = (input: string | string[]) => {
   }
 };
 
-export const addOutlineStyles = (selector: string, css: string) => {
+export const addOutlineStyles = (selector: string, css: string): void => {
   const existingStyle = global.document.getElementById(selector);
   if (existingStyle) {
     if (existingStyle.innerHTML !== css) {

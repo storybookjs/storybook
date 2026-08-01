@@ -27,7 +27,7 @@ const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummary
  * Intercepts primary clicks on in-page review navigation links for SPA
  * transitions. Real hrefs are preserved for middle-click and open-in-new-tab.
  */
-export const useReviewNavigationInterceptor = () => {
+export const useReviewNavigationInterceptor = (): void => {
   const navigate = useNavigate();
   const api = useStorybookApi();
   const filtersRef = useReviewFiltersRef();

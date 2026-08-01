@@ -59,7 +59,7 @@ export const ButtonLink = {
     onClick: fn(),
   },
   name: 'Link-styled button',
-  play: async ({ args, canvas }) => {
+  play: async ({ args, canvas }): Promise<void> => {
     const link = canvas.getByRole('button', { name: 'Click me' });
     link.focus();
     expect(link).toHaveFocus();
@@ -69,7 +69,7 @@ export const ButtonLink = {
 } satisfies Story;
 
 export const StyledLinks = {
-  render: (args: ComponentProps<typeof Link>) => (
+  render: (args: ComponentProps<typeof Link>): React.JSX.Element => (
     <div>
       <Link href="http://google.com" {...args}>
         Default

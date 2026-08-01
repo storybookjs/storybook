@@ -50,7 +50,7 @@ export const userOrAutoTitleFromSpecifier = (
   fileName: string | number,
   entry: NormalizedStoriesSpecifier,
   userTitle?: string
-) => {
+): string | undefined => {
   const { directory, importPathMatcher, titlePrefix = '' } = entry || {};
   // On Windows, backslashes are used in paths, which can cause problems here
   // slash makes sure we always handle paths with unix-style forward slash
@@ -87,7 +87,7 @@ export const userOrAutoTitle = (
   fileName: string,
   storiesEntries: NormalizedStoriesSpecifier[],
   userTitle?: string
-) => {
+): string | undefined => {
   for (let i = 0; i < storiesEntries.length; i += 1) {
     const title = userOrAutoTitleFromSpecifier(fileName, storiesEntries[i], userTitle);
 

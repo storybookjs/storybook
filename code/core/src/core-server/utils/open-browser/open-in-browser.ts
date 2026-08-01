@@ -5,7 +5,7 @@ import { dedent } from 'ts-dedent';
 
 import { openBrowser } from './opener.ts';
 
-export async function openInBrowser(address: string) {
+export async function openInBrowser(address: string): Promise<void> {
   let errorOccurred = false;
   let openBrowserResult: boolean | undefined;
 

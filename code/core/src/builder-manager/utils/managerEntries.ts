@@ -41,7 +41,10 @@ const sanitizeFinal = (path: string) => {
  * We need to wrap each managerEntry with a try-catch because if we do not, a failing managerEntry
  * can stop execution of other managerEntries.
  */
-export async function wrapManagerEntries(entrypoints: string[], uniqueId?: string) {
+export async function wrapManagerEntries(
+  entrypoints: string[],
+  uniqueId?: string
+): Promise<string[]> {
   return Promise.all(
     entrypoints.map(async (entry, i) => {
       const { name, dir } = parse(entry);

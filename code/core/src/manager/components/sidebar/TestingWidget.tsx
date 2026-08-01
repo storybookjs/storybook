@@ -171,7 +171,7 @@ export const TestingWidget = ({
   warningsActive,
   setWarningsActive,
   successCount,
-}: TestingModuleProps) => {
+}: TestingModuleProps): React.JSX.Element | null => {
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);

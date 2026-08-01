@@ -1,4 +1,9 @@
-export const nameSpaceClassNames = ({ ...props }, key: string) => {
+export const nameSpaceClassNames = (
+  { ...props },
+  key: string
+): {
+  [x: string]: any;
+} => {
   const classes = [props.class, props.className];
 
   delete props.class;

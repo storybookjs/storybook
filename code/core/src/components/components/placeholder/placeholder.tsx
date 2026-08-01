@@ -19,7 +19,7 @@ export interface PlaceholderProps {
   children?: React.ReactNode;
 }
 
-export const Placeholder = ({ children, ...props }: PlaceholderProps) => {
+export const Placeholder = ({ children, ...props }: PlaceholderProps): React.JSX.Element => {
   const [title, desc] = Children.toArray(children);
   return (
     <Message {...props}>

@@ -12,7 +12,7 @@ import type { Path } from 'storybook/internal/types';
  * @param mdxImportPath ImportPath of the MDX file with of={}
  * @param csfImportPath ImportPath of the of CSF file
  */
-export function autoName(mdxImportPath: Path, csfImportPath: Path, defaultName: string) {
+export function autoName(mdxImportPath: Path, csfImportPath: Path, defaultName: string): string {
   const mdxBasename = basename(mdxImportPath);
   const csfBasename = basename(csfImportPath);
 

@@ -79,7 +79,7 @@ export const ProgressSpinner = ({
   width = 1.5,
   children = null,
   ...props
-}: ProgressSpinnerProps) =>
+}: ProgressSpinnerProps): React.JSX.Element =>
   typeof percentage === 'number' ? (
     <Wrapper size={size} {...props}>
       {children}

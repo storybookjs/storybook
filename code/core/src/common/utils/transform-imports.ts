@@ -20,7 +20,12 @@ export const transformImportFiles = async (
   files: string[],
   renamedImports: Record<string, string>,
   dryRun?: boolean
-) => {
+): Promise<
+  {
+    file: string;
+    error: Error;
+  }[]
+> => {
   const errors: Array<{ file: string; error: Error }> = [];
   const { default: pLimit } = await import('p-limit');
   const limit = pLimit(10);

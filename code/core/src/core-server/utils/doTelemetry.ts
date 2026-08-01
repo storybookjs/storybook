@@ -13,7 +13,7 @@ export async function doTelemetry(
   core: CoreConfig,
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>,
   options: Options
-) {
+): Promise<void> {
   const { versionCheck, versionUpdates } = options;
   invariant(
     !versionUpdates || (versionUpdates && versionCheck),

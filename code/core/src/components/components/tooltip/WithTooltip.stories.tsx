@@ -52,7 +52,7 @@ const Tooltip: FunctionComponent<TooltipProps> = ({ onHide }) => (
 export default {
   component: WithTooltip,
   decorators: [
-    (storyFn: any) => (
+    (storyFn: any): React.JSX.Element => (
       <ViewPort>
         <BackgroundBox>
           <Spacer />

@@ -26,7 +26,7 @@ export const getDirectoryFromWorkingDir = ({
   configDir,
   workingDir,
   directory,
-}: NormalizeOptions & { directory: string }) => {
+}: NormalizeOptions & { directory: string }): string => {
   const directoryFromConfig = resolve(configDir, directory);
   const directoryFromWorking = relative(workingDir, directoryFromConfig);
 
@@ -105,7 +105,10 @@ interface NormalizeOptions {
   defaultFilesPattern?: string;
 }
 
-export const normalizeStories = (entries: StoriesEntry[], options: NormalizeOptions) => {
+export const normalizeStories = (
+  entries: StoriesEntry[],
+  options: NormalizeOptions
+): NormalizedStoriesSpecifier[] => {
   if (!entries || (Array.isArray(entries) && entries.length === 0)) {
     throw new InvalidStoriesEntryError();
   }

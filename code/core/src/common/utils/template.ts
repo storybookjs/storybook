@@ -10,7 +10,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
 export function getPreviewBodyTemplate(
   configDirPath: string,
   interpolations?: Record<string, string>
-) {
+): string {
   const base = readFileSync(
     join(resolvePackageDir('storybook'), 'assets/server/base-preview-body.html'),
     'utf8'
@@ -29,7 +29,7 @@ export function getPreviewBodyTemplate(
 export function getPreviewHeadTemplate(
   configDirPath: string,
   interpolations?: Record<string, string>
-) {
+): string {
   const base = readFileSync(
     join(resolvePackageDir('storybook'), 'assets/server/base-preview-head.html'),
     'utf8'

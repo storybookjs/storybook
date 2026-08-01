@@ -77,7 +77,7 @@ export const TextFlip = ({
   text: string;
   duration?: number;
   placeholder?: string;
-} & ComponentProps<typeof Container>) => {
+} & ComponentProps<typeof Container>): React.JSX.Element => {
   const textRef = useRef(text);
   const [staleValue, setStaleValue] = useState(text);
 

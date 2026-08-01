@@ -29,7 +29,7 @@ const errorMessages = [
   'React is running in production mode',
 ];
 
-export const shouldSkipError = (error: Error) => errorMessages.includes(error?.message);
+export const shouldSkipError = (error: Error): boolean => errorMessages.includes(error?.message);
 
 export function prepareForTelemetry(
   originalError: Error & {
@@ -40,7 +40,14 @@ export function prepareForTelemetry(
     srcElement?: any;
     browserInfo?: BrowserInfo;
   }
-) {
+): Error & {
+  fromStorybook?: boolean;
+  category?: string;
+  target?: any;
+  currentTarget?: any;
+  srcElement?: any;
+  browserInfo?: BrowserInfo;
+} {
   let error = originalError;
 
   // DOM manipulation errors and other similar errors are not serializable as they contain

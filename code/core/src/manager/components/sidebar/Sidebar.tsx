@@ -123,7 +123,7 @@ export const Sidebar = React.memo(function Sidebar({
   refs = {},
   onMenuClick,
   showCreateStoryButton = isDevelopment && isRendererReact,
-}: SidebarProps) {
+}: SidebarProps): React.JSX.Element {
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);

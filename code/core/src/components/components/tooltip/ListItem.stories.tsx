@@ -9,7 +9,7 @@ export default {
 };
 
 export const All = {
-  render: () => (
+  render: (): React.JSX.Element => (
     <div>
       <ListItem loading />
       <ListItem title="Default" />

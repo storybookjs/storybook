@@ -14,7 +14,7 @@ import { randomUUID } from 'crypto';
  * By making the token a shared singleton, we can ensure that both the server channel and the
  * presets have access to the same token without creating this circular dependency.
  */
-export const getWsToken = () => {
+export const getWsToken = (): string => {
   if (!globalThis.STORYBOOK_WEBSOCKET_TOKEN) {
     globalThis.STORYBOOK_WEBSOCKET_TOKEN = randomUUID();
   }

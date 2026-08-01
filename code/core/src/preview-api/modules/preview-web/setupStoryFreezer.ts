@@ -29,7 +29,7 @@ const getQueryParam = (search: string, key: string): string | null => {
   return new URLSearchParams(search).get(key);
 };
 
-export const shouldFreeze = ({ search }: { search: string }) => {
+export const shouldFreeze = ({ search }: { search: string }): boolean => {
   const freeze = getQueryParam(search, 'freeze');
   const viewMode = getQueryParam(search, 'viewMode') ?? 'story';
   return freeze === 'finished' && viewMode === 'story';
@@ -284,7 +284,7 @@ export type StoryFreezerOptions = {
 export const setupStoryFreezer = (
   channel: Pick<Channel, 'on'>,
   options: StoryFreezerOptions = {}
-) => {
+): boolean => {
   const windowRef = global.window;
   const documentRef = global.document;
   if (!windowRef || !documentRef) {

@@ -147,7 +147,7 @@ export const OnReviewedStory = meta.story({
       customQueryParams: { collection: '0' },
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     applyReviewState();
 
@@ -175,7 +175,7 @@ export const Progress = meta.story({
       customQueryParams: { collection: '0' },
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     applyReviewState();
 
@@ -203,7 +203,7 @@ export const NewStory = meta.story({
     },
   },
   // A story is "newly added" when change detection reports it as new.
-  beforeEach: () => {
+  beforeEach: (): void => {
     internal_fullStatusStore.set([
       {
         storyId: 'manager-settings-checklist--default',
@@ -214,7 +214,7 @@ export const NewStory = meta.story({
       },
     ]);
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     applyReviewState();
 

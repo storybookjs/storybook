@@ -143,7 +143,7 @@ export const FileSearchModal = ({
   searchResults,
   onCreateNewStory,
   setError,
-}: FileSearchModalProps) => {
+}: FileSearchModalProps): React.JSX.Element => {
   const [modalContentRef, modalContentDimensions] = useMeasure<HTMLDivElement>();
   // @ts-expect-error (non strict)
   const [modalMaxHeight, setModalMaxHeight] = useState<number>(modalContentDimensions.height);

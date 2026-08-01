@@ -15,7 +15,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { generateStoryFile } from '../utils/generate-story.ts';
 
-export function initCreateNewStoryChannel(channel: Channel, options: Options) {
+export function initCreateNewStoryChannel(channel: Channel, options: Options): Channel {
   /** Listens for events to create a new storyfile */
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,

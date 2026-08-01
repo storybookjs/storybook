@@ -27,7 +27,7 @@ const externalResolver = new ResolverFactory({
  * @param root The project's root directory.
  * @returns The absolute path to the module.
  */
-export function resolveExternalModule(path: string, root: string) {
+export function resolveExternalModule(path: string, root: string): string {
   const result = externalResolver.sync(root, path);
   if (result.path) {
     return result.path;
@@ -35,7 +35,7 @@ export function resolveExternalModule(path: string, root: string) {
   return require.resolve(path, { paths: [root] });
 }
 
-export function getIsExternal(path: string, importer: string) {
+export function getIsExternal(path: string, importer: string): boolean {
   try {
     return !isAbsolute(path) && isModuleDirectory(require.resolve(path, { paths: [importer] }));
   } catch (e) {
@@ -89,7 +89,7 @@ export function resolveMock(
  * @returns True if the mock path is external, false otherwise
  * @link https://nodejs.org/api/cli.html#--experimental-import-meta-resolve
  */
-export function isExternal(path: string, from: string) {
+export function isExternal(path: string, from: string): boolean {
   try {
     return !isAbsolute(path) && isModuleDirectory(require.resolve(path, { paths: [from] }));
   } catch (e) {
@@ -117,7 +117,7 @@ export function getRealPath(path: string, preserveSymlinks: boolean): string {
  * @param from - The root of the project, this should be an absolute path
  * @returns The resolved path
  */
-export function resolveWithExtensions(path: string, from: string) {
+export function resolveWithExtensions(path: string, from: string): string {
   for (const extension of userModuleExtensions) {
     try {
       return require.resolve(path + extension, { paths: [from] });

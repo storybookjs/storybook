@@ -60,7 +60,7 @@ export interface SpacedProps {
   outer?: number | boolean;
 }
 
-export const Spaced = ({ col, row, outer, children, ...rest }: SpacedProps) => {
+export const Spaced = ({ col, row, outer, children, ...rest }: SpacedProps): React.JSX.Element => {
   const outerAmount = toNumber(typeof outer === 'number' || !outer ? outer : col || row);
 
   return (

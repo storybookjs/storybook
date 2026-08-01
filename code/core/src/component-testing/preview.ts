@@ -1,4 +1,4 @@
-import { definePreviewAddon } from 'storybook/internal/csf';
+import { AddonTypes, definePreviewAddon, PreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
 
@@ -14,7 +14,7 @@ const { step } = instrument(
   { intercept: true }
 );
 
-export default () =>
+export default (): PreviewAddon<AddonTypes> =>
   definePreviewAddon({
     parameters: {
       throwPlayFunctionExceptions: false,

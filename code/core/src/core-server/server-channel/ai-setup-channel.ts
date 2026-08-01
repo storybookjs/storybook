@@ -21,7 +21,7 @@ export function initAIAnalyticsChannel(
   channel: Channel,
   options: Options,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
-) {
+): Channel {
   /** Send analytics about the ai setup workflow when requested*/
   channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {

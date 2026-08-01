@@ -7,7 +7,11 @@ import type { Stats } from 'storybook/internal/types';
 import { stringifyStream } from '@discoveryjs/json-ext';
 import picocolors from 'picocolors';
 
-export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
+export async function outputStats(
+  directory: string,
+  previewStats?: any,
+  managerStats?: any
+): Promise<void> {
   if (previewStats) {
     const filePath = await writeStats(directory, 'preview', previewStats as Stats);
     logger.info(`Preview stats written to ${picocolors.cyan(filePath)}`);
@@ -18,7 +22,11 @@ export async function outputStats(directory: string, previewStats?: any, manager
   }
 }
 
-export const writeStats = async (directory: string, name: string, stats: Stats) => {
+export const writeStats = async (
+  directory: string,
+  name: string,
+  stats: Stats
+): Promise<string> => {
   const filePath = join(directory, `${name}-stats.json`);
   const { chunks, ...data } = stats.toJson(); // omit chunks, which is about half of the total data
   await new Promise((resolve, reject) => {

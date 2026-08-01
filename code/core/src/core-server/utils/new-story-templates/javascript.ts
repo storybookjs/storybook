@@ -13,7 +13,9 @@ interface JavaScriptTemplateData {
   args?: Record<string, any>;
 }
 
-export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTemplateData) {
+export async function getJavaScriptTemplateForNewStoryFile(
+  data: JavaScriptTemplateData
+): Promise<string> {
   const importName = data.componentIsDefaultExport
     ? await getComponentVariableName(data.basenameWithoutExtension)
     : data.componentExportName;

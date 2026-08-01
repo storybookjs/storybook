@@ -7,7 +7,14 @@ import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api
 import { ADDON_ID, PARAM_KEY } from './constants.ts';
 import { MINIMAL_VIEWPORTS } from './defaults.ts';
 import { VIEWPORT_MIN_HEIGHT, VIEWPORT_MIN_WIDTH, resolveViewport } from './resolveViewport.ts';
-import type { GlobalState, GlobalStateUpdate, ViewportMap, ViewportParameters } from './types.ts';
+import type {
+  GlobalState,
+  GlobalStateUpdate,
+  Viewport,
+  ViewportMap,
+  ViewportParameters,
+  ViewportType,
+} from './types.ts';
 
 export { VIEWPORT_MIN_HEIGHT, VIEWPORT_MIN_WIDTH };
 
@@ -34,7 +41,59 @@ const normalizeGlobal = (
     ? { value, isRotated: defaultIsRotated }
     : { value: value?.value, isRotated: value?.isRotated ?? defaultIsRotated };
 
-export const useViewport = () => {
+export const useViewport = (): {
+  name: string;
+  type: ViewportType;
+  width: string;
+  height: string;
+  value: string;
+  option: string | undefined;
+  isCustom: boolean;
+  isDefault: boolean;
+  isLocked: boolean;
+  isRotated: boolean;
+  options:
+    | Record<string, Viewport>
+    | {
+        readonly mobile1: {
+          readonly name: 'Small mobile';
+          readonly styles: {
+            readonly height: '568px';
+            readonly width: '320px';
+          };
+          readonly type: 'mobile';
+        };
+        readonly mobile2: {
+          readonly name: 'Large mobile';
+          readonly styles: {
+            readonly height: '896px';
+            readonly width: '414px';
+          };
+          readonly type: 'mobile';
+        };
+        readonly tablet: {
+          readonly name: 'Tablet';
+          readonly styles: {
+            readonly height: '1112px';
+            readonly width: '834px';
+          };
+          readonly type: 'tablet';
+        };
+        readonly desktop: {
+          readonly name: 'Desktop';
+          readonly styles: {
+            readonly height: '1024px';
+            readonly width: '1280px';
+          };
+          readonly type: 'desktop';
+        };
+      };
+  lastSelectedOption: string | undefined;
+  resize: (width: string, height: string) => void;
+  reset: () => void;
+  rotate: () => void;
+  select: (value: string) => void;
+} => {
   const api = useStorybookApi();
   const { viewMode } = api.getUrlState();
 

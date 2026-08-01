@@ -4,7 +4,9 @@ export default {
   title: 'Addon Panel',
 };
 
-export const AllAddons = () => <div>By default all addon panels are rendered</div>;
+export const AllAddons = (): React.JSX.Element => (
+  <div>By default all addon panels are rendered</div>
+);
 
 /*
 TODO: this story currently breaks the whole Storybook UI (including the manager).

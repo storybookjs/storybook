@@ -14,7 +14,7 @@ export async function execCommandCountLines(
   command: string,
   args: string[],
   options?: Parameters<typeof execa>[1]
-) {
+): Promise<number> {
   const process = execa(command, args, { buffer: false, ...options });
   if (!process.stdout) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors

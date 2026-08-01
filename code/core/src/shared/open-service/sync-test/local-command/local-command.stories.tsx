@@ -10,7 +10,7 @@ import { localCommandSyncService } from './preview.ts';
 
 const store = createDemoStore('');
 
-function LocalCommandDemo() {
+function LocalCommandDemo(): React.JSX.Element {
   // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
@@ -70,7 +70,7 @@ const meta = {
     layout: 'centered',
     [OPEN_SERVICE_DEMO_PARAM_KEY]: { enabled: true },
   },
-  beforeEach: () => {
+  beforeEach: (): (() => Promise<void>) => {
     const initialValue = localCommandSyncService.queries.value.get();
     store.set(initialValue);
     const unsubscribe = localCommandSyncService.queries.value.subscribe(undefined, ({ data }) =>

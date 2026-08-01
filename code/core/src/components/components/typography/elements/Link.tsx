@@ -3,7 +3,7 @@ import React from 'react';
 export const Link = ({
   href: input = '',
   ...props
-}: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+}: React.AnchorHTMLAttributes<HTMLAnchorElement>): React.JSX.Element => {
   const isStorybookPath = /^\//.test(input);
   const href = isStorybookPath ? `./?path=${input}` : input;
 

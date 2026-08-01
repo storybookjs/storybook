@@ -35,10 +35,10 @@ const list = (filler: (data: number) => ReactElement) => {
 
 export default {
   component: ScrollArea,
-  decorators: [(storyFn: () => any) => <Wrapper>{storyFn()}</Wrapper>],
+  decorators: [(storyFn: () => any): React.JSX.Element => <Wrapper>{storyFn()}</Wrapper>],
 };
 
-export const Vertical = () => (
+export const Vertical = (): React.JSX.Element => (
   <ScrollArea vertical>
     {list((i) => (
       <Fragment key={i}>
@@ -49,7 +49,7 @@ export const Vertical = () => (
   </ScrollArea>
 );
 
-export const Horizontal = () => (
+export const Horizontal = (): React.JSX.Element => (
   <ScrollArea horizontal>
     <div style={{ padding: 5 }}>
       {list((i) => (
@@ -59,7 +59,7 @@ export const Horizontal = () => (
   </ScrollArea>
 );
 
-export const Both = () => (
+export const Both = (): React.JSX.Element => (
   <ScrollArea horizontal vertical>
     {list((i) => (
       <Fragment key={i}>
@@ -72,7 +72,7 @@ export const Both = () => (
   </ScrollArea>
 );
 
-export const Neither = () => (
+export const Neither = (): React.JSX.Element => (
   <ScrollArea>
     {list((i) => (
       <Fragment key={i}>
@@ -85,7 +85,7 @@ export const Neither = () => (
   </ScrollArea>
 );
 
-export const WithOuterBorder = () => (
+export const WithOuterBorder = (): React.JSX.Element => (
   <ScrollArea horizontal vertical>
     <div
       style={{
@@ -98,7 +98,7 @@ export const WithOuterBorder = () => (
   </ScrollArea>
 );
 
-export const CustomOffset = () => (
+export const CustomOffset = (): React.JSX.Element => (
   <ScrollArea horizontal vertical offset={20}>
     {list((i) => (
       <Fragment key={i}>
@@ -111,7 +111,7 @@ export const CustomOffset = () => (
   </ScrollArea>
 );
 
-export const CustomSize = () => (
+export const CustomSize = (): React.JSX.Element => (
   <ScrollArea horizontal vertical scrollbarSize={20}>
     {list((i) => (
       <Fragment key={i}>
@@ -124,7 +124,7 @@ export const CustomSize = () => (
   </ScrollArea>
 );
 
-export const FocusableVertical = () => (
+export const FocusableVertical = (): React.JSX.Element => (
   <ScrollArea vertical focusable>
     {list((i) => (
       <Fragment key={i}>
@@ -135,7 +135,7 @@ export const FocusableVertical = () => (
   </ScrollArea>
 );
 
-export const FocusableHorizontal = () => (
+export const FocusableHorizontal = (): React.JSX.Element => (
   <ScrollArea horizontal focusable>
     <div style={{ padding: 5 }}>
       {list((i) => (
@@ -145,7 +145,7 @@ export const FocusableHorizontal = () => (
   </ScrollArea>
 );
 
-export const FocusableBoth = () => (
+export const FocusableBoth = (): React.JSX.Element => (
   <ScrollArea horizontal vertical focusable>
     {list((i) => (
       <Fragment key={i}>

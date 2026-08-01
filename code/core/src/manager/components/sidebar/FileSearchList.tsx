@@ -90,7 +90,7 @@ export const FileSearchList = memo(function FileSearchList({
   searchResults,
   onNewStory,
   errorItemId,
-}: FileSearchListProps) {
+}: FileSearchListProps): React.JSX.Element | null {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const parentRef = React.useRef<HTMLDivElement>();
 

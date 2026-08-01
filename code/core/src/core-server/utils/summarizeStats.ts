@@ -2,7 +2,7 @@ import type { IndexInputStats } from 'storybook/internal/types';
 
 export type IndexStatsSummary = Record<keyof IndexInputStats, number>;
 
-export const addStats = (stat: IndexInputStats, acc: IndexStatsSummary) => {
+export const addStats = (stat: IndexInputStats, acc: IndexStatsSummary): void => {
   Object.entries(stat).forEach(([key, value]) => {
     const statsKey = key as keyof IndexInputStats;
 

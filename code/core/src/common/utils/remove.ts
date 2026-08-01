@@ -21,7 +21,7 @@ export type RemoveAddonOptions = {
  * sb remove @storybook/addon-links
  * ```
  */
-export async function removeAddon(addon: string, options: RemoveAddonOptions) {
+export async function removeAddon(addon: string, options: RemoveAddonOptions): Promise<void> {
   const { packageManager, skipInstall } = options;
 
   const { mainConfigPath, configDir } = getConfigInfo(options.configDir);

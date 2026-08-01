@@ -1,7 +1,7 @@
 import { parse, stringify } from 'telejson';
 
 // setting up the store, overriding set and get to use telejson
-export default (_: any) => {
+export default (_: any): void => {
   _.fn('set', function (key: string, data: object) {
     return _.set(
       // @ts-expect-error('this' implicitly has type 'any')

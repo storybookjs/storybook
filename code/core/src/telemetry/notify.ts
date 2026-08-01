@@ -12,7 +12,7 @@ let called = false;
  * constantly annoy them about it. We will re-inform users about the telemetry if significant
  * changes are ever made.
  */
-export const notify = async () => {
+export const notify = async (): Promise<void> => {
   if (!called) {
     called = true;
 

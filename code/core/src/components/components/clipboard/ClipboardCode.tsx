@@ -21,7 +21,7 @@ interface ClipboardCodeProps {
   code: string;
 }
 
-export const ClipboardCode = ({ code, ...props }: ClipboardCodeProps) => (
+export const ClipboardCode = ({ code, ...props }: ClipboardCodeProps): React.JSX.Element => (
   <Code id="clipboard-code" {...props}>
     {code}
   </Code>

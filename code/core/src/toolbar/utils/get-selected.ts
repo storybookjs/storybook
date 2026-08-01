@@ -5,6 +5,9 @@ interface GetSelectedItemProps {
   items: ToolbarItem[];
 }
 
-export const getSelectedItem = ({ currentValue, items }: GetSelectedItemProps) => {
+export const getSelectedItem = ({
+  currentValue,
+  items,
+}: GetSelectedItemProps): ToolbarItem | undefined => {
   return items.find((item) => item.value === currentValue && item.type !== 'reset');
 };

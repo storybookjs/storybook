@@ -170,7 +170,7 @@ const meta = {
   component: ControlsPanel,
   args: { saveStory: fn(), createStory: fn() },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],

@@ -14,7 +14,7 @@ type ParseFn = (code: string) => Program;
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
-export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn) {
+export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn): MagicString {
   const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', parse, {
     globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
   });

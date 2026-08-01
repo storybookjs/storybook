@@ -6,7 +6,9 @@ import {
 } from 'storybook/internal/common';
 import { type Options, SupportedBuilder } from 'storybook/internal/types';
 
-export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
+export const buildFrameworkGlobalsFromOptions = async (
+  options: Options
+): Promise<Record<string, any>> => {
   const globals: Record<string, any> = {};
 
   const { builder: builderConfig, channelOptions } = await options.presets.apply('core');

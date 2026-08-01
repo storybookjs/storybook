@@ -53,7 +53,7 @@ const resolveUsingBranchInstall = async (packageManager: JsPackageManager, reque
 export async function getRendererDir(
   packageManager: JsPackageManager,
   renderer: SupportedFramework | SupportedRenderer
-) {
+): Promise<string | null> {
   const [externalFramework] =
     Object.entries({ ...frameworkPackages, ...rendererPackages }).find(
       ([key, value]) => value === renderer

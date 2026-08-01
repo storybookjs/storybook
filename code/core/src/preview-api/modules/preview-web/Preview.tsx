@@ -489,7 +489,7 @@ export class Preview<TRenderer extends Renderer> {
 
     this.storyRenders.push(render);
 
-    return async () => {
+    return async (): Promise<void> => {
       await this.teardownRender(render);
     };
   }

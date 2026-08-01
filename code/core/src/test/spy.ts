@@ -74,7 +74,7 @@ function listenWhenCalled(mock: MockInstance) {
  *
  * It is useful if you need to clean up mock between different assertions.
  */
-export function clearAllMocks() {
+export function clearAllMocks(): void {
   mocks.forEach((spy) => spy.mockClear());
   moduleMockSpies.forEach((spy) => spy.mockClear());
 }
@@ -86,7 +86,7 @@ export function clearAllMocks() {
  *
  * This is useful when you want to completely reset a mock to the default state.
  */
-export function resetAllMocks() {
+export function resetAllMocks(): void {
   mocks.forEach((spy) => spy.mockReset());
   moduleMockSpies.forEach((spy) => spy.mockReset());
 }
@@ -95,7 +95,7 @@ export function resetAllMocks() {
  * Calls [`.mockRestore()`](https://vitest.dev/api/mock#mockrestore) on every mocked function. This
  * will restore all original implementations.
  */
-export function restoreAllMocks() {
+export function restoreAllMocks(): void {
   mocks.forEach((spy) => spy.mockRestore());
   // For module mock spies, we only clear call history (not restore), because:
   // - mockRestore() would try to undo the spyOn on the module export object, which is not

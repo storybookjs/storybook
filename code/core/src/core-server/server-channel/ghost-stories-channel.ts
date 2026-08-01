@@ -10,7 +10,7 @@ import { getAiSetupRunId } from '../../shared/utils/ai-checklist-flags.ts';
 
 class SkipGhostStoriesTelemetry extends Error {}
 
-export function initGhostStoriesChannel(channel: Channel, options: Options) {
+export function initGhostStoriesChannel(channel: Channel, options: Options): Channel {
   /** Listens for events to discover and test stories */
   channel.on(GHOST_STORIES_REQUEST, async () => {
     const stats: {

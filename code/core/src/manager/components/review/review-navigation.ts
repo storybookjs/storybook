@@ -8,7 +8,7 @@ import type { ReviewState } from './review-state.ts';
 export { REVIEW_COLLECTION_QUERY_PARAM, isReviewSummaryPath };
 
 /** Fallback display name when the Storybook index has not resolved a title. */
-export const prettifyComponentId = (componentId: string) =>
+export const prettifyComponentId = (componentId: string): string =>
   componentId
     .split(/[-/]/)
     .filter(Boolean)

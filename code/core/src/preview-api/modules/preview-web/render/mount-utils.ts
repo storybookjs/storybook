@@ -11,7 +11,7 @@ export function mountDestructured(playFunction?: (...args: any[]) => any): boole
  * @param fn - The function to extract the properties from.
  * @returns An array of property names.
  */
-export function getUsedProps(fn: (...args: unknown[]) => unknown) {
+export function getUsedProps(fn: (...args: unknown[]) => unknown): string[] {
   const [, args, body] = fn.toString().match(/[^(]*\(([^)]+)\)(?:.*{([^]+)})?/) || [];
   if (!args) {
     return [];

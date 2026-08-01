@@ -20,7 +20,7 @@ const store = createDemoStore<StaticLoadSnapshot>({
   unbackedStatus: 'pending',
 });
 
-function StaticLoadDemo() {
+function StaticLoadDemo(): React.JSX.Element {
   // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
@@ -89,7 +89,7 @@ const meta = {
     layout: 'centered',
     [OPEN_SERVICE_DEMO_PARAM_KEY]: { enabled: true },
   },
-  beforeEach: () => {
+  beforeEach: (): (() => void) => {
     let active = true;
     const initialValue: StaticLoadSnapshot = {
       alpha: staticLoadSyncService.queries.entry.get({ id: 'alpha' }),

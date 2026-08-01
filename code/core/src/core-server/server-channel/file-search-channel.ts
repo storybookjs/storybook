@@ -20,7 +20,7 @@ import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-fil
 import { getParser } from '../utils/parser/index.ts';
 import { searchFiles } from '../utils/search-files.ts';
 
-export async function initFileSearchChannel(channel: Channel, options: Options) {
+export async function initFileSearchChannel(channel: Channel, options: Options): Promise<Channel> {
   /** Listens for a search query event and searches for files in the project */
   channel.on(
     FILE_COMPONENT_SEARCH_REQUEST,

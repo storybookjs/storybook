@@ -48,7 +48,7 @@ export const Collapsible = Object.assign(
     initialCollapsed?: boolean;
     storageKey?: string;
     state?: ReturnType<typeof useCollapsible>;
-  } & ComponentProps<typeof CollapsibleContent>) {
+  } & ComponentProps<typeof CollapsibleContent>): React.JSX.Element {
     const internalState = useCollapsible({ collapsed, disabled, initialCollapsed, storageKey });
     const state = providedState || internalState;
     return (
@@ -113,7 +113,7 @@ export const useCollapsible = ({
   }, [collapsed, setCollapsed]);
 
   const toggleCollapsed = useCallback(
-    (event?: SyntheticEvent<Element, Event>) => {
+    (event?: SyntheticEvent<Element, Event>): void => {
       event?.stopPropagation();
       if (!disabled) {
         setCollapsed((value) => !value);

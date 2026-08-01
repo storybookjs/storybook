@@ -30,7 +30,7 @@ export const All = {
     myArray: ['foo', 'bar'],
     myArrayDeep: [['foo'], ['bar']],
     myBoolean: true,
-    myFunction: () => {},
+    myFunction: (): void => {},
     myNull: null,
     myNumber: 42,
     myObject: {

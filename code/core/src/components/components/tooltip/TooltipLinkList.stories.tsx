@@ -15,7 +15,7 @@ const onLinkClick = action('onLinkClick');
 export default {
   component: TooltipLinkList,
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <div
         style={{
           height: '300px',

@@ -28,7 +28,7 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn: any) => (
+    (storyFn: any): React.JSX.Element => (
       <div
         style={{
           display: 'flex',

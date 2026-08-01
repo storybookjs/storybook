@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 
 import { getInterpretedFile } from './interpret-files.ts';
 
-export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
+export function loadManagerOrAddonsFile({ configDir }: { configDir: string }): string | undefined {
   const storybookCustomAddonsPath = getInterpretedFile(resolve(configDir, 'addons'));
   const storybookCustomManagerPath = getInterpretedFile(resolve(configDir, 'manager'));
 

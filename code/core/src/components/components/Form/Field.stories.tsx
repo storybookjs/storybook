@@ -21,7 +21,7 @@ export default {
 };
 
 export const Input = {
-  render: (args: any) => (
+  render: (args: any): React.JSX.Element => (
     <Flexed {...args}>
       <InputComponent value="Text" onChange={fn().mockName('onChange')} />
     </Flexed>
@@ -29,7 +29,7 @@ export const Input = {
 };
 
 export const Select = {
-  render: (args: any) => (
+  render: (args: any): React.JSX.Element => (
     <Flexed {...args}>
       <SelectComponent value="val2" onChange={fn().mockName('onChange')}>
         <option value="val1">Value 1</option>
@@ -41,7 +41,7 @@ export const Select = {
 };
 
 export const Textarea = {
-  render: (args: any) => (
+  render: (args: any): React.JSX.Element => (
     <Flexed {...args}>
       <TextareaComponent value="Content" onChange={fn().mockName('onChange')} />
     </Flexed>

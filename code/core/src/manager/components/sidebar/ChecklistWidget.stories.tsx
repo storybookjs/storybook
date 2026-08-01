@@ -7,6 +7,7 @@ import preview from '../../../../../.storybook/preview.tsx';
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
 import { ChecklistWidget } from './ChecklistWidget.tsx';
+import { JSX } from 'react';
 
 const managerContext: any = {
   state: {},
@@ -91,7 +92,7 @@ export const Default = meta.story({
 });
 
 export const Narrow = meta.story({
-  decorators: [(Story) => <div style={{ width: 200, height: 250 }}>{Story()}</div>],
+  decorators: [(Story): JSX.Element => <div style={{ width: 200, height: 250 }}>{Story()}</div>],
   play,
 });
 
@@ -109,7 +110,7 @@ const withAiSetupState = {
 };
 
 export const WithAiSetup = meta.story({
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     mockStore.setState(withAiSetupState);
   },
 });

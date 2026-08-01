@@ -1,4 +1,4 @@
-export const str = (obj: any) => {
+export const str = (obj: any): string => {
   if (!obj) {
     return '';
   }

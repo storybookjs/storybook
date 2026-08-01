@@ -26,7 +26,7 @@ export const Separator = styled.span<SeparatorProps>(
 );
 Separator.displayName = 'Separator';
 
-export const interleaveSeparators = (list: any[]) =>
+export const interleaveSeparators = (list: any[]): any =>
   list.reduce(
     (acc, item, index) =>
       item ? (

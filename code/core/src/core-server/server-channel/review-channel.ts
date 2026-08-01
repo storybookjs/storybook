@@ -68,7 +68,7 @@ function prepareReview(payload: ReviewState): ReviewState {
  * The cache is a single in-memory slot scoped to this dev-server channel; it is
  * intentionally not persisted, so a restart wipes the slate.
  */
-export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}) {
+export function initReviewChannel(channel: Channel, options: ReviewChannelOptions = {}): Channel {
   const subscribeToModuleGraphChanges =
     options.subscribeToModuleGraphChanges ?? defaultSubscribeToModuleGraphChanges;
 

@@ -194,7 +194,7 @@ export const SingleStoryComponents: Story = {
 };
 
 export const DocsOnlySingleStoryComponents = {
-  render: () => {
+  render: (): React.JSX.Element => {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree

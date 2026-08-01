@@ -33,7 +33,7 @@ export type WhatsNewResponse = {
 const WHATS_NEW_CACHE = 'whats-new-cache';
 const WHATS_NEW_URL = 'https://storybook.js.org/whats-new/v1';
 
-export function initializeWhatsNew(channel: Channel, options: OptionsWithRequiredCache) {
+export function initializeWhatsNew(channel: Channel, options: OptionsWithRequiredCache): void {
   channel.on(SET_WHATS_NEW_CACHE, async (data: WhatsNewCache) => {
     const cache: WhatsNewCache = await options.cache.get(WHATS_NEW_CACHE).catch((e) => {
       logger.verbose(e);

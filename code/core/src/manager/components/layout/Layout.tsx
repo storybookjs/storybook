@@ -154,7 +154,12 @@ const OrderedMobileNavigation: React.FC<
   order: 1,
 });
 
-export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
+export const Layout = ({
+  managerLayoutState,
+  setManagerLayoutState,
+  hasTab,
+  ...slots
+}: Props): React.JSX.Element => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
   // Subscribe to manager state so nav availability re-evaluates on route and layout changes.

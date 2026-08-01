@@ -47,7 +47,7 @@ export const Placements = meta.story({
     children: <button>ignored</button>,
     tooltip: 'ignored',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div
       style={{
         display: 'grid',
@@ -185,7 +185,7 @@ export const AlwaysOpen = meta.story({
     children: <Trigger>Always visible tooltip</Trigger>,
     placement: 'right-start',
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
   },
 });
@@ -197,7 +197,7 @@ export const NeverOpen = meta.story({
     children: <Trigger>Never visible tooltip</Trigger>,
     placement: 'right-start',
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await expect(await screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
   },
 });

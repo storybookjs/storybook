@@ -35,7 +35,7 @@ const Intro = styled.div(({ theme }) => ({
   },
 }));
 
-export const GuidePage = () => {
+export const GuidePage = (): React.JSX.Element => {
   const checklist = useChecklist();
 
   const aiSetupItem = checklist.availableItems.find((item) => item.id === 'aiSetup');

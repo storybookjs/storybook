@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 
 import { Button, EmptyTabContent } from 'storybook/internal/components';
 
@@ -91,7 +91,7 @@ export const ControlledState = meta.story({
     selected: 'tab2',
     onSelectionChange: fn(),
   },
-  render: (args) => {
+  render: (args): JSX.Element => {
     const [selected, setSelected] = useState(args.selected);
     return (
       <>

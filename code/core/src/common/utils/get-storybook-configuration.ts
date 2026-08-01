@@ -8,7 +8,7 @@ export function getStorybookConfiguration(
   storybookScript: string,
   shortName: string,
   longName: string
-) {
+): string | null {
   if (!storybookScript) {
     return null;
   }

@@ -269,7 +269,7 @@ export const Checklist = ({
   forceCollapsed = false,
 }: Pick<ReturnType<typeof useChecklist>, 'availableItems' | 'accept' | 'skip' | 'reset'> & {
   forceCollapsed?: boolean;
-}) => {
+}): React.JSX.Element => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 

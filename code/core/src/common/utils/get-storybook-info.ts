@@ -109,7 +109,7 @@ const getStorybookVersionSpecifier = (configDir: string) => {
 
 const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
 
-export const findConfigFile = (prefix: string, configDir: string) => {
+export const findConfigFile = (prefix: string, configDir: string): string | null => {
   const filePrefix = join(configDir, prefix);
   const extension = validConfigExtensions.find((ext: string) => existsSync(`${filePrefix}.${ext}`));
   return extension ? `${filePrefix}.${extension}` : null;

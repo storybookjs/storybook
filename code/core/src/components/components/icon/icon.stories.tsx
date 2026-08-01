@@ -64,10 +64,10 @@ export default {
   },
 };
 
-export const Basic = (args: ComponentProps<typeof Icons>) => <Icons {...args} />;
+export const Basic = (args: ComponentProps<typeof Icons>): React.JSX.Element => <Icons {...args} />;
 Basic.args = { icon: 'watch' };
 
-export const Labels = (args: ComponentProps<typeof Icons>) => (
+export const Labels = (args: ComponentProps<typeof Icons>): React.JSX.Element => (
   <>
     <Header>{Object.keys(icons).length} icons</Header>
     <List>
@@ -82,7 +82,7 @@ export const Labels = (args: ComponentProps<typeof Icons>) => (
   </>
 );
 
-export const NoLabels = (args: ComponentProps<typeof Icons>) => (
+export const NoLabels = (args: ComponentProps<typeof Icons>): React.JSX.Element => (
   <>
     <Header>{Object.keys(icons).length} icons</Header>
     <List>
@@ -96,7 +96,7 @@ export const NoLabels = (args: ComponentProps<typeof Icons>) => (
   </>
 );
 
-export const NoDeprecateWarning = (args: ComponentProps<typeof Icons>) => (
+export const NoDeprecateWarning = (args: ComponentProps<typeof Icons>): React.JSX.Element => (
   <>
     <Header>{Object.keys(icons).length} icons</Header>
     <List>

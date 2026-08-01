@@ -19,7 +19,7 @@ const meta = {
     layout: 'centered',
   },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       // Drag uses `position: absolute` so it needs a positioned parent.
       <div
         style={{

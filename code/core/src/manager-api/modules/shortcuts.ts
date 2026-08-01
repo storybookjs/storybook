@@ -20,9 +20,9 @@ function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
 }
 
-export const isMacLike = () =>
+export const isMacLike = (): boolean =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
-export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
+export const controlOrMetaKey = (): 'meta' | 'control' => (isMacLike() ? 'meta' : 'control');
 
 export function keys<O>(o: O) {
   return Object.keys(o!) as (keyof O)[];

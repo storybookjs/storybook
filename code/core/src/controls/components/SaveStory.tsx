@@ -90,7 +90,11 @@ type SaveStoryProps = {
   resetArgs: () => void;
 };
 
-export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps) => {
+export const SaveStory = ({
+  saveStory,
+  createStory,
+  resetArgs,
+}: SaveStoryProps): React.JSX.Element => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [saving, setSaving] = React.useState(false);
   const [creating, setCreating] = React.useState(false);

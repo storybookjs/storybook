@@ -109,26 +109,26 @@ export const reviewStore = {
   getState: (): ReviewStoreState => snapshot,
   subscribe: (listener: () => void) => {
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return (): boolean => listeners.delete(listener);
   },
   /** Show a review, replacing any displayed or deferred one. */
-  displayReview: (next: ReviewState) => {
+  displayReview: (next: ReviewState): void => {
     commit({ state: next, pendingReview: null, isStale: !!next.stale });
   },
   /** Hold an updated payload until the user accepts it. */
-  deferReview: (next: ReviewState) => {
+  deferReview: (next: ReviewState): void => {
     commit({ pendingReview: next });
   },
-  setStale: (isStale: boolean) => {
+  setStale: (isStale: boolean): void => {
     commit({ isStale });
   },
   /** Drop all review state (dismissal), including the persisted review-mode flag. */
-  clearReview: () => {
+  clearReview: (): void => {
     sessionStore.remove(REVIEW_MODE_SESSION_KEY);
     commit({ state: null, pendingReview: null, isStale: false, isInReviewMode: false });
   },
   /** Toggle review mode, persisted so it survives reloads. */
-  setReviewMode: (active: boolean) => {
+  setReviewMode: (active: boolean): void => {
     if (active) {
       sessionStore.write(REVIEW_MODE_SESSION_KEY, '1');
     } else {
@@ -136,15 +136,15 @@ export const reviewStore = {
     }
     commit({ isInReviewMode: active });
   },
-  setExiting: (isExiting: boolean) => {
+  setExiting: (isExiting: boolean): void => {
     commit({ isExiting });
   },
   /** Push values derived by ReviewProvider from index/status/route inputs. */
-  setDerived: (next: ReviewDerivedState) => {
+  setDerived: (next: ReviewDerivedState): void => {
     derived = next;
     notify();
   },
-  reset: () => {
+  reset: (): void => {
     core = { ...emptyCore };
     derived = emptyDerived;
     notify();

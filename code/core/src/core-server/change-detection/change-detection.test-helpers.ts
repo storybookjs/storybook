@@ -103,12 +103,12 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   } as unknown as ModuleGraphService);
 
   return {
-    applySnapshot: () => {
+    applySnapshot: (): void => {
       // The snapshot marks the graph ready but is the revision baseline, not a change.
       status = { value: 'ready' };
       emitStatus();
     },
-    applyUpdate: (bumpedStoryFiles: string[] = []) => {
+    applyUpdate: (bumpedStoryFiles: string[] = []): void => {
       // Out-of-graph changes bump no stories, so they must not advance the revision.
       if (bumpedStoryFiles.length === 0) {
         return;
@@ -117,15 +117,15 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       latestChangedStoryFiles = bumpedStoryFiles;
       emitRevision();
     },
-    bumpGraphRevision: () => {
+    bumpGraphRevision: (): void => {
       graphRevision += 1;
       emitRevision();
     },
-    applyError: (error: Error) => {
+    applyError: (error: Error): void => {
       status = { value: 'error', error: errorToErrorLike(error) };
       emitStatus();
     },
-    applyUnavailable: (reason: string, error?: Error) => {
+    applyUnavailable: (reason: string, error?: Error): void => {
       status = {
         value: 'unavailable',
         reason,

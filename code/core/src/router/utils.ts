@@ -222,11 +222,11 @@ interface Query {
 
 const queryFromString = memoize(1000)((s?: string): Query => (s !== undefined ? parse(s) : {}));
 
-export const queryFromLocation = (location?: Partial<Location>) => {
+export const queryFromLocation = (location?: Partial<Location>): Query => {
   return queryFromString(location?.search ? location.search.slice(1) : '');
 };
 
-export const stringifyQuery = (query: Query) => {
+export const stringifyQuery = (query: Query): string => {
   const queryStr = stringify(query);
   return queryStr ? '?' + queryStr : '';
 };

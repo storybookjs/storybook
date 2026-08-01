@@ -9,7 +9,7 @@ import {
 export const warnOnIncompatibleAddons = async (
   currentStorybookVersion: string,
   packageManager: JsPackageManager
-) => {
+): Promise<void> => {
   const incompatiblePackagesList = await getIncompatibleStorybookPackages({
     skipUpgradeCheck: true,
     skipErrors: true,

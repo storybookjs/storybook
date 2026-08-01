@@ -11,7 +11,7 @@ import { dedent } from 'ts-dedent';
 
 import { supportedExtensions } from './interpret-files.ts';
 
-export async function validateConfigurationFiles(configDir: string, cwd?: string) {
+export async function validateConfigurationFiles(configDir: string, cwd?: string): Promise<void> {
   const extensionsPattern = `{${Array.from(supportedExtensions).join(',')}}`;
   const mainConfigMatches = await glob(slash(resolve(configDir, `main${extensionsPattern}`)), {
     cwd: cwd ?? process.cwd(),

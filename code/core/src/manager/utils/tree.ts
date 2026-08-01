@@ -10,7 +10,7 @@ import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/t
 
 const { document, window: globalWindow } = global;
 
-export const createId = (itemId: string, refId?: string) =>
+export const createId = (itemId: string, refId?: string): string =>
   !refId || refId === DEFAULT_REF_ID ? itemId : `${refId}_${itemId}`;
 
 export const getLink = (item: HashEntry, refId?: string) => {
@@ -22,8 +22,8 @@ export const prevent = (e: SyntheticEvent) => {
   return false;
 };
 
-export const get = memoize(1000)((id: string, dataset: Dataset) => dataset[id]);
-export const getParent = memoize(1000)((id: string, dataset: Dataset) => {
+export const get = memoize(1000)((id: string, dataset: Dataset): Item => dataset[id]);
+export const getParent = memoize(1000)((id: string, dataset: Dataset): Item | undefined => {
   const item = get(id, dataset);
   return item && item.type !== 'root' ? get(item.parent as string, dataset) : undefined;
 });
@@ -81,7 +81,7 @@ export function cycle<T>(array: T[], index: number, delta: number): number {
   return next;
 }
 
-export const scrollIntoView = (element: Element, center = false) => {
+export const scrollIntoView = (element: Element, center = false): void => {
   if (!element) {
     return;
   }
@@ -103,7 +103,7 @@ export const getStateType = (
   isAuthRequired: boolean,
   isError: boolean,
   isEmpty: boolean
-) => {
+): 'error' | 'loading' | 'ready' | 'empty' | 'auth' => {
   switch (true) {
     case isAuthRequired:
       return 'auth';
@@ -129,7 +129,8 @@ export const isAncestor = (element?: Element, maybeAncestor?: Element): boolean 
   return isAncestor(element.parentElement || undefined, maybeAncestor);
 };
 
-export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/(\s|-|_)/gi, '');
+export const removeNoiseFromName = (storyName: string): string =>
+  storyName.replaceAll(/(\s|-|_)/gi, '');
 
-export const isStoryHoistable = (storyName: string, componentName: string) =>
+export const isStoryHoistable = (storyName: string, componentName: string): boolean =>
   removeNoiseFromName(storyName) === removeNoiseFromName(componentName);

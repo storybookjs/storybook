@@ -12,7 +12,9 @@ import type {
   Commands,
   Queries,
   ServiceDefinition,
+  ServiceInstance,
   ServiceRegistrationOptions,
+  ServiceRegistryApi,
 } from '../types.ts';
 import type { ModuleGraphService } from './module-graph/definition.ts';
 import { toStoryIndexPath } from './module-graph/types.ts';
@@ -137,7 +139,7 @@ export function registerExtractionService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
-) {
+): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,

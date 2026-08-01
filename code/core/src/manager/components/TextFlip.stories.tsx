@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { useState } from 'react';
 
 import preview from '../../../../.storybook/preview.tsx';
@@ -33,6 +33,8 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
-export const Increasing = meta.story(() => <Counter placeholder="00" text="-1" />);
+export const Increasing = meta.story((): JSX.Element => <Counter placeholder="00" text="-1" />);
 
-export const Decreasing = meta.story(() => <Counter placeholder="00" text="99" reverse />);
+export const Decreasing = meta.story(
+  (): JSX.Element => <Counter placeholder="00" text="99" reverse />
+);

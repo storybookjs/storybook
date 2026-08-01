@@ -11,11 +11,11 @@ interface Session {
 
 let sessionId: string | undefined;
 
-export const resetSessionIdForTest = (val: string | undefined = undefined) => {
+export const resetSessionIdForTest = (val: string | undefined = undefined): void => {
   sessionId = val;
 };
 
-export const getSessionId = async () => {
+export const getSessionId = async (): Promise<string> => {
   const now = Date.now();
   if (!sessionId) {
     const session: Session | undefined = await cache.get('session');

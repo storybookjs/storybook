@@ -3,9 +3,9 @@ import { isMacLike } from './platform.ts';
 
 export type { API_KeyCollection } from '../modules/shortcuts.ts';
 
-export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
-export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
-export const optionOrAltSymbol = () => (isMacLike() ? '⌥' : 'alt');
+export const controlOrMetaSymbol = (): '⌘' | 'ctrl' => (isMacLike() ? '⌘' : 'ctrl');
+export const controlOrMetaKey = (): 'meta' | 'control' => (isMacLike() ? 'meta' : 'control');
+export const optionOrAltSymbol = (): '⌥' | 'alt' => (isMacLike() ? '⌥' : 'alt');
 
 export const isShortcutTaken = (arr1: string[], arr2: string[]): boolean =>
   JSON.stringify(arr1) === JSON.stringify(arr2);

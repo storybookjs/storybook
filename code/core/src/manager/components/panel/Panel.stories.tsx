@@ -34,7 +34,7 @@ export default {
   component: AddonPanel,
 };
 
-export const Default = () => {
+export const Default = (): React.JSX.Element => {
   const [selectedPanel, setSelectedPanel] = useState('test2');
   return (
     <AddonPanel
@@ -47,7 +47,7 @@ export const Default = () => {
   );
 };
 
-export const JSXTitles = () => {
+export const JSXTitles = (): React.JSX.Element => {
   const [selectedPanel, setSelectedPanel] = useState('function-string');
   return (
     <AddonPanel
@@ -146,7 +146,7 @@ export const JSXTitles = () => {
   );
 };
 
-export const NoPanels = () => (
+export const NoPanels = (): React.JSX.Element => (
   <AddonPanel
     panels={{}}
     actions={{ onSelect, toggleVisibility, togglePosition }}

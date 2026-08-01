@@ -8,7 +8,10 @@ let initialIcon: string | undefined;
 export const getFaviconUrl = (
   initialHref: string = './favicon.svg',
   status?: (typeof STATUSES)[number]
-) => {
+): Promise<{
+  href: string;
+  status?: (typeof STATUSES)[number];
+}> => {
   initialIcon ??= initialHref;
   const href = initialIcon + (status && STATUSES.includes(status) ? `?status=${status}` : '');
 
@@ -20,7 +23,7 @@ export const getFaviconUrl = (
   });
 };
 
-export const useDynamicFavicon = (status?: (typeof STATUSES)[number]) => {
+export const useDynamicFavicon = (status?: (typeof STATUSES)[number]): void => {
   const links = useRef(document.head.querySelectorAll<HTMLLinkElement>("link[rel*='icon']"));
   useEffect(() => {
     let isMounted = true;

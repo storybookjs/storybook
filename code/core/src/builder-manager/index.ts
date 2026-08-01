@@ -24,6 +24,7 @@ import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
+import { build } from 'esbuild';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
 
@@ -121,7 +122,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
 };
 
 export const executor = {
-  get: async () => {
+  get: async (): Promise<build> => {
     const { build } = await import('esbuild');
     return build;
   },

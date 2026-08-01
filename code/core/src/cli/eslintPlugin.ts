@@ -15,7 +15,7 @@ import { babelParse, recast, types as t, traverse } from '../babel/index.ts';
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
-export const findEslintFile = (instanceDir: string) => {
+export const findEslintFile = (instanceDir: string): string | undefined => {
   const filePrefixes = ['eslint.config', '.eslintrc'];
 
   // Check for unsupported files
@@ -52,7 +52,7 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
   return expr;
 }
 
-export const configureFlatConfig = async (code: string) => {
+export const configureFlatConfig = async (code: string): Promise<string> => {
   const ast = babelParse(code);
 
   // Bail out if eslint-plugin-storybook is already imported (static or dynamic) to avoid
@@ -270,7 +270,7 @@ export async function configureEslintPlugin({
   eslintConfigFile: string | undefined;
   packageManager: JsPackageManager;
   isFlatConfig: boolean;
-}) {
+}): Promise<void> {
   if (eslintConfigFile) {
     if (eslintConfigFile.endsWith('json')) {
       logger.debug(`Detected JSON config at ${eslintConfigFile}`);

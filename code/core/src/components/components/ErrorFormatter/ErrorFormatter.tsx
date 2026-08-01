@@ -26,7 +26,7 @@ export interface ErrorFormatterProps {
   error: Error;
 }
 
-export const ErrorFormatter = ({ error }: ErrorFormatterProps) => {
+export const ErrorFormatter = ({ error }: ErrorFormatterProps): React.JSX.Element => {
   if (!error) {
     return <Fragment>This error has no stack or message</Fragment>;
   }

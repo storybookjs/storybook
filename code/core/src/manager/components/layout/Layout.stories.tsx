@@ -118,7 +118,7 @@ const meta = {
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (storyFn) => (
+    (storyFn): React.JSX.Element => (
       <ManagerContext.Provider value={mockManagerStore}>
         <LocationProvider>
           <LayoutProvider>{storyFn()}</LayoutProvider>
@@ -126,7 +126,7 @@ const meta = {
       </ManagerContext.Provider>
     ),
   ],
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [managerLayoutState, setManagerLayoutState] = useState(args.managerLayoutState);
 
     return (

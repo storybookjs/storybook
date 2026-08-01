@@ -17,7 +17,13 @@ export default {
       options: ['active', 'positive', 'warning', 'negative', 'critical'],
     },
   },
-  render: ({ status, size }: { status?: Parameters<typeof getFaviconUrl>[1]; size?: number }) => {
+  render: ({
+    status,
+    size,
+  }: {
+    status?: Parameters<typeof getFaviconUrl>[1];
+    size?: number;
+  }): React.JSX.Element => {
     const [favicon, setFavicon] = useState<string | null>(null);
 
     useEffect(() => {
@@ -42,7 +48,7 @@ export const Statuses = {
       disableSnapshot: true,
     },
   },
-  render: ({ size }: { size: number }) => (
+  render: ({ size }: { size: number }): React.JSX.Element => (
     <div style={{ display: 'flex', gap: size / 2 }}>
       <img role="presentation" width={size} height={size} src={'./favicon.svg'} />
       <img role="presentation" width={size} height={size} src={'./favicon.svg?status=active'} />
@@ -62,7 +68,7 @@ export const Sizes = {
       },
     },
   },
-  render: ({ status }: { status?: Parameters<typeof getFaviconUrl>[1] }) => (
+  render: ({ status }: { status?: Parameters<typeof getFaviconUrl>[1] }): React.JSX.Element => (
     <div style={{ display: 'flex', gap: 10 }}>
       <img role="presentation" width={16} height={16} src={`./favicon.svg?status=${status}`} />
       <img role="presentation" width={32} height={32} src={`./favicon.svg?status=${status}`} />

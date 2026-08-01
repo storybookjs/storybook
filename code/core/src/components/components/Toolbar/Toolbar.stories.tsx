@@ -48,14 +48,14 @@ export const Scrollable = meta.story({
   args: {
     scrollable: true,
   },
-  render: (args) => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
+  render: (args): React.JSX.Element => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
 });
 
 export const NotScrollable = meta.story({
   args: {
     scrollable: false,
   },
-  render: (args) => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
+  render: (args): React.JSX.Element => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
 });
 
 export const Border = meta.story({

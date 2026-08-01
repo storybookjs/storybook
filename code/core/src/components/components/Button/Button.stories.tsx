@@ -35,7 +35,7 @@ export const IconButton = meta.story({
 
 export const Variants = meta.story({
   args: { ariaLabel: false, children: 'Button' },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row>
         <Button {...args} variant="solid">
@@ -64,7 +64,7 @@ export const Variants = meta.story({
 });
 
 export const PseudoStates = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <Stack>
       <Row>
         <Button ariaLabel={false} variant="solid">
@@ -183,7 +183,7 @@ export const PseudoStates = meta.story({
 export const Active = meta.story({
   name: 'Active (deprecated)',
   args: { ariaLabel: false, active: true },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row>
         <Button {...args} variant="solid">
@@ -262,7 +262,7 @@ export const WithIcon = meta.story({
       </>
     ),
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Row>
       <Button variant="solid" {...args} />
       <Button variant="outline" {...args} />
@@ -277,7 +277,7 @@ export const IconOnly = meta.story({
     children: <FaceHappyIcon />,
     padding: 'small',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Row>
       <Button variant="solid" {...args} />
       <Button variant="outline" {...args} />
@@ -287,7 +287,7 @@ export const IconOnly = meta.story({
 });
 
 export const Sizes = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <Row>
       <Button ariaLabel={false} size="small">
         Small Button
@@ -300,7 +300,7 @@ export const Sizes = meta.story({
 });
 
 export const Paddings = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <Stack>
       <Row>
         <Button ariaLabel={false} size="small" padding="small">
@@ -329,14 +329,14 @@ export const Disabled = meta.story({
     children: 'Disabled Button',
     onClick: fn(),
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Row>
       <Button variant="solid" {...args}>
         Disabled Button
       </Button>
     </Row>
   ),
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step }): Promise<void> => {
     const button = canvas.getByRole('button', { name: 'Disabled Button' });
 
     await step('Disabled button should be aria-disabled', async () => {
@@ -365,7 +365,7 @@ export const ReadOnly = meta.story({
 });
 
 export const WithHref = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <Row>
       <Button ariaLabel={false} onClick={() => console.log('Hello')}>
         I am a button using onClick
@@ -382,7 +382,7 @@ export const Animated = meta.story({
     ariaLabel: false,
     variant: 'outline',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row>
         <Button {...args} animation="glow">

@@ -50,7 +50,7 @@ export const metaFrameworks = {
   'vike-solid': 'vike-solid',
 } as Record<string, string>;
 
-export const sanitizeAddonName = (name: string) => {
+export const sanitizeAddonName = (name: string): string => {
   const normalized = name.replace(/\\/g, '/');
 
   let candidate: string = normalized;
@@ -338,7 +338,7 @@ function resolveDefaultConfigDir(packageJson: PackageJson): string {
   return '.storybook';
 }
 
-export const getStorybookMetadata = async (_configDir?: string) => {
+export const getStorybookMetadata = async (_configDir?: string): Promise<StorybookMetadata> => {
   const { packageJson, packageJsonPath } = await getPackageJsonDetails();
   const configDir = _configDir || resolveDefaultConfigDir(packageJson);
   const contentHash = await hashMainConfig(configDir);

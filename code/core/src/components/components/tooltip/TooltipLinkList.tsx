@@ -67,7 +67,11 @@ export interface TooltipLinkListProps extends ComponentProps<typeof List> {
   LinkWrapper?: LinkWrapperType;
 }
 
-export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
+export const TooltipLinkList = ({
+  links,
+  LinkWrapper,
+  ...props
+}: TooltipLinkListProps): React.JSX.Element => {
   deprecate(
     '`TooltipLinkList` is deprecated and will be removed in Storybook 11, use `ActionList` or `MenuItem` and `WithMenu` instead.'
   );

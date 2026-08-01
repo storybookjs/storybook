@@ -15,7 +15,7 @@ const tempDir = () => realpath(os.tmpdir());
 
 const getPath = async (prefix = '') => join(await tempDir(), prefix + uniqueString());
 
-export async function temporaryDirectory({ prefix = '' } = {}) {
+export async function temporaryDirectory({ prefix = '' } = {}): Promise<string> {
   const directory = await getPath(prefix);
   mkdirSync(directory);
   return directory;
@@ -44,7 +44,7 @@ export type FileOptions = MergeExclusive<
   }
 >;
 
-export async function temporaryFile({ name, extension }: FileOptions = {}) {
+export async function temporaryFile({ name, extension }: FileOptions = {}): Promise<string> {
   if (name) {
     if (extension !== undefined && extension !== null) {
       throw new Error('The `name` and `extension` options are mutually exclusive');
@@ -138,6 +138,6 @@ export const createLogStream = async (
   });
 };
 
-export const isCorePackage = (pkg: string) =>
+export const isCorePackage = (pkg: string): boolean =>
   !!storybookPackagesVersions[pkg as keyof typeof storybookPackagesVersions];
-export const isSatelliteAddon = (pkg: string) => satelliteAddons.includes(pkg);
+export const isSatelliteAddon = (pkg: string): boolean => satelliteAddons.includes(pkg);

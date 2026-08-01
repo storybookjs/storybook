@@ -1,5 +1,11 @@
-import { createContext as ReactCreateContext } from 'react';
+import { Context, createContext as ReactCreateContext } from 'react';
 
-import type { Combo } from './root.tsx';
+import type { API, Combo, State } from './root.tsx';
 
-export const createContext = ({ api, state }: Combo) => ReactCreateContext({ api, state });
+export const createContext = ({
+  api,
+  state,
+}: Combo): Context<{
+  api: API;
+  state: State;
+}> => ReactCreateContext({ api, state });

@@ -13,7 +13,7 @@ interface SidebarProps {
   onMenuClick?: SidebarComponentProps['onMenuClick'];
 }
 
-const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
+const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps): React.JSX.Element {
   const mapper = ({ state, api }: Combo) => {
     const {
       ui: { name, url, enableShortcuts },

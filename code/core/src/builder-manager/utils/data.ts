@@ -1,12 +1,31 @@
 import { basename } from 'node:path';
 
 import { getRefs } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
+import type { DocsOptions, Options, Ref } from 'storybook/internal/types';
 
 import { executor, getConfig } from '../index.ts';
 import { readTemplate } from './template.ts';
+import { build, BuildOptions } from 'esbuild';
 
-export const getData = async (options: Options) => {
+export const getData = async (
+  options: Options
+): Promise<{
+  refs: Promise<Record<string, Ref>>;
+  features: Promise<Record<string, string | boolean>>;
+  title: Promise<string>;
+  docsOptions: Promise<DocsOptions>;
+  template: Promise<string>;
+  customHead: Promise<string>;
+  instance: build;
+  config: BuildOptions & {
+    outdir: string;
+  } & {
+    entryPoints: string[];
+  };
+  logLevel: Promise<string>;
+  favicon: Promise<string>;
+  tagsOptions: Promise<{}>;
+}> => {
   const refs = getRefs(options);
   const favicon = options.presets.apply<string>('favicon').then((p) => basename(p));
 

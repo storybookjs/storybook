@@ -6,7 +6,7 @@ export const StoryContent = ({
 }: {
   dynamic: boolean;
   withPopover: boolean;
-}) => {
+}): React.JSX.Element => {
   const [extra, setExtra] = React.useState(false);
   React.useEffect(() => {
     if (!dynamic) {

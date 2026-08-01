@@ -144,67 +144,67 @@ export default meta;
 export const Default = meta.story({});
 
 export const ToggleSidebar = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('button', { name: /Show sidebar/i }));
   },
 });
 
 export const ToggleToolbar = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('button', { name: /Show toolbar/i }));
   },
 });
 
 export const TogglePanel = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('button', { name: /Show addons panel/i }));
   },
 });
 
 export const RightPanel = meta.story({
-  play: async ({ canvasElement, userEvent }) => {
+  play: async ({ canvasElement, userEvent }): Promise<void> => {
     const panel = within(canvasElement.querySelector('#storybook-panel-root') as HTMLElement);
     await userEvent.click(await panel.findByLabelText('Move addon panel to right'));
   },
 });
 
 export const FullScreen = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByRole('button', { name: /Enter full screen/i }));
   },
 });
 
 export const ConnectionLost = meta.story({
-  play: async () => {
+  play: async (): Promise<void> => {
     channel.emit(CHANNEL_WS_DISCONNECT, { code: 3007 });
   },
 });
 
 export const ServerTimedOut = meta.story({
-  play: async () => {
+  play: async (): Promise<void> => {
     channel.emit(CHANNEL_WS_DISCONNECT, { code: 3008 });
   },
 });
 
 export const AboutPage = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('link', { name: /About your Storybook/i }));
   },
 });
 
 export const GuidePage = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('link', { name: /Onboarding guide/i }));
   },
 });
 
 export const ShortcutsPage = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent }): Promise<void> => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('link', { name: /Keyboard shortcuts/i }));
   },

@@ -285,7 +285,7 @@ export class Instrumenter {
     }
   }
 
-  loadParentWindowState = () => {
+  loadParentWindowState = (): void => {
     try {
       this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
     } catch {
@@ -294,7 +294,7 @@ export class Instrumenter {
     }
   };
 
-  updateParentWindowState = () => {
+  updateParentWindowState = (): void => {
     try {
       global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
     } catch {
@@ -791,7 +791,7 @@ function getPropertyDescriptor<T>(obj: T, propName: keyof T) {
   return undefined;
 }
 
-export function isClass(obj: unknown) {
+export function isClass(obj: unknown): boolean {
   // if not a function, return false.
 
   // if not a function, return false.

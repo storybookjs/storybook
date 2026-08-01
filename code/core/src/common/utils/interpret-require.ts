@@ -14,7 +14,7 @@ function getCandidate(paths: string[]) {
 }
 
 // TODO: remove this when it is no longer used by @storybook/core-webpack
-export function serverRequire(filePath: string | string[]) {
+export function serverRequire(filePath: string | string[]): Promise<any> | null {
   const paths = Array.isArray(filePath) ? filePath : [filePath];
   const candidatePath = getCandidate(paths);
 

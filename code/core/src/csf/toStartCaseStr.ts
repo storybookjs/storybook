@@ -1,4 +1,4 @@
-export function toStartCaseStr(str: string) {
+export function toStartCaseStr(str: string): string {
   return str
     .replace(/_/g, ' ')
     .replace(/-/g, ' ')

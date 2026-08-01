@@ -12,7 +12,10 @@ const cache = createFileSystemCache({
  * NOTE: if the operation returns `undefined` the value will not be cached. Use this to indicate
  * that the operation failed.
  */
-export const runTelemetryOperation = async <T>(cacheKey: string, operation: () => Promise<T>) => {
+export const runTelemetryOperation = async <T>(
+  cacheKey: string,
+  operation: () => Promise<T>
+): Promise<T> => {
   let cached = await cache.get<T>(cacheKey);
   if (cached === undefined) {
     cached = await operation();

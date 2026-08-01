@@ -48,7 +48,7 @@ const meta = {
   title: 'Sidebar/IconSymbols',
   parameters: { layout: 'padded' },
   decorators: [
-    (StoryFn) => (
+    (StoryFn): React.JSX.Element => (
       <>
         <IconSymbols />
         <StoryFn />

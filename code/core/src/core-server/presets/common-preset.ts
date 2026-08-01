@@ -66,7 +66,7 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) =>
 export const favicon = async (
   value: string | undefined,
   options: Pick<Options, 'presets' | 'configDir'>
-) => {
+): Promise<string> => {
   if (value) {
     return value;
   }
@@ -116,7 +116,15 @@ export const favicon = async (
   return faviconPaths[0] || defaultFavicon;
 };
 
-export const babel = async (_: unknown, options: Options) => {
+export const babel = async (
+  _: unknown,
+  options: Options
+): Promise<{
+  // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
+  // This is needed to support the mount property of the context described here:
+  // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-story-in-a-file
+  overrides: any[];
+}> => {
   const { presets } = options;
   const babelDefault = ((await presets.apply('babelDefault', {}, options)) ?? {}) as Record<
     string,
@@ -155,22 +163,23 @@ export const babel = async (_: unknown, options: Options) => {
   };
 };
 
-export const title = (previous: string, options: Options) =>
+export const title = (previous: string, options: Options): string | false =>
   previous || options.packageJson?.name || false;
 
-export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
+export const logLevel = (previous: any, options: Options): any =>
+  previous || options.loglevel || 'info';
 
-export const previewHead = async (base: any, { configDir, presets }: Options) => {
+export const previewHead = async (base: any, { configDir, presets }: Options): Promise<string> => {
   const interpolations = await presets.apply<Record<string, string>>('env');
   return getPreviewHeadTemplate(configDir, interpolations);
 };
 
-export const env = async () => {
+export const env = async (): Promise<Record<string, string>> => {
   const { raw } = await loadEnvs({ production: true });
   return raw;
 };
 
-export const previewBody = async (base: any, { configDir, presets }: Options) => {
+export const previewBody = async (base: any, { configDir, presets }: Options): Promise<string> => {
   const interpolations = await presets.apply<Record<string, string>>('env');
   return getPreviewBodyTemplate(configDir, interpolations);
 };
@@ -182,7 +191,8 @@ export const typescript = () => ({
   reactDocgenTypescriptOptions: {
     shouldExtractLiteralValuesFromEnum: true,
     shouldRemoveUndefinedFromOptional: true,
-    propFilter: (prop: any) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
+    propFilter: (prop: any): boolean =>
+      prop.parent ? !/node_modules/.test(prop.parent.fileName) : true,
     // NOTE: this default cannot be changed
     savePropValueAsString: true,
   },
@@ -277,7 +287,7 @@ export const frameworkOptions = async (
   return config.options;
 };
 
-export const managerHead = async (_: any, options: Options) => {
+export const managerHead = async (_: any, options: Options): Promise<string> => {
   const location = join(options.configDir, 'manager-head.html');
   if (existsSync(location)) {
     const contents = readFile(location, { encoding: 'utf8' });
@@ -289,14 +299,14 @@ export const managerHead = async (_: any, options: Options) => {
   return '';
 };
 
-export const channelToken = async (value: string | undefined) => {
+export const channelToken = async (value: string | undefined): Promise<string | undefined> => {
   return value;
 };
 
 export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
-) => {
+): Promise<Channel> => {
   initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
@@ -319,7 +329,7 @@ export const experimental_serverChannel = async (
  * explicit dependency on react this will return the existing values Which will be the versions
  * shipped with addon-docs
  */
-export const resolvedReact = async (existing: any) => {
+export const resolvedReact = async (existing: any): Promise<any> => {
   try {
     return {
       ...existing,
@@ -331,7 +341,7 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-export const managerEntries = async (existing: any) => {
+export const managerEntries = async (existing: any): Promise<any[]> => {
   return [
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),

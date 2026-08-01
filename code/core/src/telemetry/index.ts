@@ -39,7 +39,7 @@ export { addToGlobalContext } from './telemetry.ts';
 export { detectAgent, type AgentInfo } from './detect-agent.ts';
 
 /** Is this story part of the CLI generated examples, including user-created stories in those files */
-export const isExampleStoryId = (storyId: string) =>
+export const isExampleStoryId = (storyId: string): boolean =>
   storyId.startsWith('example-button--') ||
   storyId.startsWith('example-header--') ||
   storyId.startsWith('example-page--');
@@ -81,7 +81,7 @@ const resolvePayload = async (payload: PayloadInput): Promise<Payload> =>
  * Resolve telemetry state. When enabled, flushes the queue. When disabled, clears it.
  * This should be called once presets have been evaluated and the disableTelemetry config is known.
  */
-export async function setTelemetryEnabled(enabled: boolean) {
+export async function setTelemetryEnabled(enabled: boolean): Promise<void> {
   const previousState = globalThis.SB_TELEMETRY_STATE;
   globalThis.SB_TELEMETRY_STATE = enabled ? 'enabled' : 'disabled';
 
@@ -107,12 +107,12 @@ export async function setTelemetryEnabled(enabled: boolean) {
 }
 
 /** Check whether telemetry is currently enabled. */
-export function isTelemetryModuleEnabled() {
+export function isTelemetryModuleEnabled(): boolean {
   return globalThis.SB_TELEMETRY_STATE === 'enabled';
 }
 
 /** Check whether the telemetry state has been resolved (is no longer uninitialized). */
-export function isTelemetryStateResolved() {
+export function isTelemetryStateResolved(): boolean {
   return globalThis.SB_TELEMETRY_STATE !== undefined;
 }
 
@@ -140,7 +140,7 @@ if (!('PAYLOAD_ERROR_HANDLER' in globalThis)) {
  * (cliOptions, presetOptions, error levels, sub-errors) so all commands benefit
  * from automatic error telemetry.
  */
-export function onPayloadError(handler: PayloadErrorHandler | undefined) {
+export function onPayloadError(handler: PayloadErrorHandler | undefined): void {
   globalThis.PAYLOAD_ERROR_HANDLER = handler;
 }
 
@@ -215,7 +215,7 @@ export const telemetry = async (
   eventType: EventType,
   payload: PayloadInput = {},
   options: Partial<Options> = {}
-) => {
+): Promise<void> => {
   // force:true bypasses the disabled state (used for error telemetry with enableCrashReports)
   if (globalThis.SB_TELEMETRY_STATE === 'disabled' && !options.force) {
     return;

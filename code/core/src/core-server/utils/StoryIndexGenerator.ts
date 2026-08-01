@@ -860,7 +860,7 @@ export class StoryIndexGenerator {
 
   onInvalidated(listener: () => void) {
     this.invalidationListeners.add(listener);
-    return () => {
+    return (): void => {
       this.invalidationListeners.delete(listener);
     };
   }

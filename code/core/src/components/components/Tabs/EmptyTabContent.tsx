@@ -44,7 +44,7 @@ interface Props {
   footer?: React.ReactNode;
 }
 
-export const EmptyTabContent = ({ title, description, footer }: Props) => {
+export const EmptyTabContent = ({ title, description, footer }: Props): React.JSX.Element => {
   return (
     <Wrapper>
       <Content>

@@ -42,7 +42,7 @@ const FileListItemSkeleton = styled.div(({ theme }) => ({
   },
 }));
 
-export const FileSearchListLoadingSkeleton = () => {
+export const FileSearchListLoadingSkeleton = (): React.JSX.Element => {
   return (
     <FileList>
       {[1, 2, 3].map((result) => (

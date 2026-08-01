@@ -35,7 +35,10 @@ interface CreateNewStoryFileModalProps {
 
 const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
-export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
+export const CreateNewStoryFileModal = ({
+  open,
+  onOpenChange,
+}: CreateNewStoryFileModalProps): React.JSX.Element => {
   const [isLoading, setLoading] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
   const fileSearchQueryDebounced = useDebounce(fileSearchQuery, 600);

@@ -1,7 +1,99 @@
 import { registerService } from 'storybook/internal/common';
 import { localCommandSyncServiceDef } from './definition.ts';
+import { VoidSchema, StringSchema, ObjectSchema } from 'valibot';
+import { ks, vs, ys, cs, Ms } from '../../../../../dist/chunk-Duv0fAMJ';
 
-export function registerLocalCommandSyncService() {
+export function registerLocalCommandSyncService(): ks<
+  {
+    value: string;
+  },
+  {
+    readonly value: vs<
+      {
+        value: string;
+      },
+      VoidSchema<undefined>,
+      StringSchema<undefined>,
+      {
+        readonly setValue: ObjectSchema<
+          {
+            readonly value: StringSchema<undefined>;
+          },
+          undefined
+        >;
+      },
+      {
+        readonly setValue: VoidSchema<undefined>;
+      },
+      ys<
+        {
+          readonly value: VoidSchema<undefined>;
+        },
+        {
+          readonly value: StringSchema<undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "value" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly value: {
+      output: StringSchema<undefined>;
+    };
+  },
+  {
+    readonly setValue: cs<
+      {
+        value: string;
+      },
+      ObjectSchema<
+        {
+          readonly value: StringSchema<undefined>;
+        },
+        undefined
+      >,
+      VoidSchema<undefined>,
+      {
+        readonly setValue: ObjectSchema<
+          {
+            readonly value: StringSchema<undefined>;
+          },
+          undefined
+        >;
+      },
+      {
+        readonly setValue: VoidSchema<undefined>;
+      },
+      ys<
+        {
+          readonly value: VoidSchema<undefined>;
+        },
+        {
+          readonly value: StringSchema<undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "setValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly setValue: {
+      output: VoidSchema<undefined>;
+    };
+  }
+> &
+  Ms {
   const service = registerService(localCommandSyncServiceDef);
 
   let previousValue: string | undefined;

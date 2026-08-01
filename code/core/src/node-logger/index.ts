@@ -93,15 +93,17 @@ export const logger = {
 export { npmLog as instance };
 
 const logged = new Set();
-export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {
-  if (logged.has(message)) {
-    return undefined;
-  }
-  logged.add(message);
-  return logger[type](message);
-};
+export const once =
+  (type: 'verbose' | 'info' | 'warn' | 'error') =>
+  (message: string): void => {
+    if (logged.has(message)) {
+      return undefined;
+    }
+    logged.add(message);
+    return logger[type](message);
+  };
 
-once.clear = () => logged.clear();
+once.clear = (): void => logged.clear();
 once.verbose = once('verbose');
 once.info = once('info');
 once.warn = once('warn');

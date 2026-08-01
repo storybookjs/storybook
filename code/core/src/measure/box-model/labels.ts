@@ -232,7 +232,12 @@ export function drawFloatingLabel(
   context: CanvasRenderingContext2D,
   measurements: ElementMeasurements,
   { type, text }: Label
-) {
+): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
   const { floatingAlignment, extremities } = measurements;
 
   let x = extremities[floatingAlignment.x];
@@ -282,7 +287,7 @@ export function labelStacks(
   measurements: ElementMeasurements,
   labels: LabelStack,
   externalLabels: boolean
-) {
+): void {
   const stacks = labels.reduce<GroupedLabelStacks>((acc, l) => {
     if (!Object.prototype.hasOwnProperty.call(acc, l.position)) {
       acc[l.position] = [];

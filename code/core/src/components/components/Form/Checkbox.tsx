@@ -47,6 +47,6 @@ const Input = styled.input(({ theme }) => ({
   },
 }));
 
-export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
+export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>): React.JSX.Element => {
   return <Input {...props} type="checkbox" />;
 };

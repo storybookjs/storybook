@@ -10,7 +10,7 @@ export interface CLIIndexOptions extends CLIBaseOptions {
 
 export const buildIndex = async (
   cliOptions: CLIIndexOptions & { packageJson?: Record<string, any> }
-) => {
+): Promise<void> => {
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || '.storybook',

@@ -61,7 +61,7 @@ export function cleanPaths(str: string, separator: string = path.sep): string {
 }
 
 // Takes an Error and returns a sanitized JSON String
-export function sanitizeError(error: Error, pathSeparator: string = path.sep) {
+export function sanitizeError(error: Error, pathSeparator: string = path.sep): any {
   try {
     error = {
       ...JSON.parse(JSON.stringify(error)),

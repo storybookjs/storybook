@@ -26,7 +26,7 @@ type ZoomProps = {
   children: ReactElement | ReactElement[];
 };
 
-export function ZoomElement({ centered, scale, children }: ZoomProps) {
+export function ZoomElement({ centered, scale, children }: ZoomProps): React.JSX.Element {
   const componentWrapperRef = useRef<HTMLDivElement>(null);
   const [elementHeight, setElementHeight] = useState(0);
 

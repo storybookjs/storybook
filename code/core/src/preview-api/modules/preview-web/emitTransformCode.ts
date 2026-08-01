@@ -12,7 +12,10 @@ type Transformer =
   | ((code: string, storyContext: ReducedStoryContext) => string | Promise<string>)
   | undefined;
 
-export async function emitTransformCode(source: string | undefined, context: ReducedStoryContext) {
+export async function emitTransformCode(
+  source: string | undefined,
+  context: ReducedStoryContext
+): Promise<void> {
   const transform = context.parameters?.docs?.source?.transform as Transformer;
   const { id, unmappedArgs } = context;
 

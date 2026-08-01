@@ -7,21 +7,21 @@ import { join } from 'pathe';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 
-export const getTemplatePath = (template: string) => {
+export const getTemplatePath = (template: string): string => {
   return join(resolvePackageDir('storybook'), 'assets/server', template);
 };
 
-export const readTemplate = async (template: string) => {
+export const readTemplate = async (template: string): Promise<string> => {
   const path = getTemplatePath(template);
 
   return readFile(path, { encoding: 'utf8' });
 };
 
-export async function getManagerMainTemplate() {
+export async function getManagerMainTemplate(): Promise<string> {
   return getTemplatePath(`manager.ejs`);
 }
 
-export const customHeadHasFavicon = (head: string) => {
+export const customHeadHasFavicon = (head: string): boolean => {
   const linkTags = head.match(/<link\b[^>]*>/gi) || [];
 
   return linkTags.some((tag) => {
@@ -46,7 +46,7 @@ export const renderHTML = async (
   tagsOptions: Promise<TagsOptions>,
   { versionCheck, previewUrl, configType, ignorePreview }: Options,
   globals: Record<string, any>
-) => {
+): Promise<string> => {
   const titleRef = await title;
   const templateRef = await template;
   const headRef = (await customHead) || '';

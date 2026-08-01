@@ -27,7 +27,7 @@ export const LocationMonitor = {
   subscribe(...listeners: Array<(location: Location) => void>) {
     listeners.forEach((listener) => this._listeners.add(listener));
     this.start();
-    return () => {
+    return (): void => {
       listeners.forEach((listener) => this._listeners.delete(listener));
       if (this._listeners.size === 0) {
         this.stop();
@@ -36,7 +36,7 @@ export const LocationMonitor = {
   },
 };
 
-export const useLocationHash = () => {
+export const useLocationHash = (): string => {
   const [hash, setHash] = useState(globalThis.window?.location.hash ?? '');
   useEffect(() => LocationMonitor.subscribe((location) => setHash(location.hash)), []);
   return hash.slice(1);

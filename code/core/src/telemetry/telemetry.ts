@@ -23,7 +23,7 @@ const URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/eve
 
 let tasks: Promise<any>[] = [];
 
-export const addToGlobalContext = (key: string, value: any) => {
+export const addToGlobalContext = (key: string, value: any): void => {
   globalContext[key] = value;
 };
 
@@ -103,7 +103,7 @@ function getVersionNumber() {
 export async function sendTelemetry(
   data: TelemetryData,
   options: Partial<Options> = { retryDelay: 1000, immediate: false }
-) {
+): Promise<void> {
   const { eventType, payload, metadata, ...rest } = data;
 
   // We use this id so we can de-dupe events that arrive at the index multiple times due to the

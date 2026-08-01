@@ -11,11 +11,11 @@ export function isInteractionsDisabled(parameters: API_StoryEntry['parameters'])
   return !!parameters?.[PARAM_KEY]?.disable;
 }
 
-export function isTestAssertionError(error: unknown) {
+export function isTestAssertionError(error: unknown): unknown {
   return isChaiError(error) || isJestError(error);
 }
 
-export function isChaiError(error: unknown) {
+export function isChaiError(error: unknown): unknown {
   return (
     error &&
     typeof error === 'object' &&
@@ -25,7 +25,7 @@ export function isChaiError(error: unknown) {
   );
 }
 
-export function isJestError(error: unknown) {
+export function isJestError(error: unknown): unknown {
   return (
     error &&
     typeof error === 'object' &&
@@ -35,7 +35,7 @@ export function isJestError(error: unknown) {
   );
 }
 
-export function createAnsiToHtmlFilter(theme: StorybookTheme) {
+export function createAnsiToHtmlFilter(theme: StorybookTheme): Filter {
   return new Filter({
     escapeXML: true,
     fg: theme.color.defaultText,
@@ -43,7 +43,7 @@ export function createAnsiToHtmlFilter(theme: StorybookTheme) {
   });
 }
 
-export function useAnsiToHtmlFilter() {
+export function useAnsiToHtmlFilter(): Filter {
   const theme = useTheme();
   return createAnsiToHtmlFilter(theme);
 }

@@ -56,7 +56,7 @@ export const logger = {
 const logged = new Set();
 export const once =
   (type: keyof typeof logger) =>
-  (message: any, ...rest: any[]) => {
+  (message: any, ...rest: any[]): void => {
     if (logged.has(message)) {
       return undefined;
     }
@@ -64,7 +64,7 @@ export const once =
     return logger[type](message, ...rest);
   };
 
-once.clear = () => logged.clear();
+once.clear = (): void => logged.clear();
 once.trace = once('trace');
 once.debug = once('debug');
 once.info = once('info');
@@ -76,7 +76,7 @@ export const deprecate = once('warn');
 
 export const pretty =
   (type: keyof typeof logger) =>
-  (...args: Parameters<LoggingFn>) => {
+  (...args: Parameters<LoggingFn>): void => {
     const argArray: Parameters<LoggingFn> = [] as any;
 
     if (args.length) {

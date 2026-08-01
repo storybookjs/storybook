@@ -18,4 +18,4 @@ export function createSummaryValue(summary?: string, detail?: string): PropSumma
   return { summary, detail };
 }
 
-export const normalizeNewlines = (string: string) => string.replace(/\\r\\n/g, '\\n');
+export const normalizeNewlines = (string: string): string => string.replace(/\\r\\n/g, '\\n');

@@ -14,7 +14,7 @@ export const useArrowKeyNavigation = ({
   parentRef,
   rowVirtualizer,
   selectedItem,
-}: UseArrowKeyNavigationProps) => {
+}: UseArrowKeyNavigationProps): void => {
   useEffect(() => {
     const handleArrowKeys = (event: KeyboardEvent) => {
       if (!parentRef.current) {

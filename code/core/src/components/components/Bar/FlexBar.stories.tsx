@@ -23,7 +23,7 @@ const LongContent = () =>
   ));
 
 export const Default = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>Left content</Row>
       <Row>Right content</Row>
@@ -32,7 +32,7 @@ export const Default = meta.story({
 });
 
 export const OnlyLeft = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>Only left</Row>
     </FlexBar>
@@ -40,7 +40,7 @@ export const OnlyLeft = meta.story({
 });
 
 export const OnlyRight = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row></Row>
       <Row>Only right</Row>
@@ -55,7 +55,7 @@ export const Background = meta.story({
   globals: {
     sb_theme: 'light',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>Left content</Row>
       <Row>Right content</Row>
@@ -67,7 +67,7 @@ export const Border = meta.story({
   args: {
     border: true,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>Left content</Row>
       <Row>Right content</Row>
@@ -83,7 +83,7 @@ export const BackgroundBorder = meta.story({
   globals: {
     sb_theme: 'light',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>Left content</Row>
       <Row>Right content</Row>
@@ -99,7 +99,7 @@ export const ScrollableBackground = meta.story({
   globals: {
     sb_theme: 'light',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>
         <LongContent />
@@ -116,7 +116,7 @@ export const ScrollableBorder = meta.story({
     border: true,
     scrollable: true,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>
         <LongContent />
@@ -137,7 +137,7 @@ export const ScrollableBackgroundBorder = meta.story({
   globals: {
     sb_theme: 'light',
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <FlexBar {...args}>
       <Row>
         <LongContent />

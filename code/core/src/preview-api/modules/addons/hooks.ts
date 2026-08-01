@@ -56,7 +56,7 @@ export class HooksContext<TRenderer extends Renderer, TArgs extends Args = Args>
 
   currentContext: StoryContext<TRenderer, TArgs> | null = undefined as any;
 
-  renderListener = (storyId: StoryId) => {
+  renderListener = (storyId: StoryId): void => {
     if (storyId !== this.currentContext?.id) {
       return;
     }
@@ -527,7 +527,10 @@ export interface EventMap {
  *   the event listeners will be re-subscribed. Default is `[]`
  * @returns {(...args: any[]) => void} A function to emit events to the Storybook channel.
  */
-export function useChannel(eventMap: EventMap, deps: any[] = []) {
+export function useChannel(
+  eventMap: EventMap,
+  deps: any[] = []
+): (eventName: string, ...args: any) => void {
   const channel = addons.getChannel();
 
   useEffect(() => {

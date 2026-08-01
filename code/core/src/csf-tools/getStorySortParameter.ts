@@ -93,7 +93,7 @@ const parseDefault = (defaultExpr: t.Expression, program: t.Program): t.Expressi
   return undefined;
 };
 
-export const getStorySortParameter = (previewCode: string) => {
+export const getStorySortParameter = (previewCode: string): any => {
   // don't even try to process the file
   if (!previewCode.includes('storySort')) {
     return undefined;

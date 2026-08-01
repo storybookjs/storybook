@@ -85,6 +85,6 @@ export interface BadgeProps {
   children?: React.ReactNode;
 }
 
-export const Badge = ({ ...props }: BadgeProps) => {
+export const Badge = ({ ...props }: BadgeProps): React.JSX.Element => {
   return <BadgeWrapper {...props} />;
 };

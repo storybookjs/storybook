@@ -3,7 +3,7 @@ import { dedent } from 'ts-dedent';
 /*
   From pesticide v1.3.0 . @mrmrs . MIT
 */
-export default function outlineCSS(selector: string) {
+export default function outlineCSS(selector: string): string {
   return dedent /* css */ `
     ${selector} body {
       outline: 1px solid #2980b9 !important;

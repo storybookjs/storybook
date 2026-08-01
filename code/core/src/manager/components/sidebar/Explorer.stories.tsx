@@ -73,7 +73,7 @@ const withRefs: Record<string, RefType> = {
   },
 };
 
-export const Simple = () => (
+export const Simple = (): React.JSX.Element => (
   <Explorer
     dataset={{ hash: simple, entries: Object.entries(simple) }}
     selected={{
@@ -87,7 +87,7 @@ export const Simple = () => (
   />
 );
 
-export const WithRefs = () => (
+export const WithRefs = (): React.JSX.Element => (
   <Explorer
     dataset={{ hash: withRefs, entries: Object.entries(withRefs) }}
     selected={{

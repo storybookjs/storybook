@@ -28,7 +28,7 @@ function unhandledRejectionListener({ reason }: any) {
   }
 }
 
-export function setup() {
+export function setup(): void {
   // Apply all the globals
   globalPackages.forEach((key) => {
     (global as any)[globalsNameReferenceMap[key]] = globalsNameValueMap[key];

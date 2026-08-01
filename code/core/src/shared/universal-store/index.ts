@@ -507,7 +507,7 @@ export class UniversalStore<
   }
 
   /** Sends a custom event to the other stores */
-  public send = (event: CustomEvent) => {
+  public send = (event: CustomEvent): void => {
     this.debug('send', { event });
     if (this.status !== UniversalStore.Status.READY) {
       throw new TypeError(

@@ -2,7 +2,7 @@ import type { CleanupCallback } from 'storybook/internal/csf';
 
 const ANIMATION_TIMEOUT = 5000;
 
-export function isTestEnvironment() {
+export function isTestEnvironment(): boolean {
   try {
     return (
       // @ts-expect-error This property exists in Vitest browser mode
@@ -51,7 +51,7 @@ export function pauseAnimations(atEnd = true): CleanupCallback {
 }
 
 // Use the Web Animations API to wait for any animations and transitions to finish
-export async function waitForAnimations(signal?: AbortSignal) {
+export async function waitForAnimations(signal?: AbortSignal): Promise<void> {
   if (
     !(
       'document' in globalThis &&

@@ -19,7 +19,7 @@ interface Modifiers {
 
 const allFalse = { alt: false, ctrl: false, meta: false, shift: false };
 
-export const matchesModifiers = (modifiers: Modifiers | false, event: KeyboardEvent) => {
+export const matchesModifiers = (modifiers: Modifiers | false, event: KeyboardEvent): boolean => {
   const { alt, ctrl, meta, shift } = modifiers === false ? allFalse : modifiers;
 
   if (typeof alt === 'boolean' && alt !== event.altKey) {
@@ -40,7 +40,7 @@ export const matchesModifiers = (modifiers: Modifiers | false, event: KeyboardEv
   return true;
 };
 
-export const matchesKeyCode = (code: keyof typeof codeToKeyMap, event: KeyboardEvent) => {
+export const matchesKeyCode = (code: keyof typeof codeToKeyMap, event: KeyboardEvent): boolean => {
   // event.code is preferable but not supported in IE
   return event.code ? event.code === code : event.key === codeToKeyMap[code];
 };

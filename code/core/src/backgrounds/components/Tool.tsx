@@ -15,7 +15,7 @@ import type {
   GlobalStateUpdate,
 } from '../types.ts';
 
-export const BackgroundTool = memo(function BackgroundSelector() {
+export const BackgroundTool = memo(function BackgroundSelector(): React.JSX.Element | null {
   const config = useParameter<BackgroundsParameters['backgrounds']>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
 

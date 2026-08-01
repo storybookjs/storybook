@@ -2,14 +2,14 @@ import { writeFile } from 'node:fs/promises';
 
 import { normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
+import type { BuilderOptions, CLIOptions, LoadOptions, StoryIndex } from 'storybook/internal/types';
 
 import { loadStorybook } from './load.ts';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 
 export type BuildIndexOptions = CLIOptions & LoadOptions & BuilderOptions;
 
-export const buildIndex = async (options: BuildIndexOptions) => {
+export const buildIndex = async (options: BuildIndexOptions): Promise<StoryIndex> => {
   const { presets } = await loadStorybook(options);
   const [indexers, stories, docsOptions] = await Promise.all([
     presets.apply('experimental_indexers', []),
@@ -36,7 +36,9 @@ export const buildIndex = async (options: BuildIndexOptions) => {
   return generator.getIndex();
 };
 
-export const buildIndexStandalone = async (options: BuildIndexOptions & { outputFile: string }) => {
+export const buildIndexStandalone = async (
+  options: BuildIndexOptions & { outputFile: string }
+): Promise<void> => {
   const index = await buildIndex(options);
   logger.info(`Writing index to ${options.outputFile}`);
   await writeFile(options.outputFile, JSON.stringify(index));

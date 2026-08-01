@@ -109,7 +109,7 @@ interface LoaderProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: number;
 }
 
-export const Loader = ({ progress, error, size, ...props }: LoaderProps) => {
+export const Loader = ({ progress, error, size, ...props }: LoaderProps): React.JSX.Element => {
   if (error) {
     return (
       <ProgressWrapper aria-label={error.toString()} aria-live="polite" role="status" {...props}>

@@ -186,7 +186,7 @@ export class ConfigFile {
    * Resolve a declaration node by unwrapping TS assertions/satisfies and following identifiers to
    * resolve the correct node in case it's an identifier.
    */
-  _resolveDeclaration = (node: t.Node, parent: t.Node = this._ast.program) => {
+  _resolveDeclaration = (node: t.Node, parent: t.Node = this._ast.program): any => {
     const decl = this._unwrap(node);
     if (t.isIdentifier(decl) && t.isProgram(parent)) {
       const initialization = _findVarInitialization(decl.name, parent);
@@ -1160,7 +1160,7 @@ export class ConfigFile {
   }
 }
 
-export const loadConfig = (code: string, fileName?: string) => {
+export const loadConfig = (code: string, fileName?: string): ConfigFile => {
   const ast = babelParse(code);
   return new ConfigFile(ast, code, fileName);
 };
@@ -1173,12 +1173,12 @@ export const printConfig = (config: ConfigFile, options: RecastOptions = {}): Pr
   return recast.print(config._ast, options);
 };
 
-export const readConfig = async (fileName: string) => {
+export const readConfig = async (fileName: string): Promise<ConfigFile> => {
   const code = (await readFile(fileName, 'utf-8')).toString();
   return loadConfig(code, fileName).parse();
 };
 
-export const writeConfig = async (config: ConfigFile, fileName?: string) => {
+export const writeConfig = async (config: ConfigFile, fileName?: string): Promise<void> => {
   const fname = fileName || config.fileName;
 
   if (!fname) {
@@ -1187,7 +1187,7 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
   await writeFile(fname, formatConfig(config));
 };
 
-export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
+export const isCsfFactoryPreview = (previewConfig: ConfigFile): boolean => {
   const program = previewConfig._ast.program;
   return !!program.body.find((node) => {
     return (

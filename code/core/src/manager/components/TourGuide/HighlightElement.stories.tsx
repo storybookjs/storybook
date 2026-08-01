@@ -2,6 +2,7 @@ import { Button } from 'storybook/internal/components';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { HighlightElement } from './HighlightElement.tsx';
+import { JSX } from 'react';
 
 const meta = preview.meta({
   component: HighlightElement,
@@ -14,7 +15,7 @@ export const Default = meta.story({
   args: {
     targetSelector: '#highlighted',
   },
-  render: (args: { targetSelector: string; pulsating?: boolean }) => (
+  render: (args: { targetSelector: string; pulsating?: boolean }): JSX.Element => (
     <div style={{ overflow: 'hidden' }}>
       <Button variant="ghost" id="highlighted">
         I'm highlighted
@@ -29,7 +30,7 @@ export const Pulsating = meta.story({
     targetSelector: '#highlighted',
     pulsating: true,
   },
-  render: (args: { targetSelector: string; pulsating?: boolean }) => (
+  render: (args: { targetSelector: string; pulsating?: boolean }): JSX.Element => (
     <>
       <Button variant="ghost" id="highlighted">
         I'm pulsating
@@ -44,7 +45,7 @@ export const PulsatingOverflow = meta.story({
     targetSelector: '#highlighted',
     pulsating: true,
   },
-  render: (args: { targetSelector: string; pulsating?: boolean }) => (
+  render: (args: { targetSelector: string; pulsating?: boolean }): JSX.Element => (
     <div style={{ overflow: 'hidden' }}>
       <Button variant="ghost" id="highlighted">
         I'm pulsating despite being contained by overflow:hidden
@@ -59,7 +60,7 @@ export const WithScrollableContainer = meta.story({
     targetSelector: '#highlighted-in-scroll',
     pulsating: true,
   },
-  render: (args: { targetSelector: string; pulsating?: boolean }) => (
+  render: (args: { targetSelector: string; pulsating?: boolean }): JSX.Element => (
     <div
       style={{
         width: '290px',

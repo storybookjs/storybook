@@ -1,7 +1,9 @@
 import { execCommandCountLines } from './exec-command-count-lines.ts';
 import { runTelemetryOperation } from './run-telemetry-operation.ts';
 
-export const getPortableStoriesFileCountUncached = async (path?: string) => {
+export const getPortableStoriesFileCountUncached = async (
+  path?: string
+): Promise<number | undefined> => {
   try {
     return await execCommandCountLines('git', [
       'grep',
@@ -15,7 +17,7 @@ export const getPortableStoriesFileCountUncached = async (path?: string) => {
   }
 };
 
-export const getPortableStoriesFileCount = async (path?: string) => {
+export const getPortableStoriesFileCount = async (path?: string): Promise<number | undefined> => {
   return runTelemetryOperation('portableStories', async () =>
     getPortableStoriesFileCountUncached(path)
   );

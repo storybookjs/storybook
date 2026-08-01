@@ -6,7 +6,7 @@ import { useArgTypes, useStorybookApi } from 'storybook/manager-api';
 
 import { ADDON_ID } from '../constants.ts';
 
-export function Title() {
+export function Title(): React.JSX.Element {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
   const rows = useArgTypes();

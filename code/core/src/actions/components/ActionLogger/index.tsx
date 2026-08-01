@@ -44,7 +44,11 @@ interface ActionLoggerProps {
   onClear: () => void;
 }
 
-export const ActionLogger = ({ actions, expandLevel, onClear }: ActionLoggerProps) => {
+export const ActionLogger = ({
+  actions,
+  expandLevel,
+  onClear,
+}: ActionLoggerProps): React.JSX.Element => {
   const wrapperRef = useRef<ElementRef<typeof Wrapper>>(null);
   const wrapper = wrapperRef.current;
   const wasAtBottom = wrapper && wrapper.scrollHeight - wrapper.scrollTop === wrapper.clientHeight;

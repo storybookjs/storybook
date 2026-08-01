@@ -20,7 +20,7 @@ try {
   // ignore
 }
 
-export const beforeAll = async () => {
+export const beforeAll = async (): Promise<() => void> => {
   let cleanup: () => void = () => {};
   try {
     globalThis.parent.__STORYBOOK_BEFORE_ALL_CALLS__ += 1;
@@ -42,9 +42,13 @@ export const parameters = {
   },
 };
 
-export const loaders = [async () => ({ projectValue: 2 })];
+export const loaders = [
+  async (): Promise<{
+    projectValue: number;
+  }> => ({ projectValue: 2 }),
+];
 
-const testProjectDecorator = (storyFn: PartialStoryFn, context: StoryContext) => {
+const testProjectDecorator = (storyFn: PartialStoryFn, context: StoryContext): any => {
   if (context.parameters.useProjectDecorator) {
     return storyFn({ args: { ...context.args, text: `project ${context.args.text}` } });
   }

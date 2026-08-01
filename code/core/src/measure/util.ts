@@ -1,6 +1,6 @@
 import { global } from '@storybook/global';
 
-export const deepElementFromPoint = (x: number, y: number) => {
+export const deepElementFromPoint = (x: number, y: number): HTMLElement => {
   const element = global.document.elementFromPoint(x, y) as HTMLElement;
 
   const crawlShadows = (node: HTMLElement): HTMLElement => {

@@ -16,7 +16,7 @@ export function outputStartupInformation(options: {
   allowedHosts?: string[] | true;
   managerTotalTime?: [number, number];
   previewTotalTime?: [number, number];
-}) {
+}): void {
   const {
     updateInfo,
     version,

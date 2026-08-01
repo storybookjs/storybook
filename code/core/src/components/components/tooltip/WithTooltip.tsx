@@ -319,7 +319,7 @@ const WithToolTipState = ({
   startOpen = false,
   onVisibleChange: onChange,
   ...rest
-}: WithTooltipStateProps) => {
+}: WithTooltipStateProps): React.JSX.Element => {
   const [tooltipShown, setTooltipShown] = useState(startOpen);
   const onVisibilityChange = useCallback(
     (visibility: boolean) => {

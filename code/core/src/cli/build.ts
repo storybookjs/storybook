@@ -1,7 +1,7 @@
 import { cache } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 
-export const build = async (cliOptions: any) => {
+export const build = async (cliOptions: any): Promise<void> => {
   const { default: packageJson } = await import('storybook/package.json', {
     with: { type: 'json' },
   });

@@ -143,7 +143,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
  *
  * Otherwise we use `call.method` (e.g. `click`, `expect`, nested steps without their own title).
  */
-export const extractStepName = (call: Call) => {
+export const extractStepName = (call: Call): string => {
   if (call.method === 'step' && call.path?.length === 0 && typeof call.args?.[0] === 'string') {
     const label = call.args[0].trim();
     if (label.length > 0) {
@@ -250,7 +250,7 @@ export const Interaction = ({
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   pausedAt?: Call['id'];
-}) => {
+}): React.JSX.Element | null => {
   const [isHovered, setIsHovered] = React.useState(false);
   const isNavigationDisabled =
     !controlStates.goto || !call.interceptable || !!call.ancestors?.length;

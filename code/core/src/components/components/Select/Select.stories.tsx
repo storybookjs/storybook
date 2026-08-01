@@ -38,7 +38,7 @@ const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 export const Base = meta.story({});
 
 export const Sizes = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row>
         <Select size="small" {...args}>
@@ -53,7 +53,7 @@ export const Sizes = meta.story({
 });
 
 export const Paddings = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row>
         <Select padding="none" {...args}>
@@ -74,7 +74,7 @@ export const PseudoStates = meta.story({
   args: {
     options: [{ title: 'Frog', value: 'frog' }],
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Stack>
       <Row style={{ marginBlock: '4rem' }}>
         <h4>Inactive</h4>
@@ -192,14 +192,14 @@ export const CustomOptionRendering = meta.story({
 });
 
 export const WithSiblings = meta.story({
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Row>
       <Button ariaLabel={false}>Before</Button>
       <Select {...args} />
       <Button ariaLabel={false}>After</Button>
     </Row>
   ),
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const user = userEvent.setup();
 
     await step('Open select and select an option', async () => {
@@ -246,14 +246,14 @@ export const WithSiblings = meta.story({
 
 export const WithSiblingsInToolbar = meta.story({
   name: 'With Siblings in Toolbar',
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Toolbar aria-label="Test toolbar">
       <Button ariaLabel="Before button">Before</Button>
       <Select {...args} />
       <Button ariaLabel="After button">After</Button>
     </Toolbar>
   ),
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const user = userEvent.setup();
 
     await step('Navigate to select with ArrowRight', async () => {
@@ -368,7 +368,7 @@ export const DefaultOpen = meta.story({
 
 export const MouseSelection = meta.story({
   name: 'Mouse Selection (single)',
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await userEvent.click(selectButton);
 
@@ -391,13 +391,13 @@ export const MouseSelectionMulti = meta.story({
   args: {
     multiSelect: true,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Row>
       <Select {...args} />
       <Button ariaLabel={false}>Other content</Button>
     </Row>
   ),
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button', { name: /Animal/ });
     await userEvent.click(selectButton);
 
@@ -537,7 +537,7 @@ export const KeyboardSelectionMultiSS = meta.story({
 });
 
 export const FullArrowNavigation = meta.story({
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await step('Open select', async () => {
       selectButton.focus();
@@ -579,7 +579,7 @@ export const FullArrowNavigation = meta.story({
 
 export const MouseOpenNoAutoselect = meta.story({
   name: 'AutoSelect - nothing selected on Mouse open (single)',
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Click on button', async () => {
@@ -602,7 +602,7 @@ export const MouseOpenNoAutoselect = meta.story({
 
 export const KeyboardOpenAutoselect = meta.story({
   name: 'AutoSelect - first item select on Enter (single)',
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Open with Enter', async () => {
@@ -631,7 +631,7 @@ export const KeyboardOpenAutoselect = meta.story({
 
 export const ArrowDownAutoSelect = meta.story({
   name: 'AutoSelect - first item select on ArrowDown (single)',
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
     await userEvent.keyboard('{ArrowDown}');
@@ -645,7 +645,7 @@ export const ArrowDownAutoSelect = meta.story({
 
 export const ArrowUpAutoSelect = meta.story({
   name: 'AutoSelect - last item select on ArrowUp (single)',
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
     await userEvent.keyboard('{ArrowUp}');
@@ -665,7 +665,7 @@ export const MouseFastNavPage = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Open select (no active option)', async () => {
@@ -696,7 +696,7 @@ export const KeyboardFastNavPage = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
@@ -730,7 +730,7 @@ export const MouseFastNavHomeEnd = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Open select (no active option)', async () => {
@@ -768,7 +768,7 @@ export const KeyboardFastNavHomeEnd = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
@@ -806,7 +806,7 @@ export const MouseDeselection = meta.story({
     multiSelect: true,
     defaultOptions: ['tadpole', 'pollywog'],
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Check initial state', async () => {
@@ -837,7 +837,7 @@ export const KeyboardDeselection = meta.story({
     multiSelect: true,
     defaultOptions: ['tadpole', 'pollywog'],
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Check initial state', async () => {
@@ -873,7 +873,7 @@ export const OnSelectHandler = meta.story({
   args: {
     onSelect: fn().mockName('onSelect'),
   },
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
@@ -893,7 +893,7 @@ export const OnDeselectHandler = meta.story({
     defaultOptions: ['tadpole'],
     onDeselect: fn().mockName('onDeselect'),
   },
-  play: async ({ canvas, args }) => {
+  play: async ({ canvas, args }): Promise<void> => {
     const selectButton = await canvas.findByRole('button', { name: /Animal/ });
     await userEvent.click(selectButton);
 
@@ -911,7 +911,7 @@ export const OnChangeHandler = meta.story({
     multiSelect: true,
     onChange: fn().mockName('onChange'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Open select', async () => {
@@ -938,7 +938,7 @@ export const WithResetSingle = meta.story({
     defaultOptions: 'frog',
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Check initial state', async () => {
@@ -975,7 +975,7 @@ export const WithResetMulti = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Check initial state', async () => {
@@ -1009,7 +1009,7 @@ export const KeyboardResetSingle = meta.story({
     defaultOptions: 'frog',
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
@@ -1038,7 +1038,7 @@ export const KeyboardResetMulti = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
@@ -1074,7 +1074,7 @@ export const KeyboardResetMultiSpace = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
@@ -1108,7 +1108,7 @@ export const ResetButtonVisibilitySingle = meta.story({
   args: {
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Open without selection', async () => {
@@ -1144,7 +1144,7 @@ export const ResetButtonVisibilityMulti = meta.story({
     multiSelect: true,
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Open without selection', async () => {
@@ -1175,7 +1175,7 @@ export const CustomResetLabel = meta.story({
     onReset: fn().mockName('onReset'),
     resetLabel: 'Clear selection',
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
@@ -1190,7 +1190,7 @@ export const WithoutReset = meta.story({
   args: {
     defaultOptions: 'frog',
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
@@ -1221,7 +1221,7 @@ export const NonStringValuesSingleSelect = meta.story({
     onSelect: fn(),
     onChange: fn(),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Select number value (42)', async () => {
@@ -1277,7 +1277,7 @@ export const NonStringValuesMultiSelect = meta.story({
     onDeselect: fn(),
     onChange: fn(),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Select number (42)', async () => {
@@ -1325,7 +1325,7 @@ export const DefaultOptionNumber = meta.story({
     options: nonStringOptions,
     defaultOptions: 42,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Number (42)');
   },
@@ -1337,7 +1337,7 @@ export const DefaultOptionZero = meta.story({
     options: nonStringOptions,
     defaultOptions: 0,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Number (0)');
   },
@@ -1349,7 +1349,7 @@ export const DefaultOptionBooleanTrue = meta.story({
     options: nonStringOptions,
     defaultOptions: true,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Boolean (true)');
   },
@@ -1361,7 +1361,7 @@ export const DefaultOptionBooleanFalse = meta.story({
     options: nonStringOptions,
     defaultOptions: false,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Boolean (false)');
   },
@@ -1373,7 +1373,7 @@ export const DefaultOptionNull = meta.story({
     options: nonStringOptions,
     defaultOptions: null,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Null');
   },
@@ -1386,7 +1386,7 @@ export const DefaultOptionUndefinedDoesNotWork = meta.story({
     defaultOptions: undefined,
     children: 'Nothing selected',
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Nothing selected');
     await expect(selectButton).not.toHaveTextContent('Undefined');
@@ -1399,7 +1399,7 @@ export const DefaultOptionUndefinedInArrayWorks = meta.story({
     options: nonStringOptions,
     defaultOptions: [undefined],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('Undefined');
   },
@@ -1412,7 +1412,7 @@ export const DefaultOptionsMultipleNonStringValues = meta.story({
     defaultOptions: [42, false, null],
     multiSelect: true,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
     await expect(selectButton).toHaveTextContent('3');
 
@@ -1442,7 +1442,7 @@ export const ResetWithUndefinedOption = meta.story({
     onChange: fn(),
     onSelect: fn(),
   },
-  play: async ({ canvas, args, step }) => {
+  play: async ({ canvas, args, step }): Promise<void> => {
     const selectButton = await canvas.findByRole('button');
 
     await step('Select a regular option first', async () => {
@@ -1486,7 +1486,7 @@ export const ShowSelectedOptionTitleTrue = meta.story({
     showSelectedOptionTitle: true,
     defaultOptions: 'frog',
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Verify selected option title is shown', async () => {
       const selectButton = await canvas.findByRole('button');
       expect(selectButton).toHaveTextContent('Frog');
@@ -1500,7 +1500,7 @@ export const ShowSelectedOptionTitleFalse = meta.story({
     showSelectedOptionTitle: false,
     defaultOptions: 'frog',
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Verify default title is shown instead of selected option', async () => {
       const selectButton = await canvas.findByRole('button');
       expect(selectButton).toHaveTextContent('Animal');
@@ -1515,7 +1515,7 @@ export const ShowSelectedOptionTitleFalseMulti = meta.story({
     multiSelect: true,
     defaultOptions: ['frog', 'tadpole'],
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Verify default title is shown for multi-select', async () => {
       const selectButton = await canvas.findByRole('button');
       expect(selectButton).toHaveTextContent('Animal');
@@ -1530,7 +1530,7 @@ export const ShowSelectedOptionTitleTrueMulti = meta.story({
     multiSelect: true,
     defaultOptions: ['frog'],
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Verify option count is shown for multi-select', async () => {
       const selectButton = await canvas.findByRole('button');
       expect(selectButton).toHaveTextContent('1');

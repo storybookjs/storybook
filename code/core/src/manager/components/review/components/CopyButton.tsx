@@ -19,7 +19,7 @@ export function CopyButton({
   ariaLabelOnCopy,
   duration,
   ...buttonProps
-}: CopyButtonProps) {
+}: CopyButtonProps): React.JSX.Element {
   const { children: buttonChildren, buttonProps: copyButtonProps } = useCopyButton<ReactNode>({
     children,
     childrenOnCopy,

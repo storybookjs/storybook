@@ -22,7 +22,13 @@ type GetStoryIdOptions = StoryIdData & {
   storyFilePath: string;
 };
 
-export async function getStoryId(data: StoryIdData, options: Options) {
+export async function getStoryId(
+  data: StoryIdData,
+  options: Options
+): Promise<{
+  storyId: string;
+  kind: string;
+}> {
   const stories = await options.presets.apply('stories', [], options);
 
   const autoTitle = getStoryTitle({
@@ -52,7 +58,7 @@ export function getStoryTitle({
   stories,
   workingDir = process.cwd(),
   userTitle,
-}: Omit<GetStoryIdOptions, 'exportedStoryName'>) {
+}: Omit<GetStoryIdOptions, 'exportedStoryName'>): string | undefined {
   const normalizedStories = normalizeStories(stories, {
     configDir,
     workingDir,

@@ -19,7 +19,11 @@ export const makePayload = (
   userAgent: string,
   lastInit: CacheEntry | undefined,
   sessionId: string
-) => {
+): {
+  userAgent: string;
+  isNewUser: boolean;
+  timeSinceInit: number | undefined;
+} => {
   let timeSinceInit: number | undefined;
   const payload = {
     userAgent,
@@ -34,7 +38,7 @@ export const makePayload = (
   return payload;
 };
 
-export function initTelemetryChannel(channel: Channel) {
+export function initTelemetryChannel(channel: Channel): void {
   channel.on(PREVIEW_INITIALIZED, async ({ userAgent }) => {
     try {
       const sessionId = await getSessionId();

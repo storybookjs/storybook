@@ -15,7 +15,7 @@ export default {
   parameters: { layout: 'fullscreen' },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn: any) => (
+    (storyFn: any): React.JSX.Element => (
       <div style={{ padding: '0 20px', maxWidth: '230px' }}>
         <IconSymbols />
         {storyFn()}
@@ -73,7 +73,7 @@ const passKey: any = (props = { key: '' }) => ({ key: props.key });
 export const searching = {
   query: 'query',
   results,
-  closeMenu: () => {},
+  closeMenu: (): void => {},
   getMenuProps: passKey,
   getItemProps: passKey,
   highlightedIndex: 0,
@@ -85,14 +85,14 @@ export const noResults = {
 export const lastViewed = {
   query: '',
   results: recents,
-  closeMenu: () => {},
+  closeMenu: (): void => {},
   getMenuProps: passKey,
   getItemProps: passKey,
   highlightedIndex: 0,
 };
 
-export const Searching = () => <SearchResults {...searching} />;
+export const Searching = (): React.JSX.Element => <SearchResults {...searching} />;
 
-export const NoResults = () => <SearchResults {...noResults} />;
+export const NoResults = (): React.JSX.Element => <SearchResults {...noResults} />;
 
-export const LastViewed = () => <SearchResults {...lastViewed} />;
+export const LastViewed = (): React.JSX.Element => <SearchResults {...lastViewed} />;

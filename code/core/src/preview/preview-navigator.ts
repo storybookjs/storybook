@@ -13,7 +13,7 @@ type BranchNode = {
   isActive: boolean;
 };
 
-export async function maybeSetupPreviewNavigator() {
+export async function maybeSetupPreviewNavigator(): Promise<void> {
   const url = new URL(window.location.href);
   if (
     url.searchParams.get('navigator') !== 'true' ||
@@ -45,7 +45,10 @@ export async function maybeSetupPreviewNavigator() {
   setupPreviewNavigator(index, currentEntryId);
 }
 
-export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: string) => {
+export const setupPreviewNavigator = async (
+  index: StoryIndex,
+  currentEntryId: string
+): Promise<void> => {
   const tree: BranchNode = { title: '', entries: {}, isActive: true };
   for (const entry of Object.values(index.entries)) {
     const titleParts = entry.title.split('/');
@@ -197,7 +200,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
     ?.scrollIntoView({ block: 'center' });
 };
 
-export const teardownPreviewNavigator = () => {
+export const teardownPreviewNavigator = (): void => {
   document.querySelector('#sb-navigator-container')?.remove();
   document.querySelector('#sb-navigator-style')?.remove();
   (globalThis as any).__STORYBOOK_PREVIEW_NAVIGATOR__ = false;

@@ -18,7 +18,7 @@ export default {
   title: 'MethodCall',
   component: MethodCall,
   decorators: [
-    (Story: any) => (
+    (Story: any): React.JSX.Element => (
       <StyledWrapper>
         <Story />
       </StyledWrapper>
@@ -29,7 +29,7 @@ export default {
   },
 };
 
-export const Args = () => (
+export const Args = (): React.JSX.Element => (
   <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 10 }}>
     <Node value={null} />
     <Node value={undefined} />
@@ -211,8 +211,18 @@ const callsById = calls.reduce((acc, call) => {
   return acc;
 }, new Map<Call['id'], Call>());
 
-export const Step = () => <MethodCall call={callsById.get('9')} callsById={callsById} />;
-export const Simple = () => <MethodCall call={callsById.get('1')} callsById={callsById} />;
-export const Nested = () => <MethodCall call={callsById.get('2')} callsById={callsById} />;
-export const Chained = () => <MethodCall call={callsById.get('4')} callsById={callsById} />;
-export const Complex = () => <MethodCall call={callsById.get('8')} callsById={callsById} />;
+export const Step = (): React.JSX.Element => (
+  <MethodCall call={callsById.get('9')} callsById={callsById} />
+);
+export const Simple = (): React.JSX.Element => (
+  <MethodCall call={callsById.get('1')} callsById={callsById} />
+);
+export const Nested = (): React.JSX.Element => (
+  <MethodCall call={callsById.get('2')} callsById={callsById} />
+);
+export const Chained = (): React.JSX.Element => (
+  <MethodCall call={callsById.get('4')} callsById={callsById} />
+);
+export const Complex = (): React.JSX.Element => (
+  <MethodCall call={callsById.get('8')} callsById={callsById} />
+);

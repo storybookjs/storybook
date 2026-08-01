@@ -1,10 +1,11 @@
 import { dirname, isAbsolute, resolve } from 'node:path';
 
-import type { PackageManagerName } from 'storybook/internal/common';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import { Xa, io } from '../../dist/chunk-Duv0fAMJ';
 
 /**
  * The project directory the config dir lives in, used to resolve story globs and to locate
@@ -33,7 +34,25 @@ export const getStorybookData = async ({
    * would read back the module system's cached evaluation from before that rewrite.
    */
   skipCache?: boolean;
-}) => {
+}): Promise<{
+  configDir: string;
+  workingDir: string;
+  mainConfig: Xa;
+  /** The version specifier of Storybook from the user's package.json */
+  versionSpecifier: string | undefined;
+  /** The version of Storybook installed in the user's project */
+  versionInstalled: string | undefined;
+  mainConfigPath: string | undefined;
+  previewConfigPath: string | undefined;
+  packageManager: JsPackageManager;
+  storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
+  frameworkPackage: string | undefined;
+  rendererPackage: string | undefined;
+  renderer: io | undefined;
+  builderPackage: string | undefined;
+  addons: string[];
+}> => {
   logger.debug('Getting Storybook info...');
   const {
     mainConfig,

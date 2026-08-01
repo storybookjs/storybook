@@ -114,7 +114,7 @@ function createLogger<T extends (...args: any[]) => void>(
   logFn: T,
   prefix?: string
 ) {
-  return function logFunction(...args: Parameters<T>) {
+  return function logFunction(...args: Parameters<T>): void {
     const [message, ...rest] = args;
     const msg = formatLogMessage([message]);
     logTracker.addLog(level, msg);
@@ -165,7 +165,7 @@ export type BoxOptions = {
   title?: string;
 } & clack.BoxOptions;
 
-export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
+export const logBox = (message: string, { title, ...options }: BoxOptions = {}): void => {
   try {
     if (shouldLog('info')) {
       logTracker.addLog('info', message);
@@ -189,7 +189,7 @@ export const logBox = (message: string, { title, ...options }: BoxOptions = {}) 
   }
 };
 
-export const intro = (message: string) => {
+export const intro = (message: string): void => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
     console.log('');
@@ -197,14 +197,14 @@ export const intro = (message: string) => {
   }
 };
 
-export const outro = (message: string) => {
+export const outro = (message: string): void => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
     LOG_FUNCTIONS.outro()(message);
   }
 };
 
-export const step = (message: string) => {
+export const step = (message: string): void => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
     LOG_FUNCTIONS.step()(message);

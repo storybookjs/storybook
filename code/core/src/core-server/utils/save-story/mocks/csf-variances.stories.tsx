@@ -30,14 +30,14 @@ export const OnlyArgs = {
 } satisfies Story;
 
 export const RenderNoArgs = {
-  render: (args) => <MyComponent {...args} />,
+  render: (args): React.JSX.Element => <MyComponent {...args} />,
 } satisfies Story;
 
 export const RenderArgs = {
   args: {
     absolute: true,
   },
-  render: (args) => <MyComponent {...args} />,
+  render: (args): React.JSX.Element => <MyComponent {...args} />,
 } satisfies Story;
 
 export const RenderExistingArgs = {
@@ -46,7 +46,7 @@ export const RenderExistingArgs = {
     bordered: true,
     initial: 'test2',
   },
-  render: (args) => <MyComponent {...args} />,
+  render: (args): React.JSX.Element => <MyComponent {...args} />,
 } satisfies Story;
 
 // The order of both the properties of the story and the order of args should be preserved
@@ -56,7 +56,7 @@ export const OrderedArgs = {
     initial: 'test2',
     absolute: true,
   },
-  render: (args) => <MyComponent {...args} />,
+  render: (args): React.JSX.Element => <MyComponent {...args} />,
 } satisfies Story;
 
 // The order of both the properties of the story and the order of args should be preserved
@@ -66,7 +66,7 @@ export const HasPlayFunction = {
     initial: 'test2',
     absolute: true,
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     console.log('play');
 
     canvasElement.style.backgroundColor = 'red';

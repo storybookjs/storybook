@@ -30,7 +30,7 @@ const FocusRing = ({
 }: React.ComponentProps<typeof FocusOutline> & {
   highlightDuration?: number;
   nodeRef?: React.RefObject<HTMLDivElement>;
-}) => {
+}): React.JSX.Element => {
   const [visible, setVisible] = useState(active);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const FocusTarget = ({
   ...props
 }: Omit<React.ComponentProps<typeof FocusRing>, 'active'> & {
   targetHash: string;
-}) => {
+}): React.JSX.Element => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const locationHash = useLocationHash();
   const [active, setActive] = useState(locationHash === targetHash);

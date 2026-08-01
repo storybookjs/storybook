@@ -200,7 +200,7 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
  * Reads the BROWSER environment variable and decides what to do with it. Returns true if it opened
  * a browser or ran a node.js script, otherwise false.
  */
-export function openBrowser(url: string) {
+export function openBrowser(url: string): boolean {
   const { action, value, args } = getBrowserEnv();
   // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';

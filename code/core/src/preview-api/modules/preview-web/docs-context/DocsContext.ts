@@ -272,7 +272,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     }
   }
 
-  storyIdByName = (storyName: StoryName) => {
+  storyIdByName = (storyName: StoryName): string => {
     const storyId = this.nameToStoryId.get(storyName);
 
     if (storyId) {
@@ -282,11 +282,11 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     throw new Error(`No story found with that name: ${storyName}`);
   };
 
-  componentStories = () => {
+  componentStories = (): PreparedStory<TRenderer>[] => {
     return this.componentStoriesValue;
   };
 
-  getComponentId = (component: Renderer['component']) => {
+  getComponentId = (component: Renderer['component']): string | undefined => {
     for (const csfFile of new Set(this.exportsToCSFFile.values())) {
       if (csfFile.meta.component === component) {
         return csfFile.meta.id;
@@ -295,11 +295,11 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     return undefined;
   };
 
-  componentStoriesFromCSFFile = (csfFile: CSFFile<TRenderer>) => {
+  componentStoriesFromCSFFile = (csfFile: CSFFile<TRenderer>): PreparedStory<TRenderer>[] => {
     return this.store.componentStoriesFromCSFFile({ csfFile });
   };
 
-  storyById = (storyId?: StoryId) => {
+  storyById = (storyId?: StoryId): PreparedStory<TRenderer> => {
     if (!storyId) {
       if (!this.primaryStory) {
         throw new Error(
@@ -325,7 +325,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     };
   };
 
-  loadStory = (id: StoryId) => {
+  loadStory = (id: StoryId): Promise<PreparedStory<TRenderer>> => {
     return this.store.loadStory({ storyId: id });
   };
 }

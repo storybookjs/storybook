@@ -84,7 +84,7 @@ export const AiSetupBlock = ({
   item: ChecklistItem;
   reset: (id: ItemId) => void;
   skip: (id: ItemId) => void;
-}) => {
+}): React.JSX.Element | null => {
   const api = useStorybookApi();
 
   const showAiCta = !item.isDone && !item.isAccepted && !item.isCompleted;

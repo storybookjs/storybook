@@ -42,7 +42,10 @@ interface RoutePropsDefault {
 
 const getBase = () => `${document.location.pathname}?`;
 
-export const useNavigate = () => {
+export const useNavigate = (): ((
+  to: R.To | number,
+  { plain, ...options }?: NavigateOptions
+) => void) => {
   const navigate = R.useNavigate();
 
   return useCallback((to: R.To | number, { plain, ...options } = {} as NavigateOptions) => {
@@ -67,7 +70,7 @@ export const useNavigate = () => {
 };
 
 /** A component that will navigate to a new location/path when clicked */
-export const Link = ({ to, children, ...rest }: LinkProps) => (
+export const Link = ({ to, children, ...rest }: LinkProps): React.JSX.Element => (
   <R.Link to={`${getBase()}path=${to}`} {...rest}>
     {children}
   </R.Link>
@@ -78,7 +81,7 @@ Link.displayName = 'QueryLink';
  * A render-prop component where children is called with a location and will be called whenever it
  * changes
  */
-export const Location = ({ children }: LocationProps) => {
+export const Location = ({ children }: LocationProps): React.JSX.Element => {
   const location = R.useLocation();
   const { path = '', singleStory } = queryFromLocation(location);
   const { viewMode, storyId, refId } = parsePath(path);

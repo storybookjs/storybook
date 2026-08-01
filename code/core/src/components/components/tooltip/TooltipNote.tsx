@@ -20,6 +20,6 @@ export interface TooltipNoteProps {
   note: string;
 }
 
-export const TooltipNote = ({ note, ...props }: TooltipNoteProps) => {
+export const TooltipNote = ({ note, ...props }: TooltipNoteProps): React.JSX.Element => {
   return <Note {...props}>{note}</Note>;
 };

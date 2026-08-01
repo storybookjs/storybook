@@ -40,7 +40,7 @@ interface BabelFile {
 }
 
 const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
-export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
+export const isValidPreviewPath = (filepath: string): boolean => PREVIEW_FILE_REGEX.test(filepath);
 
 function parseIncludeExclude(prop: t.Node) {
   if (t.isArrayExpression(prop)) {
@@ -113,7 +113,7 @@ const formatLocation = (node: t.Node, fileName?: string) => {
   return `${fileName || ''} ${loc}`.trim();
 };
 
-export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
+export const isModuleMock = (importPath: string): boolean => MODULE_MOCK_REGEX.test(importPath);
 
 const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
   let storyFn: t.Node = init;
@@ -1079,7 +1079,7 @@ export const babelParseFile = ({
   );
 };
 
-export const loadCsf = (code: string, options: CsfOptions) => {
+export const loadCsf = (code: string, options: CsfOptions): CsfFile => {
   const ast = babelParse(code);
   const file = babelParseFile({ code, filename: options.fileName, ast });
   return new CsfFile(ast, options, file);
@@ -1102,12 +1102,12 @@ export const printCsf = (csf: CsfFile, options: RecastOptions = {}): PrintResult
   return recast.print(csf._ast, options);
 };
 
-export const readCsf = async (fileName: string, options: CsfOptions) => {
+export const readCsf = async (fileName: string, options: CsfOptions): Promise<CsfFile> => {
   const code = (await readFile(fileName, 'utf-8')).toString();
   return loadCsf(code, { ...options, fileName });
 };
 
-export const writeCsf = async (csf: CsfFile, fileName?: string) => {
+export const writeCsf = async (csf: CsfFile, fileName?: string): Promise<void> => {
   const fname = fileName || csf._options.fileName;
 
   if (!fname) {

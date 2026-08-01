@@ -17,7 +17,7 @@ export async function syncStorybookAddons(
   mainConfig: StorybookConfig,
   previewConfigPath: string,
   configDir: string
-) {
+): Promise<void> {
   const previewConfig = await readConfig(previewConfigPath);
   const modifiedConfig = await syncPreviewAddonsWithMainConfig(
     mainConfig,

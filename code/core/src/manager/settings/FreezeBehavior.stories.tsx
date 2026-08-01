@@ -85,14 +85,14 @@ const meta = preview.meta({
 export const Interval = meta.story({});
 
 export const ButtonClick = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole('button', { name: 'Increment' }));
   },
 });
 
 export const DelayedCompletion = meta.story({
-  play: async () =>
+  play: async (): Promise<void> =>
     new Promise<void>((resolve) => {
       window.setTimeout(resolve, 3000);
     }),
@@ -100,5 +100,5 @@ export const DelayedCompletion = meta.story({
 
 export const AnimationEndsOnFreeze = meta.story({
   name: 'Animation Ends On Freeze',
-  render: () => <FreezeAnimationHarness />,
+  render: (): React.JSX.Element => <FreezeAnimationHarness />,
 });

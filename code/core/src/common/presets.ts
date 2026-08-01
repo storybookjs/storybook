@@ -338,7 +338,7 @@ export async function loadAllPresets(
       build?: StorybookConfigRaw['build'];
       channel: ChannelLike;
     }
-) {
+): Promise<Presets> {
   const { corePresets = [], overridePresets = [], ...restOptions } = options;
   validateConfigurationFiles(options.configDir);
 

@@ -139,7 +139,7 @@ export const Base = meta.story({
   args: {
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -158,7 +158,7 @@ export const FixedWidth = meta.story({
     width: 300,
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -177,7 +177,7 @@ export const FixedHeight = meta.story({
     height: 300,
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -197,7 +197,7 @@ export const FixedDimensions = meta.story({
     height: 400,
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -215,7 +215,7 @@ export const DismissalBehavior = meta.story({
   args: {
     children: <SampleModalContent />,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
       <div>
         <h4>Default (dismissible)</h4>
@@ -263,7 +263,7 @@ export const OnInteractOutside = meta.story({
     children: <SampleModalContent />,
     onInteractOutside: fn(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -278,7 +278,7 @@ export const OnInteractOutside = meta.story({
       </>
     );
   },
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -302,9 +302,9 @@ export const OnInteractOutsidePreventDefault = meta.story({
   name: 'OnInteractOutside - e.preventDefault (deprecated)',
   args: {
     children: <SampleModalContent />,
-    onInteractOutside: (e) => e.preventDefault(),
+    onInteractOutside: (e): void => e.preventDefault(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -319,7 +319,7 @@ export const OnInteractOutsidePreventDefault = meta.story({
       </>
     );
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -347,7 +347,7 @@ export const OnInteractOutsideDismissDisabled = meta.story({
     dismissOnClickOutside: false,
     onInteractOutside: fn(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -362,7 +362,7 @@ export const OnInteractOutsideDismissDisabled = meta.story({
       </>
     );
   },
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -390,7 +390,7 @@ export const OnEscapeKeyDown = meta.story({
     children: <SampleModalContent />,
     onEscapeKeyDown: fn(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -402,7 +402,7 @@ export const OnEscapeKeyDown = meta.story({
       </>
     );
   },
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -425,9 +425,9 @@ export const OnEscapeKeyDownPreventDefault = meta.story({
   name: 'OnEscapeKeyDown - e.preventDefault (deprecated)',
   args: {
     children: <SampleModalContent />,
-    onEscapeKeyDown: (e) => e.preventDefault(),
+    onEscapeKeyDown: (e): void => e.preventDefault(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -439,7 +439,7 @@ export const OnEscapeKeyDownPreventDefault = meta.story({
       </>
     );
   },
-  play: async ({ canvas, step }) => {
+  play: async ({ canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -466,7 +466,7 @@ export const OnEscapeKeyDownEscDisabled = meta.story({
     dismissOnEscape: false,
     onEscapeKeyDown: fn(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -478,7 +478,7 @@ export const OnEscapeKeyDownEscDisabled = meta.story({
       </>
     );
   },
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step }): Promise<void> => {
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal');
       await userEvent.click(trigger);
@@ -519,7 +519,7 @@ export const StyledComponents = meta.story({
     width: 600,
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -584,7 +584,7 @@ export const WithError = meta.story({
     width: 500,
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
     const [showError, setShowError] = useState(false);
 
@@ -632,7 +632,7 @@ export const AlwaysOpen = meta.story({
     dismissOnEscape: false,
     children: <SampleModalContent />,
   },
-  render: (args) => (
+  render: (args): React.JSX.Element => (
     <Modal {...args}>
       <Modal.Content>
         <Modal.Header hasClose={false}>
@@ -652,7 +652,7 @@ export const WithOpenChangeCallback = meta.story({
     children: <SampleModalContent />,
     onOpenChange: fn(),
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     const handleOpenChange = (open: boolean) => {
@@ -669,7 +669,7 @@ export const WithOpenChangeCallback = meta.story({
       </>
     );
   },
-  play: async ({ args, canvasElement, step }) => {
+  play: async ({ args, canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
 
     await step('Open modal and verify callback', async () => {
@@ -698,7 +698,7 @@ export const InteractiveKeyboard = meta.story({
   args: {
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -710,7 +710,7 @@ export const InteractiveKeyboard = meta.story({
       </>
     );
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByText('Open Modal (Keyboard Test)');
 
@@ -768,7 +768,7 @@ export const InteractiveMouse = meta.story({
   args: {
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -783,7 +783,7 @@ export const InteractiveMouse = meta.story({
       </div>
     );
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement, step }): Promise<void> => {
     const canvas = within(canvasElement);
 
     await step('Open modal', async () => {
@@ -829,7 +829,7 @@ export const LongContent = meta.story({
     ariaLabel: 'Long content modal',
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -883,7 +883,7 @@ export const DialogTransitions = meta.story({
     ariaLabel: 'Dialog with transitions',
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -932,7 +932,7 @@ export const BottomDrawerTransitions = meta.story({
     ariaLabel: 'Bottom drawer with transitions',
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -980,7 +980,7 @@ export const WithContainer = meta.story({
   args: {
     children: <SampleModalContent />,
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
     const container = useRef<HTMLDivElement>(null);
 
@@ -1011,7 +1011,7 @@ export const WithPortalSelector = meta.story({
     children: <SampleModalContent />,
     portalSelector: '#custom-modal-portal-target',
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
 
     return (
@@ -1036,7 +1036,7 @@ export const WithContainerAndPortalSelector = meta.story({
     children: <SampleModalContent />,
     portalSelector: '#ignored-portal-target',
   },
-  render: (args) => {
+  render: (args): React.JSX.Element => {
     const [isOpen, setOpen] = useState(false);
     const [container, setContainer] = useState<HTMLElement | null>(null);
 

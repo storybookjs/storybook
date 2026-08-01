@@ -110,7 +110,7 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     },
   },
 }));
-export const Select = ({ children, ...props }: SelectProps) => {
+export const Select = ({ children, ...props }: SelectProps): React.JSX.Element => {
   return (
     // @ts-expect-error Weird props mismatch
     <BaseSelect {...props}>

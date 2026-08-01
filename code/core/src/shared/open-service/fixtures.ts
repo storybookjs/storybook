@@ -1,7 +1,16 @@
 import * as v from 'valibot';
 
 import { defineService } from './service-definition.ts';
-import type { ServiceInstanceOf } from './types.ts';
+import type {
+  AnySchema,
+  CommandDefinition,
+  MatchingOutputSchemas,
+  OperationInputSchemas,
+  QueryDefinition,
+  QueryFunctions,
+  ServiceDefinition,
+  ServiceInstanceOf,
+} from './types.ts';
 
 /** Shared schema used by fixtures that address one logical record by id. */
 export const entryIdInputSchema = v.object({ entryId: v.string() });
@@ -179,7 +188,152 @@ export const rebuiltEqualValueOnLoadServiceDef = defineService({
 export type SharedStaticFileState = { left?: string; right?: string };
 
 /** Creates a fixture where multiple queries contribute state to one shared static file. */
-export function createSharedStaticFileServiceDef() {
+export function createSharedStaticFileServiceDef(): ServiceDefinition<
+  SharedStaticFileState,
+  {
+    readonly leftValue: QueryDefinition<
+      SharedStaticFileState,
+      v.VoidSchema<undefined>,
+      v.NullableSchema<v.StringSchema<undefined>, undefined>,
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      QueryFunctions<
+        {
+          readonly leftValue: v.VoidSchema<undefined>;
+          readonly rightValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly leftValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+          readonly rightValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "leftValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+    readonly rightValue: QueryDefinition<
+      SharedStaticFileState,
+      v.VoidSchema<undefined>,
+      v.NullableSchema<v.StringSchema<undefined>, undefined>,
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      QueryFunctions<
+        {
+          readonly leftValue: v.VoidSchema<undefined>;
+          readonly rightValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly leftValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+          readonly rightValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "rightValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly leftValue: {
+      output: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+    };
+    readonly rightValue: {
+      output: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+    };
+  },
+  {
+    readonly writeLeftValue: CommandDefinition<
+      SharedStaticFileState,
+      v.VoidSchema<undefined>,
+      v.VoidSchema<undefined>,
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      QueryFunctions<
+        {
+          readonly leftValue: v.VoidSchema<undefined>;
+          readonly rightValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly leftValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+          readonly rightValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "writeLeftValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+    readonly writeRightValue: CommandDefinition<
+      SharedStaticFileState,
+      v.VoidSchema<undefined>,
+      v.VoidSchema<undefined>,
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      {
+        readonly writeLeftValue: v.VoidSchema<undefined>;
+        readonly writeRightValue: v.VoidSchema<undefined>;
+      },
+      QueryFunctions<
+        {
+          readonly leftValue: v.VoidSchema<undefined>;
+          readonly rightValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly leftValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+          readonly rightValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "writeRightValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly writeLeftValue: {
+      output: v.VoidSchema<undefined>;
+    };
+    readonly writeRightValue: {
+      output: v.VoidSchema<undefined>;
+    };
+  },
+  'internal-fixture/shared-static-file'
+> {
   return defineService({
     id: 'internal-fixture/shared-static-file',
     description: 'Builds two independent query outputs into one shared static file.',
@@ -240,7 +394,83 @@ export function createSharedStaticFileServiceDef() {
  * the same lookup any consumer code would use — rather than capturing the registered instance in
  * a closure. The source service must already be registered when the derived query runs.
  */
-export function createDerivedBooleanFromChildQueryServiceDef() {
+export function createDerivedBooleanFromChildQueryServiceDef(): ServiceDefinition<
+  Record<string, never>,
+  {
+    readonly isEntryMarked: QueryDefinition<
+      Record<string, never>,
+      v.ObjectSchema<
+        {
+          readonly entryId: v.StringSchema<undefined>;
+        },
+        undefined
+      >,
+      v.BooleanSchema<undefined>,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly isEntryMarked: v.ObjectSchema<
+            {
+              readonly entryId: v.StringSchema<undefined>;
+            },
+            undefined
+          >;
+        },
+        {
+          readonly isEntryMarked: v.BooleanSchema<undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "isEntryMarked" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly isEntryMarked: {
+      output: v.BooleanSchema<undefined>;
+    };
+  },
+  {
+    [x: string]: CommandDefinition<
+      Record<string, never>,
+      AnySchema,
+      AnySchema,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly isEntryMarked: v.ObjectSchema<
+            {
+              readonly entryId: v.StringSchema<undefined>;
+            },
+            undefined
+          >;
+        },
+        {
+          readonly isEntryMarked: v.BooleanSchema<undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: `Operation "${string}" has internal: true but must be prefixed with "_"`;
+          }
+      );
+  } & {
+    [x: string]: {
+      output: AnySchema;
+    };
+  },
+  'internal-fixture/derived-boolean-from-child-query'
+> {
   type DerivedState = Record<string, never>;
 
   return defineService({
@@ -290,7 +520,68 @@ export const undefinedOutputQueryServiceDef = defineService({
 });
 
 /** Creates a fixture that intentionally returns an invalid query output. */
-export function createInvalidQueryOutputServiceDef() {
+export function createInvalidQueryOutputServiceDef(): ServiceDefinition<
+  Record<string, never>,
+  {
+    readonly brokenValue: QueryDefinition<
+      Record<string, never>,
+      v.VoidSchema<undefined>,
+      v.NullableSchema<v.StringSchema<undefined>, undefined>,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly brokenValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly brokenValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "brokenValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly brokenValue: {
+      output: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+    };
+  },
+  {
+    [x: string]: CommandDefinition<
+      Record<string, never>,
+      AnySchema,
+      AnySchema,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly brokenValue: v.VoidSchema<undefined>;
+        },
+        {
+          readonly brokenValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: `Operation "${string}" has internal: true but must be prefixed with "_"`;
+          }
+      );
+  } & {
+    [x: string]: {
+      output: AnySchema;
+    };
+  },
+  'internal-fixture/invalid-query-output'
+> {
   return defineService({
     id: 'internal-fixture/invalid-query-output',
     description: 'Returns an invalid query output on purpose.',
@@ -308,7 +599,62 @@ export function createInvalidQueryOutputServiceDef() {
 }
 
 /** Creates a fixture that intentionally returns an invalid command output. */
-export function createInvalidCommandOutputServiceDef() {
+export function createInvalidCommandOutputServiceDef(): ServiceDefinition<
+  Record<string, never>,
+  {
+    [x: string]: QueryDefinition<
+      Record<string, never>,
+      AnySchema,
+      AnySchema,
+      {
+        readonly runBrokenCommand: v.VoidSchema<undefined>;
+      },
+      {
+        readonly runBrokenCommand: v.StringSchema<undefined>;
+      },
+      QueryFunctions<OperationInputSchemas, MatchingOutputSchemas<OperationInputSchemas>>
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: `Operation "${string}" has internal: true but must be prefixed with "_"`;
+          }
+      );
+  } & {
+    [x: string]: {
+      output: AnySchema;
+    };
+  },
+  {
+    readonly runBrokenCommand: CommandDefinition<
+      Record<string, never>,
+      v.VoidSchema<undefined>,
+      v.StringSchema<undefined>,
+      {
+        readonly runBrokenCommand: v.VoidSchema<undefined>;
+      },
+      {
+        readonly runBrokenCommand: v.StringSchema<undefined>;
+      },
+      QueryFunctions<OperationInputSchemas, MatchingOutputSchemas<OperationInputSchemas>>
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "runBrokenCommand" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly runBrokenCommand: {
+      output: v.StringSchema<undefined>;
+    };
+  },
+  'internal-fixture/invalid-command-output'
+> {
   return defineService({
     id: 'internal-fixture/invalid-command-output',
     description: 'Returns an invalid command output on purpose.',
@@ -326,7 +672,83 @@ export function createInvalidCommandOutputServiceDef() {
 }
 
 /** Creates a fixture that intentionally yields invalid static load inputs. */
-export function createInvalidStaticInputServiceDef() {
+export function createInvalidStaticInputServiceDef(): ServiceDefinition<
+  PreloadedValueState,
+  {
+    readonly preloadedValue: QueryDefinition<
+      PreloadedValueState,
+      v.ObjectSchema<
+        {
+          readonly entryId: v.StringSchema<undefined>;
+        },
+        undefined
+      >,
+      v.NullableSchema<v.StringSchema<undefined>, undefined>,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly preloadedValue: v.ObjectSchema<
+            {
+              readonly entryId: v.StringSchema<undefined>;
+            },
+            undefined
+          >;
+        },
+        {
+          readonly preloadedValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: 'Operation "preloadedValue" has internal: true but must be prefixed with "_"';
+          }
+      );
+  } & {
+    readonly preloadedValue: {
+      output: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+    };
+  },
+  {
+    [x: string]: CommandDefinition<
+      PreloadedValueState,
+      AnySchema,
+      AnySchema,
+      OperationInputSchemas,
+      MatchingOutputSchemas<OperationInputSchemas>,
+      QueryFunctions<
+        {
+          readonly preloadedValue: v.ObjectSchema<
+            {
+              readonly entryId: v.StringSchema<undefined>;
+            },
+            undefined
+          >;
+        },
+        {
+          readonly preloadedValue: v.NullableSchema<v.StringSchema<undefined>, undefined>;
+        }
+      >
+    > &
+      (
+        | {
+            internal?: false;
+          }
+        | {
+            __internal_naming_error: `Operation "${string}" has internal: true but must be prefixed with "_"`;
+          }
+      );
+  } & {
+    [x: string]: {
+      output: AnySchema;
+    };
+  },
+  'internal-fixture/invalid-static-input'
+> {
   return defineService({
     id: 'internal-fixture/invalid-static-input',
     description: 'Provides an invalid static load input on purpose.',

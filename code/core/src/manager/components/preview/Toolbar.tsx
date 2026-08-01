@@ -22,8 +22,10 @@ import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { PreviewProps } from './utils/types.tsx';
 
-export const getTools = (getFn: API['getElements']) => Object.values(getFn(types.TOOL));
-export const getToolsExtra = (getFn: API['getElements']) => Object.values(getFn(types.TOOLEXTRA));
+export const getTools = (getFn: API['getElements']): Addon_BaseType[] =>
+  Object.values(getFn(types.TOOL));
+export const getToolsExtra = (getFn: API['getElements']): Addon_BaseType[] =>
+  Object.values(getFn(types.TOOLEXTRA));
 
 const fullScreenMapper = ({ api, state }: Combo) => {
   return {
@@ -150,7 +152,7 @@ export function filterToolsSide(
   location: State['location'],
   path: State['path'],
   tabId: string
-) {
+): Addon_BaseType[] {
   const filter = (item: Partial<Addon_BaseType>) =>
     item &&
     (!item.match ||

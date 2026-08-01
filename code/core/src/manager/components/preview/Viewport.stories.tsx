@@ -4,6 +4,7 @@ import type { ViewportMap } from 'storybook/viewport';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Viewport } from './Viewport.tsx';
+import { JSX } from 'react';
 
 const managerContext: any = {
   state: {},
@@ -116,7 +117,7 @@ export const Short = meta.story({
     viewport: { options: customViewports },
     chromatic: { disableSnapshot: true },
   },
-  render: () => <></>,
+  render: (): JSX.Element => <></>,
 });
 
 export const Narrow = meta.story({
@@ -127,7 +128,7 @@ export const Narrow = meta.story({
     viewport: { options: customViewports },
     chromatic: { disableSnapshot: true },
   },
-  render: () => <></>,
+  render: (): JSX.Element => <></>,
 });
 
 export const Calculated = meta.story({
@@ -138,6 +139,6 @@ export const Calculated = meta.story({
     viewport: { options: customViewports },
     chromatic: { disableSnapshot: true },
   },
-  render: () => <></>,
+  render: (): JSX.Element => <></>,
   tags: ['!test', '!vitest'], // Vitest browser does not support calculated viewports
 });

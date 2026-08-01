@@ -8,7 +8,7 @@ const fileExists = (basename: string) =>
     return !found && existsSync(filename) ? filename : found;
   }, '');
 
-export async function getMiddleware(configDir: string) {
+export async function getMiddleware(configDir: string): Promise<any> {
   const middlewarePath = fileExists(resolve(configDir, 'middleware'));
   if (middlewarePath) {
     const middlewareModule = await import('file://' + middlewarePath);

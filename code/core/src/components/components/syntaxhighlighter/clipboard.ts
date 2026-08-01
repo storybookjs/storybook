@@ -2,7 +2,7 @@ import { global } from '@storybook/global';
 
 const { document, window: globalWindow } = global;
 
-async function copyUsingClipboardAPI(text: string) {
+async function copyUsingClipboardAPI(text: string): Promise<void> {
   try {
     await globalWindow.top?.navigator.clipboard.writeText(text);
   } catch {
@@ -23,6 +23,6 @@ async function copyUsingWorkAround(text: string) {
   focus.focus();
 }
 
-export function createCopyToClipboardFunction() {
+export function createCopyToClipboardFunction(): typeof copyUsingClipboardAPI {
   return globalWindow.navigator?.clipboard ? copyUsingClipboardAPI : copyUsingWorkAround;
 }

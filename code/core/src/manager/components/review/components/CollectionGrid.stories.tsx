@@ -106,7 +106,7 @@ const meta = preview.meta({
   args: {
     storyIds: demoStoryIds,
     storyInfo: demoStoryInfo,
-    getStoryPreviewHref: (storyId: string) =>
+    getStoryPreviewHref: (storyId: string): string =>
       `iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&embed=true&freeze=finished`,
   },
 });
@@ -159,7 +159,7 @@ const waitForCellPreviewSettled = async (
 };
 
 export const Default = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cells = await within(canvasElement).findAllByTestId('review-collection-grid-cell');
     await waitFor(() => {
       for (const cell of cells) {
@@ -186,7 +186,7 @@ export const QueuedPreviewShowsLoader = meta.story({
     showAll: true,
   },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const cells = await canvas.findAllByTestId('review-collection-grid-cell');
     expect(cells.length).toBe(5);
@@ -208,7 +208,7 @@ export const PreviewLoadingSettle = meta.story({
   args: {
     storyIds: ['manager-main--default'],
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const cell = await canvas.findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell);
@@ -241,8 +241,8 @@ const StorySwapHarness: FC<Partial<CollectionGridProps>> = () => {
 };
 
 export const PreviewRemountOnStoryChange = meta.story({
-  render: () => <StorySwapHarness />,
-  play: async ({ canvasElement }) => {
+  render: (): React.JSX.Element => <StorySwapHarness />,
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const cell = await canvas.findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell);
@@ -266,7 +266,7 @@ export const PreviewRemountOnStoryChange = meta.story({
 // two rows, so eight stories overflow into the "Review all" affordance.
 export const ManyStoriesOverflow = meta.story({
   globals: { viewport: { value: 'mobile1' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('button', { name: /Review all/i })).toBeInTheDocument();
     const reviewAllFrame = canvasElement.querySelector('[data-review-all] > :first-child');
@@ -284,7 +284,7 @@ export const FewStories = meta.story({
     storyIds: ['manager-main--default', 'manager-settings-aboutscreen--default'],
   },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cells = canvasElement.querySelectorAll('[data-testid="review-collection-grid-cell"]');
     await expect(cells.length).toBe(2);
     await expect(
@@ -319,7 +319,7 @@ export const FewStories = meta.story({
 export const FortyStoriesOverflow = meta.story({
   args: { storyIds: fortyStoryIds },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const reviewAllButton = await canvas.findByRole('button', { name: /Review all 40/i });
     await expect(reviewAllButton).toBeInTheDocument();
@@ -355,11 +355,11 @@ export const FortyStoriesOverflow = meta.story({
 export const Accessibility = meta.story({
   args: {
     storyIds: ['button-component--base', 'button-component--variants', 'button-component--sizes'],
-    getStoryHref: (storyId: string) => `?path=/story/${storyId}`,
+    getStoryHref: (storyId: string): string => `?path=/story/${storyId}`,
     showAll: true,
   },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
 
     const list = await canvas.findByRole('list');
@@ -381,7 +381,7 @@ export const SingleCellClamped = meta.story({
     storyIds: ['manager-main--default'],
   },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cell = canvasElement.querySelector('[data-testid="review-collection-grid-cell"]');
     await expect(cell).toBeTruthy();
     await expect((cell as HTMLElement).getBoundingClientRect().width).toBeLessThanOrEqual(401);
@@ -393,7 +393,7 @@ export const FrameFitsCellAfterResize = meta.story({
     storyIds: ['manager-main--default'],
   },
   globals: { viewport: { value: 'desktop' } },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell, {
       width: 1280,
@@ -413,7 +413,7 @@ export const ViewportAspectRatio = meta.story({
   args: {
     storyIds: ['manager-main--default'],
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell, {
       width: 120,
@@ -440,7 +440,7 @@ export const ResponsiveViewportFillsCell = meta.story({
   args: {
     storyIds: ['manager-main--default'],
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const cell = await within(canvasElement).findByTestId('review-collection-grid-cell');
     await waitForCellPreviewSettled(cell, {
       width: 320,

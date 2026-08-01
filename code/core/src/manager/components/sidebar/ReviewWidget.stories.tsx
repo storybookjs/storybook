@@ -149,7 +149,7 @@ const meta = {
   component: ReviewWidget,
   title: 'Sidebar/ReviewWidget',
   decorators: [
-    (Story, { parameters }) => (
+    (Story, { parameters }): React.JSX.Element => (
       <MemoryRouter initialEntries={['/']}>
         <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
           <ReviewProvider>

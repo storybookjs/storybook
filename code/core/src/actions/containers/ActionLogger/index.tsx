@@ -24,7 +24,7 @@ const safeDeepEqual = (a: any, b: any): boolean => {
   }
 };
 
-export default function ActionLogger({ active, api }: ActionLoggerProps) {
+export default function ActionLogger({ active, api }: ActionLoggerProps): React.JSX.Element | null {
   const [actions, setActions] = useState<ActionDisplay[]>([]);
   const parameter = useParameter<ActionsParameters['actions']>(PARAM_KEY);
   const expandLevel = parameter?.expandLevel ?? 1;

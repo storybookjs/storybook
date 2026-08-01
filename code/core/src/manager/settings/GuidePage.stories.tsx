@@ -66,13 +66,13 @@ const aiCtaOpenState = {
 };
 
 export const AiCtaOpen = meta.story({
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     mockStore.setState(aiCtaOpenState);
   },
 });
 
 export const AiCtaSkipped = meta.story({
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     mockStore.setState({
       loaded: true,
       aiOptIn: true,
@@ -90,7 +90,7 @@ export const AiCtaSkipped = meta.story({
 });
 
 export const AiCtaDone = meta.story({
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     mockStore.setState({
       loaded: true,
       aiOptIn: true,
@@ -108,7 +108,7 @@ export const AiCtaDone = meta.story({
 });
 
 export const AllDone = meta.story({
-  beforeEach: async () => {
+  beforeEach: async (): Promise<void> => {
     const allDoneItems = Object.keys(initialState.items).reduce(
       (acc, key) => {
         acc[key as keyof typeof initialState.items] = { status: 'done' };

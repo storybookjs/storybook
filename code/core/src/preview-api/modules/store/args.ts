@@ -203,7 +203,7 @@ export const UNTARGETED = 'UNTARGETED';
 export function groupArgsByTarget<TArgs extends Args = Args>({
   args,
   argTypes,
-}: Pick<StoryContext<Renderer, TArgs>, 'args' | 'argTypes'>) {
+}: Pick<StoryContext<Renderer, TArgs>, 'args' | 'argTypes'>): Record<string, Partial<TArgs>> {
   const groupedArgs: Record<string, Partial<TArgs>> = {};
   (Object.entries(args) as [keyof TArgs, any][]).forEach(([name, value]) => {
     const { target = UNTARGETED } = (argTypes[name] || {}) as { target?: string };
@@ -216,6 +216,6 @@ export function groupArgsByTarget<TArgs extends Args = Args>({
 
 export function noTargetArgs<TArgs extends Args = Args>(
   context: Pick<StoryContext<Renderer, TArgs>, 'args' | 'argTypes'>
-) {
+): Partial<TArgs> {
   return groupArgsByTarget(context)[UNTARGETED];
 }

@@ -149,7 +149,7 @@ export const WithoutColor = meta.story({
 });
 
 export const WithModal = meta.story({
-  render: () => {
+  render: (): React.JSX.Element => {
     const [isPopoverOpen] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     return (
@@ -173,7 +173,7 @@ export const WithModal = meta.story({
       </>
     );
   },
-  play: async ({ userEvent }) => {
+  play: async ({ userEvent }): Promise<void> => {
     await userEvent.click(screen.getByRole('button', { name: 'Open modal' }));
   },
 });

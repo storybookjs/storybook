@@ -4,7 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import { getInterpretedFile } from './interpret-files.ts';
 
-export function loadPreviewOrConfigFile({ configDir }: { configDir: string }) {
+export function loadPreviewOrConfigFile({ configDir }: { configDir: string }): string | undefined {
   const storybookConfigPath = getInterpretedFile(resolve(configDir, 'config'));
   const storybookPreviewPath = getInterpretedFile(resolve(configDir, 'preview'));
 

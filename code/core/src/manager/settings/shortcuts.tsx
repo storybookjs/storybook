@@ -197,7 +197,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     };
   }
 
-  onKeyDown = (e: KeyboardEvent) => {
+  onKeyDown = (e: KeyboardEvent): false | void | Promise<void> => {
     const { activeFeature, shortcutKeys } = this.state;
 
     if (e.key === 'Backspace') {
@@ -229,7 +229,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     });
   };
 
-  onFocus = (focusedInput: Feature) => () => {
+  onFocus = (focusedInput: Feature) => (): void => {
     const { shortcutKeys } = this.state;
 
     this.setState({
@@ -241,7 +241,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     });
   };
 
-  onBlur = async () => {
+  onBlur = async (): Promise<false | void> => {
     const { shortcutKeys, activeFeature } = this.state;
 
     if (shortcutKeys[activeFeature]) {
@@ -254,7 +254,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     return false;
   };
 
-  saveShortcut = async () => {
+  saveShortcut = async (): Promise<void> => {
     const { activeFeature, shortcutKeys } = this.state;
 
     const { setShortcut } = this.props;
@@ -262,14 +262,14 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     this.setState({ successField: activeFeature });
   };
 
-  restoreDefaults = async () => {
+  restoreDefaults = async (): Promise<void> => {
     const { restoreAllDefaultShortcuts } = this.props;
 
     const defaultShortcuts = await restoreAllDefaultShortcuts();
     return this.setState({ shortcutKeys: toShortcutState(defaultShortcuts) });
   };
 
-  restoreDefault = async () => {
+  restoreDefault = async (): Promise<void> => {
     const { activeFeature, shortcutKeys } = this.state;
 
     const { restoreDefaultShortcut } = this.props;
@@ -283,7 +283,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     });
   };
 
-  displaySuccessMessage = (activeElement: Feature) => {
+  displaySuccessMessage = (activeElement: Feature): 'valid' | undefined => {
     const { successField, shortcutKeys } = this.state;
     return activeElement === successField && shortcutKeys[activeElement].error === false
       ? 'valid'
@@ -297,7 +297,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       : undefined;
   };
 
-  renderKeyInput = () => {
+  renderKeyInput = (): React.JSX.Element[] => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
     // Filter out keyboard shortcuts from localStorage that no longer exist in code
     const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
@@ -350,7 +350,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     return arr;
   };
 
-  renderKeyForm = () => (
+  renderKeyForm = (): React.JSX.Element => (
     <GridWrapper>
       <GridHeaderRow>
         <HeaderItem>Commands</HeaderItem>

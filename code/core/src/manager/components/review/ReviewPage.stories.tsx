@@ -306,7 +306,7 @@ const meta = preview.meta({
 });
 
 export const Collections = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
@@ -319,7 +319,7 @@ export const Collections = meta.story({
 });
 
 export const StoryLinksUseCollectionParam = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     applyReviewState();
 
@@ -337,7 +337,7 @@ export const StoryLinksUseCollectionParam = meta.story({
 });
 
 export const PendingUpdateDeferred = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
@@ -354,8 +354,8 @@ export const PendingUpdateDeferred = meta.story({
 });
 
 export const PendingUpdateAccept = meta.story({
-  render: () => <ReviewOutsideHarness />,
-  play: async ({ canvasElement }) => {
+  render: (): React.JSX.Element => <ReviewOutsideHarness />,
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
@@ -391,7 +391,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
       customQueryParams: { collection: '0' },
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
@@ -411,7 +411,7 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 });
 
 export const PendingUpdateSupersedesStale = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
@@ -428,7 +428,7 @@ export const PendingUpdateSupersedesStale = meta.story({
 });
 
 export const ShowsNotificationForEachNewReview = meta.story({
-  render: () => <ReviewOutsideHarness />,
+  render: (): React.JSX.Element => <ReviewOutsideHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default'],
     managerState: {
@@ -436,7 +436,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
       viewMode: 'story',
     },
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
     await waitFor(() =>
@@ -469,7 +469,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
 });
 
 export const ShowsNotificationForUnseenReview = meta.story({
-  render: () => <ReviewOutsideWithNotificationsHarness />,
+  render: (): React.JSX.Element => <ReviewOutsideWithNotificationsHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default'],
     managerState: {
@@ -477,7 +477,7 @@ export const ShowsNotificationForUnseenReview = meta.story({
       viewMode: 'story',
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
@@ -496,7 +496,7 @@ export const ShowsNotificationForUnseenReview = meta.story({
 });
 
 export const DismissesNotificationOnReviewVisit = meta.story({
-  render: () => <ReviewOutsideWithNotificationsHarness />,
+  render: (): React.JSX.Element => <ReviewOutsideWithNotificationsHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/review/'],
     managerState: {
@@ -504,11 +504,11 @@ export const DismissesNotificationOnReviewVisit = meta.story({
       viewMode: 'review',
     },
   },
-  beforeEach: () => {
+  beforeEach: (): void => {
     sessionStorage.removeItem(NOTIFIED_REVIEW_CREATED_AT_KEY);
     sessionStorage.removeItem(VISITED_REVIEW_CREATED_AT_KEY);
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     try {
       sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
@@ -531,7 +531,7 @@ export const DismissesNotificationOnReviewVisit = meta.story({
 });
 
 export const HidesNotificationAfterReviewVisited = meta.story({
-  render: () => <ReviewOutsideHarness />,
+  render: (): React.JSX.Element => <ReviewOutsideHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default'],
     managerState: {
@@ -539,10 +539,10 @@ export const HidesNotificationAfterReviewVisited = meta.story({
       viewMode: 'story',
     },
   },
-  beforeEach: () => {
+  beforeEach: (): void => {
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
   },
-  play: async () => {
+  play: async (): Promise<void> => {
     await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
     emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
@@ -551,7 +551,7 @@ export const HidesNotificationAfterReviewVisited = meta.story({
 });
 
 export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
-  render: () => <ReviewOutsideHarness />,
+  render: (): React.JSX.Element => <ReviewOutsideHarness />,
   parameters: {
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default'],
     managerState: {
@@ -559,7 +559,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
       viewMode: 'story',
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     const freshReviewState = {
       ...reviewState,
@@ -592,7 +592,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
 });
 
 export const SummaryStateSurvivesReviewReplay = meta.story({
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }): Promise<void> => {
     const canvas = within(canvasElement);
     applyReviewState();
 

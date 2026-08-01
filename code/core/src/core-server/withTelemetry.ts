@@ -104,7 +104,7 @@ export async function sendTelemetryError(
   options: TelemetryOptions,
   blocking = true,
   parent?: StorybookError
-) {
+): Promise<void> {
   try {
     let errorLevel = 'error';
     try {

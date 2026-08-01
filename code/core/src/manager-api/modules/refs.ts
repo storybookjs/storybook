@@ -78,7 +78,7 @@ export interface SubAPI {
   changeRefState: (id: string, previewInitialized: boolean) => void;
 }
 
-export const getSourceType = (source: string, refId?: string) => {
+export const getSourceType = (source: string, refId?: string): string[] | null[] => {
   const { origin: localOrigin, pathname: localPathname } = location;
   const { origin: sourceOrigin, pathname: sourcePathname } = new URL(source);
 

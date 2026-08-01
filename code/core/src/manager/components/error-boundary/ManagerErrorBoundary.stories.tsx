@@ -98,12 +98,12 @@ const meta = preview.meta({
 export default meta;
 
 export const WithError = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <ManagerErrorBoundary>
       <ThrowingComponent />
     </ManagerErrorBoundary>
   ),
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     await expect(canvas.getByTestId('manager-error-boundary')).toBeInTheDocument();
     await expect(canvas.getByText('Something went wrong')).toBeInTheDocument();
     await expect(
@@ -126,7 +126,7 @@ export const WithError = meta.story({
 });
 
 export const WithDeepStackTrace = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <ManagerErrorBoundary>
       <DeepErrorComponent />
     </ManagerErrorBoundary>
@@ -134,7 +134,7 @@ export const WithDeepStackTrace = meta.story({
 });
 
 export const WithoutError = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <ManagerErrorBoundary>
       <div style={{ padding: 40 }}>
         <h1>Everything is fine!</h1>
@@ -142,7 +142,7 @@ export const WithoutError = meta.story({
       </div>
     </ManagerErrorBoundary>
   ),
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     await expect(canvas.getByText('Everything is fine!')).toBeInTheDocument();
     await expect(
       canvas.getByText('This content should render normally when there is no error.')
@@ -152,7 +152,7 @@ export const WithoutError = meta.story({
 });
 
 export const InteractiveError = meta.story({
-  render: () => (
+  render: (): React.JSX.Element => (
     <ManagerErrorBoundary>
       <div style={{ padding: 40, textAlign: 'center' }}>
         <h2>Interactive Error Test</h2>
@@ -164,7 +164,7 @@ export const InteractiveError = meta.story({
 });
 
 export const CustomErrorMessage = meta.story({
-  render: () => {
+  render: (): React.JSX.Element => {
     const CustomError = () => {
       throw new Error(
         'Custom error: Unable to load addons configuration. Please check your manager.ts file.'
@@ -177,7 +177,7 @@ export const CustomErrorMessage = meta.story({
       </ManagerErrorBoundary>
     );
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }): Promise<void> => {
     await expect(canvas.getByTestId('manager-error-boundary')).toBeInTheDocument();
     await expect(
       canvas.getByText(

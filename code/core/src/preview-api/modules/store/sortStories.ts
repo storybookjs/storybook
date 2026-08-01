@@ -38,7 +38,7 @@ export const sortStoriesV7 = (
   stories: IndexEntry[],
   storySortParameter: Addon_StorySortParameterV7,
   fileNameOrder: Path[]
-) => {
+): IndexEntry[] => {
   try {
     return sortStoriesCommon(stories, storySortParameter, fileNameOrder);
   } catch (err) {
@@ -63,7 +63,7 @@ export const sortStoriesV6 = <TRenderer extends Renderer>(
   stories: [string, PreparedStory<TRenderer>, Parameters, Parameters][],
   storySortParameter: Addon_StorySortParameter,
   fileNameOrder: Path[]
-) => {
+): IndexEntry[] => {
   if (storySortParameter && typeof storySortParameter === 'function') {
     stories.sort(storySortParameter as (a: IndexEntryLegacy, b: IndexEntryLegacy) => number);
     return stories.map((s) => toIndexEntry(s[1]));

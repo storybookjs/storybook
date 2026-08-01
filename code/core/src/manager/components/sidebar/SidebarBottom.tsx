@@ -103,7 +103,7 @@ export const SidebarBottomBase = ({
   testProviderStates,
   registeredTestProviders,
   onRunAll,
-}: SidebarBottomProps) => {
+}: SidebarBottomProps): React.JSX.Element | null => {
   const spacerRef = useRef<HTMLDivElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
@@ -171,7 +171,11 @@ export const SidebarBottomBase = ({
   );
 };
 
-export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
+export const SidebarBottom = ({
+  isDevelopment,
+}: {
+  isDevelopment?: boolean;
+}): React.JSX.Element => {
   const api = useStorybookApi();
   const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const { notifications } = useStorybookState();

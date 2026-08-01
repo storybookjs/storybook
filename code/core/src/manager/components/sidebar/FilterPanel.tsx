@@ -49,7 +49,7 @@ export const FilterPanel = ({
   allStatuses,
   includedStatusFilters,
   excludedStatusFilters,
-}: FilterPanelProps) => {
+}: FilterPanelProps): React.JSX.Element => {
   const theme = useTheme();
 
   const { builtInEntries, tagEntries } = useTagFilterEntries(indexJson);

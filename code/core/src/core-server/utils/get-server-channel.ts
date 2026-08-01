@@ -100,7 +100,7 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server, options: ServerChannelTransportOptions) {
+export function getServerChannel(server: Server, options: ServerChannelTransportOptions): Channel {
   const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });

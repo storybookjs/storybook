@@ -14,7 +14,7 @@ export const enrichCsfStory = (
   csfSource: CsfFile,
   key: string,
   options?: EnrichCsfOptions
-) => {
+): void => {
   const storyExport = csfSource.getStoryExport(key);
   const isCsfFactory =
     t.isCallExpression(storyExport) &&
@@ -126,7 +126,11 @@ const addComponentDescription = (
   addComponentDescription(subNode, rest, value);
 };
 
-export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
+export const enrichCsfMeta = (
+  csf: CsfFile,
+  csfSource: CsfFile,
+  options?: EnrichCsfOptions
+): void => {
   const description = !options?.disableDescription && extractDescription(csfSource._metaStatement);
   // docs: { description: { component: %%description%% } },
   if (description) {
@@ -141,7 +145,11 @@ export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: Enrich
   }
 };
 
-export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
+export const enrichCsf = async (
+  csf: CsfFile,
+  csfSource: CsfFile,
+  options?: EnrichCsfOptions
+): Promise<void> => {
   enrichCsfMeta(csf, csfSource, options);
   await options?.enrichCsf?.(csf, csfSource);
   Object.keys(csf._storyExports).forEach((key) => {
@@ -149,13 +157,13 @@ export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: Enri
   });
 };
 
-export const extractSource = (node: t.Node) => {
+export const extractSource = (node: t.Node): string => {
   const src = t.isVariableDeclarator(node) ? node.init : node;
   const { code } = generate(src as t.Node, {});
   return code;
 };
 
-export const extractDescription = (node?: t.Node) => {
+export const extractDescription = (node?: t.Node): string => {
   if (!node?.leadingComments) {
     return '';
   }

@@ -1,10 +1,18 @@
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-import { detect } from 'package-manager-detector';
+import { Agent, AgentName, detect } from 'package-manager-detector';
 
 import { getProjectRoot } from '../common/index.ts';
 
-export const getPackageManagerInfo = async () => {
+export const getPackageManagerInfo = async (): Promise<
+  | {
+      type: AgentName;
+      version: string | undefined;
+      agent: Agent;
+      nodeLinker: 'pnp' | 'node_modules' | 'pnpm' | 'isolated' | 'hoisted';
+    }
+  | undefined
+> => {
   const packageManagerType = await detect({ cwd: getProjectRoot() });
 
   if (!packageManagerType) {

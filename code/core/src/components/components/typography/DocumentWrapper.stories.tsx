@@ -4,10 +4,12 @@ import { DocumentWrapper } from './DocumentWrapper.tsx';
 
 export default {
   component: DocumentWrapper,
-  decorators: [(storyFn: any) => <div style={{ width: '600px' }}>{storyFn()}</div>],
+  decorators: [
+    (storyFn: any): React.JSX.Element => <div style={{ width: '600px' }}>{storyFn()}</div>,
+  ],
 };
 
-export const WithDOM = () => (
+export const WithDOM = (): React.JSX.Element => (
   <DocumentWrapper>
     <h1>h1 Heading</h1>
     <h2>h2 Heading</h2>

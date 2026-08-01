@@ -71,7 +71,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - env:
+      - name: Force-push next release branch
+        env:
           TARGET_BRANCH: ${{ needs.get-next-release-branch.outputs.branch }}
           SOURCE_BRANCH: ${{ needs.branch-checks.outputs.branch }}
         run: |
@@ -98,7 +99,8 @@ jobs:
         if: ${{ steps.is-next-release-branch.outputs.result == 'true' }}
         run: echo "relevant-base-branch=next" >> $GITHUB_OUTPUT
 
-      - if: ${{ steps.is-next-release-branch.outputs.result == 'true' }}
+      - name: Reject direct pushes to next release branch
+        if: ${{ steps.is-next-release-branch.outputs.result == 'true' }}
         run: |
           echo 'WARNING: Do not push directly to the `${{ needs.branch-checks.outputs.branch }}` branch. This branch is created and force-pushed over after pushing to the `${{ steps.relevant-base-branch.outputs.relevant-base-branch }}` branch and the changes you just pushed will be lost.'
           exit 1

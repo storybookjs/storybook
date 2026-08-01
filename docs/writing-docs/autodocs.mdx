@@ -33,7 +33,7 @@ Similarly, you can exclude a particular story from the auto docs page, by removi
 
 ### Configure
 
-In addition to enabling the feature with `tags`, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
+In addition to enabling the feature with `tags`, you can extend your Storybook configuration file (i.e., [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project)) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
 
 <CodeSnippets path="storybook-auto-docs-full-config.md" />
 
@@ -158,7 +158,7 @@ This is not a Storybook issue but a detail of how MDX works. From their [migrati
 
 ### Addon options
 
-The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., `.storybook/main.js|ts`), as part of registering the addon. The following options are available:
+The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project)), as part of registering the addon. The following options are available:
 
 | Option             | Description                                                                                                                                                    |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -195,7 +195,7 @@ Update your import statements to reference the component directly instead of the
 
 <CodeSnippets path="storybook-fix-imports-autodocs-monorepo.md" />
 
-Additionally, if you're developing using TypeScript, you may need to update Storybook's configuration file (i.e., `.storybook/main.js|ts`) to include the following:
+Additionally, if you're developing using TypeScript, you may need to update Storybook's configuration file (i.e., [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project)) to include the following:
 
 <CodeSnippets path="storybook-main-fix-imports-autodocs-monorepo.md" />
 

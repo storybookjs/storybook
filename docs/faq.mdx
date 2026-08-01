@@ -54,7 +54,7 @@ WARN   Failed to load preset: "@storybook/react-webpack5/preset"
 Required package: @storybook/react-webpack5 (via "@storybook/react-webpack5/preset")
 ```
 
-To fix this, you can wrap the package name inside your Storybook configuration file (i.e., `.storybook/main.js|ts`) as follows:
+To fix this, you can wrap the package name inside your Storybook configuration file (i.e., [.storybook/main.*](configure/index.mdx#configure-your-storybook-project)) as follows:
 
 <CodeSnippets path="storybook-main-pnpm-with-module-resolution.md" />
 
@@ -98,7 +98,7 @@ It is advisable to add a `.storybook/tsconfig.json` file so that you apply chang
 
 If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
 
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
+You can opt-out from the new React Root API by setting the following property in your [.storybook/main.*](configure/index.mdx#configure-your-storybook-project) file:
 
 <CodeSnippets path="react-framework-options-legacy-root-api.md" />
 

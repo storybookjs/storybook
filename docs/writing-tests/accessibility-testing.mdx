@@ -232,7 +232,7 @@ Modern React components often use asynchronous techniques like [Suspense](https:
 
 To address this issue, we have introduced a feature flag: `developmentModeForBuild`. This feature flag allows you to set `process.env.NODE_ENV` to `'development'` in built Storybooks, enabling development-related optimizations that are typically disabled in production builds. One of those development optimizations is React’s [`act` utility](https://react.dev/reference/react/act), which helps ensure that all updates related to a test are processed and applied before making assertions, like a11y checks.
 
-To enable this feature flag, add the following configuration to your `.storybook/main.js|ts` file:
+To enable this feature flag, add the following configuration to your [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project) file:
 
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
 

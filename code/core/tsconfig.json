@@ -4,7 +4,9 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "module": "esnext",
-    "stripInternal": true
+    "stripInternal": true,
+    "declaration": true,
+    "isolatedDeclarations": true
   },
   "include": ["src/**/*", "scripts/**/*", "*.d.ts", "templates/runtime-build-code.template"]
 }

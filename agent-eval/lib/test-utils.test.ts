@@ -1,5 +1,12 @@
-import { describe, expect, test } from 'vitest';
+import { readFileSync } from 'node:fs';
+
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+
+vi.mock('node:fs', { spy: true });
+
 import {
+  expectPreviewBrowserStarted,
+  expectValidStorybookLaunchConfig,
   findDevServerKillCommands,
   isLocalDevServerUrl,
   isLocalStorybookPreviewUrl,
@@ -408,5 +415,48 @@ describe('isLocalStorybookPreviewUrl', () => {
     expect(isLocalStorybookPreviewUrl('http://localhost:5173/')).toBe(false);
     expect(isLocalStorybookPreviewUrl('http://localhost:6006/')).toBe(false);
     expect(isLocalStorybookPreviewUrl('https://storybook.js.org/?path=/story/button')).toBe(false);
+  });
+});
+
+describe('launch/preview helpers fail loud out of context', () => {
+  const agentContextPath = '__agent_eval__/agent.json';
+
+  beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+  });
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+  });
+
+  function stubAgentContext(agent: string, integration: 'mcp' | 'plugin') {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === agentContextPath) {
+        return JSON.stringify({ agent, integration, review: false });
+      }
+      throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
+    }) as typeof readFileSync);
+  }
+
+  test('expectValidStorybookLaunchConfig fails when integration is mcp', () => {
+    stubAgentContext('claude-code', 'mcp');
+
+    expect(() => expectValidStorybookLaunchConfig()).toThrow(
+      /only for claude-code \+ plugin.*integration=mcp/
+    );
+  });
+
+  test('expectValidStorybookLaunchConfig fails for codex plugin (not Claude preview tooling)', () => {
+    stubAgentContext('codex', 'plugin');
+
+    expect(() => expectValidStorybookLaunchConfig()).toThrow(
+      /only for claude-code \+ plugin.*agent=codex/
+    );
+  });
+
+  test('expectPreviewBrowserStarted fails when integration is mcp', () => {
+    stubAgentContext('claude-code', 'mcp');
+
+    expect(() => expectPreviewBrowserStarted()).toThrow(/only for plugin.*integration=mcp/);
   });
 });

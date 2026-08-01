@@ -18,6 +18,7 @@ const ADDON_INSTALLATION_INSTRUCTIONS = {
 type ExecuteAddonConfigurationParams = {
   addons: string[];
   configDir?: string;
+  dependencyInstallationStatus?: 'failed' | 'success';
 };
 
 export type ExecuteAddonConfigurationResult = {
@@ -45,6 +46,7 @@ export class AddonConfigurationCommand {
   async execute({
     addons,
     configDir,
+    dependencyInstallationStatus = 'success',
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
     if (!configDir || addons.length === 0) {
       return { status: 'success' };
@@ -52,14 +54,23 @@ export class AddonConfigurationCommand {
 
     try {
       const { hasFailures, addonResults } = await this.configureAddons(configDir, addons);
+      const vitestConfiguredSuccessfully = addonResults.get('@storybook/addon-vitest') === null;
 
-      if (addonResults.has('@storybook/addon-vitest')) {
+      if (vitestConfiguredSuccessfully && dependencyInstallationStatus === 'success') {
         const { result } = await this.addonVitestService.installPlaywright({
           yes: this.commandOptions.yes,
           useRemotePkg: !!this.commandOptions.skipInstall,
         });
         // Map outcome to telemetry decision
         await this.telemetryService.trackPlaywrightPromptDecision(result);
+      } else if (vitestConfiguredSuccessfully && dependencyInstallationStatus === 'failed') {
+        const { command } = this.addonVitestService.getPlaywrightInstallCommand();
+
+        logger.warn(dedent`
+          Playwright browser installation was skipped because dependency installation failed.
+          Resolve the dependency installation error first, then run:
+          ${CLI_COLORS.cta(command)}
+        `);
       }
 
       // some addons failed

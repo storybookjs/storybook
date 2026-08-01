@@ -16,8 +16,13 @@ import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
+import { isCI } from '../utils/envs.ts';
 import { getProjectRoot } from '../utils/paths.ts';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import {
+  type InstallDependenciesOptions,
+  JsPackageManager,
+  PackageManagerName,
+} from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -369,11 +374,66 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: InstallDependenciesOptions) {
     try {
       await super.installDependencies(options);
     } catch (error) {
-      const logs = getErrorLogs(error);
+      let installError = error;
+      let logs = getErrorLogs(installError);
+
+      if (logs.includes('ERR_PNPM_IGNORED_BUILDS')) {
+        const canReviewBuildScripts =
+          options?.nonInteractive === false &&
+          process.stdin.isTTY === true &&
+          process.stdout.isTTY === true &&
+          !isCI();
+        let shouldReviewBuildScripts = false;
+        let approvalCommandFailed = false;
+
+        if (canReviewBuildScripts) {
+          shouldReviewBuildScripts = await prompt.confirm({
+            message:
+              'pnpm blocked dependency build scripts that have not been reviewed. Review them now?',
+            initialValue: true,
+          });
+
+          if (shouldReviewBuildScripts) {
+            // Keep package selection and approval in pnpm's terminal UI.
+            try {
+              await this.runInternalCommand('approve-builds', [], this.cwd, 'inherit');
+            } catch (approvalError) {
+              installError = approvalError;
+              logs = getErrorLogs(installError);
+              approvalCommandFailed = true;
+            }
+
+            if (!approvalCommandFailed) {
+              // Retry once to verify the install; approve-builds can succeed without approving a build.
+              try {
+                await super.installDependencies(options);
+                return;
+              } catch (retryError) {
+                installError = retryError;
+                logs = getErrorLogs(installError);
+              }
+            }
+          }
+        }
+
+        if (
+          !canReviewBuildScripts ||
+          !shouldReviewBuildScripts ||
+          approvalCommandFailed ||
+          logs.includes('ERR_PNPM_IGNORED_BUILDS')
+        ) {
+          logger.error(dedent`
+            pnpm blocked dependency build scripts that have not been reviewed.
+            Review the pending build scripts and retry the installation:
+            pnpm approve-builds
+            pnpm install
+          `);
+        }
+      }
 
       if (logs.includes('ERR_PNPM_NO_MATURE_MATCHING_VERSION')) {
         const handledError = new MinimumReleaseAgeHandledError({
@@ -384,14 +444,14 @@ export class PNPMProxy extends JsPackageManager {
           minimumReleaseAgeExclusionsConfigDocs:
             'https://pnpm.io/settings#minimumreleaseageexclude',
           failedPackage: this.extractFailedPackage(logs),
-          cause: error,
+          cause: installError,
         });
 
         logger.error(handledError.message);
         throw handledError;
       }
 
-      throw error;
+      throw installError;
     }
   }
 

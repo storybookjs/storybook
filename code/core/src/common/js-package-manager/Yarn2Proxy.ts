@@ -19,7 +19,11 @@ import { logger } from '../../node-logger/index.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import {
+  type InstallDependenciesOptions,
+  JsPackageManager,
+  PackageManagerName,
+} from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -259,7 +263,7 @@ export class Yarn2Proxy extends JsPackageManager {
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: InstallDependenciesOptions) {
     try {
       await super.installDependencies(options);
     } catch (error) {

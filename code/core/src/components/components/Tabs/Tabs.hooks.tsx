@@ -12,7 +12,9 @@ import type { Link } from '../tooltip/TooltipLinkList.tsx';
 import { TabButton } from './Button.tsx';
 import type { ChildrenListComplete } from './Tabs.helpers.tsx';
 
-const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
+const CollapseIcon: React.FC<
+  React.JSX.IntrinsicElements['span'] & { isActive: boolean; theme?: Theme }
+> = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
   display: 'inline-block',
   width: 0,
   height: 0,

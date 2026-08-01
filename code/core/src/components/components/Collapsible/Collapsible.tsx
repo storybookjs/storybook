@@ -10,7 +10,9 @@ import React, {
 import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
-const CollapsibleContent = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
+const CollapsibleContent: React.FC<
+  React.JSX.IntrinsicElements['div'] & { collapsed?: boolean; theme?: Theme }
+> = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
   blockSize: collapsed ? 0 : 'auto',
   contentVisibility: collapsed ? 'hidden' : 'visible',
   transform: collapsed ? 'translateY(-10px)' : 'translateY(0)',

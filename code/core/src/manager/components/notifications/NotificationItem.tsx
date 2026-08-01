@@ -32,7 +32,9 @@ const grow = keyframes({
   },
 });
 
-const Notification = styled.div<{ duration?: number }>(
+const Notification: React.FC<
+  React.JSX.IntrinsicElements['div'] & { duration?: number; theme?: Theme }
+> = styled.div<{ duration?: number }>(
   ({ theme }) => ({
     position: 'relative',
     display: 'flex',
@@ -67,7 +69,9 @@ const Notification = styled.div<{ duration?: number }>(
     }
 );
 
-const NotificationWithInteractiveStates = styled(Notification)({
+const NotificationWithInteractiveStates: React.FC<
+  React.ComponentProps<typeof Notification> & { theme?: Theme }
+> = styled(Notification)({
   cursor: 'pointer',
   border: 'none',
   outline: 'none',
@@ -142,12 +146,13 @@ const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
   </>
 );
 
-const DismissButtonWrapper = styled(Button)(({ theme }) => ({
-  width: 28,
-  alignSelf: 'center',
-  marginTop: 0,
-  color: theme.base === 'light' ? 'rgba(255,255,255,0.7)' : ' #999999',
-}));
+const DismissButtonWrapper: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> =
+  styled(Button)(({ theme }) => ({
+    width: 28,
+    alignSelf: 'center',
+    marginTop: 0,
+    color: theme.base === 'light' ? 'rgba(255,255,255,0.7)' : ' #999999',
+  }));
 
 const DismissNotificationItem: FC<{
   onDismiss: () => void;

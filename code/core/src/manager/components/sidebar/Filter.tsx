@@ -22,23 +22,25 @@ const StyledButton = styled(Button)<{ $isHighlighted: boolean }>(({ $isHighlight
   }),
 }));
 
-const TagSelected = styled(Badge)(({ theme }) => ({
-  position: 'absolute',
-  top: 7,
-  right: 7,
-  transform: 'translate(50%, -50%)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 3,
-  height: 6,
-  minWidth: 6,
-  lineHeight: 'px',
-  boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
-  fontSize: theme.typography.size.s1 - 1,
-  background: theme.barSelectedColor,
-  color: theme.color.inverseText,
-}));
+const TagSelected: React.FC<React.ComponentProps<typeof Badge> & { theme?: Theme }> = styled(Badge)(
+  ({ theme }) => ({
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    transform: 'translate(50%, -50%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
+    height: 6,
+    minWidth: 6,
+    lineHeight: 'px',
+    boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
+    fontSize: theme.typography.size.s1 - 1,
+    background: theme.barSelectedColor,
+    color: theme.color.inverseText,
+  })
+);
 
 const filterMapper = ({ api, state }: Combo) => ({
   api,

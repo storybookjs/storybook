@@ -6,7 +6,7 @@ const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
 }));
 
-const Desc = styled.div();
+const Desc: React.FC<React.JSX.IntrinsicElements['div'] & { theme?: Theme }> = styled.div();
 
 const Message = styled.div(({ theme }) => ({
   padding: 30,

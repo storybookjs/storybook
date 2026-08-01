@@ -63,12 +63,12 @@ const RowContainer = styled('li', {
     }
 );
 
-const RowHeader = styled.div<{ $isNavigationDisabled: boolean }>(
-  ({ theme, $isNavigationDisabled }) => ({
-    display: 'flex',
-    '&:hover': $isNavigationDisabled ? {} : { background: theme.background.hoverable },
-  })
-);
+const RowHeader: React.FC<
+  React.JSX.IntrinsicElements['div'] & { $isNavigationDisabled: boolean; theme?: Theme }
+> = styled.div<{ $isNavigationDisabled: boolean }>(({ theme, $isNavigationDisabled }) => ({
+  display: 'flex',
+  '&:hover': $isNavigationDisabled ? {} : { background: theme.background.hoverable },
+}));
 
 const RowLabel = styled('button', {
   shouldForwardProp: (prop) => !['call'].includes(prop.toString()),
@@ -102,7 +102,9 @@ const RowActions = styled.div({
   padding: 6,
 });
 
-const StyledButton = styled(Button)(({ theme }) => ({
+const StyledButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));

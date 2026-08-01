@@ -44,26 +44,27 @@ import type { ReviewState } from '../review-state.ts';
 import type { ReviewBanner } from '../review-store.ts';
 import type { StoryInfo } from '../review-types.ts';
 
-const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
-  color: theme.color.defaultText,
-  p: {
-    margin: 0,
-  },
-  'p + p': {
-    marginTop: 10,
-  },
-  code: {
-    color: 'inherit',
-    verticalAlign: 'text-bottom',
-    fontSize: '0.85em',
-    margin: 0,
-    padding: '0 4px',
-    background: 'transparent',
-    border: 'none',
-    boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
-    borderRadius: theme.appBorderRadius,
-  },
-}));
+const MarkdownWrapper: React.FC<React.ComponentProps<typeof DocumentWrapper> & { theme?: Theme }> =
+  styled(DocumentWrapper)(({ theme }) => ({
+    color: theme.color.defaultText,
+    p: {
+      margin: 0,
+    },
+    'p + p': {
+      marginTop: 10,
+    },
+    code: {
+      color: 'inherit',
+      verticalAlign: 'text-bottom',
+      fontSize: '0.85em',
+      margin: 0,
+      padding: '0 4px',
+      background: 'transparent',
+      border: 'none',
+      boxShadow: `inset 0 0 0 1px ${theme.appBorderColor}`,
+      borderRadius: theme.appBorderRadius,
+    },
+  }));
 
 // `100dvh` fills the manager's page cell and also works in the addon's own
 // fullscreen stories, where #storybook-root has no height. The card list below
@@ -114,7 +115,7 @@ const Main = styled.main({
   },
 });
 
-const SummaryCard = styled(Card)({
+const SummaryCard: React.FC<React.ComponentProps<typeof Card> & { theme?: Theme }> = styled(Card)({
   display: 'flex',
   alignItems: 'flex-start',
   padding: '9px 12px',
@@ -138,15 +139,16 @@ const SummaryLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
-const SummaryContent = styled(MarkdownWrapper)({
-  flex: 1,
-  minWidth: 0,
-  // Keep the "Summary:" heading and the first description paragraph on the same
-  // line, matching the previous inline "**Summary:** …" rendering.
-  '& > p:first-of-type': {
-    display: 'inline',
-  },
-});
+const SummaryContent: React.FC<React.ComponentProps<typeof MarkdownWrapper> & { theme?: Theme }> =
+  styled(MarkdownWrapper)({
+    flex: 1,
+    minWidth: 0,
+    // Keep the "Summary:" heading and the first description paragraph on the same
+    // line, matching the previous inline "**Summary:** …" rendering.
+    '& > p:first-of-type': {
+      display: 'inline',
+    },
+  });
 
 // A real heading for the summary label, styled to look identical to the inline
 // bold "Summary:" text it replaces.
@@ -209,14 +211,17 @@ const CardCount = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const ToggleChevronIcon = styled(ChevronSmallDownIcon)({
+const ToggleChevronIcon: React.FC<
+  React.ComponentProps<typeof ChevronSmallDownIcon> & { theme?: Theme }
+> = styled(ChevronSmallDownIcon)({
   transition: 'transform 160ms ease',
 });
 
-const CardRationale = styled(MarkdownWrapper)(({ theme }) => ({
-  color: theme.textMutedColor,
-  margin: '0 12px',
-}));
+const CardRationale: React.FC<React.ComponentProps<typeof MarkdownWrapper> & { theme?: Theme }> =
+  styled(MarkdownWrapper)(({ theme }) => ({
+    color: theme.textMutedColor,
+    margin: '0 12px',
+  }));
 
 const Footer = styled.div(({ theme }) => ({
   color: theme.textMutedColor,

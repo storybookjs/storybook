@@ -11,7 +11,14 @@ import { styled } from 'storybook/theming';
 import { Button } from '../Button/Button.tsx';
 import type { useTabsState } from './TabsView.tsx';
 
-const StyledTabButton = styled.button<{
+const StyledTabButton: React.FC<
+  React.JSX.IntrinsicElements['button'] & {
+    isDisabled: boolean;
+    isPressed: boolean;
+    isSelected: boolean;
+    theme?: Theme;
+  }
+> = styled.button<{
   isDisabled: boolean;
   isPressed: boolean;
   isSelected: boolean;
@@ -96,7 +103,13 @@ const StyledTabList = styled.div({
 
 const SCROLL_BUTTON_WIDTH = 28; // 16 width + 6 + 6 padding
 
-const ScrollButtonContainer = styled.div<{
+const ScrollButtonContainer: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $showStartBorder?: boolean;
+    $showEndBorder?: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   $showStartBorder?: boolean;
   $showEndBorder?: boolean;
 }>(({ $showStartBorder, $showEndBorder, theme }) => ({
@@ -112,7 +125,9 @@ const ScrollButtonContainer = styled.div<{
       : 'none',
 }));
 
-const ScrollButton = styled(Button)({
+const ScrollButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   flexShrink: 0,
   paddingInline: 0,
   width: 16,

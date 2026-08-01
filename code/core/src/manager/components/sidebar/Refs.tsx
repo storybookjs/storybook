@@ -22,10 +22,11 @@ export interface RefProps {
   setHighlighted: (highlight: Highlight) => void;
 }
 
-const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
-  position: 'relative',
-  marginTop: isMain ? undefined : 0,
-}));
+const Wrapper: React.FC<React.JSX.IntrinsicElements['div'] & { isMain: boolean; theme?: Theme }> =
+  styled.div<{ isMain: boolean }>(({ isMain }) => ({
+    position: 'relative',
+    marginTop: isMain ? undefined : 0,
+  }));
 
 const RefHead = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,

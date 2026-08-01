@@ -43,7 +43,9 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
+const ErrorDisplay: React.FC<
+  React.JSX.IntrinsicElements['pre'] & { isMobile: boolean; theme?: Theme }
+> = styled.pre<{ isMobile: boolean }>(
   {
     boxSizing: 'border-box',
     borderRadius: 8,
@@ -151,10 +153,14 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
   );
 };
 
-const FlexSpaced = styled(Spaced)({
+const FlexSpaced: React.FC<React.ComponentProps<typeof Spaced> & { theme?: Theme }> = styled(
+  Spaced
+)({
   display: 'flex',
 });
-const WideSpaced = styled(Spaced)({
+const WideSpaced: React.FC<React.ComponentProps<typeof Spaced> & { theme?: Theme }> = styled(
+  Spaced
+)({
   flex: 1,
 });
 

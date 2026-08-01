@@ -223,7 +223,9 @@ const MobileBottomBar = styled.header({
   },
 });
 
-const BottomBarButton = styled(Button)({
+const BottomBarButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   WebkitLineClamp: 1,
   flexShrink: 1,
   p: {

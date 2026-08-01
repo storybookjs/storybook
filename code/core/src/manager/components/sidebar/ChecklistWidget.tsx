@@ -77,11 +77,13 @@ const useTransitionArray = <K, V>(
   );
 };
 
-const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
+const CollapsibleWithMargin: React.FC<
+  React.ComponentProps<typeof Collapsible> & { theme?: Theme }
+> = styled(Collapsible)(({ collapsed }) => ({
   marginTop: collapsed ? 0 : 16,
 }));
 
-const HoverCard = styled(Card)({
+const HoverCard: React.FC<React.ComponentProps<typeof Card> & { theme?: Theme }> = styled(Card)({
   '&:hover #checklist-module-collapse-toggle': {
     opacity: 1,
   },
@@ -95,11 +97,14 @@ const CollapseToggle = styled(ActionList.Button)({
   },
 });
 
-const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
-  color: theme.color.secondary,
-}));
+const ProgressCircle: React.FC<React.ComponentProps<typeof ProgressSpinner> & { theme?: Theme }> =
+  styled(ProgressSpinner)(({ theme }) => ({
+    color: theme.color.secondary,
+  }));
 
-const Checked = styled(StatusPassIcon)(({ theme }) => ({
+const Checked: React.FC<React.ComponentProps<typeof StatusPassIcon> & { theme?: Theme }> = styled(
+  StatusPassIcon
+)(({ theme }) => ({
   padding: 1,
   borderRadius: '50%',
   background: theme.color.positive,
@@ -107,7 +112,9 @@ const Checked = styled(StatusPassIcon)(({ theme }) => ({
   animation: `${fadeScaleIn} 500ms forwards`,
 }));
 
-const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
+const ItemLabel: React.FC<
+  React.JSX.IntrinsicElements['span'] & { isCompleted: boolean; isSkipped: boolean; theme?: Theme }
+> = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   ({ theme, isCompleted, isSkipped }) => ({
     position: 'relative',
     margin: '0 -2px',

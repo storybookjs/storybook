@@ -46,12 +46,16 @@ export interface NewStoryPayload extends CreateNewStoryRequestPayload {
   selectedItemId: string | number;
 }
 
-const TreeExpandIconStyled = styled(ChevronSmallRightIcon)(({ theme }) => ({
+const TreeExpandIconStyled: React.FC<
+  React.ComponentProps<typeof ChevronSmallRightIcon> & { theme?: Theme }
+> = styled(ChevronSmallRightIcon)(({ theme }) => ({
   color: theme.textMutedColor,
   marginTop: 2,
 }));
 
-const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)(({ theme }) => ({
+const TreeCollapseIconStyled: React.FC<
+  React.ComponentProps<typeof ChevronSmallDownIcon> & { theme?: Theme }
+> = styled(ChevronSmallDownIcon)(({ theme }) => ({
   color: theme.textMutedColor,
   marginTop: 2,
 }));

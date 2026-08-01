@@ -11,7 +11,7 @@ const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
 }));
 
-const Desc = styled.span();
+const Desc: React.FC<React.JSX.IntrinsicElements['span'] & { theme?: Theme }> = styled.span();
 
 const Links = styled.div(({ theme }) => ({
   marginTop: 8,

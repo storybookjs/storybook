@@ -19,10 +19,11 @@ const UnstyledWrapped = forwardRef<HTMLDivElement, { children: ReactNode; classN
 );
 UnstyledWrapped.displayName = 'UnstyledWrapped';
 
-export const Wrapper = styled(UnstyledWrapped)({
-  margin: 0,
-  padding: '10px 5px 20px',
-});
+export const Wrapper: React.FC<React.ComponentProps<typeof UnstyledWrapped> & { theme?: Theme }> =
+  styled(UnstyledWrapped)({
+    margin: 0,
+    padding: '10px 5px 20px',
+  });
 
 interface InspectorProps {
   theme: Theme & { addonActionsTheme?: string };

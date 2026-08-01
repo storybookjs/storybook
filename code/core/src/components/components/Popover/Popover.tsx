@@ -26,7 +26,15 @@ export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   padding?: number | string;
 }
 
-const Wrapper = styled.div<{
+const Wrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    bgColor: NonNullable<PopoverProps['color']>;
+    hasChrome: boolean;
+    hasCloseButton: boolean;
+    padding: NonNullable<PopoverProps['padding']>;
+    theme?: Theme;
+  }
+> = styled.div<{
   bgColor: NonNullable<PopoverProps['color']>;
   hasChrome: boolean;
   hasCloseButton: boolean;
@@ -68,7 +76,9 @@ const Wrapper = styled.div<{
     }
 );
 
-const AbsoluteButton = styled(Button)({
+const AbsoluteButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   position: 'absolute',
   top: 4,
   right: 4,

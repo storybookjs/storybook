@@ -58,14 +58,23 @@ const slide = keyframes({
   },
 });
 
-const CardContent = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
+const CardContent: React.FC<
+  React.JSX.IntrinsicElements['div'] & { color?: ThemeColor; theme?: Theme }
+> = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
   color: getColor(theme, color),
   borderRadius: theme.appBorderRadius,
   background: getOpaqueBackground(theme, color),
   position: 'relative',
 }));
 
-const CardOutline = styled.div<{
+const CardOutline: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    animation?: 'none' | 'rainbow' | 'spin';
+    color?: ThemeColor;
+    outlineColor?: ThemeColor;
+    theme?: Theme;
+  }
+> = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: ThemeColor;
   outlineColor?: ThemeColor;

@@ -73,7 +73,13 @@ const slideToBottom = keyframes({
   },
 });
 
-export const Overlay = styled.div<{
+export const Overlay: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $status?: TransitionStatus;
+    $transitionDuration?: number;
+    theme?: Theme;
+  }
+> = styled.div<{
   $status?: TransitionStatus;
   $transitionDuration?: number;
 }>(({ $status, $transitionDuration }) => ({
@@ -93,7 +99,16 @@ export const Overlay = styled.div<{
   },
 }));
 
-export const Container = styled.div<{
+export const Container: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $variant: 'dialog' | 'bottom-drawer';
+    $status?: TransitionStatus;
+    $transitionDuration?: number;
+    width?: number | string;
+    height?: number | string;
+    theme?: Theme;
+  }
+> = styled.div<{
   $variant: 'dialog' | 'bottom-drawer';
   $status?: TransitionStatus;
   $transitionDuration?: number;
@@ -259,7 +274,9 @@ export const Title = styled((props: ComponentProps<typeof Heading>) => (
   fontWeight: theme.typography.weight.bold,
 }));
 
-export const Description = styled(Text)(({ theme }) => ({
+export const Description: React.FC<React.ComponentProps<typeof Text> & { theme?: Theme }> = styled(
+  Text
+)(({ theme }) => ({
   position: 'relative',
   zIndex: 1,
   margin: 0,

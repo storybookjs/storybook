@@ -7,7 +7,9 @@ import { keyframes, styled } from 'storybook/theming';
 
 import { rotate360 } from '../shared/animation.ts';
 
-const LoaderWrapper = styled.div<{ size?: number }>(({ size = 32 }) => ({
+const LoaderWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & { size?: number; theme?: Theme }
+> = styled.div<{ size?: number }>(({ size = 32 }) => ({
   borderRadius: '50%',
   cursor: 'progress',
   display: 'inline-block',
@@ -66,12 +68,13 @@ const ProgressMessage = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const ErrorIcon = styled(LightningOffIcon)(({ theme }) => ({
-  width: 20,
-  height: 20,
-  marginBottom: '0.5rem',
-  color: theme.textMutedColor,
-}));
+const ErrorIcon: React.FC<React.ComponentProps<typeof LightningOffIcon> & { theme?: Theme }> =
+  styled(LightningOffIcon)(({ theme }) => ({
+    width: 20,
+    height: 20,
+    marginBottom: '0.5rem',
+    color: theme.textMutedColor,
+  }));
 
 const ellipsis = keyframes`
   from { content: "..." }

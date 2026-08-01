@@ -148,7 +148,9 @@ const useLayoutSyncingState = ({
   };
 };
 
-const OrderedMobileNavigation = styled(MobileNavigation)({
+const OrderedMobileNavigation: React.FC<
+  React.ComponentProps<typeof MobileNavigation> & { theme?: Theme }
+> = styled(MobileNavigation)({
   order: 1,
 });
 
@@ -258,7 +260,14 @@ const DragShield = styled.div({
   zIndex: 10,
 });
 
-const LayoutContainer = styled.div<{
+const LayoutContainer: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    panelPosition: LayoutState['panelPosition'];
+    showPanel: boolean;
+    showSidebar: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
   showSidebar: boolean;

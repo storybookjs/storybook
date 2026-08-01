@@ -8,7 +8,9 @@ import { Input as InputComponent } from './Input.tsx';
 import { Select as SelectComponent } from './Select.tsx';
 import { Textarea as TextareaComponent } from './Textarea.tsx';
 
-const Flexed = styled(FieldComponent)({ display: 'flex' });
+const Flexed: React.FC<React.ComponentProps<typeof FieldComponent> & { theme?: Theme }> = styled(
+  FieldComponent
+)({ display: 'flex' });
 
 export default {
   title: 'Form/Field',

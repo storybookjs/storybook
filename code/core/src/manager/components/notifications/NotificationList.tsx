@@ -32,20 +32,21 @@ export const NotificationList: FC<NotificationListProps> = ({
   );
 };
 
-const List = styled.div<{ isMobile?: boolean }>(
-  {
-    zIndex: 200,
-    '> * + *': {
-      marginTop: 12,
+const List: React.FC<React.JSX.IntrinsicElements['div'] & { isMobile?: boolean; theme?: Theme }> =
+  styled.div<{ isMobile?: boolean }>(
+    {
+      zIndex: 200,
+      '> * + *': {
+        marginTop: 12,
+      },
+      '&:empty': {
+        display: 'none',
+      },
     },
-    '&:empty': {
-      display: 'none',
-    },
-  },
-  ({ isMobile }) =>
-    isMobile && {
-      position: 'fixed',
-      bottom: 40,
-      margin: 20,
-    }
-);
+    ({ isMobile }) =>
+      isMobile && {
+        position: 'fixed',
+        bottom: 40,
+        margin: 20,
+      }
+  );

@@ -26,19 +26,21 @@ const Container = styled.div({
   zIndex: 1,
 });
 
-const Bar = styled(BaseBar)(({ theme }) => ({
-  '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
-  paddingInline: 4,
-  animation: `${slideIn} 300ms, ${highlight} 2s`,
-  background: theme.background.bar,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  fontSize: theme.typography.size.s2,
+const Bar: React.FC<React.ComponentProps<typeof BaseBar> & { theme?: Theme }> = styled(BaseBar)(
+  ({ theme }) => ({
+    '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
+    paddingInline: 4,
+    animation: `${slideIn} 300ms, ${highlight} 2s`,
+    background: theme.background.bar,
+    borderTop: `1px solid ${theme.appBorderColor}`,
+    fontSize: theme.typography.size.s2,
 
-  '@container (max-width: 799px)': {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-}));
+    '@container (max-width: 799px)': {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+  })
+);
 
 const Info = styled.div({
   display: 'flex',

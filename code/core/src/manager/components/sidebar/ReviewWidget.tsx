@@ -42,7 +42,9 @@ const HeaderTitle = styled.h2(({ theme }) => ({
   lineHeight: `${theme.typography.size.s3}px`,
 }));
 
-const AgenticIcon = styled(WandIcon)(({ theme }) => ({
+const AgenticIcon: React.FC<React.ComponentProps<typeof WandIcon> & { theme?: Theme }> = styled(
+  WandIcon
+)(({ theme }) => ({
   color: theme.fgColor.agentic,
 }));
 
@@ -53,7 +55,9 @@ const DismissButton = styled(ActionList.Button)({
   zIndex: 1,
 });
 
-const DismissIcon = styled(CloseAltIcon)({
+const DismissIcon: React.FC<React.ComponentProps<typeof CloseAltIcon> & { theme?: Theme }> = styled(
+  CloseAltIcon
+)({
   padding: 1,
 });
 

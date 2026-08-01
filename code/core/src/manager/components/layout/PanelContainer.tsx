@@ -14,7 +14,9 @@ interface PanelContainerProps {
   position: API_Layout['panelPosition'];
 }
 
-const Container = styled.div<{ position: API_Layout['panelPosition'] }>(({ theme, position }) => ({
+const Container: React.FC<
+  React.JSX.IntrinsicElements['div'] & { position: API_Layout['panelPosition']; theme?: Theme }
+> = styled.div<{ position: API_Layout['panelPosition'] }>(({ theme, position }) => ({
   gridArea: 'panel',
   position: 'relative',
   backgroundColor: theme.appContentBg,

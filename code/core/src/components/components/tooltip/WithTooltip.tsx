@@ -161,13 +161,20 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 Tooltip.displayName = 'Tooltip';
 
 // A target that doesn't speak popper
-const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
+const TargetContainer: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    trigger: ReactPopperTooltipConfig['trigger'];
+    theme?: Theme;
+  }
+> = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   display: inline-block;
   cursor: ${(props) =>
     props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
-const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
+const TargetSvgContainer: React.FC<
+  React.JSX.IntrinsicElements['g'] & { trigger: ReactPopperTooltipConfig['trigger']; theme?: Theme }
+> = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   cursor: ${(props) =>
     props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;

@@ -74,7 +74,14 @@ export const Drag = forwardRef<HTMLDivElement, DragProps>(function Drag(props, r
   );
 });
 
-const DragHandle = styled.div<{
+const DragHandle: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $orientation?: 'horizontal' | 'vertical';
+    $overlapping?: boolean;
+    $position: 'left' | 'right' | 'top' | 'bottom';
+    theme?: Theme;
+  }
+> = styled.div<{
   $orientation?: 'horizontal' | 'vertical';
   $overlapping?: boolean;
   $position: 'left' | 'right' | 'top' | 'bottom';

@@ -114,7 +114,13 @@ const slideToRight = keyframes({
   },
 });
 
-const Container = styled.div<{ $status: string; $transitionDuration: number }>(
+const Container: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $status: string;
+    $transitionDuration: number;
+    theme?: Theme;
+  }
+> = styled.div<{ $status: string; $transitionDuration: number }>(
   ({ theme, $status, $transitionDuration }) => ({
     position: 'absolute',
     width: '100%',
@@ -170,6 +176,8 @@ const BottomText = styled.div(({ theme }) => ({
   marginTop: 30,
 }));
 
-const CloseButton = styled(Button)({
+const CloseButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   alignSelf: 'start',
 });

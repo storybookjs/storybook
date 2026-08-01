@@ -68,7 +68,9 @@ const Code = styled.pre(({ theme }) => ({
   margin: '4px 0 16px',
 }));
 
-const ButtonTab = styled.button<{ active: boolean }>(({ theme, active }) => ({
+const ButtonTab: React.FC<
+  React.JSX.IntrinsicElements['button'] & { active: boolean; theme?: Theme }
+> = styled.button<{ active: boolean }>(({ theme, active }) => ({
   all: 'unset',
   alignItems: 'center',
   gap: 10,

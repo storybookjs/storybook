@@ -13,16 +13,25 @@ const rotate = keyframes({
   },
 });
 
-const Wrapper = styled.div<{ size: number }>(({ size }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  position: 'relative',
-  minWidth: size,
-  minHeight: size,
-}));
+const Wrapper: React.FC<React.JSX.IntrinsicElements['div'] & { size: number; theme?: Theme }> =
+  styled.div<{ size: number }>(({ size }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    minWidth: size,
+    minHeight: size,
+  }));
 
-const Circle = styled.svg<{ size: number; width: number; progress?: boolean; spinner?: boolean }>(
+const Circle: React.FC<
+  React.JSX.IntrinsicElements['svg'] & {
+    size: number;
+    width: number;
+    progress?: boolean;
+    spinner?: boolean;
+    theme?: Theme;
+  }
+> = styled.svg<{ size: number; width: number; progress?: boolean; spinner?: boolean }>(
   ({ size, width }) => ({
     position: 'absolute',
     width: `${size}px!important`,

@@ -57,7 +57,9 @@ const Items = styled.ol(({ theme }) => ({
   },
 }));
 
-const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
+const SectionSummary: React.FC<
+  React.JSX.IntrinsicElements['div'] & { progress: number; isCollapsed: boolean; theme?: Theme }
+> = styled.div<{ progress: number; isCollapsed: boolean }>(
   ({ theme, progress, isCollapsed, onClick }) => ({
     position: 'relative',
     fontWeight: 'bold',
@@ -103,7 +105,9 @@ const SectionHeading = styled.h2(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
 }));
 
-const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
+const ItemSummary: React.FC<
+  React.JSX.IntrinsicElements['div'] & { isCollapsed: boolean; onClick?: () => void; theme?: Theme }
+> = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
   ({ theme, isCollapsed, onClick }) => ({
     fontWeight: theme.typography.weight.regular,
     fontSize: theme.typography.size.s2,
@@ -122,7 +126,9 @@ const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
   })
 );
 
-const ItemHeading = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
+const ItemHeading: React.FC<
+  React.JSX.IntrinsicElements['h3'] & { skipped: boolean; theme?: Theme }
+> = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
   flex: 1,
   margin: 0,
   color: skipped ? theme.textMutedColor : theme.color.defaultText,
@@ -194,7 +200,9 @@ const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
     transition: 'all var(--transition-duration, 0.2s)',
   })
 );
-export const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
+export const Skipped: React.FC<
+  React.JSX.IntrinsicElements['span'] & { visible?: boolean; theme?: Theme }
+> = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
   display: 'flex',
   alignItems: 'center',
   color: theme.textMutedColor,
@@ -215,7 +223,9 @@ const Actions = styled.div({
   gap: 4,
 });
 
-const ToggleButton = styled(Button)({
+const ToggleButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   opacity: 'var(--toggle-button-opacity)',
   transition: 'opacity var(--transition-duration, 0.2s)',
 

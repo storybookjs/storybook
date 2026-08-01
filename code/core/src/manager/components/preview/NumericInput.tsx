@@ -14,57 +14,57 @@ import { Form } from 'storybook/internal/components';
 import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
-  ({ after, before, theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
+const Wrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & { after?: ReactNode; before?: ReactNode; theme?: Theme }
+> = styled.div<{ after?: ReactNode; before?: ReactNode }>(({ after, before, theme }) => ({
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  height: 32,
+  paddingInline: 9,
+  fontSize: theme.typography.size.s1,
+  color: theme.textMutedColor,
+  background: theme.input.background,
+  boxShadow: `${theme.input.border} 0 0 0 1px inset`,
+  borderRadius: theme.input.borderRadius,
+  svg: {
+    display: 'block',
+  },
+  input: {
     width: '100%',
-    height: 32,
-    paddingInline: 9,
-    fontSize: theme.typography.size.s1,
-    color: theme.textMutedColor,
-    background: theme.input.background,
-    boxShadow: `${theme.input.border} 0 0 0 1px inset`,
-    borderRadius: theme.input.borderRadius,
-    svg: {
-      display: 'block',
-    },
-    input: {
-      width: '100%',
-      height: '100%',
-      minHeight: '100%',
-      flex: '1 1 auto',
-      paddingInline: 0,
-      fontSize: 'inherit',
-      background: 'transparent',
-      border: 'none',
+    height: '100%',
+    minHeight: '100%',
+    flex: '1 1 auto',
+    paddingInline: 0,
+    fontSize: 'inherit',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    color: theme.input.color,
+    '&:focus, &:focus-visible': {
       boxShadow: 'none',
-      color: theme.input.color,
-      '&:focus, &:focus-visible': {
-        boxShadow: 'none',
-        outline: 'none',
-      },
+      outline: 'none',
     },
-    'input:disabled': {
-      background: 'transparent',
-    },
-    'input + div': {
-      paddingInline: 0,
-      fontSize: 'inherit',
-    },
-    '&:has(input:focus-visible)': {
-      outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: -2,
-    },
-    '&:has(input:disabled)': {
-      background: theme.base === 'light' ? theme.color.lighter : theme.input.background,
-      cursor: 'not-allowed',
-    },
-    ...(after && { paddingRight: 2 }),
-    ...(before && { paddingLeft: 2 }),
-  })
-);
+  },
+  'input:disabled': {
+    background: 'transparent',
+  },
+  'input + div': {
+    paddingInline: 0,
+    fontSize: 'inherit',
+  },
+  '&:has(input:focus-visible)': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
+  '&:has(input:disabled)': {
+    background: theme.base === 'light' ? theme.color.lighter : theme.input.background,
+    cursor: 'not-allowed',
+  },
+  ...(after && { paddingRight: 2 }),
+  ...(before && { paddingLeft: 2 }),
+}));
 
 interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'value'> {
   label?: string;

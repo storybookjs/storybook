@@ -17,7 +17,9 @@ export const FrameWrap = styled.main(({ theme }) => ({
   background: theme.background.app,
   flex: 1,
 }));
-export const CanvasWrap = styled.div<{ show: boolean }>(
+export const CanvasWrap: React.FC<
+  React.JSX.IntrinsicElements['div'] & { show: boolean; theme?: Theme }
+> = styled.div<{ show: boolean }>(
   {
     alignContent: 'center',
     alignItems: 'center',
@@ -33,7 +35,9 @@ export const CanvasWrap = styled.div<{ show: boolean }>(
   ({ show }) => ({ display: show ? 'grid' : 'none' })
 );
 
-export const UnstyledLink = styled(Link)({
+export const UnstyledLink: React.FC<React.ComponentProps<typeof Link> & { theme?: Theme }> = styled(
+  Link
+)({
   color: 'inherit',
   textDecoration: 'inherit',
   display: 'inline-block',

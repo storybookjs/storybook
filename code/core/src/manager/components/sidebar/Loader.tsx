@@ -5,7 +5,12 @@ import { styled } from 'storybook/theming';
 
 const LOADER_SEQUENCE = [0, 0, 1, 1, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3];
 
-const Loadingitem = styled.div<{
+const Loadingitem: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    depth?: number;
+    theme?: Theme;
+  }
+> = styled.div<{
   depth?: number;
 }>(
   {

@@ -64,7 +64,9 @@ const ScreenReaderLabel = styled.label({
   overflow: 'hidden',
 });
 
-const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+const SearchField: React.FC<
+  React.JSX.IntrinsicElements['div'] & { isMobile: boolean; theme?: Theme }
+> = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
@@ -93,40 +95,41 @@ const IconWrapper = styled.div(({ theme, onClick }) => ({
   justifyContent: 'center',
 }));
 
-const Input = styled.input<{ isMobile: boolean }>(({ theme, isMobile }) => ({
-  appearance: 'none',
-  height: 28,
-  width: '100%',
-  padding: 0,
-  border: 0,
-  background: 'transparent',
-  fontSize: isMobile ? '16px' : `${theme.typography.size.s1 + 1}px`,
-  fontFamily: 'inherit',
-  transition: 'all 150ms',
-  color: theme.color.defaultText,
-  outline: 0,
+const Input: React.FC<React.JSX.IntrinsicElements['input'] & { isMobile: boolean; theme?: Theme }> =
+  styled.input<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+    appearance: 'none',
+    height: 28,
+    width: '100%',
+    padding: 0,
+    border: 0,
+    background: 'transparent',
+    fontSize: isMobile ? '16px' : `${theme.typography.size.s1 + 1}px`,
+    fontFamily: 'inherit',
+    transition: 'all 150ms',
+    color: theme.color.defaultText,
+    outline: 0,
 
-  '&::placeholder': {
-    color: theme.textMutedColor,
-    opacity: 1,
-  },
-  '&:valid ~ code, &:focus ~ code': {
-    display: 'none',
-  },
-  '&:invalid ~ svg': {
-    display: 'none',
-  },
-  '&:valid ~ svg': {
-    display: 'block',
-  },
-  '&::-ms-clear': {
-    display: 'none',
-  },
-  '&::-webkit-search-decoration, &::-webkit-search-cancel-button, &::-webkit-search-results-button, &::-webkit-search-results-decoration':
-    {
+    '&::placeholder': {
+      color: theme.textMutedColor,
+      opacity: 1,
+    },
+    '&:valid ~ code, &:focus ~ code': {
       display: 'none',
     },
-}));
+    '&:invalid ~ svg': {
+      display: 'none',
+    },
+    '&:valid ~ svg': {
+      display: 'block',
+    },
+    '&::-ms-clear': {
+      display: 'none',
+    },
+    '&::-webkit-search-decoration, &::-webkit-search-cancel-button, &::-webkit-search-results-button, &::-webkit-search-results-decoration':
+      {
+        display: 'none',
+      },
+  }));
 
 const FocusKey = styled.code(({ theme }) => ({
   margin: 5,

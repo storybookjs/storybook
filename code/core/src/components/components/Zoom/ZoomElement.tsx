@@ -5,7 +5,14 @@ import { styled } from 'storybook/theming';
 import type { ResizeHandler } from 'use-resize-observer';
 import useResizeObserver from 'use-resize-observer';
 
-const ZoomElementWrapper = styled.div<{ centered?: boolean; scale: number; elementHeight: number }>(
+const ZoomElementWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    centered?: boolean;
+    scale: number;
+    elementHeight: number;
+    theme?: Theme;
+  }
+> = styled.div<{ centered?: boolean; scale: number; elementHeight: number }>(
   ({ centered = false, scale = 1, elementHeight }) => ({
     height: elementHeight || 'auto',
     transformOrigin: centered ? 'center top' : 'left top',

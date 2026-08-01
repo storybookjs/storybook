@@ -12,13 +12,17 @@ import { FileSearchList } from './FileSearchList.tsx';
 
 const MODAL_HEIGHT = 418;
 
-const ModalStyled = styled(Modal)(() => ({
-  boxShadow: 'none',
-  background: 'transparent',
-  overflow: 'visible',
-}));
+const ModalStyled: React.FC<React.ComponentProps<typeof Modal> & { theme?: Theme }> = styled(Modal)(
+  () => ({
+    boxShadow: 'none',
+    background: 'transparent',
+    overflow: 'visible',
+  })
+);
 
-const ModalChild = styled.div<{ height?: number }>(({ theme, height }) => ({
+const ModalChild: React.FC<
+  React.JSX.IntrinsicElements['div'] & { height?: number; theme?: Theme }
+> = styled.div<{ height?: number }>(({ theme, height }) => ({
   backgroundColor: theme.background.bar,
   borderRadius: 6,
   boxShadow: `rgba(255, 255, 255, 0.05) 0 0 0 1px inset, rgba(14, 18, 22, 0.35) 0px 10px 18px -10px`,
@@ -106,12 +110,13 @@ const ModalError = styled(Modal.Error)({
   },
 });
 
-const ModalErrorCloseIcon = styled(CloseAltIcon)({
-  position: 'absolute',
-  top: 4,
-  right: -24,
-  cursor: 'pointer',
-});
+const ModalErrorCloseIcon: React.FC<React.ComponentProps<typeof CloseAltIcon> & { theme?: Theme }> =
+  styled(CloseAltIcon)({
+    position: 'absolute',
+    top: 4,
+    right: -24,
+    cursor: 'pointer',
+  });
 
 type Error = { selectedItemId?: number | string; error: string } | null;
 

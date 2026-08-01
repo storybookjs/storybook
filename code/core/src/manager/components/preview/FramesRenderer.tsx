@@ -19,7 +19,9 @@ const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProp
   return 'storybook-preview-iframe';
 };
 
-const SkipToSidebarLink = styled(Button)(({ theme }) => ({
+const SkipToSidebarLink: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   display: 'none',
   '@media (min-width: 600px)': {
     position: 'absolute',

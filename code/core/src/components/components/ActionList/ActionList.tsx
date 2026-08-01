@@ -7,7 +7,13 @@ import { styled } from 'storybook/theming';
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
-const ActionListItem = styled.li<{
+const ActionListItem: React.FC<
+  React.JSX.IntrinsicElements['li'] & {
+    active?: boolean;
+    transitionStatus?: TransitionStatus;
+    theme?: Theme;
+  }
+> = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
 }>(
@@ -115,7 +121,9 @@ const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targ
   },
 }));
 
-const StyledButton = styled(Button)(({ size }) => ({
+const StyledButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ size }) => ({
   gap: size === 'small' ? 6 : 8,
 
   '&:focus-visible': {
@@ -124,12 +132,13 @@ const StyledButton = styled(Button)(({ size }) => ({
   },
 }));
 
-const StyledToggleButton = styled(ToggleButton)({
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-});
+const StyledToggleButton: React.FC<React.ComponentProps<typeof ToggleButton> & { theme?: Theme }> =
+  styled(ToggleButton)({
+    '&:focus-visible': {
+      // Prevent focus outline from being cut off by overflow: hidden
+      outlineOffset: -2,
+    },
+  });
 
 const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
   function ActionListButton(
@@ -149,7 +158,9 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
   }
 );
 
-const ActionListAction = styled(ActionListButton)(({ theme }) => ({
+const ActionListAction: React.FC<
+  React.ComponentProps<typeof ActionListButton> & { theme?: Theme }
+> = styled(ActionListButton)(({ theme }) => ({
   height: 'auto',
   minHeight: 32,
   flex: '0 1 100%',

@@ -67,7 +67,9 @@ import { useExpanded } from './useExpanded.ts';
 
 export type ExcludesNull = <T>(x: T | null) => x is T;
 
-const CollapseButton = styled(Button)(({ theme }) => ({
+const CollapseButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   fontSize: `${theme.typography.size.s1 - 1}px`,
   fontWeight: theme.typography.weight.bold,
   letterSpacing: '0.16em',
@@ -129,7 +131,9 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   a: { color: 'currentColor' },
 }));
 
-const SkipToContentLink = styled(Button)(({ theme }) => ({
+const SkipToContentLink: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   display: 'none',
   '@media (min-width: 600px)': {
     display: 'block',

@@ -44,16 +44,17 @@ const IndicatorPlacement = styled.div(({ theme }) => ({
   },
 }));
 
-const IndicatorClickTarget = styled(Button)(({ theme }) => ({
-  color: theme.textMutedColor,
-  svg: {
-    height: 14,
-    width: 14,
-    padding: 2,
-    transition: 'all 150ms ease-out',
-    color: 'inherit',
-  },
-}));
+const IndicatorClickTarget: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> =
+  styled(Button)(({ theme }) => ({
+    color: theme.textMutedColor,
+    svg: {
+      height: 14,
+      width: 14,
+      padding: 2,
+      transition: 'all 150ms ease-out',
+      color: 'inherit',
+    },
+  }));
 
 const MessageTitle = styled.span(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
@@ -109,7 +110,12 @@ const Message: FC<{
   );
 };
 
-export const MessageWrapper = styled.div<{
+export const MessageWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    isMobile: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   isMobile: boolean;
 }>(
   ({ isMobile }) => ({
@@ -123,7 +129,9 @@ export const MessageWrapper = styled.div<{
   })
 );
 
-const SubtleSelect = styled(Select)(({ theme }) => ({
+const SubtleSelect: React.FC<React.ComponentProps<typeof Select> & { theme?: Theme }> = styled(
+  Select
+)(({ theme }) => ({
   background: 'transparent',
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,

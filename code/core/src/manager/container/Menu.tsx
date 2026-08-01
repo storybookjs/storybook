@@ -25,9 +25,10 @@ export type MenuItem = NormalLink & {
   internal?: boolean;
 };
 
-const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
-  color: theme.color.secondary,
-}));
+const ProgressCircle: React.FC<React.ComponentProps<typeof ProgressSpinner> & { theme?: Theme }> =
+  styled(ProgressSpinner)(({ theme }) => ({
+    color: theme.color.secondary,
+  }));
 
 export const useMenu = ({
   api,

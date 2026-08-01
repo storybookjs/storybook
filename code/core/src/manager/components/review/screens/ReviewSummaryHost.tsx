@@ -12,7 +12,9 @@ import { SummaryScreen } from './SummaryScreen.tsx';
 // Fills the layout's content overlay cell. While a reviewed story is open the
 // host stays mounted but hidden (visibility, not display or unmount) so
 // thumbnail iframes keep their documents alive.
-const SummaryHost = styled.div<{ $visible: boolean }>(({ $visible }) => ({
+const SummaryHost: React.FC<
+  React.JSX.IntrinsicElements['div'] & { $visible: boolean; theme?: Theme }
+> = styled.div<{ $visible: boolean }>(({ $visible }) => ({
   position: 'absolute',
   inset: 0,
   display: 'flex',

@@ -183,16 +183,17 @@ const StyledSection = styled.section(({ theme }) => ({
   zIndex: 4,
 }));
 
-const StyledToolbar = styled(AbstractToolbar)({
-  flex: 1,
-  display: 'flex',
-  justifyContent: 'space-between',
-  flexWrap: 'nowrap',
-  flexShrink: 0,
-  height: 40,
-  marginInline: 10,
-  gap: 30,
-});
+const StyledToolbar: React.FC<React.ComponentProps<typeof AbstractToolbar> & { theme?: Theme }> =
+  styled(AbstractToolbar)({
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap',
+    flexShrink: 0,
+    height: 40,
+    marginInline: 10,
+    gap: 30,
+  });
 
 const ToolGroup = styled.div({
   display: 'flex',

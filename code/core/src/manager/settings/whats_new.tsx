@@ -86,7 +86,9 @@ export const WhatsNewFooter = ({
   );
 };
 
-const Iframe = styled.iframe<{ isLoaded: boolean }>(
+const Iframe: React.FC<
+  React.JSX.IntrinsicElements['iframe'] & { isLoaded: boolean; theme?: Theme }
+> = styled.iframe<{ isLoaded: boolean }>(
   {
     position: 'absolute',
     top: 0,

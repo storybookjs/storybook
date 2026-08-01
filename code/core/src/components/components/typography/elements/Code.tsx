@@ -24,7 +24,9 @@ const DefaultCodeBlock = styled.code(({ theme }) => ({
   ...(codeCommon({ theme }) as CSSObject),
 }));
 
-const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(({ theme }) => ({
+const StyledSyntaxHighlighter: React.FC<
+  React.ComponentProps<typeof SyntaxHighlighter> & { theme?: Theme }
+> = styled(SyntaxHighlighter)(({ theme }) => ({
   // DocBlocks-specific styling and overrides
   fontFamily: theme.typography.fonts.mono,
   fontSize: `${theme.typography.size.s2 - 1}px`,

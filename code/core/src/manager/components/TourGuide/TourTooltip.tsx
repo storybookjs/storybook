@@ -57,7 +57,9 @@ const Count = styled.span`
   font-size: 13px;
 `;
 
-const NextButton = styled(Button)(({ theme }) => ({
+const NextButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   background: theme.color.lightest,
   border: 'none',
   boxShadow: 'none',

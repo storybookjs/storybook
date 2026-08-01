@@ -13,7 +13,9 @@ const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-export const StatusIcon = styled.span<{ $iconColor?: string | null }>(({ $iconColor }) => ({
+export const StatusIcon: React.FC<
+  React.JSX.IntrinsicElements['span'] & { $iconColor?: string | null; theme?: Theme }
+> = styled.span<{ $iconColor?: string | null }>(({ $iconColor }) => ({
   display: 'contents',
   color: $iconColor ?? undefined,
   '> svg': {

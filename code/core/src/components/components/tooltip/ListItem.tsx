@@ -58,7 +58,9 @@ const Right = styled.span<RightProps>({
   },
 });
 
-const Center = styled.span<{ isIndented: boolean }>(
+const Center: React.FC<
+  React.JSX.IntrinsicElements['span'] & { isIndented: boolean; theme?: Theme }
+> = styled.span<{ isIndented: boolean }>(
   {
     flex: 1,
     textAlign: 'left',

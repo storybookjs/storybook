@@ -6,7 +6,12 @@ import { type FunctionInterpolation, styled } from 'storybook/theming';
 import { UseSymbol } from './IconSymbols.tsx';
 import { CollapseIcon } from './components/CollapseIcon.tsx';
 
-export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'document' }>(
+export const TypeIcon: React.FC<
+  React.JSX.IntrinsicElements['svg'] & {
+    type: 'component' | 'story' | 'test' | 'group' | 'document';
+    theme?: Theme;
+  }
+> = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'document' }>(
   ({ theme, type }) => ({
     width: 14,
     height: 14,
@@ -66,14 +71,23 @@ const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: b
   wordBreak: 'break-word',
 });
 
-const BranchNode = styled.button<{
+const BranchNode: React.FC<
+  React.JSX.IntrinsicElements['button'] & {
+    depth?: number;
+    isExpandable?: boolean;
+    isExpanded?: boolean;
+    isSelected?: boolean;
+    theme?: Theme;
+  }
+> = styled.button<{
   depth?: number;
   isExpandable?: boolean;
   isExpanded?: boolean;
   isSelected?: boolean;
 }>(commonNodeStyles);
 
-const LeafNode = styled.a<{ depth?: number }>(commonNodeStyles);
+const LeafNode: React.FC<React.JSX.IntrinsicElements['a'] & { depth?: number; theme?: Theme }> =
+  styled.a<{ depth?: number }>(commonNodeStyles);
 
 export const RootNode = styled.div({
   display: 'flex',

@@ -21,7 +21,9 @@ import { type Theme, styled } from 'storybook/theming';
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
 import { getDescendantIds } from './tree.ts';
 
-const SmallIcons = styled(CircleIcon)({
+const SmallIcons: React.FC<React.ComponentProps<typeof CircleIcon> & { theme?: Theme }> = styled(
+  CircleIcon
+)({
   // specificity hack
   '&&&': {
     width: 6,
@@ -29,7 +31,9 @@ const SmallIcons = styled(CircleIcon)({
   },
 });
 
-const LoadingIcons = styled(SmallIcons)(({ theme: { animation } }) => ({
+const LoadingIcons: React.FC<React.ComponentProps<typeof SmallIcons> & { theme?: Theme }> = styled(
+  SmallIcons
+)(({ theme: { animation } }) => ({
   // specificity hack
   animation: `${animation.glow} 1.5s ease-in-out infinite`,
 }));

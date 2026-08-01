@@ -40,7 +40,9 @@ const clean = (obj: { [key: string]: any }) =>
 // while docgen for the story is still pending, so the empty state never flashes before docgen lands.
 const hasAnyControl = (rows: ArgTypes) => Object.values(rows).some((arg) => arg?.control);
 
-const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
+const AddonWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & { showSaveFromUI: boolean; theme?: Theme }
+> = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
   // `minHeight` (not `height`) so the wrapper fills a short panel but grows with tall
   // content; otherwise a fixed height clips the bottom padding into the middle of the
   // scrolled content and the save bar overlaps the last control (#34531).

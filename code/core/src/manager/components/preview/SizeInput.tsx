@@ -6,38 +6,39 @@ import { Form } from 'storybook/internal/components';
 import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
-  position: 'relative',
-  fontSize: theme.typography.size.s1,
-  input: {
-    width: 70,
-    height: 28,
-    minHeight: 28,
-    paddingLeft: 25,
-    paddingRight: 0,
-    fontSize: 'inherit',
-    '&:focus': {
-      boxShadow: 'none',
-      outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: -2,
+const Wrapper: React.FC<React.JSX.IntrinsicElements['span'] & { prefix?: string; theme?: Theme }> =
+  styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
+    position: 'relative',
+    fontSize: theme.typography.size.s1,
+    input: {
+      width: 70,
+      height: 28,
+      minHeight: 28,
+      paddingLeft: 25,
+      paddingRight: 0,
+      fontSize: 'inherit',
+      '&:focus': {
+        boxShadow: 'none',
+        outline: `2px solid ${theme.color.secondary}`,
+        outlineOffset: -2,
+      },
     },
-  },
-  ...(prefix && {
-    '&::before': {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      content: `"${prefix}"`,
-      position: 'absolute',
-      left: 5,
-      top: 0,
-      bottom: 0,
-      width: 20,
-      zIndex: 1,
-      color: theme.textMutedColor,
-    },
-  }),
-}));
+    ...(prefix && {
+      '&::before': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        content: `"${prefix}"`,
+        position: 'absolute',
+        left: 5,
+        top: 0,
+        bottom: 0,
+        width: 20,
+        zIndex: 1,
+        color: theme.textMutedColor,
+      },
+    }),
+  }));
 
 export const SizeInput = ({
   label,

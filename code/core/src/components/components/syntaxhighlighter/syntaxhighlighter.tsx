@@ -98,15 +98,16 @@ const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
     {children}
   </ScrollArea>
 );
-const Scroller = styled(UnstyledScroller)(
-  {
-    flex: 1,
-    flexShrink: 0,
-    flexBasis: 'fit-content',
-    maxWidth: '100%',
-  },
-  ({ theme }) => themedSyntax(theme)
-);
+const Scroller: React.FC<React.ComponentProps<typeof UnstyledScroller> & { theme?: Theme }> =
+  styled(UnstyledScroller)(
+    {
+      flex: 1,
+      flexShrink: 0,
+      flexBasis: 'fit-content',
+      maxWidth: '100%',
+    },
+    ({ theme }) => themedSyntax(theme)
+  );
 
 export interface PreProps {
   padded?: boolean;

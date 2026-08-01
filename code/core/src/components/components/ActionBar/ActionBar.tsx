@@ -3,7 +3,9 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Container = styled.div<{ $flexLayout?: boolean }>(({ theme, $flexLayout = false }) => [
+const Container: React.FC<
+  React.JSX.IntrinsicElements['div'] & { $flexLayout?: boolean; theme?: Theme }
+> = styled.div<{ $flexLayout?: boolean }>(({ theme, $flexLayout = false }) => [
   {
     background: theme.background.content,
   },
@@ -23,7 +25,9 @@ const Container = styled.div<{ $flexLayout?: boolean }>(({ theme, $flexLayout = 
       },
 ]);
 
-export const ActionButton = styled.button<{ disabled: boolean }>(
+export const ActionButton: React.FC<
+  React.JSX.IntrinsicElements['button'] & { disabled: boolean; theme?: Theme }
+> = styled.button<{ disabled: boolean }>(
   ({ theme }) => ({
     margin: 0,
     border: '0 none',

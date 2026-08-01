@@ -30,14 +30,21 @@ const ScrollContainer = styled.div({
   },
 });
 
-const StyledTabList = styled(TabListUpstream)({
-  display: 'flex',
-  flexShrink: 0,
-});
+const StyledTabList: React.FC<React.ComponentProps<typeof TabListUpstream> & { theme?: Theme }> =
+  styled(TabListUpstream)({
+    display: 'flex',
+    flexShrink: 0,
+  });
 
 const SCROLL_BUTTON_WIDTH = 28; // 16 width + 6 + 6 padding
 
-const ScrollButtonContainer = styled.div<{
+const ScrollButtonContainer: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    $showStartBorder?: boolean;
+    $showEndBorder?: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   $showStartBorder?: boolean;
   $showEndBorder?: boolean;
 }>(({ $showStartBorder, $showEndBorder, theme }) => ({
@@ -53,7 +60,9 @@ const ScrollButtonContainer = styled.div<{
       : 'none',
 }));
 
-const ScrollButton = styled(Button)({
+const ScrollButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)({
   flexShrink: 0,
   paddingInline: 0,
   width: 16,

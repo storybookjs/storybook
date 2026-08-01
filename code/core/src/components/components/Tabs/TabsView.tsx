@@ -52,9 +52,10 @@ export const Container = styled.div({
   height: '100%',
 });
 
-export const FlexTabPanel = styled(TabPanel)(() => ({
-  flex: 1,
-}));
+export const FlexTabPanel: React.FC<React.ComponentProps<typeof TabPanel> & { theme?: Theme }> =
+  styled(TabPanel)(() => ({
+    flex: 1,
+  }));
 
 const FlexTabList = styled(TabList)<{ $simulatedGap: Key }>(({ $simulatedGap }) => ({
   flex: '1 1 0%',

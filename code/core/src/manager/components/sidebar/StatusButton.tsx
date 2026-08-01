@@ -14,7 +14,9 @@ const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue 
   color: getStatus(theme, status).iconColor ?? undefined,
 });
 
-export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, {
+export const StatusLabel: React.FC<
+  React.JSX.IntrinsicElements['div'] & { status: StatusValue; theme?: Theme }
+> = styled.div<{ status: StatusValue }>(withStatusColor, {
   margin: 3,
 });
 

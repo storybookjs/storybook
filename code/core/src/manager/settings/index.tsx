@@ -21,7 +21,9 @@ import { WhatsNewPage } from './whats_new_page.tsx';
 
 const { document } = global;
 
-const Content = styled(ScrollArea)(({ theme }) => ({
+const Content: React.FC<React.ComponentProps<typeof ScrollArea> & { theme?: Theme }> = styled(
+  ScrollArea
+)(({ theme }) => ({
   background: theme.background.content,
 }));
 

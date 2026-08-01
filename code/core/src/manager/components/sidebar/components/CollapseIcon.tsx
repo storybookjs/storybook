@@ -3,7 +3,9 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ theme, isExpanded }) => ({
+export const CollapseIconWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & { isExpanded: boolean; theme?: Theme }
+> = styled.div<{ isExpanded: boolean }>(({ theme, isExpanded }) => ({
   width: 8,
   height: 8,
   display: 'flex',

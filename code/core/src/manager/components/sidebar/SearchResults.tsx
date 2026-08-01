@@ -29,7 +29,9 @@ const ResultsList = styled.ol({
   padding: 0,
 });
 
-const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted }) => ({
+const ResultRow: React.FC<
+  React.JSX.IntrinsicElements['li'] & { isHighlighted: boolean; theme?: Theme }
+> = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted }) => ({
   width: '100%',
   border: 'none',
   cursor: 'pointer',

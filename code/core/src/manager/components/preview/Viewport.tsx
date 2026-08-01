@@ -16,7 +16,13 @@ import { NumericInput } from './NumericInput.tsx';
 
 type DragSide = 'none' | 'both' | 'bottom' | 'right';
 
-const ViewportWrapper = styled.div<{
+const ViewportWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    active: boolean;
+    isDefault: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   active: boolean;
   isDefault: boolean;
 }>(({ active, isDefault, theme }) => ({
@@ -56,7 +62,13 @@ const ViewportDimensions = styled.div({
   gap: 2,
 });
 
-const FrameWrapper = styled.div<{
+const FrameWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    isDefault: boolean;
+    'data-dragging': DragSide;
+    theme?: Theme;
+  }
+> = styled.div<{
   isDefault: boolean;
   'data-dragging': DragSide;
 }>(({ isDefault, 'data-dragging': dragging, theme }) => ({
@@ -114,7 +126,13 @@ const FrameWrapper = styled.div<{
   },
 }));
 
-const DragHandle = styled.div<{
+const DragHandle: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    isDefault: boolean;
+    'data-side': DragSide;
+    theme?: Theme;
+  }
+> = styled.div<{
   isDefault: boolean;
   'data-side': DragSide;
 }>(
@@ -172,7 +190,9 @@ const DragHandle = styled.div<{
     }
 );
 
-const ScrollEdge = styled.div<{ 'data-edge': DragSide }>({
+const ScrollEdge: React.FC<
+  React.JSX.IntrinsicElements['div'] & { 'data-edge': DragSide; theme?: Theme }
+> = styled.div<{ 'data-edge': DragSide }>({
   position: 'absolute',
   pointerEvents: 'none',
   width: 0,
@@ -191,7 +211,9 @@ const ScrollEdge = styled.div<{ 'data-edge': DragSide }>({
   },
 });
 
-const SizeInput = styled(NumericInput)({
+const SizeInput: React.FC<React.ComponentProps<typeof NumericInput> & { theme?: Theme }> = styled(
+  NumericInput
+)({
   width: 85,
   height: 28,
   minHeight: 28,

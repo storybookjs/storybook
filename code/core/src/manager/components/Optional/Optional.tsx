@@ -9,7 +9,9 @@ const Wrapper = styled.div({
   overflow: 'hidden',
 });
 
-const Content = styled.div<{ isHidden: boolean | null }>(({ isHidden }) => ({
+const Content: React.FC<
+  React.JSX.IntrinsicElements['div'] & { isHidden: boolean | null; theme?: Theme }
+> = styled.div<{ isHidden: boolean | null }>(({ isHidden }) => ({
   display: 'inline-block',
   gridArea: '1/1',
   opacity: isHidden === null ? 0 : 1,

@@ -4,7 +4,9 @@ import { StorybookLogo } from 'storybook/internal/components';
 
 import { styled, withTheme } from 'storybook/theming';
 
-export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
+export const StorybookLogoStyled: React.FC<
+  React.ComponentProps<typeof StorybookLogo> & { theme?: Theme }
+> = styled(StorybookLogo)(({ theme }) => ({
   width: 'auto',
   height: '22px !important',
   display: 'block',

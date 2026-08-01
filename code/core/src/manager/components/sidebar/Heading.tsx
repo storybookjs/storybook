@@ -47,7 +47,9 @@ const HeadingWrapper = styled.div({
   paddingLeft: 8,
 });
 
-const SkipToCanvasLink = styled(Button)(({ theme }) => ({
+const SkipToCanvasLink: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   display: 'none',
   '@media (min-width: 600px)': {
     display: 'block',

@@ -20,7 +20,7 @@ export interface StatelessTabPanelProps {
   hasScrollbar?: boolean;
 }
 
-const Root = styled(TabPanel)({
+const Root: React.FC<React.ComponentProps<typeof TabPanel> & { theme?: Theme }> = styled(TabPanel)({
   overflowY: 'hidden',
   height: '100%',
   display: 'block',

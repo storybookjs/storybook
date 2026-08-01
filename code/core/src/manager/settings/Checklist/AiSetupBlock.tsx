@@ -29,7 +29,9 @@ const AiCtaHeadingRow = styled.div({
   gap: 10,
 });
 
-const AiCtaHeading = styled.h2<{ $skipped: boolean }>(({ theme, $skipped }) => ({
+const AiCtaHeading: React.FC<
+  React.JSX.IntrinsicElements['h2'] & { $skipped: boolean; theme?: Theme }
+> = styled.h2<{ $skipped: boolean }>(({ theme, $skipped }) => ({
   flex: 1,
   margin: 0,
   color: $skipped ? theme.textMutedColor : theme.color.defaultText,

@@ -122,7 +122,9 @@ export interface FlexBarProps extends BarProps {
 }
 
 // Compensate new default inline padding for Bar to reduce the extent of visible changes in 10.1 for FlexBar users.
-const BarWithoutPadding = styled(Bar)({
+const BarWithoutPadding: React.FC<React.ComponentProps<typeof Bar> & { theme?: Theme }> = styled(
+  Bar
+)({
   paddingInline: 0,
 });
 

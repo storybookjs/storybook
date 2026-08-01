@@ -48,7 +48,14 @@ export const FileListItem = styled('div')({
   position: 'relative',
 });
 
-export const FileListItemContentWrapper = styled.div<{
+export const FileListItemContentWrapper: React.FC<
+  React.JSX.IntrinsicElements['div'] & {
+    selected: boolean;
+    disabled: boolean;
+    error: boolean;
+    theme?: Theme;
+  }
+> = styled.div<{
   selected: boolean;
   disabled: boolean;
   error: boolean;
@@ -191,7 +198,9 @@ export const FileListItemExportNameContent = styled('span')(({ theme }) => ({
   color: theme.base === 'dark' ? theme.color.lightest : theme.color.darkest,
 }));
 
-export const FileListItemExportNameContentWithExport = styled(FileListItemExportNameContent)({
+export const FileListItemExportNameContentWithExport: React.FC<
+  React.ComponentProps<typeof FileListItemExportNameContent> & { theme?: Theme }
+> = styled(FileListItemExportNameContent)({
   maxWidth: 'calc(100% - 120px)',
 });
 

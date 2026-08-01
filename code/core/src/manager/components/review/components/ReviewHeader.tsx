@@ -4,7 +4,9 @@ import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 import { useLandmark } from '../../../hooks/useLandmark.ts';
 
-const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
+const Root: React.FC<
+  React.JSX.IntrinsicElements['header'] & { $variant: 'page' | 'toolbar'; theme?: Theme }
+> = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
   containerType: 'inline-size',
   containerName: 'review-header',
   display: 'flex',
@@ -16,7 +18,9 @@ const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant 
   ...($variant === 'page' ? { borderBottom: `1px solid ${theme.appBorderColor}` } : {}),
 }));
 
-const TopRow = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
+const TopRow: React.FC<
+  React.JSX.IntrinsicElements['div'] & { $variant: 'page' | 'toolbar'; theme?: Theme }
+> = styled.div<{ $variant: 'page' | 'toolbar' }>(({ $variant }) => ({
   display: 'flex',
   flexWrap: 'wrap',
   flexDirection: 'row',

@@ -30,7 +30,15 @@ const Placeholder = styled.div({
   visibility: 'hidden',
 });
 
-const Text = styled.span<{
+const Text: React.FC<
+  React.JSX.IntrinsicElements['span'] & {
+    duration: number;
+    isExiting?: boolean;
+    isEntering?: boolean;
+    reverse?: boolean;
+    theme?: Theme;
+  }
+> = styled.span<{
   duration: number;
   isExiting?: boolean;
   isEntering?: boolean;

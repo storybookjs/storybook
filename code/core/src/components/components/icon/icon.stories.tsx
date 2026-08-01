@@ -11,36 +11,37 @@ const Meta = styled.div`
   font-size: 12px;
 `;
 
-const Item = styled.li<{ minimal?: boolean }>`
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  flex: 0 1 16%;
-  min-width: 120px;
-  margin: 16px;
+const Item: React.FC<React.JSX.IntrinsicElements['li'] & { minimal?: boolean; theme?: Theme }> =
+  styled.li<{ minimal?: boolean }>`
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    flex: 0 1 16%;
+    min-width: 120px;
+    margin: 16px;
 
-  svg {
-    margin-right: 6px;
-    width: 14px;
-    height: 14px;
-  }
+    svg {
+      margin-right: 6px;
+      width: 14px;
+      height: 14px;
+    }
 
-  ${(props) =>
-    props.minimal &&
-    css`
-      flex: none;
-      min-width: auto;
-      padding: 0;
-      margin: 16px;
+    ${(props) =>
+      props.minimal &&
+      css`
+        flex: none;
+        min-width: auto;
+        padding: 0;
+        margin: 16px;
 
-      svg {
-        display: block;
-        margin-right: 0;
-        width: 14px;
-        height: 14px;
-      }
-    `};
-`;
+        svg {
+          display: block;
+          margin-right: 0;
+          width: 14px;
+          height: 14px;
+        }
+      `};
+  `;
 
 const List = styled.ul`
   display: flex;

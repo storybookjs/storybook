@@ -37,7 +37,9 @@ interface ToolbarProps {
   api: API;
 }
 
-const StyledButton = styled(Button)(({ theme }) => ({
+const StyledButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   borderRadius: 4,
   padding: 6,
   color: theme.textMutedColor,
@@ -48,30 +50,35 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const StyledIconButton = styled(Button)(({ theme }) => ({
+const StyledIconButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> = styled(
+  Button
+)(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const OpenInEditorButton = styled(Button)(({ theme }) => ({
-  color: theme.color.secondary,
-  fontWeight: theme.typography.weight.bold,
-  justifyContent: 'flex-end',
-  textAlign: 'right',
-  whiteSpace: 'nowrap',
-  fontSize: 13,
-  lineHeight: 24,
-}));
+const OpenInEditorButton: React.FC<React.ComponentProps<typeof Button> & { theme?: Theme }> =
+  styled(Button)(({ theme }) => ({
+    color: theme.color.secondary,
+    fontWeight: theme.typography.weight.bold,
+    justifyContent: 'flex-end',
+    textAlign: 'right',
+    whiteSpace: 'nowrap',
+    fontSize: 13,
+    lineHeight: 24,
+  }));
 
-const StyledLocation = styled(P)(({ theme }) => ({
-  color: theme.textMutedColor,
-  cursor: 'default',
-  fontWeight: theme.typography.weight.regular,
-  justifyContent: 'flex-end',
-  textAlign: 'right',
-  whiteSpace: 'nowrap',
-  margin: 0,
-  fontSize: 13,
-}));
+const StyledLocation: React.FC<React.ComponentProps<typeof P> & { theme?: Theme }> = styled(P)(
+  ({ theme }) => ({
+    color: theme.textMutedColor,
+    cursor: 'default',
+    fontWeight: theme.typography.weight.regular,
+    justifyContent: 'flex-end',
+    textAlign: 'right',
+    whiteSpace: 'nowrap',
+    margin: 0,
+    fontSize: 13,
+  })
+);
 
 const ControlsGroup = styled.div({
   display: 'flex',
@@ -80,14 +87,16 @@ const ControlsGroup = styled.div({
   gap: 6,
 });
 
-const RewindButton = styled(StyledIconButton)({
-  marginInlineStart: 3,
-});
+const RewindButton: React.FC<React.ComponentProps<typeof StyledIconButton> & { theme?: Theme }> =
+  styled(StyledIconButton)({
+    marginInlineStart: 3,
+  });
 
-const JumpToEndButton = styled(StyledButton)({
-  marginInline: 3,
-  lineHeight: '12px',
-});
+const JumpToEndButton: React.FC<React.ComponentProps<typeof StyledButton> & { theme?: Theme }> =
+  styled(StyledButton)({
+    marginInline: 3,
+    lineHeight: '12px',
+  });
 
 interface AnimatedButtonProps {
   animating?: boolean;

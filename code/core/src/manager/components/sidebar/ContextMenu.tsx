@@ -27,7 +27,9 @@ const empty = {
   node: null,
 };
 
-const FloatingStatusButton = styled(StatusButton)({
+const FloatingStatusButton: React.FC<
+  React.ComponentProps<typeof StatusButton> & { theme?: Theme }
+> = styled(StatusButton)({
   background: 'var(--tree-node-background-hover)',
   boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
   position: 'absolute',

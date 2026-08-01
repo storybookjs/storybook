@@ -27,7 +27,7 @@ import { useDynamicFavicon } from './useDynamicFavicon.ts';
 
 const DEFAULT_HEIGHT = 500;
 
-const HoverCard = styled(Card)({
+const HoverCard: React.FC<React.ComponentProps<typeof Card> & { theme?: Theme }> = styled(Card)({
   display: 'flex',
   flexDirection: 'column-reverse',
 
@@ -46,7 +46,9 @@ const Content = styled.div({
   flexDirection: 'column',
 });
 
-const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) => ({
+const Bar: React.FC<
+  React.JSX.IntrinsicElements['div'] & { onClick?: (e: SyntheticEvent) => void; theme?: Theme }
+> = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) => ({
   display: 'flex',
   width: '100%',
   cursor: onClick ? 'pointer' : 'default',

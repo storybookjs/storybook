@@ -46,7 +46,9 @@ const PagesContainer = React.memo<PagesContainerProps>(function PagesContainer(p
   );
 });
 
-const MainInnerContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+const MainInnerContainer: React.FC<
+  React.JSX.IntrinsicElements['div'] & { shown: boolean; theme?: Theme }
+> = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   flex: 1,
   position: 'relative',
   backgroundColor: theme.appContentBg,

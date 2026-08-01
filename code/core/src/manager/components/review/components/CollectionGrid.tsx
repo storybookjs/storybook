@@ -194,13 +194,15 @@ const LabelStory = styled.span({
   marginRight: 4,
 });
 
-const NewBadge = styled(Badge)({
+const NewBadge: React.FC<React.ComponentProps<typeof Badge> & { theme?: Theme }> = styled(Badge)({
   flexShrink: 0,
 });
 
-const ReviewAllCell = styled(Cell)({
-  display: 'none',
-});
+const ReviewAllCell: React.FC<React.ComponentProps<typeof Cell> & { theme?: Theme }> = styled(Cell)(
+  {
+    display: 'none',
+  }
+);
 
 const ReviewAllShell = styled.div({
   width: '100%',

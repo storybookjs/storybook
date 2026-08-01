@@ -58,7 +58,7 @@ class ReactProvider extends Provider {
     this.channel = channel;
   }
 
-  getElements(type: Addon_Types) {
+  getElements(type: Addon_Types): any {
     return this.addons.getElements(type);
   }
 
@@ -66,7 +66,7 @@ class ReactProvider extends Provider {
     return this.addons.getConfig();
   }
 
-  handleAPI(api: API) {
+  handleAPI(api: API): void {
     this.addons.loadAddons(api);
 
     // Initialize story index with mock data

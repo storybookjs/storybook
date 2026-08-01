@@ -68,7 +68,7 @@ export default class Store {
     this.upstreamGetState = getState;
   }
 
-  registerPersistenceHandler(key: string, handler: PersistenceHandler) {
+  registerPersistenceHandler(key: string, handler: PersistenceHandler): void {
     this.persistenceHandlers.set(key, handler);
   }
 
@@ -95,7 +95,7 @@ export default class Store {
     return { ...base, ...local, ...session };
   }
 
-  getState() {
+  getState(): State {
     return this.upstreamGetState();
   }
 

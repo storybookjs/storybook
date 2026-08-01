@@ -210,7 +210,15 @@ export class UniversalStore<
    * A follower will be ready when the state has been synced with the leader's state, within a few
    * hundred milliseconds.
    */
-  public untilReady() {
+  public untilReady(): Promise<
+    [
+      void | {
+        channel: ChannelLike;
+        environment: EnvironmentType;
+      },
+      void | undefined,
+    ]
+  > {
     // A store that already has its own channel and environment is prepared (e.g. an isolated
     // mock), so its readiness no longer depends on the global preparation. This mirrors the
     // `status` getter, which is UNPREPARED only while channel/environment are missing. Relying on
@@ -399,7 +407,7 @@ export class UniversalStore<
    *
    * Either a new state or a state updater function can be passed to the method.
    */
-  public setState(updater: State | StateUpdater<State>) {
+  public setState(updater: State | StateUpdater<State>): void {
     const previousState = this.state;
     const newState =
       typeof updater === 'function' ? (updater as StateUpdater<State>)(previousState) : updater;
@@ -488,7 +496,7 @@ export class UniversalStore<
    */
   public onStateChange(
     listener: (state: State, previousState: State, eventInfo: EventInfo) => void
-  ) {
+  ): () => void {
     this.debug('onStateChange', { listener });
     return this.subscribe(
       UniversalStore.InternalEventType.SET_STATE as any,

@@ -48,7 +48,7 @@ export class ExternalPreview<TRenderer extends Renderer = Renderer> extends Prev
     super(importFn, getProjectAnnotations, new Channel({}));
   }
 
-  async getStoryIndexFromServer() {
+  async getStoryIndexFromServer(): Promise<StoryIndex> {
     return this.storyIndex;
   }
 

@@ -332,7 +332,7 @@ export class CsfFile {
     this.imports = [];
   }
 
-  _parseTitle(value: t.Node) {
+  _parseTitle(value: t.Node): string {
     const node = t.isIdentifier(value)
       ? findVarInitialization(value.name, this._ast.program)
       : value;
@@ -350,7 +350,7 @@ export class CsfFile {
     `);
   }
 
-  _parseMeta(declaration: t.ObjectExpression, program: t.Program) {
+  _parseMeta(declaration: t.ObjectExpression, program: t.Program): void {
     if (this._metaNode) {
       throw new MultipleMetaError('multiple meta objects', declaration, this._options.fileName);
     }
@@ -410,7 +410,7 @@ export class CsfFile {
     this._meta = meta;
   }
 
-  getStoryExport(key: string) {
+  getStoryExport(key: string): t.Node {
     let node = this._storyExports[key] as t.Node;
     node = t.isVariableDeclarator(node) ? (node.init as t.Node) : node;
     if (t.isCallExpression(node)) {
@@ -992,7 +992,7 @@ export class CsfFile {
     return Object.values(this._stories);
   }
 
-  public getStoryTests(story: string | t.Node) {
+  public getStoryTests(story: string | t.Node): StoryTest[] {
     const storyNode = typeof story === 'string' ? this._storyStatements[story] : story;
     if (!storyNode) {
       return [];

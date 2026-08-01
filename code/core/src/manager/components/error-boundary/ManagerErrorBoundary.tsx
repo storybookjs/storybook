@@ -202,7 +202,7 @@ export class ManagerErrorBoundary extends Component<
     }
   }
 
-  render() {
+  render(): string | number | boolean | Iterable<ReactNode> | React.JSX.Element | null | undefined {
     const { hasError, error, errorInfo } = this.state;
     const { children } = this.props;
 

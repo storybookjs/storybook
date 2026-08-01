@@ -13,7 +13,7 @@ export class ArgsStore {
 
   argsByStoryId: Record<StoryId, Args> = {};
 
-  get(storyId: StoryId) {
+  get(storyId: StoryId): Args {
     if (!(storyId in this.argsByStoryId)) {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
     }
@@ -21,7 +21,7 @@ export class ArgsStore {
     return this.argsByStoryId[storyId];
   }
 
-  setInitial(story: PreparedStory<any>) {
+  setInitial(story: PreparedStory<any>): void {
     if (!this.initialArgsByStoryId[story.id]) {
       this.initialArgsByStoryId[story.id] = story.initialArgs;
       this.argsByStoryId[story.id] = story.initialArgs;
@@ -37,7 +37,7 @@ export class ArgsStore {
     }
   }
 
-  updateFromDelta(story: PreparedStory<any>, delta: Args) {
+  updateFromDelta(story: PreparedStory<any>, delta: Args): void {
     // Use the argType to ensure we setting a type with defined options to something outside of that
     const validatedDelta = validateOptions(delta, story.argTypes);
 
@@ -47,7 +47,7 @@ export class ArgsStore {
     this.argsByStoryId[story.id] = combineArgs(this.argsByStoryId[story.id], validatedDelta);
   }
 
-  updateFromPersisted(story: PreparedStory<any>, persisted: Args) {
+  updateFromPersisted(story: PreparedStory<any>, persisted: Args): void {
     // Use the argType to ensure we aren't persisting the wrong type of value to the type.
     // For instance you could try and set a string-valued arg to a number by changing the URL
     const mappedPersisted = mapArgsToTypes(persisted, story.argTypes);
@@ -55,7 +55,7 @@ export class ArgsStore {
     return this.updateFromDelta(story, mappedPersisted);
   }
 
-  update(storyId: StoryId, argsUpdate: Partial<Args>) {
+  update(storyId: StoryId, argsUpdate: Partial<Args>): void {
     if (!(storyId in this.argsByStoryId)) {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
     }

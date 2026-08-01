@@ -4,19 +4,36 @@ import {
   MissingStoryFromCsfFileError,
 } from 'storybook/internal/preview-errors';
 import type {
+  Args,
+  ArgsStoryFn,
+  Canvas,
+  ComponentId,
+  ComponentTitle,
   CSFFile,
+  Globals,
+  GlobalTypes,
   IndexEntry,
+  LegacyStoryFn,
+  ModuleExport,
   ModuleExports,
   ModuleImportFn,
   NormalizedProjectAnnotations,
+  Parameters,
   Path,
   PreparedMeta,
   PreparedStory,
   ProjectAnnotations,
   Renderer,
+  RenderToCanvas,
+  StepRunner,
+  StoryContext,
   StoryContextForEnhancers,
+  StoryContextForLoaders,
   StoryId,
   StoryIndex,
+  StoryName,
+  StrictArgTypes,
+  Tag,
 } from 'storybook/internal/types';
 
 import { omitBy, pick } from 'es-toolkit/object';
@@ -103,7 +120,7 @@ export class StoryStore<TRenderer extends Renderer> {
     this.prepareStoryWithCache = memoize(STORY_CACHE_SIZE)(prepareStory) as typeof prepareStory;
   }
 
-  setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
+  setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>): void {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
     // NOTE: unlike the constructor, this does not prepend the core annotations: the project
     // annotations passed here (from `getProjectAnnotations()`) are only ever re-normalized, never
@@ -123,7 +140,7 @@ export class StoryStore<TRenderer extends Renderer> {
   }: {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
-  }) {
+  }): Promise<void> {
     if (importFn) {
       this.importFn = importFn;
     }
@@ -235,7 +252,10 @@ export class StoryStore<TRenderer extends Renderer> {
       .map((storyId: StoryId) => this.storyFromCSFFile({ storyId, csfFile }));
   }
 
-  async loadEntry(id: StoryId) {
+  async loadEntry(id: StoryId): Promise<{
+    entryExports: ModuleExports;
+    csfFiles: CSFFile<TRenderer>[];
+  }> {
     const entry = await this.storyIdToEntry(id);
 
     const storyImports = entry.type === 'docs' ? entry.storiesImports : [];
@@ -253,7 +273,57 @@ export class StoryStore<TRenderer extends Renderer> {
 
   // A prepared story does not include args, globals or hooks. These are stored in the story store
   // and updated separately to the (immutable) story.
-  getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
+  getStoryContext(
+    story: PreparedStory<TRenderer>,
+    { forceInitialArgs = false } = {}
+  ): {
+    args: Args;
+    initialGlobals: Globals;
+    globalTypes: GlobalTypes | undefined;
+    userGlobals: Globals;
+    reporting: ReporterAPI;
+    globals: {
+      [x: string]: any;
+    };
+    hooks: unknown;
+    component?:
+      | (TRenderer & {
+          T: any;
+        })['component']
+      | undefined;
+    subcomponents?:
+      | Record<
+          string,
+          (TRenderer & {
+            T: any;
+          })['component']
+        >
+      | undefined;
+    parameters: Parameters;
+    initialArgs: Args;
+    argTypes: StrictArgTypes<Args>;
+    componentId: ComponentId;
+    title: ComponentTitle;
+    kind: ComponentTitle;
+    id: StoryId;
+    name: StoryName;
+    story: StoryName;
+    tags: Tag[];
+    moduleExport: ModuleExport;
+    originalStoryFn: ArgsStoryFn<TRenderer>;
+    undecoratedStoryFn: LegacyStoryFn<TRenderer>;
+    unboundStoryFn: LegacyStoryFn<TRenderer>;
+    applyLoaders: (context: StoryContext<TRenderer, Args>) => Promise<Record<string, any>>;
+    applyBeforeEach: (context: StoryContext<TRenderer, Args>) => Promise<CleanupCallback[]>;
+    applyAfterEach: (context: StoryContext<TRenderer, Args>) => Promise<void>;
+    playFunction?: ((context: StoryContext<TRenderer, Args>) => Promise<void> | void) | undefined;
+    runStep: StepRunner<TRenderer>;
+    mount: (context: StoryContext<TRenderer, Args>) => () => Promise<Canvas>;
+    testingLibraryRender?: (...args: never[]) => unknown;
+    renderToCanvas?: RenderToCanvas<TRenderer> | undefined;
+    usesMount: boolean;
+    storyGlobals: Globals;
+  } & Pick<StoryContextForLoaders<Renderer, Args>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
     const reporting = new ReporterAPI();
@@ -272,7 +342,7 @@ export class StoryStore<TRenderer extends Renderer> {
     });
   }
 
-  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]) {
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]): void {
     this.cleanupCallbacks[story.id] = (this.cleanupCallbacks[story.id] || []).concat(callbacks);
   }
 

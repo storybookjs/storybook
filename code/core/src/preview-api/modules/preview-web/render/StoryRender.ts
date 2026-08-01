@@ -127,7 +127,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     return signal.aborted;
   }
 
-  async prepare() {
+  async prepare(): Promise<void> {
     await this.runPhase(this.abortController.signal, 'preparing', async () => {
       this.story = await this.store.loadStory({ storyId: this.id });
     });
@@ -147,17 +147,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     );
   }
 
-  isPreparing() {
+  isPreparing(): boolean {
     return ['preparing'].includes(this.phase as RenderPhase);
   }
 
-  isPending() {
+  isPending(): boolean {
     return ['loading', 'beforeEach', 'rendering', 'playing', 'afterEach'].includes(
       this.phase as RenderPhase
     );
   }
 
-  async renderToElement(canvasElement: TRenderer['canvasElement']) {
+  async renderToElement(canvasElement: TRenderer['canvasElement']): Promise<void> {
     this.canvasElement = canvasElement;
 
     // FIXME: this comment
@@ -182,7 +182,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }: {
     initial?: boolean;
     forceRemount?: boolean;
-  } = {}) {
+  } = {}): Promise<void> {
     const { canvasElement } = this;
 
     if (!this.story) {
@@ -437,7 +437,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
    * will not be enqueued, and will be executed immediately, to support rendering args changes while
    * playing.
    */
-  async rerender() {
+  async rerender(): Promise<void> {
     if (this.isPending() && this.phase !== 'playing') {
       this.rerenderEnqueued = true;
     } else {
@@ -445,7 +445,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  async remount() {
+  async remount(): Promise<void> {
     await this.teardown();
     return this.render({ forceRemount: true });
   }
@@ -455,18 +455,18 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   // (possibly the loaders or the play function are still running). We use the controller
   // as a method to abort them, ASAP, but this is not foolproof as we cannot control what
   // happens inside the user's code.
-  cancelRender() {
+  cancelRender(): void {
     this.abortController.abort();
   }
 
-  cancelPlayFunction() {
+  cancelPlayFunction(): void {
     if (this.phase === 'playing') {
       this.abortController.abort();
       this.runPhase(this.abortController.signal, 'aborted');
     }
   }
 
-  async teardown() {
+  async teardown(): Promise<void> {
     this.torndown = true;
     this.cancelRender();
 

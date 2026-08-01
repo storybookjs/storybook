@@ -98,11 +98,15 @@ export class AngularJSON {
     return rootProjectName ? this.projects[rootProjectName] : null;
   }
 
-  getProjectSettingsByName(projectName: string) {
+  getProjectSettingsByName(projectName: string): {
+    root: string;
+    projectType: string;
+    architect: Record<string, any>;
+  } {
     return this.projects[projectName];
   }
 
-  async getProjectName() {
+  async getProjectName(): Promise<string> {
     if (this.projectsWithoutStorybook.length > 1) {
       return prompt.select({
         message: 'For which project do you want to generate Storybook configuration?',
@@ -128,7 +132,7 @@ export class AngularJSON {
     useCompodoc: boolean;
     root: string;
     useVite?: boolean;
-  }) {
+  }): void {
     // add an entry to the angular.json file to setup the storybook builders
     const { architect } = this.projects[angularProjectName];
 
@@ -172,7 +176,7 @@ export class AngularJSON {
     }
   }
 
-  write() {
+  write(): void {
     writeFileSync(this.path, this.rawText);
   }
 }

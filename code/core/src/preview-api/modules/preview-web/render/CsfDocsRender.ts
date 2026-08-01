@@ -57,11 +57,11 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     this.renderId = Date.now();
   }
 
-  isPreparing() {
+  isPreparing(): boolean {
     return this.preparing;
   }
 
-  async prepare() {
+  async prepare(): Promise<void> {
     this.preparing = true;
     const { entryExports, csfFiles = [] } = await this.store.loadEntry(this.id);
 
@@ -97,7 +97,9 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     );
   }
 
-  docsContext(renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']) {
+  docsContext(
+    renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']
+  ): DocsContext<TRenderer> {
     if (!this.csfFiles) {
       throw new Error('Cannot render docs before preparing');
     }
@@ -123,7 +125,7 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
   async renderToElement(
     canvasElement: TRenderer['canvasElement'],
     renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']
-  ) {
+  ): Promise<void> {
     if (!this.story || !this.csfFiles) {
       throw new Error('Cannot render docs before preparing');
     }
@@ -161,7 +163,7 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     return renderDocs();
   }
 
-  async teardown({ viewModeChanged }: { viewModeChanged?: boolean } = {}) {
+  async teardown({ viewModeChanged }: { viewModeChanged?: boolean } = {}): Promise<void> {
     this.teardownRender?.({ viewModeChanged });
     this.torndown = true;
   }

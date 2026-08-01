@@ -9,7 +9,7 @@ import {
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Options, Result, ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -85,7 +85,7 @@ export class BUNProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
-  async initPackageJson() {
+  async initPackageJson(): Promise<Result<Options>> {
     return executeCommand({ command: 'bun', args: ['init'] });
   }
 
@@ -158,7 +158,7 @@ export class BUNProxy extends JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ) {
+  ): ResultPromise {
     return executeCommand({
       command: 'bun',
       args: [command, ...args],
@@ -167,7 +167,10 @@ export class BUNProxy extends JsPackageManager {
     });
   }
 
-  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
+  public async findInstallations(
+    pattern: string[],
+    { depth = 99 }: { depth?: number } = {}
+  ): Promise<InstallationMetadata | undefined> {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
       return executeCommand({
         command: 'npm',
@@ -218,7 +221,7 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean }): ResultPromise {
     return executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -227,7 +230,7 @@ export class BUNProxy extends JsPackageManager {
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean }): Promise<void> {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -356,7 +359,7 @@ export class BUNProxy extends JsPackageManager {
     throw rerunError;
   }
 
-  public async getRegistryURL() {
+  public async getRegistryURL(): Promise<string | undefined> {
     const process = executeCommand({
       command: 'npm',
       cwd: this.cwd,
@@ -369,7 +372,7 @@ export class BUNProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean): ResultPromise {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {

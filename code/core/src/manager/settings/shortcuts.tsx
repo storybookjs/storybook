@@ -360,7 +360,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     </GridWrapper>
   );
 
-  render() {
+  render(): React.JSX.Element {
     const layout = this.renderKeyForm();
     return (
       <Container>

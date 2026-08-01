@@ -140,7 +140,7 @@ export class NPMProxy extends JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ) {
+  ): ResultPromise {
     return executeCommand({
       command: 'npm',
       args: [command, ...args],
@@ -149,7 +149,10 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
+  public async findInstallations(
+    pattern: string[],
+    { depth = 99 }: { depth?: number } = {}
+  ): Promise<InstallationMetadata | undefined> {
     const exec = ({ packageDepth }: { packageDepth: number }) => {
       return executeCommand({
         command: 'npm',
@@ -196,7 +199,7 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean }): ResultPromise {
     return executeCommand({
       command: 'npm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -205,7 +208,7 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean }): Promise<void> {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -282,7 +285,7 @@ export class NPMProxy extends JsPackageManager {
     throw error;
   }
 
-  public async getRegistryURL() {
+  public async getRegistryURL(): Promise<string | undefined> {
     const process = executeCommand({
       command: 'npm',
       // "npm config" commands are not allowed in workspaces per default
@@ -294,7 +297,7 @@ export class NPMProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean): ResultPromise {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {

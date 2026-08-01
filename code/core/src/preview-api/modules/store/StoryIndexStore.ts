@@ -23,7 +23,7 @@ export class StoryIndexStore {
     this.entries = entries;
   }
 
-  entryFromSpecifier(specifier: StorySpecifier) {
+  entryFromSpecifier(specifier: StorySpecifier): IndexEntry | undefined {
     const entries = Object.values(this.entries);
     if (specifier === '*') {
       // '*' means select the first entry. If there is none, we have no selection.

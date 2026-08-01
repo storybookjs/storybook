@@ -49,7 +49,7 @@ export class ZoomProvider extends Component<
 
   set = (value: number) => this.setState({ value });
 
-  render() {
+  render(): React.JSX.Element {
     const { children, shouldScale } = this.props;
     const { set } = this;
     const { value } = this.state;

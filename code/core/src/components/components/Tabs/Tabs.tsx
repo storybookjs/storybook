@@ -310,7 +310,7 @@ export class TabsState extends Component<TabsStateProps, TabsStateState> {
     onSelect: (id: string) => this.setState({ selected: id }),
   };
 
-  render() {
+  render(): React.JSX.Element {
     const { bordered = false, absolute = false, children, backgroundColor, menuName } = this.props;
     const { selected } = this.state;
     return (

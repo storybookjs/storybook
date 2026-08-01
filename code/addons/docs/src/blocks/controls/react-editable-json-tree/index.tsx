@@ -25,7 +25,13 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
     this.removeRoot = this.removeRoot.bind(this);
   }
 
-  static getDerivedStateFromProps(props: JsonTreeProps, state: JsonTreeState) {
+  static getDerivedStateFromProps(
+    props: JsonTreeProps,
+    state: JsonTreeState
+  ): {
+    data: any;
+    rootName: string | undefined;
+  } | null {
     if (props.data !== state.data || props.rootName !== state.rootName) {
       return {
         data: props.data,
@@ -35,16 +41,16 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
     return null;
   }
 
-  onUpdate(key: string | null, data: any) {
+  onUpdate(key: string | null, data: any): void {
     this.setState({ data });
     this.props.onFullyUpdate?.(data);
   }
 
-  removeRoot() {
+  removeRoot(): void {
     this.onUpdate(null, null);
   }
 
-  render() {
+  render(): React.JSX.Element | null {
     const { data, rootName } = this.state;
     const {
       isCollapsed,

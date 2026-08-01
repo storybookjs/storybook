@@ -5,7 +5,7 @@ export const LocationMonitor = {
   _intervalId: null as ReturnType<typeof setInterval> | null,
   _listeners: new Set<(location: Location) => void>(),
 
-  start() {
+  start(): void {
     if (this._intervalId === null) {
       this._intervalId = setInterval(() => {
         const newLocation = globalThis.window.location;
@@ -17,7 +17,7 @@ export const LocationMonitor = {
     }
   },
 
-  stop() {
+  stop(): void {
     if (this._intervalId !== null) {
       clearInterval(this._intervalId);
       this._intervalId = null;

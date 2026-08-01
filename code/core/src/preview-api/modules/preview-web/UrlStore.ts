@@ -100,12 +100,12 @@ export class UrlStore implements SelectionStore {
     this.selectionSpecifier = getSelectionSpecifierFromPath();
   }
 
-  setSelection(selection: Selection) {
+  setSelection(selection: Selection): void {
     this.selection = selection;
     setPath(this.selection);
   }
 
-  setQueryParams(queryParams: Record<PropertyKey, unknown>) {
+  setQueryParams(queryParams: Record<PropertyKey, unknown>): void {
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
     history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);

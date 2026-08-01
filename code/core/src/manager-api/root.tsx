@@ -219,7 +219,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     props.provider.handleAPI(this.api);
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.mounted = true;
   }
 
@@ -257,7 +257,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     });
   };
 
-  render() {
+  render(): React.JSX.Element {
     const { children } = this.props;
     const value = {
       state: this.state,

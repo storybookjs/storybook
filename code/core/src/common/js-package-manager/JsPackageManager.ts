@@ -151,7 +151,7 @@ export abstract class JsPackageManager {
   /** Get the package.json file for a given module. */
   abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 
-  isStorybookInMonorepo() {
+  isStorybookInMonorepo(): boolean {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
     const rushJsonPath = find.up(`rush.json`, { last: getProjectRoot() });
     const nxJsonPath = find.up(`nx.json`, { last: getProjectRoot() });
@@ -177,7 +177,7 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean }): Promise<void> {
     await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
@@ -195,7 +195,7 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean }) {
+  async dedupeDependencies(options?: { force?: boolean }): Promise<void> {
     await prompt.executeTask(
       (_signal) =>
         this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
@@ -253,7 +253,7 @@ export abstract class JsPackageManager {
     }
   }
 
-  writePackageJson(packageJson: PackageJson, directory = this.cwd) {
+  writePackageJson(packageJson: PackageJson, directory = this.cwd): void {
     const packageJsonToWrite = { ...packageJson };
     const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
 
@@ -279,7 +279,7 @@ export abstract class JsPackageManager {
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
 
-  getAllDependencies() {
+  getAllDependencies(): Record<string, string> {
     const allDependencies: Record<string, string> = {};
 
     for (const packageJsonPath of this.packageJsonPaths) {
@@ -292,7 +292,7 @@ export abstract class JsPackageManager {
     return allDependencies;
   }
 
-  isDependencyInstalled(dependency: string) {
+  isDependencyInstalled(dependency: string): boolean {
     return Object.keys(this.getAllDependencies()).includes(dependency);
   }
 
@@ -623,7 +623,7 @@ export abstract class JsPackageManager {
     this.clearInstalledVersionCache();
   }
 
-  public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {
+  public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }): void {
     const sbPort = options?.port ?? 6006;
     const storybookCmd = `storybook dev -p ${sbPort}`;
     const buildStorybookCmd = `storybook build`;
@@ -636,7 +636,7 @@ export abstract class JsPackageManager {
     });
   }
 
-  public addScripts(scripts: Record<string, string>) {
+  public addScripts(scripts: Record<string, string>): void {
     const { operationDir, packageJson } = this.#getPrimaryPackageJson();
 
     packageJson.scripts = {
@@ -646,7 +646,7 @@ export abstract class JsPackageManager {
     this.writePackageJson(packageJson, operationDir);
   }
 
-  public addPackageResolutions(versions: Record<string, string>) {
+  public addPackageResolutions(versions: Record<string, string>): void {
     const { operationDir, packageJson } = this.#getPrimaryPackageJson();
 
     const resolutions = this.getResolutions(packageJson, versions);

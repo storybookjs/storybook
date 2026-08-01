@@ -58,7 +58,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
   // This docs entry references this CSF file and can synchronously load the stories, as well
   // as reference them by module export. If the CSF is part of the "component" stories, they
   // can also be referenced by name and are in the componentStories list.
-  referenceCSFFile(csfFile: CSFFile<TRenderer>) {
+  referenceCSFFile(csfFile: CSFFile<TRenderer>): void {
     this.exportsToCSFFile.set(csfFile.moduleExports, csfFile);
     // Also set the default export as the component's exports,
     // to allow `import ButtonStories from './Button.stories'`.
@@ -76,7 +76,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     });
   }
 
-  attachCSFFile(csfFile: CSFFile<TRenderer>) {
+  attachCSFFile(csfFile: CSFFile<TRenderer>): void {
     if (!this.exportsToCSFFile.has(csfFile.moduleExports)) {
       throw new Error('Cannot attach a CSF file that has not been referenced');
     }
@@ -99,7 +99,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     });
   }
 
-  referenceMeta(metaExports: ModuleExports, attach: boolean) {
+  referenceMeta(metaExports: ModuleExports, attach: boolean): void {
     const resolved = this.resolveModuleExport(metaExports);
 
     if (resolved.type !== 'meta') {

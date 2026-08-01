@@ -84,13 +84,13 @@ export const Default = meta.story({
 });
 
 export const Mobile = meta.story({
-  beforeEach() {
+  beforeEach(): void {
     managerContext.api.getGlobals.mockReturnValue({ viewport: { value: 'mobile1' } });
   },
 });
 
 export const Locked = meta.story({
-  beforeEach() {
+  beforeEach(): void {
     managerContext.api.getGlobals.mockReturnValue({
       viewport: { value: 'mobile1' },
     });
@@ -101,7 +101,7 @@ export const Locked = meta.story({
 });
 
 export const Rotated = meta.story({
-  beforeEach() {
+  beforeEach(): void {
     managerContext.api.getGlobals.mockReturnValue({
       viewport: { value: 'mobile1', isRotated: true },
     });

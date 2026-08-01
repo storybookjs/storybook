@@ -211,7 +211,7 @@ export class StoryIndexGenerator {
     );
   }
 
-  async initialize() {
+  async initialize(): Promise<void> {
     // Find all matching paths for each specifier
     const specifiersAndCaches = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
       this.specifiers,
@@ -239,7 +239,7 @@ export class StoryIndexGenerator {
       existingEntry: CacheEntry
     ) => Promise<CacheEntry>,
     overwrite = false
-  ) {
+  ): Promise<void> {
     await Promise.all(
       this.specifiers.map(async (specifier) => {
         const entry = this.specifierToCache.get(specifier);
@@ -275,7 +275,7 @@ export class StoryIndexGenerator {
     );
   }
 
-  isDocsMdx(absolutePath: Path) {
+  isDocsMdx(absolutePath: Path): boolean {
     return /(?<!\.stories)\.mdx$/i.test(absolutePath);
   }
 
@@ -340,7 +340,7 @@ export class StoryIndexGenerator {
     return { entries, stats: statsSummary };
   }
 
-  findDependencies(absoluteImports: Path[]) {
+  findDependencies(absoluteImports: Path[]): StoriesCacheEntry[] {
     return [...this.specifierToCache.values()].flatMap((cache: SpecifierStoriesCache) =>
       Object.entries(cache)
         .filter(([fileName, cacheEntry]) => {
@@ -376,7 +376,7 @@ export class StoryIndexGenerator {
     rawComponentPath: Path,
     absolutePath: Path,
     matchPath: TsconfigPaths.MatchPath | undefined
-  ) {
+  ): string {
     const matchedPath =
       matchPath?.(rawComponentPath, undefined, undefined, supportedExtensions) ?? rawComponentPath;
     let resolved;
@@ -516,7 +516,7 @@ export class StoryIndexGenerator {
     specifier: NormalizedStoriesSpecifier,
     absolutePath: Path,
     projectTags: Tag[] = []
-  ) {
+  ): Promise<false | DocsIndexEntry> {
     const relativePath = relative(this.options.workingDir, absolutePath);
     try {
       const normalizedPath = normalizeStoryPath(relativePath);
@@ -710,7 +710,10 @@ export class StoryIndexGenerator {
     return betterEntry;
   }
 
-  async sortStories(entries: StoryIndex['entries'], storySortParameter: any) {
+  async sortStories(
+    entries: StoryIndex['entries'],
+    storySortParameter: any
+  ): Promise<Record<string, IndexEntry>> {
     const sortableStories = Object.values(entries);
     const fileNameOrder = StoryIndexGenerator.storyFileNames(this.specifierToCache);
     sortStoriesV7(sortableStories, storySortParameter, fileNameOrder);
@@ -724,7 +727,7 @@ export class StoryIndexGenerator {
     );
   }
 
-  async getIndex() {
+  async getIndex(): Promise<StoryIndex> {
     return (await this.getIndexAndStats()).storyIndex;
   }
 
@@ -792,7 +795,7 @@ export class StoryIndexGenerator {
     }
   }
 
-  invalidateAll() {
+  invalidateAll(): void {
     this.specifierToCache.forEach((cache) => {
       Object.keys(cache).forEach((key) => {
         cache[key] = false;
@@ -803,7 +806,7 @@ export class StoryIndexGenerator {
     this.invalidationListeners.forEach((listener) => listener());
   }
 
-  invalidate(importPath: Path, removed: boolean) {
+  invalidate(importPath: Path, removed: boolean): void {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
       ns.importPathMatcher.exec(importPath)
@@ -862,7 +865,7 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewCode(): Promise<string | undefined> {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
@@ -897,7 +900,9 @@ export class StoryIndexGenerator {
   }
 
   // Get the story file names in "imported order"
-  static storyFileNames(specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>) {
+  static storyFileNames(
+    specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>
+  ): string[] {
     return Array.from(specifierToCache.values()).flatMap((r) => Object.keys(r));
   }
 }

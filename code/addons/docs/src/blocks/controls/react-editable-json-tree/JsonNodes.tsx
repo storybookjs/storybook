@@ -27,7 +27,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     this.onSubmit = this.onSubmit.bind(this);
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     const { inputRefKey, inputRefValue } = this.state;
     const { onlyValue } = this.props;
 
@@ -40,7 +40,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     }
   }
 
-  onKeydown(event: KeyboardEvent) {
+  onKeydown(event: KeyboardEvent): void {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
@@ -62,7 +62,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     }
   }
 
-  onSubmit() {
+  onSubmit(): void {
     const { handleAdd, onlyValue, onSubmitValueParser, keyPath, deep } = this.props;
     const { inputRefKey, inputRefValue } = this.state;
     const result: any = {};
@@ -80,17 +80,17 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     handleAdd(result);
   }
 
-  refInputKey(node: any) {
+  refInputKey(node: any): void {
     // @ts-expect-error (Converted from ts-ignore)
     this.state.inputRefKey = node;
   }
 
-  refInputValue(node: any) {
+  refInputValue(node: any): void {
     // @ts-expect-error (Converted from ts-ignore)
     this.state.inputRefValue = node;
   }
 
-  render() {
+  render(): React.JSX.Element {
     const {
       handleCancel,
       onlyValue,
@@ -192,11 +192,16 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     this.renderNotCollapsed = this.renderNotCollapsed.bind(this);
   }
 
-  static getDerivedStateFromProps(props: JsonArrayProps, state: JsonArrayState) {
+  static getDerivedStateFromProps(
+    props: JsonArrayProps,
+    state: JsonArrayState
+  ): {
+    data: any[];
+  } | null {
     return props.data !== state.data ? { data: props.data } : null;
   }
 
-  onChildUpdate(childKey: string, childData: any) {
+  onChildUpdate(childKey: string, childData: any): void {
     const { data, keyPath = [] } = this.state;
     // Update data
     (data as Record<string, any>)[childKey] = childData;
@@ -210,13 +215,13 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     onUpdate(keyPath[size - 1], data);
   }
 
-  handleAddMode() {
+  handleAddMode(): void {
     this.setState({
       addFormVisible: true,
     });
   }
 
-  handleCollapseMode() {
+  handleCollapseMode(): void {
     this.setState((state) => ({
       collapsed: !state.collapsed,
     }));
@@ -252,7 +257,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ newValue }: any) {
+  handleAddValueAdd({ newValue }: any): void {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
     const key = data.length;
@@ -281,13 +286,13 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       .catch(logger.error);
   }
 
-  handleAddValueCancel() {
+  handleAddValueCancel(): void {
     this.setState({
       addFormVisible: false,
     });
   }
 
-  handleEditValue({ key, value }: any) {
+  handleEditValue({ key, value }: any): Promise {
     return new Promise((resolve, reject) => {
       const { beforeUpdateAction } = this.props;
       const { data, keyPath, nextDeep: deep } = this.state;
@@ -323,7 +328,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     });
   }
 
-  renderCollapsed() {
+  renderCollapsed(): React.JSX.Element {
     const { name, data, keyPath, deep } = this.state;
     const { handleRemove, readOnly, dataType, minusMenuElement } = this.props;
 
@@ -347,7 +352,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     );
   }
 
-  renderNotCollapsed() {
+  renderNotCollapsed(): React.JSX.Element {
     const { name, data, keyPath, deep, addFormVisible, nextDeep } = this.state;
     const {
       isCollapsed,
@@ -441,7 +446,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     );
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
 
@@ -521,11 +526,16 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     this.onKeydown = this.onKeydown.bind(this);
   }
 
-  static getDerivedStateFromProps(props: JsonFunctionValueProps, state: JsonFunctionValueState) {
+  static getDerivedStateFromProps(
+    props: JsonFunctionValueProps,
+    state: JsonFunctionValueState
+  ): {
+    value: any;
+  } | null {
     return props.value !== state.value ? { value: props.value } : null;
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(): void {
     const { editEnabled, inputRef, name, value, keyPath, deep } = this.state;
     const { readOnly, dataType } = this.props;
     const readOnlyResult = readOnly(name, value, keyPath, deep, dataType);
@@ -535,7 +545,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
   }
 
-  onKeydown(event: KeyboardEvent) {
+  onKeydown(event: KeyboardEvent): void {
     const { inputRef } = this.state;
     if (
       event.altKey ||
@@ -557,7 +567,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
   }
 
-  handleEdit() {
+  handleEdit(): void {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
 
@@ -583,24 +593,24 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       .catch(logger.error);
   }
 
-  handleEditMode() {
+  handleEditMode(): void {
     this.setState({
       editEnabled: true,
     });
   }
 
-  refInput(node: any) {
+  refInput(node: any): void {
     // @ts-expect-error (Converted from ts-ignore)
     this.state.inputRef = node;
   }
 
-  handleCancelEdit() {
+  handleCancelEdit(): void {
     this.setState({
       editEnabled: false,
     });
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { name, value, editEnabled, keyPath, deep } = this.state;
     const {
       handleRemove,
@@ -709,11 +719,16 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
     };
   }
 
-  static getDerivedStateFromProps(props: JsonNodeProps, state: JsonNodeState) {
+  static getDerivedStateFromProps(
+    props: JsonNodeProps,
+    state: JsonNodeState
+  ): {
+    data: any;
+  } | null {
     return props.data !== state.data ? { data: props.data } : null;
   }
 
-  render() {
+  render(): React.JSX.Element | null {
     const { data, name, keyPath, deep } = this.state;
     const {
       isCollapsed,
@@ -1040,11 +1055,16 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     this.renderNotCollapsed = this.renderNotCollapsed.bind(this);
   }
 
-  static getDerivedStateFromProps(props: JsonObjectProps, state: JsonObjectState) {
+  static getDerivedStateFromProps(
+    props: JsonObjectProps,
+    state: JsonObjectState
+  ): {
+    data: Record<string, any>;
+  } | null {
     return props.data !== state.data ? { data: props.data } : null;
   }
 
-  onChildUpdate(childKey: string, childData: any) {
+  onChildUpdate(childKey: string, childData: any): void {
     const { data, keyPath = [] } = this.state;
     // Update data
     (data as Record<string, any>)[childKey] = childData;
@@ -1058,19 +1078,19 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     onUpdate(keyPath[size - 1], data);
   }
 
-  handleAddMode() {
+  handleAddMode(): void {
     this.setState({
       addFormVisible: true,
     });
   }
 
-  handleAddValueCancel() {
+  handleAddValueCancel(): void {
     this.setState({
       addFormVisible: false,
     });
   }
 
-  handleAddValueAdd({ key, newValue }: any) {
+  handleAddValueAdd({ key, newValue }: any): void {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
 
@@ -1127,13 +1147,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     };
   }
 
-  handleCollapseMode() {
+  handleCollapseMode(): void {
     this.setState((state) => ({
       collapsed: !state.collapsed,
     }));
   }
 
-  handleEditValue({ key, value }: any) {
+  handleEditValue({ key, value }: any): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const { beforeUpdateAction } = this.props;
       const { data, keyPath = [], nextDeep: deep } = this.state;
@@ -1169,7 +1189,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     });
   }
 
-  renderCollapsed() {
+  renderCollapsed(): React.JSX.Element {
     const { name, keyPath, deep, data } = this.state;
     const { handleRemove, readOnly, dataType, minusMenuElement } = this.props;
 
@@ -1195,7 +1215,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     );
   }
 
-  renderNotCollapsed() {
+  renderNotCollapsed(): React.JSX.Element {
     const { name, data, keyPath, deep, nextDeep, addFormVisible } = this.state;
     const {
       isCollapsed,
@@ -1290,7 +1310,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     );
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { name, collapsed, keyPath, deep = 0 } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
 
@@ -1370,11 +1390,16 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     this.onKeydown = this.onKeydown.bind(this);
   }
 
-  static getDerivedStateFromProps(props: JsonValueProps, state: JsonValueState) {
+  static getDerivedStateFromProps(
+    props: JsonValueProps,
+    state: JsonValueState
+  ): {
+    value: any;
+  } | null {
     return props.value !== state.value ? { value: props.value } : null;
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(): void {
     const { editEnabled, inputRef, name, value, keyPath, deep } = this.state;
     const { readOnly, dataType } = this.props;
     const isReadOnly = readOnly(name, value, keyPath, deep, dataType);
@@ -1384,7 +1409,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     }
   }
 
-  onKeydown(event: KeyboardEvent) {
+  onKeydown(event: KeyboardEvent): void {
     const { inputRef } = this.state;
     if (
       event.altKey ||
@@ -1406,7 +1431,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     }
   }
 
-  handleEdit() {
+  handleEdit(): void {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
 
@@ -1432,24 +1457,24 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       .catch(logger.error);
   }
 
-  handleEditMode() {
+  handleEditMode(): void {
     this.setState({
       editEnabled: true,
     });
   }
 
-  refInput(node: any) {
+  refInput(node: any): void {
     // @ts-expect-error (Converted from ts-ignore)
     this.state.inputRef = node;
   }
 
-  handleCancelEdit() {
+  handleCancelEdit(): void {
     this.setState({
       editEnabled: false,
     });
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { name, value, editEnabled, keyPath, deep } = this.state;
     const {
       handleRemove,

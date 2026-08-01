@@ -146,7 +146,7 @@ export class AddonStore {
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
       | Addon_TypesEnum.experimental_TEST_PROVIDER,
-  >(type?: T) {
+  >(type?: T): string[] {
     return type ? Object.keys(this.getElements(type)) : Object.keys(this.loaders);
   }
 }

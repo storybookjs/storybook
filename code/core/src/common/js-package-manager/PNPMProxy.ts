@@ -59,7 +59,7 @@ export class PNPMProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
-  detectWorkspaceRoot() {
+  detectWorkspaceRoot(): boolean {
     const CWD = process.cwd();
 
     const pnpmWorkspaceYaml = `${CWD}/pnpm-workspace.yaml`;
@@ -122,7 +122,7 @@ export class PNPMProxy extends JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ) {
+  ): ResultPromise {
     return executeCommand({
       command: 'pnpm',
       args: [command, ...args],
@@ -131,7 +131,7 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  public async getRegistryURL() {
+  public async getRegistryURL(): Promise<string | undefined> {
     // pnpm 10.7.1+ falls back to npm for certain config keys (including registry)
     // https://github.com/pnpm/pnpm/pull/9346
     // "npm config" commands are not allowed in workspaces per default
@@ -145,7 +145,10 @@ export class PNPMProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
+  public async findInstallations(
+    pattern: string[],
+    { depth = 99 }: { depth?: number } = {}
+  ): Promise<InstallationMetadata | undefined> {
     try {
       const args = ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`];
       const childProcess = await executeCommand({
@@ -360,7 +363,7 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean }): ResultPromise {
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -369,7 +372,7 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean }): Promise<void> {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -491,7 +494,7 @@ export class PNPMProxy extends JsPackageManager {
     throw rerunError;
   }
 
-  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean): ResultPromise {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {

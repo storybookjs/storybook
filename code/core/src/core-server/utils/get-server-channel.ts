@@ -87,11 +87,11 @@ export class ServerChannelTransport {
     });
   }
 
-  setHandler(handler: ChannelHandler) {
+  setHandler(handler: ChannelHandler): void {
     this.handler = handler;
   }
 
-  send(event: any) {
+  send(event: any): void {
     const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)

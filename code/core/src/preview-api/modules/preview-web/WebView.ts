@@ -67,7 +67,7 @@ export class WebView implements View<HTMLElement> {
   }
 
   // Get ready to render a story, returning the element to render to
-  prepareForStory(story: PreparedStory<any>) {
+  prepareForStory(story: PreparedStory<any>): HTMLElement {
     this.showStory();
     this.applyLayout(story.parameters.layout);
 
@@ -84,7 +84,7 @@ export class WebView implements View<HTMLElement> {
     return document.getElementById('storybook-root')!;
   }
 
-  prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
+  prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}): HTMLElement {
     this.showMain();
     this.showDocs();
     this.applyLayout('fullscreen');
@@ -105,7 +105,7 @@ export class WebView implements View<HTMLElement> {
     return document.getElementById('storybook-docs')!;
   }
 
-  applyLayout(layout: Layout = 'padded') {
+  applyLayout(layout: Layout = 'padded'): void {
     if (layout === 'none') {
       document.body.classList.remove(this.currentLayoutClass!);
       this.currentLayoutClass = null;
@@ -124,7 +124,7 @@ export class WebView implements View<HTMLElement> {
   /**
    * Injects a BCP-47 lang attribute to the story root, or removes it if `lang` is null.
    */
-  applyHtmlLang(element: HTMLElement, lang?: string) {
+  applyHtmlLang(element: HTMLElement, lang?: string): void {
     if (lang) {
       element.setAttribute('lang', lang);
     } else {
@@ -132,7 +132,7 @@ export class WebView implements View<HTMLElement> {
     }
   }
 
-  checkIfLayoutExists(layout: keyof typeof layoutClassMap) {
+  checkIfLayoutExists(layout: keyof typeof layoutClassMap): void {
     if (!layoutClassMap[layout]) {
       logger.warn(
         dedent`
@@ -143,7 +143,7 @@ export class WebView implements View<HTMLElement> {
     }
   }
 
-  showMode(mode: Mode) {
+  showMode(mode: Mode): void {
     clearTimeout(this.preparingTimeout);
     Object.keys(Mode).forEach((otherMode) => {
       if (otherMode === mode) {
@@ -154,7 +154,7 @@ export class WebView implements View<HTMLElement> {
     });
   }
 
-  showErrorDisplay({ message = '', stack = '' }) {
+  showErrorDisplay({ message = '', stack = '' }): void {
     let header = message;
     let detail = stack;
     const parts = message.split('\n');
@@ -169,7 +169,7 @@ export class WebView implements View<HTMLElement> {
     this.showMode(Mode.ERROR);
   }
 
-  showNoPreview() {
+  showNoPreview(): void {
     if (this.testing) {
       return;
     }
@@ -181,7 +181,7 @@ export class WebView implements View<HTMLElement> {
     this.docsRoot()?.setAttribute('hidden', 'true');
   }
 
-  showPreparingStory({ immediate = false } = {}) {
+  showPreparingStory({ immediate = false } = {}): void {
     clearTimeout(this.preparingTimeout);
 
     if (immediate) {
@@ -194,7 +194,7 @@ export class WebView implements View<HTMLElement> {
     }
   }
 
-  showPreparingDocs({ immediate = false } = {}) {
+  showPreparingDocs({ immediate = false } = {}): void {
     clearTimeout(this.preparingTimeout);
     if (immediate) {
       this.showMode(Mode.PREPARING_DOCS);
@@ -203,21 +203,21 @@ export class WebView implements View<HTMLElement> {
     }
   }
 
-  showMain() {
+  showMain(): void {
     this.showMode(Mode.MAIN);
   }
 
-  showDocs() {
+  showDocs(): void {
     this.storyRoot().setAttribute('hidden', 'true');
     this.docsRoot().removeAttribute('hidden');
   }
 
-  showStory() {
+  showStory(): void {
     this.docsRoot().setAttribute('hidden', 'true');
     this.storyRoot().removeAttribute('hidden');
   }
 
-  showStoryDuringRender() {
+  showStoryDuringRender(): void {
     // When 'showStory' is called (at the start of rendering) we get rid of our display:none
     // from all children of the root (but keep the preparing spinner visible). This may mean
     // that very weird and high z-index stories are briefly visible.

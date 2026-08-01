@@ -12,13 +12,13 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
   // @ts-expect-error (non strict)
   iframe: HTMLIFrameElement = null;
 
-  componentDidMount() {
+  componentDidMount(): void {
     const { iFrameRef } = this.props;
     // @ts-expect-error (non strict)
     this.iframe = iFrameRef.current;
   }
 
-  shouldComponentUpdate(nextProps: IZoomIFrameProps) {
+  shouldComponentUpdate(nextProps: IZoomIFrameProps): boolean {
     const { scale, active } = this.props;
 
     if (scale !== nextProps.scale) {
@@ -35,7 +35,7 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
     return nextProps.children.props.src !== this.props.children.props.src;
   }
 
-  setIframeInnerZoom(scale: number) {
+  setIframeInnerZoom(scale: number): void {
     try {
       // @ts-expect-error (non strict)
       Object.assign(this.iframe.contentDocument.body.style, {
@@ -49,7 +49,7 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
     }
   }
 
-  setIframeZoom(scale: number) {
+  setIframeZoom(scale: number): void {
     Object.assign(this.iframe.style, {
       width: `${(1 / scale) * 100}%`,
       height: `${(1 / scale) * 100}%`,
@@ -58,7 +58,7 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
     });
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { children } = this.props;
     return <>{children}</>;
   }

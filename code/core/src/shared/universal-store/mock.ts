@@ -71,7 +71,7 @@ export class MockUniversalStore<
     return new MockUniversalStore(options, testUtils);
   }
 
-  public unsubscribeAll() {
+  public unsubscribeAll(): void {
     if (!this.testUtils) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(

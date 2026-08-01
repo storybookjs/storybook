@@ -22,7 +22,7 @@ export class GlobalsStore {
     this.set({ globals, globalTypes });
   }
 
-  set({ globals = {}, globalTypes = {} }: { globals?: Globals; globalTypes?: GlobalTypes }) {
+  set({ globals = {}, globalTypes = {} }: { globals?: Globals; globalTypes?: GlobalTypes }): void {
     const delta = this.initialGlobals && deepDiff(this.initialGlobals, this.globals);
 
     this.allowedGlobalNames = new Set([...Object.keys(globals), ...Object.keys(globalTypes)]);
@@ -36,7 +36,7 @@ export class GlobalsStore {
     }
   }
 
-  filterAllowedGlobals(globals: Globals) {
+  filterAllowedGlobals(globals: Globals): Globals {
     return Object.entries(globals).reduce((acc, [key, value]) => {
       if (this.allowedGlobalNames.has(key)) {
         acc[key] = value;
@@ -49,18 +49,18 @@ export class GlobalsStore {
     }, {} as Globals);
   }
 
-  updateFromPersisted(persisted: Globals) {
+  updateFromPersisted(persisted: Globals): void {
     const allowedUrlGlobals = this.filterAllowedGlobals(persisted);
     // Note that unlike args, we do not have the same type information for globals to allow us
     // to type check them here, so we just set them naively
     this.globals = { ...this.globals, ...allowedUrlGlobals };
   }
 
-  get() {
+  get(): Globals {
     return this.globals;
   }
 
-  update(newGlobals: Globals) {
+  update(newGlobals: Globals): void {
     this.globals = { ...this.globals, ...this.filterAllowedGlobals(newGlobals) };
 
     for (const key in newGlobals) {

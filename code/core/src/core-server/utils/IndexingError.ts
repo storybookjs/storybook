@@ -13,7 +13,7 @@ export class IndexingError extends Error {
     }
   }
 
-  pathsString() {
+  pathsString(): string {
     if (this.importPaths.length === 1) {
       return `${slash(this.importPaths[0])}`;
     }
@@ -44,7 +44,7 @@ export class MultipleIndexingError extends Error {
     }
   }
 
-  toString() {
+  toString(): string {
     if (this.indexingErrors.length === 1) {
       return `${this.message}:\n  ${this.indexingErrors[0].stack}`;
     }

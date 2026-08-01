@@ -101,7 +101,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.initialize();
   }
 
-  setupListeners() {
+  setupListeners(): void {
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
@@ -125,7 +125,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.channel.on(PRELOAD_ENTRIES, this.onPreloadStories.bind(this));
   }
 
-  async setInitialGlobals() {
+  async setInitialGlobals(): Promise<void> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'setInitialGlobals' });
     }
@@ -145,7 +145,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   // Use the selection specifier to choose a story, then render it
-  async selectSpecifiedStory() {
+  async selectSpecifiedStory(): Promise<void> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({
         methodName: 'selectSpecifiedStory',
@@ -199,7 +199,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     getProjectAnnotations,
   }: {
     getProjectAnnotations: () => MaybePromise<ProjectAnnotations<TRenderer>>;
-  }) {
+  }): Promise<void> {
     await super.onGetProjectAnnotationsChanged({ getProjectAnnotations });
 
     if (this.selectionStore.selection) {
@@ -214,7 +214,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }: {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
-  }) {
+  }): Promise<void> {
     await super.onStoriesChanged({ importFn, storyIndex });
 
     if (this.selectionStore.selection) {
@@ -225,7 +225,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  onKeydown(event: KeyboardEvent) {
+  onKeydown(event: KeyboardEvent): void {
     if (!this.storyRenders.find((r) => r.disableKeyListeners) && !focusInInput(event)) {
       // We have to pick off the keys of the event that we need on the other side
       const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
@@ -235,7 +235,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }): Promise<void> {
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the
@@ -249,11 +249,11 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.renderSelection();
   }
 
-  onUpdateQueryParams(queryParams: any) {
+  onUpdateQueryParams(queryParams: any): void {
     this.selectionStore.setQueryParams(queryParams);
   }
 
-  async onUpdateGlobals({ globals }: { globals: Globals }) {
+  async onUpdateGlobals({ globals }: { globals: Globals }): Promise<void> {
     const currentStory =
       (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
     super.onUpdateGlobals({ globals, currentStory });
@@ -265,11 +265,17 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
+  async onUpdateArgs({
+    storyId,
+    updatedArgs,
+  }: {
+    storyId: StoryId;
+    updatedArgs: Args;
+  }): Promise<void> {
     super.onUpdateArgs({ storyId, updatedArgs });
   }
 
-  async onPreloadStories({ ids }: { ids: string[] }) {
+  async onPreloadStories({ ids }: { ids: string[] }): Promise<void> {
     await this.storeInitializationPromise;
 
     if (this.storyStoreValue) {
@@ -290,7 +296,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   //     in which case we render it to the root element, OR
   // - a story selected in "docs" viewMode,
   //     in which case we render the docsPage for that story
-  protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}) {
+  protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}): Promise<void> {
     const { renderToCanvas } = this;
 
     if (!this.storyStoreValue || !renderToCanvas) {
@@ -490,7 +496,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   async teardownRender(
     render: PossibleRender<TRenderer>,
     { viewModeChanged = false }: { viewModeChanged?: boolean } = {}
-  ) {
+  ): Promise<void> {
     this.storyRenders = this.storyRenders.filter((r) => r !== render);
     await render?.teardown?.({ viewModeChanged });
   }
@@ -505,17 +511,17 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     };
   }
 
-  renderPreviewEntryError(reason: string, err: Error) {
+  renderPreviewEntryError(reason: string, err: Error): void {
     super.renderPreviewEntryError(reason, err);
     this.view.showErrorDisplay(err);
   }
 
-  renderMissingStory() {
+  renderMissingStory(): void {
     this.view.showNoPreview();
     this.channel.emit(STORY_MISSING);
   }
 
-  renderStoryLoadingException(storySpecifier: StorySpecifier, err: Error) {
+  renderStoryLoadingException(storySpecifier: StorySpecifier, err: Error): void {
     // logger.error(`Unable to load story '${storySpecifier}':`);
     logger.error(err);
     this.view.showErrorDisplay(err);
@@ -523,7 +529,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   // renderException is used if we fail to render the story and it is uncaught by the app layer
-  renderException(storyId: StoryId, error: Error) {
+  renderException(storyId: StoryId, error: Error): void {
     const { name = 'Error', message = String(error), stack } = error;
     const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack });
@@ -536,7 +542,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   // renderError is used by the various app layers to inform the user they have done something
   // wrong -- for instance returned the wrong thing from a story
-  renderError(storyId: StoryId, { title, description }: { title: string; description: string }) {
+  renderError(
+    storyId: StoryId,
+    { title, description }: { title: string; description: string }
+  ): void {
     const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_ERRORED, { title, description });
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });

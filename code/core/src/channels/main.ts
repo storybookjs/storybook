@@ -54,12 +54,12 @@ export class Channel implements ChannelLike {
     return this.transports.length > 0;
   }
 
-  addListener(eventName: string, listener: Listener) {
+  addListener(eventName: string, listener: Listener): void {
     this.events[eventName] = this.events[eventName] || [];
     this.events[eventName].push(listener);
   }
 
-  emit(eventName: string, ...args: any) {
+  emit(eventName: string, ...args: any): void {
     const event: ChannelEvent = { type: eventName, args, from: this.sender };
     let options = {};
     if (args.length >= 1 && args[0] && args[0].options) {
@@ -81,15 +81,15 @@ export class Channel implements ChannelLike {
     }
   }
 
-  last(eventName: string) {
+  last(eventName: string): any {
     return this.data[eventName];
   }
 
-  eventNames() {
+  eventNames(): string[] {
     return Object.keys(this.events);
   }
 
-  listenerCount(eventName: string) {
+  listenerCount(eventName: string): number {
     const listeners = this.listeners(eventName);
     return listeners ? listeners.length : 0;
   }
@@ -99,12 +99,12 @@ export class Channel implements ChannelLike {
     return listeners || undefined;
   }
 
-  once(eventName: string, listener: Listener) {
+  once(eventName: string, listener: Listener): void {
     const onceListener: Listener = this.onceListener(eventName, listener);
     this.addListener(eventName, onceListener);
   }
 
-  removeAllListeners(eventName?: string) {
+  removeAllListeners(eventName?: string): void {
     if (!eventName) {
       this.events = {};
     } else if (this.events[eventName]) {
@@ -112,18 +112,18 @@ export class Channel implements ChannelLike {
     }
   }
 
-  removeListener(eventName: string, listener: Listener) {
+  removeListener(eventName: string, listener: Listener): void {
     const listeners = this.listeners(eventName);
     if (listeners) {
       this.events[eventName] = listeners.filter((l) => l !== listener);
     }
   }
 
-  on(eventName: string, listener: Listener) {
+  on(eventName: string, listener: Listener): void {
     this.addListener(eventName, listener);
   }
 
-  off(eventName: string, listener: Listener) {
+  off(eventName: string, listener: Listener): void {
     this.removeListener(eventName, listener);
   }
 

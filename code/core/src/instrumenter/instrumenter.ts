@@ -303,11 +303,11 @@ export class Instrumenter {
     }
   };
 
-  getState(storyId: StoryId) {
+  getState(storyId: StoryId): State {
     return this.state[storyId] || getInitialState();
   }
 
-  setState(storyId: StoryId, update: Partial<State> | ((state: State) => Partial<State>)) {
+  setState(storyId: StoryId, update: Partial<State> | ((state: State) => Partial<State>)): void {
     if (storyId) {
       const state = this.getState(storyId);
       const patch = typeof update === 'function' ? update(state) : update;
@@ -317,7 +317,7 @@ export class Instrumenter {
     }
   }
 
-  cleanup() {
+  cleanup(): void {
     // Reset stories with retained state to their initial state, and drop the rest.
     this.state = Object.entries(this.state).reduce(
       (acc, [storyId, state]) => {
@@ -446,7 +446,7 @@ export class Instrumenter {
     object: Record<string, unknown>,
     args: any[],
     options: Options
-  ) {
+  ): PatchedObj<any> {
     const storyId: StoryId =
       args?.[0]?.__storyId__ || global.__STORYBOOK_PREVIEW__?.selectionStore?.selection?.storyId;
     const { cursor, ancestors } = this.getState(storyId);
@@ -460,7 +460,7 @@ export class Instrumenter {
     return this.instrument(result, { ...options, mutate: true, path: [{ __callId__: call.id }] });
   }
 
-  intercept(fn: Function, object: Record<string, unknown>, call: Call, options: Options) {
+  intercept(fn: Function, object: Record<string, unknown>, call: Call, options: Options): any {
     const { chainedCallIds, isDebugging, playUntil } = this.getState(call.storyId);
 
     // For a "jump to step" action, continue playing until we hit a call by that ID.
@@ -488,7 +488,7 @@ export class Instrumenter {
     });
   }
 
-  invoke(fn: Function, object: Record<string, unknown>, call: Call, options: Options) {
+  invoke(fn: Function, object: Record<string, unknown>, call: Call, options: Options): any {
     const { callRefsByResult, renderPhase } = this.getState(call.storyId);
 
     // TODO This function should not needed anymore, as the channel already serializes values with telejson
@@ -674,7 +674,7 @@ export class Instrumenter {
   }
 
   // Sends the call info to the manager and synchronizes the log.
-  update(call: Call) {
+  update(call: Call): void {
     this.channel?.emit(EVENTS.CALL, call);
     this.setState(call.storyId, ({ calls }) => {
       // Omit earlier calls for the same ID, which may have been superseded by a later invocation.
@@ -694,7 +694,7 @@ export class Instrumenter {
 
   // Builds a log of interceptable calls and control states and sends it to the manager.
   // Uses a 0ms debounce because this might get called many times in one tick.
-  sync(storyId: string) {
+  sync(storyId: string): void {
     const synchronize = () => {
       const { isLocked, isPlaying } = this.getState(storyId);
       const logItems: LogItem[] = this.getLog(storyId);

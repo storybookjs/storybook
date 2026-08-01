@@ -29,23 +29,38 @@ import {
 } from 'storybook/internal/preview-errors';
 import type {
   Args,
+  ArgsStoryFn,
+  Canvas,
+  ComponentId,
+  ComponentTitle,
+  GlobalTypes,
   Globals,
   GlobalsUpdatedPayload,
+  LegacyStoryFn,
+  ModuleExport,
   ModuleImportFn,
+  Parameters,
   PreparedStory,
   ProjectAnnotations,
   RenderContextCallbacks,
   RenderToCanvas,
   Renderer,
   SetGlobalsPayload,
+  StoryContextForEnhancers,
+  StepRunner,
+  StoryContext,
+  StoryContextForLoaders,
   StoryId,
   StoryIndex,
+  StoryName,
   StoryRenderOptions,
+  StrictArgTypes,
+  Tag,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
+import { ReporterAPI, StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
 import type { MdxDocsRender } from './render/MdxDocsRender.ts';
@@ -122,7 +137,7 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   // INITIALIZATION
-  protected async initialize() {
+  protected async initialize(): Promise<void> {
     this.setupListeners();
 
     try {
@@ -137,11 +152,11 @@ export class Preview<TRenderer extends Renderer> {
     }
   }
 
-  ready() {
+  ready(): Promise<void> {
     return this.storeInitializationPromise;
   }
 
-  setupListeners() {
+  setupListeners(): void {
     this.channel.on(STORY_INDEX_INVALIDATED, this.onStoryIndexChanged.bind(this));
     this.channel.on(UPDATE_GLOBALS, this.onUpdateGlobals.bind(this));
     this.channel.on(UPDATE_STORY_ARGS, this.onUpdateArgs.bind(this));
@@ -179,7 +194,9 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   // If initialization gets as far as project annotations, this function runs.
-  async initializeWithProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
+  async initializeWithProjectAnnotations(
+    projectAnnotations: ProjectAnnotations<TRenderer>
+  ): Promise<void> {
     this.projectAnnotationsBeforeInitialization = projectAnnotations;
     try {
       const storyIndex = await this.getStoryIndexFromServer();
@@ -190,7 +207,7 @@ export class Preview<TRenderer extends Renderer> {
     }
   }
 
-  async runBeforeAllHook(projectAnnotations: ProjectAnnotations<TRenderer>) {
+  async runBeforeAllHook(projectAnnotations: ProjectAnnotations<TRenderer>): Promise<void> {
     try {
       await this.beforeAllCleanup?.();
       this.beforeAllCleanup = await projectAnnotations.beforeAll?.();
@@ -200,7 +217,7 @@ export class Preview<TRenderer extends Renderer> {
     }
   }
 
-  async getStoryIndexFromServer() {
+  async getStoryIndexFromServer(): Promise<StoryIndex> {
     const result = await fetch(STORY_INDEX_PATH);
     if (result.status === 200) {
       return result.json() as any as StoryIndex;
@@ -228,11 +245,11 @@ export class Preview<TRenderer extends Renderer> {
     this.resolveStoreInitializationPromise();
   }
 
-  async setInitialGlobals() {
+  async setInitialGlobals(): Promise<void> {
     this.emitGlobals();
   }
 
-  emitGlobals() {
+  emitGlobals(): void {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'emitGlobals' });
     }
@@ -251,7 +268,7 @@ export class Preview<TRenderer extends Renderer> {
     getProjectAnnotations,
   }: {
     getProjectAnnotations: () => MaybePromise<ProjectAnnotations<TRenderer>>;
-  }) {
+  }): Promise<void> {
     delete this.previewEntryError;
     this.getProjectAnnotations = getProjectAnnotations;
 
@@ -267,7 +284,7 @@ export class Preview<TRenderer extends Renderer> {
     this.emitGlobals();
   }
 
-  async onStoryIndexChanged() {
+  async onStoryIndexChanged(): Promise<void> {
     delete this.previewEntryError;
 
     // We haven't successfully set project annotations yet,
@@ -300,7 +317,7 @@ export class Preview<TRenderer extends Renderer> {
   }: {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
-  }) {
+  }): Promise<void> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onStoriesChanged' });
     }
@@ -313,7 +330,7 @@ export class Preview<TRenderer extends Renderer> {
   }: {
     globals: Globals;
     currentStory?: PreparedStory<TRenderer>;
-  }) {
+  }): Promise<void> {
     if (!this.storyStoreValue) {
       await this.storeInitializationPromise;
     }
@@ -347,7 +364,13 @@ export class Preview<TRenderer extends Renderer> {
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
+  async onUpdateArgs({
+    storyId,
+    updatedArgs,
+  }: {
+    storyId: StoryId;
+    updatedArgs: Args;
+  }): Promise<void> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateArgs' });
     }
@@ -369,7 +392,7 @@ export class Preview<TRenderer extends Renderer> {
     });
   }
 
-  async onRequestArgTypesInfo({ id, payload }: RequestData<ArgTypesRequestPayload>) {
+  async onRequestArgTypesInfo({ id, payload }: RequestData<ArgTypesRequestPayload>): Promise<void> {
     try {
       await this.storeInitializationPromise;
       const story = await this.storyStoreValue?.loadStory(payload);
@@ -388,7 +411,13 @@ export class Preview<TRenderer extends Renderer> {
     }
   }
 
-  async onResetArgs({ storyId, argNames }: { storyId: string; argNames?: string[] }) {
+  async onResetArgs({
+    storyId,
+    argNames,
+  }: {
+    storyId: string;
+    argNames?: string[];
+  }): Promise<void> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onResetArgs' });
     }
@@ -417,15 +446,15 @@ export class Preview<TRenderer extends Renderer> {
 
   // ForceReRender does not include a story id, so we simply must
   // re-render all stories in case they are relevant
-  async onForceReRender() {
+  async onForceReRender(): Promise<void> {
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
   }
 
-  async onForceRemount({ storyId }: { storyId: StoryId }) {
+  async onForceRemount({ storyId }: { storyId: StoryId }): Promise<void> {
     await Promise.all(this.storyRenders.filter((r) => r.id === storyId).map((r) => r.remount()));
   }
 
-  async onStoryHotUpdated() {
+  async onStoryHotUpdated(): Promise<void> {
     await Promise.all(this.storyRenders.map((r) => r.cancelPlayFunction()));
   }
 
@@ -468,13 +497,13 @@ export class Preview<TRenderer extends Renderer> {
   async teardownRender(
     render: StoryRender<TRenderer> | CsfDocsRender<TRenderer> | MdxDocsRender<TRenderer>,
     { viewModeChanged }: { viewModeChanged?: boolean } = {}
-  ) {
+  ): Promise<void> {
     this.storyRenders = this.storyRenders.filter((r) => r !== render);
     await render?.teardown?.({ viewModeChanged });
   }
 
   // API
-  async loadStory({ storyId }: { storyId: StoryId }) {
+  async loadStory({ storyId }: { storyId: StoryId }): Promise<PreparedStory<TRenderer>> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'loadStory' });
     }
@@ -482,7 +511,57 @@ export class Preview<TRenderer extends Renderer> {
     return this.storyStoreValue.loadStory({ storyId });
   }
 
-  getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
+  getStoryContext(
+    story: PreparedStory<TRenderer>,
+    { forceInitialArgs = false } = {}
+  ): {
+    args: Args;
+    initialGlobals: Globals;
+    globalTypes: GlobalTypes | undefined;
+    userGlobals: Globals;
+    reporting: ReporterAPI;
+    globals: {
+      [x: string]: any;
+    };
+    hooks: unknown;
+    component?:
+      | (TRenderer & {
+          T: any;
+        })['component']
+      | undefined;
+    subcomponents?:
+      | Record<
+          string,
+          (TRenderer & {
+            T: any;
+          })['component']
+        >
+      | undefined;
+    parameters: Parameters;
+    initialArgs: Args;
+    argTypes: StrictArgTypes<Args>;
+    componentId: ComponentId;
+    title: ComponentTitle;
+    kind: ComponentTitle;
+    id: StoryId;
+    name: StoryName;
+    story: StoryName;
+    tags: Tag[];
+    moduleExport: ModuleExport;
+    originalStoryFn: ArgsStoryFn<TRenderer>;
+    undecoratedStoryFn: LegacyStoryFn<TRenderer>;
+    unboundStoryFn: LegacyStoryFn<TRenderer>;
+    applyLoaders: (context: StoryContext<TRenderer, Args>) => Promise<Record<string, any>>;
+    applyBeforeEach: (context: StoryContext<TRenderer, Args>) => Promise<CleanupCallback[]>;
+    applyAfterEach: (context: StoryContext<TRenderer, Args>) => Promise<void>;
+    playFunction?: ((context: StoryContext<TRenderer, Args>) => Promise<void> | void) | undefined;
+    runStep: StepRunner<TRenderer>;
+    mount: (context: StoryContext<TRenderer, Args>) => () => Promise<Canvas>;
+    testingLibraryRender?: (...args: never[]) => unknown;
+    renderToCanvas?: RenderToCanvas<TRenderer> | undefined;
+    usesMount: boolean;
+    storyGlobals: Globals;
+  } & Pick<StoryContextForLoaders<Renderer, Args>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'getStoryContext' });
     }
@@ -490,7 +569,9 @@ export class Preview<TRenderer extends Renderer> {
     return this.storyStoreValue.getStoryContext(story, { forceInitialArgs });
   }
 
-  async extract(options?: { includeDocsOnly: boolean }) {
+  async extract(options?: {
+    includeDocsOnly: boolean;
+  }): Promise<Record<string, StoryContextForEnhancers<TRenderer, Args>>> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'extract' });
     }
@@ -506,7 +587,7 @@ export class Preview<TRenderer extends Renderer> {
 
   // UTILITIES
 
-  renderPreviewEntryError(reason: string, err: Error) {
+  renderPreviewEntryError(reason: string, err: Error): void {
     this.previewEntryError = err;
     logger.error(reason);
     logger.error(err);

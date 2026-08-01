@@ -22,7 +22,7 @@ interface BodyStyle {
 export class IFrame extends Component<IFrameProps> {
   iframe: any = null;
 
-  componentDidMount() {
+  componentDidMount(): void {
     const { id } = this.props;
     this.iframe = globalWindow.document.getElementById(id);
   }
@@ -41,11 +41,11 @@ export class IFrame extends Component<IFrameProps> {
     return false;
   }
 
-  setIframeBodyStyle(style: BodyStyle) {
+  setIframeBodyStyle(style: BodyStyle): any {
     return Object.assign(this.iframe.contentDocument.body.style, style);
   }
 
-  render() {
+  render(): React.JSX.Element {
     const { id, title, src, allowFullScreen, scale, ...rest } = this.props;
     return (
       <iframe

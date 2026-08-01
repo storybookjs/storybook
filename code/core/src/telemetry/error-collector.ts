@@ -23,11 +23,11 @@ export class ErrorCollector {
     return ErrorCollector.instance;
   }
 
-  public static addError(error: unknown) {
+  public static addError(error: unknown): void {
     this.getInstance().errors.push(error);
   }
 
-  public static getErrors() {
+  public static getErrors(): unknown[] {
     return this.getInstance().errors;
   }
 }

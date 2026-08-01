@@ -92,6 +92,32 @@ describe('runCompodoc', () => {
       cwd: 'path/to/project',
     });
   });
+
+  it('should not inject a default -d when an attached -d value is present', async () => {
+    await runCompodoc({
+      compodocArgs: ['-e', 'json', '-ddocs'],
+      tsconfig: 'path/to/tsconfig.json',
+      workspaceRoot,
+    });
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '-e', 'json', '-ddocs'],
+      cwd: 'path/to/project',
+    });
+  });
+
+  it('should not inject a default -d when a long --output=value is present', async () => {
+    await runCompodoc({
+      compodocArgs: ['--output=docs'],
+      tsconfig: 'path/to/tsconfig.json',
+      workspaceRoot,
+    });
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', 'path/to/tsconfig.json', '--output=docs'],
+      cwd: 'path/to/project',
+    });
+  });
 });
 
 describe('getCompodocOutputDir', () => {
@@ -128,5 +154,21 @@ describe('getCompodocOutputDir', () => {
   it('falls back to the workspace root for a dangling output flag', () => {
     expect(getCompodocOutputDir(['-d'], workspaceRoot)).toBe(resolve(workspaceRoot));
     expect(getCompodocOutputDir(['--output', '-e'], workspaceRoot)).toBe(resolve(workspaceRoot));
+  });
+
+  it('resolves an attached -d value (-ddocs)', () => {
+    expect(getCompodocOutputDir(['-ddocs'], workspaceRoot)).toBe(resolve(workspaceRoot, 'docs'));
+  });
+
+  it('resolves an inline long --output=value', () => {
+    expect(getCompodocOutputDir(['--output=docs'], workspaceRoot)).toBe(
+      resolve(workspaceRoot, 'docs')
+    );
+  });
+
+  it('does not treat an attached long flag (--outputdocs) as an output option', () => {
+    // Commander parses `--outputdocs` as an unknown flag, so it must not be
+    // mistaken for the output directory.
+    expect(getCompodocOutputDir(['--outputdocs'], workspaceRoot)).toBe(resolve(workspaceRoot));
   });
 });

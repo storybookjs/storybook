@@ -451,6 +451,61 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 
 </details>
 
+#### Manual fixes after automatic migration
+
+The automigration covers the standard CSF 3 patterns. If your stories use custom
+args or import meta from another story file, make the following adjustments after
+running it.
+
+<details>
+<summary>Preserving custom args</summary>
+
+If a story used `satisfies Meta<CustomArgs>` to add args that are not component
+props, add the same type through `preview.type()` after the migration:
+
+```diff title="Button.stories.js|ts"
++ import preview from '../.storybook/preview';
+- import type { Meta } from '@storybook/your-framework';
+
+type StoryArgs = {
+  pageIcon: Icon;
+};
+
++ const meta = preview.type<{ args: StoryArgs }>().meta({
+- const meta = {
+  component: MyComponent,
+  args: {
+    pageIcon: DeactivatedOrg,
+  },
++ });
+- } satisfies Meta<StoryArgs>;
+```
+
+</details>
+
+<details>
+<summary>Reusing meta from another story file</summary>
+
+When another story file imports a meta object, explicitly export it as the
+default export from the source story file:
+
+```ts title="Button.stories.js|ts"
+const meta = preview.meta({ component: Button });
+
+export default meta;
+```
+
+This export is only needed for cross-file imports. It is not required for a
+regular CSF Next story file.
+
+```ts title="OtherButton.stories.js|ts"
+import ButtonMeta from './Button.stories';
+
+const meta = preview.meta({ ...ButtonMeta.input });
+```
+
+</details>
+
 **3.1 Reusing story properties**
 
 <Callout variant="info" icon="💡">

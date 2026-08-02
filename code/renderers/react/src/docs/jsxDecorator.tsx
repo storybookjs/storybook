@@ -142,6 +142,10 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
           return getDocgenSection(el.type, 'displayName');
         } else if (el.type.render?.displayName) {
           return el.type.render.displayName;
+        } else if (isForwardRef(el.type)) {
+          return el.type.render.displayName || el.type.render.name;
+        } else if (isMemo(el.type)) {
+          return el.type.type.displayName || el.type.type.name;
         } else if (
           typeof el.type === 'symbol' ||
           (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
@@ -160,10 +164,6 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
             }
           }
           return 'No Display Name';
-        } else if (isForwardRef(el.type)) {
-          return el.type.render.name;
-        } else if (isMemo(el.type)) {
-          return el.type.type.name;
         } else {
           return el.type;
         }

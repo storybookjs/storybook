@@ -56,11 +56,8 @@ describe('writing stories for an existing AlertBanner', () => {
       }
     );
 
-    test.skipIf(integration !== 'plugin')(
-      'opens the preview browser when using the plugin',
-      () => {
-        expectPreviewBrowserStarted();
-      }
-    );
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
   });
 });

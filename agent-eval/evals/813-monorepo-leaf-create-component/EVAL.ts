@@ -68,11 +68,8 @@ describe('creating a Callout in a monorepo UI package', () => {
       }
     );
 
-    test.skipIf(integration !== 'plugin')(
-      'opens the preview browser when using the plugin',
-      () => {
-        expectPreviewBrowserStarted();
-      }
-    );
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
   });
 });

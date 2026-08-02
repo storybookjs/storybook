@@ -57,17 +57,15 @@ describe('editing ReviewCard to add date and optional onReport', () => {
       expectSkillInvoked('stories');
     });
 
-    test.skipIf(
-      agent !== 'claude-code' || integration !== 'plugin'
-    )('keeps the pre-existing Storybook launch config valid', () => {
-      expectValidStorybookLaunchConfig();
-    });
-
-    test.skipIf(integration !== 'plugin')(
-      'opens the preview browser when using the plugin',
+    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
+      'keeps the pre-existing Storybook launch config valid',
       () => {
-        expectPreviewBrowserStarted();
+        expectValidStorybookLaunchConfig();
       }
     );
+
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
   });
 });

@@ -1,4 +1,3 @@
-import { describe, test } from 'vitest';
 import {
   expectDisplayReviewForBrowseRequest,
   expectPreviewBrowserStarted,
@@ -8,6 +7,7 @@ import {
   getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
 describe('browsing existing ReviewCard Storybook states', () => {
   const review = isReviewEnabled();
@@ -39,16 +39,11 @@ describe('browsing existing ReviewCard Storybook states', () => {
 
     test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
       'keeps the pre-existing Storybook launch config valid',
-      () => {
-        expectValidStorybookLaunchConfig();
-      }
+      () => expectValidStorybookLaunchConfig()
     );
 
-    test.skipIf(integration !== 'plugin')(
-      'opens the preview browser when using the plugin',
-      () => {
-        expectPreviewBrowserStarted();
-      }
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
+      expectPreviewBrowserStarted()
     );
   });
 });

@@ -61,11 +61,8 @@ describe('writing the first Button stories in an empty Storybook', () => {
       }
     );
 
-    test.skipIf(integration !== 'plugin')(
-      'opens the preview browser when using the plugin',
-      () => {
-        expectPreviewBrowserStarted();
-      }
-    );
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
   });
 });

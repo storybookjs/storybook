@@ -145,10 +145,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
         continue;
       }
 
-      // created: adopt the file only if a config re-parse now includes it (the React project's
-      // checkRootFilesUpdate semantics) — force-adding every created file would grow the program
-      // past what the tsconfig scopes.
-      const commandLine = this.getCommandLineFn?.();
+      const commandLine = this.commandLine;
       if (commandLine) {
         this.commandLine = commandLine;
         if (commandLine.fileNames.includes(fileName)) {

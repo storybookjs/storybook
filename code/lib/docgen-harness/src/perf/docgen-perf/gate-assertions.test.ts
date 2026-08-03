@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PerfBudget } from '../docgen-shared/budgets.ts';
+import type { PerfBudget, PerfBudgetKey } from '../docgen-shared/budgets.ts';
 import { assertBudgets } from './gate-assertions.ts';
 import {
   type EngineMetrics,
@@ -61,10 +61,10 @@ const failures = (assertions: ReturnType<typeof assertBudgets>) => assertions.fi
 
 describe('assertBudgets', () => {
   it('passes when every budgeted metric is within its budget', () => {
-    const budgets: Record<string, PerfBudget> = {
+    const budgets: Partial<Record<PerfBudgetKey, PerfBudget>> = {
       'vue-component-meta/flat': {
         maxWarmColdRatio: 0.3,
-        memory: { maxPeakTransientMb: 60, maxRetainedSlopeMbPerSave: 1 },
+        memory: { maxTransientMb: 60, maxRetainedSlopeMb: 1 },
       },
     };
     expect(failures(assertBudgets(results(), budgets))).toEqual([]);
@@ -82,7 +82,7 @@ describe('assertBudgets', () => {
   it('fails a memory metric over budget', () => {
     const found = failures(
       assertBudgets(results(), {
-        'vue-component-meta/flat': { memory: { maxPeakTransientMb: 10 } },
+        'vue-component-meta/flat': { memory: { maxTransientMb: 10 } },
       })
     );
     expect(found).toHaveLength(1);
@@ -122,48 +122,5 @@ describe('assertBudgets', () => {
     );
     expect(found).toHaveLength(1);
     expect(found[0].detail).toBe('not measured in this run');
-  });
-
-  it('refuses to gate on a cross-engine ratio the suite did not certify as like-for-like', () => {
-    const withRatio = results({
-      ratios: {
-        vue: {
-          flat: {
-            cold: 0.15,
-            warm: 0.04,
-            coldComparability: 'next-documents-more',
-            warmComparability: 'next-documents-more',
-          },
-        },
-      },
-    });
-    const found = failures(
-      assertBudgets(withRatio, {
-        'vue-component-meta/flat': { reference: { pair: 'vue', minColdRatio: 0.1 } },
-      })
-    );
-    expect(found).toHaveLength(1);
-    expect(found[0].detail).toContain('did not do equal work');
-  });
-
-  it('passes a like-for-like reference ratio at or above its floor', () => {
-    const withRatio = results({
-      ratios: {
-        vue: {
-          flat: {
-            cold: 1.2,
-            coldComparability: 'like-for-like',
-            warmComparability: 'like-for-like',
-          },
-        },
-      },
-    });
-    expect(
-      failures(
-        assertBudgets(withRatio, {
-          'vue-component-meta/flat': { reference: { pair: 'vue', minColdRatio: 1.0 } },
-        })
-      )
-    ).toEqual([]);
   });
 });

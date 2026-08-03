@@ -170,7 +170,9 @@ Four rules exist so that a green gate means something:
 - A run marked non-comparable - the `--quick` smoke profile - fails rather than passing on numbers that were never meant to be compared.
 - An empty budget table fails, because a gate that asserts nothing should not report success.
 - An engine that carries a budget but skipped or failed fails the gate. Skipping is legitimate on a laptop missing an optional tool; on the gate it means the thing being protected did not run.
-- A cross-engine ratio the suite did not certify as like-for-like fails rather than being gated on, and the failure names which way the two sides differed.
+
+Cross-engine ratios are printed on every run but gated on by nothing, because no pair has been certified as doing equal work.
+The rule that only a like-for-like pair may become a budget lives here rather than in the gate; the check that enforces it belongs with the first pair that earns one.
 
 The gate then proves its own failure detection: it runs the suite a second time with an engine that always fails, and requires that run to come back non-zero.
 Without that, a gate whose failure path had silently broken would be indistinguishable from a gate that keeps passing because nothing is wrong.

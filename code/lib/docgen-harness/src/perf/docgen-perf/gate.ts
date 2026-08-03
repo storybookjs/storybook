@@ -25,14 +25,15 @@ import type { SuiteResults } from './types.ts';
 
 const SUITE = path.join(import.meta.dirname, 'run.ts');
 
-/** CI points this inside the checkout so the results can be stored as a build artifact. */
-const { outDir: GATE_DIR } = parseHarnessOptions<{ outDir: string }>(
-  process.argv.slice(2),
-  { out: { type: 'string' } },
-  z.object({ outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-perf-gate')) }),
-  (values) => ({ outDir: values.out })
-);
-const RESULTS_PATH = path.join(GATE_DIR, 'results.json');
+/** CI points `--out` inside the checkout so the results can be stored as a build artifact. */
+function parseOptions(argv: string[]): { outDir: string } {
+  return parseHarnessOptions<{ outDir: string }>(
+    argv,
+    { out: { type: 'string' } },
+    z.object({ outDir: z.string().default(path.join(SANDBOX_DIRECTORY, 'docgen-perf-gate')) }),
+    (values) => ({ outDir: values.out })
+  );
+}
 
 interface SuiteRun {
   status: number | null;
@@ -73,9 +74,9 @@ function report(assertions: Assertion[]): string[] {
  * control and still succeeds means failures are being swallowed somewhere between the child and
  * the job's exit status.
  */
-function checkNegativeControl(): string[] {
+function checkNegativeControl(gateDir: string): string[] {
   console.log('\n=== negative control: a failing engine must fail the gate ===');
-  const controlPath = path.join(GATE_DIR, 'crash-control.json');
+  const controlPath = path.join(gateDir, 'crash-control.json');
   const { status } = runSuite(['--quick', '--engine', 'crash-control'], controlPath);
 
   if (status !== 0) {
@@ -89,8 +90,11 @@ function checkNegativeControl(): string[] {
 }
 
 function main(): void {
+  const { outDir } = parseOptions(process.argv.slice(2));
+  const resultsPath = path.join(outDir, 'results.json');
+
   console.log('=== docgen perf suite (pinned profile) ===');
-  const { status, results } = runSuite([], RESULTS_PATH);
+  const { status, results } = runSuite([], resultsPath);
 
   const failures: string[] = [];
 
@@ -98,13 +102,13 @@ function main(): void {
     failures.push(`the suite exited with status ${status}; see its output above`);
   }
   if (!results) {
-    failures.push(`the suite wrote no results at ${RESULTS_PATH}`);
+    failures.push(`the suite wrote no results at ${resultsPath}`);
   } else {
     console.log('\n=== budgets ===');
     failures.push(...report(assertBudgets(results)));
   }
 
-  failures.push(...checkNegativeControl());
+  failures.push(...checkNegativeControl(outDir));
 
   console.log('');
   if (failures.length > 0) {
@@ -117,7 +121,7 @@ function main(): void {
     process.exitCode = 1;
     return;
   }
-  console.log(`docgen perf gate passed. Results: ${RESULTS_PATH}`);
+  console.log(`docgen perf gate passed. Results: ${resultsPath}`);
 }
 
 main();

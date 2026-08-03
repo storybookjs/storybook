@@ -433,6 +433,9 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+const DOCGEN_PERF_RESULTS_DIR = 'perf-results';
+
 export const docgenMemoryGate = defineJob(
   'Docgen memory gate',
   () => ({
@@ -445,7 +448,7 @@ export const docgenMemoryGate = defineJob(
       {
         run: {
           name: 'Docgen-server re-extraction memory gate',
-          working_directory: 'code/lib/docgen-harness',
+          working_directory: DOCGEN_HARNESS_DIR,
           command: 'yarn bench:docgen-memory',
         },
       },
@@ -453,12 +456,6 @@ export const docgenMemoryGate = defineJob(
   }),
   [commonJobsNoOpJob]
 );
-
-/**
- * Wall clock is roughly a minute per engine at the pinned profile, plus the compodoc child's own
- * ten-minute kill if it hangs, so the job needs headroom well above a normal run.
- */
-const DOCGEN_PERF_RESULTS_DIR = 'code/lib/docgen-harness/perf-results';
 
 export const docgenPerfGate = defineJob(
   'Docgen perf gate',
@@ -472,13 +469,15 @@ export const docgenPerfGate = defineJob(
       {
         run: {
           name: 'Per-engine docgen perf budgets',
-          working_directory: 'code/lib/docgen-harness',
-          command: 'yarn bench:docgen-perf-gate --out ./perf-results',
+          working_directory: DOCGEN_HARNESS_DIR,
+          command: `yarn bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
+          // A full run is ~5 minutes, but the compodoc child alone may sit for its own ten-minute
+          // kill before the suite can report it, so the ceiling sits well above the normal case.
           no_output_timeout: '30m',
         },
       },
       artifact.persist(
-        join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_PERF_RESULTS_DIR),
+        join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_HARNESS_DIR, DOCGEN_PERF_RESULTS_DIR),
         'docgen-perf-results'
       ),
     ],

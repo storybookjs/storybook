@@ -193,7 +193,7 @@ Key points:
 - NX handles task dependencies via `nx.json`
 - NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
 - Example: `yarn nx compile core` (project `core` is published as package `storybook`)
-- NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") are benign — the local cache is still used
+- NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") are benign — the local cache is still used. Set `NX_CLOUD_ACCESS_TOKEN` to authenticate; a read-only token enables cache reads but still cannot store artifacts, so the "wasn't able to store" warning remains expected
 
 ## Sandbox Notes
 
@@ -338,6 +338,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
 | `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
+| `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 
 ## Commands To Avoid
 
@@ -370,6 +371,10 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 The cloud VM boots from a snapshot with dependencies already installed; the startup update script only runs `yarn` (install). Standard commands are documented above — notes below are cloud-only caveats.
 
-- **Node is already configured in the snapshot.** `~/.bashrc` prepends the nvm-managed Node (`.nvmrc` / `22.22.3`) ahead of `/exec-daemon/node`, so login shells and shells that source `~/.bashrc` get the correct version for native `.ts` execution (`yarn task check`, etc.). Do not re-document or re-apply that PATH workaround in-session unless `node --version` is unexpectedly below 22.18.
+- **Node is fixed in the VM snapshot, not in this repo.** `/exec-daemon/node` (Node 22.14) is injected ahead of nvm in `PATH`, and `nvm use` does not override it. That breaks anything running a `.ts` file directly through `node` (`yarn task check`, `yarn nx run-many -t check`). The snapshot's `~/.bashrc` already prepends the nvm-managed Node (`.nvmrc` / `22.22.3`), so normally you do nothing. Because that fix lives in the VM image rather than in git, it is not reproducible from this repo alone — if `node --version` reports below 22.18, the snapshot was rebuilt without it and you should restore it:
+  ```bash
+  export PATH="$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node" | sort -V | tail -1)/bin:$PATH"
+  corepack enable   # provides yarn 4.10.3 on that Node
+  ```
 - **Compile before running or typechecking.** The update script does not build. `yarn storybook:ui` runs `code/core/dist/bin/dispatcher.js`, so run `yarn task --task=compile --start-from=compile` (or `yarn nx run-many -t compile`) after a fresh boot or after changing package source. NX caches make reruns fast.
 - **Running the app:** `cd code && yarn storybook:ui` serves the internal Storybook UI on port `6006`. Verify with `curl -s localhost:6006/index.json`.

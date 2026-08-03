@@ -4,25 +4,10 @@ import { createRequire } from 'node:module';
 import { ResolverFactory } from 'oxc-resolver';
 import { dirname, isAbsolute, resolve } from 'pathe';
 
+import { userModuleExtensions } from '../shared/constants/extensions.ts';
 import { isModuleDirectory } from './extract.ts';
 
 const require = createRequire(import.meta.url);
-
-/**
- * Module file extensions the resolvers in this file know how to handle. Covers the JS/TS family
- * plus JSON and common SFC types (`.vue`, `.svelte`).
- */
-const moduleExtensions = [
-  '.js',
-  '.mjs',
-  '.cjs',
-  '.ts',
-  '.tsx',
-  '.jsx',
-  '.json',
-  '.vue',
-  '.svelte',
-] as const;
 
 /**
  * Browser-condition resolver used for `sb.mock()` external module resolution.
@@ -31,7 +16,7 @@ const externalResolver = new ResolverFactory({
   conditionNames: ['browser', 'import', 'module', 'default'],
   mainFields: ['browser', 'module', 'main'],
   aliasFields: [['browser']],
-  extensions: [...moduleExtensions],
+  extensions: [...userModuleExtensions],
 });
 
 /**
@@ -133,7 +118,7 @@ export function getRealPath(path: string, preserveSymlinks: boolean): string {
  * @returns The resolved path
  */
 export function resolveWithExtensions(path: string, from: string) {
-  for (const extension of moduleExtensions) {
+  for (const extension of userModuleExtensions) {
     try {
       return require.resolve(path + extension, { paths: [from] });
     } catch (e) {

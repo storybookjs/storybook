@@ -44,7 +44,7 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'ButtonProps' },
         },
         disabled: {
-          type: { name: 'boolean | undefined' },
+          type: { name: 'boolean' },
           required: false,
           parent: { name: 'ButtonProps' },
         },
@@ -247,7 +247,7 @@ describe('prop extraction via story JSX', () => {
       },
       props: {
         multiple: {
-          type: { name: 'boolean | undefined' },
+          type: { name: 'boolean' },
           required: false,
           description: 'Whether multiple items can be open',
           defaultValue: { value: 'true' },
@@ -302,7 +302,7 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'PanelProps' },
         },
         open: {
-          type: { name: 'boolean | undefined' },
+          type: { name: 'boolean' },
           required: false,
           description: 'Whether the panel is open',
           defaultValue: { value: 'false' },

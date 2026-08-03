@@ -12,6 +12,7 @@ import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';
+const emptyImportRegExp = /^import(?:\s*\{\s*\}\s*from)?\s*['"][^'"]+['"]\s*;?$/;
 const replacementMap = new Map([
   ['import ', 'const '],
   ['import{', 'const {'],
@@ -123,6 +124,15 @@ function getDefaultImportReplacement(match: string) {
   return matched && `const {default: ${matched[1]}} =`;
 }
 
+function getEmptyImportReplacement(importStatement: string, globalReference: string) {
+  if (!emptyImportRegExp.test(importStatement.trim())) {
+    return undefined;
+  }
+
+  const statementTerminator = importStatement.trimEnd().endsWith(';') ? ';' : '';
+  return `void ${globalReference}${statementTerminator}`;
+}
+
 function getSearchRegExp(packageName: string) {
   const staticKeys = [...replacementMap.keys()].map(escapeKeys);
   const packageNameLiteral = `.${packageName}.`;
@@ -136,6 +146,12 @@ export function rewriteImport(
   globs: Record<string, string>,
   packageName: string
 ): string {
+  const emptyImportReplacement = getEmptyImportReplacement(importStatement, globs[packageName]);
+
+  if (emptyImportReplacement) {
+    return emptyImportReplacement;
+  }
+
   const search = getSearchRegExp(packageName);
   return importStatement.replace(
     search,

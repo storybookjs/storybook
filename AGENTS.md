@@ -9,11 +9,14 @@ This file is the canonical instruction source for coding agents. Files like `CLA
 Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.22.1` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
+- **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
 - **Package Manager**: Yarn Berry
 - **Task orchestration**: NX plus the custom `yarn task` runner
+- **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting — `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
+- **Formatting**: oxfmt (root `.oxfmtrc.json`)
 - **CI environment**: Linux and Windows
 - **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
+- **Type checking**: Per-package checks (`yarn task check`, `scripts/check/check-package.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias); diagnostics are filtered to the checked package. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (e.g. no `baseUrl`).
 
 ## Repository Structure
 
@@ -84,6 +87,31 @@ Internal exports include:
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
+### Open services and toolsets
+
+- OSA hosts two sibling constructs behind the `storybook/open-service` entry: **services**
+  (`defineService`/`registerService`) own internal state, synchronization, queries, commands, and
+  loading; **toolsets** (`defineToolset`/`registerToolset`) are the public agent surface for CLI/MCP.
+  They live in mirrored trees: `open-service/services/` and `open-service/toolsets/`.
+- All core OSA services are `internal: true` and may change without a public semver bump. Resolve
+  internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws when
+  the service is internal.
+- A toolset has an `id`, description, and methods with only `schema`, `description`, and `handler`.
+- Toolsets register imperatively via `registerToolset`, called from the same place the paired
+  service registers (the `services` preset hook for core and addons; the mechanism itself does not
+  depend on the Node preset system). Feature gating is shared: a disabled feature registers neither
+  the service nor its toolset. Adapters read the set via `getRegisteredToolsets()`; nothing consumes
+  it before Milestone 4.
+- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), optional `origin`, required
+  `format` (`'markdown' | 'json'`), and `getService`. Methods never declare the output format;
+  adapters own the mapping (CLI `--json` flag, MCP `json` tool input).
+- The docs toolset's Markdown is a verbatim port of the `@storybook/mcp` manifest formatter
+  (`toolsets/docs/manifest-formatter/`); the two copies must not drift until Milestone 4 deletes the
+  original. MCP consumer + Markdown is the parity-tested cell.
+- The toolset surface remains experimental. Production MCP migration is Milestone 4. CLI generation
+  and production `storybook tools` wiring are Milestone 5. MCP tools remain hand-authored in
+  `addon-mcp` until Milestone 4.
+
 ## Common Commands
 
 Run commands from the repository root unless stated otherwise.
@@ -132,6 +160,8 @@ yarn storybook:vitest
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
+| Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
+| Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 
 ## NX and `yarn task`
 
@@ -242,12 +272,38 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Test real behavior, not just syntax patterns
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
+- Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows
+
+### Filesystem tests with `memfs`
+
+For unit tests that touch `node:fs` / `node:fs/promises`, use [`memfs`](https://github.com/streamich/memfs) instead of real temp directories or wholesale `node:fs` mocks:
+
+- Import `vol` from `memfs` and call `vol.reset()` in `beforeEach`
+- Seed virtual files with `vol.fromNestedJSON({ '/absolute/path/file.json': '...' })` or memfs `writeFile` after redirecting spies
+- Use `vi.mock('node:fs/promises', { spy: true })` and, in `beforeEach`, point `mkdir` / `writeFile` / `readFile` at `memfs.fs.promises` (see `code/core/src/shared/open-service/server.test.ts`)
+- Assert disk state with `vol.toJSON()` when helpful
+
+Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async factory mock unless a test file already standardizes on the spy redirect pattern above.
+
+### Globals in tests: never assign `globalThis.*` directly
+
+> [!IMPORTANT]
+> Under no circumstances may a test mutate a global by assigning it directly (e.g. `globalThis.FEATURES = {...}`, `globalThis.window = ...`, `global.fetch = ...`). Direct assignment leaks across tests and files — Vitest does not restore it — so it silently changes behavior in unrelated tests and creates order-dependent flakiness.
+
+Use Vitest's global stubbing instead, which is tracked and restorable:
+
+- Set a global with `vi.stubGlobal('FEATURES', { experimentalDocgenServer: true })`.
+- Restore in `afterEach(() => vi.unstubAllGlobals())` (or enable `unstubGlobals: true` in the Vitest config so it resets before each test automatically).
+- For a value used by every test in a file, stub it in `beforeEach` and unstub in `afterEach`; for a one-off override, call `vi.stubGlobal` inside that single test.
+- Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` + `vi.unstubAllGlobals()` does this correctly, including deleting keys that did not previously exist.
+
+This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `document`, `navigator`, `fetch`, `IS_REACT_ACT_ENVIRONMENT`).
 
 ## Quality and Logging
 
 After changing files:
 
-1. Format with `yarn fmt:write` (run from the repo root)
+1. **Always** format with `yarn fmt:write`, run from the `code/` directory (`cd code && yarn fmt:write`), once you are done editing. The repo uses `oxfmt`, so hand-written formatting will frequently be wrong — do not skip this step.
 2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
 3. Run relevant tests before submitting a PR
 
@@ -273,12 +329,12 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 ## Environment Variables
 
-| Variable                      | Purpose                     |
-| ----------------------------- | --------------------------- |
-| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry           |
-| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events        |
-| `DEBUG`                       | Enable debug logging        |
+| Variable                      | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation                     |
+| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry                               |
+| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
+| `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 
 ## Commands To Avoid
@@ -299,6 +355,7 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 - **Test contracts (including side effects), not private implementation details.** It is valid to assert side effects when they are part of the public contract. Avoid assertions about internals that are not part of an exported contract, user-visible DOM output, or externally observable behavior.
 - **Bias toward broader coverage for security and migrations.** For security-sensitive code paths and legacy data migration logic, prefer handling more edge cases and documenting evidence for the chosen safeguards. Migration compatibility code should be explicitly version-scoped so it can be removed once the support window ends.
 - **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them.
+- **Don't commit accidental overrides to generated code.** Files like `code/core/src/manager/globals/exports.ts` are auto-generated, as stated in their JSDoc header. Only commit changes if they match changes you made on your PR, otherwise leave them untouched and flag flaky generated files in the PR description.
 
 ## Maintenance Rules For Agents
 

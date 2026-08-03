@@ -81,6 +81,15 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
   /** Syncronously find all stories of the component referenced by the CSF file. */
   componentStories: () => PreparedStory<TRenderer>[];
 
+  /**
+   * Resolve the component id (the CSF title id) for a component object referenced by a docs entry.
+   *
+   * Returns the id of the first referenced CSF file whose `meta.component` is the given component,
+   * or `undefined` when no referenced CSF file declares it. Used by blocks like `<ArgTypes
+   * of={Component} />` to key service lookups that are addressed by component id.
+   */
+  getComponentId: (component: TRenderer['component']) => string | undefined;
+
   /** Syncronously find all stories by CSF file. */
   componentStoriesFromCSFFile: (csfFile: CSFFile<TRenderer>) => PreparedStory<TRenderer>[];
 
@@ -104,6 +113,13 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
 
   /** Project annotations -- can be read to get the project's global annotations */
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
+
+  /**
+   * When true, `<Primary />` and `<Controls />` filter the CSF file's stories to those tagged
+   * `autodocs`. The docs render sets it: true for autodocs pages, false for MDX docs entries, so
+   * that on an MDX page the page author's story selection is respected. Unset is treated as true.
+   */
+  filterByAutodocs?: boolean;
 }
 
 export type DocsRenderFunction<TRenderer extends Renderer> = (

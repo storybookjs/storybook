@@ -66,6 +66,20 @@ export const Inline: Story = {
   },
 };
 
+export const InlineHtmlLang: Story = {
+  ...Inline,
+  args: {
+    of: StoryParametersStories.HtmlLang,
+    inline: true,
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      const inner = canvasElement.querySelector('[id$="-inner"]');
+      expect(inner).toHaveAttribute('lang', 'fr');
+    });
+  },
+};
+
 export const InlineWithHeightProps: Story = {
   ...Inline,
   args: {

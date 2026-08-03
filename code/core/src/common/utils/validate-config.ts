@@ -6,6 +6,7 @@ import {
 
 import { resolveModulePath } from 'exsolve';
 
+import { jsModuleExtensions } from '../../shared/constants/extensions.ts';
 import { extractFrameworkPackageName } from '../index.ts';
 import { frameworkPackages } from './get-storybook-info.ts';
 
@@ -36,7 +37,7 @@ export function validateFrameworkName(
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
     resolveModulePath(`${frameworkName}/preset`, {
-      extensions: ['.mjs', '.js', '.cjs'],
+      extensions: [...jsModuleExtensions],
       conditions: ['node', 'import', 'require'],
     });
   } catch (err) {

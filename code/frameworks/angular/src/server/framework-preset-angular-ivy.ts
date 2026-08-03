@@ -24,7 +24,6 @@ const require = createRequire(import.meta.url);
  * @returns A Promise that resolves to the dynamically imported module.
  */
 function loadEsmModule<T>(modulePath: string): Promise<T> {
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   return new Function('modulePath', `return import(modulePath);`)(modulePath) as Promise<T>;
 }
 

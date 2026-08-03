@@ -45,6 +45,7 @@ export const FilesControl: FC<FilesControlProps> = ({
   accept = 'image/*',
   value,
   argType,
+  required,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
   const readonly = argType?.control?.readOnly;
@@ -81,6 +82,7 @@ export const FilesControl: FC<FilesControlProps> = ({
         disabled={readonly}
         onChange={handleFileChange}
         accept={accept}
+        aria-required={required || undefined}
         size="flex"
       />
     </>

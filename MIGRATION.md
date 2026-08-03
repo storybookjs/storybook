@@ -1,8 +1,10 @@
 <h1>Migration</h1>
 
+- [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
+  - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
   - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
-  - [TanStack React: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
+  - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -522,6 +524,14 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.4.0 to 10.5.0
+
+### ExternalDocs and ExternalDocsContainer are deprecated
+
+The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
+
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
 
 ## From version 10.3.0 to 10.4.0
 

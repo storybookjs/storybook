@@ -70,6 +70,7 @@ export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
 export const STORYBOOK_TEST_PROVIDE_KEY = 'storybook/test-provided';
 export const STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY = 'storybook/core-ghost-stories';
 export const STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY = 'storybook/core-render-analysis';
+export const STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY = 'storybook/test-initial-globals';
 
 // Channel event names for programmatic test triggering
 export const TRIGGER_TEST_RUN_REQUEST = `${ADDON_ID}/trigger-test-run-request`;

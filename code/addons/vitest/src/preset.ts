@@ -233,17 +233,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       return;
     }
 
-    store.send({
-      type: 'TRIGGER_RUN',
-      payload: {
-        storyIds,
-        triggeredBy: `external:${actor}`,
-        ...(configOverride && {
-          configOverride: { ...config, ...configOverride },
-        }),
-      },
-    });
-
     const unsubscribe = store.subscribe((event) => {
       switch (event.type) {
         case 'TEST_RUN_COMPLETED': {
@@ -262,6 +251,17 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
           return;
         }
       }
+    });
+
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds,
+        triggeredBy: `external:${actor}`,
+        ...(configOverride && {
+          configOverride: { ...config, ...configOverride },
+        }),
+      },
     });
   });
 

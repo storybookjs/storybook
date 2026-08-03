@@ -1,0 +1,18 @@
+{
+  "label": {
+    "defaultValue": undefined,
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

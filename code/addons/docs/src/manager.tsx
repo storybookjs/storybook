@@ -9,26 +9,41 @@ import {
   ADDON_ID,
   PANEL_ID,
   PARAM_KEY,
+  type StoryDocsCodePanelParameters,
+  shouldWaitForServiceSnippet,
   SNIPPET_RENDERED,
-} from '../../../core/src/docs-tools/shared';
+} from 'storybook/internal/docs-tools';
+import type { StoryId } from 'storybook/internal/types';
 import type { SourceParameters } from './blocks/blocks';
 import { Source } from './blocks/components/Source';
+
+/** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
+type SnippetRenderedEvent = {
+  id?: StoryId;
+  source?: string;
+  format?: SyntaxHighlighterFormatTypes;
+};
 
 const CodePanel = ({
   active,
   lastEvent,
   currentStoryId,
+  storyParameters,
+  storyPrepared,
 }: {
   active: boolean | undefined;
-  lastEvent: any | undefined;
+  lastEvent: SnippetRenderedEvent | undefined;
   currentStoryId: string | undefined;
+  storyParameters: StoryDocsCodePanelParameters | undefined;
+  storyPrepared: boolean | undefined;
 }) => {
+  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
   }>({
-    source: lastEvent?.source,
-    format: lastEvent?.format ?? undefined,
+    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
+    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
   });
 
   const parameter = useParameter(PARAM_KEY, {
@@ -43,24 +58,35 @@ const CodePanel = ({
     });
   }, [currentStoryId]);
 
-  useChannel({
-    [SNIPPET_RENDERED]: ({ source, format }) => {
-      setSourceCode({ source, format });
+  useChannel(
+    {
+      [SNIPPET_RENDERED]: ({ id, source, format }) => {
+        // Ignore snippets emitted for other stories: a slow extraction for the previously selected
+        // story can resolve after navigation and would otherwise overwrite the current panel.
+        // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
+        // against the currently selected story rather than the one selected on mount.
+        if (id !== undefined && id !== currentStoryId) {
+          return;
+        }
+        setSourceCode({ source, format });
+      },
     },
-  });
+    [currentStoryId]
+  );
 
   const theme = useTheme();
   const isDark = theme.base !== 'light';
 
+  const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
+  const code =
+    parameter.source?.code ||
+    codeSnippet.source ||
+    (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
+
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
-        <Source
-          {...parameter.source}
-          code={parameter.source?.code || codeSnippet.source || parameter.source?.originalSource}
-          format={codeSnippet.format}
-          dark={isDark}
-        />
+        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
       </SourceStyles>
     </AddonPanel>
   );
@@ -92,7 +118,15 @@ addons.register(ADDON_ID, (api) => {
 
       const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
 
-      return <CodePanel currentStoryId={currentStory?.id} lastEvent={lastEvent} active={active} />;
+      return (
+        <CodePanel
+          currentStoryId={currentStory?.id}
+          storyParameters={currentStory?.parameters}
+          storyPrepared={currentStory?.prepared}
+          lastEvent={lastEvent}
+          active={active}
+        />
+      );
     },
   });
 });

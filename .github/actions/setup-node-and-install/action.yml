@@ -11,7 +11,7 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
       with:
         node-version-file: '.nvmrc'
 
@@ -23,7 +23,7 @@ runs:
     # runner-internal token that bypasses `permissions:`, so splitting is the only
     # reliable way to prevent pull_request_target runs from poisoning the shared cache.
     - name: Restore cached dependencies
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           ~/.yarn/berry/cache
@@ -45,7 +45,7 @@ runs:
 
     - name: Save cached dependencies
       if: github.event_name != 'pull_request_target'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           ~/.yarn/berry/cache

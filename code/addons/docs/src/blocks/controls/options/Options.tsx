@@ -18,10 +18,19 @@ import { SelectControl } from './Select';
  * While non-primitive values are deprecated, they might still not be valid object keys, so the
  * resulting object is a Label -> Value mapping.
  */
-const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
+export const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   if (Array.isArray(options)) {
     return options.reduce((acc, item) => {
-      acc[labels?.[item] || String(item)] = item;
+      // Guard against `labels` being an array (e.g. from Svelte docgen), prototype-chain
+      // lookups, and keys present with an undefined value (partial label maps).
+      // Checking `typeof === 'string'` covers all three: arrays are skipped by the
+      // isArray guard, prototype-chain values are functions (not strings), and an
+      // explicitly-undefined label value is also not a string.
+      const label =
+        labels != null && !Array.isArray(labels) && typeof labels[item] === 'string'
+          ? labels[item]
+          : String(item);
+      acc[label] = item;
       return acc;
     }, {});
   }

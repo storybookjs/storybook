@@ -178,7 +178,7 @@ describe('updateConfigFile', () => {
     `);
   });
 
-  it('does not support function notation', async () => {
+  it('does not support complex function notation', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.template', {
         CONFIG_DIR: '.storybook',
@@ -191,13 +191,25 @@ describe('updateConfigFile', () => {
       import react from '@vitejs/plugin-react'
 
       // https://vite.dev/config/
-      export default defineConfig(() => ({
-        plugins: [react()],
-        test: {
-          globals: true,
-          workspace: ['packages/*']
-        },
-      }))
+      export default defineConfig(({ mode }) => {
+        if (mode === 'production') {
+          return {
+            plugins: [react()],
+            test: {
+              globals: true,
+              workspace: ['packages/*']
+            },
+          }
+        }
+
+        return {
+          plugins: [react()],
+          test: {
+            globals: false,
+            workspace: ['packages/*']
+          },
+        }
+      })
     `);
 
     const before = babel.generate(target).code;

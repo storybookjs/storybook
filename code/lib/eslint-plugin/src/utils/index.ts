@@ -1,10 +1,11 @@
 import type { IncludeExcludeOptions } from 'storybook/internal/csf';
 import { isExportStory } from 'storybook/internal/csf';
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { ASTUtils } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
+  ASTUtils,
   isFunctionDeclaration,
   isIdentifier,
   isObjectExpression,

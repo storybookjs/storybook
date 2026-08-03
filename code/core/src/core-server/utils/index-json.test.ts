@@ -525,14 +525,12 @@ describe('registerIndexJsonRoute', () => {
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      const onStoryIndexInvalidated = vi.fn();
       registerIndexJsonRoute({
         app,
         channel: mockServerChannel,
         workingDir,
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
-        onStoryIndexInvalidated,
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -560,7 +558,6 @@ describe('registerIndexJsonRoute', () => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
-      expect(onStoryIndexInvalidated).toHaveBeenCalledTimes(1);
     });
 
     it('only sends one invalidation when multiple event listeners are listening', async () => {

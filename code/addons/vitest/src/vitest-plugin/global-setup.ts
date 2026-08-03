@@ -82,8 +82,19 @@ export const teardown = async () => {
   await new Promise<void>((resolve, reject) => {
     // Storybook starts multiple child processes, so we need to kill the whole tree
     if (storybookProcess?.pid) {
-      treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
+      const pid = storybookProcess.pid;
+      treeKill(pid, 'SIGTERM', (error) => {
         if (error) {
+          // On Windows, tree-kill shells out to `taskkill`, which exits with code 128 when the
+          // target PID no longer exists (e.g. Storybook already exited or  was stopped by the user).
+          // On POSIX, tree-kill already swallows the equivalent ESRCH internally.
+          if (process.platform === 'win32' && 'code' in error && error.code === 128) {
+            logger.verbose(
+              `Storybook process (pid ${pid}) already exited; treating teardown as successful (code ${error.code}: ${error.message})`
+            );
+            resolve();
+            return;
+          }
           logger.error('Failed to stop Storybook process:');
           reject(error);
           return;

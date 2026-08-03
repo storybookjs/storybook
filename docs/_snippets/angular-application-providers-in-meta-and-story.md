@@ -13,7 +13,7 @@ const meta: Meta<ChipsModule> = {
     applicationConfig({
       // List of providers and environment providers that should be available to the root component and all its children.
       providers: [
-        ...
+        // ...
         // Import application-wide providers from a module
         importProvidersFrom(BrowserAnimationsModule)
         // Or use provide-style functions if available instead, e.g.
@@ -31,7 +31,7 @@ export const WithCustomApplicationProvider: Story = {
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [...],
+      providers: [/* ... */],
     }
   })
 }
@@ -54,7 +54,7 @@ const meta = preview.type<{ args: ChipsModule }>().meta({
     applicationConfig({
       // List of providers and environment providers that should be available to the root component and all its children.
       providers: [
-        ...
+        // ...
         // Import application-wide providers from a module
         importProvidersFrom(BrowserAnimationsModule)
         // Or use provide-style functions if available instead, e.g.
@@ -69,7 +69,7 @@ export const WithCustomApplicationProvider = meta.story({
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [...],
+      providers: [/* ... */],
     }
   })
 });

@@ -99,7 +99,7 @@ export type StoryObj<TMetaOrCmpOrArgs = unknown> = [TMetaOrCmpOrArgs] extends [
         Partial<TanStackTypes<TMetaOrCmpOrArgs>>
     : _StoryObj<TMetaOrCmpOrArgs> & Partial<TanStackTypes>;
 
-interface TanStackPreview<
+export interface TanStackPreview<
   T extends AddonTypes,
   TRoute extends AnyRoute | undefined = undefined,
 > extends ReactPreview<TanStackTypes<TRoute> & T> {

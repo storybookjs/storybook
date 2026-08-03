@@ -1,5 +1,8 @@
 import { gt, prerelease, valid } from 'semver';
 
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
+
 export type StorybookInstallContext = 'create' | 'upgrade';
 
 export const STORYBOOK_PACKAGE_PATTERNS = [
@@ -109,6 +112,40 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
 
   return latestStableVersion;
 };
+
+/**
+ * Args for `runPackageCommand({ useRemotePkg: true })` when bootstrapping a Storybook CLI package
+ * that isn't installed locally.
+ *
+ * npm and Yarn Classic both execute the remote package through `npx`, which prompts "Ok to
+ * proceed?" before downloading and hangs in non-interactive/CI environments. `--yes` auto-confirms
+ * that install. pnpm (`dlx`), Yarn Berry (`dlx`) and Bun (`bunx`) download without prompting, so
+ * they must not receive the npx-only `--yes` flag.
+ */
+export function getRemotePackageRunnerArgs(
+  packageManagerType: PackageManagerName,
+  pkg: string,
+  version: string,
+  args: string[]
+): string[] {
+  const pkgWithVersion = `${pkg}@${version}`;
+  const usesNpx =
+    packageManagerType === PackageManagerName.NPM ||
+    packageManagerType === PackageManagerName.YARN1;
+  return usesNpx ? ['--yes', pkgWithVersion, ...args] : [pkgWithVersion, ...args];
+}
+
+export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
+  const args = ['vitest', '--project', 'storybook', 'run'];
+  if (file) {
+    args.push(file);
+  }
+  return packageManager.getPackageCommand(args);
+}
+
+export function getMswInitCommand(packageManager: JsPackageManager) {
+  return packageManager.getPackageCommand(['msw', 'init', './public', '--save']);
+}
 
 export const getStorybookRerunCommand = (
   installContext: StorybookInstallContext,

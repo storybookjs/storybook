@@ -295,7 +295,7 @@ The harness hands steps (1) and (2) to the trial agent as its task. Eval starts 
 
 ### How variant selection works
 
-Prompt variants live in [`code/lib/cli-storybook/src/ai/setup-prompts/`](../../code/lib/cli-storybook/src/ai/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+Prompt variants live in [`code/core/src/cli/ai/setup-prompts/`](../../code/core/src/cli/ai/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
 
 The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
 
@@ -314,9 +314,9 @@ eval.ts --prompt setup
 
 ### Adding a new prompt variant
 
-1. Create `code/lib/cli-storybook/src/ai/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
+1. Create `code/core/src/cli/ai/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
 2. Export an `instructions(projectInfo: ProjectInfo): string` function.
-3. Register it in `code/lib/cli-storybook/src/ai/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
+3. Register it in `code/core/src/cli/ai/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
 4. Use it from the eval: `node scripts/eval/eval.ts -p mealdrop --prompt <name>`.
 
 To promote a variant to be the default users see, change `DEFAULT_PROMPT_NAME` in the same registry file.

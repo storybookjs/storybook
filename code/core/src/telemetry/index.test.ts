@@ -23,6 +23,10 @@ vi.mock('./telemetry.ts', () => ({
 
 beforeEach(async () => {
   vi.resetModules();
+  // The state machine globals deliberately survive module re-loads, so reset them explicitly
+  delete (globalThis as any).SB_TELEMETRY_STATE;
+  delete (globalThis as any).SB_TELEMETRY_QUEUE;
+  delete (globalThis as any).PAYLOAD_ERROR_HANDLER;
   telemetryModule = await import('./index.ts');
 }, 30_000);
 
@@ -170,6 +174,74 @@ describe('telemetry state machine', () => {
 
     await telemetryModule.setTelemetryEnabled(true);
     expect(telemetryModule.isTelemetryModuleEnabled()).toBe(true);
+  });
+});
+
+describe('second module load (e.g. addon resolving its own copy of the storybook package)', () => {
+  it('preserves resolved state when the module loads a second time', async () => {
+    await telemetryModule.setTelemetryEnabled(true);
+
+    vi.resetModules();
+    const secondInstance = await import('./index.ts');
+
+    expect(secondInstance.isTelemetryStateResolved()).toBe(true);
+    expect(secondInstance.isTelemetryModuleEnabled()).toBe(true);
+  });
+
+  it('sends events from a second module instance after the first one resolved state', async () => {
+    await telemetryModule.setTelemetryEnabled(true);
+
+    vi.resetModules();
+    const secondInstance = await import('./index.ts');
+    const { sendTelemetry } = await import('./telemetry.ts');
+
+    await secondInstance.telemetry('dev', { foo: 'bar' }, { stripMetadata: true });
+
+    expect(sendTelemetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('flushes events queued by the first instance when a second instance resolves state', async () => {
+    await telemetryModule.telemetry('boot', { eventType: 'dev' }, { stripMetadata: true });
+
+    vi.resetModules();
+    const secondInstance = await import('./index.ts');
+    const { sendTelemetry } = await import('./telemetry.ts');
+
+    await secondInstance.setTelemetryEnabled(true);
+
+    expect(sendTelemetry).toHaveBeenCalledTimes(1);
+    expect(sendTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ eventType: 'boot', payload: { eventType: 'dev' } }),
+      expect.anything()
+    );
+  });
+
+  it('preserves disabled state when the module loads a second time', async () => {
+    await telemetryModule.setTelemetryEnabled(false);
+
+    vi.resetModules();
+    const secondInstance = await import('./index.ts');
+    const { sendTelemetry } = await import('./telemetry.ts');
+
+    await secondInstance.telemetry('dev', { foo: 'bar' });
+
+    expect(secondInstance.isTelemetryStateResolved()).toBe(true);
+    expect(secondInstance.isTelemetryModuleEnabled()).toBe(false);
+    expect(sendTelemetry).not.toHaveBeenCalled();
+  });
+
+  it('keeps a payload error handler registered through the first instance', async () => {
+    const errorHandler = vi.fn().mockResolvedValue(undefined);
+    await telemetryModule.setTelemetryEnabled(true);
+    telemetryModule.onPayloadError(errorHandler);
+
+    vi.resetModules();
+    const secondInstance = await import('./index.ts');
+
+    const testError = new Error('payload failed');
+    await secondInstance.telemetry('dev', async () => ({ error: testError }));
+
+    expect(errorHandler).toHaveBeenCalledWith(testError, 'dev');
   });
 });
 

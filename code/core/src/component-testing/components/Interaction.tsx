@@ -274,6 +274,7 @@ export const Interaction = ({
           })}
           call={call}
           onClick={() => controls.goto(call.id)}
+          onPointerDown={(e) => e.preventDefault()}
           disabled={isNavigationDisabled}
           onMouseEnter={() => controlStates.goto && setIsHovered(true)}
           onMouseLeave={() => controlStates.goto && setIsHovered(false)}

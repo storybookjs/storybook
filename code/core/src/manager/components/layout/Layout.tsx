@@ -3,8 +3,10 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
-import { type API, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
+
+import { isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 
 import { MEDIA_DESKTOP_BREAKPOINT, MINIMUM_CONTENT_WIDTH_PX } from '../../constants.ts';
 import { Notifications } from '../../container/Notifications.tsx';
@@ -18,6 +20,7 @@ import { useLandmarkIndicator } from './useLandmarkIndicator.ts';
 
 interface InternalLayoutState {
   isDragging: boolean;
+  dragCursor: string;
 }
 
 interface ManagerLayoutState extends Pick<
@@ -36,6 +39,11 @@ interface Props {
   slotSidebar?: React.ReactNode;
   slotPanel?: React.ReactNode;
   slotPages?: React.ReactNode;
+  /**
+   * Persistent overlay rendered on top of the main content cell. Always mounted, so overlays can
+   * keep state (e.g. loaded iframes) alive across route changes.
+   */
+  slotOverlay?: React.ReactNode;
   hasTab: boolean;
 }
 
@@ -69,6 +77,7 @@ const useLayoutSyncingState = ({
   const [internalDraggingSizeState, setInternalDraggingSizeState] = useState<LayoutState>({
     ...managerLayoutState,
     isDragging: false,
+    dragCursor: 'col-resize',
   });
 
   /** Sync FROM managerLayoutState to internalDraggingState if user is not dragging */
@@ -104,10 +113,7 @@ const useLayoutSyncingState = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
-  const isPagesShown =
-    managerLayoutState.viewMode !== undefined &&
-    managerLayoutState.viewMode !== 'story' &&
-    managerLayoutState.viewMode !== 'docs';
+  const isPagesShown = isPagesViewMode(managerLayoutState.viewMode);
   const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
@@ -138,6 +144,7 @@ const useLayoutSyncingState = ({
     showPages: isPagesShown,
     showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
+    dragCursor: internalDraggingSizeState.dragCursor,
   };
 };
 
@@ -148,6 +155,9 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
+  // Subscribe to manager state so nav availability re-evaluates on route and layout changes.
+  useStorybookState();
+  const showSidebar = api.getNavAvailability() === 'shown';
 
   const {
     navSize,
@@ -160,6 +170,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     panelMaxSize,
     showPages,
     showPanel,
+    isDragging,
+    dragCursor,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   // Install landmark navigation listener in parent container of all landmarks.
@@ -169,6 +181,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     <LayoutContainer
       panelPosition={managerLayoutState.panelPosition}
       showPanel={showPanel}
+      showSidebar={showSidebar}
       style={
         {
           '--nav-width': `${navSize}px`,
@@ -178,7 +191,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       }
     >
       <>
-        {isDesktop && (
+        {isDesktop && showSidebar && (
           <SidebarContainer
             navSize={navSize}
             sidebarMaxWidth={sidebarMaxWidth}
@@ -187,10 +200,11 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotSidebar}
           </SidebarContainer>
         )}
-        {isMobile && (
+        {isMobile && !showPages && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
+            showMenu={showSidebar}
             showPanel={showPanel}
           />
         )}
@@ -200,6 +214,8 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           slotMain={slots.slotMain}
           slotPages={slots.slotPages}
         />
+
+        {slots.slotOverlay && <ContentOverlayCell>{slots.slotOverlay}</ContentOverlayCell>}
 
         {isDesktop && showPanel && (
           <PanelContainer
@@ -212,16 +228,42 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             {slots.slotPanel}
           </PanelContainer>
         )}
-        {isMobile && <Notifications />}
+        {isMobile && !showPages && <Notifications />}
       </>
+      {isDragging && <DragShield style={{ cursor: dragCursor }} />}
     </LayoutContainer>
   );
 };
+/**
+ * Occupies the main content cell (the full container on mobile) without intercepting interaction;
+ * overlay content re-enables pointer events itself when visible. Kept below the toolbar (z-index 4)
+ * and the mobile navigation (z-index 10).
+ */
+const ContentOverlayCell = styled.div({
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
+  zIndex: 2,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    position: 'relative',
+    inset: 'auto',
+    gridArea: 'content',
+  },
+});
+
+const DragShield = styled.div({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 10,
+});
 
 const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
-}>(({ panelPosition, showPanel }) => ({
+  showSidebar: boolean;
+}>(({ panelPosition, showPanel, showSidebar }) => ({
+  position: 'relative',
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',
@@ -232,21 +274,33 @@ const LayoutContainer = styled.div<{
   [MEDIA_DESKTOP_BREAKPOINT]: {
     display: 'grid',
     gap: 0,
-    // This uses CSS variables to prevent Emotion from generating a new CSS className for every possible value
-    gridTemplateColumns: `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
+    gridTemplateColumns: showSidebar
+      ? `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`
+      : `minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
     gridTemplateRows: `1fr minmax(0, var(--bottom-panel-height))`,
     gridTemplateAreas: (() => {
+      if (!showSidebar && !showPanel) {
+        return `"content content"
+                "content content"`;
+      }
+      if (!showSidebar && showPanel) {
+        if (panelPosition === 'right') {
+          return `"content panel"
+                  "content panel"`;
+        }
+        return `"content content"
+                "panel   panel"`;
+      }
       if (!showPanel) {
-        // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
         return `"sidebar content content"
-                  "sidebar content content"`;
+                "sidebar content content"`;
       }
       if (panelPosition === 'right') {
         return `"sidebar content panel"
-                  "sidebar content panel"`;
+                "sidebar content panel"`;
       }
       return `"sidebar content content"
-                "sidebar panel   panel"`;
+              "sidebar panel   panel"`;
     })(),
   },
 }));

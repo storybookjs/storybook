@@ -170,10 +170,12 @@ export const ObjectControl: FC<ObjectProps> = ({
   value,
   onChange,
   argType,
+  required,
 }) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+  const hadDataRef = useRef(hasData);
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
@@ -196,6 +198,13 @@ export const ObjectControl: FC<ObjectProps> = ({
     onChange({});
     setForceVisible(true);
   }, [onChange, setForceVisible]);
+
+  useEffect(() => {
+    if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
+      setShowRaw(false);
+    }
+    hadDataRef.current = hasData;
+  }, [forceVisible, hasData, showRaw]);
 
   const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -240,6 +249,7 @@ export const ObjectControl: FC<ObjectProps> = ({
         autoFocus={forceVisible}
         valid={parseError ? 'error' : undefined}
         readOnly={readonly}
+        aria-required={required || undefined}
       />
     </>
   );

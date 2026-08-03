@@ -309,7 +309,7 @@ export async function vitestTransform({
               t.objectProperty(t.identifier('exportName'), t.stringLiteral(exportName)),
               t.objectProperty(t.identifier('story'), t.identifier(localName)),
               t.objectProperty(t.identifier('meta'), t.identifier(metaExportName)),
-              t.objectProperty(t.identifier('skipTags'), t.arrayExpression([])),
+              t.objectProperty(t.identifier('skipTags'), skipTagsId),
               t.objectProperty(t.identifier('storyId'), t.stringLiteral(storyId)),
             ];
 

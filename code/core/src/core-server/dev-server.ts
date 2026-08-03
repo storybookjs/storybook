@@ -7,9 +7,10 @@ import type { Options } from 'storybook/internal/types';
 import compression from '@polka/compression';
 import polka from 'polka';
 
+import type { ChangeDetectionAdapter } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
+import { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 import { isTelemetryModuleEnabled, telemetry } from '../telemetry/index.ts';
-import type { ChangeDetectionAdapter } from './change-detection/index.ts';
-import { ChangeDetectionService } from './change-detection/index.ts';
+import { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
@@ -52,8 +53,11 @@ export async function storybookDevServer(
     storyIndexGeneratorPromise,
     statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir,
-    presets: options.presets,
   });
+
+  const disposeChangeDetectionRuntime = async () => {
+    await changeDetectionService.dispose().catch(() => undefined);
+  };
 
   app.use(compression({ level: 1 }));
 
@@ -79,7 +83,6 @@ export async function storybookDevServer(
     channel: options.channel,
     workingDir,
     configDir,
-    onStoryIndexInvalidated: () => changeDetectionService.onStoryIndexInvalidated(),
   });
 
   (await getMiddleware(options.configDir))(app);
@@ -124,10 +127,6 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    if (!features.changeDetection) {
-      changeDetectionService.start(undefined, false);
-    }
-
     logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
@@ -141,7 +140,7 @@ export async function storybookDevServer(
         logger.error('Failed to build the preview');
         process.exitCode = 1;
 
-        await changeDetectionService.dispose().catch(() => undefined);
+        await disposeChangeDetectionRuntime();
         await managerBuilder?.bail().catch(() => undefined);
         // For some reason, even when Webpack fails e.g. wrong main.js config,
         // the preview may continue to print to stdout, which can affect output
@@ -153,15 +152,21 @@ export async function storybookDevServer(
         throw e;
       });
 
-    if (features.changeDetection) {
-      let adapter: ChangeDetectionAdapter | undefined;
-      try {
-        adapter = previewBuilder.changeDetectionAdapter?.();
-      } catch (err) {
-        logger.warn('Change detection: adapter initialisation failed');
-        logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
-      }
-      changeDetectionService.start(adapter, true);
+    let adapter: ChangeDetectionAdapter | undefined;
+    try {
+      adapter = previewBuilder.changeDetectionAdapter?.();
+    } catch (err) {
+      logger.warn('Change detection: adapter initialisation failed');
+      logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+    }
+
+    resolveChangeDetectionAdapter(adapter);
+
+    const isChangeDetectionStatusEnabled = features.changeDetection !== false;
+    if (isChangeDetectionStatusEnabled) {
+      changeDetectionService.start(true);
+    } else {
+      changeDetectionService.start(false);
     }
   }
 
@@ -180,6 +185,7 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
+    await disposeChangeDetectionRuntime();
     await managerBuilder?.bail().catch(() => undefined);
     await previewBuilder?.bail().catch(() => undefined);
     throw e;
@@ -211,6 +217,7 @@ export async function storybookDevServer(
       } catch {}
       await telemetry('canceled', payload, { immediate: true });
     } finally {
+      await disposeChangeDetectionRuntime();
       // Always terminate on signal, even when telemetry is disabled.
       process.exit(0);
     }

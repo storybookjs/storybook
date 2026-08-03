@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import React, { useRef } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import type { ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
 import { composeConfigs } from 'storybook/preview-api';
@@ -27,6 +28,7 @@ export function ExternalDocs<TRenderer extends Renderer = Renderer>({
   projectAnnotationsList,
   children,
 }: PropsWithChildren<ExternalDocsProps<TRenderer>>) {
+  deprecate(`ExternalDocs is deprecated and will be removed in Storybook 11.`);
   const projectAnnotations = composeConfigs<TRenderer>(projectAnnotationsList);
   const preview = usePreview<TRenderer>(projectAnnotations);
   const docsParameter = {

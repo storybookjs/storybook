@@ -2,6 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import { parseLocalBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
@@ -25,8 +26,10 @@ type MetaSource = {
 export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
+  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
+  const exclude =
+    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -35,6 +38,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
   return {
     name: 'storybook:vue-component-meta-plugin',
     transform: {
+      order: 'post',
       filter: { id: { include, exclude } },
       async handler(src, id) {
         if (!filter(id)) {
@@ -42,8 +46,21 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames = checker.getExportNames(id);
-          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
+          const exportNames: string[] = [];
+          let componentsMeta: ComponentMeta[] = [];
+
+          for (const name of checker.getExportNames(id)) {
+            try {
+              const meta = checker.getComponentMeta(id, name);
+              exportNames.push(name);
+              componentsMeta.push(meta);
+            } catch {}
+          }
+
+          if (componentsMeta.length === 0) {
+            return undefined;
+          }
+
           componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
 
           const metaSources: MetaSource[] = [];
@@ -114,20 +131,17 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           const s = new MagicString(src);
 
+          // Names with a local binding in this module that we can safely attach "__docgenInfo" to.
+          // Re-exports (e.g. "export { default as MyComponent } from './MyComponent.vue'" or
+          // "export * from './Tabs'") resolve via checker.getExportNames but have no local binding
+          // here, so attaching to them would reference an undefined variable at runtime.
+          const localBindings = await parseLocalBindings(id, src);
+
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-            // we can only add the "__docgenInfo" to variables that are actually defined in the current file
-            // so e.g. re-exports like "export { default as MyComponent } from './MyComponent.vue'" must be ignored
-            // to prevent runtime errors
-            if (
-              new RegExp(`export {.*${name}.*}`).test(src) ||
-              new RegExp(`export \\* from ['"]\\S*${name}['"]`).test(src) ||
-              // when using re-exports, some exports might be resolved via checker.getExportNames
-              // but are not directly exported inside the current file so we need to ignore them too
-              !src.includes(name)
-            ) {
+            if (!localBindings.has(name)) {
               return;
             }
 
@@ -145,7 +159,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           return {
             code: s.toString(),
-            map: s.generateMap({ hires: true, source: id }),
+            map: s.generateMap({ hires: true, source: id }).toString(),
           };
         } catch (e) {
           return undefined;
@@ -178,6 +192,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
     forceUseTs: true,
     noDeclarations: true,
     printer: { newLine: 1 },
+    schema: true,
   };
 
   const projectRoot = getProjectRoot();
@@ -302,6 +317,10 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
     // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
+    return;
+  }
+  if (schema.kind === 'literal') {
+    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
     return;
   }
   delete schema.schema;

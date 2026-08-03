@@ -4,7 +4,12 @@
  * onto the MCP `isError` flag is the generic unwrap's contract, pinned in `toolset-tools.test.ts`.
  */
 
-import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/open-service';
+import {
+  clearToolsetRegistry,
+  defineToolset,
+  registerToolset,
+  type ToolsetMethodDescription,
+} from 'storybook/open-service';
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,21 +24,28 @@ vi.mock('storybook/internal/node-logger', () => ({
   logger: { error: loggerError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+/** Every MCP tool currently served from a core toolset. */
+const TOOLSET_BACKED = ['preview-stories', 'get-changed-stories', 'get-stories-by-component'];
+
 /** Registers a stub `stories` toolset whose metadata resolution throws the given error. */
 function registerStoriesToolsetThrowing(error: Error) {
+  const stubMethod = (description: ToolsetMethodDescription) => ({
+    schema: v.object({}),
+    description,
+    handler: async () => ({ ok: true, data: {}, markdown: '' }),
+  });
+
   registerToolset(
     defineToolset({
       id: 'stories',
       description: 'stub',
       telemetryGroup: 'dev',
       methods: {
-        changed: {
-          schema: v.object({}),
-          description: () => {
-            throw error;
-          },
-          handler: async () => ({ ok: true, data: {}, markdown: '' }),
-        },
+        preview: stubMethod(() => {
+          throw error;
+        }),
+        changed: stubMethod('changed'),
+        findByComponent: stubMethod('find by component'),
       },
     }) as any
   );
@@ -53,10 +65,15 @@ function makeServer() {
 }
 
 describe('a broken tool row', () => {
-  // The availability gate claims change detection while the `stories` toolset never registered —
-  // the wiring bug this containment exists for.
+  // Every gate claims support while the `stories` toolset never registered — the wiring bug this
+  // containment exists for.
   const context = {
-    availability: { changeDetectionEnabled: true, docsEnabled: true, a11yEnabled: false },
+    availability: {
+      changeDetectionEnabled: true,
+      moduleGraphSupported: true,
+      docsEnabled: true,
+      a11yEnabled: false,
+    },
   } as never;
 
   beforeEach(() => {
@@ -69,20 +86,23 @@ describe('a broken tool row', () => {
 
     await expect(registerAddonMcpTools(server, context)).resolves.toBeUndefined();
 
-    expect([...tools.keys()]).not.toContain('get-changed-stories');
+    expect([...tools.keys()]).toEqual(expect.not.arrayContaining(TOOLSET_BACKED));
     expect([...tools.keys()]).toEqual(
-      expect.arrayContaining(['preview-stories', 'list-all-documentation', 'get-documentation'])
+      expect.arrayContaining(['list-all-documentation', 'get-documentation'])
     );
-    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('get-changed-stories'));
+    for (const name of TOOLSET_BACKED) {
+      expect(loggerError).toHaveBeenCalledWith(expect.stringContaining(name));
+    }
   });
 
   it('is dropped from the storybook ai metadata instead of failing the build', () => {
-    const metadata = getAddonToolMetadata(context);
-    const names = metadata.map((tool) => tool.name);
+    const names = getAddonToolMetadata(context).map((tool) => tool.name);
 
-    expect(names).not.toContain('get-changed-stories');
-    expect(names).toEqual(expect.arrayContaining(['preview-stories', 'list-all-documentation']));
-    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('get-changed-stories'));
+    expect(names).toEqual(expect.not.arrayContaining(TOOLSET_BACKED));
+    expect(names).toEqual(
+      expect.arrayContaining(['get-storybook-story-instructions', 'list-all-documentation'])
+    );
+    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('preview-stories'));
   });
 
   it('contains only the missing-toolset case: any other adapter failure still fails fast', () => {
@@ -92,26 +112,37 @@ describe('a broken tool row', () => {
   });
 });
 
-describe('get-changed-stories over the registry', () => {
+describe('the migrated rows over the registry', () => {
+  const context = {
+    availability: {
+      changeDetectionEnabled: true,
+      moduleGraphSupported: true,
+      docsEnabled: false,
+      a11yEnabled: false,
+    },
+  } as never;
+
   beforeEach(() => {
     clearToolsetRegistry();
   });
 
-  // One integration probe through the real `stories` toolset: the row resolves off the registry
+  // One integration probe through the real `stories` toolset: each row resolves off the registry
   // and publishes the frozen name and title an MCP client sees.
-  it('serves the migrated row once its toolset is registered', async () => {
+  it('serves every migrated row once its toolset is registered', async () => {
     registerCoreToolsetsForTest();
     const { server, tools } = makeServer();
 
-    await registerAddonMcpTools(server, {
-      availability: { changeDetectionEnabled: true, docsEnabled: false, a11yEnabled: false },
-    } as never);
+    await registerAddonMcpTools(server, context);
 
-    expect(tools.has('get-changed-stories')).toBe(true);
+    expect([...tools.keys()]).toEqual(expect.arrayContaining(TOOLSET_BACKED));
     expect(
-      getAddonToolMetadata({
-        availability: { changeDetectionEnabled: true, docsEnabled: false, a11yEnabled: false },
-      } as never).find((tool) => tool.name === 'get-changed-stories')
-    ).toMatchObject({ title: 'Get changed stories metadata' });
+      getAddonToolMetadata(context)
+        .filter((tool) => TOOLSET_BACKED.includes(tool.name))
+        .map((tool) => tool.title)
+    ).toEqual([
+      'Get story preview URLs',
+      'Get changed stories metadata',
+      'Get stories for component files',
+    ]);
   });
 });

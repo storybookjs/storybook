@@ -10,19 +10,55 @@ function pluralize(count: number, singular: string, plural = `${singular}s`): st
   return count === 1 ? singular : plural;
 }
 
-/** Formats preview URLs as compact Markdown for humans and agents. */
-export function formatPreviewStories({ stories }: PreviewStoriesOutput): string {
-  const lines = ['# Story previews'];
+/**
+ * Recovery nudge for the review exit ramp: agents that skip the review tool end visual work on
+ * exactly this call, so the result itself has to contradict that while a step remains to recover in.
+ */
+function previewReviewNudge(ctx: ToolsetCtx): string {
+  const reviewTool = getRef(ctx)('review.create');
+  return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
+}
 
-  for (const story of stories) {
-    if ('error' in story) {
-      lines.push(`- Error: ${story.error}`);
-    } else {
-      lines.push(`- ${story.title} - ${story.name}`, `  ${story.previewUrl}`);
-    }
+/**
+ * Splits a preview result into the text blocks a consumer shows.
+ *
+ * MCP renders one block per URL, so this returns the blocks; {@link formatPreviewStories} joins
+ * them for consumers that want a single string.
+ */
+export function formatPreviewStoryBlocks(
+  { stories }: PreviewStoriesOutput,
+  ctx: ToolsetCtx,
+  { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
+): string[] {
+  if (ctx.consumer !== 'mcp') {
+    return [
+      '# Story previews',
+      ...stories.map((story) =>
+        'error' in story
+          ? `- Error: ${story.error}`
+          : `- ${story.title} - ${story.name}\n  ${story.previewUrl}`
+      ),
+    ];
   }
 
-  return lines.join('\n');
+  const blocks = stories.map((story) => ('error' in story ? story.error : story.previewUrl));
+
+  // An all-error result has nothing to curate, so the nudge only applies once a URL resolved.
+  if (reviewEnabled && stories.some((story) => 'previewUrl' in story)) {
+    blocks.push(previewReviewNudge(ctx));
+  }
+
+  return blocks;
+}
+
+export function formatPreviewStories(
+  data: PreviewStoriesOutput,
+  ctx: ToolsetCtx,
+  options: { reviewEnabled?: boolean } = {}
+): string | string[] {
+  const blocks = formatPreviewStoryBlocks(data, ctx, options);
+  // MCP renders one text block per URL; the CLI list reads better as one joined document.
+  return ctx.consumer === 'mcp' ? blocks : blocks.join('\n');
 }
 
 const BANNER_INLINE_LIMIT = 3;

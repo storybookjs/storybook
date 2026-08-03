@@ -35,6 +35,8 @@ type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
   method: ToolsetMethodRef;
+  /** Extra MCP-only tool metadata, e.g. the preview app resource. */
+  extras?: Record<string, unknown>;
 };
 
 function resolveToolset(options: ToolsetToolOptions): AnyToolsetDefinition {
@@ -152,6 +154,7 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
     description: resolveToolsetDescription(method.description, descriptionCtx),
     ...(hasInput ? { schema: method.schema } : {}),
     ...(method.outputSchema ? { outputSchema: method.outputSchema } : {}),
+    ...options.extras,
   };
 }
 

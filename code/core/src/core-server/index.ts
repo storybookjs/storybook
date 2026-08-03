@@ -66,6 +66,7 @@ export {
  */
 export { registerToolset } from '../shared/open-service/toolset-registry.ts';
 export { createStoriesToolset } from '../shared/open-service/toolsets/stories/definition.ts';
+export type { PreviewStoriesOutput } from '../shared/open-service/toolsets/stories/definition.ts';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';

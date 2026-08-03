@@ -6,7 +6,10 @@ import { vol } from 'memfs';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import { OpenServiceModuleGraphUnavailableError } from '../../../../server-errors.ts';
+import {
+  OpenServiceMissingOriginError,
+  OpenServiceModuleGraphUnavailableError,
+} from '../../../../server-errors.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
 import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
 import { createStoriesToolset, type StoriesToolset } from './definition.ts';
@@ -39,6 +42,7 @@ const changedComponentFile = 'packages/ui/src/Button.tsx';
 const changedThemeFile = 'packages/ui/src/theme.ts';
 
 const buttonStoryHit = { storyFile: './src/Button.stories.tsx', depth: 1 };
+const previewUrl = 'http://localhost:6006/?path=/story/button--primary';
 
 const getIndex = vi.fn();
 const getChangedFiles = vi.fn();
@@ -146,27 +150,71 @@ describe('stories.preview', () => {
 
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
-      stories: [
-        {
-          title: 'Button',
-          name: 'Primary',
-          previewUrl: 'http://localhost:6006/?path=/story/button--primary',
-        },
-      ],
+      stories: [{ title: 'Button', name: 'Primary', previewUrl }],
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
 
-  it('renders compact Markdown preview URLs', async () => {
-    const outcome = await runPreview([{ storyId: 'button--primary' }]);
+  it('reports per-input lookup failures instead of failing the call', async () => {
+    const outcome = await runPreview([{ storyId: 'gone--story' }]);
 
-    expect(outcome.markdown).toBe(
-      [
-        '# Story previews',
-        '- Button - Primary',
-        '  http://localhost:6006/?path=/story/button--primary',
-      ].join('\n')
-    );
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toEqual({
+      stories: [
+        {
+          input: { storyId: 'gone--story' },
+          error: 'No story found for story ID "gone--story"',
+        },
+      ],
+    });
+  });
+
+  it('rejects when the adapter has no Storybook origin to build URLs from', async () => {
+    await expect(
+      runPreview([{ storyId: 'button--primary' }], { ...cliCtx, origin: undefined })
+    ).rejects.toBeInstanceOf(OpenServiceMissingOriginError);
+  });
+
+  it('reports the story counts it resolved', async () => {
+    await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
+
+    expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
+      inputStoryCount: 2,
+      outputStoryCount: 2,
+    });
+  });
+
+  describe('rendering', () => {
+    it('lists titled entries for the CLI', async () => {
+      const outcome = await runPreview([{ storyId: 'button--primary' }]);
+
+      expect(outcome.markdown).toBe(
+        ['# Story previews', '- Button - Primary', `  ${previewUrl}`].join('\n')
+      );
+    });
+
+    it('returns one text block per URL for MCP', async () => {
+      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
+
+      expect(outcome.markdown).toEqual([previewUrl]);
+    });
+
+    it('appends a review nudge for MCP once a URL resolved and reviews exist', async () => {
+      const withReviews = createToolset({ reviewEnabled: true });
+      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx, withReviews);
+
+      expect(outcome.markdown).toEqual([
+        previewUrl,
+        'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The display-review tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **display-review** and link that instead.',
+      ]);
+    });
+
+    it('leaves an all-error result unnudged, since there is nothing to curate', async () => {
+      const withReviews = createToolset({ reviewEnabled: true });
+      const outcome = await runPreview([{ storyId: 'gone--story' }], mcpCtx, withReviews);
+
+      expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
+    });
   });
 });
 
@@ -411,6 +459,25 @@ describe('descriptions', () => {
     expect(resolveToolsetDescription(toolset.methods.changed.description, cliCtx)).toContain(
       'npx storybook tools stories find-by-component'
     );
+  });
+
+  it('makes preview the end of visual work when no review page exists', () => {
+    expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
+      .toBe(`Use this tool to get one or more Storybook preview URLs.
+Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
+Include each returned preview URL in your final user-facing response so users can open them directly.`);
+  });
+
+  it('demotes preview to a mid-loop tool when reviews are enabled', () => {
+    const withReviews = createToolset({ reviewEnabled: true });
+
+    expect(resolveToolsetDescription(withReviews.methods.preview.description, mcpCtx))
+      .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+Do not end visual work or browse requests with these links — publish a curated review with display-review instead (passing changedFiles: [] when no code changed) and link that.`);
+
+    expect(resolveToolsetDescription(withReviews.methods.preview.description, cliCtx))
+      .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+Do not end visual work or browse requests with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
   });
 
   it('offers the review page as a hand-off target only when reviews are enabled', () => {

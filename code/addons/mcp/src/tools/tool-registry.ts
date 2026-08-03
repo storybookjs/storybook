@@ -15,12 +15,12 @@ import {
 import type { AddonContext } from '../types.ts';
 import type { ToolAvailability } from '../utils/get-tool-availability.ts';
 import { getDisplayReviewToolMetadata, addDisplayReviewTool } from './display-review.ts';
+import { PREVIEW_STORIES_RESOURCE_URI, addPreviewStoriesResource } from './preview-stories.ts';
 import {
   buildStorybookStoryInstructions,
   getStorybookStoryInstructionsToolMetadata,
   addGetUIBuildingInstructionsTool,
 } from './get-storybook-story-instructions.ts';
-import { getPreviewStoriesToolMetadata, addPreviewStoriesTool } from './preview-stories.ts';
 import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-tests.ts';
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
@@ -29,7 +29,6 @@ import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-s
 import {
   DISPLAY_REVIEW_TOOL_NAME,
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-  PREVIEW_STORIES_TOOL_NAME,
   RUN_STORY_TESTS_TOOL_NAME,
 } from './tool-names.ts';
 import {
@@ -127,14 +126,13 @@ function fromToolset(
 }
 
 const addonToolDefinitions: AddonToolDefinition[] = [
-  {
-    name: PREVIEW_STORIES_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
-    getMetadata: ({ availability }) =>
-      getPreviewStoriesToolMetadata({ reviewEnabled: availability.reviewEnabled }),
-    register: (server, { availability }, enabled) =>
-      addPreviewStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
-  },
+    options: {
+      method: 'stories.preview',
+      extras: { _meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } } },
+    },
+  }),
   {
     name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
     toolset: 'dev',
@@ -286,6 +284,10 @@ export async function registerAddonMcpTools(
   server: McpServer<any, AddonContext>,
   context: AddonToolRegistryContext
 ) {
+  // The preview app resource is transport-level: it is served to the client independently of the
+  // tool call that references it.
+  await addPreviewStoriesResource(server);
+
   for (const definition of addonToolDefinitions) {
     if (
       isToolsetEnabled(definition.toolset, context.toolsets) &&

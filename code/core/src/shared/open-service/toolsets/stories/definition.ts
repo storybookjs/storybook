@@ -8,7 +8,7 @@ import {
 } from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import { getRef } from '../../toolset-names.ts';
+import { getRef, MCP_TOOL_NAMES } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
@@ -21,7 +21,14 @@ import { detectUnreachableFiles } from './unreachable-files.ts';
 const previewSuccessSchema = v.object({
   title: v.string(),
   name: v.string(),
-  previewUrl: v.pipe(v.string(), v.description('Direct URL for the story preview.')),
+  previewUrl: v.pipe(
+    v.string(),
+    v.description(
+      // An `outputSchema` is built once per toolset, with no `ctx` to resolve a sibling tool's
+      // spelling against, so this names the frozen MCP tool rather than a hardcoded string.
+      `Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via ${MCP_TOOL_NAMES['review.create']}, in which case link the review page instead of listing individual URLs.`
+    )
+  ),
 });
 
 const previewFailureSchema = v.object({
@@ -138,6 +145,21 @@ export type CreateStoriesToolsetOptions = {
   reviewEnabled?: boolean;
 };
 
+function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
+  if (!reviewEnabled) {
+    return `Use this tool to get one or more Storybook preview URLs.
+Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
+Include each returned preview URL in your final user-facing response so users can open them directly.`;
+  }
+
+  // With reviews available this is strictly a mid-loop tool: no "include the URLs in your final
+  // response" default (that sanctioned preview links as the ending of visual work) and no hedging
+  // about the review tool's availability (a hedged "when available" let an agent that wrongly
+  // believed the tool was missing treat raw links as a sanctioned fallback).
+  return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
+Do not end visual work or browse requests with these links — publish a curated review with ${getRef(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
+}
+
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
@@ -183,24 +205,35 @@ export function createStoriesToolset({
         schema: v.object({
           stories: v.pipe(
             storyInputArraySchema,
-            v.description('Stories to preview. Prefer { storyId } when available.')
+            v.description(
+              `Stories to preview.
+Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+Use { storyId } when IDs were discovered from documentation tools.
+Use { absoluteStoryPath + exportName } only when you're already working in a specific .stories.* file and already have that context.`
+            )
           ),
         }),
-        description: 'Resolves story selectors to preview URLs.',
+        outputSchema: previewOutputSchema,
+        description: (ctx) => describePreview(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<PreviewStoriesOutput, never>> => {
-          const origin = ctx.origin;
-          if (!origin) {
+          if (!ctx.origin) {
             throw new OpenServiceMissingOriginError({
               toolsetId: 'stories',
               methodName: 'preview',
             });
           }
           const data = previewStories({
-            origin,
+            origin: ctx.origin,
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
-          return { ok: true, data, markdown: formatPreviewStories(data) };
+
+          await ctx.telemetry?.('tool:previewStories', {
+            inputStoryCount: input.stories.length,
+            outputStoryCount: data.stories.length,
+          });
+
+          return { ok: true, data, markdown: formatPreviewStories(data, ctx, { reviewEnabled }) };
         },
       },
       changed: {

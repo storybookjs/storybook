@@ -11826,7 +11826,6 @@ __metadata:
     "@storybook/mcp": "workspace:*"
     "@tmcp/adapter-valibot": "npm:^0.1.5"
     "@tmcp/transport-http": "npm:^0.8.5"
-    picoquery: "npm:^2.5.0"
     storybook: "workspace:*"
     tmcp: "npm:^1.19.4"
     typescript: "npm:^6.0.3"

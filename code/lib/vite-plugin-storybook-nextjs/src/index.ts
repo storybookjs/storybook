@@ -11,7 +11,6 @@ import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
 import loadJsConfig from "next/dist/build/load-jsconfig.js";
-import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
   PHASE_PRODUCTION_BUILD,
@@ -29,11 +28,9 @@ import {
   getViteMajorVersion,
   isVitestEnv,
 } from "./utils";
+import { loadNextConfig } from "./utils/next-config";
 
 const require = createRequire(import.meta.url);
-const loadConfig: typeof nextServerConfig =
-  // biome-ignore lint/suspicious/noExplicitAny: CJS support
-  (nextServerConfig as any).default || nextServerConfig;
 
 export type PluginOptions = {
   /**
@@ -64,9 +61,10 @@ function VitePlugin({
         ? PHASE_TEST
         : PHASE_PRODUCTION_BUILD;
 
-  loadConfig(phase, resolvedDir).then((nextConfig) => {
-    nextConfigResolver.resolve(nextConfig);
-  });
+  loadNextConfig(phase, resolvedDir).then(
+    nextConfigResolver.resolve,
+    nextConfigResolver.reject,
+  );
 
   return [
     isVite8orNewer

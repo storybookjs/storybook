@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-storybook-nextjs",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "bugs": {
     "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs/issues"
   },
@@ -86,7 +86,7 @@
     "@types/react": "^18",
     "@types/semver": "^7.5.8",
     "lefthook": "^1.6.16",
-    "next": "16.0.0",
+    "next": "16.3.0-preview.5",
     "pathe": "^2.0.3",
     "pkg-pr-new": "^0.0.63",
     "react": "19.2.0",
@@ -100,7 +100,7 @@
   },
   "packageManager": "pnpm@10.28.2",
   "dependencies": {
-    "@next/env": "16.0.0",
+    "@next/env": "16.3.0-preview.5",
     "image-size": "^2.0.0",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
@@ -114,7 +114,7 @@
   "pnpm": {
     "overrides": {
       "vite-plugin-storybook-nextjs": "workspace:*",
-      "next": "^16.0.0"
+      "next": "16.3.0-preview.5"
     }
   }
 }

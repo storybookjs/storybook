@@ -52,7 +52,7 @@ export interface SeriesSummary {
  * Saves excluded from the slope fit.
  *
  * The baseline is sampled after the cold pass, so an engine still holds whole-project state going
- * into the first save and releases it there - `react-osa` drops ~85MB between save 1 and 2, then is
+ * into the first save and releases it there - `react-osa` drops ~83MB between save 1 and 2, then is
  * flat. Fitting that step measures the transition, not the leak trend. Every other engine is flat
  * from save 1, so one excluded sample costs them nothing.
  */

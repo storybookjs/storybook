@@ -29,11 +29,28 @@ export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
   signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
 };
 
-function rethrowCategorizedExecaError(
-  error: unknown,
+function attachCategorizedExecaFailureHandler(
+  execaProcess: ResultPromise,
   context: { command: string; args: string[] }
-): never {
-  throw categorizeExecaError(error, context);
+) {
+  const categorize = (error: unknown) => categorizeExecaError(error, context);
+  const originalThen = execaProcess.then.bind(execaProcess);
+  const originalCatch = execaProcess.catch.bind(execaProcess);
+
+  execaProcess.then = ((onFulfilled, onRejected) =>
+    originalThen(
+      onFulfilled,
+      onRejected
+        ? (error) => onRejected(categorize(error))
+        : (error) => {
+            throw categorize(error);
+          }
+    )) as ResultPromise['then'];
+
+  execaProcess.catch = ((onRejected) =>
+    originalCatch((error) => {
+      throw categorize(error);
+    }).catch(onRejected)) as ResultPromise['catch'];
 }
 
 function getExecaOptions({
@@ -68,12 +85,11 @@ export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
     execaProcess.catch(() => {
       // Silently ignore errors when ignoreError is true
     });
-    return execaProcess;
+  } else {
+    attachCategorizedExecaFailureHandler(execaProcess, { command, args });
   }
 
-  return execaProcess.catch((error) => {
-    rethrowCategorizedExecaError(error, { command, args });
-  }) as ResultPromise;
+  return execaProcess;
 }
 
 export function executeCommandSync(options: ExecuteCommandOptions): string {
@@ -87,7 +103,7 @@ export function executeCommandSync(options: ExecuteCommandOptions): string {
     );
   } catch (err) {
     if (!ignoreError) {
-      rethrowCategorizedExecaError(err, { command, args });
+      throw categorizeExecaError(err, { command, args });
     }
     return '';
   }

@@ -177,6 +177,23 @@ describe('command', () => {
       expect(mockedExeca).toHaveBeenCalledTimes(1);
     });
 
+    it('should preserve subprocess methods like on after attaching categorized errors', async () => {
+      const on = vi.fn();
+      mockedExeca.mockReturnValueOnce(
+        Object.assign(Promise.resolve({ stdout: 'success', stderr: '' }), { on }) as any
+      );
+
+      const process = executeCommand({
+        command: 'pnpm',
+        args: ['--version'],
+      });
+
+      process.on('exit', on);
+      await process;
+
+      expect(on).toHaveBeenCalledWith('exit', expect.any(Function));
+    });
+
     it('should propagate categorized errors when resolved command is not found', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.cmd'));
       const error = {

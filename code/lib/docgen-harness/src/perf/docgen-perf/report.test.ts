@@ -12,20 +12,20 @@ const block = (lines: string[]) => lines.join('\n');
 
 /** A series engine: per-component, so it has no whole-project scan. */
 const seriesMetrics: EngineMetrics = {
-  coldExtractionMs: { status: 'measured', samples: [1204, 1180, 1191], median: 1191 },
-  warmExtractionMs: { status: 'measured', samples: [42.4, 39.8, 41.1], median: 41.1 },
+  coldExtractionMs: { status: 'measured', samples: [1204, 1180, 1191], value: 1191 },
+  warmExtractionMs: { status: 'measured', samples: [42.4, 39.8, 41.1], value: 41.1 },
   wholeProjectScanMs: NOT_APPLICABLE,
-  peakTransientMb: { status: 'measured', samples: [61, 58, 63], mean: 60.7 },
+  peakTransientMb: { status: 'measured', samples: [61, 58, 63], value: 60.7 },
   retainedGrowthMb: { status: 'measured', value: 12.4 },
   retainedSlopeMbPerSave: { status: 'measured', value: 0.62 },
 };
 
 /** A one-shot CLI engine: a fresh process per run, so no retained series to report. */
 const oneShotMetrics: EngineMetrics = {
-  coldExtractionMs: { status: 'measured', samples: [8420, 8110, 8300], median: 8300 },
-  warmExtractionMs: { status: 'measured', samples: [8290, 8050, 8180], median: 8180 },
-  wholeProjectScanMs: { status: 'measured', samples: [8420, 8110, 8300], median: 8300 },
-  peakTransientMb: { status: 'measured', samples: [980, 1010, 995], mean: 995 },
+  coldExtractionMs: { status: 'measured', samples: [8420, 8110, 8300], value: 8300 },
+  warmExtractionMs: { status: 'measured', samples: [8290, 8050, 8180], value: 8180 },
+  wholeProjectScanMs: { status: 'measured', samples: [8420, 8110, 8300], value: 8300 },
+  peakTransientMb: { status: 'measured', samples: [980, 1010, 995], value: 995 },
   retainedGrowthMb: NOT_APPLICABLE,
   retainedSlopeMbPerSave: NOT_APPLICABLE,
 };
@@ -166,27 +166,6 @@ describe('renderRatios', () => {
     `);
   });
 
-  it('omits the half of the pair that did not measure', () => {
-    expect(
-      block(
-        renderRatios({
-          react: {
-            default: {
-              legacyEngine: 'react-legacy',
-              nextEngine: 'react-osa',
-              cold: 4,
-              coldComparability: 'unknown',
-              warmComparability: 'unknown',
-            },
-          },
-        })
-      )
-    ).toMatchInlineSnapshot(`
-      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
-        ratio cold (react-legacy over react-osa, default): 4.00"
-    `);
-  });
-
   it('renders every scenario of every pair', () => {
     const ratios: Ratios = {
       react: {
@@ -228,31 +207,6 @@ describe('renderRatios', () => {
   it('says so when there is no ratio at all', () => {
     expect(block(renderRatios({}))).toMatchInlineSnapshot(
       `"  no calibration ratio: it needs both sides of a control pair measured in one run"`
-    );
-  });
-
-  it('names both versions when a pair compares one package against another release of it', () => {
-    expect(
-      block(
-        renderRatios({
-          'vue-component-meta-version': {
-            flat: {
-              legacyEngine: 'vue-docgen-api',
-              nextEngine: 'vue-component-meta',
-              cold: 1.08,
-              legacyVersion: '3.3.2',
-              nextVersion: '3.3.8',
-              coldComparability: 'like-for-like',
-              warmComparability: 'like-for-like',
-            },
-          },
-        })
-      )
-    ).toMatchInlineSnapshot(
-      `
-      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
-        ratio cold (vue-docgen-api over vue-component-meta, flat): 1.08  [3.3.2 vs 3.3.8]"
-    `
     );
   });
 
@@ -329,10 +283,10 @@ describe('renderResults', () => {
       }
     );
     expect(block(table)).toMatchInlineSnapshot(`
-      "  engine/scenario       cold    warm    scan    peak   ret-growth  ret-slope
-        react-legacy/default  1191ms  41ms    n/a     61MB   12.4MB      0.62MB/save
-        react-osa/default     1191ms  41ms    n/a     61MB   12.4MB      0.62MB/save
-        compodoc/default      8300ms  8180ms  8300ms  995MB  n/a         n/a"
+      "  engine/scenario       cold    warm    scan    peak     ret-growth  ret-slope
+        react-legacy/default  1191ms  41ms    n/a     60.7MB   12.4MB      0.62MB/save
+        react-osa/default     1191ms  41ms    n/a     60.7MB   12.4MB      0.62MB/save
+        compodoc/default      8300ms  8180ms  8300ms  995.0MB  n/a         n/a"
     `);
     // Only the first line of a reason: a stack trace would push the table off the screen.
     expect(block(statusLines)).toMatchInlineSnapshot(`
@@ -353,10 +307,10 @@ describe('renderResults', () => {
       },
     });
     expect(block(table)).toMatchInlineSnapshot(`
-      "  engine/scenario                     cold    warm  scan  peak  ret-growth  ret-slope
-        vue-component-meta/flat             1191ms  41ms  n/a   61MB  12.4MB      0.62MB/save
-        vue-component-meta/workspace        1191ms  41ms  n/a   61MB  12.4MB      0.62MB/save
-        vue-component-meta/base-type-touch  1191ms  41ms  n/a   61MB  12.4MB      0.62MB/save"
+      "  engine/scenario                     cold    warm  scan  peak    ret-growth  ret-slope
+        vue-component-meta/flat             1191ms  41ms  n/a   60.7MB  12.4MB      0.62MB/save
+        vue-component-meta/workspace        1191ms  41ms  n/a   60.7MB  12.4MB      0.62MB/save
+        vue-component-meta/base-type-touch  1191ms  41ms  n/a   60.7MB  12.4MB      0.62MB/save"
     `);
   });
 

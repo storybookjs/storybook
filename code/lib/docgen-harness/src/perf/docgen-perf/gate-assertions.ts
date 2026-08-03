@@ -5,7 +5,7 @@
  * instead of a full run.
  */
 import { PERF_BUDGETS, type PerfBudget, type PerfBudgetKey } from '../docgen-shared/budgets.ts';
-import type { EngineId, EngineMetrics, ScenarioResult, SuiteResults } from './types.ts';
+import type { EngineId, EngineMetrics, Metric, ScenarioResult, SuiteResults } from './types.ts';
 
 export interface Assertion {
   label: string;
@@ -36,8 +36,8 @@ function splitKey(key: PerfBudgetKey): { engine: EngineId; scenario: string } {
   };
 }
 
-function median(metric: EngineMetrics[keyof EngineMetrics]): number | undefined {
-  return metric.status === 'measured' && 'median' in metric ? metric.median : undefined;
+function valueOf(metric: Metric): number | undefined {
+  return metric.status === 'measured' ? metric.value : undefined;
 }
 
 /**
@@ -46,8 +46,8 @@ function median(metric: EngineMetrics[keyof EngineMetrics]): number | undefined 
  */
 function checkIncrementality(key: string, max: number, metrics: EngineMetrics): Assertion {
   const label = `${key} warm/cold ratio`;
-  const cold = median(metrics.coldExtractionMs);
-  const warm = median(metrics.warmExtractionMs);
+  const cold = valueOf(metrics.coldExtractionMs);
+  const warm = valueOf(metrics.warmExtractionMs);
 
   if (cold === undefined || warm === undefined || cold === 0) {
     return fail(label, 'cold and warm were not both measured');
@@ -70,18 +70,17 @@ function checkMemory(
   const checks = [
     {
       metric: 'peak transient (MB)',
-      value: peakTransientMb.status === 'measured' ? peakTransientMb.mean : undefined,
+      value: valueOf(peakTransientMb),
       max: memory.maxTransientMb,
     },
     {
       metric: 'retained growth (MB)',
-      value: retainedGrowthMb.status === 'measured' ? retainedGrowthMb.value : undefined,
+      value: valueOf(retainedGrowthMb),
       max: memory.maxRetainedGrowthMb,
     },
     {
       metric: 'retained slope (MB/save)',
-      value:
-        retainedSlopeMbPerSave.status === 'measured' ? retainedSlopeMbPerSave.value : undefined,
+      value: valueOf(retainedSlopeMbPerSave),
       max: memory.maxRetainedSlopeMb,
     },
   ];

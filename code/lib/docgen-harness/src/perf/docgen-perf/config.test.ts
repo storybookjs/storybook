@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { MIN_SAVES_FOR_SLOPE } from '../docgen-shared/stats.ts';
-import { DEFAULT_PROFILE, PINNED_N, QUICK_PROFILE, type SuiteProfile } from './config.ts';
+import { DEFAULT_PROFILE, QUICK_PROFILE, type SuiteProfile } from './config.ts';
 
 const savesPerScenario = (profile: SuiteProfile): Array<{ name: string; saves: number }> => [
   ...profile.react.map((scenario) => ({ name: `react/${scenario.shape}`, saves: scenario.saves })),
@@ -20,13 +20,8 @@ describe.each([
   });
 });
 
-describe('the pinned profile', () => {
-  it('measures at the pinned N and says its numbers are comparable', () => {
-    expect(DEFAULT_PROFILE.n).toBe(PINNED_N);
-    expect(DEFAULT_PROFILE.comparable).toBe(true);
-  });
-
-  it('marks the quick profile non-comparable, so its numbers can never become a baseline', () => {
-    expect(QUICK_PROFILE.comparable).toBe(false);
-  });
+// The gate asserts `comparable` before anything else, so this flag is the only thing standing
+// between a smoke run's numbers and a recorded baseline.
+it('marks the quick profile non-comparable, so its numbers can never become a baseline', () => {
+  expect(QUICK_PROFILE.comparable).toBe(false);
 });

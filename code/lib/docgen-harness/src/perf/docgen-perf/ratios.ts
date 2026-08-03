@@ -7,8 +7,7 @@ import type {
   Comparability,
   EngineId,
   EngineResult,
-  LatencyMetric,
-  NotApplicable,
+  Metric,
   RatioEntry,
   Ratios,
   ScenarioResult,
@@ -52,11 +51,11 @@ export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] 
  * A zero denominator is treated the same way. It means the new engine's median landed below the
  * clock's resolution, and Infinity would then be rendered and stored as if it were a ratio.
  */
-function medianRatio(legacy: LatencyMetric | NotApplicable, next: LatencyMetric | NotApplicable) {
+function medianRatio(legacy: Metric, next: Metric) {
   if (legacy.status !== 'measured' || next.status !== 'measured') {
     return undefined;
   }
-  const ratio = legacy.median / next.median;
+  const ratio = legacy.value / next.value;
   return Number.isFinite(ratio) ? ratio : undefined;
 }
 

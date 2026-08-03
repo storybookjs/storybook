@@ -153,7 +153,8 @@ Nothing about it is engine-specific.
 
 Plus one code edit, unless the engine already takes a pin.
 A spawned-CLI engine resolves its pin itself and needs nothing more; `CompodocEngine` takes one in its constructor.
-A child-harness engine has to accept `--pin` and import that specifier rather than a hard-coded one, which is three lines at the child - the flag, `pinOption(<canonical package>)` extending its option schema, and `importPinned` in place of a static import.
+A child-harness engine has to accept `--pin` and import that specifier rather than a hard-coded one, which is three lines at the child - the flag, one schema entry, and `importPinned` in place of a static import.
+`importPinned` checks the pin resolves to the package the harness measures before loading it, since an alias keeps the aliased package's own name.
 Only the named install is ever imported, so the other copy never sits on the measured heap, and the resolved specifier also names the scratch directory so the two runs do not share a generated project.
 
 One easily-missed prerequisite: the *current* side's existing registry entry must declare `pin` too, naming the canonical package.

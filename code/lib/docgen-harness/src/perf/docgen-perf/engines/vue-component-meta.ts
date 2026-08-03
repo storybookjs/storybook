@@ -13,9 +13,10 @@
 import * as fs from 'node:fs';
 
 import type { MetaCheckerOptions } from 'vue-component-meta';
+import { z } from 'zod';
 
 import { parseHarnessOptions } from '../../docgen-shared/args.ts';
-import { PIN_OPTION, importPinned, pinOption } from '../../docgen-shared/pin.ts';
+import { PIN_OPTION, importPinned } from '../../docgen-shared/pin.ts';
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
 import {
   VUE_OPTIONS,
@@ -40,7 +41,7 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
   printer: { newLine: 1 },
 };
 
-const SCHEMA = VUE_SCHEMA.extend({ pin: pinOption(PACKAGE) });
+const SCHEMA = VUE_SCHEMA.extend({ pin: z.string().default(PACKAGE) });
 
 /**
  * `--pin` extends the shared Vue table rather than being read out of argv beforehand, so it reaches
@@ -80,7 +81,7 @@ function extractOne(checker: Checker, sfcPath: string): number {
 
 async function createEngine(options: VueHarnessOptions, pin: string): Promise<SeriesEngine> {
   const scenario = setUpVueScenario(options);
-  const fns = await importPinned<CheckerModule>(pin);
+  const fns = await importPinned<CheckerModule>(pin, PACKAGE);
   let checker: Checker | undefined;
   let measuredPath = scenario.targetPaths[0];
 

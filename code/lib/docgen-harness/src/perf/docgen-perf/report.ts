@@ -1,35 +1,16 @@
 /** Renders the suite's terminal output. Pure string building, so it is testable without a runner. */
-import type {
-  Comparability,
-  EngineId,
-  EngineMetrics,
-  EngineResult,
-  RatioEntry,
-  Ratios,
-} from './types.ts';
+import type { Comparability, EngineId, EngineResult, Metric, RatioEntry, Ratios } from './types.ts';
 
 const HEADER = ['engine/scenario', 'cold', 'warm', 'scan', 'peak', 'ret-growth', 'ret-slope'];
 
 /**
- * Decimals for a single-valued metric, per unit. A slope needs two to say anything at all, while a
- * sub-millisecond difference between two aggregates is noise.
+ * Decimals per unit. A slope needs two to say anything at all, while a sub-millisecond difference
+ * between two aggregates is noise.
  */
 const VALUE_PRECISION = { ms: 0, MB: 1, 'MB/save': 2 } as const;
 
-export function formatCell(
-  metric: EngineMetrics[keyof EngineMetrics],
-  unit: keyof typeof VALUE_PRECISION
-): string {
-  if (metric.status === 'n/a') {
-    return 'n/a';
-  }
-  if ('median' in metric) {
-    return `${metric.median.toFixed(0)}${unit}`;
-  }
-  if ('mean' in metric) {
-    return `${metric.mean.toFixed(0)}${unit}`;
-  }
-  return `${metric.value.toFixed(VALUE_PRECISION[unit])}${unit}`;
+export function formatCell(metric: Metric, unit: keyof typeof VALUE_PRECISION): string {
+  return metric.status === 'n/a' ? 'n/a' : `${metric.value.toFixed(VALUE_PRECISION[unit])}${unit}`;
 }
 
 export interface RenderedResults {

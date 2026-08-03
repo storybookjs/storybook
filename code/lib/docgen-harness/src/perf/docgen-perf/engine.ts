@@ -2,26 +2,14 @@
  * What the orchestrator knows about an engine. Engines differ only in how one repetition is
  * produced; everything downstream (aggregation, member counts) follows from that choice.
  */
-import * as fs from 'node:fs';
-import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
+import { resolvePin } from '../docgen-shared/pin.ts';
 import type { SeriesResult } from '../docgen-shared/series.ts';
 import { designatedRep, seriesMetrics } from './aggregate.ts';
 import type { SuiteProfile } from './config.ts';
 import type { SeriesChildSpec } from './spawn.ts';
 import type { EngineId, EngineMetrics, MemberCounts, ScenarioResult } from './types.ts';
-
-const require = createRequire(import.meta.url);
-
-function resolvePackageVersion(packageName: string): string | undefined {
-  try {
-    const packagePath = require.resolve(`${packageName}/package.json`);
-    return (JSON.parse(fs.readFileSync(packagePath, 'utf8')) as { version: string }).version;
-  } catch {
-    return undefined;
-  }
-}
 
 export interface ScenarioSpec {
   name: string;
@@ -136,28 +124,24 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
    */
   preflight(): string | undefined {
     const { pin } = this.#config;
-    if (pin && resolvePackageVersion(pin) === undefined) {
+    if (pin && !resolvePin(pin)) {
       return `${pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
     }
     return undefined;
   }
 
   version(): string | undefined {
-    return this.#config.pin ? resolvePackageVersion(this.#config.pin) : undefined;
-  }
-
-  /** The pin reaches the child as a flag, so no engine has to spell it out in its own `args`. */
-  #args(scenario: ScenarioSpec): string[] {
-    const { args, pin } = this.#config;
-    return pin ? [...args(scenario), '--pin', pin] : args(scenario);
+    return this.#config.pin ? resolvePin(this.#config.pin)?.version : undefined;
   }
 
   async measure(ctx: MeasureContext, scenario: ScenarioSpec, rep: number): Promise<SeriesResult> {
+    const { args, child, jiti, pin } = this.#config;
     return ctx.runSeriesChild(
       {
-        childPath: path.join(import.meta.dirname, this.#config.child),
-        args: this.#args(scenario),
-        jiti: this.#config.jiti,
+        childPath: path.join(import.meta.dirname, child),
+        // The pin reaches the child as a flag, so no engine spells it out in its own `args`.
+        args: pin ? [...args(scenario), '--pin', pin] : args(scenario),
+        jiti,
       },
       path.join(ctx.scenarioDir, 'project'),
       path.join(ctx.scenarioDir, `rep${rep}.json`)

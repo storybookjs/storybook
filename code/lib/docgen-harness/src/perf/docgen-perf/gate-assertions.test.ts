@@ -4,15 +4,15 @@ import type { PerfBudget, PerfBudgetKey } from '../docgen-shared/budgets.ts';
 import { assertBudgets } from './gate-assertions.ts';
 import {
   type EngineMetrics,
-  type LatencyMetric,
+  type MeasuredMetric,
   NOT_APPLICABLE,
   type SuiteResults,
 } from './types.ts';
 
-const measuredLatency = (median: number): LatencyMetric => ({
+const measuredLatency = (value: number): MeasuredMetric => ({
   status: 'measured',
-  samples: [median],
-  median,
+  samples: [value],
+  value,
 });
 
 function results(overrides: Partial<SuiteResults> = {}): SuiteResults {
@@ -32,7 +32,7 @@ function results(overrides: Partial<SuiteResults> = {}): SuiteResults {
               coldExtractionMs: measuredLatency(200),
               warmExtractionMs: measuredLatency(20),
               wholeProjectScanMs: NOT_APPLICABLE,
-              peakTransientMb: { status: 'measured', samples: [20], mean: 20 },
+              peakTransientMb: { status: 'measured', samples: [20], value: 20 },
               retainedGrowthMb: { status: 'measured', value: 3 },
               retainedSlopeMbPerSave: { status: 'measured', value: 0.2 },
             },

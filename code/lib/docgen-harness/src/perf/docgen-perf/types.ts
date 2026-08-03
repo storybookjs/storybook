@@ -100,6 +100,10 @@ export type Comparability =
  * document the same members cold and different ones on the save it was timed on.
  */
 export interface RatioEntry {
+  /** The engine whose median is the numerator. */
+  legacyEngine: EngineId;
+  /** The engine whose median is the denominator - the one a budget would protect. */
+  nextEngine: EngineId;
   cold?: number;
   warm?: number;
   legacyColdMembers?: number;

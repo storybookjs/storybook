@@ -20,6 +20,7 @@ The slope is fitted over the save series with the first save excluded.
 An engine that re-extracts one component per save releases its whole-project state on that first save, and a fit that includes the step measures the cold-to-steady-state transition instead of the leak trend.
 For `react-osa` that is the difference between a strongly negative slope, which hides any leak smaller than the step, and the small positive trend its steady state actually shows in the table below.
 One excluded sample is enough: that engine is the only one with a step, and it lands entirely inside the first save.
+A scenario therefore needs at least three saves to produce a slope at all - the excluded one, plus the two a line needs - and a scenario configured below that reports no retained metrics and fails its engine rather than quietly reporting a flat trend.
 
 ### The two React shapes
 
@@ -114,9 +115,11 @@ Add `--quick` for a smoke run that proves the wiring; its numbers are marked non
 A real run prints one cold and one warm line per scenario:
 
 ```text
-ratio cold legacy/new (vue-component-meta-version/flat): 1.04  [documented members 70 vs 70]  [3.3.2 vs 3.3.8]
-ratio warm legacy/new (vue-component-meta-version/flat): 1.01  [documented members 15 vs 15]  [3.3.2 vs 3.3.8]
+ratio cold (vue-component-meta over vue-component-meta-next, flat): 1.04  [documented members 70 vs 70]  [3.3.2 vs 3.3.8]
+ratio warm (vue-component-meta over vue-component-meta-next, flat): 1.01  [documented members 15 vs 15]  [3.3.2 vs 3.3.8]
 ```
+
+Both engines are named on the line, and a header above the block says which way the division goes, so no one has to remember which side of a pair is which.
 
 - **Two different versions.**
   `[3.3.2 vs 3.3.8]` is what says two different versions were actually compared.

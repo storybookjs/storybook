@@ -65,6 +65,13 @@ export interface SeriesSummary {
 const SETTLE_SAVES = 1;
 
 /**
+ * Saves a scenario must run for a slope to exist: the excluded settle save, plus the two points a
+ * least-squares fit needs. A scenario configured below this reports no retained metrics at all,
+ * which the aggregation treats as a failed engine.
+ */
+export const MIN_SAVES_FOR_SLOPE = SETTLE_SAVES + 2;
+
+/**
  * Derive the retained/transient series figures shared by every series harness. Kept here so the
  * memory harness and the per-engine harnesses cannot drift apart in how they compute them.
  */

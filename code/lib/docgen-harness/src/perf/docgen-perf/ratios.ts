@@ -87,11 +87,14 @@ function comparability(
 }
 
 function ratioFor(
+  pair: ControlPair,
   legacy: ScenarioResult,
   next: ScenarioResult,
   versions: PairVersions
 ): RatioEntry {
   return {
+    legacyEngine: pair.legacy,
+    nextEngine: pair.next,
     cold: medianRatio(legacy.metrics.coldExtractionMs, next.metrics.coldExtractionMs),
     warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
     legacyColdMembers: legacy.coldMembers,
@@ -145,7 +148,7 @@ export function computeRatios(
         continue;
       }
       ratios[pair.name] ??= {};
-      ratios[pair.name][scenarioName] = ratioFor(legacyScenario, nextScenario, versions);
+      ratios[pair.name][scenarioName] = ratioFor(pair, legacyScenario, nextScenario, versions);
     }
   }
 

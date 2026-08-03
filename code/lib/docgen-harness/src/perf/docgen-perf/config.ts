@@ -144,7 +144,7 @@ export const QUICK_PROFILE: SuiteProfile = {
       chainDepth: 2,
       fanOut: 2,
       heavyLib: true,
-      saves: 2,
+      saves: 3,
     },
   ],
   angular: { components: 10, props: 4 },

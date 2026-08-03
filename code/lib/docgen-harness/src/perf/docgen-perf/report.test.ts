@@ -44,6 +44,8 @@ describe('renderRatios', () => {
         renderRatios({
           vue: {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 18.48,
               warm: 22.5,
               legacyColdMembers: 6,
@@ -57,8 +59,9 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "  ratio cold legacy/new (vue/flat): 18.48  [documented members 6 vs 320 - NOT like-for-like - new engine documented more, so this ratio undersells it]
-        ratio warm legacy/new (vue/flat): 22.50  [documented members 0 vs 32 - NOT like-for-like - new engine documented more, so this ratio undersells it]"
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 18.48  [documented members 6 vs 320 - NOT like-for-like - new engine documented more, so this ratio undersells it]
+        ratio warm (vue-docgen-api over vue-component-meta, flat): 22.50  [documented members 0 vs 32 - NOT like-for-like - new engine documented more, so this ratio undersells it]"
     `);
   });
 
@@ -69,6 +72,8 @@ describe('renderRatios', () => {
         renderRatios({
           vue: {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 0.05,
               legacyColdMembers: 320,
               nextColdMembers: 6,
@@ -79,7 +84,10 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(
-      `"  ratio cold legacy/new (vue/flat): 0.05  [documented members 320 vs 6 - NOT like-for-like - new engine documented less, so it is fast for the wrong reason]"`
+      `
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 0.05  [documented members 320 vs 6 - NOT like-for-like - new engine documented less, so it is fast for the wrong reason]"
+    `
     );
   });
 
@@ -90,6 +98,8 @@ describe('renderRatios', () => {
         renderRatios({
           vue: {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 4.1,
               legacyColdMembers: 90,
               nextColdMembers: 90,
@@ -100,7 +110,10 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(
-      `"  ratio cold legacy/new (vue/flat): 4.10  [documented members 90 vs 90 - NOT like-for-like - same members, but the new engine left more types unresolved]"`
+      `
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 4.10  [documented members 90 vs 90 - NOT like-for-like - same members, but the new engine left more types unresolved]"
+    `
     );
   });
 
@@ -110,6 +123,8 @@ describe('renderRatios', () => {
         renderRatios({
           vue: {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 1.2,
               warm: 1.1,
               legacyColdMembers: 50,
@@ -121,8 +136,9 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "  ratio cold legacy/new (vue/flat): 1.20  [documented members 50 vs 50]
-        ratio warm legacy/new (vue/flat): 1.10"
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 1.20  [documented members 50 vs 50]
+        ratio warm (vue-docgen-api over vue-component-meta, flat): 1.10"
     `);
   });
 
@@ -133,6 +149,8 @@ describe('renderRatios', () => {
         renderRatios({
           react: {
             default: {
+              legacyEngine: 'react-legacy',
+              nextEngine: 'react-osa',
               cold: 4,
               warm: 2,
               coldComparability: 'unknown',
@@ -142,8 +160,9 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "  ratio cold legacy/new (react/default): 4.00
-        ratio warm legacy/new (react/default): 2.00"
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (react-legacy over react-osa, default): 4.00
+        ratio warm (react-legacy over react-osa, default): 2.00"
     `);
   });
 
@@ -152,17 +171,28 @@ describe('renderRatios', () => {
       block(
         renderRatios({
           react: {
-            default: { cold: 4, coldComparability: 'unknown', warmComparability: 'unknown' },
+            default: {
+              legacyEngine: 'react-legacy',
+              nextEngine: 'react-osa',
+              cold: 4,
+              coldComparability: 'unknown',
+              warmComparability: 'unknown',
+            },
           },
         })
       )
-    ).toMatchInlineSnapshot(`"  ratio cold legacy/new (react/default): 4.00"`);
+    ).toMatchInlineSnapshot(`
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (react-legacy over react-osa, default): 4.00"
+    `);
   });
 
   it('renders every scenario of every pair', () => {
     const ratios: Ratios = {
       react: {
         default: {
+          legacyEngine: 'react-legacy',
+          nextEngine: 'react-osa',
           cold: 3.9,
           warm: 2.1,
           coldComparability: 'unknown',
@@ -170,15 +200,28 @@ describe('renderRatios', () => {
         },
       },
       vue: {
-        flat: { cold: 18.5, coldComparability: 'unknown', warmComparability: 'unknown' },
-        workspace: { cold: 21.2, coldComparability: 'unknown', warmComparability: 'unknown' },
+        flat: {
+          legacyEngine: 'vue-docgen-api',
+          nextEngine: 'vue-component-meta',
+          cold: 18.5,
+          coldComparability: 'unknown',
+          warmComparability: 'unknown',
+        },
+        workspace: {
+          legacyEngine: 'vue-docgen-api',
+          nextEngine: 'vue-component-meta',
+          cold: 21.2,
+          coldComparability: 'unknown',
+          warmComparability: 'unknown',
+        },
       },
     };
     expect(block(renderRatios(ratios))).toMatchInlineSnapshot(`
-      "  ratio cold legacy/new (react/default): 3.90
-        ratio warm legacy/new (react/default): 2.10
-        ratio cold legacy/new (vue/flat): 18.50
-        ratio cold legacy/new (vue/workspace): 21.20"
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (react-legacy over react-osa, default): 3.90
+        ratio warm (react-legacy over react-osa, default): 2.10
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 18.50
+        ratio cold (vue-docgen-api over vue-component-meta, workspace): 21.20"
     `);
   });
 
@@ -194,6 +237,8 @@ describe('renderRatios', () => {
         renderRatios({
           'vue-component-meta-version': {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 1.08,
               legacyVersion: '3.3.2',
               nextVersion: '3.3.8',
@@ -204,7 +249,10 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(
-      `"  ratio cold legacy/new (vue-component-meta-version/flat): 1.08  [3.3.2 vs 3.3.8]"`
+      `
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 1.08  [3.3.2 vs 3.3.8]"
+    `
     );
   });
 
@@ -216,6 +264,8 @@ describe('renderRatios', () => {
         renderRatios({
           'vue-component-meta-version': {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 1.0,
               legacyVersion: '3.3.8',
               nextVersion: '3.3.8',
@@ -226,7 +276,10 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(
-      `"  ratio cold legacy/new (vue-component-meta-version/flat): 1.00  [both sides resolved 3.3.8 - NOT a comparison]"`
+      `
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 1.00  [both sides resolved 3.3.8 - NOT a comparison]"
+    `
     );
   });
 
@@ -236,6 +289,8 @@ describe('renderRatios', () => {
         renderRatios({
           'vue-component-meta-version': {
             flat: {
+              legacyEngine: 'vue-docgen-api',
+              nextEngine: 'vue-component-meta',
               cold: 1.08,
               warm: 0.97,
               legacyColdMembers: 320,
@@ -249,8 +304,9 @@ describe('renderRatios', () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "  ratio cold legacy/new (vue-component-meta-version/flat): 1.08  [documented members 320 vs 320]  [3.3.2 vs 3.3.8]
-        ratio warm legacy/new (vue-component-meta-version/flat): 0.97  [3.3.2 vs 3.3.8]"
+      "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster
+        ratio cold (vue-docgen-api over vue-component-meta, flat): 1.08  [documented members 320 vs 320]  [3.3.2 vs 3.3.8]
+        ratio warm (vue-docgen-api over vue-component-meta, flat): 0.97  [3.3.2 vs 3.3.8]"
     `);
   });
 });

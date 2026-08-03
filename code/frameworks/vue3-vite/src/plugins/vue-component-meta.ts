@@ -26,8 +26,10 @@ type MetaSource = {
 export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
+  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
+  const exclude =
+    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -44,8 +46,21 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames = checker.getExportNames(id);
-          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
+          const exportNames: string[] = [];
+          let componentsMeta: ComponentMeta[] = [];
+
+          for (const name of checker.getExportNames(id)) {
+            try {
+              const meta = checker.getComponentMeta(id, name);
+              exportNames.push(name);
+              componentsMeta.push(meta);
+            } catch {}
+          }
+
+          if (componentsMeta.length === 0) {
+            return undefined;
+          }
+
           componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
 
           const metaSources: MetaSource[] = [];
@@ -144,7 +159,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           return {
             code: s.toString(),
-            map: s.generateMap({ hires: true, source: id }),
+            map: s.generateMap({ hires: true, source: id }).toString(),
           };
         } catch (e) {
           return undefined;
@@ -177,6 +192,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
     forceUseTs: true,
     noDeclarations: true,
     printer: { newLine: 1 },
+    schema: true,
   };
 
   const projectRoot = getProjectRoot();
@@ -301,6 +317,10 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
     // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
+    return;
+  }
+  if (schema.kind === 'literal') {
+    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
     return;
   }
   delete schema.schema;

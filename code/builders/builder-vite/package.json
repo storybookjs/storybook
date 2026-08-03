@@ -56,7 +56,7 @@
     "es-module-lexer": "^1.5.0",
     "glob": "^10.5.0",
     "knitwork": "^1.1.0",
-    "magic-string": "^0.30.0",
+    "magic-string": "^1.1.0",
     "pathe": "^1.1.2",
     "slash": "^5.0.0",
     "vite": "^7.0.4"

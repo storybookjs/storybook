@@ -40,7 +40,7 @@ export {
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Installs a `getService('core/module-graph')` mock backed by a real {@link ModuleGraphEngine}
+ * Installs a `getService('core/module-graph', { internal: true })` mock backed by a real {@link ModuleGraphEngine}
  * instance (for tests that call `graph.start(adapter)`).
  */
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {

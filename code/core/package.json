@@ -247,7 +247,7 @@
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",

@@ -1,0 +1,3 @@
+<template>
+  <SlotsShowcase heading="Plain"> Plain text content </SlotsShowcase>
+</template>

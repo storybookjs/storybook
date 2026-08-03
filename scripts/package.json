@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
-    "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
     "build-package": "jiti ./build-package.ts",
     "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
@@ -143,6 +142,7 @@
     "simple-git": "^3.30.0",
     "slash": "^3.0.0",
     "sort-package-json": "^3.5.0",
+    "storybook": "workspace:*",
     "tiny-invariant": "^1.3.3",
     "tinyexec": "^0.3.0",
     "tinyglobby": "^0.2.15",

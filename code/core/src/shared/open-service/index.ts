@@ -8,6 +8,18 @@
 export { defineService } from './service-definition.ts';
 export { seedQueryState } from './query-state.ts';
 
+export { defineToolset } from './toolset-definition.ts';
+export type {
+  AnyToolsetDefinition,
+  ToolsetConsumer,
+  ToolsetCtx,
+  ToolsetDefinition,
+  ToolsetFormat,
+  ToolsetGetService,
+  ToolsetMethod,
+} from './toolset-definition.ts';
+export { getRegisteredToolsets, registerToolset } from './toolset-registry.ts';
+
 export type { DocgenService } from './services/docgen/definition.ts';
 export type { DocgenPayload } from './services/docgen/types.ts';
 export type { StoryDocsService } from './services/story-docs/definition.ts';

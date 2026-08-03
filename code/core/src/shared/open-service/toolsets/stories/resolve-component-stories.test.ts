@@ -1,20 +1,23 @@
-import fs from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-import { vol } from 'memfs';
 import type { StoryIndex } from 'storybook/internal/types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ModuleGraphStatus, ModuleGraphStoryHit } from './module-graph.ts';
+import { vol } from 'memfs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Static import would freeze the mock target before each test gets a chance
-// to swap the underlying core-server module. We dynamically `import()` after
-// `vi.doMock` instead — see each test below.
+import type {
+  ModuleGraphAccess,
+  ModuleGraphStatus,
+  ModuleGraphStoryHit,
+  ResolveComponentStoriesDeps,
+} from './resolve-component-stories.ts';
+import { resolveComponentStories } from './resolve-component-stories.ts';
 
 vi.mock('node:fs', { spy: true });
 
 // `path.resolve` gives the fixture a drive letter on Windows, matching what the
-// resolver's own `path.resolve(workingDir, …)` produces there.
+// resolver's own `resolve(workingDir, …)` produces there.
 const FAKE_WORKING_DIR = path.resolve('/repo');
 const BADGE_ABS = path.join(FAKE_WORKING_DIR, 'src/components/Badge/Badge.tsx');
 const BADGE_BARREL = path.join(FAKE_WORKING_DIR, 'src/components/Badge/index.ts');
@@ -24,27 +27,23 @@ const asGraphPath = (p: string) => path.normalize(p).replaceAll('\\', '/');
 const storyFileAbs = (rel: string) => path.join(FAKE_WORKING_DIR, rel);
 
 /**
- * Mocks the `core/module-graph` open service via `getService`. `storiesByFile` keys are the
- * forward-slashed absolute input paths the resolver looks up; values are the relative story-file
- * hits the module graph returns for them.
+ * Stubs the module-graph service surface. `storiesByFile` keys are the forward-slashed absolute
+ * input paths the resolver looks up; values are the relative story-file hits the graph returns.
  */
-function setupService(opts: {
+function moduleGraphStub(opts: {
   status?: ModuleGraphStatus;
   storiesByFile?: Record<string, ModuleGraphStoryHit[]>;
-}) {
+}): ModuleGraphAccess {
   const status: ModuleGraphStatus = opts.status ?? { value: 'ready' };
   const storiesByFile = opts.storiesByFile ?? {};
-  const stub = {
+  return {
     queries: {
       status: { loaded: async () => status },
       storiesForFiles: {
-        loaded: async ({ files }: { files: string[] }) => files.map((f) => storiesByFile[f] ?? []),
+        loaded: async ({ files }) => files.map((file) => storiesByFile[file] ?? []),
       },
     },
   };
-  vi.doMock('storybook/internal/core-server', () => ({
-    getService: () => stub,
-  }));
 }
 
 function buildStoryIndex(byFile: Record<string, string[]>): StoryIndex {
@@ -66,24 +65,21 @@ function buildStoryIndex(byFile: Record<string, string[]>): StoryIndex {
   return { v: 5, entries };
 }
 
-function depsFor(byFile: Record<string, string[]> = {}, workingDir = FAKE_WORKING_DIR) {
+function depsFor(
+  byFile: Record<string, string[]> = {},
+  moduleGraph: ModuleGraphAccess | undefined = moduleGraphStub({})
+): ResolveComponentStoriesDeps {
   const index = buildStoryIndex(byFile);
-  return { getStoryIndex: async () => index, workingDir };
+  return { getStoryIndex: async () => index, moduleGraph, workingDir: FAKE_WORKING_DIR };
 }
 
 beforeEach(() => {
-  vi.resetModules();
   vol.reset();
   vol.fromNestedJSON({ [BADGE_ABS]: '' });
-  vi.mocked(fs.existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
-  vi.mocked(fs.realpathSync.native).mockImplementation((filePath) =>
+  vi.mocked(existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(realpathSync.native).mockImplementation((filePath) =>
     String(vol.realpathSync(filePath))
   );
-});
-
-afterEach(() => {
-  vi.resetModules();
-  vi.doUnmock('storybook/internal/core-server');
 });
 
 describe('resolveComponentStories', () => {
@@ -92,23 +88,25 @@ describe('resolveComponentStories', () => {
     // `Badge/Badge.tsx/`, the trailing slash flipped `basename === dirname`
     // in the barrel-expansion heuristic and we returned stories that
     // consumed the *barrel* (`Badge/index.ts`) instead of `Badge.tsx`.
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: {
         [asGraphPath(BADGE_ABS)]: [
           { storyFile: './src/A.stories.tsx', depth: 1 },
           { storyFile: './src/B.stories.tsx', depth: 2 },
         ],
-        [asGraphPath(BADGE_BARREL)]: [{ storyFile: './src/C.stories.tsx', depth: 1 }], // unrelated barrel consumer
+        [asGraphPath(BADGE_BARREL)]: [{ storyFile: './src/C.stories.tsx', depth: 1 }],
       },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [`${BADGE_ABS}/`] },
-      depsFor({
-        [storyFileAbs('src/A.stories.tsx')]: ['a--default'],
-        [storyFileAbs('src/B.stories.tsx')]: ['b--default'],
-        [storyFileAbs('src/C.stories.tsx')]: ['c--default'],
-      })
+      depsFor(
+        {
+          [storyFileAbs('src/A.stories.tsx')]: ['a--default'],
+          [storyFileAbs('src/B.stories.tsx')]: ['b--default'],
+          [storyFileAbs('src/C.stories.tsx')]: ['c--default'],
+        },
+        graph
+      )
     );
     expect(res.available).toBe(true);
     expect(res.results?.[0]?.matches.map((m) => m.storyId).sort()).toEqual([
@@ -120,25 +118,23 @@ describe('resolveComponentStories', () => {
   });
 
   it('resolves relative paths against the workingDir', async () => {
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: ['src/components/Badge/Badge.tsx'] },
-      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
     );
     expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
   });
 
   it('normalizes redundant slashes (`/services//webapp/`)', async () => {
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [`${FAKE_WORKING_DIR}${path.sep}src//components/Badge/Badge.tsx`] },
-      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
     );
     expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
   });
@@ -146,22 +142,20 @@ describe('resolveComponentStories', () => {
   it('maps `./`-less story index importPaths to the relative hits the module graph returns', async () => {
     // The story index here uses `src/A.stories.tsx` (no `./`); the module graph returns
     // `./src/A.stories.tsx`. The resolver normalizes both to the same form so they line up.
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 3 }] },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [BADGE_ABS] },
-      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
     );
     expect(res.results?.[0]?.matches).toEqual([{ storyId: 'a--default', depth: 3 }]);
   });
 
   it('skips virtual: importPath entries when building the file→storyIds map', async () => {
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const indexWithVirtual: StoryIndex = {
       v: 5,
       entries: {
@@ -187,7 +181,11 @@ describe('resolveComponentStories', () => {
     };
     const res = await resolveComponentStories(
       { componentPaths: [BADGE_ABS] },
-      { getStoryIndex: async () => indexWithVirtual, workingDir: FAKE_WORKING_DIR }
+      {
+        getStoryIndex: async () => indexWithVirtual,
+        moduleGraph: graph,
+        workingDir: FAKE_WORKING_DIR,
+      }
     );
     expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
   });
@@ -196,24 +194,77 @@ describe('resolveComponentStories', () => {
     // `Badge/Badge.tsx` ↔ `Badge/index.ts`: both reach `A.stories.tsx`, but via different
     // depths. The merge must keep the shorter (barrel) path's depth.
     vol.fromNestedJSON({ [BADGE_BARREL]: '' });
-    setupService({
+    const graph = moduleGraphStub({
       storiesByFile: {
         [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 2 }],
         [asGraphPath(BADGE_BARREL)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }],
       },
     });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories(
       { componentPaths: [BADGE_ABS] },
-      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] })
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
     );
     expect(res.results?.[0]?.matches).toEqual([{ storyId: 'a--default', depth: 1 }]);
   });
 
+  it('canonicalises wrong-case input so case-insensitive filesystems still hit the index', async () => {
+    const wrongCase = path.join(FAKE_WORKING_DIR, 'src/components/BADGE/Badge.tsx');
+    vi.mocked(realpathSync.native).mockImplementation((filePath) =>
+      asGraphPath(String(filePath)) === asGraphPath(wrongCase)
+        ? BADGE_ABS
+        : String(vol.realpathSync(filePath))
+    );
+    // Only the canonical spelling is a key in the reverse index.
+    const graph = moduleGraphStub({
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
+    });
+    const res = await resolveComponentStories(
+      { componentPaths: [wrongCase] },
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
+    );
+    expect(res.results?.[0]?.matches).toEqual([{ storyId: 'a--default', depth: 1 }]);
+  });
+
+  it('dedupes repeated component paths into a single result', async () => {
+    const graph = moduleGraphStub({
+      storiesByFile: { [asGraphPath(BADGE_ABS)]: [{ storyFile: './src/A.stories.tsx', depth: 1 }] },
+    });
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS, BADGE_ABS] },
+      depsFor({ [storyFileAbs('src/A.stories.tsx')]: ['a--default'] }, graph)
+    );
+    expect(res.results).toHaveLength(1);
+    expect(res.results?.[0]?.matches.map((m) => m.storyId)).toEqual(['a--default']);
+  });
+
+  it('sorts matches by depth, then by story id', async () => {
+    const graph = moduleGraphStub({
+      storiesByFile: {
+        [asGraphPath(BADGE_ABS)]: [
+          { storyFile: './src/A.stories.tsx', depth: 2 },
+          { storyFile: './src/B.stories.tsx', depth: 1 },
+        ],
+      },
+    });
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS] },
+      depsFor(
+        {
+          [storyFileAbs('src/A.stories.tsx')]: ['b--second', 'a--first'],
+          [storyFileAbs('src/B.stories.tsx')]: ['z--closest'],
+        },
+        graph
+      )
+    );
+    expect(res.results?.[0]?.matches).toEqual([
+      { storyId: 'z--closest', depth: 1 },
+      { storyId: 'a--first', depth: 2 },
+      { storyId: 'b--second', depth: 2 },
+    ]);
+  });
+
   it('flags pathNotFound when the component file does not exist on disk', async () => {
     const ghost = path.join(FAKE_WORKING_DIR, 'src/components/Ghost/Ghost.tsx');
-    setupService({ storiesByFile: {} });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     const res = await resolveComponentStories({ componentPaths: [ghost] }, depsFor());
     expect(res.available).toBe(true);
     expect(res.results?.[0]?.pathNotFound).toBe(true);
@@ -224,63 +275,61 @@ describe('resolveComponentStories', () => {
     // A permission/IO error is a real failure, not a missing path — surfacing it as
     // `pathNotFound` would hide the underlying cause, so the resolver must let it propagate.
     const locked = path.join(FAKE_WORKING_DIR, 'src/components/Locked/Locked.tsx');
-    vi.mocked(fs.realpathSync.native).mockImplementation((filePath) => {
-      if (filePath === locked) {
+    vi.mocked(realpathSync.native).mockImplementation((filePath) => {
+      if (asGraphPath(String(filePath)) === asGraphPath(locked)) {
         throw Object.assign(new Error(`EACCES: ${locked}`), { code: 'EACCES' });
       }
       return String(vol.realpathSync(filePath));
     });
-    setupService({ storiesByFile: {} });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
     await expect(resolveComponentStories({ componentPaths: [locked] }, depsFor())).rejects.toThrow(
       /EACCES/
     );
   });
 
   it('returns available:false when the module graph service is not registered', async () => {
-    vi.doMock('storybook/internal/core-server', () => ({
-      getService: () => {
-        throw new Error('service core/module-graph is not registered');
-      },
-    }));
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
-    const res = await resolveComponentStories({ componentPaths: [BADGE_ABS] }, depsFor());
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS] },
+      { ...depsFor(), moduleGraph: undefined }
+    );
     expect(res.available).toBe(false);
     expect(res.reason).toMatch(/module graph is unavailable/i);
-  });
-
-  it('returns available:false on older Storybook versions that lack the open-service API', async () => {
-    // Backwards-compat path: the module loads but `getService` is undefined (older Storybook).
-    // The dynamic-import probe must treat this identically to "service unavailable".
-    vi.doMock('storybook/internal/core-server', () => ({}));
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
-    const res = await resolveComponentStories({ componentPaths: [BADGE_ABS] }, depsFor());
-    expect(res.available).toBe(false);
-    expect(res.reason).toMatch(/module graph is unavailable/i);
+    expect(res.results).toBeUndefined();
   });
 
   it('returns available:false while the graph is still booting', async () => {
-    setupService({ status: { value: 'booting' } });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
-    const res = await resolveComponentStories({ componentPaths: [BADGE_ABS] }, depsFor());
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS] },
+      depsFor({}, moduleGraphStub({ status: { value: 'booting' } }))
+    );
     expect(res.available).toBe(false);
     expect(res.reason).toMatch(/hasn't built yet/i);
   });
 
-  it('returns available:false with the service-provided reason when unavailable', async () => {
-    setupService({
-      status: { value: 'unavailable', reason: 'builder does not support change detection' },
-    });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
-    const res = await resolveComponentStories({ componentPaths: [BADGE_ABS] }, depsFor());
+  it('returns available:false with the remedy the agent needs when unavailable', async () => {
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS] },
+      depsFor(
+        {},
+        moduleGraphStub({
+          status: { value: 'unavailable', reason: 'builder does not support change detection' },
+        })
+      )
+    );
     expect(res.available).toBe(false);
-    expect(res.reason).toMatch(/does not support change detection/);
+    // The service's cause plus the remedy: the agent is told what failed and what to change.
+    expect(res.reason).toBe(
+      "Storybook's story dependency graph is unavailable: builder does not support change detection. Make sure the dev server is running with a builder that supports change detection."
+    );
   });
 
   it('returns available:false with the serialized error message when the graph errored', async () => {
-    setupService({ status: { value: 'error', error: { message: 'boom while parsing' } } });
-    const { resolveComponentStories } = await import('./resolve-component-stories.ts');
-    const res = await resolveComponentStories({ componentPaths: [BADGE_ABS] }, depsFor());
+    const res = await resolveComponentStories(
+      { componentPaths: [BADGE_ABS] },
+      depsFor(
+        {},
+        moduleGraphStub({ status: { value: 'error', error: { message: 'boom while parsing' } } })
+      )
+    );
     expect(res.available).toBe(false);
     expect(res.reason).toMatch(/boom while parsing/);
   });

@@ -1,4 +1,5 @@
 import { logger } from 'storybook/internal/node-logger';
+import { OpenServiceModuleGraphUnavailableError } from 'storybook/internal/server-errors';
 import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/open-service';
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -156,6 +157,24 @@ describe('toolset-backed MCP tools', () => {
     await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
 
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces an unavailable module graph verbatim, without the generic error prefix', async () => {
+    registerStubStoriesToolset({
+      handler: () => {
+        throw new OpenServiceModuleGraphUnavailableError({
+          reason:
+            "Storybook's story module graph hasn't built yet — it is still being constructed.",
+        });
+      },
+    });
+
+    const result = await callToolsetMethod(makeServer(), previewOptions, { id: 'x' });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBe(
+      "Storybook's story module graph hasn't built yet — it is still being constructed."
+    );
   });
 
   it('selects verbatim surfacing by the agentFacing trait, not an adapter class list', async () => {

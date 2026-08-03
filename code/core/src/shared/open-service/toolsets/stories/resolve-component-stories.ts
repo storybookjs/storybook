@@ -1,15 +1,43 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { existsSync, realpathSync } from 'node:fs';
+
 import type { StoryIndex } from 'storybook/internal/types';
-import {
-  getModuleGraphService,
-  type ModuleGraphStatus,
-  type ModuleGraphStoryHit,
-} from './module-graph.ts';
-import { slash } from './slash.ts';
+
+import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
+
+import type { ModuleGraphServiceState } from '../../services/module-graph/definition.ts';
+
+/** Lifecycle status reported by the `core/module-graph` service. */
+export type ModuleGraphStatus = ModuleGraphServiceState['status'];
+
+/** One reverse-index hit: a story file (story-index-relative path) and its BFS import depth. */
+export type ModuleGraphStoryHit = {
+  /** Story-index-style relative path such as `./src/Button.stories.tsx`. */
+  storyFile: string;
+  /** Breadth-first-search depth: shortest number of import edges to the story file. */
+  depth: number;
+};
+
+/**
+ * The slice of the `core/module-graph` service this resolver needs. Structural so the caller can
+ * inject the real service (or a stub) without this module doing service lookup itself.
+ */
+export type ModuleGraphAccess = {
+  queries: {
+    status: { loaded: (input?: undefined) => Promise<ModuleGraphStatus> };
+    /** Positional: result `i` corresponds to input `files[i]`. */
+    storiesForFiles: {
+      loaded: (input: { files: string[] }) => Promise<Array<ModuleGraphStoryHit[] | undefined>>;
+    };
+  };
+};
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);
+
+/** Storybook import paths always use forward slashes, even on Windows. */
+function slash(filePath: string): string {
+  return filePath.replace(/\\/g, '/');
+}
 
 /**
  * Expands `Foo/Foo.tsx` ↔ `Foo/index.tsx` so a query against either form hits stories that
@@ -18,26 +46,30 @@ const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);
  */
 function expandBarrelTargets(absoluteComponentPath: string): string[] {
   const targets = new Set<string>([absoluteComponentPath]);
-  const dir = path.dirname(absoluteComponentPath);
-  const ext = path.extname(absoluteComponentPath);
-  const base = path.basename(absoluteComponentPath, ext);
-  const dirName = path.basename(dir);
+  const dir = dirname(absoluteComponentPath);
+  const ext = extname(absoluteComponentPath);
+  const base = basename(absoluteComponentPath, ext);
+  const dirName = basename(dir);
 
   if (base.toLowerCase() === 'index') {
     for (const candidateExt of SOURCE_EXTENSIONS) {
-      const candidate = path.join(dir, `${dirName}${candidateExt}`);
-      if (fs.existsSync(candidate)) targets.add(candidate);
+      const candidate = join(dir, `${dirName}${candidateExt}`);
+      if (existsSync(candidate)) {
+        targets.add(candidate);
+      }
     }
   } else if (base.toLowerCase() === dirName.toLowerCase()) {
     for (const indexBasename of INDEX_BASENAMES) {
-      const candidate = path.join(dir, indexBasename);
-      if (fs.existsSync(candidate)) targets.add(candidate);
+      const candidate = join(dir, indexBasename);
+      if (existsSync(candidate)) {
+        targets.add(candidate);
+      }
     }
   }
 
-  // The module graph accepts absolute paths but normalizes them with forward slashes, so emit
-  // forward slashes even on Windows where `path.normalize` would produce backslashes.
-  return [...targets].map((p) => slash(path.normalize(p)));
+  // The module graph accepts absolute paths but normalizes them with forward slashes; `pathe`'s
+  // `normalize` emits forward slashes on Windows too, including for `realpath` output.
+  return [...targets].map((target) => normalize(target));
 }
 
 /**
@@ -50,11 +82,13 @@ function expandBarrelTargets(absoluteComponentPath: string): string[] {
  */
 function canonicalise(absolutePath: string): string | undefined {
   try {
-    return fs.realpathSync.native(absolutePath);
+    return realpathSync.native(absolutePath);
   } catch (err) {
     // Only a missing path is "not found"; permission/IO errors are real failures and must not be
     // silently misreported as `pathNotFound`, so rethrow anything that isn't ENOENT.
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return undefined;
+    }
     throw err;
   }
 }
@@ -64,9 +98,11 @@ function canonicalise(absolutePath: string): string | undefined {
  * returns for its story files (e.g. `./src/Button.stories.tsx`). The module graph keys story files
  * this way, so we match on it instead of the absolute path.
  */
-function toStoryIndexPath(importPath: string): string {
+function toStoryFileKey(importPath: string): string {
   const normalized = slash(importPath);
-  if (normalized.startsWith('./') || normalized.startsWith('../')) return normalized;
+  if (normalized.startsWith('./') || normalized.startsWith('../')) {
+    return normalized;
+  }
   return `./${normalized}`;
 }
 
@@ -77,8 +113,10 @@ function toStoryIndexPath(importPath: string): string {
 function buildStoryIdsByFile(storyIndex: StoryIndex): Map<string, Set<string>> {
   const storyIdsByFile = new Map<string, Set<string>>();
   for (const entry of Object.values(storyIndex.entries)) {
-    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) continue;
-    const filePath = toStoryIndexPath(entry.importPath);
+    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
+      continue;
+    }
+    const filePath = toStoryFileKey(entry.importPath);
     let ids = storyIdsByFile.get(filePath);
     if (!ids) {
       ids = new Set<string>();
@@ -95,7 +133,10 @@ function reasonForStatus(status: ModuleGraphStatus): string {
     case 'booting':
       return "Storybook's story module graph hasn't built yet — it is still being constructed. Retry shortly.";
     case 'unavailable':
-      return `Storybook's story module graph is unavailable: ${status.reason}`;
+      // The service's own reason names the adapter-specific cause; the remedy sentence stays
+      // appended because the agent's next move is to check how the dev server runs, which that
+      // reason does not say.
+      return `Storybook's story dependency graph is unavailable: ${status.reason}. Make sure the dev server is running with a builder that supports change detection.`;
     case 'error':
       return `Storybook's story module graph failed to build: ${status.error.message}`;
     case 'ready':
@@ -117,7 +158,7 @@ export interface ComponentStoryDepth {
 }
 
 export interface ComponentStoriesResult {
-  /** Echoes the caller's input path, lightly normalized (trailing slashes etc. stripped). */
+  /** Echoes the caller's input path, lightly normalized (redundant separators etc. collapsed). */
   componentPath: string;
   matches: ComponentStoryDepth[];
   /** `true` when no file exists at the resolved absolute path — distinguishes "typo" from "no stories yet". */
@@ -133,6 +174,11 @@ export interface ComponentStoriesResponse {
 export interface ResolveComponentStoriesDeps {
   /** Live story index; injectable so tests can pin a fixed value. */
   getStoryIndex: () => Promise<StoryIndex>;
+  /**
+   * The `core/module-graph` service, or `undefined` when it isn't registered in this process (e.g.
+   * a builder without change detection, or an older Storybook without the open-service API).
+   */
+  moduleGraph: ModuleGraphAccess | undefined;
   /** Defaults to `process.cwd()`, matching the dev server. */
   workingDir?: string;
 }
@@ -149,12 +195,16 @@ interface ResolvedComponent {
 /**
  * Looks up stories that consume each component path via Storybook's `core/module-graph` reverse
  * index. Returns `{ available: false }` when the graph isn't ready; otherwise per-path results.
+ *
+ * The unavailable/booting/error cases are reported rather than flattened into "no matches" so a
+ * caller can't mistake an unsupported builder or a still-booting graph for "this component is
+ * unused".
  */
 export async function resolveComponentStories(
   request: ComponentStoriesRequest,
   deps: ResolveComponentStoriesDeps
 ): Promise<ComponentStoriesResponse> {
-  const moduleGraph = await getModuleGraphService();
+  const { moduleGraph } = deps;
   if (!moduleGraph) {
     return {
       available: false,
@@ -181,12 +231,12 @@ export async function resolveComponentStories(
   const resolved: ResolvedComponent[] = deduped.map((componentPath) => {
     // Normalize first: a trailing slash on `/abs/Badge/Badge.tsx/` would otherwise flip the
     // barrel-expansion heuristic and silently return barrel consumers instead of the file.
-    const absolute = path.resolve(workingDir, componentPath);
+    const absolute = resolve(workingDir, componentPath);
     const canonical = canonicalise(absolute);
 
-    // Echo a cleaned-up form of the input (no trailing slash / `..` segments) rather than the raw
-    // string. Keeps relative paths relative and absolute paths absolute.
-    const echo = path.normalize(componentPath);
+    // Echo a cleaned-up form of the input (no redundant separators / `..` segments) rather than the
+    // raw string. Keeps relative paths relative and absolute paths absolute.
+    const echo = normalize(componentPath);
 
     if (!canonical) {
       return { componentPath: echo, targets: [], pathNotFound: true };
@@ -197,14 +247,16 @@ export async function resolveComponentStories(
     // the graph regardless of which form the caller supplied.
     const targets = new Set<string>(expandBarrelTargets(absolute));
     if (canonical !== absolute) {
-      for (const t of expandBarrelTargets(canonical)) targets.add(t);
+      for (const target of expandBarrelTargets(canonical)) {
+        targets.add(target);
+      }
     }
 
     return { componentPath: echo, targets: [...targets] };
   });
 
   // Phase 2: one batched reverse-index lookup over the union of every component's targets.
-  const allTargets = [...new Set(resolved.flatMap((c) => c.targets))];
+  const allTargets = [...new Set(resolved.flatMap((component) => component.targets))];
   const hitsByTarget = new Map<string, ModuleGraphStoryHit[]>();
   if (allTargets.length > 0) {
     const batched = await moduleGraph.queries.storiesForFiles.loaded({ files: allTargets });
@@ -225,10 +277,14 @@ export async function resolveComponentStories(
       const hits = hitsByTarget.get(target) ?? [];
       for (const { storyFile, depth } of hits) {
         const storyIds = storyIdsByFile.get(storyFile);
-        if (!storyIds) continue;
+        if (!storyIds) {
+          continue;
+        }
         for (const storyId of storyIds) {
           const existing = byStoryId.get(storyId);
-          if (existing === undefined || depth < existing) byStoryId.set(storyId, depth);
+          if (existing === undefined || depth < existing) {
+            byStoryId.set(storyId, depth);
+          }
         }
       }
     }
@@ -236,7 +292,9 @@ export async function resolveComponentStories(
     const matches: ComponentStoryDepth[] = [...byStoryId.entries()]
       .map(([storyId, depth]) => ({ storyId, depth }))
       .sort((a, b) => {
-        if (a.depth !== b.depth) return a.depth - b.depth;
+        if (a.depth !== b.depth) {
+          return a.depth - b.depth;
+        }
         return a.storyId.localeCompare(b.storyId);
       });
 

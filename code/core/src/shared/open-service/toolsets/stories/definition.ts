@@ -2,13 +2,17 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import * as v from 'valibot';
 
-import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
+import {
+  OpenServiceMissingOriginError,
+  OpenServiceModuleGraphUnavailableError,
+} from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getRef } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
-import { findStoriesByComponent } from './find-by-component.ts';
+import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
+import type { ModuleGraphStatus } from './resolve-component-stories.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
@@ -67,28 +71,44 @@ const storyMatchSchema = v.object({
   distance: v.pipe(
     v.number(),
     v.description(
-      'Import-graph depth from the story file to the component. 0 = path is a story file; 1 = direct import; 2+ = transitive.'
+      'Import-graph depth from the story file to the component (lower = stronger). 0: the path you passed is itself a story file (self-match). 1: story file directly imports the component. 2+: reached through N hops.'
     )
   ),
 });
+
+const clippedByMaxDistanceSchema = v.pipe(
+  v.object({
+    count: v.number(),
+    distances: v.array(v.number()),
+  }),
+  v.description(
+    'Present only when `maxDistance` filtered out one or more matches. `count` is how many were dropped; `distances` lists the (sorted, distinct) distances those dropped matches sat at — widen `maxDistance` to include them.'
+  )
+);
 
 const findByComponentOutputSchema = v.object({
   results: v.array(
     v.object({
       componentPath: v.string(),
       matches: v.array(storyMatchSchema),
-      clipped: v.optional(
-        v.object({
-          count: v.number(),
-          distances: v.array(v.number()),
-        })
+      clipped: v.optional(clippedByMaxDistanceSchema),
+      pathNotFound: v.pipe(
+        v.optional(v.boolean()),
+        v.description(
+          '`true` when no file exists at the resolved absolute path. Distinguishes a typo from "this component has no stories yet". The agent should re-check the path it sent.'
+        )
       ),
-      pathNotFound: v.optional(v.boolean()),
     })
   ),
 });
 
-export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
+/**
+ * `maxDistance` echoes the ceiling actually applied so formatters can name it; it is deliberately
+ * absent from {@link findByComponentOutputSchema}, which is the published output contract.
+ */
+export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema> & {
+  maxDistance: number;
+};
 
 export type StoryIndexAccess = {
   getIndex: () => Promise<StoryIndex>;
@@ -122,6 +142,29 @@ function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
 The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getRef(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
+}
+
+function describeFindByComponent(ctx: ToolsetCtx, reviewEnabled: boolean): string {
+  const ref = getRef(ctx);
+  const handOffTargets = reviewEnabled
+    ? `${ref('stories.preview')} or ${ref('review.create')}`
+    : ref('stories.preview');
+  const inputShapes = reviewEnabled
+    ? `files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change`
+    : `files you just edited, a feature/domain/topic the user named, or a query like "all consumers of X"`;
+  const cascadeGuidance = reviewEnabled
+    ? `For ${ref('review.create')}, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`
+    : `The distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — use them to decide which stories to preview; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`;
+
+  return `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${handOffTargets} instead of guessing.
+
+Reach for this whenever you need story IDs, whatever shape the input has: ${inputShapes}. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`${ref('stories.changed')}\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
+
+Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: ${DEFAULT_MAX_DISTANCE}\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. ${cascadeGuidance}
+
+Never invent IDs from file names, feature names, or memory; title strings can be overridden by story authors, so only IDs returned by discovery tools resolve. If a component has no matches here, it has no stories yet (say so, don't fabricate).
+
+Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
 }
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
@@ -194,26 +237,69 @@ export function createStoriesToolset({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),
-            v.description('Component file paths (absolute preferred).')
+            v.description(
+              `Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
+Pass the components you actually want stories for — typically files you just read, edited, or that the user mentioned.
+Relative paths are also accepted and resolved against the Storybook working directory, but absolute paths are preferred for unambiguous results.
+Story files (\`*.stories.*\`) are accepted too: they appear at distance 0 as self-matches, plus any reverse-graph hits (other stories that import them).`
+            )
           ),
           maxDistance: v.pipe(
             v.optional(v.pipe(v.number(), v.minValue(1), v.integer())),
-            v.description('Maximum import-graph distance to include. Defaults to 3.')
+            v.description(
+              `Ceiling on the import depth to include in results. Must be a positive integer.
+- 1: only stories that directly import the component.
+- 2+: also include stories that reach the component through N hops.
+Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tighten precision. Shared components (Button, Icon, …) accumulate noisy indirect matches at distance ≥ 3, so the default cap protects against runaway results.`
+            )
           ),
         }),
-        description: 'Finds stories that import the given component paths via the module graph.',
+        outputSchema: findByComponentOutputSchema,
+        description: (ctx) => describeFindByComponent(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
           const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
-          const index = await storyIndex.getIndex();
-          const data = await findStoriesByComponent({
+          const maxDistance = input.maxDistance ?? DEFAULT_MAX_DISTANCE;
+          const lookup = await findStoriesByComponent({
             componentPaths: input.componentPaths,
-            maxDistance: input.maxDistance,
-            index,
-            moduleGraph,
+            maxDistance,
+            index: await storyIndex.getIndex(),
+            // The service handle carries commands and a looser status payload than the lookup
+            // needs; this narrows it to the two queries the reverse-index walk actually calls.
+            moduleGraph: {
+              queries: {
+                status: {
+                  loaded: () =>
+                    moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+                },
+                storiesForFiles: {
+                  loaded: (files: { files: string[] }) =>
+                    moduleGraph.queries.storiesForFiles.loaded(files),
+                },
+              },
+            },
           });
-          return { ok: true, data, markdown: formatFindByComponent(data) };
+
+          if (!lookup.available) {
+            throw new OpenServiceModuleGraphUnavailableError({ reason: lookup.reason });
+          }
+
+          const unmatchedCount = lookup.results.filter(
+            (result) => !result.pathNotFound && result.matches.length === 0
+          ).length;
+          await ctx.telemetry?.('tool:getStoriesByComponent', {
+            componentCount: input.componentPaths.length,
+            matchedComponentCount: input.componentPaths.length - unmatchedCount,
+            totalMatchCount: lookup.results.reduce(
+              (total, result) => total + result.matches.length,
+              0
+            ),
+            maxDistance,
+          });
+
+          const data: FindByComponentOutput = { results: lookup.results, maxDistance };
+          return { ok: true, data, markdown: formatFindByComponent(data, ctx) };
         },
       },
     },

@@ -379,6 +379,26 @@ export class OpenServiceDuplicateToolsetError extends StorybookError {
 }
 
 /**
+ * The story module graph cannot answer a query right now (still building, unsupported builder, or
+ * a build failure).
+ *
+ * Its `message` is written for the agent that triggered the lookup and names the recovery, which
+ * is what `agentFacing` declares: adapters surface it verbatim rather than wrapping it as an
+ * unexpected failure.
+ */
+export class OpenServiceModuleGraphUnavailableError extends StorybookError {
+  constructor(public data: { reason: string }) {
+    super({
+      name: 'OpenServiceModuleGraphUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 25,
+      message: data.reason,
+      agentFacing: true,
+    });
+  }
+}
+
+/**
  * A toolset method returned data its own published `outputSchema` rejects.
  *
  * Always a bug in the method: the schema is the contract adapters publish to their clients, so the

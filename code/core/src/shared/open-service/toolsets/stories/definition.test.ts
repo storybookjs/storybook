@@ -1,13 +1,14 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { vol } from 'memfs';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
-import { vol } from 'memfs';
 
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import { OpenServiceModuleGraphUnavailableError } from '../../../../server-errors.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
 import { createStoriesToolset, type StoriesToolset } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -30,6 +31,8 @@ const index = {
 const repoRoot = '/repo';
 const storybookWorkingDir = '/repo/packages/ui';
 const componentPath = `${storybookWorkingDir}/src/Button.tsx`;
+/** On disk, but no story reaches it — the "component without stories yet" case. */
+const orphanPath = `${storybookWorkingDir}/src/Orphan.tsx`;
 const themePath = `${storybookWorkingDir}/src/theme.ts`;
 // Git reports paths relative to the repository root, and the response echoes them in that form.
 const changedComponentFile = 'packages/ui/src/Button.tsx';
@@ -66,8 +69,27 @@ function createToolset({ reviewEnabled = false } = {}): StoriesToolset {
   return createStoriesToolset({ storyIndex, git, changeStatuses, reviewEnabled });
 }
 
+function runPreview(
+  stories: Array<Record<string, unknown>>,
+  ctx: ToolsetCtx = cliCtx,
+  target: StoriesToolset = toolset
+) {
+  return target.methods.preview.handler(v.parse(target.methods.preview.schema, { stories }), ctx);
+}
+
 function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
   return target.methods.changed.handler(v.parse(target.methods.changed.schema, {}), ctx);
+}
+
+function runFindByComponent(
+  input: Record<string, unknown>,
+  ctx: ToolsetCtx = cliCtx,
+  target: StoriesToolset = toolset
+) {
+  return target.methods.findByComponent.handler(
+    v.parse(target.methods.findByComponent.schema, input),
+    ctx
+  );
 }
 
 /** Marks a changed file as reachable from a story, which keeps it out of `unreachableFiles`. */
@@ -81,13 +103,14 @@ function markChanged(storyId: string, value: string) {
   };
 }
 
-beforeEach(async () => {
-  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-
+beforeEach(() => {
   vi.clearAllMocks();
   vol.reset();
-  vol.fromNestedJSON({ [componentPath]: '' });
-  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
+  vol.fromNestedJSON({ [componentPath]: '', [orphanPath]: '' });
+  vi.mocked(existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(realpathSync.native).mockImplementation((filePath) =>
+    String(vol.realpathSync(filePath))
+  );
   cwd.mockReturnValue(storybookWorkingDir);
   statusesFixture = {};
   graphMatchesByFile = new Map([[componentPath, [buttonStoryHit]]]);
@@ -119,10 +142,7 @@ afterAll(() => {
 
 describe('stories.preview', () => {
   it('resolves story ids against the live index', async () => {
-    const outcome = await toolset.methods.preview.handler(
-      v.parse(toolset.methods.preview.schema, { stories: [{ storyId: 'button--primary' }] }),
-      cliCtx
-    );
+    const outcome = await runPreview([{ storyId: 'button--primary' }]);
 
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
@@ -138,10 +158,7 @@ describe('stories.preview', () => {
   });
 
   it('renders compact Markdown preview URLs', async () => {
-    const outcome = await toolset.methods.preview.handler(
-      v.parse(toolset.methods.preview.schema, { stories: [{ storyId: 'button--primary' }] }),
-      cliCtx
-    );
+    const outcome = await runPreview([{ storyId: 'button--primary' }]);
 
     expect(outcome.markdown).toBe(
       [
@@ -191,7 +208,6 @@ describe('stories.changed', () => {
   it('anchors Git-relative paths at the repository root, not the Storybook working directory', async () => {
     await runChanged();
 
-    expect(process.cwd()).toBe(storybookWorkingDir);
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath, themePath] });
   });
 
@@ -289,14 +305,12 @@ For these, grep the codebase for their exports (e.g. specific tokens or symbols)
 });
 
 describe('stories.findByComponent', () => {
-  it('returns index-backed matches from the module graph in context', async () => {
-    const outcome = await toolset.methods.findByComponent.handler(
-      v.parse(toolset.methods.findByComponent.schema, { componentPaths: [componentPath] }),
-      cliCtx
-    );
+  it('returns index-backed matches together with the ceiling that was applied', async () => {
+    const outcome = await runFindByComponent({ componentPaths: [componentPath] });
 
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
+      maxDistance: 3,
       results: [
         {
           componentPath,
@@ -316,20 +330,73 @@ describe('stories.findByComponent', () => {
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 
-  it('renders a headed section per component', async () => {
-    const outcome = await toolset.methods.findByComponent.handler(
-      v.parse(toolset.methods.findByComponent.schema, { componentPaths: [componentPath] }),
-      cliCtx
+  it('echoes a caller-supplied ceiling', async () => {
+    const outcome = await runFindByComponent({ componentPaths: [componentPath], maxDistance: 1 });
+
+    expect(outcome.data).toMatchObject({ maxDistance: 1 });
+  });
+
+  it('rejects with the graph reason rather than answering "no stories"', async () => {
+    graphStatus.mockResolvedValue({
+      value: 'unavailable',
+      reason: 'builder does not support change detection',
+    });
+
+    const error = await runFindByComponent({ componentPaths: [componentPath] }).catch(
+      (reason: unknown) => reason
     );
 
-    expect(outcome.markdown).toBe(
-      [
-        '# Stories by component',
-        `## ${componentPath}`,
-        '- Button - Primary (button--primary, distance 1)',
-        '  ./src/Button.stories.tsx',
-      ].join('\n')
+    expect(error).toBeInstanceOf(OpenServiceModuleGraphUnavailableError);
+    // The adapter hands this message straight to the agent, so it must name both the
+    // adapter-specific cause the service reported and the remedy that cause does not say.
+    expect((error as Error).message).toBe(
+      "Storybook's story dependency graph is unavailable: builder does not support change detection. Make sure the dev server is running with a builder that supports change detection."
     );
+  });
+
+  it('reports how many of the requested components matched', async () => {
+    await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
+
+    expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
+      componentCount: 2,
+      matchedComponentCount: 1,
+      totalMatchCount: 1,
+      maxDistance: 3,
+    });
+  });
+
+  describe('rendering', () => {
+    it('renders a headed section per component for the CLI', async () => {
+      const outcome = await runFindByComponent({ componentPaths: [componentPath] });
+
+      expect(outcome.markdown).toBe(
+        `# Stories by component
+## ${componentPath}
+${componentPath}:
+→ 1 story across 1 component, distances 1..1 (d1=1)
+distance 1:
+  - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
+      );
+    });
+
+    it('renders distance buckets without headings for MCP', async () => {
+      const outcome = await runFindByComponent({ componentPaths: [componentPath] }, mcpCtx);
+
+      expect(outcome.markdown).toBe(
+        `${componentPath}:
+→ 1 story across 1 component, distances 1..1 (d1=1)
+distance 1:
+  - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
+      );
+    });
+
+    it('tells MCP to re-check a path that does not exist on disk', async () => {
+      const outcome = await runFindByComponent({ componentPaths: [themePath] }, mcpCtx);
+
+      expect(outcome.markdown).toBe(
+        `${themePath}: path does not exist on disk — re-check the path you sent.`
+      );
+    });
   });
 });
 
@@ -344,5 +411,16 @@ describe('descriptions', () => {
     expect(resolveToolsetDescription(toolset.methods.changed.description, cliCtx)).toContain(
       'npx storybook tools stories find-by-component'
     );
+  });
+
+  it('offers the review page as a hand-off target only when reviews are enabled', () => {
+    const withReviews = createToolset({ reviewEnabled: true });
+
+    expect(
+      resolveToolsetDescription(withReviews.methods.findByComponent.description, mcpCtx)
+    ).toContain('hand these to preview-stories or display-review');
+    expect(
+      resolveToolsetDescription(toolset.methods.findByComponent.description, mcpCtx)
+    ).toContain('hand these to preview-stories instead of guessing');
   });
 });

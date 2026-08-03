@@ -16,10 +16,6 @@ import type { AddonContext } from '../types.ts';
 import type { ToolAvailability } from '../utils/get-tool-availability.ts';
 import { getDisplayReviewToolMetadata, addDisplayReviewTool } from './display-review.ts';
 import {
-  getStoriesByComponentToolMetadata,
-  addGetStoriesByComponentTool,
-} from './get-stories-by-component.ts';
-import {
   buildStorybookStoryInstructions,
   getStorybookStoryInstructionsToolMetadata,
   addGetUIBuildingInstructionsTool,
@@ -32,7 +28,6 @@ import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-
 import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-service';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
-  GET_STORIES_BY_COMPONENT_TOOL_NAME,
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
   PREVIEW_STORIES_TOOL_NAME,
   RUN_STORY_TESTS_TOOL_NAME,
@@ -172,17 +167,11 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     available: ({ availability }) => availability.changeDetectionEnabled,
     options: { method: 'stories.changed' },
   }),
-  {
-    name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.moduleGraphSupported,
-    getMetadata: ({ availability }) =>
-      getStoriesByComponentToolMetadata({ reviewEnabled: availability.reviewEnabled }),
-    register: (server, { availability }, enabled) =>
-      addGetStoriesByComponentTool(server, enabled, {
-        reviewEnabled: availability.reviewEnabled,
-      }),
-  },
+    options: { method: 'stories.findByComponent' },
+  }),
   {
     name: DISPLAY_REVIEW_TOOL_NAME,
     toolset: 'dev',

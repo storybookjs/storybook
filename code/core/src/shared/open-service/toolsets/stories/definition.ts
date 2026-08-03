@@ -1,17 +1,18 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { resolve as resolvePath } from 'pathe';
 import * as v from 'valibot';
 
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
-import { defineToolset } from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import { getRef } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { findStoriesByComponent } from './find-by-component.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
+import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
   title: v.string(),
@@ -110,17 +111,30 @@ export type CreateStoriesToolsetOptions = {
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
+  /**
+   * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
+   * work, so when they exist several methods steer the agent there instead of at raw preview links.
+   */
+  reviewEnabled?: boolean;
 };
+
+function describeChanged(ctx: ToolsetCtx): string {
+  return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
+
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getRef(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
+}
 
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
+  reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
+    telemetryGroup: 'dev',
     methods: {
       preview: {
         schema: v.object({
@@ -130,7 +144,7 @@ export function createStoriesToolset({
           ),
         }),
         description: 'Resolves story selectors to preview URLs.',
-        handler: async (input, ctx) => {
+        handler: async (input, ctx): Promise<ToolsetOutcome<PreviewStoriesOutput, never>> => {
           const origin = ctx.origin;
           if (!origin) {
             throw new OpenServiceMissingOriginError({
@@ -143,39 +157,36 @@ export function createStoriesToolset({
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
-          return ctx.format === 'json' ? data : formatPreviewStories(data);
+          return { ok: true, data, markdown: formatPreviewStories(data) };
         },
       },
       changed: {
         schema: v.object({}),
-        description:
-          'Returns new, modified, and related stories from change detection, plus unreachable working-tree files.',
-        handler: async (input, ctx) => {
+        description: describeChanged,
+        handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
           const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
-          const [statuses, index, changedFiles, repoRoot] = await Promise.all([
+          const [statuses, index] = await Promise.all([
             Promise.resolve(changeStatuses.getAll()),
             storyIndex.getIndex(),
-            git.getChangedFiles(),
-            git.getRepoRoot(),
           ]);
-          const files = [...new Set([...changedFiles.changed, ...changedFiles.new])].map((file) =>
-            resolvePath(repoRoot, file)
-          );
-          let unreachableFiles: string[] = [];
-          const status = await moduleGraph.queries.status.loaded(undefined);
-          if (status.value === 'ready') {
-            const storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({ files });
-            unreachableFiles = files.filter(
-              (_file, fileIndex) => storiesForFiles[fileIndex]?.length === 0
-            );
-          }
+
           const data = {
             ...getChangedStories({ statuses, index }),
-            unreachableFiles,
+            // Files outside the story graph are why an empty or partial result can still be wrong,
+            // so they are part of the answer rather than a separate lookup.
+            unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
           };
-          return ctx.format === 'json' ? data : formatChangedStories(data);
+
+          await ctx.telemetry?.('tool:getChangedStories', {
+            storyCount: data.stories.length,
+            newStoryCount: data.counts.new,
+            modifiedStoryCount: data.counts.modified,
+            affectedStoryCount: data.counts.affected,
+          });
+
+          return { ok: true, data, markdown: formatChangedStories(data, ctx, { reviewEnabled }) };
         },
       },
       findByComponent: {
@@ -191,7 +202,7 @@ export function createStoriesToolset({
           ),
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
-        handler: async (input, ctx) => {
+        handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
           const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
@@ -202,7 +213,7 @@ export function createStoriesToolset({
             index,
             moduleGraph,
           });
-          return ctx.format === 'json' ? data : formatFindByComponent(data);
+          return { ok: true, data, markdown: formatFindByComponent(data) };
         },
       },
     },

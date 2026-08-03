@@ -43,7 +43,6 @@ describe('review API', () => {
     ctx = {
       consumer: 'cli',
       origin: 'http://localhost:6006/',
-      format: 'markdown',
       getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
     };
   });
@@ -61,10 +60,14 @@ describe('review API', () => {
     await expect(createReview()).rejects.toBe(serviceError);
   });
 
-  it('sets review state and returns Markdown by default', async () => {
-    await expect(createReview()).resolves.toBe(
-      'Review created: http://localhost:6006/?path=/review/'
-    );
+  it('sets review state and returns the review page URL', async () => {
+    const outcome = await createReview();
+
+    expect(outcome).toEqual({
+      ok: true,
+      data: { reviewUrl: 'http://localhost:6006/?path=/review/' },
+      markdown: 'Review created: http://localhost:6006/?path=/review/',
+    });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(ctx.getService).toHaveBeenCalledWith('core/review', { internal: true });
   });
@@ -74,18 +77,9 @@ describe('review API', () => {
     ctx.consumer = 'mcp';
     const mcpResult = await createReview();
 
-    expect(cliResult).not.toContain('Show this review URL');
-    expect(mcpResult).toBe(
-      `${cliResult}\n\nShow this review URL to the user in your final response.`
+    expect(cliResult.markdown).not.toContain('Show this review URL');
+    expect(mcpResult.markdown).toBe(
+      `${cliResult.markdown}\n\nShow this review URL to the user in your final response.`
     );
-  });
-
-  it('returns structured data when the adapter requests JSON', async () => {
-    ctx.format = 'json';
-
-    await expect(createReview()).resolves.toEqual({
-      reviewUrl: 'http://localhost:6006/?path=/review/',
-    });
-    expect(setReview).toHaveBeenCalledWith(input);
   });
 });

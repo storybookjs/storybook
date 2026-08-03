@@ -356,6 +356,45 @@ export class OpenServiceServicesAppliedTwiceError extends StorybookError {
   }
 }
 
+export class OpenServiceMissingToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceMissingToolsetError',
+      category: Category.CORE_COMMON,
+      code: 23,
+      message: `No registered toolset with id "${data.toolsetId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceDuplicateToolsetError',
+      category: Category.CORE_COMMON,
+      code: 24,
+      message: `A toolset with id "${data.toolsetId}" is already registered. Each public toolset must be registered exactly once.`,
+    });
+  }
+}
+
+/**
+ * A toolset method returned data its own published `outputSchema` rejects.
+ *
+ * Always a bug in the method: the schema is the contract adapters publish to their clients, so the
+ * mismatch is raised instead of quietly shipping unvalidated data.
+ */
+export class OpenServiceToolsetOutputMismatchError extends StorybookError {
+  constructor(public data: { issues: readonly unknown[] }) {
+    super({
+      name: 'OpenServiceToolsetOutputMismatchError',
+      category: Category.CORE_COMMON,
+      code: 26,
+      message: `Toolset output did not match its published output schema: ${JSON.stringify(data.issues)}`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

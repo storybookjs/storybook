@@ -15,7 +15,6 @@ import {
 import type { AddonContext } from '../types.ts';
 import type { ToolAvailability } from '../utils/get-tool-availability.ts';
 import { getDisplayReviewToolMetadata, addDisplayReviewTool } from './display-review.ts';
-import { getChangedStoriesToolMetadata, addGetChangedStoriesTool } from './get-changed-stories.ts';
 import {
   getStoriesByComponentToolMetadata,
   addGetStoriesByComponentTool,
@@ -27,14 +26,22 @@ import {
 } from './get-storybook-story-instructions.ts';
 import { getPreviewStoriesToolMetadata, addPreviewStoriesTool } from './preview-stories.ts';
 import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-tests.ts';
+// The error class must come from the same entry as `getToolset` (which throws it, via
+// `toolset-tools.ts`); a copy from another core entry is a different constructor and
+// `instanceof` would silently fail.
+import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-service';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
-  GET_CHANGED_STORIES_TOOL_NAME,
   GET_STORIES_BY_COMPONENT_TOOL_NAME,
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
   PREVIEW_STORIES_TOOL_NAME,
   RUN_STORY_TESTS_TOOL_NAME,
 } from './tool-names.ts';
+import {
+  getToolsetToolMetadata,
+  registerToolsetTool,
+  type ToolsetToolOptions,
+} from './toolset-tools.ts';
 
 export type ToolMetadata = {
   name: string;
@@ -94,6 +101,36 @@ const createToolsetEnabled =
   () =>
     server.ctx.custom?.toolsets?.[toolset] ?? true;
 
+/**
+ * Declares an MCP tool that is backed by a core toolset method.
+ *
+ * The addon contributes only what is specific to this surface: the MCP toolset grouping, the
+ * availability gate, and any MCP-only metadata. Name, title, description, schemas, behaviour and
+ * telemetry all come from the method.
+ */
+function fromToolset(
+  definition: Omit<AddonToolDefinition, 'name' | 'getMetadata' | 'register'> & {
+    options: ToolsetToolOptions;
+    available?: (context: AddonToolRegistryContext) => boolean;
+  }
+): AddonToolDefinition {
+  const { options, available, ...rest } = definition;
+  return {
+    ...rest,
+    // Read from the constant, not the registry: this array is built at import time, while toolsets
+    // register later from their preset hooks. Each availability gate is written to match the
+    // condition under which its toolset registers; if they still disagree, resolution fails loudly
+    // (getToolset throws) and the registry drops that one row with an error log rather than taking
+    // down the whole server (see resolveDefinitionOrDrop).
+    name: MCP_TOOL_NAMES[options.method],
+    available: (context) => available?.(context) ?? true,
+    getMetadata: () => getToolsetToolMetadata(options),
+    register: async (server, context, enabled) => {
+      registerToolsetTool(server, options, enabled);
+    },
+  };
+}
+
 const addonToolDefinitions: AddonToolDefinition[] = [
   {
     name: PREVIEW_STORIES_TOOL_NAME,
@@ -130,14 +167,11 @@ const addonToolDefinitions: AddonToolDefinition[] = [
       },
     }),
   },
-  {
-    name: GET_CHANGED_STORIES_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.changeDetectionEnabled,
-    getMetadata: () => getChangedStoriesToolMetadata(),
-    register: (server, { availability }, enabled) =>
-      addGetChangedStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
-  },
+    options: { method: 'stories.changed' },
+  }),
   {
     name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
     toolset: 'dev',
@@ -208,10 +242,40 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   },
 ];
 
+/**
+ * Logs and drops one tool row when its availability gate said yes but the backing toolset never
+ * registered.
+ *
+ * That mismatch is a wiring bug (each gate is written to match its toolset's registration
+ * condition), but it must cost the user one tool, not the whole MCP server or the `storybook ai`
+ * metadata build — the error log keeps it loud. Only this one error is contained: every other
+ * failure rethrows, so a genuinely broken adapter still fails fast.
+ */
+function dropRowIfToolsetMissing(name: string, error: unknown): undefined {
+  if (!(error instanceof OpenServiceMissingToolsetError)) {
+    throw error;
+  }
+  logger.error(`Skipping MCP tool "${name}", its backing toolset is not registered: ${error}`);
+  return undefined;
+}
+
+function resolveDefinitionOrDrop<T>(name: string, resolve: () => T): T | undefined {
+  try {
+    return resolve();
+  } catch (error) {
+    return dropRowIfToolsetMissing(name, error);
+  }
+}
+
 export function getAddonToolMetadata(context: AddonToolRegistryContext): ToolMetadata[] {
   return addonToolDefinitions
     .filter((definition) => isMetadataToolEnabled(definition, context))
-    .map((definition) => definition.getMetadata(context));
+    .flatMap((definition) => {
+      const metadata = resolveDefinitionOrDrop(definition.name, () =>
+        definition.getMetadata(context)
+      );
+      return metadata ? [metadata] : [];
+    });
 }
 
 export function getAddonLocalTools(
@@ -221,7 +285,9 @@ export function getAddonLocalTools(
     addonToolDefinitions
       .filter((definition) => isMetadataToolEnabled(definition, context))
       .flatMap((definition) => {
-        const localTool = definition.getLocalTool?.(context);
+        const localTool = resolveDefinitionOrDrop(definition.name, () =>
+          definition.getLocalTool?.(context)
+        );
         return localTool ? [[definition.name, localTool]] : [];
       })
   );
@@ -236,7 +302,15 @@ export async function registerAddonMcpTools(
       isToolsetEnabled(definition.toolset, context.toolsets) &&
       isToolAvailable(definition, context)
     ) {
-      await definition.register(server, context, createToolsetEnabled(server, definition.toolset));
+      try {
+        await definition.register(
+          server,
+          context,
+          createToolsetEnabled(server, definition.toolset)
+        );
+      } catch (error) {
+        dropRowIfToolsetMissing(definition.name, error);
+      }
     }
   }
 }

@@ -17,6 +17,7 @@ const reviewCreateInputSchema = v.object({
 export const reviewToolset = defineToolset({
   id: 'review',
   description: 'Create a curated Storybook review.',
+  telemetryGroup: 'dev',
   methods: {
     create: {
       schema: reviewCreateInputSchema,
@@ -34,14 +35,13 @@ export const reviewToolset = defineToolset({
           .commands.setReview(review);
 
         const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=/review/`;
-        if (ctx.format === 'json') {
-          return { reviewUrl };
-        }
+        const created = `Review created: ${reviewUrl}`;
+        const markdown =
+          ctx.consumer === 'mcp'
+            ? `${created}\n\nShow this review URL to the user in your final response.`
+            : created;
 
-        const markdown = `Review created: ${reviewUrl}`;
-        return ctx.consumer === 'mcp'
-          ? `${markdown}\n\nShow this review URL to the user in your final response.`
-          : markdown;
+        return { ok: true, data: { reviewUrl }, markdown };
       },
     },
   },

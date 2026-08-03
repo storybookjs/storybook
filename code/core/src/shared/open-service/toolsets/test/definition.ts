@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineToolset } from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetOutcome } from '../../toolset-definition.ts';
 import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
 import { formatTestRun } from './format.ts';
@@ -97,6 +97,7 @@ export function createTestToolset({ channel, storyIndex }: CreateTestToolsetOpti
   return defineToolset({
     id: 'test',
     description: 'Run Storybook story tests via addon-vitest.',
+    telemetryGroup: 'test',
     methods: {
       run: {
         schema: v.object({
@@ -116,7 +117,7 @@ export function createTestToolset({ channel, storyIndex }: CreateTestToolsetOpti
         }),
         description:
           'Runs story tests for the given selectors, or all stories when stories is omitted.',
-        handler: async (input, ctx) => {
+        handler: async (input): Promise<ToolsetOutcome<TestRunOutput, never>> => {
           const done = await queue.wait();
           try {
             const result = await runStoryTests({
@@ -125,7 +126,7 @@ export function createTestToolset({ channel, storyIndex }: CreateTestToolsetOpti
               stories: input.stories,
               a11y: input.a11y,
             });
-            return ctx.format === 'json' ? result : formatTestRun(result);
+            return { ok: true, data: result, markdown: formatTestRun(result) };
           } finally {
             done();
           }

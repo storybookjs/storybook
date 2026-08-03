@@ -45,7 +45,6 @@ beforeEach(() => {
   ctx = {
     consumer: 'cli',
     origin: 'http://localhost:6006',
-    format: 'markdown',
     getService: vi.fn((id) => {
       if (id === 'addon-docs/mdx' && !mdxAvailable) {
         throw new OpenServiceMissingServiceError({ serviceId: 'addon-docs/mdx' });
@@ -110,13 +109,13 @@ beforeEach(() => {
 });
 
 describe('docs API', () => {
-  it('returns the MCP list Markdown by default after loading services through context', async () => {
-    await expect(
-      docsToolset.methods.list.handler(
-        v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
-        ctx
-      )
-    ).resolves.toBe(
+  it('renders the list and its structured data after loading services through context', async () => {
+    const outcome = await docsToolset.methods.list.handler(
+      v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
+      ctx
+    );
+
+    expect(outcome.markdown).toBe(
       [
         '# Components',
         '',
@@ -128,19 +127,7 @@ describe('docs API', () => {
         '- Guide (guide--docs): Intro',
       ].join('\n')
     );
-    expect(ctx.getService).toHaveBeenCalledWith('core/docgen', { internal: true });
-    expect(ctx.getService).toHaveBeenCalledWith('core/story-docs', { internal: true });
-    expect(ctx.getService).toHaveBeenCalledWith('addon-docs/mdx', { internal: true });
-  });
-
-  it('returns structured JSON when the adapter requests it', async () => {
-    ctx.format = 'json';
-    await expect(
-      docsToolset.methods.list.handler(
-        v.parse(docsToolset.methods.list.schema, { withStoryIds: true }),
-        ctx
-      )
-    ).resolves.toEqual({
+    expect(outcome.data).toEqual({
       components: [
         {
           id: 'button',
@@ -151,27 +138,30 @@ describe('docs API', () => {
       ],
       docs: [{ id: 'guide--docs', name: 'Guide', title: 'Getting started', summary: 'Intro' }],
     });
+    expect(ctx.getService).toHaveBeenCalledWith('core/docgen', { internal: true });
+    expect(ctx.getService).toHaveBeenCalledWith('core/story-docs', { internal: true });
+    expect(ctx.getService).toHaveBeenCalledWith('addon-docs/mdx', { internal: true });
   });
 
   it('shows component and story documentation via per-id loaders', async () => {
-    await expect(
-      docsToolset.methods.show.handler(
-        v.parse(docsToolset.methods.show.schema, { id: 'button' }),
-        ctx
-      )
-    ).resolves.toContain('Button');
+    const shown = await docsToolset.methods.show.handler(
+      v.parse(docsToolset.methods.show.schema, { id: 'button' }),
+      ctx
+    );
+
+    expect(shown.markdown).toContain('Button');
     expect(docgen).toHaveBeenCalledWith({ id: 'button' });
     expect(storyDocs).toHaveBeenCalledWith({ id: 'button' });
 
-    await expect(
-      docsToolset.methods.showStory.handler(
-        v.parse(docsToolset.methods.showStory.schema, {
-          componentId: 'button',
-          storyName: 'Primary',
-        }),
-        ctx
-      )
-    ).resolves.toBe(
+    const shownStory = await docsToolset.methods.showStory.handler(
+      v.parse(docsToolset.methods.showStory.schema, {
+        componentId: 'button',
+        storyName: 'Primary',
+      }),
+      ctx
+    );
+
+    expect(shownStory.markdown).toBe(
       [
         '# Button - Primary',
         '',
@@ -187,55 +177,54 @@ describe('docs API', () => {
   });
 
   it('returns the existing not-found result for unknown ids', async () => {
-    ctx.format = 'json';
-    await expect(
-      docsToolset.methods.show.handler(
-        v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
-        ctx
-      )
-    ).resolves.toEqual({ kind: 'not-found', id: 'missing' });
+    const outcome = await docsToolset.methods.show.handler(
+      v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
+      ctx
+    );
+
+    expect(outcome.data).toEqual({ kind: 'not-found', id: 'missing' });
   });
 
   it('shows a standalone docs entry, whose id has no component payloads', async () => {
-    ctx.format = 'json';
+    const outcome = await docsToolset.methods.show.handler(
+      v.parse(docsToolset.methods.show.schema, { id: 'guide--docs' }),
+      ctx
+    );
 
-    await expect(
-      docsToolset.methods.show.handler(
-        v.parse(docsToolset.methods.show.schema, { id: 'guide--docs' }),
-        ctx
-      )
-    ).resolves.toMatchObject({ kind: 'docs', id: 'guide--docs' });
+    expect(outcome.data).toMatchObject({ kind: 'docs', id: 'guide--docs' });
   });
 
   it('mirrors the @storybook/mcp miss messages for the MCP consumer', async () => {
     ctx.consumer = 'mcp';
 
-    await expect(
-      docsToolset.methods.show.handler(
-        v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
-        ctx
-      )
-    ).resolves.toBe(
+    const shown = await docsToolset.methods.show.handler(
+      v.parse(docsToolset.methods.show.schema, { id: 'missing' }),
+      ctx
+    );
+
+    expect(shown.markdown).toBe(
       'Component or Docs Entry not found: "missing". Use the list-all-documentation tool to see available components and documentation entries.'
     );
 
-    await expect(
-      docsToolset.methods.showStory.handler(
-        v.parse(docsToolset.methods.showStory.schema, { componentId: 'missing', storyName: 'X' }),
-        ctx
-      )
-    ).resolves.toBe(
+    const shownStory = await docsToolset.methods.showStory.handler(
+      v.parse(docsToolset.methods.showStory.schema, { componentId: 'missing', storyName: 'X' }),
+      ctx
+    );
+
+    expect(shownStory.markdown).toBe(
       'Component not found: "missing". Use the list-all-documentation tool to see available components.'
     );
   });
 
   it('continues without MDX when the optional service is unavailable', async () => {
-    ctx.format = 'json';
     mdxAvailable = false;
 
-    await expect(
-      docsToolset.methods.list.handler(v.parse(docsToolset.methods.list.schema, {}), ctx)
-    ).resolves.toEqual({
+    const outcome = await docsToolset.methods.list.handler(
+      v.parse(docsToolset.methods.list.schema, {}),
+      ctx
+    );
+
+    expect(outcome.data).toEqual({
       components: [{ id: 'button', name: 'Button', summary: 'A button' }],
       docs: [],
     });

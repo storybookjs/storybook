@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { GET_TOOL_NAME } from '@storybook/mcp';
@@ -47,6 +48,8 @@ vi.mock('./tools/run-story-tests.ts', async (importActual) => ({
 
 describe('buildStorybookAiMetadata', () => {
   beforeEach(() => {
+    // The `services` preset hook does this in a real Storybook before metadata is built.
+    registerCoreToolsetsForTest();
     vi.clearAllMocks();
     vi.stubGlobal('fetch', vi.fn(mockManifestFetch(true)));
     vi.mocked(isModuleGraphSupported).mockResolvedValue(true);

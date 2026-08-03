@@ -384,7 +384,7 @@ export const workflow = {
 
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v9-${platform}-node_modules`,
+    `v10-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

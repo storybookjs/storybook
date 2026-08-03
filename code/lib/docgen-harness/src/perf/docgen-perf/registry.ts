@@ -8,14 +8,15 @@ import { type BenchEngine, type ScenarioSpec, SeriesChildEngine } from './engine
 import { CompodocEngine } from './engines/compodoc.ts';
 import type { EngineId } from './types.ts';
 
-const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
-  { name: 'default', params: { ...profile.react } },
-];
+const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
 const vueScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.vue.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
 
 const reactArgs = ({ params }: ScenarioSpec): string[] => [
+  '--shape',
+  String(params.shape),
   '--components',
   String(params.components),
   '--variants',

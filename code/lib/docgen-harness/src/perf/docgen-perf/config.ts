@@ -29,7 +29,18 @@ export const RSS_POLL_INTERVAL_MS = 100;
  */
 export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
 
+/**
+ * How much of the project the cold pass documents, which is the difference between the two shapes
+ * Storybook actually runs.
+ *
+ *   whole-index - one batch over every component, what the manifest generator does.
+ *   first-story - the single component a request asked for, what the docgen server does; every save
+ *                 then re-extracts that same component, so the steady state stays comparable.
+ */
+export type ReactScenarioShape = 'whole-index' | 'first-story';
+
 export interface ReactScenarioConfig {
+  shape: ReactScenarioShape;
   components: number;
   variants: number;
   props: number;
@@ -54,7 +65,7 @@ export interface AngularScenarioConfig {
 export interface SuiteProfile {
   n: number;
   comparable: boolean;
-  react: ReactScenarioConfig;
+  react: ReactScenarioConfig[];
   vue: VueScenarioConfig[];
   angular: AngularScenarioConfig;
 }
@@ -62,7 +73,12 @@ export interface SuiteProfile {
 export const DEFAULT_PROFILE: SuiteProfile = {
   n: PINNED_N,
   comparable: true,
-  react: { components: 300, variants: 4, props: 10, saves: 20 },
+  react: [
+    { shape: 'whole-index', components: 300, variants: 4, props: 10, saves: 20 },
+    // The project is the same size; only the cold pass and the save target differ, so the two rows
+    // are directly comparable.
+    { shape: 'first-story', components: 300, variants: 4, props: 10, saves: 10 },
+  ],
   vue: [
     {
       name: 'flat',
@@ -98,7 +114,10 @@ export const DEFAULT_PROFILE: SuiteProfile = {
 export const QUICK_PROFILE: SuiteProfile = {
   n: QUICK_N,
   comparable: false,
-  react: { components: 20, variants: 2, props: 4, saves: 4 },
+  react: [
+    { shape: 'whole-index', components: 20, variants: 2, props: 4, saves: 4 },
+    { shape: 'first-story', components: 20, variants: 2, props: 4, saves: 3 },
+  ],
   vue: [
     {
       name: 'flat',

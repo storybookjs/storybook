@@ -17,7 +17,8 @@ We are collecting five metrics per engine:
 5. Leak detection: How much retained heap is still held after the save series, together with how steeply it climbed from one save to the next?
 
 The slope is fitted over the save series with the first save excluded.
-An engine that re-extracts one component per save releases its whole-project state on that first save, and a fit that includes the step measures the cold-to-steady-state transition instead of the leak trend - for `react-osa` that alone is the difference between a reported -1.16MB/save and the true +0.06MB/save.
+An engine that re-extracts one component per save releases its whole-project state on that first save, and a fit that includes the step measures the cold-to-steady-state transition instead of the leak trend.
+For `react-osa` that is the difference between a strongly negative slope, which hides any leak smaller than the step, and the small positive trend its steady state actually shows in the table below.
 One excluded sample is enough: that engine is the only one with a step, and it lands entirely inside the first save.
 
 ## Determinism method
@@ -199,13 +200,13 @@ Milliseconds are context, never a budget: the same suite runs three to four time
 | Engine / scenario                  | Cold    | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
 | ---------------------------------- | ------- | ------ | ------ | -------------- | --------------- | -------------- |
 | react-legacy/default               | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
-| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | pending        |
+| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | 0.10MB/save    |
 | vue-docgen-api/flat                | 155ms   | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
 | vue-docgen-api/workspace           | 121ms   | 3ms    | n/a    | 0.4MB          | 0.3MB           | 0.02MB/save    |
-| vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.01MB/save    |
-| vue-component-meta/flat            | 1145ms  | 80ms   | n/a    | 9.4MB          | 3.7MB           | 0.21MB/save    |
-| vue-component-meta/workspace       | 1067ms  | 84ms   | n/a    | 12.7MB         | 3.6MB           | 0.20MB/save    |
-| vue-component-meta/base-type-touch | 1182ms  | 96ms   | n/a    | 12.1MB         | 3.0MB           | 0.26MB/save    |
+| vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.02MB/save    |
+| vue-component-meta/flat            | 1145ms  | 80ms   | n/a    | 9.4MB          | 3.7MB           | 0.19MB/save    |
+| vue-component-meta/workspace       | 1067ms  | 84ms   | n/a    | 12.7MB         | 3.6MB           | 0.19MB/save    |
+| vue-component-meta/base-type-touch | 1182ms  | 96ms   | n/a    | 12.1MB         | 3.0MB           | 0.25MB/save    |
 | compodoc/default                   | 1434ms  | 1537ms | 1434ms | 213.8MB        | n/a             | n/a            |
 
 Two things in that table are worth reading twice.

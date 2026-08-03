@@ -20,6 +20,7 @@ type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
 
 export interface BuildDocgenContext {
   getChecker: (componentFilePath: string) => ComponentMetaChecker;
+  resolvePath?: (importPath: string) => string;
 }
 
 const UNRESOLVED_COMPONENT_ERRORS: Record<
@@ -56,7 +57,9 @@ export async function buildDocgenPayload(
   }
 
   // Import paths in the index are relative to the project root the server runs from.
-  const storyPath = join(process.cwd(), storyFilePath);
+  const resolvePath =
+    context.resolvePath ?? ((importPath: string) => join(process.cwd(), importPath));
+  const storyPath = resolvePath(storyFilePath);
 
   let storyFile: string;
   try {

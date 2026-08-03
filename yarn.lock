@@ -16543,7 +16543,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/language-core@npm:3.3.8, @vue/language-core@npm:^3.2.7":
+"@vue/language-core@npm:3.3.8":
   version: 3.3.8
   resolution: "@vue/language-core@npm:3.3.8"
   dependencies:

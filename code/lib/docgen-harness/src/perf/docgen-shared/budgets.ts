@@ -64,9 +64,13 @@ export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
   },
   // The docgen-memory gate protects this engine's retained heap under its own, much heavier
   // workload; what this row adds is the incremental re-extraction the suite measures.
+  //
+  // Growth is negative here - the engine releases its whole-project state on the first save and
+  // settles ~85MB below the cold pass - so the ceiling is only ever met from far below. The slope
+  // is what carries the leak signal, and it is tight because the steady state is genuinely flat.
   'react-osa/default': {
     maxWarmColdRatio: 0.08,
-    memory: { maxTransientMb: 45, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 3 },
+    memory: { maxTransientMb: 45, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 0.5 },
   },
   'vue-docgen-api/flat': {
     maxWarmColdRatio: 0.08,

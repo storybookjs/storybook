@@ -16,6 +16,10 @@ We are collecting five metrics per engine:
 4. Peak memory: the memory a save claims above the retained baseline
 5. Leak detection: How much retained heap is still held after the save series, together with how steeply it climbed from one save to the next?
 
+The slope is fitted over the save series with the first save excluded.
+An engine that re-extracts one component per save releases its whole-project state on that first save, and a fit that includes the step measures the cold-to-steady-state transition instead of the leak trend - for `react-osa` that alone is the difference between a reported -1.16MB/save and the true +0.06MB/save.
+One excluded sample is enough: that engine is the only one with a step, and it lands entirely inside the first save.
+
 ## Determinism method
 
 ### Fixed synthetic projects
@@ -195,7 +199,7 @@ Milliseconds are context, never a budget: the same suite runs three to four time
 | Engine / scenario                  | Cold    | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
 | ---------------------------------- | ------- | ------ | ------ | -------------- | --------------- | -------------- |
 | react-legacy/default               | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
-| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | -1.13MB/save   |
+| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | pending        |
 | vue-docgen-api/flat                | 155ms   | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
 | vue-docgen-api/workspace           | 121ms   | 3ms    | n/a    | 0.4MB          | 0.3MB           | 0.02MB/save    |
 | vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.01MB/save    |
@@ -209,8 +213,10 @@ Two things in that table are worth reading twice.
 Compodoc's warm figure is its cold figure, because it re-runs the whole project on every invocation.
 That is what it does by design, so it carries no incrementality budget; its peak memory, an order of magnitude above every other engine, is the number worth watching.
 
-`react-osa` reports negative retained growth and a negative slope: it ends the series holding less than it started with, because the run's forced collections settle the heap below the baseline taken before any extraction happened.
-A leak would show up as a positive slope, so the budget is a ceiling and the negative value passes it comfortably.
+`react-osa` reports negative retained growth, and that is the engine working correctly rather than a measurement artefact.
+The baseline is sampled straight after the cold pass, when the engine still holds state sized for the whole project.
+The first save re-extracts a single component, that whole-project state is released, and retained heap drops by around 85MB in one step and then stays flat.
+So the growth figure measures the distance from the cold-pass peak down to the steady state, and it is negative for every engine that re-extracts incrementally.
 
 The reference ratios stand at 0.71 cold and 0.31 warm for react-legacy over react-osa, and around 0.10-0.14 cold for vue-docgen-api over vue-component-meta.
 None of them is gated on, for the reasons under "Like-for-like comparison" above.
@@ -222,7 +228,7 @@ Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, at roughly
 | Engine / scenario                  | Warm/cold ratio | Peak transient | Retained growth | Retained slope | Tier  |
 | ---------------------------------- | --------------- | -------------- | --------------- | -------------- | ----- |
 | react-legacy/default               | 0.05            | 15MB           | 30MB            | 1MB/save       | daily |
-| react-osa/default                  | 0.08            | 45MB           | 60MB            | 3MB/save       | daily |
+| react-osa/default                  | 0.08            | 45MB           | 60MB            | 0.5MB/save     | daily |
 | vue-docgen-api/flat                | 0.08            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/workspace           | 0.10            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/base-type-touch     | 0.25            | 8MB            | 10MB            | 1MB/save       | daily |

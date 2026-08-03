@@ -38,7 +38,10 @@ export function leastSquaresSlope(values: number[]): number {
 
 /** The retained- and transient-memory figures every series harness derives from its save series. */
 export interface SeriesSummary {
-  /** Least-squares slope of retained heap over the save series, MB per save. */
+  /**
+   * Least-squares slope of retained heap over the save series, MB per save, excluding the settle
+   * sample. This is the leak signal: a positive slope means each save leaves something behind.
+   */
   retainedSlope?: number;
   /** Final retained sample minus the pre-series baseline, MB. */
   retainedGrowth?: number;
@@ -47,6 +50,19 @@ export interface SeriesSummary {
   /** Mean of {@link transients}. */
   avgTransient?: number;
 }
+
+/**
+ * Saves excluded from the slope fit.
+ *
+ * The baseline is sampled straight after the cold pass, so an engine still holds whole-project
+ * state going into the first save. Where a save re-extracts one component, that state is released
+ * on the first one - `react-osa` drops ~85MB between save 1 and save 2 and is then flat - and a fit
+ * that includes the step measures the cold-to-steady-state transition rather than the leak trend.
+ *
+ * One is enough: that engine is the only one with a step, and it lands entirely inside the first
+ * save. Every other engine is flat from save 1, so dropping one sample costs them nothing.
+ */
+const SETTLE_SAVES = 1;
 
 /**
  * Derive the retained/transient series figures shared by every series harness. Kept here so the
@@ -61,10 +77,11 @@ export function summarizeSeries(samples: SaveSample[], baseline: MemorySample): 
   const retained = gcSampled.map((s) => s.retainedHeapMb);
   const transients = gcSampled.map((s) => s.heapUsedMb - s.retainedHeapMb);
   const last = retained.at(-1);
+  const settled = retained.slice(SETTLE_SAVES);
   return {
     // A slope needs two points. `leastSquaresSlope` answers 0 for a shorter series, which is
     // indistinguishable from a measured flat one, so a series that short reports nothing instead.
-    retainedSlope: retained.length >= 2 ? leastSquaresSlope(retained) : undefined,
+    retainedSlope: settled.length >= 2 ? leastSquaresSlope(settled) : undefined,
     retainedGrowth:
       last !== undefined && baseline.retainedHeapMb !== undefined
         ? last - baseline.retainedHeapMb

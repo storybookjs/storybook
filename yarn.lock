@@ -16543,7 +16543,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/language-core@npm:3.3.8":
+"@vue/language-core@npm:3.3.8, @vue/language-core@npm:^3.2.7":
   version: 3.3.8
   resolution: "@vue/language-core@npm:3.3.8"
   dependencies:
@@ -16570,21 +16570,6 @@ __metadata:
     path-browserify: "npm:^1.0.1"
     picomatch: "npm:^4.0.4"
   checksum: 10c0/bff339e8ce218d32b8db7a372c1f958db52950e74bbedff527e928b68e52fad30c14e0652dc2626673a579cab15b47d8106eac0deefc7898f370da7889122bba
-  languageName: node
-  linkType: hard
-
-"@vue/language-core@npm:^3.2.7":
-  version: 3.3.8
-  resolution: "@vue/language-core@npm:3.3.8"
-  dependencies:
-    "@volar/language-core": "npm:2.4.28"
-    "@vue/compiler-dom": "npm:^3.5.0"
-    "@vue/shared": "npm:^3.5.0"
-    alien-signals: "npm:^3.2.1"
-    muggle-string: "npm:^0.4.1"
-    path-browserify: "npm:^1.0.1"
-    picomatch: "npm:^4.0.4"
-  checksum: 10c0/2e321f027dfb10f28cb6052629e1f1fba3e12b659284c68755097aa678ea56c190dd43aad2da1fb237debc399fd7ab2922d7e576a4eb072c5f094cdaea412b2d
   languageName: node
   linkType: hard
 

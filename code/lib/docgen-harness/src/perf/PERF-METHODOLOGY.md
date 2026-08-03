@@ -137,7 +137,7 @@ An engine whose package does not resolve is reported as skipped with a reason ra
 
 #### Adding a version pair for another engine
 
-This works only for an engine whose child imports the versioned package directly, the way `engines/vue-component-meta.ts` does.
+This works for an engine that reaches its docgen package by specifier: a child that imports it, the way `engines/vue-component-meta.ts` does, or a CLI the engine spawns, the way `engines/compodoc.ts` does.
 Where the harness reaches the engine through repo source instead - `react-legacy` goes via `loadReactRendererModule` into `code/renderers/react`, which imports `react-docgen` by bare specifier - no child flag can redirect that import, and a version pair needs a different approach entirely.
 Declaring `@storybook/react` as a dependency of `@storybook/docgen-harness` is what makes that source reachable in the first place, but it does not make the specifier redirectable: pointing the renderer at a second `react-docgen` would take a module resolution hook registered in the child, which is not built.
 
@@ -151,8 +151,9 @@ Four data edits:
 The registry's `pin` is the whole mechanism: it reaches the child as `--pin <specifier>`, is what `preflight` resolves, and is the version reported with the results.
 Nothing about it is engine-specific.
 
-Plus one code edit, unless the child already has it: the child has to accept `--pin` and import that specifier rather than a hard-coded one.
-`docgen-shared/pin.ts` is that, in three lines at the child - the flag, `pinOption(<canonical package>)` extending its option schema, and `importPinned` in place of a static import.
+Plus one code edit, unless the engine already takes a pin.
+A spawned-CLI engine resolves its pin itself and needs nothing more; `CompodocEngine` takes one in its constructor.
+A child-harness engine has to accept `--pin` and import that specifier rather than a hard-coded one, which is three lines at the child - the flag, `pinOption(<canonical package>)` extending its option schema, and `importPinned` in place of a static import.
 Only the named install is ever imported, so the other copy never sits on the measured heap, and the resolved specifier also names the scratch directory so the two runs do not share a generated project.
 
 One easily-missed prerequisite: the *current* side's existing registry entry must declare `pin` too, naming the canonical package.

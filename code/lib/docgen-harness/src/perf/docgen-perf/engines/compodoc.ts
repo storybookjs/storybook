@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
 import { outputTail } from '../../docgen-shared/child-output.ts';
+import { assertPin } from '../../docgen-shared/pin.ts';
 import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
 import { type DocumentationCounts, countDocumentation } from './compodoc-doc.ts';
 import {
@@ -24,9 +25,12 @@ interface ResolvedCompodoc {
   version: string;
 }
 
-function resolveCompodoc(): ResolvedCompodoc | undefined {
+/** The canonical install. A pin names an alias of it - see docgen-shared/pin.ts. */
+const COMPODOC_PACKAGE = '@compodoc/compodoc';
+
+function resolveCompodoc(specifier: string): ResolvedCompodoc | undefined {
   try {
-    const packagePath = require.resolve('@compodoc/compodoc/package.json');
+    const packagePath = require.resolve(`${specifier}/package.json`);
     const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     return {
       cli: path.join(path.dirname(packagePath), pkg.bin.compodoc),
@@ -169,10 +173,29 @@ export async function runCompodocRepetition(
   };
 }
 
+/**
+ * Compodoc is a spawned CLI rather than an imported module, so its pin selects which CLI to run.
+ * A version pair is two entries differing only in `pin`, as it is for the series engines.
+ */
+export interface CompodocConfig {
+  id: EngineId;
+  pin: string;
+  inDefaultRun?: boolean;
+}
+
 export class CompodocEngine extends BenchEngine<OneShotRepetition> {
-  readonly id: EngineId = 'compodoc';
+  readonly id: EngineId;
+
+  readonly #pin: string;
 
   #resolved: ResolvedCompodoc | undefined;
+
+  constructor(config: CompodocConfig = { id: 'compodoc', pin: COMPODOC_PACKAGE }) {
+    super();
+    this.id = config.id;
+    this.inDefaultRun = config.inDefaultRun ?? true;
+    this.#pin = assertPin(COMPODOC_PACKAGE, config.pin);
+  }
 
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     // The poll interval rides in params because it qualifies the peak this engine reports: the
@@ -184,10 +207,10 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   }
 
   preflight(): string | undefined {
-    this.#resolved = resolveCompodoc();
+    this.#resolved = resolveCompodoc(this.#pin);
     return this.#resolved
       ? undefined
-      : '@compodoc/compodoc did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install';
+      : `${this.#pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
   }
 
   version(): string | undefined {

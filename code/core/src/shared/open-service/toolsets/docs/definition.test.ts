@@ -155,3 +155,42 @@ describe('docs.showStory', () => {
     expect(cliOutcome.markdown).toBe('Component not found: "nope".');
   });
 });
+
+describe('usage reporting', () => {
+  /** Runs a method the way a consumer does; the handler reports usage inline. */
+  async function run(methodName: 'list' | 'show', input: unknown, consumer: 'cli' | 'mcp') {
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const ctx: ToolsetCtx = {
+      consumer,
+      getService: () => ({}) as never,
+      telemetry: async (event, payload) => {
+        events.push([event, payload]);
+      },
+    };
+
+    await toolset.methods[methodName].handler(input as never, ctx);
+
+    return events;
+  }
+
+  it.each(['cli', 'mcp'] as const)('reports a listing on %s', async (consumer) => {
+    const [[event, payload] = []] = await run('list', { withStoryIds: false }, consumer);
+
+    expect(event).toBe('tool:listAllDocumentation');
+    expect(payload).toMatchObject({ componentCount: 1, docsCount: 1 });
+    expect(payload!.resultTokenCount).toBeGreaterThan(0);
+  });
+
+  it.each(['cli', 'mcp'] as const)('reports a lookup on %s', async (consumer) => {
+    const [[event, payload] = []] = await run('show', { id: 'button' }, consumer);
+
+    expect(event).toBe('tool:getDocumentation');
+    expect(payload).toMatchObject({ componentId: 'button', found: true });
+  });
+
+  it('reports a miss as not found', async () => {
+    const [[, payload] = []] = await run('show', { id: 'nope' }, 'mcp');
+
+    expect(payload).toMatchObject({ componentId: 'nope', found: false });
+  });
+});

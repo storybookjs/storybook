@@ -10,7 +10,7 @@ import { getManifestStatus } from './tools/is-manifest-available.ts';
 import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
 import { getReviewStatus } from './utils/is-review-available.ts';
 import { isModuleGraphSupported, isModuleGraphSupportedByBuilder } from './utils/module-graph.ts';
-import { MCP_TOOL_NAMES } from 'storybook/open-service';
+import { MCP_TOOL_NAMES } from 'storybook/internal/toolsets-docs';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
   GET_STORIES_BY_COMPONENT_TOOL_NAME,

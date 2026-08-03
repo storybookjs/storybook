@@ -2,16 +2,10 @@ import type { McpServer } from 'tmcp';
 import type { Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
 import {
-  addGetDocumentationTool,
-  addGetStoryDocumentationTool,
-  addListAllDocumentationTool,
-  GET_STORY_TOOL_NAME,
-  GET_TOOL_NAME,
-  getDocumentationToolMetadata,
-  getListAllDocumentationToolMetadata,
-  getStoryDocumentationToolMetadata,
-  LIST_TOOL_NAME,
-} from '@storybook/mcp';
+  createCompositionDocsSources,
+  createDocsToolset,
+  type DocsToolset,
+} from 'storybook/internal/toolsets-docs';
 import type { AddonContext } from '../types.ts';
 import type { ToolAvailability } from '../utils/get-tool-availability.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
@@ -126,6 +120,49 @@ function fromToolset(
   };
 }
 
+/**
+ * Builds the docs toolset for a composition.
+ *
+ * The composed sources, their manifest provider and the local source's own access all arrive with
+ * the request, so this cannot be the toolset registered once at boot. Called
+ * without a server for metadata only, where the sources shape the schemas but nothing is fetched.
+ */
+function compositionDocsToolset(server?: McpServer<any, AddonContext>): DocsToolset {
+  const custom = server?.ctx.custom;
+  return createDocsToolset({
+    sources: createCompositionDocsSources({
+      sources: custom?.sources ?? [{ id: 'local', title: 'Local' }],
+      manifestProvider: custom?.manifestProvider,
+      getRequest: () => custom?.request,
+      localAccess: custom?.localAccess,
+    }),
+  });
+}
+
+/** The docs rows, in the two shapes the registry needs: registered toolset, or per-request one. */
+function docsRow(method: 'docs.list' | 'docs.show' | 'docs.showStory'): AddonToolDefinition {
+  const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
+    context.multiSource
+      ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
+      : { method };
+
+  return {
+    name: MCP_TOOL_NAMES[method],
+    toolset: 'docs',
+    available: ({ availability }) => availability.docsEnabled,
+    getMetadata: (context) => getToolsetToolMetadata(forContext(context)),
+    register: async (server, context, enabled) => {
+      registerToolsetTool(server, forContext(context), enabled);
+    },
+  };
+}
+
+const docsToolDefinitions: AddonToolDefinition[] = [
+  docsRow('docs.list'),
+  docsRow('docs.show'),
+  docsRow('docs.showStory'),
+];
+
 const addonToolDefinitions: AddonToolDefinition[] = [
   fromToolset({
     toolset: 'dev',
@@ -193,38 +230,9 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     available: ({ availability }) => availability.testSupported,
     options: { method: 'test.run' },
   }),
-  {
-    name: LIST_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: () => getListAllDocumentationToolMetadata(),
-    register: async (server, _context, enabled) => {
-      logger.info(
-        'Experimental components manifest feature detected - registering component tools'
-      );
-      await addListAllDocumentationTool(server, enabled);
-    },
-  },
-  {
-    name: GET_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: ({ multiSource }) => getDocumentationToolMetadata({ multiSource }),
-    register: (server, { multiSource }, enabled) =>
-      addGetDocumentationTool(server, enabled, {
-        multiSource,
-      }),
-  },
-  {
-    name: GET_STORY_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: ({ multiSource }) => getStoryDocumentationToolMetadata({ multiSource }),
-    register: (server, { multiSource }, enabled) =>
-      addGetStoryDocumentationTool(server, enabled, {
-        multiSource,
-      }),
-  },
+  // Docs run on the core docs toolset in both modes. A composition builds its toolset per request,
+  // because the sources it reads and the provider that fetches them belong to the request.
+  ...docsToolDefinitions,
 ];
 
 /**

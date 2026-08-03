@@ -2,23 +2,22 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import type { Source } from '@storybook/mcp';
+import type { Source } from 'storybook/internal/toolsets-docs';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
+import type { DocsAccess } from 'storybook/internal/toolsets-docs';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
 } from './utils/get-tool-availability.ts';
-import { estimateTokens } from './utils/estimate-tokens.ts';
 import type { CompositionAuth } from './auth/index.ts';
 import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
-import type { DocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -119,7 +118,7 @@ type McpServerHandlerParams = {
    * Selected (alongside `manifestProvider`) by the caller; the doc tools only consult
    * it for the local source. Undefined on older Storybook versions / when the feature is off.
    */
-  resolveEntry?: DocgenServerManifestAccess['resolveEntry'];
+  localAccess?: DocsAccess;
   /** Composition auth handler for multi-source mode */
   compositionAuth: CompositionAuth;
 };
@@ -132,7 +131,7 @@ export const mcpServerHandler = async ({
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
   manifestProvider,
-  resolveEntry,
+  localAccess,
   compositionAuth,
 }: McpServerHandlerParams) => {
   // Initialize MCP server and transport on first request, with concurrency safety
@@ -142,7 +141,7 @@ export const mcpServerHandler = async ({
       sources?.some((s) => s.url)
     );
   }
-  const server = await initialize;
+  await initialize;
 
   // Convert Node.js request to Web API Request
   const webRequest = await incomingMessageToWebRequest(req);
@@ -159,31 +158,7 @@ export const mcpServerHandler = async ({
     request: webRequest,
     sources,
     manifestProvider,
-    resolveEntry,
-    // Telemetry handlers for component manifest tools
-    ...(!disableTelemetry && {
-      onListAllDocumentation: async ({ manifests, resultText, sources: sourceManifests }) => {
-        await collectTelemetry({
-          event: 'tool:listAllDocumentation',
-          server,
-          toolset: 'docs',
-          componentCount: Object.keys(manifests.componentManifest.components).length,
-          docsCount: Object.keys(manifests.docsManifest?.docs || {}).length,
-          resultTokenCount: estimateTokens(resultText),
-          sourceCount: sourceManifests?.length,
-        });
-      },
-      onGetDocumentation: async ({ input, foundDocumentation, resultText }) => {
-        await collectTelemetry({
-          event: 'tool:getDocumentation',
-          server,
-          toolset: 'docs',
-          componentId: input.id,
-          found: !!foundDocumentation,
-          resultTokenCount: estimateTokens(resultText ?? ''),
-        });
-      },
-    }),
+    localAccess,
   };
 
   const response = await transport!.respond(webRequest, addonContext);

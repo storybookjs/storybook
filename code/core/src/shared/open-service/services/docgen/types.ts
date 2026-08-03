@@ -1,4 +1,7 @@
-import type { StrictArgTypes } from '../../../../types/modules/csf.ts';
+// From the defining module, not the `types/modules/csf.ts` barrel: that barrel re-exports through
+// the bare `storybook/internal/csf` specifier, which the portable `toolsets-docs` d.ts (this file
+// is in its closure) must not reference — its guard allows no `storybook/*` imports.
+import type { StrictArgTypes } from '../../../../csf/story.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
 /**

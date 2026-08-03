@@ -39,9 +39,20 @@ export type ToolsetToolOptions = {
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
   wrapSchema?: (schema: StandardSchemaV1) => StandardSchemaV1;
+  /**
+   * Supplies the toolset instead of the registry.
+   *
+   * A composition's docs tools read state that belongs to the request being served (its manifest
+   * provider and composed sources), so their toolset is built per call rather than registered once
+   * at boot. Called without a server when only static metadata is needed.
+   */
+  resolveToolset?: (server?: Server) => AnyToolsetDefinition;
 };
 
-function resolveToolset(options: ToolsetToolOptions): AnyToolsetDefinition {
+function resolveToolset(options: ToolsetToolOptions, server?: Server): AnyToolsetDefinition {
+  if (options.resolveToolset) {
+    return options.resolveToolset(server);
+  }
   const [toolsetId] = options.method.split('.');
   return getToolset(toolsetId);
 }
@@ -112,7 +123,7 @@ export async function callToolsetMethod(
   options: ToolsetToolOptions,
   input: unknown
 ): Promise<StorybookAiToolCallResult> {
-  const toolset = resolveToolset(options);
+  const toolset = resolveToolset(options, server);
   const method = resolveMethod(toolset, options);
   const ctx = buildContext(server, toolset);
 

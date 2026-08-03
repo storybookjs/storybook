@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { Options } from 'storybook/internal/types';
-import type { StorybookContext } from '@storybook/mcp';
+import type { DocsAccess, ManifestProvider, Source } from 'storybook/internal/toolsets-docs';
 
 const isLiteralEndpointPathname = (endpoint: string) => {
   try {
@@ -36,11 +36,28 @@ export const AddonOptions = v.object({
 export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;
 export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
 /**
+ * What serving the docs tools needs from the request being handled.
+ *
+ * Only a composition uses these: it reads several Storybooks, each through its own provider, and
+ * the local one through its own access when docgen-server mode is on. A single Storybook is served
+ * by the docs toolset registered at boot and needs none of it.
+ */
+export type DocsServingContext = {
+  /** The in-flight request; the default provider derives the manifest origin from it. */
+  request?: Request;
+  /** Fetches one manifest file, per source. */
+  manifestProvider?: ManifestProvider;
+  /** The composed Storybooks, when `refs` are configured. */
+  sources?: Source[];
+  /** Reads the local Storybook directly, in docgen-server mode. */
+  localAccess?: DocsAccess;
+};
+
+/**
  * Custom context passed to MCP server and tools.
  * Contains Storybook-specific configuration and runtime information.
- * Extends StorybookContext to be compatible with @storybook/mcp tools.
  */
-export type AddonContext = StorybookContext & {
+export type AddonContext = DocsServingContext & {
   /**
    * The Storybook options object containing configuration,
    * port, presets, and other runtime information.

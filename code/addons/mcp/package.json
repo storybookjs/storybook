@@ -36,7 +36,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/mcp": "workspace:*",
     "@tmcp/adapter-valibot": "^0.1.5",
     "@tmcp/transport-http": "^0.8.5",
     "tmcp": "^1.19.4",

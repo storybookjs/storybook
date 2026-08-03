@@ -369,14 +369,4 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 ## Cursor Cloud specific instructions
 
-The cloud VM boots from a snapshot with dependencies already installed; the startup update script only runs `yarn` (install). Standard commands are documented above — notes below are cloud-only caveats.
-
-- **Node is fixed in the VM snapshot, not in this repo.** `/exec-daemon/node` (Node 22.14) is injected ahead of nvm in `PATH`, and `nvm use` does not override it. That breaks anything running a `.ts` file directly through `node` (`yarn task check`, `yarn nx run-many -t check`). The snapshot's `~/.bashrc` already prepends the nvm-managed Node (`.nvmrc` / `22.22.3`), so normally you do nothing. Because that fix lives in the VM image rather than in git, it is not reproducible from this repo alone — if `node --version` reports below 22.18, the snapshot was rebuilt without it and you should restore it:
-  ```bash
-  # from the repo root, so nvm resolves .nvmrc
-  nvm install                                                                           # no-op if already installed
-  export PATH="${NVM_DIR:-$HOME/.nvm}/versions/node/v$(tr -d '[:space:]' < .nvmrc)/bin:$PATH"
-  corepack enable                                                                       # yarn 4.10.3 on that Node
-  ```
-- **Compile before running or typechecking.** The update script does not build. `yarn storybook:ui` runs `code/core/dist/bin/dispatcher.js`, so run `yarn task --task=compile --start-from=compile` (or `yarn nx run-many -t compile`) after a fresh boot or after changing package source. NX caches make reruns fast.
-- **Running the app:** `cd code && yarn storybook:ui` serves the internal Storybook UI on port `6006`. Verify with `curl --fail --silent --show-error localhost:6006/index.json`.
+Only relevant when running inside a Cursor Cloud agent VM: see [`.cursor/cloud-agent.md`](.cursor/cloud-agent.md) for the VM-specific caveats (the snapshot-provided Node/PATH setup, compiling before running or typechecking, and starting/verifying the Storybook UI). Kept as a pointer so these targeted notes do not fill every agent's context window.

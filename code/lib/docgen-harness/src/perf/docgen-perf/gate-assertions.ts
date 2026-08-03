@@ -118,8 +118,31 @@ function resolveScenario(
 }
 
 /**
- * Every assertion the gate makes about one run, in print order. The two whole-run rules come first
- * because either invalidates everything after it.
+ * The gate asserts the budget rows it has, so a scenario nobody wrote a row for would be measured
+ * every night and protected by nothing. Adding a scenario therefore fails the gate until its
+ * baseline is recorded, which is the point at which the number to budget exists.
+ */
+function checkEveryScenarioBudgeted(
+  results: SuiteResults,
+  budgets: Partial<Record<PerfBudgetKey, PerfBudget>>
+): Assertion {
+  const unbudgeted = Object.entries(results.engines).flatMap(([engine, result]) =>
+    result?.status === 'measured'
+      ? Object.keys(result.scenarios)
+          .filter((scenario) => budgets[`${engine as EngineId}/${scenario}`] === undefined)
+          .map((scenario) => `${engine}/${scenario}`)
+      : []
+  );
+
+  const label = 'every measured scenario has a budget';
+  return unbudgeted.length === 0
+    ? pass(label)
+    : fail(label, `${unbudgeted.join(', ')} measured with no budget row in budgets.ts`);
+}
+
+/**
+ * Every assertion the gate makes about one run, in print order. The whole-run rules come first
+ * because each invalidates everything after it.
  */
 export function assertBudgets(
   results: SuiteResults,
@@ -144,6 +167,7 @@ export function assertBudgets(
 
   return [
     pass('run is comparable'),
+    checkEveryScenarioBudgeted(results, budgets),
     ...entries.flatMap(([key, budget]) => {
       const scenario = resolveScenario(key, results);
       if ('missing' in scenario) {

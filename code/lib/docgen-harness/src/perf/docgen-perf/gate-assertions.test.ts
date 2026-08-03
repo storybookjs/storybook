@@ -113,6 +113,20 @@ describe('assertBudgets', () => {
     expect(found[0].detail).toContain('skipped');
   });
 
+  it('fails a scenario the run measured with no budget row, so a new one cannot land unprotected', () => {
+    const extra = results();
+    const measured = extra.engines['vue-component-meta'];
+    if (measured?.status !== 'measured') {
+      throw new Error('fixture must start from a measured engine');
+    }
+    measured.scenarios.workspace = measured.scenarios.flat;
+    const found = failures(
+      assertBudgets(extra, { 'vue-component-meta/flat': { maxWarmColdRatio: 0.3 } })
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0].detail).toContain('vue-component-meta/workspace');
+  });
+
   it('fails a budgeted metric the run reported as n/a', () => {
     const partial = withMetrics({ retainedGrowthMb: NOT_APPLICABLE });
     const found = failures(

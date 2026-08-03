@@ -40,19 +40,31 @@ export type PerfBudgetKey = `${EngineId}/${string}`;
 
 /** Measured on CI with headroom; the run is recorded in PERF-METHODOLOGY.md. */
 export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
-  // No first-story rows yet: those budgets follow the first CI run that measures the shape.
-  //
-  // Warm is ~14ms against a ~1.9s cold pass, so the ratio moves easily on a noisy executor; the
+  // Warm is ~13ms against a ~1.7s cold pass, so the ratio moves easily on a noisy executor; the
   // budget sits far enough above it to survive that.
   'react-legacy/whole-index': {
     maxWarmColdRatio: 0.05,
     memory: { maxTransientMb: 15, maxRetainedGrowthMb: 30, maxRetainedSlopeMb: 1 },
   },
+  // A one-component cold pass is only ~96ms, so warm/cold sits an order of magnitude higher than
+  // the index shape's without anything being wrong; the ratio still catches a warm pass that stops
+  // being incremental. Growth and slope are positive here because every save grows the one
+  // component's type - see PERF-METHODOLOGY.md, "Recorded baselines".
+  'react-legacy/first-story': {
+    maxWarmColdRatio: 0.6,
+    memory: { maxTransientMb: 15, maxRetainedGrowthMb: 10, maxRetainedSlopeMb: 1 },
+  },
   // Growth is negative here: the engine releases its whole-project state on the first save and
-  // settles ~85MB below the cold pass, so the slope is what carries the leak signal.
+  // settles ~83MB below the cold pass, so the slope is what carries the leak signal.
   'react-osa/whole-index': {
     maxWarmColdRatio: 0.08,
     memory: { maxTransientMb: 45, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 0.5 },
+  },
+  // The engine still builds a program for one component, so cold stays ~1.1s and the ratio looks
+  // like the index shape's. Its cold cost against react-legacy's is the finding, not this budget.
+  'react-osa/first-story': {
+    maxWarmColdRatio: 0.15,
+    memory: { maxTransientMb: 30, maxRetainedGrowthMb: 10, maxRetainedSlopeMb: 1 },
   },
   'vue-docgen-api/flat': {
     maxWarmColdRatio: 0.08,

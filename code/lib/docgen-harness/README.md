@@ -210,7 +210,7 @@ The React engines run every scenario twice, because Storybook documents componen
 - `whole-index` - one batch over every component, what the manifest generator does.
 - `first-story` - the single component a request asks for, what the docgen server does. This is the number a developer waits for before Controls populate.
 
-The cold ratio between the React engines is around 0.7 over the index and 0.1 over the first story; reading only one of them gives a misleading picture of the engine's cost.
+The cold ratio between the React engines is 0.73 over the index and 0.08 over the first story; reading only one of them gives a misleading picture of the engine's cost.
 
 ### Comparing two releases of one engine
 

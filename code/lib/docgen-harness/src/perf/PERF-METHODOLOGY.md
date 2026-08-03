@@ -199,6 +199,7 @@ Four rules exist so that a green gate means something:
 
 - A run marked non-comparable - the `--quick` smoke profile - fails rather than passing on numbers that were never meant to be compared.
 - An empty budget table fails, because a gate that asserts nothing should not report success.
+- A scenario the run measured with no budget row fails. The gate can only assert the rows it has, so without this a new scenario would run every night protected by nothing. It fails until its baseline is recorded, which is the run that produces the number to budget.
 - An engine that carries a budget but skipped or failed fails the gate. Skipping is legitimate on a laptop missing an optional tool; on the gate it means the thing being protected did not run.
 
 Cross-engine ratios are printed on every run but gated on by nothing, because no pair has been certified as doing equal work.
@@ -219,52 +220,71 @@ Memory budgets stay in absolute megabytes, with enough headroom on CI so that th
 
 ## Recorded baselines
 
-Measured on a CircleCI `sb_node_22_classic` medium+ executor, Node 22.22.1, at the pinned profile (N=6).
+Measured on a CircleCI `sb_node_22_classic` medium+ executor at the pinned profile (N=6); the exact Node version is recorded in the run's own `results.json`.
 Milliseconds are context, never a budget: the same suite runs three to four times faster on an Apple-silicon laptop, which is exactly why nothing gates on them.
 
-| Engine / scenario                  | Cold    | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
-| ---------------------------------- | ------- | ------ | ------ | -------------- | --------------- | -------------- |
-| react-legacy/whole-index           | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
-| react-osa/whole-index              | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | 0.10MB/save    |
-| react-legacy/first-story           | pending | pending| n/a    | pending        | pending         | pending        |
-| react-osa/first-story              | pending | pending| n/a    | pending        | pending         | pending        |
-| vue-docgen-api/flat                | 155ms   | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
-| vue-docgen-api/workspace           | 121ms   | 3ms    | n/a    | 0.4MB          | 0.3MB           | 0.02MB/save    |
-| vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.02MB/save    |
-| vue-component-meta/flat            | 1145ms  | 80ms   | n/a    | 9.4MB          | 3.7MB           | 0.19MB/save    |
-| vue-component-meta/workspace       | 1067ms  | 84ms   | n/a    | 12.7MB         | 3.6MB           | 0.19MB/save    |
-| vue-component-meta/base-type-touch | 1182ms  | 96ms   | n/a    | 12.1MB         | 3.0MB           | 0.25MB/save    |
-| compodoc/default                   | 1434ms  | 1537ms | 1434ms | 213.8MB        | n/a             | n/a            |
+| Engine / scenario                  | Cold   | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
+| ---------------------------------- | ------ | ------ | ------ | -------------- | --------------- | -------------- |
+| react-legacy/whole-index           | 1722ms | 13ms   | n/a    | 2.3MB          | -4.1MB          | 0.01MB/save    |
+| react-legacy/first-story           | 96ms   | 19ms   | n/a    | 2.6MB          | 1.6MB           | 0.12MB/save    |
+| react-osa/whole-index              | 2353ms | 45ms   | n/a    | 13.8MB         | -82.9MB         | 0.10MB/save    |
+| react-osa/first-story              | 1142ms | 48ms   | n/a    | 9.8MB          | 1.3MB           | 0.19MB/save    |
+| vue-docgen-api/flat                | 153ms  | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.01MB/save    |
+| vue-docgen-api/workspace           | 105ms  | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
+| vue-docgen-api/base-type-touch     | 109ms  | 6ms    | n/a    | 0.9MB          | 0.1MB           | 0.02MB/save    |
+| vue-component-meta/flat            | 997ms  | 79ms   | n/a    | 9.4MB          | 3.7MB           | 0.20MB/save    |
+| vue-component-meta/workspace       | 1060ms | 84ms   | n/a    | 12.8MB         | 3.6MB           | 0.19MB/save    |
+| vue-component-meta/base-type-touch | 1044ms | 84ms   | n/a    | 12.9MB         | 3.0MB           | 0.25MB/save    |
+| compodoc/default                   | 1315ms | 1336ms | 1315ms | 216.0MB        | n/a             | n/a            |
 
-The `first-story` rows land with the next daily run; the shape was added after the run above.
-Locally they read 33ms and 341ms cold against 463ms and 678ms for `whole-index`, which is the shape of the finding rather than a number to quote.
+### Pair ratios from the same run
 
-Three things in that table are worth reading twice.
+Each ratio divides the first engine's median by the second's, so above 1.00 means the second engine was faster.
+None of them is gated on, for the reasons under "Like-for-like comparison" above.
+
+| Pair (first over second)               | Scenario        | Cold | Warm | Equal work?                                     |
+| -------------------------------------- | --------------- | ---- | ---- | ----------------------------------------------- |
+| react-legacy over react-osa            | whole-index     | 0.73 | 0.29 | unknown - neither React engine reports counts   |
+| react-legacy over react-osa            | first-story     | 0.08 | 0.40 | unknown - neither React engine reports counts   |
+| vue-docgen-api over vue-component-meta | flat            | 0.15 | 0.04 | no - 80 vs 320 cold, 0 vs 17 warm               |
+| vue-docgen-api over vue-component-meta | workspace       | 0.10 | 0.04 | no - 50 vs 350 cold, 0 vs 37 warm               |
+| vue-docgen-api over vue-component-meta | base-type-touch | 0.10 | 0.07 | no - 50 vs 350 cold, 5 vs 45 warm               |
+
+The Vue rows are all `NOT like-for-like` in the new engine's favour: it documents four to seven times as many members, so every one of those ratios understates it.
+The React rows say `unknown` rather than agreeing, because neither React engine reports a member count at all.
+Nothing in the version-pair row appears here: `vue-component-meta-next` is out of the default run, so a version comparison only exists in the output of the run that explicitly asked for it.
+
+Four things in these tables are worth reading twice.
+
 
 Compodoc's warm figure is its cold figure, because it re-runs the whole project on every invocation.
 That is what it does by design, so it carries no incrementality budget; its peak memory, an order of magnitude above every other engine, is the number worth watching.
 
 `react-osa` reports negative retained growth, and that is the engine working correctly rather than a measurement artefact.
 The baseline is sampled straight after the cold pass, when the engine still holds state sized for the whole project.
-The first save re-extracts a single component, that whole-project state is released, and retained heap drops by around 85MB in one step and then stays flat.
+The first save re-extracts a single component, that whole-project state is released, and retained heap drops by around 83MB in one step and then stays flat.
 So the growth figure measures the distance from the cold-pass peak down to the steady state, and it is negative for every engine that re-extracts incrementally.
 
-And the React pair's cold ratio depends entirely on which shape you ask about.
-Over `whole-index` it sits near 0.7 - the two engines are within half an order of magnitude when documenting everything.
-Over `first-story` it drops to about 0.10, because `react-docgen` answers one component without building a program at all while `react-osa` has to construct one first.
+The React pair's cold ratio depends entirely on which shape you ask about.
+Over `whole-index` it sits at 0.73 - the two engines are within half an order of magnitude when documenting everything.
+Over `first-story` it drops to 0.08, because `react-docgen` answers one component without building a program at all while `react-osa` has to construct one first.
 That gap is the startup cost of the new engine, and it was invisible while the suite only measured the whole-index shape.
+The warm ratios run the other way round: 0.29 over the index against 0.40 over the first story, because once a program exists `react-osa` re-extracts more cheaply than the legacy parser re-parses.
 
-The reference ratios stand at 0.71 cold and 0.31 warm for react-legacy over react-osa on `whole-index`, and around 0.10-0.14 cold for vue-docgen-api over vue-component-meta.
-None of them is gated on, for the reasons under "Like-for-like comparison" above.
+And the retained slope is higher on `first-story` for both engines (0.12 and 0.19, against 0.01 and 0.10) without either of them leaking.
+Every save adds a prop to the component it touches, and in this shape that is the same component every time, so its type genuinely grows across the run.
+The slope there measures that growth as well as any leak, which is why its budget is no tighter than the whole-index one.
 
 ### Budgets
 
-Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, at roughly three to seven times the observed value so a busy executor cannot turn the gate into a flake.
+Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the observed value by whatever margin that metric's own noise demands.
 
 | Engine / scenario                  | Warm/cold ratio | Peak transient | Retained growth | Retained slope | Tier  |
 | ---------------------------------- | --------------- | -------------- | --------------- | -------------- | ----- |
 | react-legacy/whole-index           | 0.05            | 15MB           | 30MB            | 1MB/save       | daily |
+| react-legacy/first-story           | 0.60            | 15MB           | 10MB            | 1MB/save       | daily |
 | react-osa/whole-index              | 0.08            | 45MB           | 60MB            | 0.5MB/save     | daily |
+| react-osa/first-story              | 0.15            | 30MB           | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/flat                | 0.08            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/workspace           | 0.10            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/base-type-touch     | 0.25            | 8MB            | 10MB            | 1MB/save       | daily |

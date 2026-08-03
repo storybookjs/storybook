@@ -363,3 +363,17 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
+
+## Cursor Cloud specific instructions
+
+The cloud VM boots from a snapshot with dependencies already installed; the startup update script only runs `yarn` (install). Commands are the standard ones documented above — the notes below are only the non-obvious cloud caveats.
+
+- **Node/PATH gotcha (important):** `/exec-daemon/node` (Node 22.14) is injected at the front of `PATH` and shadows the nvm-managed Node. `nvm use` does **not** win over it. Most tasks tolerate 22.14 (install, `compile`, `lint`, `yarn test`, and running the app all work because they go through jiti/vite/vitest/oxlint), but anything that runs a `.ts` file directly through `node` — notably `yarn task check` and `yarn nx run-many -t check` — needs Node ≥ 22.18 (the repo pins `22.22.3` via `.nvmrc`). Activate it by explicitly prepending the nvm bin to `PATH` before those commands:
+  ```bash
+  export PATH="$HOME/.nvm/versions/node/$(ls "$HOME/.nvm/versions/node" | sort -V | tail -1)/bin:$PATH"
+  corepack enable   # only needed once per node version, provides yarn 4.10.3
+  ```
+- **Compile before running or typechecking.** The update script does not build. `yarn storybook:ui` runs `code/core/dist/bin/dispatcher.js`, so run `yarn task --task=compile --start-from=compile` (or `yarn nx run-many -t compile`) after a fresh boot or after changing package source. NX caches make reruns fast.
+- **Running the app:** `cd code && yarn storybook:ui` serves the internal Storybook UI on port `6006` (long-running dev server). It is fully functional in the VM; verify via `curl -s localhost:6006/index.json`.
+- **NX Cloud remote cache returns HTTP 401** ("insufficient access") on this account — this is benign, the local cache is still used. Ignore it.
+- **Tests:** the full `yarn test` suite is large; prefer focused runs like `yarn test <pattern>` (e.g. `yarn test csf-tools`) during iteration.

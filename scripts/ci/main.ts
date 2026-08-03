@@ -12,6 +12,8 @@ import {
   commonJobsNoOpJob,
   defineCircleciCompletion,
   docgenMemoryGate,
+  docgenPerfBaselineCapture,
+  docgenPerfGate,
   knip,
   lint,
   fmt,
@@ -55,7 +57,7 @@ function generateConfig(workflow: Workflow) {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate);
+      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
     }
 
     jobs.push(
@@ -73,6 +75,8 @@ function generateConfig(workflow: Workflow) {
       internalStorybookE2e,
       internalStorybookBuildE2e,
       benchmarkPackages,
+      // TEMPORARY: remove together with the job definition once the perf budgets are recorded.
+      docgenPerfBaselineCapture,
 
       sandboxesNoOpJob,
       ...sandboxes,

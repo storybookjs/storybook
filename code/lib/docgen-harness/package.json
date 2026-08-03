@@ -27,7 +27,8 @@
   },
   "scripts": {
     "bench:docgen-memory": "node --import jiti/register ./src/perf/docgen-memory/gate.ts",
-    "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts"
+    "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts",
+    "bench:docgen-perf-gate": "node ./src/perf/docgen-perf/gate.ts"
   },
   "devDependencies": {
     "@angular/common": "^21.2.14",

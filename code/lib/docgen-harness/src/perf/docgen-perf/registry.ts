@@ -97,6 +97,15 @@ export const ENGINES: BenchEngine[] = [
     versionPackage: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
+  // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
+  // failure; nothing else ever runs it.
+  new SeriesChildEngine({
+    id: 'crash-control',
+    child: 'engines/crash-control.ts',
+    scenarios: () => [{ name: 'default', params: {} }],
+    inDefaultRun: false,
+    args: () => [],
+  }),
 ];
 
 export const ALL_ENGINE_IDS: EngineId[] = ENGINES.map((engine) => engine.id);

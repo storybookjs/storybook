@@ -471,8 +471,7 @@ export const docgenPerfGate = defineJob(
           name: 'Per-engine docgen perf budgets',
           working_directory: DOCGEN_HARNESS_DIR,
           command: `yarn bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
-          // A full run is ~5 minutes, but the compodoc child alone may sit for its own ten-minute
-          // kill before the suite can report it, so the ceiling sits well above the normal case.
+          // A full run is ~5 minutes; the ceiling covers a hung compodoc child's ten-minute kill.
           no_output_timeout: '30m',
         },
       },

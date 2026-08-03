@@ -12,8 +12,7 @@ describe.each([
   ['default', DEFAULT_PROFILE],
   ['quick', QUICK_PROFILE],
 ])('%s profile', (_name, profile) => {
-  // The slope fit drops the settle save, so a scenario configured below this floor reports no
-  // retained metrics and the aggregation fails the whole engine - a smoke run that cannot smoke.
+  // Below the floor the run reports no retained metrics and fails the engine outright.
   it('runs enough saves for every scenario to produce a retained slope', () => {
     for (const { name, saves } of savesPerScenario(profile)) {
       expect(saves, name).toBeGreaterThanOrEqual(MIN_SAVES_FOR_SLOPE);

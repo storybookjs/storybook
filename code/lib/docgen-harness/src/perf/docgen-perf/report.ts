@@ -92,8 +92,7 @@ export function renderRatios(ratios: Ratios): string[] {
 
   for (const scenarios of Object.values(ratios)) {
     for (const [scenarioName, entry] of Object.entries(scenarios)) {
-      // Naming both engines rather than their roles: "legacy/new" tells a reader which side is
-      // which only if they already know the pair, which is exactly what they came here to find out.
+      // Naming both engines: "legacy/new" only helps a reader who already knows the pair.
       const label = `${entry.legacyEngine} over ${entry.nextEngine}, ${scenarioName}`;
       const versions = versionNote(entry);
 
@@ -117,8 +116,7 @@ export function renderRatios(ratios: Ratios): string[] {
   if (lines.length === 0) {
     return ['  no calibration ratio: it needs both sides of a control pair measured in one run'];
   }
-  // Which way the number points is the first thing a reader needs, and it is not guessable from a
-  // bare decimal.
+  // Which way the number points is not guessable from a bare decimal.
   return [
     "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster",
     ...lines,

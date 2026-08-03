@@ -1,8 +1,8 @@
 /**
  * Turns one suite run into a pass/fail verdict against the recorded budgets.
  *
- * Kept free of process and filesystem work so the rules below - which are the whole point of the
- * gate - can be tested against hand-built results instead of a full run.
+ * Free of process and filesystem work, so the rules can be tested against hand-built results
+ * instead of a full run.
  */
 import { PERF_BUDGETS, type PerfBudget, type PerfBudgetKey } from '../docgen-shared/budgets.ts';
 import type { EngineId, EngineMetrics, ScenarioResult, SuiteResults } from './types.ts';
@@ -41,11 +41,8 @@ function median(metric: EngineMetrics[keyof EngineMetrics]): number | undefined 
 }
 
 /**
- * Warm over cold, for one engine, from one run.
- *
- * Both figures come from the same process over the same project, which makes this like-for-like by
- * construction - no member-count comparison needed - and it rises exactly when re-extraction after
- * a save stops being incremental and starts redoing the cold pass's work.
+ * Warm over cold, for one engine, from one run: like-for-like by construction, and it rises when
+ * re-extraction after a save stops being incremental.
  */
 function checkIncrementality(key: string, max: number, metrics: EngineMetrics): Assertion {
   const label = `${key} warm/cold ratio`;
@@ -102,10 +99,8 @@ function checkMemory(
 }
 
 /**
- * The scenario a budget row names, or the reason there is nothing to assert it against.
- *
- * A budgeted engine that skipped is legitimate on a laptop missing an optional tool and never on
- * the gate: the thing being protected did not run, and a green result would claim otherwise.
+ * The scenario a budget row names, or why there is nothing to assert against. A budgeted engine
+ * that skipped is fine locally and never on the gate: the protected thing did not run.
  */
 function resolveScenario(
   key: PerfBudgetKey,
@@ -124,11 +119,8 @@ function resolveScenario(
 }
 
 /**
- * Every assertion the gate makes about one run, in the order it should be printed.
- *
- * Two whole-run rules come first, because either one invalidates everything after it: a run whose
- * numbers are marked non-comparable (the `--quick` smoke profile) must never report a green gate,
- * and a budget table with no rows asserts nothing while looking like protection.
+ * Every assertion the gate makes about one run, in print order. The two whole-run rules come first
+ * because either invalidates everything after it.
  */
 export function assertBudgets(
   results: SuiteResults,

@@ -1,12 +1,11 @@
 /**
  * CI regression gate for the per-engine docgen performance suite.
  *
- * Runs the suite once at the pinned profile, asserts every recorded budget against the results it
- * wrote, and then proves its own failure detection with a negative control: a second, tiny run that
- * includes a deliberately failing engine and MUST come back non-zero.
+ * Runs the suite at the pinned profile, asserts the recorded budgets, then proves its own failure
+ * detection with a negative control: a second run including a deliberately failing engine, which
+ * MUST come back non-zero.
  *
- * The measurement contract is ../PERF-METHODOLOGY.md; the budgets are
- * ../docgen-shared/budgets.ts.
+ * Contract: ../PERF-METHODOLOGY.md. Budgets: ../docgen-shared/budgets.ts.
  *
  * Run from code/lib/docgen-harness:
  *   yarn bench:docgen-perf-gate
@@ -47,8 +46,7 @@ function runSuite(args: string[], jsonPath: string): SuiteRun {
 
   const proc = spawnSync(process.execPath, [SUITE, ...args, '--json', jsonPath], {
     encoding: 'utf8',
-    // The suite's own table is the record of what was measured, so it belongs in the job log in
-    // full rather than as a tail after the fact.
+    // The suite's table is the record of what was measured, so it belongs in the job log in full.
     stdio: ['ignore', 'inherit', 'inherit'],
   });
 
@@ -69,11 +67,7 @@ function report(assertions: Assertion[]): string[] {
   return failures;
 }
 
-/**
- * The suite reports a failing engine by exiting non-zero, so a gate run that includes the crash
- * control and still succeeds means failures are being swallowed somewhere between the child and
- * the job's exit status.
- */
+/** A run including the crash control that still succeeds means failures are being swallowed. */
 function checkNegativeControl(gateDir: string): string[] {
   console.log('\n=== negative control: a failing engine must fail the gate ===');
   const controlPath = path.join(gateDir, 'crash-control.json');
@@ -116,8 +110,7 @@ function main(): void {
     for (const failure of failures) {
       console.error(`  - ${failure}`);
     }
-    // Not process.exit: writes to a pipe are async, and exiting here can truncate the very reasons
-    // someone is reading when the gate fails.
+    // Not process.exit: writes to a pipe are async and would truncate the reasons printed above.
     process.exitCode = 1;
     return;
   }

@@ -55,13 +55,7 @@ const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
  *   changed - re-extract only the component whose file changed.
  */
 const SCOPES = ['all', 'changed'] as const;
-/**
- * Which shape of docgen work the run reproduces - the same two shapes the OSA harness runs, so the
- * legacy engine can be compared against it on either.
- *
- *   whole-index - cold documents every component, saves walk round-robin.
- *   first-story - cold documents one component, every save re-extracts that same one.
- */
+/** The two shapes the OSA harness runs, so the legacy engine can be compared on either. */
 const SHAPES = ['whole-index', 'first-story'] as const;
 
 const OPTIONS = {
@@ -169,8 +163,7 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
   // Track how many extra props each component currently has, so each save grows its type.
   const extraByComponent = new Array<number>(options.components).fill(options.props);
   const firstStory = options.shape === 'first-story';
-  // Fixed at the one component the cold pass documented, for the reason the OSA harness pins it:
-  // walking round-robin would keep documenting components the cold pass never saw.
+  // Fixed at the component the cold pass documented; round-robin would keep documenting new ones.
   const changedIndex = (save: number) => (firstStory ? 0 : (save - 1) % options.components);
 
   return {

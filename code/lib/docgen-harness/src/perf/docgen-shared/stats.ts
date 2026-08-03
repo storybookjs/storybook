@@ -38,10 +38,7 @@ export function leastSquaresSlope(values: number[]): number {
 
 /** The retained- and transient-memory figures every series harness derives from its save series. */
 export interface SeriesSummary {
-  /**
-   * Least-squares slope of retained heap over the save series, MB per save, excluding the settle
-   * sample. This is the leak signal: a positive slope means each save leaves something behind.
-   */
+  /** Least-squares slope of retained heap per save, excluding the settle sample: the leak signal. */
   retainedSlope?: number;
   /** Final retained sample minus the pre-series baseline, MB. */
   retainedGrowth?: number;
@@ -54,20 +51,16 @@ export interface SeriesSummary {
 /**
  * Saves excluded from the slope fit.
  *
- * The baseline is sampled straight after the cold pass, so an engine still holds whole-project
- * state going into the first save. Where a save re-extracts one component, that state is released
- * on the first one - `react-osa` drops ~85MB between save 1 and save 2 and is then flat - and a fit
- * that includes the step measures the cold-to-steady-state transition rather than the leak trend.
- *
- * One is enough: that engine is the only one with a step, and it lands entirely inside the first
- * save. Every other engine is flat from save 1, so dropping one sample costs them nothing.
+ * The baseline is sampled after the cold pass, so an engine still holds whole-project state going
+ * into the first save and releases it there - `react-osa` drops ~85MB between save 1 and 2, then is
+ * flat. Fitting that step measures the transition, not the leak trend. Every other engine is flat
+ * from save 1, so one excluded sample costs them nothing.
  */
 const SETTLE_SAVES = 1;
 
 /**
- * Saves a scenario must run for a slope to exist: the excluded settle save, plus the two points a
- * least-squares fit needs. A scenario configured below this reports no retained metrics at all,
- * which the aggregation treats as a failed engine.
+ * Saves a scenario needs for a slope: the excluded settle save plus the two points a fit needs.
+ * Below this the run reports no retained metrics, which fails the engine.
  */
 export const MIN_SAVES_FOR_SLOPE = SETTLE_SAVES + 2;
 

@@ -69,9 +69,9 @@ describe('summarizeSeries', () => {
     }));
 
   it('excludes the settle save from the slope, so a cold-to-steady-state drop is not read as a trend', () => {
-    // react-osa's real shape: whole-project state is released on the first save, then flat.
+    // react-osa's real shape: the first save releases whole-project state, then it is flat.
     const summary = summarizeSeries(series([232.7, 147.4, 147.5, 147.6, 147.7]), baseline);
-    // Fitting the step in would give a steeply negative slope; the steady state creeps up slightly.
+    // Fitting the step would give a steeply negative slope; the steady state creeps up slightly.
     expect(summary.retainedSlope).toBeCloseTo(0.1, 5);
   });
 

@@ -76,8 +76,7 @@ const SCOPES = ['all', 'changed'] as const;
  * Which shape of docgen work the run reproduces.
  *
  *   whole-index - cold documents every component, saves walk round-robin. The manifest generator.
- *   first-story - cold documents one component, every save re-extracts that same one. The docgen
- *                 server's per-request path, where nothing is documented until a story asks for it.
+ *   first-story - cold documents one component and every save re-extracts it. The docgen server.
  */
 const SHAPES = ['whole-index', 'first-story'] as const;
 const RECYCLE = ['on', 'off'] as const;
@@ -238,9 +237,8 @@ function refreshEngine(
   // Track how many extra props each component currently has, so each save grows the type.
   const extraByComponent = new Array<number>(options.components).fill(options.props);
   const firstStory = options.shape === 'first-story';
-  // Round-robin would document a component the cold pass never touched, so retained heap would
-  // climb for the honest reason that the run keeps documenting more - indistinguishable from a leak.
-  // Re-touching the one documented component keeps the steady state comparable with the other shape.
+  // Round-robin would document components the cold pass never touched, so retained heap would climb
+  // for an honest reason that reads exactly like a leak.
   const changedIndex = (save: number) => (firstStory ? 0 : (save - 1) % options.components);
 
   return {
@@ -285,9 +283,8 @@ harnessMain(async () => {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
   }
 
+  // Re-extracting everything after a save is the other shape wearing this one's name.
   if (options.shape === 'first-story' && options.scope === 'all') {
-    // Re-extracting everything after a save would document the whole project anyway, which is the
-    // other shape wearing this one's name.
     throw new Error('--shape first-story requires --scope changed');
   }
 

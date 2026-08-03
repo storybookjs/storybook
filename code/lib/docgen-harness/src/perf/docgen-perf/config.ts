@@ -30,12 +30,11 @@ export const RSS_POLL_INTERVAL_MS = 100;
 export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
 
 /**
- * How much of the project the cold pass documents, which is the difference between the two shapes
- * Storybook actually runs.
+ * How much of the project the cold pass documents - the two shapes Storybook actually runs.
  *
  *   whole-index - one batch over every component, what the manifest generator does.
- *   first-story - the single component a request asked for, what the docgen server does; every save
- *                 then re-extracts that same component, so the steady state stays comparable.
+ *   first-story - the one component a request asked for, what the docgen server does; saves then
+ *                 re-extract that same component.
  */
 export type ReactScenarioShape = 'whole-index' | 'first-story';
 
@@ -75,8 +74,7 @@ export const DEFAULT_PROFILE: SuiteProfile = {
   comparable: true,
   react: [
     { shape: 'whole-index', components: 300, variants: 4, props: 10, saves: 20 },
-    // The project is the same size; only the cold pass and the save target differ, so the two rows
-    // are directly comparable.
+    // Same project size; only the cold pass and save target differ, so the rows are comparable.
     { shape: 'first-story', components: 300, variants: 4, props: 10, saves: 10 },
   ],
   vue: [

@@ -1,33 +1,18 @@
 /**
  * IMPORTANT: This file has unique constraints due to how Danger.js executes it.
  *
- * Restrictions:
- *
- * - NO TypeScript: This file runs without any transpilation/transformation
- * - NO external dependencies: Scripts dependencies are not installed in CI
- * - NO Node.js built-ins: Even `fs` and other core modules don't work in Danger's runtime
- * - MUST use `import` for Danger API: The Danger runtime only processes `import` statements, not
- *   `require()`. These imports get compiled to global references by Danger.js
- * - CAN use `require()` for local files: Works for things like package.json
- *
- * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
- * build processes.
+ * Danger transpiles this file and its local TypeScript imports inside its Docker image. Repository
+ * dependencies are not installed in CI, so imported utilities must not rely on package dependencies.
  */
 import { danger, fail, schedule, warn } from 'danger';
 
-/**
- * Returns the intersection of two arrays
- *
- * @template T
- * @param {ReadonlyArray<T>} a - First array
- * @param {ReadonlyArray<T>} b - Second array
- * @returns {T[]} Array containing elements present in both arrays
- */
-function intersection(a, b) {
+import pkg from '../code/package.json';
+import { getLatestOpinionatedReviews } from './utils/github/reviews.ts';
+import { isMemberOfAnyTeam } from './utils/github/teams.ts';
+
+function intersection<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): T[] {
   return a.filter((v) => b.includes(v));
 }
-
-const pkg = require('../code/package.json');
 
 const Versions = {
   PATCH: 'PATCH',
@@ -37,7 +22,10 @@ const Versions = {
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
-const trustedReviewerTeams = ['core', 'developer-experience'];
+const trustedReviewerTeams = {
+  org: 'storybookjs',
+  slugs: ['core', 'developer-experience'],
+} as const;
 
 const { labels } = danger.github.issue;
 
@@ -49,8 +37,7 @@ const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 const author = danger.github.pr.user;
 const authorAssociation = danger.github.pr.author_association;
 
-/** @param {string[]} labels */
-const checkRequiredLabels = (labels) => {
+const checkRequiredLabels = (labels: string[]) => {
   const forbiddenLabels = [
     'ci: do not merge',
     'in progress',
@@ -105,8 +92,7 @@ const checkRequiredLabels = (labels) => {
   }
 };
 
-/** @param {string} title */
-const checkPrTitle = (title) => {
+const checkPrTitle = (title: string) => {
   const match = title.match(/^[A-Z].+:\s[A-Z].+$/);
   if (!match) {
     fail(
@@ -122,8 +108,7 @@ Bad examples:
   }
 };
 
-/** @param {string} body */
-const checkManualTestingSection = (body) => {
+const checkManualTestingSection = (body: string) => {
   // Check if author is a core team member or maintainer
   const author = danger.github.pr.user;
   const authorAssociation = danger.github.pr.author_association;
@@ -178,9 +163,8 @@ const checkManualTestingSection = (body) => {
  * - Renaming freeform commits that are missing a changelog category
  * - Cherry-picking PRs with conflicts
  * - Any other task you choose to add during the release process!
- * @param {string} body
  */
-const checkReleaseChecklist = (body) => {
+const checkReleaseChecklist = (body: string) => {
   if (!isReleasePr) {
     return;
   }
@@ -222,46 +206,29 @@ const checkCoreDxApproval = async () => {
     return;
   }
 
-  const authorLogin = danger.github.pr.user.login.toLowerCase();
-  const reviews = danger.github.reviews ?? [];
-
-  /** @type {Map<string, (typeof reviews)[number]>} */
-  const latestByUser = new Map();
-  for (const review of reviews) {
-    const login = review.user?.login;
-    if (!login) {
-      continue;
-    }
-
-    const key = login.toLowerCase();
-    const existing = latestByUser.get(key);
-    if (!existing) {
-      latestByUser.set(key, review);
-      continue;
-    }
-
-    const existingTime = Date.parse(existing.submitted_at ?? '') || 0;
-    const nextTime = Date.parse(review.submitted_at ?? '') || 0;
-    if (
-      nextTime > existingTime ||
-      (nextTime === existingTime && (review.id ?? 0) > (existing.id ?? 0))
-    ) {
-      latestByUser.set(key, review);
-    }
-  }
-
-  const approvedLogins = [];
-  for (const [loginKey, review] of latestByUser) {
-    if (loginKey === authorLogin) {
-      continue;
-    }
-    if (review.state === 'APPROVED') {
-      approvedLogins.push(loginKey);
-    }
-  }
-
   const failMessage =
     'This PR needs an approving review from a Storybook Core or Developer Experience team member before it can be merged.';
+  const warningMessage =
+    'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.';
+
+  let reviews;
+  try {
+    reviews = await getLatestOpinionatedReviews(danger.github.api.graphql.bind(danger.github.api), {
+      owner: danger.github.thisPR.owner,
+      repo: danger.github.thisPR.repo,
+      number: danger.github.thisPR.pull_number,
+    });
+  } catch {
+    warn(warningMessage);
+    return;
+  }
+
+  const authorLogin = danger.github.pr.user.login.toLowerCase();
+  const approvedLogins = reviews.flatMap((review) =>
+    review.state === 'APPROVED' && review.authorLogin.toLowerCase() !== authorLogin
+      ? [review.authorLogin]
+      : []
+  );
 
   if (approvedLogins.length === 0) {
     fail(failMessage);
@@ -270,49 +237,19 @@ const checkCoreDxApproval = async () => {
 
   const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
   if (!token || typeof fetch !== 'function') {
-    warn(
-      'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
-    );
+    warn(warningMessage);
     return;
   }
 
-  /** @type {Set<string>} */
-  const trustedLogins = new Set();
   try {
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    };
-
-    for (const team of trustedReviewerTeams) {
-      const response = await fetch(
-        `https://api.github.com/orgs/storybookjs/teams/${team}/members?per_page=100`,
-        { headers }
-      );
-
-      if (!response.ok) {
-        warn(
-          'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
-        );
-        return;
-      }
-
-      const members = await response.json();
-      for (const member of members) {
-        if (member?.login) {
-          trustedLogins.add(member.login.toLowerCase());
-        }
-      }
+    const trusted = await Promise.all(
+      approvedLogins.map((login) => isMemberOfAnyTeam(login, trustedReviewerTeams, token))
+    );
+    if (trusted.some(Boolean)) {
+      return;
     }
   } catch {
-    warn(
-      'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.'
-    );
-    return;
-  }
-
-  if (approvedLogins.some((login) => trustedLogins.has(login))) {
+    warn(warningMessage);
     return;
   }
 

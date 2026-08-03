@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.6.0-alpha.3",
+  "version": "10.6.0-alpha.4",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -92,6 +92,11 @@
       "types": "./dist/common/index.d.ts",
       "code": "./src/common/index.ts",
       "default": "./dist/common/index.js"
+    },
+    "./internal/component-meta": {
+      "types": "./dist/component-meta/index.d.ts",
+      "code": "./src/component-meta/index.ts",
+      "default": "./dist/component-meta/index.js"
     },
     "./internal/components": {
       "types": "./dist/components/index.d.ts",
@@ -247,7 +252,7 @@
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",

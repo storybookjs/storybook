@@ -148,7 +148,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
                 return {
                   code: automockedCode.toString(),
-                  map: automockedCode.generateMap(),
+                  map: automockedCode.generateMap().toString(),
                 };
               }
             } catch (e) {

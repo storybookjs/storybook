@@ -94,3 +94,7 @@ scripts/eval/results
 
 # Unknown
 .omc
+/tools-api.md
+
+# Vercel CLI link/pull output for the agent-eval playground (CI runs from the repo root)
+.vercel

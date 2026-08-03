@@ -63,6 +63,18 @@ const baseConfig = {
       entry: ['src/index.ts', 'src/ink/steps/checks/index.tsx'],
       project,
     },
+    // The perf bench is a set of CLIs and spawned child processes, reachable from `yarn
+    // bench:docgen-*` rather than from the package's own entry, so each root is listed here.
+    'lib/docgen-harness': {
+      entry: [
+        'src/index.ts',
+        'src/perf/docgen-perf/run.ts',
+        'src/perf/docgen-perf/engines/{react-legacy,vue-component-meta,vue-docgen-api}.ts',
+        'src/perf/docgen-perf/generators/{angular,vue}.ts',
+        'src/perf/docgen-memory/{gate,memory-harness,generate-project}.ts',
+      ],
+      project,
+    },
     'lib/*': {
       project,
     },

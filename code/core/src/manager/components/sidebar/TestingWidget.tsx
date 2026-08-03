@@ -230,12 +230,6 @@ export const TestingWidget = ({
   );
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
-  useEffect(() => {
-    if (isCrashed && isCollapsed) {
-      toggleCollapsed(undefined, false);
-    }
-  }, [isCrashed, isCollapsed, toggleCollapsed]);
-
   useDynamicFavicon(
     isCrashed
       ? 'critical'

@@ -147,7 +147,39 @@ Cold and warm get their own verdict, since a pair can document the same members 
 
 Even the member count is not enough on its own. An engine that records a type's name without ever looking through it documents exactly as many members as one that expanded the whole chain, and it does so at a fraction of the cost. So an engine that works that way also reports how many of its documented members carry a type it never resolved, and that second count has to agree as well before the two sides count as having done equal work.
 
-What we do not have yet is the gate. Once baselines exist, a ratio that moves the wrong way should fail CI, so that a human intercepts and decides what to do next.
+A cross-engine ratio therefore only becomes a budget once the suite has certified the pair as like-for-like, and today none of the pairs qualifies.
+The Vue pair is genuinely unequal: `vue-component-meta` documents several times the members `vue-docgen-api` does, so its higher cost is thoroughness rather than slowness.
+The React pair is undecided rather than unequal, because neither React engine reports a member count, and a missing count is not agreement.
+Making that pair gateable means teaching both React children to count what they documented, which is worth doing and has not been done.
+
+### The incrementality ratio
+
+There is one timing budget that needs no second engine.
+Warm over cold, for a single engine, compares two figures from the same process over the same project, which makes it like-for-like by construction and immune to the member-count question entirely.
+
+It also measures the thing users feel.
+A cold extraction happens once at startup; a warm one happens on every save, and it is only fast because the engine re-extracts the component that changed instead of redoing the whole project.
+When that breaks, the warm figure climbs toward the cold one, and the ratio catches it whatever the absolute numbers on the day happen to be.
+
+## The gate
+
+`yarn bench:docgen-perf-gate` runs the suite once at the pinned profile and asserts every recorded budget against the results.
+
+Four rules exist so that a green gate means something:
+
+- A run marked non-comparable - the `--quick` smoke profile - fails rather than passing on numbers that were never meant to be compared.
+- An empty budget table fails, because a gate that asserts nothing should not report success.
+- An engine that carries a budget but skipped or failed fails the gate. Skipping is legitimate on a laptop missing an optional tool; on the gate it means the thing being protected did not run.
+- A cross-engine ratio the suite did not certify as like-for-like fails rather than being gated on, and the failure names which way the two sides differed.
+
+The gate then proves its own failure detection: it runs the suite a second time with an engine that always fails, and requires that run to come back non-zero.
+Without that, a gate whose failure path had silently broken would be indistinguishable from a gate that keeps passing because nothing is wrong.
+
+### When it runs
+
+On CircleCI's daily tier, which is triggered by the `ci:daily` label on a pull request.
+Nothing schedules that tier, so this is on-demand protection rather than nightly protection.
+A regression that lands on a Tuesday is caught whenever someone next asks for a daily run, not overnight.
 
 ### Memory budgets
 

@@ -37,12 +37,14 @@ import { createDocgenWorkerClient } from '../../shared/open-service/services/doc
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
-import { docsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
 import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
 import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { loadManifests } from '../utils/manifests/manifests.ts';
 
 import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
@@ -363,8 +365,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     presets: options.presets,
   });
 
-  registerToolset(docsToolset);
-
   const features = await options.presets.apply('features');
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
@@ -426,12 +426,27 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       });
     }
 
+    // Story-docs registers whenever this block runs, docgen only when a worker is available, so
+    // docgen registered ⇒ story-docs registered. `createLocalDocsAccess` requires both before
+    // reading from the services and degrades to the manifests otherwise, so reordering or gating
+    // these registrations cannot make the docs toolset throw — only fall back.
     registerStoryDocsService({
       getIndex: () => storyIndexGenerator.getIndex(),
       storyDocsProvider,
       workingDir: process.cwd(),
     });
   }
+
+  registerToolset(
+    createDocsToolset({
+      // Registration-based selection between the docgen services and the inline manifests, shared
+      // with addon-mcp's composed local source so both read this Storybook the same way.
+      docsAccess: createLocalDocsAccess({
+        storyIndex,
+        getManifests: () => loadManifests(options.presets),
+      }),
+    })
+  );
 };
 
 // Store the promise (not the result) to prevent race conditions.

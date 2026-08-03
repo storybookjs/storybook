@@ -10,8 +10,10 @@
 import type { StoryIndex } from 'storybook/internal/types';
 import { clearToolsetRegistry } from 'storybook/open-service';
 import {
+  createDocsToolset,
   createStoriesToolset,
   createTestToolset,
+  emptyManifests,
   registerToolset,
   reviewToolset,
 } from 'storybook/internal/core-server';
@@ -50,4 +52,9 @@ export function registerCoreToolsetsForTest({
       })
     );
   }
+  registerToolset(
+    createDocsToolset({
+      docsAccess: { list: async () => emptyManifests(), resolve: async () => undefined },
+    })
+  );
 }

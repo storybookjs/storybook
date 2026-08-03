@@ -70,6 +70,18 @@ function mergeServicePayloads(
   );
 }
 
+/**
+ * Whether the dev server should 404 `manifests/components.json` and `manifests/docs.json` because
+ * docgen-server mode owns that data.
+ *
+ * Deliberately flag-based, while the docs toolset's engine selection (`createLocalDocsAccess`) is
+ * registration-based. The two can disagree: with the flag on but the docgen services unregistered
+ * (manager-only build, no docgen worker), the toolset falls back to reading the inline manifests
+ * while this route keeps 404ing them — so a composing parent Storybook fetching manifests over
+ * HTTP sees nothing even though the local MCP tools still serve docs. Accepted for now: switching
+ * this gate to registration would change composition behavior that only the live-fixture suites
+ * cover, so it is deferred to its own change.
+ */
 function isDocgenServerManifestMode(features: {
   experimentalDocgenServer?: boolean;
   componentsManifest?: boolean;
@@ -121,6 +133,16 @@ async function getManifests(
       watch,
     })) ?? {}
   );
+}
+
+/**
+ * Loads the live manifests, the same way the dev-server manifest routes do.
+ *
+ * Exposed for the docs toolset, which reads manifest data in-process instead of fetching its own
+ * server over loopback HTTP.
+ */
+export async function loadManifests(presets: Presets) {
+  return getManifests(presets, await getManifestEntries(presets), { watch: true });
 }
 
 /**

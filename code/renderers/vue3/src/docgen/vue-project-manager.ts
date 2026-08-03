@@ -57,6 +57,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
    * so without this an extraction racing an editor save would serve stale docgen forever.
    */
   private readonly mtimes = new Map<string, number>();
+  private readonly pendingCreatedFiles = new Set<string>();
 
   constructor(
     public readonly checker: ComponentMetaChecker,
@@ -66,7 +67,34 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
   ) {}
 
   getCommandLine(): ts.ParsedCommandLine {
+    this.replayPendingCreatedFiles();
     return this.commandLine;
+  }
+
+  private replayPendingCreatedFiles(): void {
+    if (this.pendingCreatedFiles.size === 0) {
+      return;
+    }
+
+    const pendingCreatedFiles = [...this.pendingCreatedFiles];
+    this.pendingCreatedFiles.clear();
+
+    const commandLine = this.getCommandLineFn?.();
+    if (!commandLine) {
+      return;
+    }
+
+    this.commandLine = commandLine;
+    const rootFiles = new Set(commandLine.fileNames);
+    for (const fileName of pendingCreatedFiles) {
+      if (!rootFiles.has(fileName)) {
+        continue;
+      }
+      const text = tryReadFile(fileName);
+      if (text !== undefined) {
+        this.checker.updateFile(fileName, text);
+      }
+    }
   }
 
   hasSourceFile(fileName: string): boolean {
@@ -124,6 +152,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
       const fileName = normalize(filePath);
 
       if (type === 'deleted') {
+        this.pendingCreatedFiles.delete(fileName);
         if (this.hasSourceFile(fileName)) {
           this.checker.deleteFile(fileName);
         }
@@ -145,15 +174,8 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
         continue;
       }
 
-      const commandLine = this.commandLine;
-      if (commandLine) {
-        this.commandLine = commandLine;
-        if (commandLine.fileNames.includes(fileName)) {
-          const text = tryReadFile(fileName);
-          if (text !== undefined) {
-            this.checker.updateFile(fileName, text);
-          }
-        }
+      if (this.getCommandLineFn) {
+        this.pendingCreatedFiles.add(fileName);
       }
     }
   }
@@ -172,6 +194,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
   dispose(): void {
     this.checker.clearCache();
     this.mtimes.clear();
+    this.pendingCreatedFiles.clear();
   }
 }
 

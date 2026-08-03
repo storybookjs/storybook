@@ -1,5 +1,17 @@
 ## 3.1.12
 
+## 3.3.2
+
+### Patch Changes
+
+- [#130](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/130) [`69563ea`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/69563ea8b524e4db6fa41cfc050f87f11918875b) Thanks [@luuhongyii](https://github.com/luuhongyii)! - Fix the root CommonJS export's types condition to point to the emitted declaration file.
+
+- [#134](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/134) [`e8c749a`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/e8c749a64042c8c5f48ec1d755b4f2126aa06117) Thanks [@Stanzilla](https://github.com/Stanzilla)! - Ignore the Turbopack-only Rust React Compiler flag when loading Next.js configuration for Vite.
+
+- [#139](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/139) [`003ccf5`](https://github.com/storybookjs/vite-plugin-storybook-nextjs/commit/003ccf590b58437217fafbc64f03f144a1545ddd) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Fix Next.js navigation and router mocks losing exports in dev mode
+
+  A few members of `next/navigation` and `next/router` were only forwarded at runtime, so importing them by name failed in dev with "does not provide an export named". Production builds were never affected. Those members are now declared explicitly.
+
 ## 3.3.1
 
 ### Patch Changes

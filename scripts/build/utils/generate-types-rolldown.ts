@@ -57,6 +57,31 @@ const RE_DTS_IMPORTER = /\.d\.[cm]?ts(?:\?|$)/;
  * both `@types/*` fallback and `typesVersions`. Everything else falls through
  * to the plugin's fast Rust resolver.
  */
+const TEXT_ASSET_STUB_ID = '\0text-asset-stub.d.ts';
+
+/**
+ * The JS bundler inlines `.md`/`.html` imports as strings (see the esbuild
+ * `loader` option in generate-bundle), so in the type surface such imports
+ * collapse to `string`.
+ */
+function createTextAssetStubPlugin(): Plugin {
+  return {
+    name: 'text-asset-stub',
+    resolveId(source) {
+      if (source.endsWith('.md') || source.endsWith('.html')) {
+        return TEXT_ASSET_STUB_ID;
+      }
+      return null;
+    },
+    load(id) {
+      if (id === TEXT_ASSET_STUB_ID) {
+        return 'declare const content: string;\nexport default content;\n';
+      }
+      return null;
+    },
+  };
+}
+
 function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean): Plugin {
   const cache = new Map<string, string | null>();
   const compilerOptions: ts.CompilerOptions = {
@@ -327,6 +352,7 @@ export async function generateTypesFiles(
       input,
       external: externalFn,
       plugins: [
+        createTextAssetStubPlugin(),
         ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(externalFn)] : []),
         dts({
           cwd,

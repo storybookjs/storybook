@@ -2,13 +2,9 @@ import React, { useEffect, type FC, type ReactNode } from 'react';
 
 import { Select } from 'storybook/internal/components';
 
-import { useNavigate } from 'storybook/internal/router';
-import { useStorybookApi } from 'storybook/manager-api';
-
-import { navigateToReviewEntry } from '../review-actions.ts';
+import { useReviewContext } from '../review-context.ts';
 import { prettifyComponentId, resolveNavIndex, type ReviewNavEntry } from '../review-navigation.ts';
 import { type StoryInfo } from '../review-types.ts';
-import { useReviewFiltersRef } from '../useReviewFiltersRef.ts';
 
 const derivePickerLabel = (
   storyId: string,
@@ -47,9 +43,7 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
   storyInfo,
   children,
 }) => {
-  const api = useStorybookApi();
-  const navigate = useNavigate();
-  const filtersRef = useReviewFiltersRef();
+  const { openEntry } = useReviewContext();
 
   // Each option carries the entry's index in `entries` as its value. A story can
   // appear under several collections, so its storyId is not unique — the index is,
@@ -69,9 +63,9 @@ export const ReviewCollectionPicker: FC<ReviewCollectionPickerProps> = ({
 
   useEffect(() => {
     if (nextStory) {
-      navigateToReviewEntry(api, navigate, nextStory, filtersRef.current);
+      openEntry(nextStory);
     }
-  }, [nextStory, api, navigate, filtersRef]);
+  }, [nextStory, openEntry]);
 
   return (
     <Select

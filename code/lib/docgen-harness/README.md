@@ -17,6 +17,9 @@ Each framework has three test files:
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
+vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
+It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
+
 ## Layout
 
 ```text
@@ -34,9 +37,11 @@ src/
 │   └── types.ts
 ├── vue3/
 │   ├── vue3-baselines.test.ts
+│   ├── vue3-component-meta-baselines.test.ts
 │   ├── vue3-legacy-gaps.test.ts
 │   ├── vue3-render.test.ts
-│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot
+│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot,
+│                                 # cm-argtypes.snapshot, cm-snippet-<story>.snapshot
 ├── angular/
 │   ├── angular-baselines.test.ts
 │   ├── angular-legacy-gaps.test.ts
@@ -45,7 +50,12 @@ src/
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
 ├── svelte/                       # planned
-└── web-components/               # planned
+├── web-components/               # planned
+└── perf/                         # the performance bench, see below
+    ├── PERF-METHODOLOGY.md       # the measurement contract
+    ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
+    ├── docgen-memory/            # the docgen-server memory regression gate
+    └── docgen-shared/            # sampling, stats, budgets and paths shared by both
 ```
 
 ## The comparator
@@ -68,6 +78,18 @@ src/
 - The committed `argtypes*.snapshot` files are pretty-format text, not JSON.
   `parseArgTypesSnapshot` reads them back and verifies itself by re-serializing every parse byte-for-byte; anything outside that grammar throws.
 - Adding a framework: extend the `Framework` union and compilation fails at the switch in `snippets.ts` until the new matcher exists.
+
+## The vue-component-meta recorder (vue3)
+
+`vue3-component-meta-baselines.test.ts` replicates the vue3-vite vite plugin's meta processing exactly - checker options, empty-meta skip, nested-schema pruning, exposed de-duplication, and the vue-docgen-api event-description backfill - so the `cm-` snapshots show what a `vue-component-meta` user actually gets today.
+Keeping that copy in step with `frameworks/vue3-vite/src/plugins/vue-component-meta.ts` is manual; nothing detects drift.
+
+- The `cm-` prefix keeps each recorder's stale-snippet guard scoped to its own files.
+- `sourceFiles` records `<sfc>` because production stores the absolute module id and snapshots must stay path-free; nothing downstream reads it.
+- Like the legacy recorder, it self-compares every committed baseline through the comparator, so a checker or plugin change that loses extraction quality fails with named violations instead of landing as an unremarkable diff.
+  Whether the OSA Vue engine is also held to these baselines - rather than only to the legacy ones - is a separate, later decision.
+- Plugin and checker changes land here as reviewed snapshot diffs instead of silent drift - #35565 (`schema: true`) moved 17 of the 25 `cm-argtypes.snapshot` files and left every `cm-snippet-*` byte-identical.
+  The recorded state is whatever the lockfile resolves `vue-component-meta` to (3.3.9 today), so a dependency bump is a reviewed baseline change too.
 
 ## Adding a fixture
 
@@ -104,6 +126,7 @@ Nothing detects drift between a fixture's sources and its committed capture, so 
 - Reactive-props-destructure defaults are invisible; only `withDefaults()` is extracted.
 - `defineModel('name')` named models are invisible; snippets render a bare attribute instead of `v-model:name`.
 - Scoped-slot binding types are never extracted, only their names.
+- `defineExpose` members record no type at all - name and description only, where `vue-component-meta` resolves the same members to `number` and `() => void`.
 - Bigints beyond `Number.MAX_SAFE_INTEGER` lose precision in snippets.
 - Thin baselines by design: `Pick`-composed props record `{}`, recursive types a name-only stub, runtime array props `type: undefined`.
 - `defineProps<ReturnType<typeof useComposable>>()` does not build in the legacy toolchain; a statement-block event expression crashes `parse()` outright (#23851). No baselines can exist for either.
@@ -120,6 +143,9 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options.
 - #24270 (partial) -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted; the issue's own snippet repro is not covered here.
 - #26465 (partial) -> `slots/`: scoped-slot binding types must be extracted; the marker covers only this symptom, not the issue's `vue-component-meta` repro.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under `vue-component-meta` - does not occur at 3.3.9.
+  `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact; a regression baseline, no marker.
+  The issue's secondary HMR symptom is dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options.
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` argument must resolve its props.
 
@@ -145,7 +171,27 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ.
 
+## The performance bench
+
+`src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.
+It is a set of CLIs rather than part of this package's exported API, so nothing in `src/perf/` is re-exported from `src/index.ts`.
+
+Both commands run from `code/lib/docgen-harness`:
+
+```bash
+yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile
+yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
+yarn bench:docgen-memory          # the docgen-server memory regression gate CI runs daily
+```
+
+`bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
+`bench:docgen-memory` asserts both that re-extraction is leak-free and that the program-recycle fix still flips a tight-heap run from OOM to survival.
+
+Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
+It is the contract the numbers are only meaningful under.
+
+The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
+
 ## What does not live here
 
-- The performance harness stays under `scripts/`.
 - Framework provider code lives in each framework's own package.

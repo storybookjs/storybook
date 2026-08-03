@@ -1,0 +1,3 @@
+<template>
+  <DefinePropsWithDefaults disabled label="Custom label" size="large" />
+</template>

@@ -1,0 +1,67 @@
+{
+  "disabled": {
+    "defaultValue": {
+      "summary": "false",
+    },
+    "description": "Whether the label is disabled.",
+    "name": "disabled",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "label": {
+    "defaultValue": {
+      "summary": ""Label"",
+    },
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""Label"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "size": {
+    "defaultValue": {
+      "summary": ""medium"",
+    },
+    "description": "The visual size of the label.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": ""medium" | "small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "medium",
+        "small",
+        "large",
+      ],
+    },
+  },
+}

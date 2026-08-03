@@ -3,6 +3,10 @@ const nextConfig = {
   env: {
     nextConfigEnv: "next-config-env",
   },
+  reactCompiler: true,
+  experimental: {
+    turbopackRustReactCompiler: true,
+  },
 };
 
 export default nextConfig;

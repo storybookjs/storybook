@@ -22,6 +22,7 @@ let navigationAPI: {
  * */
 
 type NavigationActions = typeof navigationAPI & Record<string, unknown>;
+type RedirectType = Parameters<typeof getRedirectError>[1];
 
 export const createNavigation = (
   overrides?: Record<string, (...params: unknown[]) => unknown>,
@@ -82,27 +83,17 @@ export const unstable_isUnrecognizedActionError: typeof actual.unstable_isUnreco
   actual.unstable_isUnrecognizedActionError; // Next 15.5
 
 // mock utilities/overrides (as of Next v14.2.0)
-export const redirect: Mock<
-  (url: string, type?: actual.RedirectType) => never
-> = fn(
-  (
-    url: string,
-    type: actual.RedirectType = actual.RedirectType.push,
-  ): never => {
+export const redirect: Mock<(url: string, type?: RedirectType) => never> = fn(
+  (url: string, type: RedirectType = "push" as RedirectType): never => {
     throw getRedirectError(url, type, RedirectStatusCode.SeeOther);
   },
 ).mockName("next/navigation::redirect");
 
 export const permanentRedirect: Mock<
-  (url: string, type?: actual.RedirectType) => never
-> = fn(
-  (
-    url: string,
-    type: actual.RedirectType = actual.RedirectType.push,
-  ): never => {
-    throw getRedirectError(url, type, RedirectStatusCode.SeeOther);
-  },
-).mockName("next/navigation::permanentRedirect");
+  (url: string, type?: RedirectType) => never
+> = fn((url: string, type: RedirectType = "push" as RedirectType): never => {
+  throw getRedirectError(url, type, RedirectStatusCode.SeeOther);
+}).mockName("next/navigation::permanentRedirect");
 
 // passthrough mocks - keep original implementation but allow for spying
 export const useSearchParams: Mock<() => actual.ReadonlyURLSearchParams> = fn(

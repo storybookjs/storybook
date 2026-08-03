@@ -369,4 +369,4 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 ## Cursor Cloud specific instructions
 
-Only relevant when running inside a Cursor Cloud agent VM: see [`.cursor/cloud-agent.md`](.cursor/cloud-agent.md) for the VM-specific caveats (the snapshot-provided Node/PATH setup, compiling before running or typechecking, and starting/verifying the Storybook UI). Kept as a pointer so these targeted notes do not fill every agent's context window.
+Cursor Cloud agents must also read [`.cursor/cloud-agent.md`](.cursor/cloud-agent.md).

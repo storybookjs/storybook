@@ -1,6 +1,9 @@
 name: Agent eval
 
 on:
+  schedule:
+    # Weekly full 8xx/82x suite on `next` (repo default). Monday 08:00 UTC.
+    - cron: '0 8 * * 1'
   pull_request:
     types:
       - opened
@@ -64,6 +67,7 @@ jobs:
     name: Run agent eval experiments
     # Skip synchronize: sticky `ci:eval` must not re-bill on every push.
     if: >-
+      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
         github.event.action != 'synchronize' &&
@@ -73,7 +77,7 @@ jobs:
     environment:
       # Keep this rule in sync with the Resolve Vercel target step below.
       # GitHub evaluates environment.name before step outputs exist.
-      name: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
       url: ${{ steps.deploy_playground.outputs.url }}
     permissions:
       contents: read
@@ -138,10 +142,10 @@ jobs:
         id: run_evals
         run: yarn workspace agent-eval run eval
         env:
-          # PR labels (ci:extra-evals, ci:extra-models) and workflow_dispatch
-          # inputs both opt in; unlabeled ci:eval runs stay minimal.
+          # Schedule always runs the full 8xx/82x line on next. PR labels and
+          # workflow_dispatch inputs opt in otherwise; unlabeled ci:eval stays minimal.
           EVAL_ONLY: ${{ inputs.eval_only || '' }}
-          EVAL_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
+          EVAL_EXTRA_EVALS: ${{ (github.event_name == 'schedule' || inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
           EVAL_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && '1' || '' }}
           EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
           EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
@@ -188,7 +192,7 @@ jobs:
         shell: bash
         run: |
           # Keep this rule in sync with jobs.eval.environment.name above.
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF" == "refs/heads/next" ]]; then
+          if [[ ("$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "schedule") && "$GITHUB_REF" == "refs/heads/next" ]]; then
             echo "target=production" >> "$GITHUB_OUTPUT"
           else
             echo "target=preview" >> "$GITHUB_OUTPUT"

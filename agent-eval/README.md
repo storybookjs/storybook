@@ -61,6 +61,11 @@ only the specific evals affected by the change (or the eval being fixed), one
 experiment at a time, via `EVAL_ONLY` — never a full line, never multiple
 experiments in parallel.
 
+A scheduled weekly run (Monday 08:00 UTC) always executes the full 8xx/82x
+line on `next` with default-model experiments, deploys the playground to the
+Vercel production target, and does not enable `EVAL_EXTRA_MODELS`,
+`EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW` (use `workflow_dispatch` for those).
+
 By default only the first core eval (`801-create-component-no-launch-config`)
 runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals

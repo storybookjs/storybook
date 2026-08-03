@@ -180,8 +180,8 @@ All commands run from `code/lib/docgen-harness`:
 ```bash
 yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile (~1 min)
 yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
-yarn bench:docgen-perf-gate       # the same suite, plus budget assertions - what CI runs daily
-yarn bench:docgen-memory          # the docgen-server memory regression gate CI runs daily
+yarn bench:docgen-perf-gate       # the same suite, plus budget assertions - what the CI gate runs
+yarn bench:docgen-memory          # the docgen-server memory regression gate
 ```
 
 `bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
@@ -226,6 +226,8 @@ The suite prints both resolved versions beside every ratio and calls out two equ
 `PERF-METHODOLOGY.md` walks through reading those guard lines, and through adding a pair for another engine.
 
 ### The gate and its budgets
+
+Both gates run on CircleCI's daily tier, which is triggered on demand by the `ci:daily` label on a pull request - nothing schedules it, so this is not nightly protection.
 
 `bench:docgen-perf-gate` runs the suite at the pinned profile, asserts the budgets in `src/perf/docgen-shared/budgets.ts`, and then proves its own failure detection by running a deliberately failing engine and requiring that run to come back non-zero.
 It writes into the sandbox directory by default; CI passes `--out ./perf-results` so the results can be stored as a build artifact.

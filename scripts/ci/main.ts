@@ -74,7 +74,6 @@ function generateConfig(workflow: Workflow) {
       internalStorybookE2e,
       internalStorybookBuildE2e,
       benchmarkPackages,
-      // TEMPORARY: remove together with the job definition once the perf budgets are recorded.
 
       sandboxesNoOpJob,
       ...sandboxes,

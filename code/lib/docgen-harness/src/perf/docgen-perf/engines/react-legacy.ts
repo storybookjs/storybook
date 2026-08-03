@@ -139,6 +139,11 @@ async function loadParser(options: HarnessOptions, project: GeneratedProject): P
 }
 
 async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
+  // Re-extracting everything after a save is the other shape wearing this one's name.
+  if (options.shape === 'first-story' && options.scope === 'all') {
+    throw new Error('--shape first-story requires --scope changed');
+  }
+
   const genStart = Date.now();
   const project = generateProject({
     outDir: options.outDir,

@@ -55,10 +55,13 @@ export type PerfBudgetKey = `${EngineId}/${string}`;
  * from is recorded in PERF-METHODOLOGY.md.
  */
 export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
+  // No first-story rows yet: that shape lands with this change and its budgets follow the first CI
+  // run that measures it, rather than being guessed from a laptop.
+  //
   // Warm here is ~14ms against a ~1.9s cold pass, so the ratio has room to move on a noisy
   // executor without meaning anything; the budget sits far enough above it to survive that and
   // still catch a save that stopped being re-extracted incrementally.
-  'react-legacy/default': {
+  'react-legacy/whole-index': {
     maxWarmColdRatio: 0.05,
     memory: { maxTransientMb: 15, maxRetainedGrowthMb: 30, maxRetainedSlopeMb: 1 },
   },
@@ -68,7 +71,7 @@ export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
   // Growth is negative here - the engine releases its whole-project state on the first save and
   // settles ~85MB below the cold pass - so the ceiling is only ever met from far below. The slope
   // is what carries the leak signal, and it is tight because the steady state is genuinely flat.
-  'react-osa/default': {
+  'react-osa/whole-index': {
     maxWarmColdRatio: 0.08,
     memory: { maxTransientMb: 45, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 0.5 },
   },

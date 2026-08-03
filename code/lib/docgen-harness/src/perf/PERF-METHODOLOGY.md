@@ -21,6 +21,22 @@ An engine that re-extracts one component per save releases its whole-project sta
 For `react-osa` that is the difference between a strongly negative slope, which hides any leak smaller than the step, and the small positive trend its steady state actually shows in the table below.
 One excluded sample is enough: that engine is the only one with a step, and it lands entirely inside the first save.
 
+### The two React shapes
+
+Storybook documents React components in two different shapes, and they cost very different things, so the suite measures both rather than averaging them into one misleading number.
+
+`whole-index` is the manifest generator: one batch over every component in the index.
+`first-story` is the docgen server's per-request path, where the manager is created on the first eligible request and extracts only the component that story needs; every save then re-extracts that same component.
+Both run over the identical generated project, so the only difference is how much of it the cold pass documents.
+
+The save target differs deliberately.
+Walking round-robin under `first-story` would document a component the cold pass never touched, so retained heap would climb for the honest reason that the run keeps documenting more - which is indistinguishable from a leak.
+Re-touching the one documented component keeps the steady state comparable between the shapes.
+
+Reading both rows together is the point.
+`whole-index` is what a full manifest build costs, which is what agent and MCP consumers need.
+`first-story` is what a developer waits for before Controls populate, and it is the number to watch when judging whether the docgen server feels fast.
+
 ## Determinism method
 
 ### Fixed synthetic projects
@@ -199,8 +215,10 @@ Milliseconds are context, never a budget: the same suite runs three to four time
 
 | Engine / scenario                  | Cold    | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
 | ---------------------------------- | ------- | ------ | ------ | -------------- | --------------- | -------------- |
-| react-legacy/default               | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
-| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | 0.10MB/save    |
+| react-legacy/whole-index           | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
+| react-osa/whole-index              | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | 0.10MB/save    |
+| react-legacy/first-story           | pending | pending| n/a    | pending        | pending         | pending        |
+| react-osa/first-story              | pending | pending| n/a    | pending        | pending         | pending        |
 | vue-docgen-api/flat                | 155ms   | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
 | vue-docgen-api/workspace           | 121ms   | 3ms    | n/a    | 0.4MB          | 0.3MB           | 0.02MB/save    |
 | vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.02MB/save    |
@@ -209,7 +227,10 @@ Milliseconds are context, never a budget: the same suite runs three to four time
 | vue-component-meta/base-type-touch | 1182ms  | 96ms   | n/a    | 12.1MB         | 3.0MB           | 0.25MB/save    |
 | compodoc/default                   | 1434ms  | 1537ms | 1434ms | 213.8MB        | n/a             | n/a            |
 
-Two things in that table are worth reading twice.
+The `first-story` rows land with the next daily run; the shape was added after the run above.
+Locally they read 33ms and 341ms cold against 463ms and 678ms for `whole-index`, which is the shape of the finding rather than a number to quote.
+
+Three things in that table are worth reading twice.
 
 Compodoc's warm figure is its cold figure, because it re-runs the whole project on every invocation.
 That is what it does by design, so it carries no incrementality budget; its peak memory, an order of magnitude above every other engine, is the number worth watching.
@@ -219,7 +240,12 @@ The baseline is sampled straight after the cold pass, when the engine still hold
 The first save re-extracts a single component, that whole-project state is released, and retained heap drops by around 85MB in one step and then stays flat.
 So the growth figure measures the distance from the cold-pass peak down to the steady state, and it is negative for every engine that re-extracts incrementally.
 
-The reference ratios stand at 0.71 cold and 0.31 warm for react-legacy over react-osa, and around 0.10-0.14 cold for vue-docgen-api over vue-component-meta.
+And the React pair's cold ratio depends entirely on which shape you ask about.
+Over `whole-index` it sits near 0.7 - the two engines are within half an order of magnitude when documenting everything.
+Over `first-story` it drops to about 0.10, because `react-docgen` answers one component without building a program at all while `react-osa` has to construct one first.
+That gap is the startup cost of the new engine, and it was invisible while the suite only measured the whole-index shape.
+
+The reference ratios stand at 0.71 cold and 0.31 warm for react-legacy over react-osa on `whole-index`, and around 0.10-0.14 cold for vue-docgen-api over vue-component-meta.
 None of them is gated on, for the reasons under "Like-for-like comparison" above.
 
 ### Budgets
@@ -228,8 +254,8 @@ Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, at roughly
 
 | Engine / scenario                  | Warm/cold ratio | Peak transient | Retained growth | Retained slope | Tier  |
 | ---------------------------------- | --------------- | -------------- | --------------- | -------------- | ----- |
-| react-legacy/default               | 0.05            | 15MB           | 30MB            | 1MB/save       | daily |
-| react-osa/default                  | 0.08            | 45MB           | 60MB            | 0.5MB/save     | daily |
+| react-legacy/whole-index           | 0.05            | 15MB           | 30MB            | 1MB/save       | daily |
+| react-osa/whole-index              | 0.08            | 45MB           | 60MB            | 0.5MB/save     | daily |
 | vue-docgen-api/flat                | 0.08            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/workspace           | 0.10            | 8MB            | 10MB            | 1MB/save       | daily |
 | vue-docgen-api/base-type-touch     | 0.25            | 8MB            | 10MB            | 1MB/save       | daily |

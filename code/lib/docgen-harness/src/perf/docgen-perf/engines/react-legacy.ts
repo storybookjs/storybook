@@ -55,9 +55,18 @@ const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
  *   changed - re-extract only the component whose file changed.
  */
 const SCOPES = ['all', 'changed'] as const;
+/**
+ * Which shape of docgen work the run reproduces - the same two shapes the OSA harness runs, so the
+ * legacy engine can be compared against it on either.
+ *
+ *   whole-index - cold documents every component, saves walk round-robin.
+ *   first-story - cold documents one component, every save re-extracts that same one.
+ */
+const SHAPES = ['whole-index', 'first-story'] as const;
 
 const OPTIONS = {
   parser: { type: 'string' },
+  shape: { type: 'string' },
   components: { type: 'string' },
   variants: { type: 'string' },
   props: { type: 'string' },
@@ -74,6 +83,7 @@ const SCHEMA = z.object({
   props: countOption(10),
   saves: countOption(20),
   scope: z.enum(SCOPES).default('changed'),
+  shape: z.enum(SHAPES).default('whole-index'),
   outDir: z
     .string()
     .default(path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')),
@@ -158,11 +168,18 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
 
   // Track how many extra props each component currently has, so each save grows its type.
   const extraByComponent = new Array<number>(options.components).fill(options.props);
-  const changedIndex = (save: number) => (save - 1) % options.components;
+  const firstStory = options.shape === 'first-story';
+  // Fixed at the one component the cold pass documented, for the reason the OSA harness pins it:
+  // walking round-robin would keep documenting components the cold pass never saw.
+  const changedIndex = (save: number) => (firstStory ? 0 : (save - 1) % options.components);
 
   return {
     async cold() {
-      await extractAll();
+      if (firstStory) {
+        await extractOne(0);
+      } else {
+        await extractAll();
+      }
       return undefined;
     },
     async applySave(save) {
@@ -194,9 +211,13 @@ harnessMain(async () => {
       props: options.props,
       saves: options.saves,
       scope: options.scope,
+      shape: options.shape,
     },
     saves: options.saves,
-    coldLabel: `${options.components} components`,
+    coldLabel:
+      options.shape === 'first-story'
+        ? `1 of ${options.components} components`
+        : `${options.components} components`,
     jsonOut: options.jsonOut,
     setup: () => createEngine(options),
   });

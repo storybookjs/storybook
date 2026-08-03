@@ -117,7 +117,28 @@ describe('what the series engines spawn', () => {
   it('passes the scenario size through to the child', async () => {
     const { spec } = await specFor('react-legacy', reactScenario);
     const components = spec.args[spec.args.indexOf('--components') + 1];
-    expect(components).toBe(String(QUICK_PROFILE.react.components));
+    expect(components).toBe(String(QUICK_PROFILE.react[0].components));
+  });
+
+  it('runs both React shapes, and tells the child which one it is measuring', async () => {
+    const shapes = engineById('react-osa')
+      .scenarios(QUICK_PROFILE)
+      .map((scenario) => scenario.name);
+    expect(shapes).toEqual(['whole-index', 'first-story']);
+
+    for (const scenario of engineById('react-osa').scenarios(QUICK_PROFILE)) {
+      const { spec } = await specFor('react-osa', scenario);
+      expect(spec.args[spec.args.indexOf('--shape') + 1], scenario.name).toBe(scenario.name);
+    }
+  });
+
+  it('gives the React engines identical flags per shape, so a ratio compares engines not shapes', async () => {
+    for (const scenario of engineById('react-osa').scenarios(QUICK_PROFILE)) {
+      const osa = await specFor('react-osa', scenario);
+      const legacy = await specFor('react-legacy', scenario);
+      const shapeOf = (args: string[]) => args[args.indexOf('--shape') + 1];
+      expect(shapeOf(osa.spec.args), scenario.name).toBe(shapeOf(legacy.spec.args));
+    }
   });
 
   it('passes --heavy-lib only for scenarios that ask for it', async () => {

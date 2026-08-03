@@ -3,6 +3,7 @@ import {
   createRoute,
   RootRoute,
   createRootRouteWithContext,
+  interpolatePath,
   joinPaths,
 } from '@tanstack/react-router';
 
@@ -96,6 +97,11 @@ function cloneChild(
     (cloned as any).update({ id: explicitId });
   }
 
+  const lazyFn = (oldRoute as any).lazyFn;
+  if (lazyFn) {
+    (cloned as any).lazy(lazyFn);
+  }
+
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
   const children = (oldRoute as any).children as AnyRoute[] | undefined;
@@ -150,6 +156,10 @@ export function duplicateRouteTree(
     ...restRoot,
     ...rootOverride,
   } as any);
+  const rootLazyFn = (rootRoute as any).lazyFn;
+  if (rootLazyFn) {
+    (newRoot as any).lazy(rootLazyFn);
+  }
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
   const children = (rootRoute as any).children as AnyRoute[] | undefined;
@@ -206,25 +216,58 @@ export function originalRouteId(tree: DuplicatedTree, route: AnyRoute): string |
  *
  * Resolution order:
  *
- * 1. The route whose `fullPath` exactly matches the explicit `path` parameter.
+ * 1. The route whose mount path matches the explicit `path` parameter,
+ *    literally or after interpolating `params`.
  * 2. The route bound to the story (`boundRouteId`), if it is present in the cloned tree.
  * 3. The first top-level child of the root.
  * 4. The root itself.
  */
 export function resolveStoryLeaf(
   tree: DuplicatedTree,
-  { path, boundRouteId }: { path?: string | undefined; boundRouteId?: string | undefined }
+  {
+    path,
+    boundRouteId,
+    params,
+  }: {
+    path?: string | undefined;
+    boundRouteId?: string | undefined;
+    params?: Record<string, unknown> | undefined;
+  }
 ): AnyRoute {
   const { root, byId } = tree;
 
   if (path) {
+    const bound = boundRouteId ? byId.get(boundRouteId) : undefined;
+    if (bound) {
+      const boundCandidate = mountPathFor(bound);
+      const boundInterpolated = params
+        ? interpolatePath({ path: boundCandidate, params }).interpolatedPath
+        : boundCandidate;
+      if (boundCandidate === path || boundInterpolated === path) {
+        return bound;
+      }
+    }
+
     let bestMatch: AnyRoute | undefined;
+    let bestLiteral = false;
     let bestMatchLength = -1;
     for (const route of byId.values()) {
-      const fullPath = (route as any).fullPath as string | undefined;
-      if (fullPath && fullPath === path && fullPath.length > bestMatchLength) {
+      if (route === (root as unknown as AnyRoute)) {
+        continue;
+      }
+      const candidate = mountPathFor(route);
+      const isLiteral = candidate === path;
+      const interpolated = params
+        ? interpolatePath({ path: candidate, params }).interpolatedPath
+        : candidate;
+      if (!isLiteral && interpolated !== path) {
+        continue;
+      }
+      const better = isLiteral === bestLiteral ? candidate.length > bestMatchLength : isLiteral;
+      if (better) {
         bestMatch = route;
-        bestMatchLength = fullPath.length;
+        bestLiteral = isLiteral;
+        bestMatchLength = candidate.length;
       }
     }
     if (bestMatch) {

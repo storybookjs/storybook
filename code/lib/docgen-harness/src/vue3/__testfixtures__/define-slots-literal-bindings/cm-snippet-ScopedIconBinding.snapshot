@@ -1,0 +1,5 @@
+<template>
+  <DefineSlotsLiteralBindings > Save
+
+<template #icon="{ size, fill }"><i>{{ size }} {{ fill }}</i></template> </DefineSlotsLiteralBindings>
+</template>

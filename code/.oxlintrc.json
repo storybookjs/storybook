@@ -96,6 +96,12 @@
       }
     },
     {
+      "files": ["**/lib/docgen-harness/src/perf/**"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "off"
+      }
+    },
+    {
       "files": ["**/core/src/preview-errors.ts"],
       "rules": {
         "local-rules/no-duplicated-error-codes": "error"

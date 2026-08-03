@@ -1,7 +1,0 @@
-{
-  "name": "907-existing-component-change-component-reshaped-detailed",
-  "type": "module",
-  "evals": {
-    "template": "reshaped-storybook"
-  }
-}

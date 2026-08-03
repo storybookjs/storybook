@@ -92,7 +92,7 @@ describe('createAsyncQueue', () => {
 });
 
 describe('runStoryTests', () => {
-  it('returns an error when any focused selector is unresolved', async () => {
+  it('returns no-stories with the per-selector messages when nothing matched', async () => {
     const channel = createMockChannel();
     const emitSpy = vi.spyOn(channel, 'emit');
 
@@ -103,8 +103,8 @@ describe('runStoryTests', () => {
     });
 
     expect(result).toEqual({
-      status: 'error',
-      error: { message: expect.stringContaining('missing--story') },
+      status: 'no-stories',
+      notFoundMessages: ['No story found for story ID "missing--story"'],
     });
     expect(emitSpy).not.toHaveBeenCalled();
   });
@@ -133,7 +133,7 @@ describe('runStoryTests', () => {
       stories: [],
     });
 
-    expect(result).toEqual({ status: 'no-stories' });
+    expect(result).toEqual({ status: 'no-stories', notFoundMessages: [] });
     expect(emitSpy).not.toHaveBeenCalled();
   });
 

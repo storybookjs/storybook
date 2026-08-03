@@ -9,8 +9,10 @@ import {
 } from 'storybook/internal/common';
 import {
   type StoryIndexGenerator,
+  createTestToolset,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
+  registerToolset,
 } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
@@ -43,6 +45,12 @@ import { runTestRunner } from './node/boot-test-runner.ts';
 import type { CachedState, ErrorLike, StoreState } from './types.ts';
 import type { StoreEvent } from './types.ts';
 
+/**
+ * Preset marker: true exactly when this addon is enabled, since only enabled addons' presets load.
+ * addon-mcp's availability gate reads it through `presets.apply('isAddonVitestEnabled', false)`.
+ */
+export const isAddonVitestEnabled = true;
+
 type Event =
   | {
       type: 'test-discrepancy';
@@ -57,6 +65,32 @@ type Event =
       type: 'test-run-completed';
       payload: StoreState['currentRun'];
     };
+
+/**
+ * Registers the public `test` toolset.
+ *
+ * This addon owns the toolset because running stories needs its channel protocol, but it must
+ * register from the `services` hook rather than `experimental_serverChannel`: consumers resolve
+ * the toolset for its descriptions and schemas alone, and the two places that do so — `storybook
+ * ai` metadata generation (which never starts a dev server) and a non-Vite dev server (where the
+ * channel hook returns early) — would otherwise ask for a toolset that was never registered and
+ * fail hard. Registering here matches the availability gate that decides whether the tool is
+ * offered at all: that gate reads the `isAddonVitestEnabled` marker this preset exports, which is
+ * true exactly when the addon is enabled — the same condition under which this hook runs. The
+ * channel is used only when a run is actually triggered.
+ */
+export const services = async (_value: void, options: Options): Promise<void> => {
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
+  registerToolset(
+    createTestToolset({
+      channel: options.channel as Channel,
+      storyIndex: { getIndex: () => storyIndexGenerator.getIndex() },
+      a11yEnabled: await options.presets.apply('isAddonA11yEnabled', false),
+    })
+  );
+};
 
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');

@@ -4,12 +4,7 @@
  * onto the MCP `isError` flag is the generic unwrap's contract, pinned in `toolset-tools.test.ts`.
  */
 
-import {
-  clearToolsetRegistry,
-  defineToolset,
-  registerToolset,
-  type ToolsetMethodDescription,
-} from 'storybook/open-service';
+import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/open-service';
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -24,28 +19,21 @@ vi.mock('storybook/internal/node-logger', () => ({
   logger: { error: loggerError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-/** Every MCP tool currently served from a core toolset. */
-const TOOLSET_BACKED = ['preview-stories', 'get-changed-stories', 'get-stories-by-component'];
-
-/** Registers a stub `stories` toolset whose metadata resolution throws the given error. */
-function registerStoriesToolsetThrowing(error: Error) {
-  const stubMethod = (description: ToolsetMethodDescription) => ({
-    schema: v.object({}),
-    description,
-    handler: async () => ({ ok: true, data: {}, markdown: '' }),
-  });
-
+/** Registers a stub `test` toolset whose metadata resolution throws the given error. */
+function registerTestToolsetThrowing(error: Error) {
   registerToolset(
     defineToolset({
-      id: 'stories',
+      id: 'test',
       description: 'stub',
-      telemetryGroup: 'dev',
+      telemetryGroup: 'test',
       methods: {
-        preview: stubMethod(() => {
-          throw error;
-        }),
-        changed: stubMethod('changed'),
-        findByComponent: stubMethod('find by component'),
+        run: {
+          schema: v.object({}),
+          description: () => {
+            throw error;
+          },
+          handler: async () => ({ ok: true, data: {}, markdown: '' }),
+        },
       },
     }) as any
   );
@@ -65,19 +53,14 @@ function makeServer() {
 }
 
 describe('a broken tool row', () => {
-  // Every gate claims support while the `stories` toolset never registered — the wiring bug this
-  // containment exists for.
+  // The availability gate claims test support while the `test` toolset never registered — the
+  // wiring bug behind the addon-vitest installed-but-not-enabled outage.
   const context = {
-    availability: {
-      changeDetectionEnabled: true,
-      moduleGraphSupported: true,
-      docsEnabled: true,
-      a11yEnabled: false,
-    },
+    availability: { testSupported: true, docsEnabled: true, a11yEnabled: false },
   } as never;
 
   beforeEach(() => {
-    clearToolsetRegistry();
+    registerCoreToolsetsForTest({ testToolset: false });
     loggerError.mockClear();
   });
 
@@ -86,63 +69,68 @@ describe('a broken tool row', () => {
 
     await expect(registerAddonMcpTools(server, context)).resolves.toBeUndefined();
 
-    expect([...tools.keys()]).toEqual(expect.not.arrayContaining(TOOLSET_BACKED));
+    expect([...tools.keys()]).not.toContain('run-story-tests');
     expect([...tools.keys()]).toEqual(
-      expect.arrayContaining(['list-all-documentation', 'get-documentation'])
+      expect.arrayContaining(['preview-stories', 'list-all-documentation', 'get-documentation'])
     );
-    for (const name of TOOLSET_BACKED) {
-      expect(loggerError).toHaveBeenCalledWith(expect.stringContaining(name));
-    }
+    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('run-story-tests'));
   });
 
   it('is dropped from the storybook ai metadata instead of failing the build', () => {
-    const names = getAddonToolMetadata(context).map((tool) => tool.name);
+    const metadata = getAddonToolMetadata(context);
+    const names = metadata.map((tool) => tool.name);
 
-    expect(names).toEqual(expect.not.arrayContaining(TOOLSET_BACKED));
-    expect(names).toEqual(
-      expect.arrayContaining(['get-storybook-story-instructions', 'list-all-documentation'])
-    );
-    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('preview-stories'));
+    expect(names).not.toContain('run-story-tests');
+    expect(names).toEqual(expect.arrayContaining(['preview-stories', 'list-all-documentation']));
+    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('run-story-tests'));
   });
 
   it('contains only the missing-toolset case: any other adapter failure still fails fast', () => {
-    registerStoriesToolsetThrowing(new Error('broken description'));
+    registerTestToolsetThrowing(new Error('broken description'));
 
     expect(() => getAddonToolMetadata(context)).toThrow('broken description');
   });
 });
 
-describe('the migrated rows over the registry', () => {
+describe('run-story-tests over the registry', () => {
+  // Availability narrowed so only rows whose toolsets are registered here resolve.
   const context = {
-    availability: {
-      changeDetectionEnabled: true,
-      moduleGraphSupported: true,
-      docsEnabled: false,
-      a11yEnabled: false,
-    },
+    availability: { testSupported: true, docsEnabled: false, a11yEnabled: false },
   } as never;
 
   beforeEach(() => {
     clearToolsetRegistry();
   });
 
-  // One integration probe through the real `stories` toolset: each row resolves off the registry
-  // and publishes the frozen name and title an MCP client sees.
-  it('serves every migrated row once its toolset is registered', async () => {
-    registerCoreToolsetsForTest();
+  // One integration probe through the real `test` toolset: a crashed run must reach the MCP
+  // client flagged as an error with the report rendered. The per-status tag mapping lives on the
+  // definition (`test/definition.test.ts`), the tag-to-isError unwrap in `toolset-tools.test.ts`.
+  it('flags a crashed run as an error result end to end', async () => {
+    registerCoreToolsetsForTest({ testToolset: false });
+    registerToolset(
+      defineToolset({
+        id: 'test',
+        description: 'stub',
+        telemetryGroup: 'test',
+        methods: {
+          run: {
+            schema: v.object({}),
+            description: 'run',
+            handler: async () => ({
+              ok: false,
+              data: { status: 'error', error: { message: 'vitest died' } },
+              markdown: 'Error: vitest died',
+            }),
+          },
+        },
+      }) as any
+    );
     const { server, tools } = makeServer();
-
     await registerAddonMcpTools(server, context);
 
-    expect([...tools.keys()]).toEqual(expect.arrayContaining(TOOLSET_BACKED));
-    expect(
-      getAddonToolMetadata(context)
-        .filter((tool) => TOOLSET_BACKED.includes(tool.name))
-        .map((tool) => tool.title)
-    ).toEqual([
-      'Get story preview URLs',
-      'Get changed stories metadata',
-      'Get stories for component files',
-    ]);
+    const result = await tools.get('run-story-tests')!({});
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([{ type: 'text', text: 'Error: vitest died' }]);
   });
 });

@@ -152,6 +152,7 @@ export const mcpServerHandler = async ({
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
     reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
+    cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
     origin: origin!,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,

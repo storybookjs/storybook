@@ -172,24 +172,26 @@ export async function runStoryTests({
   if (stories) {
     const index = await getIndex();
     const resolved = findStoryIds(index, stories);
-    const unresolved = resolved.filter((story): story is NotFoundStory => !('entry' in story));
+    const found = resolved.filter((story): story is FoundStory => 'entry' in story);
+    const notFoundMessages = resolved
+      .filter((story): story is NotFoundStory => !('entry' in story))
+      .map((story) => story.errorMessage);
 
-    if (unresolved.length > 0) {
+    // Nothing to run: the per-selector failures are the answer, so they travel with the outcome.
+    if (found.length === 0) {
+      return { status: 'no-stories', notFoundMessages };
+    }
+
+    // Running the matched subset would report a verdict for stories that were never run, so a
+    // partially resolved selector list fails instead.
+    if (notFoundMessages.length > 0) {
       return {
         status: 'error',
-        error: {
-          message: unresolved.map((story) => story.errorMessage).join('; '),
-        },
+        error: { message: notFoundMessages.join('; ') },
       };
     }
 
-    storyIds = resolved
-      .filter((story): story is FoundStory => 'entry' in story)
-      .map((s) => s.entry.id);
-
-    if (storyIds.length === 0) {
-      return { status: 'no-stories' };
-    }
+    storyIds = found.map((story) => story.entry.id);
   }
 
   let response: TriggerTestRunResponse;

@@ -47,7 +47,23 @@ describe('collectTelemetry', () => {
         roots: { listChanged: true },
       },
       customField: 'custom-value',
+      consumer: 'mcp',
     });
+  });
+
+  it('reports the storybook ai CLI channel as the cli consumer', async () => {
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+
+    const cliServer = Object.assign(Object.create(mockServer), {
+      ctx: { ...mockServer.ctx, custom: { cliClient: true } },
+    }) as any;
+
+    await collectTelemetry({ event: 'test-event', server: cliServer });
+
+    expect(telemetry).toHaveBeenCalledWith(
+      'addon-mcp',
+      expect.objectContaining({ consumer: 'cli' })
+    );
   });
 
   it('should pass through additional payload fields', async () => {
@@ -69,6 +85,7 @@ describe('collectTelemetry', () => {
       toolName: 'list-all-documentation',
       duration: 123,
       success: true,
+      consumer: 'mcp',
     });
   });
 
@@ -103,6 +120,7 @@ describe('collectTelemetry', () => {
       mcpSessionId: undefined,
       clientInfo: undefined,
       clientCapabilities: undefined,
+      consumer: 'mcp',
     });
   });
 });

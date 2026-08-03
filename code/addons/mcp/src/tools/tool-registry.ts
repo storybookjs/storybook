@@ -21,12 +21,11 @@ import {
   getStorybookStoryInstructionsToolMetadata,
   addGetUIBuildingInstructionsTool,
 } from './get-storybook-story-instructions.ts';
-import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-tests.ts';
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
 import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-service';
-import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
   registerToolsetTool,
@@ -148,6 +147,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     register: (server, { availability, toolsets }, enabled) =>
       addGetUIBuildingInstructionsTool(server, enabled, {
         docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+        addonVitestAvailable: availability.testSupported,
       }),
     getLocalTool: ({ availability, toolsets, options }) => ({
       call: async () => {
@@ -188,15 +188,11 @@ const addonToolDefinitions: AddonToolDefinition[] = [
       wrapSchema: withFriendlyErrors,
     },
   }),
-  {
-    name: RUN_STORY_TESTS_TOOL_NAME,
+  fromToolset({
     toolset: 'test',
     available: ({ availability }) => availability.testSupported,
-    getMetadata: ({ availability }) =>
-      getRunStoryTestsToolMetadata({ a11yEnabled: availability.a11yEnabled }),
-    register: (server, { availability }, enabled) =>
-      addRunStoryTestsTool(server, { a11yEnabled: availability.a11yEnabled }, enabled),
-  },
+    options: { method: 'test.run' },
+  }),
   {
     name: LIST_TOOL_NAME,
     toolset: 'docs',

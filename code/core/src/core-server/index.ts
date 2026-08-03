@@ -65,6 +65,11 @@ export {
  * server-only code, and that entry is built for the browser.
  */
 export { registerToolset } from '../shared/open-service/toolset-registry.ts';
+export { createTestToolset } from '../shared/open-service/toolsets/test/definition.ts';
+export type {
+  CreateTestToolsetOptions,
+  TestToolset,
+} from '../shared/open-service/toolsets/test/definition.ts';
 export { createStoriesToolset } from '../shared/open-service/toolsets/stories/definition.ts';
 export type { PreviewStoriesOutput } from '../shared/open-service/toolsets/stories/definition.ts';
 export { reviewToolset } from '../shared/open-service/toolsets/review/definition.ts';

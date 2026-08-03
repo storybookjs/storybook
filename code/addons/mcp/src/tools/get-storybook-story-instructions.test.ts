@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { getAddonVitestConstants } from './run-story-tests.ts';
+import { isAddonVitestEnabled } from '../utils/addon-vitest.ts';
 import {
   addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
@@ -14,8 +14,8 @@ import {
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 } from './tool-names.ts';
 
-vi.mock('./run-story-tests.ts', () => ({
-  getAddonVitestConstants: vi.fn(),
+vi.mock('../utils/addon-vitest.ts', () => ({
+  isAddonVitestEnabled: vi.fn(),
 }));
 
 vi.mock('../utils/is-review-available.ts', () => ({
@@ -26,10 +26,7 @@ describe('getUIBuildingInstructionsTool', () => {
   let server: McpServer<any, AddonContext>;
 
   beforeEach(async () => {
-    vi.mocked(getAddonVitestConstants).mockResolvedValue({
-      TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
-      TRIGGER_TEST_RUN_RESPONSE: 'TRIGGER_TEST_RUN_RESPONSE',
-    });
+    vi.mocked(isAddonVitestEnabled).mockResolvedValue(true);
 
     vi.mocked(getReviewStatus).mockResolvedValue({
       available: false,
@@ -69,7 +66,7 @@ describe('getUIBuildingInstructionsTool', () => {
       }
     );
 
-    await addGetUIBuildingInstructionsTool(server);
+    await addGetUIBuildingInstructionsTool(server, undefined, { addonVitestAvailable: true });
   });
 
   async function getToolDescription(context: AddonContext) {

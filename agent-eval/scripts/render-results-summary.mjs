@@ -173,6 +173,37 @@ const totals = evals
   );
 const playgroundUrl = process.env.PLAYGROUND_URL;
 const runUrl = process.env.RUN_URL;
+const format = process.env.FORMAT === 'slack' ? 'slack' : 'markdown';
+
+if (format === 'slack') {
+  const evalOutcome = process.env.EVAL_OUTCOME || 'unknown';
+  const allPassed = evals.length > 0 && passedEvals.length === evals.length;
+  const headline =
+    evalOutcome === 'success' && allPassed
+      ? ':white_check_mark: Weekly agent eval on `next` passed'
+      : evalOutcome === 'success'
+        ? ':warning: Weekly agent eval on `next` finished with failures'
+        : ':x: Weekly agent eval on `next` failed';
+
+  const stats =
+    evals.length > 0
+      ? `*${passedEvals.length}/${evals.length} evals passed*${
+          totals.total > 0 ? ` · ${formatTokens(totals.total)} tokens · ${formatCost(totals)}` : ''
+        }`
+      : '_No eval result files._';
+
+  const links = [
+    runUrl ? `<${runUrl}|Workflow run>` : null,
+    playgroundUrl ? `<${playgroundUrl}|Playground>` : null,
+  ].filter(Boolean);
+
+  process.stdout.write(
+    [headline, stats, links.length > 0 ? links.map((link) => `• ${link}`).join('\n') : null]
+      .filter(Boolean)
+      .join('\n') + '\n'
+  );
+  process.exit(0);
+}
 
 const sections = [
   [

@@ -298,3 +298,27 @@ jobs:
             --description 'Agent eval run passed for the current PR head' \
             2>/dev/null || true
           gh pr edit "$PR_NUMBER" --add-label 'evals:ok'
+
+      # Weekly / next-dispatch signal to #sb-skills. Requires repo secret
+      # SLACK_AGENT_EVAL_WEBHOOK_URL (Incoming Webhook into that channel).
+      - name: Notify Slack
+        if: >-
+          always() &&
+          !cancelled() &&
+          (github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next'))
+        shell: bash
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_AGENT_EVAL_WEBHOOK_URL }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
+        run: |
+          if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
+            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #sb-skills notify."
+            exit 0
+          fi
+
+          text="$(FORMAT=slack node agent-eval/scripts/render-results-summary.mjs)"
+          payload="$(jq -n --arg text "$text" '{text: $text}')"
+          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"

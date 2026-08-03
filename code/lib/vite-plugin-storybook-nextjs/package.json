@@ -32,7 +32,7 @@
         "default": "./dist/index.js"
       },
       "require": {
-        "types": "./dist/index.d.cjs",
+        "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
     },

@@ -12391,6 +12391,7 @@ __metadata:
     react-docgen: "npm:^8.0.2"
     react-docgen-typescript: "npm:^2.4.0"
     srvx: "npm:^0.8.16"
+    storybook: "workspace:*"
     tinyexec: "npm:^1.0.2"
     tmcp: "npm:^1.19.4"
     typescript: "npm:^6.0.3"

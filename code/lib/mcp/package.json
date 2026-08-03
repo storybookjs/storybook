@@ -49,6 +49,7 @@
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.4.0",
     "srvx": "^0.8.16",
+    "storybook": "workspace:*",
     "tinyexec": "^1.0.2",
     "typescript": "^6.0.3"
   },

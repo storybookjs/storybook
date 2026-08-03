@@ -12,6 +12,8 @@ import {
   execaNode,
 } from 'execa';
 
+import { categorizeExecaError } from './categorize-execa-error.ts';
+
 const COMMON_ENV_VARS = {
   COREPACK_ENABLE_STRICT: '0',
   COREPACK_ENABLE_AUTO_PIN: '0',
@@ -26,6 +28,13 @@ export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
   env?: Record<string, string>;
   signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
 };
+
+function rethrowCategorizedExecaError(
+  error: unknown,
+  context: { command: string; args: string[] }
+): never {
+  throw categorizeExecaError(error, context);
+}
 
 function getExecaOptions({
   stdio,
@@ -59,9 +68,12 @@ export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
     execaProcess.catch(() => {
       // Silently ignore errors when ignoreError is true
     });
+    return execaProcess;
   }
 
-  return execaProcess;
+  return execaProcess.catch((error) => {
+    rethrowCategorizedExecaError(error, { command, args });
+  }) as ResultPromise;
 }
 
 export function executeCommandSync(options: ExecuteCommandOptions): string {
@@ -75,7 +87,7 @@ export function executeCommandSync(options: ExecuteCommandOptions): string {
     );
   } catch (err) {
     if (!ignoreError) {
-      throw err;
+      rethrowCategorizedExecaError(err, { command, args });
     }
     return '';
   }

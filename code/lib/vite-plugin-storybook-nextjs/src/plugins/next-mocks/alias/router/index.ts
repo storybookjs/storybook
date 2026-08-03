@@ -135,6 +135,10 @@ export const getRouter = () => {
 
 // re-exports of the actual module
 export * from "next/dist/client/router";
+// Same root cause as the `next/navigation` mock: `export *` from CommonJS is invisible to
+// static ESM analysis (storybookjs/storybook#34688). Only `Router` is declared in Next.js'
+// own types, the remaining runtime members stay reachable via the namespace only.
+export { Router } from "next/dist/client/router";
 export default singletonRouter;
 
 // mock utilities/overrides (as of Next v14.2.0)

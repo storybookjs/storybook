@@ -84,7 +84,7 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/vue-component-meta.ts',
     scenarios: vueScenarios,
     args: vueArgs,
-    versionPackage: 'vue-component-meta',
+    pin: 'vue-component-meta',
   }),
   // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
   // control rather than an engine-vs-engine one. No budget row yet, so it stays out of the
@@ -94,8 +94,8 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/vue-component-meta.ts',
     scenarios: vueScenarios,
     inDefaultRun: false,
-    args: (scenario) => [...vueArgs(scenario), '--pin', 'next'],
-    versionPackage: 'vue-component-meta-next',
+    args: vueArgs,
+    pin: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a

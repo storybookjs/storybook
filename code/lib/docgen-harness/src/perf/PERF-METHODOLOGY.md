@@ -143,15 +143,19 @@ Declaring `@storybook/react` as a dependency of `@storybook/docgen-harness` is w
 
 Four data edits:
 
-1. An alias in `code/lib/docgen-harness/package.json` pinned to the candidate version.
+1. An alias in `code/lib/docgen-harness/package.json` pinned to the candidate version, named `<package>-<suffix>`.
 2. The new id added to the `EngineId` union in `docgen-shared/engine-ids.ts`, which is hand-maintained: a registry entry naming an id that is not in the union does not compile.
-3. A second registry entry in `docgen-perf/registry.ts` reusing the same child, with `inDefaultRun: false`, `versionPackage` naming the alias, and the flag that tells the child which install to load.
+3. A second registry entry in `docgen-perf/registry.ts` reusing the same child, with `inDefaultRun: false` and `pin` naming the alias.
 4. An entry in `CONTROL_PAIRS` in `docgen-perf/ratios.ts` naming the current side as `legacy` and the alias as `next`.
 
-Plus one code edit, unless the child already has it: the child needs a flag that selects the install, which is what `--pin` is on the vue-component-meta child.
-That took a small union of allowed values, an extension of the shared option schema, a per-pin scratch directory so the two runs do not share a generated project, and a conditional import of the aliased package.
+The registry's `pin` is the whole mechanism: it reaches the child as `--pin <specifier>`, is what `preflight` resolves, and is the version reported with the results.
+Nothing about it is engine-specific.
 
-One easily-missed prerequisite: the *current* side's existing registry entry must declare `versionPackage` too.
+Plus one code edit, unless the child already has it: the child has to accept `--pin` and import that specifier rather than a hard-coded one.
+`docgen-shared/pin.ts` is that, in three lines at the child - the flag, `pinOption(<canonical package>)` extending its option schema, and `importPinned` in place of a static import.
+Only the named install is ever imported, so the other copy never sits on the measured heap, and the resolved specifier also names the scratch directory so the two runs do not share a generated project.
+
+One easily-missed prerequisite: the *current* side's existing registry entry must declare `pin` too, naming the canonical package.
 `versionNote` prints nothing unless both sides resolved a version, so without it every ratio line silently loses its version note - and with it the guard against both sides resolving to the same version.
 
 Nothing else changes: aggregation, member counts and the ordering alternation are already shared by every pair.

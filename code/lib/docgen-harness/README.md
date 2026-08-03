@@ -223,6 +223,9 @@ yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-n
 
 Pin the candidate exactly rather than with a range - two caret ranges can resolve to one install, and then the run compares an engine against itself.
 The suite prints both resolved versions beside every ratio and calls out two equal ones as not being a comparison at all.
+
+The mechanism is not Vue-specific: an engine entry declares which install it measures, the child imports that specifier instead of a hard-coded package, and a pair is two entries differing only in that field.
+`PERF-METHODOLOGY.md` has the steps for setting one up on another engine, and the one case it does not cover.
 `PERF-METHODOLOGY.md` walks through reading those guard lines, and through adding a pair for another engine.
 
 ### The gate and its budgets

@@ -99,8 +99,13 @@ export interface SeriesChildConfig {
   /** Only the reused docgen-memory harness runs under the jiti loader. */
   jiti?: boolean;
   inDefaultRun?: boolean;
-  /** The npm package name whose resolved `package.json#version` should be reported for this engine. */
-  versionPackage?: string;
+  /**
+   * The install this engine measures: the canonical package name, or the alias of a second,
+   * explicitly-versioned copy of it. Passed to the child as `--pin` and reported as the engine's
+   * version, so a version pair is two entries differing only in this field. Only for children that
+   * accept `--pin`; see docgen-shared/pin.ts.
+   */
+  pin?: string;
 }
 
 /**
@@ -124,30 +129,34 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
   }
 
   /**
-   * A declared `versionPackage` is one the child imports, so failing to resolve it means a partial
-   * install. Skipping here rather than letting `version()` quietly answer undefined is what keeps a
-   * version pair from running with no way to tell its two installs apart - the one failure that
-   * comparison exists to catch.
+   * A declared `pin` is what the child imports, so failing to resolve it means a partial install.
+   * Skipping here rather than letting `version()` quietly answer undefined is what keeps a version
+   * pair from running with no way to tell its two installs apart - the one failure that comparison
+   * exists to catch.
    */
   preflight(): string | undefined {
-    const { versionPackage } = this.#config;
-    if (versionPackage && resolvePackageVersion(versionPackage) === undefined) {
-      return `${versionPackage} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
+    const { pin } = this.#config;
+    if (pin && resolvePackageVersion(pin) === undefined) {
+      return `${pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
     }
     return undefined;
   }
 
   version(): string | undefined {
-    return this.#config.versionPackage
-      ? resolvePackageVersion(this.#config.versionPackage)
-      : undefined;
+    return this.#config.pin ? resolvePackageVersion(this.#config.pin) : undefined;
+  }
+
+  /** The pin reaches the child as a flag, so no engine has to spell it out in its own `args`. */
+  #args(scenario: ScenarioSpec): string[] {
+    const { args, pin } = this.#config;
+    return pin ? [...args(scenario), '--pin', pin] : args(scenario);
   }
 
   async measure(ctx: MeasureContext, scenario: ScenarioSpec, rep: number): Promise<SeriesResult> {
     return ctx.runSeriesChild(
       {
         childPath: path.join(import.meta.dirname, this.#config.child),
-        args: this.#config.args(scenario),
+        args: this.#args(scenario),
         jiti: this.#config.jiti,
       },
       path.join(ctx.scenarioDir, 'project'),

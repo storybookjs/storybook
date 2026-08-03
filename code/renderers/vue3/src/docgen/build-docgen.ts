@@ -16,7 +16,7 @@ import type { ComponentMetaChecker } from 'vue-component-meta';
 import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
 import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
 
-export type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
+type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
 
 export interface BuildDocgenContext {
   getChecker: (componentFilePath: string) => ComponentMetaChecker;

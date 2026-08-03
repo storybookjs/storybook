@@ -26,8 +26,10 @@ type MetaSource = {
 export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
+  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
+  const exclude =
+    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 

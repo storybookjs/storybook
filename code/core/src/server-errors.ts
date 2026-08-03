@@ -319,15 +319,23 @@ export class OpenServiceMissingOriginError extends StorybookError {
   }
 }
 
+/**
+ * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
+ * so it lives here rather than in both places — the two copies had already drifted apart once.
+ */
+export function describeUnknownStoryIds(unknownIds: string[]): string {
+  const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+}
+
 export class OpenServiceUnknownStoryIdsError extends StorybookError {
   constructor(public data: { unknownIds: string[] }) {
     const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
-    const plural = data.unknownIds.length === 1 ? 'ID is' : 'IDs are';
     super({
       name: 'OpenServiceUnknownStoryIdsError',
       category: Category.CORE_COMMON,
       code: 18,
-      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):\n${list}`,
+      message: `${describeUnknownStoryIds(data.unknownIds)}\n${list}`,
     });
   }
 }

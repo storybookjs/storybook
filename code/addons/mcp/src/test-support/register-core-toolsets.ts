@@ -9,7 +9,11 @@
 
 import type { StoryIndex } from 'storybook/internal/types';
 import { clearToolsetRegistry } from 'storybook/open-service';
-import { createStoriesToolset, registerToolset } from 'storybook/internal/core-server';
+import {
+  createStoriesToolset,
+  registerToolset,
+  reviewToolset,
+} from 'storybook/internal/core-server';
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 
@@ -32,4 +36,5 @@ export function registerCoreToolsetsForTest({
       reviewEnabled,
     })
   );
+  registerToolset(reviewToolset);
 }

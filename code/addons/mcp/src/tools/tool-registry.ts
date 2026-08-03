@@ -14,7 +14,7 @@ import {
 } from '@storybook/mcp';
 import type { AddonContext } from '../types.ts';
 import type { ToolAvailability } from '../utils/get-tool-availability.ts';
-import { getDisplayReviewToolMetadata, addDisplayReviewTool } from './display-review.ts';
+import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { PREVIEW_STORIES_RESOURCE_URI, addPreviewStoriesResource } from './preview-stories.ts';
 import {
   buildStorybookStoryInstructions,
@@ -26,11 +26,7 @@ import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
 import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-service';
-import {
-  DISPLAY_REVIEW_TOOL_NAME,
-  GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-  RUN_STORY_TESTS_TOOL_NAME,
-} from './tool-names.ts';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, RUN_STORY_TESTS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
   registerToolsetTool,
@@ -106,9 +102,15 @@ function fromToolset(
   definition: Omit<AddonToolDefinition, 'name' | 'getMetadata' | 'register'> & {
     options: ToolsetToolOptions;
     available?: (context: AddonToolRegistryContext) => boolean;
+    /** Narrows the tool further per request, on top of the toolset gate. */
+    wrapEnabled?: (
+      server: McpServer<any, AddonContext>,
+      context: AddonToolRegistryContext,
+      enabled: ToolEnabled
+    ) => ToolEnabled;
   }
 ): AddonToolDefinition {
-  const { options, available, ...rest } = definition;
+  const { options, available, wrapEnabled, ...rest } = definition;
   return {
     ...rest,
     // Read from the constant, not the registry: this array is built at import time, while toolsets
@@ -120,7 +122,7 @@ function fromToolset(
     available: (context) => available?.(context) ?? true,
     getMetadata: () => getToolsetToolMetadata(options),
     register: async (server, context, enabled) => {
-      registerToolsetTool(server, options, enabled);
+      registerToolsetTool(server, options, wrapEnabled?.(server, context, enabled) ?? enabled);
     },
   };
 }
@@ -170,22 +172,22 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     available: ({ availability }) => availability.moduleGraphSupported,
     options: { method: 'stories.findByComponent' },
   }),
-  {
-    name: DISPLAY_REVIEW_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
-    // Registered whenever the CLI default could turn review on; the per-request
-    // `reviewEnabled` context (explicit flag, or the trusted local-client header)
-    // decides whether a given MCP client actually sees the tool.
+    // Registered whenever the CLI default could turn review on; the per-request `reviewEnabled`
+    // context (explicit flag, or the trusted local-client header) decides whether a given MCP
+    // client actually sees the tool.
     available: ({ availability }) => availability.reviewEnabledForCli,
-    getMetadata: () => getDisplayReviewToolMetadata(),
-    register: (server, { availability }, enabled) =>
-      addDisplayReviewTool(
-        server,
-        async () =>
-          ((await enabled?.()) ?? true) &&
-          (server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled)
-      ),
-  },
+    wrapEnabled:
+      (server, { availability }, enabled) =>
+      async () =>
+        ((await enabled?.()) ?? true) &&
+        (server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled),
+    options: {
+      method: 'review.create',
+      wrapSchema: withFriendlyErrors,
+    },
+  }),
   {
     name: RUN_STORY_TESTS_TOOL_NAME,
     toolset: 'test',

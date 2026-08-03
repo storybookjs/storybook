@@ -37,6 +37,8 @@ export type ToolsetToolOptions = {
   method: ToolsetMethodRef;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
+  /** Wraps the input schema before publishing it (used for friendlier validation errors). */
+  wrapSchema?: (schema: StandardSchemaV1) => StandardSchemaV1;
 };
 
 function resolveToolset(options: ToolsetToolOptions): AnyToolsetDefinition {
@@ -152,7 +154,9 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
     name: MCP_TOOL_NAMES[options.method],
     title: MCP_TOOL_TITLES[options.method],
     description: resolveToolsetDescription(method.description, descriptionCtx),
-    ...(hasInput ? { schema: method.schema } : {}),
+    ...(hasInput
+      ? { schema: options.wrapSchema ? options.wrapSchema(method.schema) : method.schema }
+      : {}),
     ...(method.outputSchema ? { outputSchema: method.outputSchema } : {}),
     ...options.extras,
   };

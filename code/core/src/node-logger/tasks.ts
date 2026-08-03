@@ -147,9 +147,6 @@ export const executeTaskWithSpinner = async (
         logTracker.addLog('info', `${intro}: ${data.toString()}`);
         task.message(`${intro}: ${message}`);
       });
-      childProcess.stderr?.on('data', (data: Buffer) => {
-        logTracker.addLog('warn', `${intro} (stderr): ${data.toString()}`);
-      });
       await childProcess;
     }
     logTracker.addLog('info', success);

@@ -36,8 +36,11 @@ import {
 
 /**
  * Packages Storybook needs to run install scripts under pnpm 11+.
- * Without these, `pnpm dlx` can block on an interactive approve-builds picker (TTY),
- * and `pnpm install` can fail with ERR_PNPM_IGNORED_BUILDS.
+ * Without these, Storybook-owned `pnpm dlx` / `pnpm add` can block on an interactive
+ * approve-builds picker (TTY) or fail with ERR_PNPM_IGNORED_BUILDS.
+ *
+ * Only passed as a per-command `--allow-build` flag (vouching for that Storybook-run
+ * install). We deliberately do not persist `allowBuilds` in the user's project config.
  */
 const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
 
@@ -45,11 +48,6 @@ const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 /** `pnpm add --allow-build` support (docs: Added in v10.4.0). */
 const PNPM_ALLOW_BUILD_ADD_MIN = '10.4.0';
-/**
- * Lowest pnpm that accepts a `pnpm-workspace.yaml` with `allowBuilds` and no `packages` field.
- * Older versions error with "packages field missing or empty".
- */
-const PNPM_ALLOW_BUILDS_YAML_MIN = '10.5.0';
 
 const getPnpmAllowBuildArgs = (): string[] =>
   PNPM_ALLOWED_BUILD_DEPENDENCIES.map((pkg) => `--allow-build=${pkg}`);
@@ -420,7 +418,7 @@ export class PNPMProxy extends JsPackageManager {
 
   protected runInstall(options?: { force?: boolean }) {
     // Do not pass `--allow-build` here: `pnpm install` rejects it on every current pnpm major
-    // (including 11). Mode B is handled by seeding `allowBuilds` before install instead.
+    // (including 11).
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
@@ -430,8 +428,6 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   async installDependencies(options?: { force?: boolean }) {
-    this.#ensureAllowBuilds();
-
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -554,8 +550,6 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
-    this.#ensureAllowBuilds();
-
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
@@ -575,47 +569,6 @@ export class PNPMProxy extends JsPackageManager {
       stdio: prompt.getPreferredStdio(),
       cwd: this.primaryPackageJson.operationDir,
     });
-  }
-
-  /**
-   * Persist `allowBuilds` for Storybook's native deps in `pnpm-workspace.yaml` (pnpm 11+ config
-   * home). Needed so plain `pnpm install` (which cannot take `--allow-build`) does not fail with
-   * ERR_PNPM_IGNORED_BUILDS. Skipped on older pnpm that reject allowBuilds-only workspace files.
-   */
-  #ensureAllowBuilds(): void {
-    if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_YAML_MIN)) {
-      return;
-    }
-
-    const workspacePath =
-      find.up('pnpm-workspace.yaml', {
-        cwd: this.primaryPackageJson.operationDir,
-        last: getProjectRoot(),
-      }) ?? join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml');
-
-    try {
-      const doc = existsSync(workspacePath)
-        ? parseDocument(readFileSync(workspacePath, 'utf8'))
-        : parseDocument('');
-
-      if (doc.errors.length > 0) {
-        throw doc.errors[0];
-      }
-
-      let changed = false;
-      for (const pkg of PNPM_ALLOWED_BUILD_DEPENDENCIES) {
-        if (doc.getIn(['allowBuilds', pkg]) !== true) {
-          doc.setIn(['allowBuilds', pkg], true);
-          changed = true;
-        }
-      }
-
-      if (changed) {
-        writeFileSync(workspacePath, doc.toString(), 'utf8');
-      }
-    } catch (error) {
-      logger.debug(`Could not update allowBuilds in ${workspacePath}: ${String(error)}`);
-    }
   }
 
   protected async runGetVersions<T extends boolean>(

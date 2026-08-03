@@ -1,7 +1,3 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -10,12 +6,6 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
-
-const createTempProject = () => {
-  const dir = mkdtempSync(join(tmpdir(), 'pnpm-proxy-test-'));
-  writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'test', private: true })}\n`);
-  return dir;
-};
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -84,20 +74,7 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    let tempProjectDir: string;
-
-    beforeEach(() => {
-      tempProjectDir = createTempProject();
-      pnpmProxy = new PNPMProxy({ cwd: tempProjectDir });
-      vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
-    });
-
-    afterEach(() => {
-      rmSync(tempProjectDir, { recursive: true, force: true });
-    });
-
-    it('should run plain `pnpm install` and seed allowBuilds on pnpm 11', async () => {
-      mockPnpmVersion('11.18.0');
+    it('should run plain `pnpm install` without --allow-build', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -112,21 +89,6 @@ describe('PNPM Proxy', () => {
           args: ['install'],
         })
       );
-      expect(readFileSync(join(tempProjectDir, 'pnpm-workspace.yaml'), 'utf8')).toContain(
-        'esbuild: true'
-      );
-    });
-
-    it('should not seed allowBuilds-only workspace yaml on pnpm < 10.5', async () => {
-      mockPnpmVersion('10.4.0');
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
-
-      await pnpmProxy.installDependencies();
-
-      expect(existsSync(join(tempProjectDir, 'pnpm-workspace.yaml'))).toBe(false);
     });
 
     it('should rethrow minimum-release-age install errors as handled errors', async () => {
@@ -200,18 +162,6 @@ describe('PNPM Proxy', () => {
   });
 
   describe('addDependencies', () => {
-    let tempProjectDir: string;
-
-    beforeEach(() => {
-      tempProjectDir = createTempProject();
-      pnpmProxy = new PNPMProxy({ cwd: tempProjectDir });
-      vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
-    });
-
-    afterEach(() => {
-      rmSync(tempProjectDir, { recursive: true, force: true });
-    });
-
     it('with devDep it should run `pnpm add --allow-build=esbuild -D storybook` on pnpm >= 10.4', async () => {
       mockPnpmVersion('10.4.0');
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
@@ -238,7 +188,6 @@ describe('PNPM Proxy', () => {
           args: ['add', '-D', 'storybook'],
         })
       );
-      expect(existsSync(join(tempProjectDir, 'pnpm-workspace.yaml'))).toBe(false);
     });
   });
 

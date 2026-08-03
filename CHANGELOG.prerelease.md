@@ -1,3 +1,34 @@
+## 10.6.0-alpha.4
+
+- Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!
+- Angular: Serve ancestor node_modules for addon-vitest in browser mode - [#35600](https://github.com/storybookjs/storybook/pull/35600), thanks @brandonroberts!
+- Build: Fix repository.directory path in @storybook/nextjs-vite package.json - [#35609](https://github.com/storybookjs/storybook/pull/35609), thanks @LHMQ878!
+- Build: Fix repository.directory path in create-storybook package.json - [#35596](https://github.com/storybookjs/storybook/pull/35596), thanks @LHMQ878!
+- Builder-Webpack5: Use strict mtime equality for mock cache reuse - [#35681](https://github.com/storybookjs/storybook/pull/35681), thanks @benwarbrooke-auror!
+- CLI: Update AI setup instructions to msw-storybook-addon v3 - [#35512](https://github.com/storybookjs/storybook/pull/35512), thanks @yannbf!
+- Core: Add additionnal field for component API in manifest - [#35585](https://github.com/storybookjs/storybook/pull/35585), thanks @huang-julien!
+- Core: Define shared public toolsets (defineToolset) - [#35516](https://github.com/storybookjs/storybook/pull/35516), thanks @ghengeveld!
+- Core: Include null union members as enum options in TS argTypes conversion - [#35599](https://github.com/storybookjs/storybook/pull/35599), thanks @solp721!
+- Core: Move docgen JSDoc parser into csf-tools - [#35623](https://github.com/storybookjs/storybook/pull/35623), thanks @huang-julien!
+- Core: Upgrade `ws` to fix security advisories - [#35584](https://github.com/storybookjs/storybook/pull/35584), thanks @ndelangen!
+- Dependencies: Bump magic-string from 0.30.21 to 1.1.0 - [#35559](https://github.com/storybookjs/storybook/pull/35559), thanks @wojtekmaj!
+- Dependencies: Pin `@testing-library/jest-dom` to `6.9.1` - [#35614](https://github.com/storybookjs/storybook/pull/35614), thanks @ndelangen!
+- ESLint Plugin: Add plugin meta and document oxlint usage - [#35655](https://github.com/storybookjs/storybook/pull/35655), thanks @yannbf!
+- Icons: Add missing @storybook/icons to the toolbar icon map - [#35595](https://github.com/storybookjs/storybook/pull/35595), thanks @thejamesgore!
+- Manager: Toggle the mobile navigation drawer with the sidebar keyboard shortcut - [#35263](https://github.com/storybookjs/storybook/pull/35263), thanks @TheSeydiCharyyev!
+- Manifest Debugger: Stable deep-link anchors for component cards - [#35470](https://github.com/storybookjs/storybook/pull/35470), thanks @rachelslurs!
+- NextJS: Normalize trailing slash in the next/link mock - [#35589](https://github.com/storybookjs/storybook/pull/35589), thanks @sobol-sudo!
+- Review: Use correct role for footer - [#35434](https://github.com/storybookjs/storybook/pull/35434), thanks @Sidnioulz!
+- TanStack: Carry lazy route bindings onto cloned routes - [#35500](https://github.com/storybookjs/storybook/pull/35500), thanks @unpunnyfuns!
+- TanStack: Preserve explicit route ids on pathful clones - [#35499](https://github.com/storybookjs/storybook/pull/35499), thanks @unpunnyfuns!
+- TanStack: Resolve mock redirects through Vite's resolver - [#35501](https://github.com/storybookjs/storybook/pull/35501), thanks @unpunnyfuns!
+- TanStack: Select the story leaf by mount path and params - [#35498](https://github.com/storybookjs/storybook/pull/35498), thanks @unpunnyfuns!
+- Test: Fix Illegal invocation when reading prototype.focus - [#35528](https://github.com/storybookjs/storybook/pull/35528), thanks @FrancoKaddour!
+- Vue3 Vite: Enable Schema Extraction for Vue Component Meta - [#35565](https://github.com/storybookjs/storybook/pull/35565), thanks @dmitriy-prokoshev!
+- Vue3: Support TypeScript enum props in vue-component-meta docgen - [#35684](https://github.com/storybookjs/storybook/pull/35684), thanks @valentinpalkovic!
+- Vue: Resolve docgen per export so a type-only export does not drop a file's prop tables - [#35593](https://github.com/storybookjs/storybook/pull/35593), thanks @seanogdev!
+- Vue: Skip docgen for module ids carrying a query - [#35598](https://github.com/storybookjs/storybook/pull/35598), thanks @seanogdev!
+
 ## 10.6.0-alpha.3
 
 - Addon Vitest: Pin storybook/test in optimizeDeps so its CJS-only deps are prebundled - [#35572](https://github.com/storybookjs/storybook/pull/35572), thanks @Nic-Polumeyv!

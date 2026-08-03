@@ -38,11 +38,36 @@ env:
   VERCEL_PROJECT_NAME: storybook-evals
 
 jobs:
+  # Keep `ci:eval` sticky as the "this PR needs evals" marker. New pushes
+  # invalidate prior green without re-spending; re-run by remove+re-add
+  # `ci:eval` or workflow_dispatch.
+  invalidate-evals-ok:
+    name: Invalidate evals:ok on new commits
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'synchronize' &&
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'ci:eval') &&
+      contains(github.event.pull_request.labels.*.name, 'evals:ok')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Remove stale evals:ok
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --remove-label 'evals:ok'
+
   eval:
     name: Run agent eval experiments
+    # Skip synchronize: sticky `ci:eval` must not re-bill on every push.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (!github.event.pull_request.head.repo.fork &&
+      (github.event_name == 'pull_request' &&
+        github.event.action != 'synchronize' &&
+        !github.event.pull_request.head.repo.fork &&
         contains(github.event.pull_request.labels.*.name, 'ci:eval'))
     runs-on: ubuntu-latest
     environment:
@@ -53,12 +78,23 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      issues: write
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
+      - name: Clear prior evals:ok
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name' | grep -Fxq 'evals:ok'; then
+            gh pr edit "$PR_NUMBER" --remove-label 'evals:ok'
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -243,3 +279,18 @@ jobs:
             echo "- Project: \`$VERCEL_PROJECT_NAME\`"
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Sticky `ci:eval` = evals required. `evals:ok` = this head's eval run passed.
+      # Danger blocks merge when `ci:eval` is present without `evals:ok`.
+      # Tied to the eval step, not playground deploy (deploy can fail independently).
+      - name: Mark evals:ok
+        if: ${{ github.event_name == 'pull_request' && steps.run_evals.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh label create 'evals:ok' \
+            --color '0E8A16' \
+            --description 'Agent eval run passed for the current PR head' \
+            2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --add-label 'evals:ok'

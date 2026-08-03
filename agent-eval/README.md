@@ -50,13 +50,16 @@ Run a single experiment:
 yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
 ```
 
-Pull requests with the `ci:eval` label run all experiments in CI. The
-`ci:eval`/`ci:extra-*` labels are applied by **humans only** — labeled runs are
-expensive and re-trigger on every subsequent push, so an AI agent must never
-add them to a PR (nor start `workflow_dispatch` eval runs). Agents validate
-their changes locally instead: only the specific evals affected by the change
-(or the eval being fixed), one experiment at a time, via `EVAL_ONLY` — never a
-full line, never multiple experiments in parallel.
+Pull requests with the `ci:eval` label run experiments in CI (on label apply,
+not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` /
+`ci:review` labels are applied by **humans only** — labeled runs are expensive,
+so an AI agent must never add them (nor start `workflow_dispatch` eval runs).
+A successful run adds `evals:ok`; new commits clear that proof so Danger can
+block merge while `ci:eval` is set without `evals:ok`. Re-run by removing and
+re-adding `ci:eval`, or via workflow_dispatch. Agents validate locally instead:
+only the specific evals affected by the change (or the eval being fixed), one
+experiment at a time, via `EVAL_ONLY` — never a full line, never multiple
+experiments in parallel.
 
 By default only the first core eval (`801-create-component-no-launch-config`)
 runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
@@ -114,13 +117,19 @@ workflow too:
 EVAL_REVIEW=1 yarn workspace agent-eval run eval
 ```
 
-In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
-`ci:review` PR labels set the matching flag on labeled `ci:eval` runs, and
-manual `workflow_dispatch` runs of the `Agent eval` workflow can enable them
-through the `extra_evals`, `extra_models`, `storybook_latest`, and `review`
-inputs, or target specific evals through the `eval_only` input. All of these
-are human-triggered spend decisions; agents never apply the labels or dispatch
-the workflow.
+In CI, opt-in labels compose with `ci:eval` (same flags exist on
+`workflow_dispatch`):
+
+| Label / input | Effect |
+| --- | --- |
+| `ci:extra-evals` / `extra_evals` | Full 8xx (+ 82x on plugins) instead of the default single smoke eval |
+| `ci:extra-models` / `extra_models` | Also run non-default model experiments (e.g. sonnet-medium) |
+| `ci:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
+| `ci:review` / `review` | Force `experimentalReview` on and assert the review workflow for MCP cells too |
+
+`eval_only` (dispatch only) targets specific eval names. All of these are
+human-triggered spend decisions; agents never apply the labels or dispatch the
+workflow.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static

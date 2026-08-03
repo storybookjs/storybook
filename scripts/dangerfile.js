@@ -48,6 +48,22 @@ const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 const author = danger.github.pr.user;
 const authorAssociation = danger.github.pr.author_association;
 
+/**
+ * `ci:eval` means this PR requires agent evals. `evals:ok` is set by the
+ * Agent eval workflow when a labeled run succeeds. New commits clear
+ * `evals:ok` without re-running, so merge stays blocked until evals are
+ * re-triggered (remove+re-add `ci:eval`, or workflow_dispatch).
+ *
+ * @param {string[]} labels
+ */
+const checkEvalLabels = (labels) => {
+  if (labels.includes('ci:eval') && !labels.includes('evals:ok')) {
+    fail(
+      'This PR has the `ci:eval` label but not `evals:ok`. Wait for a successful Agent eval run (or remove `ci:eval` if evals are not required). Re-run by removing and re-adding `ci:eval`, or via workflow_dispatch.'
+    );
+  }
+};
+
 /** @param {string[]} labels */
 const checkRequiredLabels = (labels) => {
   const forbiddenLabels = [
@@ -214,6 +230,8 @@ const checkTargetBranch = () => {
 
 checkTargetBranch();
 checkReleaseChecklist(danger.github.pr.body);
+
+checkEvalLabels(labels.map((l) => l.name));
 
 if (prLogConfig) {
   checkRequiredLabels(labels.map((l) => l.name));

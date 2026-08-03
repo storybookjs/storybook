@@ -299,7 +299,7 @@ jobs:
             2>/dev/null || true
           gh pr edit "$PR_NUMBER" --add-label 'evals:ok'
 
-      # Weekly / next-dispatch signal to #sb-skills. Requires repo secret
+      # Weekly / next-dispatch signal to #team-storybook. Requires repo secret
       # SLACK_AGENT_EVAL_WEBHOOK_URL (Incoming Webhook into that channel).
       - name: Notify Slack
         if: >-
@@ -315,7 +315,7 @@ jobs:
           EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
         run: |
           if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
-            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #sb-skills notify."
+            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #team-storybook notify."
             exit 0
           fi
 

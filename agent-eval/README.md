@@ -63,15 +63,15 @@ experiments in parallel.
 
 A scheduled weekly run (Monday 08:00 UTC) always executes the full 8xx/82x
 line on `next` with default-model experiments, deploys the playground to the
-Vercel production target, and posts a summary to Slack `#sb-skills`. It does
-not enable `EVAL_EXTRA_MODELS`, `EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW` (use
-`workflow_dispatch` for those). Manual `workflow_dispatch` runs on `next` also
-notify Slack.
+Vercel production target, and posts a summary to Slack `#team-storybook`. It
+does not enable `EVAL_EXTRA_MODELS`, `EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW`
+(use `workflow_dispatch` for those). Manual `workflow_dispatch` runs on `next`
+also notify Slack.
 
 Slack notify needs the repo secret `SLACK_AGENT_EVAL_WEBHOOK_URL`: create an
-[Incoming Webhook](https://api.slack.com/messaging/webhooks) into `#sb-skills`
-and store the URL as that secret. If the secret is missing, the job warns and
-continues.
+[Incoming Webhook](https://api.slack.com/messaging/webhooks) into
+`#team-storybook` and store the URL as that secret. If the secret is missing,
+the job warns and continues.
 
 By default only the first core eval (`801-create-component-no-launch-config`)
 runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx

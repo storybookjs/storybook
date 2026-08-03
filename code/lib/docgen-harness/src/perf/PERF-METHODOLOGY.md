@@ -185,14 +185,53 @@ A regression that lands on a Tuesday is caught whenever someone next asks for a 
 
 Memory budgets stay in absolute megabytes, with enough headroom on CI so that the gate is not flaky while still failing hard on real regressions.
 
-## Budgets table skeleton
+## Recorded baselines
 
-| Engine                                    | Cold extraction | Warm extraction | Whole-project scan | Peak memory (transient) | Retained growth | Retained slope | Tier  |
-| ----------------------------------------- | --------------- | --------------- | ------------------ | ----------------------- | --------------- | -------------- | ----- |
-| react-legacy (react-docgen, control)      | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| react-osa (ComponentMetaManager, control) | TBD             | TBD             | n/a                | 90MB                    | 60MB            | 3MB/save       | daily |
-| vue-docgen-api (legacy, current default)  | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| vue-component-meta                        | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| compodoc                                  | TBD             | TBD             | TBD                | TBD                     | TBD             | TBD            | TBD   |
-| svelte (stretch)                          | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
-| cem (stretch)                             | TBD             | TBD             | n/a                | TBD                     | TBD             | TBD            | TBD   |
+Measured on a CircleCI `sb_node_22_classic` medium+ executor, Node 22.22.1, at the pinned profile (N=6).
+Milliseconds are context, never a budget: the same suite runs three to four times faster on an Apple-silicon laptop, which is exactly why nothing gates on them.
+
+| Engine / scenario                  | Cold    | Warm   | Scan   | Peak transient | Retained growth | Retained slope |
+| ---------------------------------- | ------- | ------ | ------ | -------------- | --------------- | -------------- |
+| react-legacy/default               | 1917ms  | 14ms   | n/a    | 2.4MB          | -4.1MB          | 0.01MB/save    |
+| react-osa/default                  | 2701ms  | 44ms   | n/a    | 13.8MB         | -83.0MB         | -1.13MB/save   |
+| vue-docgen-api/flat                | 155ms   | 3ms    | n/a    | 0.4MB          | 0.2MB           | 0.02MB/save    |
+| vue-docgen-api/workspace           | 121ms   | 3ms    | n/a    | 0.4MB          | 0.3MB           | 0.02MB/save    |
+| vue-docgen-api/base-type-touch     | 123ms   | 10ms   | n/a    | 0.9MB          | 0.1MB           | 0.01MB/save    |
+| vue-component-meta/flat            | 1145ms  | 80ms   | n/a    | 9.4MB          | 3.7MB           | 0.21MB/save    |
+| vue-component-meta/workspace       | 1067ms  | 84ms   | n/a    | 12.7MB         | 3.6MB           | 0.20MB/save    |
+| vue-component-meta/base-type-touch | 1182ms  | 96ms   | n/a    | 12.1MB         | 3.0MB           | 0.26MB/save    |
+| compodoc/default                   | 1434ms  | 1537ms | 1434ms | 213.8MB        | n/a             | n/a            |
+
+Two things in that table are worth reading twice.
+
+Compodoc's warm figure is its cold figure, because it re-runs the whole project on every invocation.
+That is what it does by design, so it carries no incrementality budget; its peak memory, an order of magnitude above every other engine, is the number worth watching.
+
+`react-osa` reports negative retained growth and a negative slope: it ends the series holding less than it started with, because the run's forced collections settle the heap below the baseline taken before any extraction happened.
+A leak would show up as a positive slope, so the budget is a ceiling and the negative value passes it comfortably.
+
+The reference ratios stand at 0.71 cold and 0.31 warm for react-legacy over react-osa, and around 0.10-0.14 cold for vue-docgen-api over vue-component-meta.
+None of them is gated on, for the reasons under "Like-for-like comparison" above.
+
+### Budgets
+
+Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, at roughly three to seven times the observed value so a busy executor cannot turn the gate into a flake.
+
+| Engine / scenario                  | Warm/cold ratio | Peak transient | Retained growth | Retained slope | Tier  |
+| ---------------------------------- | --------------- | -------------- | --------------- | -------------- | ----- |
+| react-legacy/default               | 0.05            | 15MB           | 30MB            | 1MB/save       | daily |
+| react-osa/default                  | 0.08            | 45MB           | 60MB            | 3MB/save       | daily |
+| vue-docgen-api/flat                | 0.08            | 8MB            | 10MB            | 1MB/save       | daily |
+| vue-docgen-api/workspace           | 0.10            | 8MB            | 10MB            | 1MB/save       | daily |
+| vue-docgen-api/base-type-touch     | 0.25            | 8MB            | 10MB            | 1MB/save       | daily |
+| vue-component-meta/flat            | 0.20            | 40MB           | 20MB            | 1.5MB/save     | daily |
+| vue-component-meta/workspace       | 0.22            | 40MB           | 20MB            | 1.5MB/save     | daily |
+| vue-component-meta/base-type-touch | 0.25            | 40MB           | 20MB            | 1.5MB/save     | daily |
+| compodoc/default                   | none            | 400MB          | n/a             | n/a            | daily |
+| svelte (stretch)                   | TBD             | TBD            | TBD             | TBD            | TBD   |
+| cem (stretch)                      | TBD             | TBD            | TBD             | TBD            | TBD   |
+
+`react-legacy-rdt` and `vue-component-meta-next` are measurable but carry no budget: neither runs by default, and a budget on something CI never runs would be decoration.
+The two stretch rows wait on engines that do not exist yet.
+
+The docgen-memory gate keeps its own, heavier `react-osa` row (90MB transient, 60MB growth, 3MB/save) covering the whole-index workload; the row above covers the incremental one this suite measures.

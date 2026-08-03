@@ -12,7 +12,6 @@ import {
   commonJobsNoOpJob,
   defineCircleciCompletion,
   docgenMemoryGate,
-  docgenPerfBaselineCapture,
   docgenPerfGate,
   knip,
   lint,
@@ -76,7 +75,6 @@ function generateConfig(workflow: Workflow) {
       internalStorybookBuildE2e,
       benchmarkPackages,
       // TEMPORARY: remove together with the job definition once the perf budgets are recorded.
-      docgenPerfBaselineCapture,
 
       sandboxesNoOpJob,
       ...sandboxes,

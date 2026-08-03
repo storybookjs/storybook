@@ -486,39 +486,6 @@ export const docgenPerfGate = defineJob(
   [commonJobsNoOpJob]
 );
 
-/**
- * TEMPORARY - delete before this branch merges.
- *
- * Runs the perf suite on CI hardware so the budgets in the harness can be set from CI numbers
- * rather than from a laptop. It never gates: it reports. Once the budgets are recorded, this job
- * and its entry in the always-on workflow go away and the daily gate above is the only perf job.
- */
-export const docgenPerfBaselineCapture = defineJob(
-  'Docgen perf baseline capture (temporary)',
-  () => ({
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium+',
-    },
-    steps: [
-      ...workflow.restoreLinux(),
-      {
-        run: {
-          name: 'Per-engine docgen perf suite (report only)',
-          working_directory: 'code/lib/docgen-harness',
-          command: 'yarn bench:docgen-perf --json ./perf-results/results.json',
-          no_output_timeout: '30m',
-        },
-      },
-      artifact.persist(
-        join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_PERF_RESULTS_DIR),
-        'docgen-perf-baseline'
-      ),
-    ],
-  }),
-  [commonJobsNoOpJob]
-);
-
 export const benchmarkPackages = defineJob(
   'Benchmark packages',
   () => ({

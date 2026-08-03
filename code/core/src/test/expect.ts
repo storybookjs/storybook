@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+// TODO SB11: Upgrade @testing-library/jest-dom to v7+ across the monorepo.
 import * as matchers from '@testing-library/jest-dom/matchers';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 

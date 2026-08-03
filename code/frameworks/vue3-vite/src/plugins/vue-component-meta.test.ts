@@ -39,9 +39,11 @@ async function getTransformHandler() {
 
 describe('vue-component-meta plugin', () => {
   let transform: Awaited<ReturnType<typeof getTransformHandler>>;
+  let rejectedExportName: string | undefined;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    rejectedExportName = undefined;
 
     // Only mock what's actually called: createCheckerByJson, getProjectRoot, stat
     // createChecker, readFile, parseMulti are never reached in these tests
@@ -52,7 +54,12 @@ describe('vue-component-meta plugin', () => {
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
 
     mockChecker.getExportNames.mockReturnValue(['Tab']);
-    mockChecker.getComponentMeta.mockReturnValue(makeComponentMeta());
+    mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
+      if (name === rejectedExportName) {
+        throw new Error(`Could not find export ${name}`);
+      }
+      return makeComponentMeta();
+    });
 
     transform = await getTransformHandler();
   });
@@ -139,6 +146,53 @@ describe('vue-component-meta plugin', () => {
       const result = await transform(src, id);
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('non-component exports', () => {
+    it('should keep docgen for the other exports when getComponentMeta throws for one', async () => {
+      const src = [
+        `import { defineComponent } from 'vue';`,
+        `export type TabVariant = 'primary' | 'secondary';`,
+        `export const Tab = defineComponent({});`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabVariant', 'Tab']);
+      rejectedExportName = 'TabVariant';
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should return undefined when every export throws', async () => {
+      const src = `export type Variant = 'a' | 'b';\n`;
+      const id = '/project/src/components/types.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['Variant']);
+      rejectedExportName = 'Variant';
+
+      const result = await transform(src, id);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should keep meta aligned with its export name when an earlier export throws', async () => {
+      const src = [
+        `export type TabsVariant = 'horizontal' | 'vertical';`,
+        `export const Tabs = {};`,
+      ].join('\n');
+      const id = '/project/src/components/Tabs.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabsVariant', 'Tabs']);
+      rejectedExportName = 'TabsVariant';
+
+      const result = await transform(src, id);
+
+      expect(result!.code).toContain('Tabs.__docgenInfo');
+      expect(result!.code).toContain('"displayName":"Tabs"');
     });
   });
 

@@ -101,6 +101,10 @@ export const getExternal = async (cwd: string) => {
     // bundle so rollup-plugin-dts doesn't walk its (CJS) source (which fails on refractor/core
     // and exhausts the heap). It stays bundled in the JS output, like ast-types.
     'react-syntax-highlighter',
+    // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
+    // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
+    // external lets treeshaking drop the import when the kept types don't use it.
+    'typescript',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

@@ -1,6 +1,6 @@
 import { recast } from 'storybook/internal/babel';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
+import { extractDescription, extractJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -9,7 +9,6 @@ import {
   type TypescriptOptions,
   getComponents,
 } from './getComponentImports.ts';
-import { extractJSDocInfo } from './jsdocTags.ts';
 import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 

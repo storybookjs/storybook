@@ -72,3 +72,59 @@ describe('extractArgTypesFromData', () => {
     expect(() => extract('Status', { enumerations: [{ name: 'Status' }] as never })).not.toThrow();
   });
 });
+
+describe('required', () => {
+  /** Extracts a single input declared with the given pair of Compodoc flags. */
+  const requiredOf = (flags: { optional?: boolean; required?: boolean }) => {
+    const componentData = {
+      name: 'StatusComponent',
+      type: 'component',
+      inputsClass: [{ name: 'value', type: 'string', ...flags }],
+      outputsClass: [],
+      propertiesClass: [],
+      methodsClass: [],
+    } as never;
+
+    const argTypes = extractArgTypesFromData(componentData, {
+      compodocJson: jsonWith({} as never),
+      filterNonInputControls: true,
+      logger,
+      unwrapHtml: (html: unknown) => String(html),
+    });
+
+    // `required` has always been written into `table.type`, which the public ArgTypes type
+    // declares as summary/detail only, so reading it back needs an assertion.
+    return (argTypes.value.table?.type as { required?: boolean } | undefined)?.required;
+  };
+
+  // One case per shape Compodoc can emit. Which declaration produces which pair is recorded here
+  // because the pairs are not self-explanatory, and one of them is self-contradictory.
+  it('is false for a signal input with a default: `input("")`', () => {
+    expect(requiredOf({ optional: false, required: false })).toBe(false);
+  });
+
+  it('is true for `input.required<T>()`', () => {
+    expect(requiredOf({ optional: false, required: true })).toBe(true);
+  });
+
+  it('is true for `@Input({ required: true })`', () => {
+    expect(requiredOf({ optional: false, required: true })).toBe(true);
+  });
+
+  it('is false for `@Input({ required: false })`, which Compodoc reports as required and optional at once', () => {
+    // Compodoc derives `required` from the presence of the key rather than its value, so this
+    // declaration contradicts itself. Trusting `required` alone would call it required.
+    expect(requiredOf({ optional: true, required: true })).toBe(false);
+  });
+
+  it('falls back to `optional` when Compodoc omits `required`', () => {
+    expect(requiredOf({ optional: true })).toBe(false);
+    expect(requiredOf({ optional: false })).toBe(true);
+  });
+
+  it('is true for a plain `@Input()`, for which Compodoc emits neither flag (compodoc#863)', () => {
+    // The remaining upstream gap: with nothing to read, every plain decorator input reads as
+    // required. Fixing it upstream makes `optional` appear, and this case corrects itself.
+    expect(requiredOf({})).toBe(true);
+  });
+});

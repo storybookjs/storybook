@@ -544,7 +544,7 @@ function getLocalToolNames(metadata: StorybookAiMetadata): Set<string> {
   return new Set(Object.keys(metadata.localTools ?? {}));
 }
 
-const MAX_SCHEMA_DEPTH = 4;
+export const MAX_SCHEMA_DEPTH = 4;
 
 function schemaItem(schema: JsonSchemaNode): JsonSchemaNode | undefined {
   return Array.isArray(schema.items) ? schema.items[0] : schema.items;
@@ -592,7 +592,8 @@ function schemaChildLines(schema: JsonSchemaNode, indent: string, depth: number)
   return lines;
 }
 
-function schemaLines(
+/** Also the `storybook tools` help renderer's line formatter, so both CLIs render schemas alike. */
+export function schemaLines(
   label: string,
   schema: JsonSchemaNode,
   isRequired: boolean,

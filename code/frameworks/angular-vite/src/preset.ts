@@ -121,7 +121,13 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     const path = await import('node:path');
     const workspaceRoot =
       (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
-    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
+    const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
+    const outputDirIndex = compodocArgs.indexOf('-d');
+    const outputDir =
+      outputDirIndex !== -1 && compodocArgs[outputDirIndex + 1]
+        ? path.resolve(workspaceRoot, compodocArgs[outputDirIndex + 1])
+        : workspaceRoot;
+    const documentationJsonPath = path.resolve(outputDir, 'documentation.json');
     if (!existsSync(documentationJsonPath)) {
       const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
       const tsconfig =
@@ -129,7 +135,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         (options as any)?.tsConfig ??
         (options as any)?.angularBuilderOptions?.tsConfig ??
         path.resolve(workspaceRoot, 'tsconfig.json');
-      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
       try {
         await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
       } catch (err) {

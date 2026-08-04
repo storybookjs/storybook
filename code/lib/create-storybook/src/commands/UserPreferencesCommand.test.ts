@@ -486,6 +486,118 @@ describe('UserPreferencesCommand', () => {
     });
   });
 
+  describe('React Native-only projects', () => {
+    it('should skip the install-type prompt and use the minimal config for existing users', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      // Not a new user - normally this would trigger the install-type prompt
+      vi.mocked(prompt.select).mockResolvedValueOnce(false);
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        projectType: ProjectType.REACT_NATIVE,
+      });
+
+      // Only the new-user prompt should have run - the install-type prompt must be skipped
+      expect(prompt.select).toHaveBeenCalledTimes(1);
+      expect(prompt.select).not.toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'What configuration should we install?' }),
+        expect.anything()
+      );
+
+      // Minimal ("light") config: none of the recommended features are installed
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.A11Y)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
+
+      // The automatic choice is still recorded for telemetry
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackInstallType).toHaveBeenCalledWith('light');
+    });
+
+    it('should use the minimal config for new users without prompting', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        projectType: ProjectType.REACT_NATIVE,
+      });
+
+      expect(result.newUser).toBe(true);
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.A11Y)).toBe(false);
+    });
+
+    it('should use the minimal config in non-interactive mode', async () => {
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        projectType: ProjectType.REACT_NATIVE,
+      });
+
+      expect(prompt.select).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+    });
+
+    it('should use the minimal config when --yes is set', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      const commandOptions: CommandOptions = {
+        packageManager: PackageManagerName.NPM,
+        disableTelemetry: true,
+        yes: true,
+      };
+      const yesCommand = new UserPreferencesCommand(commandOptions);
+
+      (yesCommand as unknown as CommandWithPrivates).telemetryService = {
+        trackNewUserCheck: vi.fn(),
+        trackInstallType: vi.fn(),
+        trackAiSetupNudge: vi.fn(),
+        trackPromptCancel: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const result = await yesCommand.execute({
+        ...defaultExecuteOptions,
+        projectType: ProjectType.REACT_NATIVE,
+      });
+
+      expect(prompt.select).not.toHaveBeenCalled();
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+    });
+
+    it('should still prompt for install type for React Native Web projects', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select)
+        .mockResolvedValueOnce(false) // not a new user
+        .mockResolvedValueOnce('recommended'); // install type
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        projectType: ProjectType.REACT_NATIVE_WEB,
+      });
+
+      expect(prompt.select).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'What configuration should we install?' }),
+        expect.anything()
+      );
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(true);
+    });
+  });
+
   describe('executeUserPreferences helper', () => {
     it('should return a valid result', async () => {
       const commandOptions: CommandOptions = {

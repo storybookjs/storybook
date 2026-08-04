@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 
 import { detectAgent } from '../../telemetry/detect-agent.ts';
-import { resolveStorybookConfigDir } from '../ai/mcp/local-metadata.ts';
-import { readRegistry } from '../ai/mcp/registry.ts';
-import { resolveInstance } from '../ai/mcp/resolve-instance.ts';
-import type { StorybookInstanceRecord } from '../ai/mcp/types.ts';
+import { resolveStorybookConfigDir } from './config-dir.ts';
+import { readRegistry } from './instances/registry.ts';
+import { resolveInstance } from './instances/resolve.ts';
+import type { StorybookInstanceRecord } from './instances/types.ts';
 
 export type ToolsTarget = {
   /** Project directory of the target Storybook; defaults to `process.cwd()`. */
@@ -24,7 +24,7 @@ export type InstanceDiscovery = {
  * Find a running `storybook dev` instance for the targeted project via the runtime instance
  * registry the dev server writes.
  *
- * Reuses the ai CLI's matching rules (cwd/config-dir keys, agent buckets, recency, pid liveness)
+ * Applies the shared matching rules (cwd/config-dir keys, agent buckets, recency, pid liveness)
  * but ignores the record's MCP status: the tools CLI only needs a live origin for its URLs, so any
  * running Storybook counts — with or without `@storybook/addon-mcp` installed.
  */

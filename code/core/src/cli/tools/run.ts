@@ -6,7 +6,7 @@ import type {
   ToolsetTelemetry,
 } from '../../shared/open-service/toolset-definition.ts';
 import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
-import type { StorybookInstanceRecord } from '../ai/mcp/types.ts';
+import type { StorybookInstanceRecord } from './instances/types.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './bootstrap.ts';
 import {
   discoverRunningInstance,

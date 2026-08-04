@@ -9,10 +9,14 @@ import type { CLIOptions } from 'storybook/internal/types';
 import type { Command } from 'commander';
 
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
-import type { CommandFailureHandler } from '../ai/mcp/register.ts';
-import { resolveStorybookConfigDir } from '../ai/mcp/local-metadata.ts';
+import { resolveStorybookConfigDir } from './config-dir.ts';
 import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
 import { TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
+
+/** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
+export type CommandFailureHandler = (
+  logFilePath: string | boolean | undefined
+) => (error: unknown) => Promise<never>;
 
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;

@@ -29,7 +29,7 @@ import {
   TRIGGER_TEST_RUN_RESPONSE,
   type TriggerTestRunResponse,
 } from '../../shared/open-service/toolsets/test/run.ts';
-import type { StorybookInstanceRecord } from '../ai/mcp/types.ts';
+import type { StorybookInstanceRecord } from './instances/types.ts';
 import type { ToolsRuntime } from './bootstrap.ts';
 import { runToolsCommand, type ToolsRunDeps } from './run.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';

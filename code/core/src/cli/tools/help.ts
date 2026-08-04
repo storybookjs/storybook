@@ -10,8 +10,12 @@ import {
   type ToolsetCtx,
 } from '../../shared/open-service/toolset-definition.ts';
 import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
-import { MAX_SCHEMA_DEPTH, schemaLines } from '../ai/mcp/run-tool.ts';
-import { JsonSchemaNodeSchema, type JsonSchemaNode } from '../ai/mcp/types.ts';
+import {
+  JsonSchemaNodeSchema,
+  MAX_SCHEMA_DEPTH,
+  schemaLines,
+  type JsonSchemaNode,
+} from './schema-lines.ts';
 import { TOOLS_OPTION_SPECS } from './tool-tokens.ts';
 
 const LOCAL_BADGE = '[local]';

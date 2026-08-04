@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { isAddonVitestEnabled } from '../utils/addon-vitest.ts';
 import {
   addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
 } from './get-storybook-story-instructions.ts';
-import { getReviewStatus } from '../utils/is-review-available.ts';
 import type { AddonContext } from '../types.ts';
 import {
   PREVIEW_STORIES_TOOL_NAME,
@@ -14,24 +12,14 @@ import {
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 } from './tool-names.ts';
 
-vi.mock('../utils/addon-vitest.ts', { spy: true });
-
-vi.mock('../utils/is-review-available.ts', () => ({
-  getReviewStatus: vi.fn(),
-}));
-
+// Review/addon-vitest availability now resolve through core's `getReviewStatus`/
+// `isAddonVitestEnabled` (`resolveSkillInputs`, inside `buildStorybookStoryInstructions`'s
+// adapter), so tests below drive them through the `options.presets` fixture or the per-request
+// `addonVitestAvailable`/`reviewEnabled` overrides instead of mocking an addon-local probe.
 describe('getUIBuildingInstructionsTool', () => {
   let server: McpServer<any, AddonContext>;
 
   beforeEach(async () => {
-    vi.mocked(isAddonVitestEnabled).mockResolvedValue(true);
-
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: false,
-      hasFeatureFlag: false,
-    });
-
     const adapter = new ValibotJsonSchemaAdapter();
     server = new McpServer(
       {
@@ -267,17 +255,13 @@ describe('getUIBuildingInstructionsTool', () => {
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
   it('tells the agent to show only the review section when review is enabled', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: true,
-      availableForCli: true,
-      hasFeatureFlag: true,
-    });
-
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
+          // experimentalReview + changeDetection both on makes the real (core) getReviewStatus
+          // resolve `available: true`, driving the review-flavored instructions below.
+          if (presetName === 'features') return { changeDetection: true, experimentalReview: true };
           return undefined;
         }),
       },
@@ -324,12 +308,6 @@ describe('getUIBuildingInstructionsTool', () => {
   // explicit experimentalReview flag (and thus getReviewStatus().available)
   // is off.
   it('uses the review instructions when the request context enables review despite the flag being unset', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: true,
-      hasFeatureFlag: false,
-    });
-
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
@@ -365,12 +343,6 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('tells the agent to include preview URLs when review is disabled', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: false,
-      hasFeatureFlag: false,
-    });
-
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {

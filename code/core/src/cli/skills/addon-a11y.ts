@@ -1,4 +1,4 @@
-import type { Options } from 'storybook/internal/types';
+import type { Options } from '../../types/index.ts';
 
 /**
  * Check if @storybook/addon-a11y is enabled in the Storybook configuration.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getManifestStatus } from './is-manifest-available.ts';
-import type { Options } from 'storybook/internal/types';
+import { getManifestStatus } from './manifest-status.ts';
+import type { Options } from '../../types/index.ts';
 
 function createMockOptions({
   featureFlag = false,

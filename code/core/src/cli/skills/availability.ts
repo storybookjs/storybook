@@ -1,9 +1,11 @@
-import type { Options } from 'storybook/internal/types';
-import { isModuleGraphSupported } from './module-graph.ts';
-import { getReviewStatus } from './is-review-available.ts';
-import { getManifestStatus, type ManifestFeatures } from '../tools/is-manifest-available.ts';
+import { getService } from '../../shared/open-service/server.ts';
+import { importModule } from '../../shared/utils/module.ts';
+import type { Builder, CoreConfig, Options } from '../../types/index.ts';
+
+import { isAddonA11yEnabled } from './addon-a11y.ts';
 import { isAddonVitestEnabled } from './addon-vitest.ts';
-import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
+import { getManifestStatus, type ManifestFeatures } from './manifest-status.ts';
+import { getReviewStatus } from './review-status.ts';
 
 export interface ToolAvailability {
   /** The `core/module-graph` open service is registered/resolvable. Gates `get-stories-by-component`. */
@@ -72,6 +74,39 @@ export function getEffectiveToolAvailability(
     docsHasManifests: true,
     docsFeatureEnabled: true,
   };
+}
+
+/**
+ * True iff the `core/module-graph` open service is registered in this process — reflects
+ * registration rather than mere runtime presence so tool gating/badging can't drift from the
+ * service the dev server actually resolves (a builder may ship change detection but not
+ * register the service, e.g. without change detection wired up).
+ */
+export async function isModuleGraphSupported(): Promise<boolean> {
+  try {
+    return getService('core/module-graph', { internal: true }) !== undefined;
+  } catch {
+    // `getService` throws when the service isn't registered in this process.
+    return false;
+  }
+}
+
+export async function isModuleGraphSupportedByBuilder(
+  options: Pick<Options, 'presets'>
+): Promise<boolean> {
+  const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
+  const builder = core?.builder;
+  const builderName = typeof builder === 'string' ? builder : builder?.name;
+  if (!builderName) {
+    return false;
+  }
+
+  try {
+    const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
+    return typeof previewBuilder.changeDetectionAdapter === 'function';
+  } catch {
+    return false;
+  }
 }
 
 /**

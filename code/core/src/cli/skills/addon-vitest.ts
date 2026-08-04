@@ -1,4 +1,4 @@
-import type { Options } from 'storybook/internal/types';
+import type { Options } from '../../types/index.ts';
 
 /**
  * Whether `@storybook/addon-vitest` is enabled in this project.

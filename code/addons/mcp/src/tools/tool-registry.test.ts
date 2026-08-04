@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { collectTelemetry } from '../telemetry.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
-import type { ToolAvailability } from '../utils/get-tool-availability.ts';
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import {
   type AddonToolRegistryContext,
   getAddonToolMetadata,

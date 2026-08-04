@@ -10,13 +10,20 @@
  * module-graph-specific data shapes below (`ModuleGraphStatus`, `ModuleGraphStoryHit`, etc.) are
  * baked into the service's runtime definition and aren't part of core's public type surface, so we
  * mirror them here; keep them in sync with `core/module-graph` if it changes.
+ *
+ * The two support probes (`isModuleGraphSupported`, `isModuleGraphSupportedByBuilder`) live in
+ * core alongside the rest of the shared availability probing (`storybook/internal/core-server`)
+ * and are re-exported here so existing addon call sites don't need to know they moved.
  */
 
-import { importModule } from 'storybook/internal/common';
 import type { Query } from 'storybook/internal/core-server';
-import type { Builder, CoreConfig, Options } from 'storybook/internal/types';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
+
+export {
+  isModuleGraphSupported,
+  isModuleGraphSupportedByBuilder,
+} from 'storybook/internal/core-server';
 
 /** Serializable error shape carried by the module-graph status (mirrors the service's `ErrorLike`). */
 export interface ModuleGraphErrorLike {
@@ -66,34 +73,6 @@ async function probe(): Promise<GetServiceFn | null> {
     probed = null;
   }
   return probed;
-}
-
-/**
- * True iff the `core/module-graph` service is actually resolvable — i.e. Storybook ships the
- * open-service runtime AND the service is registered in this process. Reflects registration rather
- * than mere runtime presence so tool gating/badging can't drift from {@link getModuleGraphService}
- * (a builder may ship the runtime but not register the service, e.g. without change detection).
- */
-export async function isModuleGraphSupported(): Promise<boolean> {
-  return (await getModuleGraphService()) !== undefined;
-}
-
-export async function isModuleGraphSupportedByBuilder(
-  options: Pick<Options, 'presets'>
-): Promise<boolean> {
-  const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
-  const builder = core?.builder;
-  const builderName = typeof builder === 'string' ? builder : builder?.name;
-  if (!builderName) {
-    return false;
-  }
-
-  try {
-    const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
-    return typeof previewBuilder.changeDetectionAdapter === 'function';
-  } catch {
-    return false;
-  }
 }
 
 /**

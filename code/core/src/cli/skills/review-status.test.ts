@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { Options } from 'storybook/internal/types';
+import type { Options } from '../../types/index.ts';
 
-import { getReviewStatus } from './is-review-available.ts';
+import { getReviewStatus } from './review-status.ts';
 
 function createMockOptions({
   changeDetection = false,

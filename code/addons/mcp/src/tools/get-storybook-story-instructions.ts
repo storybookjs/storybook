@@ -1,20 +1,11 @@
 import type { McpServer } from 'tmcp';
 import type { Options } from 'storybook/internal/types';
-import { isAddonVitestEnabled } from '../utils/addon-vitest.ts';
+import { resolveSkillInputs } from 'storybook/internal/core-server';
+import { buildStoryInstructions } from 'storybook/internal/skills';
 import { collectTelemetry } from '../telemetry.ts';
-import { getFinalLinksGuidance } from '../instructions/build-server-instructions.ts';
-import { getReviewStatus } from '../utils/is-review-available.ts';
-import storyInstructionsTemplate from '../instructions/storybook-story-instructions.md';
-import storyTestingInstructionsTemplate from '../instructions/story-testing-instructions.md';
-import a11yInstructionsTemplate from '../instructions/a11y-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
-import {
-  GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-  GET_CHANGED_STORIES_TOOL_NAME,
-  PREVIEW_STORIES_TOOL_NAME,
-  RUN_STORY_TESTS_TOOL_NAME,
-} from './tool-names.ts';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 
 type BuildStorybookStoryInstructionsOptions = {
   toolsets?: AddonContext['toolsets'];
@@ -28,20 +19,6 @@ type BuildStorybookStoryInstructionsOptions = {
    */
   reviewEnabled?: boolean;
 };
-
-/**
- * Injected into the story instructions when the documentation toolset is
- * available. This tool output is the one channel every agent reads before
- * writing UI (on both the MCP and the CLI/plugin path) and is never
- * truncated, so it must carry the docs-workflow trigger — the server
- * instructions only have room for a terse pointer, and agents otherwise
- * default to reading library sources out of node_modules.
- */
-const docsWorkflowGuidance = `
-
-## Using library components
-
-This Storybook exposes component documentation tools. Before creating or changing any UI, call **list-all-documentation** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **get-documentation** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **list-all-documentation** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Never assume or invent props.`;
 
 export async function addGetUIBuildingInstructionsTool(
   server: McpServer<any, AddonContext>,
@@ -155,6 +132,14 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
   };
 }
 
+/**
+ * Thin adapter over the shared `buildStoryInstructions` content builder: resolves this
+ * Storybook's framework/renderer and availability probes through `resolveSkillInputs` (the same
+ * path the skills CLI uses), then renders the MCP-flavored prose. Per-request overrides
+ * (`reviewEnabled`, the toolset gates, `addonVitestAvailable`, `docsAvailable`) take priority over
+ * the resolved defaults so the live MCP server and the `storybook ai` metadata preset can each
+ * apply their own channel-specific gating.
+ */
 export async function buildStorybookStoryInstructions(
   options: Options,
   {
@@ -165,79 +150,17 @@ export async function buildStorybookStoryInstructions(
     reviewEnabled: reviewEnabledOverride,
   }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
-  const frameworkPreset = await options.presets.apply('framework');
-  const featuresPreset = await options.presets.apply('features', {});
-  const changeDetectionEnabled = featuresPreset?.changeDetection ?? false;
-  const reviewStatus = await getReviewStatus(options, { features: featuresPreset });
-  const reviewEnabled = reviewEnabledOverride ?? reviewStatus.available;
-  const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset?.name;
-  const renderer = frameworkToRendererMap[framework!];
-  // Mirrors the review-aware rewrite in build-server-instructions.ts:
-  // discovery feeds the review, not the preview list. Plugin-path agents do
-  // see those server instructions (`storybook ai --help` embeds them as its
-  // "# Storybook workflow instructions" section), but this tool is billed as
-  // the source of truth for story work and this line still routed discovery
-  // into previews — a contradiction agents resolved by constructing story
-  // IDs from file names and publishing reviews with zero discovery calls.
-  // The two channels must state the same workflow.
-  const storyLinkingWorkflow = changeDetectionEnabled
-    ? reviewEnabled
-      ? `After changing any component or story, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as get-stories-by-component for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **display-review** when the change is visually observable; use \`${PREVIEW_STORIES_TOOL_NAME}\` only while iterating on a specific story.`
-      : `After changing UI, call \`${GET_CHANGED_STORIES_TOOL_NAME}\` first, then use \`${PREVIEW_STORIES_TOOL_NAME}\` with selected \`storyId\` values from those results.`
-    : `After changing UI, call \`${PREVIEW_STORIES_TOOL_NAME}\` and share the most relevant links for the changes.`;
-  const changedStoryFallbackLinkGuidance = changeDetectionEnabled
-    ? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${PREVIEW_STORIES_TOOL_NAME}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
-    : `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${PREVIEW_STORIES_TOOL_NAME}\`, mention that additional relevant stories may exist in Storybook.`;
+  const inputs = await resolveSkillInputs(options);
 
-  const docsToolsAvailable = (toolsets?.docs ?? true) && docsAvailable;
-
-  let uiInstructions = storyInstructionsTemplate
-    .replace('{{FRAMEWORK}}', framework)
-    .replace('{{RENDERER}}', renderer ?? framework)
-    .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsToolsAvailable ? docsWorkflowGuidance : '')
-    .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
-    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
-    .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
-
-  const resolvedAddonVitestAvailable =
-    addonVitestAvailable ?? (await isAddonVitestEnabled(options));
-  const testToolsetAvailable = (toolsets?.test ?? true) && resolvedAddonVitestAvailable;
-
-  if (testToolsetAvailable) {
-    const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
-
-    const storyTestingInstructions = storyTestingInstructionsTemplate
-      .replaceAll('{{RUN_STORY_TESTS_TOOL_NAME}}', RUN_STORY_TESTS_TOOL_NAME)
-      .replace('{{A11Y_FIX_SUFFIX}}', a11yFixSuffix);
-
-    uiInstructions += `\n\n${storyTestingInstructions}`;
-    if (a11yEnabled) {
-      uiInstructions += `\n${a11yInstructionsTemplate}`;
-    }
-  }
-
-  return uiInstructions;
+  return buildStoryInstructions({
+    consumer: 'mcp',
+    framework: inputs.framework,
+    renderer: inputs.renderer,
+    changeDetectionEnabled: inputs.changeDetectionEnabled,
+    reviewEnabled: reviewEnabledOverride ?? inputs.reviewEnabled,
+    testToolsetAvailable:
+      (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
+    a11yEnabled,
+    docsAvailable: (toolsets?.docs ?? true) && docsAvailable,
+  });
 }
-
-// TODO: this is a stupid map to maintain and it's not complete, but we can't easily get the current renderer name
-const frameworkToRendererMap: Record<string, string> = {
-  '@storybook/react-vite': '@storybook/react',
-  '@storybook/react-webpack5': '@storybook/react',
-  '@storybook/nextjs': '@storybook/react',
-  '@storybook/nextjs-vite': '@storybook/react',
-  '@storybook/react-native-web-vite': '@storybook/react',
-
-  '@storybook/vue3-vite': '@storybook/vue3',
-  '@nuxtjs/storybook': '@storybook/vue3',
-
-  '@storybook/angular': '@storybook/angular',
-
-  '@storybook/svelte-vite': '@storybook/svelte',
-  '@storybook/sveltekit': '@storybook/svelte',
-
-  '@storybook/preact-vite': '@storybook/preact',
-
-  '@storybook/web-components-vite': '@storybook/web-components',
-
-  '@storybook/html-vite': '@storybook/html',
-};

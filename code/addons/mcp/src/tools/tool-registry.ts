@@ -7,7 +7,7 @@ import {
   type DocsToolset,
 } from 'storybook/internal/toolsets-docs';
 import type { AddonContext } from '../types.ts';
-import type { ToolAvailability } from '../utils/get-tool-availability.ts';
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { PREVIEW_STORIES_RESOURCE_URI, addPreviewStoriesResource } from './preview-stories.ts';
 import {

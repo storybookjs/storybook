@@ -276,8 +276,9 @@ export const baseTemplates = {
     script:
       'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     // The point of this template is the canary line, and canaries are published
-    // daily. `@next/*` covers the platform binaries released alongside `next`.
-    minAgeGateExemptions: ['next', '@next/*'],
+    // daily. `@next/*` covers the platform binaries, and `eslint-config-next`
+    // is pinned to the same canary version by create-next-app.
+    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next'],
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',

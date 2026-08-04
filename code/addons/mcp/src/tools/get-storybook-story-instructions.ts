@@ -1,6 +1,6 @@
 import type { McpServer } from 'tmcp';
 import type { Options } from 'storybook/internal/types';
-import { getAddonVitestConstants } from './run-story-tests.ts';
+import { isAddonVitestEnabled } from '../utils/addon-vitest.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import { getFinalLinksGuidance } from '../instructions/build-server-instructions.ts';
 import { getReviewStatus } from '../utils/is-review-available.ts';
@@ -47,10 +47,11 @@ export async function addGetUIBuildingInstructionsTool(
   server: McpServer<any, AddonContext>,
   enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
     server.ctx.custom?.toolsets?.dev ?? true,
-  { docsAvailable = false }: { docsAvailable?: boolean } = {}
+  {
+    docsAvailable = false,
+    addonVitestAvailable = false,
+  }: { docsAvailable?: boolean; addonVitestAvailable?: boolean } = {}
 ) {
-  const addonVitestAvailable = !!(await getAddonVitestConstants());
-
   server.tool(
     {
       name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
@@ -198,7 +199,8 @@ export async function buildStorybookStoryInstructions(
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(reviewEnabled))
     .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 
-  const resolvedAddonVitestAvailable = addonVitestAvailable ?? !!(await getAddonVitestConstants());
+  const resolvedAddonVitestAvailable =
+    addonVitestAvailable ?? (await isAddonVitestEnabled(options));
   const testToolsetAvailable = (toolsets?.test ?? true) && resolvedAddonVitestAvailable;
 
   if (testToolsetAvailable) {

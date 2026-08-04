@@ -786,15 +786,14 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,
-      // `componentsManifest` is required alongside `experimentalDocgenServer`: the docgen service
-      // only writes its per-component static snapshots, which the recorded baselines read, when both
-      // are on.
-      mainConfig: () => ({
+      // These two flags are what brings a template into docgen baseline coverage; see
+      // `docgenServerTemplates`.
+      mainConfig: {
         features: {
           experimentalDocgenServer: true,
           componentsManifest: true,
         },
-      }),
+      },
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,
@@ -1220,3 +1219,46 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
+
+/**
+ * Features a sandbox must enable for the docgen service to write the per-component static snapshots
+ * that the recorded docgen baselines are read from. Both are required: without
+ * `componentsManifest`, `experimentalDocgenServer` writes nothing to disk.
+ */
+const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+
+const mainConfigFeatures = (template: Template): Record<string, unknown> | undefined => {
+  const { mainConfig } = template.modifications ?? {};
+  if (!mainConfig) {
+    return undefined;
+  }
+  if (typeof mainConfig !== 'function') {
+    return mainConfig.features;
+  }
+  // Templates that rewrite the generated config read from the `ConfigFile` they are handed; the
+  // ones that only declare features ignore it. Reading features out of the latter is worth a stub;
+  // the former are expected to throw here and simply do not declare these flags.
+  try {
+    return mainConfig({ getFieldValue: () => undefined } as never)?.features;
+  } catch {
+    return undefined;
+  }
+};
+
+/** Whether a template's sandbox runs with server-side docgen, and so carries docgen baselines. */
+export const enablesDocgenServer = (template: Template): boolean => {
+  const features = mainConfigFeatures(template);
+  return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
+};
+
+/**
+ * Templates whose sandbox runs with server-side docgen enabled.
+ *
+ * Derived from the flags rather than kept as a second list, so turning them on for a template is all
+ * it takes to bring it into docgen baseline coverage — both the recorder and the CI step that
+ * verifies it read this.
+ */
+export const docgenServerTemplates = (): TemplateKey[] =>
+  (Object.entries(allTemplates) as [TemplateKey, Template][])
+    .filter(([, template]) => enablesDocgenServer(template))
+    .map(([key]) => key);

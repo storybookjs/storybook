@@ -26,7 +26,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "baselines:sandbox": "node ./src/sandbox-baselines/run.ts",
+    "baselines:sandbox": "node --import jiti/register ./src/sandbox-baselines/run.ts",
     "bench:docgen-memory": "node --import jiti/register ./src/perf/docgen-memory/gate.ts",
     "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts"
   },

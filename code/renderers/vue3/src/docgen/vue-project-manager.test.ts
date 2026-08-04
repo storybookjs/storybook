@@ -1,14 +1,15 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry } from 'storybook/internal/types';
 
 import ts from 'typescript';
+import type { ComponentMetaChecker } from 'vue-component-meta';
 
 import { buildDocgenPayload } from './build-docgen.ts';
-import { VueComponentMetaManager } from './vue-project-manager.ts';
+import { VueComponentMetaManager, VueComponentMetaProject } from './vue-project-manager.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const referencesDir = join(fixturesDir, 'references');
@@ -94,5 +95,47 @@ describe('VueComponentMetaManager', () => {
     const project = manager.getProjectForFile(join(dir, 'Loose.vue'));
 
     expect(project.configFileName).toBeUndefined();
+  });
+
+  it('defers and batches created files until the project is next queried', () => {
+    const buttonPath = join(fixturesDir, 'Button.vue').replace(/\\/g, '/');
+    const refButtonPath = join(referencesDir, 'src/RefButton.vue').replace(/\\/g, '/');
+    const excludedPath = join(fixturesDir, 'excluded.vue').replace(/\\/g, '/');
+    const checker = {
+      updateFile: vi.fn(),
+      clearCache: vi.fn(),
+    } as unknown as ComponentMetaChecker;
+    const refreshedCommandLine = {
+      options: {},
+      fileNames: [buttonPath, refButtonPath],
+      errors: [],
+    } satisfies ts.ParsedCommandLine;
+    const getCommandLine = vi.fn(() => refreshedCommandLine);
+    const project = new VueComponentMetaProject(
+      checker,
+      { options: {}, fileNames: [], errors: [] },
+      join(fixturesDir, 'tsconfig.json'),
+      getCommandLine
+    );
+
+    project.onFilesChanged([
+      { filePath: buttonPath, type: 'created' },
+      { filePath: refButtonPath, type: 'created' },
+      { filePath: excludedPath, type: 'created' },
+    ]);
+
+    expect(getCommandLine).not.toHaveBeenCalled();
+    expect(checker.updateFile).not.toHaveBeenCalled();
+
+    expect(project.getCommandLine()).toBe(refreshedCommandLine);
+    expect(getCommandLine).toHaveBeenCalledOnce();
+    expect(checker.updateFile).toHaveBeenCalledTimes(2);
+    expect(checker.updateFile).toHaveBeenCalledWith(buttonPath, expect.any(String));
+    expect(checker.updateFile).toHaveBeenCalledWith(refButtonPath, expect.any(String));
+    expect(checker.updateFile).not.toHaveBeenCalledWith(excludedPath, expect.any(String));
+
+    project.getCommandLine();
+    expect(getCommandLine).toHaveBeenCalledOnce();
+    expect(checker.updateFile).toHaveBeenCalledTimes(2);
   });
 });

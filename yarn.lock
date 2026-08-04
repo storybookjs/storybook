@@ -36614,6 +36614,7 @@ __metadata:
     oxc-resolver: "npm:^11.19.1"
     p-limit: "npm:^7.2.0"
     package-manager-detector: "npm:^1.1.0"
+    pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
     picoquery: "npm:^2.5.0"

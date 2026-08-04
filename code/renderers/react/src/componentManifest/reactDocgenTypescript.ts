@@ -432,5 +432,8 @@ function isSameFileName(typescript: TypeScriptRuntime, left: string, right: stri
 }
 
 function normalizeFileName(typescript: TypeScriptRuntime, fileName: string) {
-  return typescript.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+  // TypeScript's parsed `fileNames` use `/` even on Windows; Node `path` APIs use `\`.
+  // Normalize both before comparing so project-reference ownership checks work cross-platform.
+  const normalized = resolve(fileName).replace(/\\/g, '/');
+  return typescript.sys.useCaseSensitiveFileNames ? normalized : normalized.toLowerCase();
 }

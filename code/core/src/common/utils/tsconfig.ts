@@ -110,7 +110,10 @@ function tsconfigIncludesFile(entry: TsconfigEntry, filePath: string) {
 
   const files = asStringArray(entry.config.files);
   if (files.length > 0) {
-    return files.some((candidatePath) => resolve(configDir, candidatePath) === filePath);
+    const normalizedFilePath = normalizePath(filePath);
+    return files.some(
+      (candidatePath) => normalizePath(resolve(configDir, candidatePath)) === normalizedFilePath
+    );
   }
 
   const includePatterns = getIncludePatterns(entry.config);

@@ -145,6 +145,8 @@ export const reviewToolset = defineToolset({
       schema: reviewCreateInputSchema,
       outputSchema: reviewCreateOutputSchema,
       title: 'Display Storybook review',
+      // Reviews publish into the running Storybook's review service and link into its UI.
+      requiresDevServer: true,
       description: describeCreate,
       handler: async (
         review: ReviewCreateInput,

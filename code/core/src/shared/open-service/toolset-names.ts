@@ -21,11 +21,21 @@ export const MCP_TOOL_NAMES = {
 
 export type ToolsetMethodRef = keyof typeof MCP_TOOL_NAMES;
 
+/**
+ * `findByComponent` -> `find-by-component`.
+ *
+ * The one authority for how a method name is spelled on the CLI; the `storybook tools` command
+ * derives its dispatch and help from this so command names and description cross-references cannot
+ * disagree.
+ */
+export function toCliMethodName(methodName: string): string {
+  return methodName.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
 /** `stories.findByComponent` -> `stories find-by-component`. */
 function toCliPath(method: ToolsetMethodRef): string {
   const [toolsetId, methodName] = method.split('.');
-  const kebabMethod = methodName.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-  return `${toolsetId} ${kebabMethod}`;
+  return `${toolsetId} ${toCliMethodName(methodName)}`;
 }
 
 /**

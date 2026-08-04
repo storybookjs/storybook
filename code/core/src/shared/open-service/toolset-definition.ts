@@ -93,15 +93,25 @@ export type ToolsetMethod<
   schema: TSchema;
   /** Published as the MCP tool's `outputSchema`. Declare it only where the JSON is contractual. */
   outputSchema?: AnySchema;
+  /**
+   * Marks a method that can only do its job against a running Storybook dev server — because it
+   * needs a live origin for its URLs or reads state only the dev server owns. Consumers that run
+   * without one (the `storybook tools` CLI) surface these methods behind one uniform contract:
+   * start the dev server first. Adapters that always have a dev server (MCP) ignore the trait.
+   */
+  requiresDevServer?: true;
   handler: (
     input: StandardSchemaV1.InferOutput<TSchema>,
     context: ToolsetCtx
   ) => TOutcome | Promise<TOutcome>;
 };
 
-// `any` permits a heterogeneous method map. Each individual method remains typed by `defineToolset`.
+// `any` permits reading one method out of a heterogeneous method map, e.g. by a consumer that
+// dispatches over `AnyToolsetDefinition`. Each individual method remains typed by `defineToolset`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ToolsetMethods = Record<string, ToolsetMethod<any, AnyToolsetOutcome>>;
+export type AnyToolsetMethod = ToolsetMethod<any, AnyToolsetOutcome>;
+
+type ToolsetMethods = Record<string, AnyToolsetMethod>;
 
 /**
  * Which surface group a toolset's telemetry reports under. Part of the definition — not adapter

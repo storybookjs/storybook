@@ -100,12 +100,6 @@ describe('createStoryRouter with a pathless layout that already has an index chi
   });
 });
 
-// A page story imports its route straight from the route file, so a layout's
-// index (`_app/index.tsx`) arrives standalone: id `/_app/` (trailing slash) and
-// no path of its own. Preserving that id verbatim makes the cloned leaf collide
-// with the index child synthesized for it — both derive `/_app/` — so the clone
-// drops the trailing slash and the pair becomes the `/_app` + `/_app/` a
-// generated route tree would have.
 describe('createStoryRouter with a standalone index file route', () => {
   it('mounts without colliding with the synthesized index child', async () => {
     const router = createStoryRouter({

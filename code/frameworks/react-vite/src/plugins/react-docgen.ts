@@ -116,10 +116,17 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
   });
 }
 
+const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
+
 function createTsconfigMatchPath(filePath: string) {
   const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
   if (!tsconfigPath) {
     return undefined;
+  }
+
+  const cached = matchPathByTsconfigPath.get(tsconfigPath);
+  if (cached) {
+    return cached;
   }
 
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
@@ -129,9 +136,11 @@ function createTsconfigMatchPath(filePath: string) {
   }
 
   logger.debug('Using tsconfig paths for react-docgen');
-  return TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
+  const matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
     'browser',
     'module',
     'main',
   ]);
+  matchPathByTsconfigPath.set(tsconfigPath, matchPath);
+  return matchPath;
 }

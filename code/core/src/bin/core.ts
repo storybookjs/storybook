@@ -242,7 +242,7 @@ const handleCliCommandFailure =
   };
 
 const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
+  .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
     'Write the prompt output to a file instead of printing it to stdout'
@@ -250,7 +250,9 @@ const aiCommand = command('ai')
 
 aiCommand
   .command('setup')
-  .description('Generate setup instructions to write stories for real components')
+  .description(
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills get setup`)'
+  )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)

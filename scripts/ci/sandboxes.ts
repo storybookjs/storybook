@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -16,6 +17,40 @@ import {
 } from './utils/helpers.ts';
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/**
+ * Verifies the committed docgen baselines against the sandbox that was just built, for templates
+ * that have them recorded.
+ *
+ * Derived from what is on disk rather than a hardcoded template list, so committing a baseline
+ * directory is all it takes to gate a template. Requires the static build, hence its placement
+ * after the build step.
+ */
+function getDocgenBaselineSteps(templateKey: string, id: string) {
+  const baselineDir = join(
+    import.meta.dirname,
+    '../..',
+    DOCGEN_HARNESS_DIR,
+    'src/sandbox-baselines/__baselines__',
+    id
+  );
+
+  if (!existsSync(baselineDir)) {
+    return [];
+  }
+
+  return [
+    {
+      run: {
+        name: 'Verify docgen baselines',
+        working_directory: DOCGEN_HARNESS_DIR,
+        command: `yarn baselines:sandbox --template ${templateKey}`,
+      },
+    },
+  ];
+}
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -213,6 +248,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task build --template ${key} --no-link -s build`,
           },
         },
+        ...getDocgenBaselineSteps(key, id),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),
         workspace.persist([sandboxArchive(id)]),

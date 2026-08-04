@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
-import { executeCommand } from '../utils/command.ts';
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
@@ -23,6 +23,16 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock(import('../utils/command.ts'), { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
+const mockedExecuteCommandSync = vi.mocked(executeCommandSync);
+
+const mockPnpmVersion = (version: string) => {
+  mockedExecuteCommandSync.mockImplementation((options) => {
+    if (options.command === 'pnpm' && options.args?.[0] === '--version') {
+      return version;
+    }
+    return '';
+  });
+};
 const expectedMinimumReleaseAgeExcludePackages = [
   'react',
   'webpack',
@@ -36,6 +46,7 @@ describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
   beforeEach(() => {
+    mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -63,7 +74,7 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('should run `pnpm install`', async () => {
+    it('should run plain `pnpm install` without --allow-build', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -73,7 +84,10 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['install'],
+        })
       );
     });
 
@@ -111,10 +125,46 @@ describe('PNPM Proxy', () => {
         })
       );
     });
+
+    it('should pass --allow-build=esbuild before dlx on pnpm >= 10.2', () => {
+      mockPnpmVersion('10.2.0');
+      pnpmProxy = new PNPMProxy();
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      pnpmProxy.runPackageCommand({
+        args: ['create-storybook@10.5.5', '-y'],
+        useRemotePkg: true,
+      });
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
+        })
+      );
+    });
+
+    it('should not pass --allow-build on dlx for pnpm < 10.2', () => {
+      mockPnpmVersion('9.15.9');
+      pnpmProxy = new PNPMProxy();
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      pnpmProxy.runPackageCommand({
+        args: ['create-storybook@10.5.5', '-y'],
+        useRemotePkg: true,
+      });
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['dlx', 'create-storybook@10.5.5', '-y'],
+        })
+      );
+    });
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `pnpm add -D storybook`', async () => {
+    it('with devDep it should run `pnpm add -D storybook` without --allow-build', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
 
       await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);

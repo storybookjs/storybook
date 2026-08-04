@@ -11,11 +11,12 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
-import { executeCommand } from '../utils/command.ts';
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
@@ -54,10 +55,31 @@ export type PnpmListOutput = PnpmListItem[];
 
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
+/**
+ * Packages Storybook needs to run install scripts under pnpm 11+.
+ * Without this, Storybook-owned `pnpm dlx` can block on an interactive
+ * approve-builds picker (TTY) or fail with ERR_PNPM_IGNORED_BUILDS.
+ *
+ * Only passed as a per-command `--allow-build` flag on Storybook-run `dlx`.
+ * Do not use on `pnpm add`: that persists `allowBuilds` into the user's project
+ * config (e.g. pnpm-workspace.yaml). We deliberately do not seed `allowBuilds`
+ * in the user's project.
+ */
+const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
+
+/** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
+const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
+
+const getPnpmAllowBuildArgs = (): string[] =>
+  PNPM_ALLOWED_BUILD_DEPENDENCIES.map((pkg) => `--allow-build=${pkg}`);
+
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
 
   installArgs: string[] | undefined;
+
+  /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
+  #pnpmVersion: string | null | undefined;
 
   detectWorkspaceRoot() {
     const CWD = process.cwd();
@@ -79,12 +101,43 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   async getPnpmVersion(): Promise<string> {
-    const result = await executeCommand({
-      cwd: this.cwd,
-      command: 'pnpm',
-      args: ['--version'],
-    });
-    return typeof result.stdout === 'string' ? result.stdout : '';
+    return this.#readPnpmVersion() ?? '';
+  }
+
+  #readPnpmVersion(): string | null {
+    if (this.#pnpmVersion !== undefined) {
+      return this.#pnpmVersion;
+    }
+
+    try {
+      const stdout = executeCommandSync({
+        cwd: this.cwd,
+        command: 'pnpm',
+        args: ['--version'],
+        stdio: 'pipe',
+      });
+      this.#pnpmVersion = stdout.trim();
+    } catch {
+      this.#pnpmVersion = null;
+    }
+
+    return this.#pnpmVersion;
+  }
+
+  #pnpmGte(minimum: string): boolean {
+    const version = coerce(this.#readPnpmVersion());
+    return version != null && gte(version, minimum);
+  }
+
+  /**
+   * `--allow-build` is only used for Storybook-owned `pnpm dlx`. Do not pass it on
+   * `pnpm add`: recent pnpm versions persist `allowBuilds` into the project config.
+   * `pnpm install` also rejects the flag.
+   */
+  #allowBuildArgsFor(command: 'dlx'): string[] {
+    return command === 'dlx' && this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN)
+      ? getPnpmAllowBuildArgs()
+      : [];
   }
 
   getInstallArgs(): string[] {
@@ -110,9 +163,15 @@ export class PNPMProxy extends JsPackageManager {
     args: string[];
     useRemotePkg?: boolean;
   }): ResultPromise {
+    // Flag before `dlx`: `pnpm --allow-build=esbuild dlx <pkg>` (required on some pnpm versions).
+    // Storybook-owned remote package runs only — never on `add`/`install`.
+    const pnpmArgs = useRemotePkg
+      ? [...this.#allowBuildArgsFor('dlx'), 'dlx', ...args]
+      : ['exec', ...args];
+
     return executeCommand({
       command: 'pnpm',
-      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
+      args: pnpmArgs,
       ...options,
     });
   }

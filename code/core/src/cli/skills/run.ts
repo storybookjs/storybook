@@ -53,9 +53,11 @@ export async function runSkillsCommand(
 
   if (id === 'setup') {
     // The setup skill only needs the lightweight project-info probe, not a full preset load, so
-    // it never pays for `loadStorybook`.
+    // it never pays for `loadStorybook`. Resolve against `target.cwd` the same way the
+    // config-loading branch below does — a relative `configDir` must not be probed against this
+    // process's cwd when `--cwd` points the run at a different project.
     const probed: ProjectInfoResult = await deps.getProjectInfo({
-      configDir: input.target.configDir,
+      configDir: resolveStorybookConfigDir(input.target),
     });
     if (!probed.ok) {
       return { output: '', errorOutput: probed.message, exitCode: 1, skill: id };
@@ -65,8 +67,23 @@ export async function runSkillsCommand(
   }
 
   const configDir = resolveStorybookConfigDir(input.target);
-  const storybook = await deps.loadStorybook({ configDir });
-  const inputs = await deps.resolveSkillInputs(storybook);
+  let inputs: SkillInputs;
+  try {
+    const storybook = await deps.loadStorybook({ configDir });
+    inputs = await deps.resolveSkillInputs(storybook);
+  } catch (error) {
+    // Reduce to one clean line, matching `cli/tools/run.ts`'s equivalent bootstrap failure: an
+    // agent piping this output should not see a raw Node stack trace for an everyday "wrong
+    // directory" mistake.
+    return {
+      output: '',
+      errorOutput: `Could not load the Storybook configuration for this project: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      exitCode: 1,
+      skill: id,
+    };
+  }
   return { output: assemble(id, inputs), exitCode: 0, skill: id };
 }
 

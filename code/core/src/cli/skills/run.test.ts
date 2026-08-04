@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { runSkillsCommand } from './run.ts';
 
 const deps = () => ({
@@ -65,6 +66,25 @@ describe('runSkillsCommand', () => {
     const result = await runSkillsCommand({ subcommand: 'get', id: 'setup', target: {} }, d);
     expect(result.exitCode).toBe(1);
     expect(result.errorOutput).toContain('Could not detect framework');
+  });
+
+  it('get setup resolves configDir against the given cwd before probing, not process.cwd()', async () => {
+    const d = deps();
+    const target = { cwd: '/some/other/project', configDir: 'custom-storybook' };
+    await runSkillsCommand({ subcommand: 'get', id: 'setup', target }, d);
+    expect(d.getProjectInfo).toHaveBeenCalledWith({
+      configDir: resolveStorybookConfigDir(target),
+    });
+  });
+
+  it('reports a clean one-line message when loading the target Storybook fails, no stack trace', async () => {
+    const d = deps();
+    d.loadStorybook.mockRejectedValue(new Error('Cannot find module .storybook/main.ts'));
+    const result = await runSkillsCommand({ subcommand: 'get', id: 'stories', target: {} }, d);
+    expect(result.exitCode).toBe(1);
+    expect(result.errorOutput).toBe(
+      'Could not load the Storybook configuration for this project: Cannot find module .storybook/main.ts'
+    );
   });
 
   it('unknown id exits nonzero and names the valid ids', async () => {

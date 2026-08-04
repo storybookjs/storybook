@@ -19,15 +19,16 @@ import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import type {
-  CoreConfig,
-  DocgenProviderDescriptor,
-  Indexer,
-  Options,
-  PresetProperty,
-  PresetPropertyFn,
-  StoryDocsProvider,
-  StorybookConfigRaw,
+import {
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  type CoreConfig,
+  type DocgenProviderDescriptor,
+  type Indexer,
+  type Options,
+  type PresetProperty,
+  type PresetPropertyFn,
+  type StoryDocsProvider,
+  type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
@@ -36,9 +37,14 @@ import { createDocgenWorkerClient } from '../../shared/open-service/services/doc
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
-import { docsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
 import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
+import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
+import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
+import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { loadManifests } from '../utils/manifests/manifests.ts';
 
 import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
@@ -50,7 +56,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
+import { isReviewExplicitlyEnabled, isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initReviewChannel } from '../server-channel/review-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
@@ -367,12 +373,30 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     presets: options.presets,
   });
 
-  // Toolsets register imperatively alongside their services: addons contribute both from their own
-  // `services` hook. The stories and test toolsets join once their boot-time dependencies are wired
-  // (stories factory; test moves to addon-vitest).
-  registerToolset(docsToolset);
-
   const features = await options.presets.apply('features');
+
+  // Toolsets register imperatively alongside their services: addons contribute both from their own
+  // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
+  const storyIndex = { getIndex: () => storyIndexGenerator.getIndex() };
+  const gitDiffProvider = new GitDiffProvider(process.cwd());
+
+  registerToolset(
+    createStoriesToolset({
+      storyIndex,
+      git: {
+        getRepoRoot: () => gitDiffProvider.getRepoRoot(),
+        getChangedFiles: () => gitDiffProvider.getChangedFiles(),
+      },
+      changeStatuses: {
+        getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
+      },
+      // The explicit opt-in gate, not `isReviewFeatureEnabled`: with the flag unset the review
+      // infrastructure below still registers (the `storybook ai` CLI channel enables the tool per
+      // request), but direct MCP clients never see `display-review`, so the stories prose must
+      // not point at it.
+      reviewEnabled: isReviewExplicitlyEnabled(features),
+    })
+  );
 
   if (isReviewFeatureEnabled(features)) {
     registerReviewService({
@@ -410,12 +434,27 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       });
     }
 
+    // Story-docs registers whenever this block runs, docgen only when a worker is available, so
+    // docgen registered ⇒ story-docs registered. `createLocalDocsAccess` requires both before
+    // reading from the services and degrades to the manifests otherwise, so reordering or gating
+    // these registrations cannot make the docs toolset throw — only fall back.
     registerStoryDocsService({
       getIndex: () => storyIndexGenerator.getIndex(),
       storyDocsProvider,
       workingDir: process.cwd(),
     });
   }
+
+  registerToolset(
+    createDocsToolset({
+      // Registration-based selection between the docgen services and the inline manifests, shared
+      // with addon-mcp's composed local source so both read this Storybook the same way.
+      docsAccess: createLocalDocsAccess({
+        storyIndex,
+        getManifests: () => loadManifests(options.presets),
+      }),
+    })
+  );
 };
 
 // Store the promise (not the result) to prevent race conditions.

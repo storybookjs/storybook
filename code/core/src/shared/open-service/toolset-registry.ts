@@ -1,4 +1,9 @@
+import {
+  OpenServiceDuplicateToolsetError,
+  OpenServiceMissingToolsetError,
+} from '../../server-errors.ts';
 import type { AnyToolsetDefinition } from './toolset-definition.ts';
+import type { KnownToolsets } from './toolset-types.ts';
 
 const TOOLSET_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.toolset-registry');
 
@@ -24,23 +29,41 @@ function getToolsetRegistry(): Map<string, AnyToolsetDefinition> {
  *
  * Call it from the same place the paired OSA service registers (for core, the `services` preset
  * hook). Registration is deliberately independent of the Node preset system so manager- or
- * preview-realm toolsets can use the same API later. Idempotent by id, mirroring `registerService`:
- * a repeated registration is a no-op.
+ * preview-realm toolsets can use the same API later.
+ *
+ * Unlike `registerService`, a repeated id throws instead of being ignored: services re-register
+ * legitimately (HMR, repeated composition), while every toolset registration site is a one-shot
+ * preset hook, so a duplicate id can only mean two hosts claimed the same public surface.
  */
 export function registerToolset(toolset: AnyToolsetDefinition): void {
   const registry = getToolsetRegistry();
 
-  if (!registry.has(toolset.id)) {
-    registry.set(toolset.id, toolset);
+  if (registry.has(toolset.id)) {
+    throw new OpenServiceDuplicateToolsetError({ toolsetId: toolset.id });
   }
+
+  registry.set(toolset.id, toolset);
 }
 
 /**
- * Returns the registered toolsets in registration order.
+ * Returns one registered toolset by id, typed for the core toolsets.
  *
- * Adapter-facing: the MCP server (Milestone 4) and the `storybook tools` CLI (Milestone 5) read the
- * public tool surface from here; nothing consumes it before then.
+ * Throws when the id is not registered — an adapter asking for a toolset that no host wired up is
+ * a configuration error, not an empty result.
  */
+export function getToolset<TId extends keyof KnownToolsets>(toolsetId: TId): KnownToolsets[TId];
+export function getToolset(toolsetId: string): AnyToolsetDefinition;
+export function getToolset(toolsetId: string): AnyToolsetDefinition {
+  const toolset = getToolsetRegistry().get(toolsetId);
+
+  if (!toolset) {
+    throw new OpenServiceMissingToolsetError({ toolsetId });
+  }
+
+  return toolset;
+}
+
+/** Returns the registered toolsets in registration order. */
 export function getRegisteredToolsets(): AnyToolsetDefinition[] {
   return Array.from(getToolsetRegistry().values());
 }

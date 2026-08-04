@@ -463,7 +463,8 @@ export interface ComponentsManifest {
       | 'react-docgen'
       | 'react-docgen-typescript'
       | 'react-component-meta'
-      | 'vue-component-meta';
+      | 'vue-component-meta'
+      | 'compodoc';
     durationMs: number;
   };
 }

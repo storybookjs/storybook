@@ -29,3 +29,4 @@ export {
   getComponentData,
   isMethod,
 } from './extract-arg-types.ts';
+export { htmlToText } from './html-to-text.ts';

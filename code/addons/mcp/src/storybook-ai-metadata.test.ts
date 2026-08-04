@@ -75,6 +75,33 @@ describe('buildStorybookAiMetadata', () => {
     expect(result).toEqual(liveResult);
   });
 
+  // Regression guard: the metadata-local-tool call sources `reviewEnabled` from the mocked
+  // `getToolAvailability` seam (via the `availability.reviewEnabled` override threaded through
+  // `tool-registry.ts`'s `getLocalTool`), while `buildStorybookStoryInstructions`'s adapter falls
+  // back to the real (unmocked) `resolveSkillInputs` whenever that override is absent. Tune the
+  // fixture so the two would DISAGREE if the override were ever dropped — real presets say review
+  // is off (`experimentalReview: false`), but the mocked availability says it's on — so this only
+  // passes when the override is genuinely driving the result, not merely coinciding with a fallback
+  // that happens to compute the same value.
+  it('drives the local tool instructions from the resolved availability override, not a coincidental real-probe fallback', async () => {
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ reviewEnabled: true, reviewEnabledForCli: true })
+    );
+    const options = createOptions({
+      features: { changeDetection: true, componentsManifest: true, experimentalReview: false },
+    });
+
+    const metadata = await buildStorybookAiMetadata(options);
+    const result = await metadata.localTools[GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME]?.call();
+    const text = result?.content[0]?.text as string;
+
+    // If the override were dropped, this would fall through to the real `resolveSkillInputs`
+    // fallback, which — given `experimentalReview: false` above — resolves review OFF and would
+    // render the preview-URL variant instead.
+    expect(text).toContain('## 👀 Review your changes');
+    expect(text).not.toContain('include every returned preview URL');
+  });
+
   it('respects disabled addon toolsets', async () => {
     const metadata = await buildStorybookAiMetadata(
       createOptions({

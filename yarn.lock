@@ -11917,6 +11917,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/angular-compodoc@workspace:*, @storybook/angular-compodoc@workspace:code/lib/angular-compodoc":
+  version: 0.0.0-use.local
+  resolution: "@storybook/angular-compodoc@workspace:code/lib/angular-compodoc"
+  dependencies:
+    "@storybook/global": "npm:^5.0.0"
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/angular-vite@workspace:*, @storybook/angular-vite@workspace:code/frameworks/angular-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/angular-vite@workspace:code/frameworks/angular-vite"
@@ -11933,6 +11944,7 @@ __metadata:
     "@angular/forms": "npm:^21.2.14"
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
+    "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
@@ -11984,6 +11996,7 @@ __metadata:
     "@angular/forms": "npm:^19.1.1"
     "@angular/platform-browser": "npm:^19.1.1"
     "@angular/platform-browser-dynamic": "npm:^19.1.1"
+    "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"

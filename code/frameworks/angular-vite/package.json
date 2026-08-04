@@ -81,6 +81,7 @@
     "@angular/forms": "^21.2.14",
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
+    "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "rimraf": "^6.0.1",

@@ -45,8 +45,6 @@ describe('findTsconfigPathForFile', () => {
       'src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
-
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.app.json')
     );
@@ -72,8 +70,6 @@ describe('findTsconfigPathForFile', () => {
       'src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
-
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.app.json')
     );
@@ -88,8 +84,6 @@ describe('findTsconfigPathForFile', () => {
       }),
       'src/Button.tsx': 'export const Button = () => null;',
     });
-
-    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.json')
@@ -112,8 +106,6 @@ describe('findTsconfigPathForFile', () => {
       }`,
       'src/Button.tsx': 'export const Button = () => null;',
     });
-
-    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.app.json')
@@ -138,8 +130,6 @@ describe('findTsconfigPathForPath', () => {
       'nested/src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
-
     // Directory input must search from that directory, not its parent.
     expect(findTsconfigPathForPath(join(dir, 'nested/src'))).toBe(
       join(dir, 'nested/tsconfig.json')
@@ -161,5 +151,6 @@ function createTempProject(files: Record<string, string>) {
     writeFileSync(fullPath, content, 'utf-8');
   }
 
+  vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
   return dir;
 }

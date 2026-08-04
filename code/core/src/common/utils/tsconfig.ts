@@ -1,9 +1,9 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, extname, relative, resolve } from 'node:path';
 
 import * as find from 'empathic/find';
 import picomatch from 'picomatch';
-import ts from 'typescript';
+import stripJsonComments from 'strip-json-comments';
 
 import { getProjectRoot } from './paths.ts';
 
@@ -193,12 +193,25 @@ function compareTsconfigEntries(filePath: string, left: TsconfigEntry, right: Ts
 }
 
 function readTsconfigConfig(configPath: string): TsconfigConfig | undefined {
-  // Use TypeScript's own JSONC reader so comments/trailing commas match tsc.
-  const { config, error } = ts.readConfigFile(configPath, ts.sys.readFile);
-  if (error || config === undefined) {
+  /*
+   * Do NOT use `typescript.readConfigFile` (or any static `import 'typescript'`) here.
+   *
+   * This module is exported from `storybook/internal/common`. A top-level TypeScript import
+   * pulls the full `typescript` package into every consumer of that barrel — including unit-test
+   * processes that only touch unrelated helpers. That has OOM'd the CI Vitest runs (~4GB heap)
+   * and timed out imports that load `common` transitively (e.g. docgen-harness loading react
+   * `utils.ts`).
+   *
+   * Prefer the lightweight JSONC path: strip comments + trailing commas, then `JSON.parse`.
+   * Enable `trailingCommas` so Vite-style / editor-formatted tsconfigs still parse; without it
+   * a trailing comma makes `JSON.parse` fail and we silently skip that config.
+   */
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    return JSON.parse(stripJsonComments(content, { trailingCommas: true })) as TsconfigConfig;
+  } catch {
     return undefined;
   }
-  return config as TsconfigConfig;
 }
 
 function matchesPatterns(filePath: string, patterns: string[]) {

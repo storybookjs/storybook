@@ -14,8 +14,8 @@ import { getVitestStorybookRunCommand } from 'storybook/internal/common';
 
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo } from '../types.ts';
-import { getTypeImportSource } from '../utils/type-import-source.ts';
+import type { ProjectInfo } from '../../project-info.ts';
+import { getTypeImportSource } from '../setup-utils/type-import-source.ts';
 
 function getPreviewDecoratorExample(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;

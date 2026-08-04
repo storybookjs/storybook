@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
-import type { ProjectInfo } from '../../types.ts';
-import { ext } from '../../utils/ext.ts';
+import type { ProjectInfo } from '../../../project-info.ts';
+import { ext } from '../../setup-utils/ext.ts';
 
 export function getPreviewExample(projectInfo: ProjectInfo): string {
   const { configDir, language, framework, rendererPackage, hasCsfFactoryPreview } = projectInfo;

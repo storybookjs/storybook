@@ -1,19 +1,20 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, SetupInstructionsContext } from '../types.ts';
-import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
-import { ext } from '../utils/ext.ts';
-import { listDOD, listRules, listSteps } from '../utils/markdown.ts';
+import type { ProjectInfo } from '../../project-info.ts';
+import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
+import { ext } from '../setup-utils/ext.ts';
+import { listDOD, listRules, listSteps } from '../setup-utils/markdown.ts';
+import type { SetupInstructionsContext } from './types.ts';
 import {
   buildPortalStep,
   buildSharedPreviewStep,
   cleanupStep,
-  discoveryStepRelaxed,
+  discoveryStepStrict,
   interactionPlayStep,
   monorepoStep,
   mswStep,
-  verifyWithAllowedFailureStep,
-  writeStoriesWithAllowedFailuresStep,
+  verifyStep,
+  writeStoriesStep,
 } from './partials/steps.ts';
 import {
   batchTestsRule,
@@ -23,15 +24,15 @@ import {
   noPolishRule,
   packageManagerRule,
   preferSharedFixesRule,
-  readBudgetRuleRelaxed,
+  readBudgetRule,
   toolsVsShellRule,
 } from './partials/rules.ts';
 import {
   cssCheckDOD,
   sharedPreviewDOD,
-  storyTagsV2DOD,
-  typeCheckPassesWhenExpectedDOD,
-  vitestPassesWhenExpectedDOD,
+  storyTagsV1DOD,
+  typeCheckPassesStrictDOD,
+  vitestPassesStrictDOD,
 } from './partials/dod.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
@@ -61,8 +62,8 @@ export function instructions(projectInfo: ProjectInfo): string {
     ${listRules([
       toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
-      monorepoRule(ctx),
-      readBudgetRuleRelaxed(ctx),
+      monorepoRule(projectInfo),
+      readBudgetRule(ctx),
       editOverWriteRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
@@ -74,26 +75,26 @@ export function instructions(projectInfo: ProjectInfo): string {
 
     ${listSteps(
       [
-        discoveryStepRelaxed(projectInfo, ctx),
+        discoveryStepStrict(projectInfo, ctx),
         monorepoStep(projectInfo, ctx),
         buildSharedPreviewStep(projectInfo, ctx),
         buildPortalStep(projectInfo, ctx),
         mswStep(projectInfo, ctx),
-        writeStoriesWithAllowedFailuresStep(projectInfo, ctx),
+        writeStoriesStep(projectInfo, ctx),
         interactionPlayStep(projectInfo, ctx),
-        verifyWithAllowedFailureStep(projectInfo, ctx),
+        verifyStep(projectInfo, ctx),
         cleanupStep(projectInfo, ctx),
       ],
       { level: 3 }
     )}
 
     ## Done when
-
+    
     ${listDOD([
       cssCheckDOD(ctx),
-      storyTagsV2DOD(ctx),
-      vitestPassesWhenExpectedDOD(ctx),
-      typeCheckPassesWhenExpectedDOD(ctx),
+      storyTagsV1DOD(ctx),
+      vitestPassesStrictDOD(ctx),
+      typeCheckPassesStrictDOD(ctx),
       sharedPreviewDOD(ctx),
     ])}
 

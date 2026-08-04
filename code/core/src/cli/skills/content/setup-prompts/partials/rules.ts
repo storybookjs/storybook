@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
-import { getMonorepoType } from '../../../../shared/utils/get-monorepo-type.ts';
-import type { SetupInstructionsContext } from '../../types.ts';
+import type { ProjectInfo } from '../../../project-info.ts';
+import type { SetupInstructionsContext } from '../types.ts';
 
 export function toolsVsShellRule(ctx: SetupInstructionsContext): string {
   return dedent`**Discover with Glob/Grep/Read, not shell.** Never use \`ls\`, \`find\`, \`cat\`, \`head\`, \`tail\`, shell \`grep\`, \`sed\`, or \`node -e\` for discovery or for editing files in bulk — these are slower per call and violate caching. Substitute bash commands for the specific tool names listed below, or available tools with the closest semantics:
@@ -14,8 +14,9 @@ export function nodeModuleReadsRule(ctx: SetupInstructionsContext): string {
   return dedent`**Never read or grep inside \`node_modules\`.** The imports shown in this prompt are correct — don't verify them by introspecting installed packages. If something seems off, re-read this prompt, not \`node_modules\`.`;
 }
 
-export function monorepoRule(ctx: SetupInstructionsContext): string | undefined {
-  const monorepoType = getMonorepoType();
+export function monorepoRule({
+  monorepoType,
+}: Pick<ProjectInfo, 'monorepoType'>): string | undefined {
   if (monorepoType) {
     return `**${monorepoType} monorepo.** Don't initially look for config or existing Storybook content in other packages. Start exploring from config and tooling local to the package where you are asked to set up Storybook. If it uses local monorepo dependencies, build all dependencies found during discovery before writing stories or running tests.`;
   }

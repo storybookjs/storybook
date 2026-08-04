@@ -14,9 +14,9 @@ import { getMswInitCommand, getVitestStorybookRunCommand } from 'storybook/inter
 
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo } from '../types.ts';
-import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
-import { getTypeImportSource } from '../utils/type-import-source.ts';
+import type { ProjectInfo } from '../../project-info.ts';
+import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
+import { getTypeImportSource } from '../setup-utils/type-import-source.ts';
 
 function getDocsReferenceSection(projectInfo: ProjectInfo): string {
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);

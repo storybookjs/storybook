@@ -1,4 +1,4 @@
-import type { ProjectInfo } from '../types.ts';
+import type { ProjectInfo } from '../../project-info.ts';
 
 export function getProjectOverview(projectInfo: ProjectInfo): string {
   const rows: Array<[string, string]> = [

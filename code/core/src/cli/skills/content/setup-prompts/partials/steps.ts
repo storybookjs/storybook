@@ -2,7 +2,8 @@ import { getMswInitCommand, getVitestStorybookRunCommand } from 'storybook/inter
 
 import { dedent } from 'ts-dedent';
 
-import type { SetupInstructionsContext as InstructionsContext, ProjectInfo } from '../../types.ts';
+import type { ProjectInfo } from '../../../project-info.ts';
+import type { SetupInstructionsContext as InstructionsContext } from '../types.ts';
 import {
   getInteractionPlayExample,
   getMainConfigExample,

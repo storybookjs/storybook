@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
-import type { ProjectInfo } from '../types.ts';
+import type { ProjectInfo } from '../../project-info.ts';
 
-import { getProjectOverview } from '../utils/project-overview.ts';
+import { getProjectOverview } from '../setup-utils/project-overview.ts';
 
 /**
  * The single prompt variant that ships to real users. Running

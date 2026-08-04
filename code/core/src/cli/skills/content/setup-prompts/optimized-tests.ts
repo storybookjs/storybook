@@ -1,9 +1,10 @@
 import { dedent } from 'ts-dedent';
 
-import type { ProjectInfo, SetupInstructionsContext } from '../types.ts';
-import { getDocsMarkdownUrl } from '../utils/docs-markdown-url.ts';
-import { ext } from '../utils/ext.ts';
-import { listDOD, listRules, listSteps } from '../utils/markdown.ts';
+import type { ProjectInfo } from '../../project-info.ts';
+import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
+import { ext } from '../setup-utils/ext.ts';
+import { listDOD, listRules, listSteps } from '../setup-utils/markdown.ts';
+import type { SetupInstructionsContext } from './types.ts';
 import {
   buildPortalStep,
   buildSharedPreviewStep,

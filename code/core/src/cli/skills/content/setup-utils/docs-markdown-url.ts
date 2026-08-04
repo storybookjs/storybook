@@ -1,4 +1,4 @@
-import type { ProjectInfo } from '../types.ts';
+import type { ProjectInfo } from '../../project-info.ts';
 
 /**
  * Builds a markdown-format docs URL with renderer and language query parameters.

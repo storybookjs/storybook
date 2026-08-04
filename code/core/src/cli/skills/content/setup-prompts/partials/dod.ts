@@ -2,7 +2,7 @@ import { getVitestStorybookRunCommand } from 'storybook/internal/common';
 
 import { dedent } from 'ts-dedent';
 
-import type { SetupInstructionsContext } from '../../types.ts';
+import type { SetupInstructionsContext } from '../types.ts';
 
 export function cssCheckDOD(ctx: SetupInstructionsContext): string {
   return dedent`**Exactly one \`CssCheck\` story exists** somewhere in the new stories, asserting a concrete computed style value read from the component's source.`;

@@ -135,7 +135,20 @@ const addStorybook = async ({
     // allowlisted by name rather than the gate being switched off.
     await preapproveLocallyPublishedPackages(tmpDir);
 
-    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN2}`], debug);
+    // Adding Storybook necessarily rewrites the lockfile this template now
+    // ships, and `sbInit` forces `CI=true`, which makes Yarn immutable by
+    // default. Without this the install aborts, nothing is linked, and the
+    // addon postinstall hooks then fail on the missing node_modules state.
+    // Set it here rather than relying on the generate-sandboxes workflow env,
+    // so a local run behaves the same as CI.
+    const sbInitEnv = { ...env, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
+
+    await sbInit(
+      tmpDir,
+      sbInitEnv,
+      [...flags, `--package-manager=${PackageManagerName.YARN2}`],
+      debug
+    );
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });

@@ -1,0 +1,480 @@
+{
+  "argTypes": {
+    "_anotherDefaultValue": {
+      "description": "\n",
+      "name": "_anotherDefaultValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Another default value"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "_inputValue": {
+      "description": "\n",
+      "name": "_inputValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "some value"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "_value": {
+      "description": "\nPrivate value.",
+      "name": "_value",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Private hello"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "accent": {
+      "description": "\nSpecify the accent-type of the button",
+      "name": "accent",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "ButtonAccent.Normal"
+        },
+        "type": {
+          "required": true,
+          "summary": "ButtonAccent"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["Normal", "High"]
+      }
+    },
+    "anotherDefaultValue": {
+      "description": "\n\nSetting default value here because compodoc won't get the default value for accessors\n\nAnother default value\n",
+      "name": "anotherDefaultValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "Another default value\n"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "aNullValue": {
+      "description": "\nTest null default value.",
+      "name": "aNullValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": null
+        },
+        "type": {
+          "required": true,
+          "summary": "string | null"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "aNumericValue": {
+      "description": "\nTest numeric default value.",
+      "name": "aNumericValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": 123
+        },
+        "type": {
+          "required": true,
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "anUndefinedValue": {
+      "description": "\nTest null default value.",
+      "name": "anUndefinedValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "undefined"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "appearance": {
+      "description": "\nAppearance style of the button.",
+      "name": "appearance",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "secondary"
+        },
+        "type": {
+          "required": true,
+          "summary": "\"primary\" | \"secondary\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["primary", "secondary"]
+      }
+    },
+    "buttonRef": {
+      "description": "\n",
+      "name": "buttonRef",
+      "table": {
+        "category": "view child",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "calc": {
+      "description": "\n\nAn internal calculation method which adds `x` and `y` together.\n\n  calculation.\n",
+      "name": "calc",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "(x: number, y: string | number) => number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "focus": {
+      "description": "\n",
+      "name": "focus",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "required": true,
+          "summary": "unknown"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "inputValue": {
+      "description": "\nSetter for `inputValue` that is also an `@Input`.",
+      "name": "inputValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "internalProperty": {
+      "description": "\nPublic value.",
+      "name": "internalProperty",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Public hello"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "isDisabled": {
+      "description": "\nSets the button to a disabled state.",
+      "name": "isDisabled",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "required": true,
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "item": {
+      "description": "\n",
+      "name": "item",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "T[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "label": {
+      "description": "\n\nThe inner text of the button.\n\n",
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "onClick": {
+      "action": "onClick",
+      "description": "\n\nHandler to be called when the button is clicked by a user.\n\nWill also block the emission of the event if `isDisabled` is true.\n",
+      "name": "onClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "onClickListener": {
+      "description": "\n",
+      "name": "onClickListener",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "(event: Event) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "privateMethod": {
+      "description": "\n\nA private method.\n\n",
+      "name": "privateMethod",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "(password: string) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "processedItem": {
+      "description": "\n",
+      "name": "processedItem",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "T[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "protectedMethod": {
+      "description": "\n\nA protected method.\n\n",
+      "name": "protectedMethod",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "(id?: number) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "publicMethod": {
+      "description": "\nA public method using an interface.",
+      "name": "publicMethod",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "(things: ISomeInterface) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "showKeyAlias": {
+      "description": "\n",
+      "name": "showKeyAlias",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "keyof T"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "size": {
+      "description": "\nSize of the button.",
+      "name": "size",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "medium"
+        },
+        "type": {
+          "required": true,
+          "summary": "ButtonSize"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["small", "medium", "large", "xlarge"]
+      }
+    },
+    "someDataObject": {
+      "description": "\n\nSpecifies some arbitrary object. This comment is to test certain chars like apostrophes - it's\nworking\n",
+      "name": "someDataObject",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "ISomeInterface"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "somethingYouShouldNotUse": {
+      "description": "\n\nSome input you shouldn't use.\n\n",
+      "name": "somethingYouShouldNotUse",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "required": true,
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "theDefaultValue": {
+      "description": "\nTest default value.",
+      "name": "theDefaultValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "Default value in component"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "description": "This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.\nIt supports markdown, so you can embed formatted text,\nlike bold, italic, and inline code.> How you like dem apples?! It's never been easier to\ndocument all your components.\nHello world\nExample\nThingThing\naaa",
+  "id": "stories-frameworks-angular-vite-argtypes-doc-button",
+  "jsDocTags": {
+    "code": ["ThingThing"],
+    "html": ["aaa"],
+    "link": ["Example"],
+    "string": ["Hello world"]
+  },
+  "name": "DocButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-button/doc-button.stories.ts"
+}

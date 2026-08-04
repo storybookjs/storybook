@@ -25,9 +25,4 @@ export const experimental_importParsers = async (
   return [...input, vueImportParser];
 };
 
-/**
- * Shared vue-component-meta engine, resolved by the framework's Vite docgen plugin through
- * `presets.apply('experimental_vueDocgenEngine')` so both docgen paths extract identical meta from
- * one implementation.
- */
 export const experimental_vueDocgenEngine = async () => import('./docgen/component-meta.ts');

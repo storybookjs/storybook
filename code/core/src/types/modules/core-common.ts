@@ -336,8 +336,15 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   /**
    * Returns a change-detection adapter the core change-detection service uses to (a) read
    * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   *
+   * The dev server calls it with no arguments after `start()`, binding the adapter to the running
+   * builder. A consumer without a dev server (the `storybook tools` CLI) passes `options` so the
+   * builder can assemble its resolve config headlessly; builders that cannot work headlessly may
+   * throw, which the caller treats as "no adapter".
    */
-  changeDetectionAdapter?(): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
+  changeDetectionAdapter?(
+    options?: Options
+  ): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */

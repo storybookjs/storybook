@@ -32,6 +32,7 @@ import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 import {
   localizeYarnConfigFiles,
+  preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
   setupYarn,
 } from './utils/yarn.ts';
@@ -128,19 +129,13 @@ const addStorybook = async ({
       await addResolutions(tmpDir);
     }
 
-    // Inherit the 7-day `npmMinimalAgeGate` from `before-storybook/.yarnrc.yml`
-    // would block freshly-published Verdaccio packages (storybook itself plus
-    // anything new in `extraDependencies`, e.g. `webpack@^5.107.0`). The
-    // after-storybook tree is internal CI scaffolding — Phase 1's publish-time
-    // filter strips this gate before anything reaches consumers — so disable
-    // it for this install via env (no `.yarnrc.yml` write).
-    const sbInitEnv = { ...env, YARN_NPM_MINIMAL_AGE_GATE: '0' };
-    await sbInit(
-      tmpDir,
-      sbInitEnv,
-      [...flags, `--package-manager=${PackageManagerName.YARN2}`],
-      debug
-    );
+    // This install is the only step that runs package code, so it keeps the
+    // 7-day gate inherited from before-storybook. The locally published
+    // Storybook packages are seconds old and can never satisfy it, so they are
+    // allowlisted by name rather than the gate being switched off.
+    await preapproveLocallyPublishedPackages(tmpDir);
+
+    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN2}`], debug);
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });

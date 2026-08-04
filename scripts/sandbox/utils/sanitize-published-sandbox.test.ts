@@ -4,9 +4,13 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
+
 import {
   EXCLUDE_GLOBS,
   STRIP_KEYS,
+  ensureLockfilePublishRules,
   sanitizePublishedSandboxes,
 } from './sanitize-published-sandbox.ts';
 
@@ -157,5 +161,69 @@ describe('sanitizePublishedSandboxes', () => {
     expect(second.filteredYarnrcCount).toBe(0);
     expect(second.strippedKeyCount).toBe(0);
     expect(second.removedPaths).toBe(0);
+  });
+});
+
+describe('ensureLockfilePublishRules', () => {
+  let root: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'sandbox-gitignore-'));
+  });
+
+  const stagedFiles = async () => {
+    await execaCommand('git init -q .', { cwd: root });
+    await execaCommand('git add .', { cwd: root });
+    const { stdout } = await execaCommand('git diff --cached --name-only', { cwd: root });
+    return stdout.split('\n').filter(Boolean);
+  };
+
+  const seedSandbox = async () => {
+    for (const dir of ['before-storybook', 'after-storybook']) {
+      await mkdir(join(root, 'angular-cli-default-ts', dir), { recursive: true });
+      await writeFile(join(root, 'angular-cli-default-ts', dir, 'yarn.lock'), '# lockfile\n');
+    }
+  };
+
+  it('publishes the before-storybook lockfile and still withholds the after-storybook one', async () => {
+    // The sandboxes repository ignores lockfiles wholesale.
+    await writeFile(join(root, '.gitignore'), 'node_modules\n\nyarn.lock\npackage-lock.json\n');
+    await seedSandbox();
+
+    await ensureLockfilePublishRules(root);
+
+    const staged = await stagedFiles();
+    expect(staged).toContain('angular-cli-default-ts/before-storybook/yarn.lock');
+    expect(staged).not.toContain('angular-cli-default-ts/after-storybook/yarn.lock');
+  });
+
+  it('withholds the after-storybook lockfile even when nothing was ignored before', async () => {
+    await seedSandbox();
+
+    await ensureLockfilePublishRules(root);
+
+    const staged = await stagedFiles();
+    expect(staged).toContain('angular-cli-default-ts/before-storybook/yarn.lock');
+    expect(staged).not.toContain('angular-cli-default-ts/after-storybook/yarn.lock');
+  });
+
+  it('is idempotent', async () => {
+    await writeFile(join(root, '.gitignore'), 'yarn.lock\n');
+
+    expect(await ensureLockfilePublishRules(root)).toBe(true);
+    const afterFirst = await readFile(join(root, '.gitignore'), 'utf-8');
+
+    expect(await ensureLockfilePublishRules(root)).toBe(false);
+    expect(await readFile(join(root, '.gitignore'), 'utf-8')).toBe(afterFirst);
+  });
+
+  it('keeps the repository’s existing ignore rules', async () => {
+    await writeFile(join(root, '.gitignore'), 'node_modules\n.angular\nyarn.lock\n');
+
+    await ensureLockfilePublishRules(root);
+
+    const contents = await readFile(join(root, '.gitignore'), 'utf-8');
+    expect(contents).toContain('node_modules');
+    expect(contents).toContain('.angular');
   });
 });

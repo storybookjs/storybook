@@ -1,8 +1,58 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 
+import { join } from 'node:path';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import yml from 'yaml';
+
+/**
+ * Git ignore rules the published sandboxes repository must end up with, in this order.
+ *
+ * The repository ignores `yarn.lock` wholesale, and `commitAllToGit` stages with `git add .`, so
+ * without the negation the generated `before-storybook` lockfile is silently dropped and consumers
+ * still resolve whatever is newest at install time.
+ *
+ * `after-storybook` deliberately stays ignored: it resolves Storybook packages from the local
+ * registry, and in link mode its lockfile carries `portal:`/`file:` resolutions pointing back into
+ * the monorepo, neither of which a consumer can install from.
+ */
+export const GITIGNORE_LOCKFILE_RULES = ['yarn.lock', '!**/before-storybook/yarn.lock'] as const;
+
+const MANAGED_BLOCK_HEADER =
+  '# Managed by publish-sandboxes: publish only the before-storybook lockfile';
+
+/**
+ * Make sure the published tree ships the `before-storybook` lockfile and nothing else lock-shaped.
+ *
+ * Appends the rules rather than editing existing lines, because git ignore precedence is
+ * last-match-wins: appending guarantees the intended outcome regardless of what the repository's
+ * own `.gitignore` already says.
+ */
+export const ensureLockfilePublishRules = async (rootDir: string): Promise<boolean> => {
+  const gitignorePath = join(rootDir, '.gitignore');
+
+  let contents = '';
+  try {
+    contents = await readFile(gitignorePath, 'utf-8');
+  } catch {
+    // No .gitignore in the sandboxes repo: still write the rules, so the after-storybook
+    // lockfile does not start getting published by omission.
+  }
+
+  const lines = contents.split('\n').map((line) => line.trim());
+  if (GITIGNORE_LOCKFILE_RULES.every((rule) => lines.includes(rule))) {
+    return false;
+  }
+
+  const prefix = contents.length > 0 && !contents.endsWith('\n') ? '\n' : '';
+  await writeFile(
+    gitignorePath,
+    `${contents}${prefix}\n${MANAGED_BLOCK_HEADER}\n${GITIGNORE_LOCKFILE_RULES.join('\n')}\n`
+  );
+
+  return true;
+};
 
 /**
  * Keys stripped from `after-storybook/.yarnrc.yml` before publishing to the public sandboxes

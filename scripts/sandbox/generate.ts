@@ -236,7 +236,7 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, env, initOptions, disableMinAgeGate }) =>
+    generators.map(({ dirName, name, script, env, initOptions, minAgeGateExemptions }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
@@ -320,7 +320,7 @@ const runGenerators = async (
             await refreshBeforeStorybookLockfile({
               cwd: createBeforeDir,
               debug,
-              disableMinAgeGate,
+              minAgeGateExemptions,
             });
           } catch (error) {
             const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;

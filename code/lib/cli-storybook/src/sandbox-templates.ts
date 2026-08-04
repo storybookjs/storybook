@@ -106,12 +106,16 @@ export type Template = {
     ensureMinNodeVersion?: boolean;
   };
   /**
-   * Templates that pin intentionally-fresh dependency versions
-   * (`create-next-app@canary`, `@angular/cli@next`, etc.) cannot satisfy the
-   * 7-day `npmMinimalAgeGate` and must opt out of it during sandbox lockfile
-   * refresh. Stable templates should leave this unset.
+   * Package names or glob patterns exempted from the sandbox `npmMinimalAgeGate`,
+   * for templates that deliberately track a prerelease line. The gate still
+   * applies to every other dependency, so only the packages named here can be
+   * installed fresh.
+   *
+   * The gate is enforced transitively, so this has to name the whole family of
+   * packages published in lockstep with the prerelease, not just the direct
+   * dependency. Stable templates should leave this unset.
    */
-  disableMinAgeGate?: boolean;
+  minAgeGateExemptions?: string[];
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -271,7 +275,9 @@ export const baseTemplates = {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
       'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
-    disableMinAgeGate: true,
+    // The point of this template is the canary line, and canaries are published
+    // daily. `@next/*` covers the platform binaries released alongside `next`.
+    minAgeGateExemptions: ['next', '@next/*'],
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -898,9 +904,17 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // Expo ships frequent dependency updates; pinned SDK versions are routinely
-    // within the 7-day npmMinimalAgeGate window.
-    disableMinAgeGate: true,
+    // create-expo-app pins the current SDK, whose packages are released
+    // together and are routinely younger than the gate window.
+    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
+    minAgeGateExemptions: [
+      'expo',
+      'expo-*',
+      '@expo/*',
+      'babel-preset-expo',
+      'react-native',
+      '@react-native/*',
+    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

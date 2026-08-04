@@ -69,6 +69,10 @@ export const STRIP_KEYS = [
   'enableMirror',
   'logFilters',
   'npmMinimalAgeGate',
+  // `after-storybook` is a copy of `before-storybook`, so it inherits the
+  // prerelease allowlist. Left behind next to a stripped gate it is dead
+  // config, and it would quietly widen a consumer's own gate.
+  'npmPreapprovedPackages',
   'pnpFallbackMode',
   'enableGlobalCache',
   'checksumBehavior',

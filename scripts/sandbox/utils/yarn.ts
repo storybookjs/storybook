@@ -64,11 +64,15 @@ interface RefreshLockfileOptions {
   cwd: string;
   debug?: boolean;
   /**
-   * Skip the `npmMinimalAgeGate` setting. Required for templates that pin
-   * intentionally-fresh dependency versions (e.g. `create-next-app@canary`)
-   * whose pinned versions would otherwise be quarantined.
+   * Package names or glob patterns exempted from the age gate, for templates
+   * that deliberately track a prerelease line (`next@canary`, Expo SDK). The
+   * gate still applies to every other dependency in those templates.
+   *
+   * Yarn applies the gate transitively, so the list has to cover the whole
+   * family of packages published in lockstep with the prerelease, not just the
+   * direct dependency.
    */
-  disableMinAgeGate?: boolean;
+  minAgeGateExemptions?: string[];
 }
 
 /**
@@ -79,7 +83,8 @@ interface RefreshLockfileOptions {
  *    legacy `yarn.lock`, `pnpm-lock.yaml`).
  * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
  *    resolves it deterministically (no network `yarn set version`).
- * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions.
+ * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions,
+ *    plus any per-template `npmPreapprovedPackages` allowlist.
  * 4. Run `yarn install --mode=update-lockfile`, falling back to `yarn up '*'`
  *    plus a retry only when the template's own ranges cannot resolve under the
  *    gate. Installing first keeps deliberately pinned majors intact.
@@ -90,7 +95,7 @@ interface RefreshLockfileOptions {
 export async function refreshBeforeStorybookLockfile({
   cwd,
   debug,
-  disableMinAgeGate,
+  minAgeGateExemptions,
 }: RefreshLockfileOptions) {
   // Start from a clean Yarn state. Drop the lockfiles the template's CLI
   // produced, plus any `.yarnrc.yml` / `.yarn/` left behind by the staged
@@ -129,8 +134,24 @@ export async function refreshBeforeStorybookLockfile({
 
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd, env }, debug);
 
-  const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
-  await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd, env }, debug);
+  // Every template keeps the full gate. Prerelease templates narrow it to a
+  // named allowlist rather than switching it off, so a compromised release of
+  // anything they do not explicitly track is still quarantined.
+  await runCommand(
+    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_MINUTES}`,
+    { cwd, env },
+    debug
+  );
+
+  if (minAgeGateExemptions?.length) {
+    await runCommand(
+      `yarn config set npmPreapprovedPackages --json ${JSON.stringify(
+        JSON.stringify(minAgeGateExemptions)
+      )}`,
+      { cwd, env },
+      debug
+    );
+  }
 
   // Resolve the template's own ranges first. This is the path almost every
   // template takes, and it is the only one that preserves deliberately pinned
@@ -153,7 +174,7 @@ export async function refreshBeforeStorybookLockfile({
   // resort, and it is safe for these templates precisely because they track
   // latest anyway.
   console.warn(
-    `⚠️ install failed under the ${gateMinutes}min age gate; widening ranges via yarn up`
+    `⚠️ install failed under the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate; widening ranges via yarn up`
   );
 
   // `yarn up '*'` errors when the project has no direct dependencies

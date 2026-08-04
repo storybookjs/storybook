@@ -21,6 +21,8 @@ export type ToolResultContentItem = v.InferOutput<typeof ToolResultContentItemSc
 
 export const ToolCallResultSchema = v.looseObject({
   content: v.optional(v.array(ToolResultContentItemSchema)),
+  /** The JSON matching the tool's published `outputSchema`, when it declares one. */
+  structuredContent: v.optional(v.unknown()),
   isError: v.optional(v.boolean()),
 });
 export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;

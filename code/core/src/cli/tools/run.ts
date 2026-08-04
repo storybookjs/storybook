@@ -5,8 +5,13 @@ import type {
   ToolsetCtx,
   ToolsetTelemetry,
 } from '../../shared/open-service/toolset-definition.ts';
-import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
+import {
+  MCP_TOOL_NAMES,
+  toCliMethodName,
+  type ToolsetMethodRef,
+} from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
+import { callMcpTool } from './mcp-client.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './bootstrap.ts';
 import {
   discoverRunningInstance,
@@ -61,6 +66,8 @@ export type ToolsInvocation = {
 export type ToolsRunDeps = {
   bootstrap?: typeof bootstrapToolsRuntime;
   discoverInstance?: typeof discoverRunningInstance;
+  /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
+  mcpToolCall?: typeof callMcpTool;
   /** Sink for the per-method toolset telemetry events; absent when telemetry is disabled. */
   methodTelemetry?: ToolsetTelemetry;
 };
@@ -80,6 +87,20 @@ const MODULE_GRAPH_METHODS = new Set(['stories.changed', 'stories.findByComponen
  * distinction is deliberately invisible in the surface — one trait, one contract.
  */
 const ORIGIN_ONLY_METHODS = new Set(['stories.preview']);
+
+/**
+ * State-bound methods this CLI forwards to the dev server's `@storybook/addon-mcp` endpoint
+ * instead of running locally, so the whole tool surface works before connect mode exists.
+ *
+ * A stopgap until Milestone 5b: connect mode attaches to the dev server's own open-service state,
+ * at which point these methods run through the normal handler path and this set, its dispatch
+ * branch and the `mcpToolCall` dependency get deleted. `mcp-client.ts` goes with them once
+ * `storybook ai` — its other consumer — is removed. Only methods `@storybook/addon-mcp` exposes
+ * under {@link MCP_TOOL_NAMES} can be listed here.
+ */
+const PROXY_VIA_MCP_METHODS: ReadonlySet<string> = new Set([
+  'review.create',
+] satisfies ToolsetMethodRef[]);
 
 /** `find-by-component` -> `findByComponent`, accepting an already-camelCase spelling unchanged. */
 function toMethodKey(cliName: string): string {
@@ -175,6 +196,8 @@ export async function runToolsCommand(
     });
   }
   const commandPath = `npx storybook tools ${toolset.id} ${toCliMethodName(methodKey)}`;
+  /** The method the toolset actually resolved, which the dev-server contract dispatches on. */
+  const resolvedRef = `${toolset.id}.${methodKey}`;
 
   if (parsed.help) {
     return result({
@@ -185,6 +208,7 @@ export async function runToolsCommand(
   }
 
   let origin: string | undefined;
+  let proxyTarget: StorybookInstanceRecord | undefined;
   if (method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
     if (!discovery.record) {
@@ -194,7 +218,18 @@ export async function runToolsCommand(
         outcome: { kind: 'intercept', reason: 'requires-dev-server' },
       });
     }
-    if (!ORIGIN_ONLY_METHODS.has(`${toolset.id}.${methodKey}`)) {
+    if (PROXY_VIA_MCP_METHODS.has(resolvedRef)) {
+      if (!discovery.record.mcp.endpoint) {
+        return result({
+          exitCode: 1,
+          output: formatProxyEndpointMissing(commandPath, discovery.record),
+          outcome: { kind: 'intercept', reason: 'attach-unavailable' },
+        });
+      }
+      proxyTarget = discovery.record;
+      // No core method reaches this arm today — it guards trait-marked methods from toolsets
+      // outside core's own set, which have no MCP tool name to proxy to.
+    } else if (!ORIGIN_ONLY_METHODS.has(resolvedRef)) {
       return result({
         exitCode: 1,
         output: formatAttachUnavailable(commandPath, discovery.record),
@@ -225,6 +260,29 @@ export async function runToolsCommand(
   }
 
   try {
+    if (proxyTarget) {
+      // The dev server runs the handler, so its telemetry and side effects stay in the process
+      // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
+      const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
+        name: MCP_TOOL_NAMES[resolvedRef as ToolsetMethodRef],
+        arguments: validation.value as Record<string, unknown>,
+      });
+      const text = (reply.content ?? [])
+        .flatMap((item) => (item.type === 'text' && item.text ? [item.text] : []))
+        .join('\n\n');
+      return result({
+        exitCode: reply.isError ? 1 : 0,
+        // `--json` prints whatever structured data the reply carries; a reply without it (an
+        // error from a method that declares no failure data) falls back to the text rather than
+        // inventing a shape, and the exit code still tells a script the call failed.
+        output:
+          parsed.json && reply.structuredContent !== undefined
+            ? JSON.stringify(reply.structuredContent, null, 2)
+            : text,
+        outcome: { kind: reply.isError ? 'failure' : 'success' },
+      });
+    }
+
     const outcome = await method.handler(
       validation.value,
       buildContext(runtime, deps, origin, toolset)
@@ -317,6 +375,10 @@ function formatRequiresDevServer(commandPath: string, discovery: InstanceDiscove
 
 function formatAttachUnavailable(commandPath: string, record: StorybookInstanceRecord): string {
   return `Found your Storybook running at ${record.url}, but \`${commandPath}\` cannot attach to a running Storybook yet — it becomes available in an upcoming release.`;
+}
+
+function formatProxyEndpointMissing(commandPath: string, record: StorybookInstanceRecord): string {
+  return `Found your Storybook running at ${record.url}, but \`${commandPath}\` runs inside that Storybook and it is not serving the endpoint this command needs. Add \`@storybook/addon-mcp\` to the \`addons\` array in your Storybook configuration, restart the dev server, then re-run this command.`;
 }
 
 function describeUnreadyModuleGraph(

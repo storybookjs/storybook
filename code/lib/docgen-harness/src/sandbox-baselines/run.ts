@@ -8,12 +8,12 @@
  * as a reviewable diff instead of being noticed by hand.
  *
  * Run from code/lib/docgen-harness:
- *   yarn baselines:sandbox                              # verify angular-vite/default-ts
+ *   yarn baselines:sandbox                              # verify angular-vite/docgen-server-ts
  *   yarn baselines:sandbox --update                     # re-record after reviewing the diff
  *   yarn baselines:sandbox --template vue3-vite/default-ts
  *
  * Requires a built sandbox:
- *   yarn task build --template angular-vite/default-ts --start-from auto
+ *   yarn task build --template angular-vite/docgen-server-ts --start-from auto
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -25,7 +25,7 @@ import type { SandboxBaselines } from './read-static-docgen.ts';
 import { readStaticDocgen } from './read-static-docgen.ts';
 
 const BASELINES_ROOT = join(dirname(fileURLToPath(import.meta.url)), '__baselines__');
-const DEFAULT_TEMPLATE = 'angular-vite/default-ts';
+const DEFAULT_TEMPLATE = 'angular-vite/docgen-server-ts';
 
 interface Options {
   template: string;

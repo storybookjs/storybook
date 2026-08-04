@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
-import { findTsconfigPathForFile, supportedExtensions } from 'storybook/internal/common';
+import { findTsconfigPathForPath, supportedExtensions } from 'storybook/internal/common';
 import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -58,9 +58,9 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   return matchingDocgen ?? docgens[0];
 }
 
-export function matchPath(id: string, importerFilePath?: string) {
-  importerFilePath ??= process.cwd();
-  const tsconfig = getTsConfig(importerFilePath);
+export function matchPath(id: string, importerPath?: string) {
+  importerPath ??= process.cwd();
+  const tsconfig = getTsConfig(importerPath);
 
   if (tsconfig.resultType === 'success') {
     const match = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
@@ -74,8 +74,9 @@ export function matchPath(id: string, importerFilePath?: string) {
 }
 
 export const getTsConfig = cached(
-  (filePath: string) => {
-    const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
+  (path: string) => {
+    // `path` may be a source file (export resolution) or a directory (makeFsImporter basedir).
+    const tsconfigPath = findTsconfigPathForPath(path);
     if (!tsconfigPath) {
       return { resultType: 'failed' as const, message: "Couldn't find tsconfig.json" };
     }

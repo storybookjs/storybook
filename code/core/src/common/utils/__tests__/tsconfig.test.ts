@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../paths.ts', { spy: true });
 
-import { findTsconfigPathForFile } from '../tsconfig.ts';
+import { findTsconfigPathForFile, findTsconfigPathForPath } from '../tsconfig.ts';
 import * as paths from '../paths.ts';
 
 const tempDirs: string[] = [];
@@ -93,6 +93,36 @@ describe('findTsconfigPathForFile', () => {
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.json')
+    );
+  });
+});
+
+describe('findTsconfigPathForPath', () => {
+  it('does not dirname directories when resolving from an importer basedir', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: {
+          baseUrl: '.',
+        },
+      }),
+      'src/Button.tsx': 'export const Button = () => null;',
+      'nested/tsconfig.json': JSON.stringify({
+        compilerOptions: {
+          baseUrl: '.',
+        },
+      }),
+      'nested/src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
+
+    // Directory input must search from that directory, not its parent.
+    expect(findTsconfigPathForPath(join(dir, 'nested/src'))).toBe(
+      join(dir, 'nested/tsconfig.json')
+    );
+    // File input still uses file-aware ownership.
+    expect(findTsconfigPathForPath(join(dir, 'nested/src/Button.tsx'))).toBe(
+      join(dir, 'nested/tsconfig.json')
     );
   });
 });

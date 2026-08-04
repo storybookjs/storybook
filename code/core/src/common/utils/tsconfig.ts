@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { basename, dirname, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, extname, relative, resolve } from 'node:path';
 
 import * as find from 'empathic/find';
 import picomatch from 'picomatch';
@@ -60,6 +60,32 @@ export const findTsconfigPathForFile = (cwd: string, filePath: string): string |
 
   return matchingConfigs[0]?.path ?? rootTsconfigPath;
 };
+
+/**
+ * Resolve a tsconfig for either a source file or a directory.
+ * Prefer file paths when available; directories must not be passed through
+ * `findTsconfigPathForFile` (that would `dirname` them and search from the parent).
+ */
+export const findTsconfigPathForPath = (path: string): string | undefined => {
+  if (isDirectoryPath(path)) {
+    return findTsconfigPath(path);
+  }
+
+  return findTsconfigPathForFile(dirname(path), path);
+};
+
+function isDirectoryPath(path: string) {
+  try {
+    if (existsSync(path)) {
+      return statSync(path).isDirectory();
+    }
+  } catch {
+    // Fall through to the extension heuristic below.
+  }
+
+  // Non-existent paths: treat extensionless values (e.g. cwd-like basedirs) as directories.
+  return extname(path) === '';
+}
 
 function collectTsconfigEntries(configPath: string, seen: Set<string>): TsconfigEntry[] {
   const normalizedConfigPath = resolve(configPath);

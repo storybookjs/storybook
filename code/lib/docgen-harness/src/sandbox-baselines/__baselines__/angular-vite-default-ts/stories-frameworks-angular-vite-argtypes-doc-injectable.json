@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Compodoc documented this project but not the component \"DocInjectableService\".\nCheck that the component's file is covered by the tsconfig Compodoc runs against (<sandbox>/.storybook/tsconfig.json) and re-run Compodoc. Source: <sandbox>/documentation.json",
+    "name": "ComponentNotDocumented"
+  },
+  "id": "stories-frameworks-angular-vite-argtypes-doc-injectable",
+  "jsDocTags": {},
+  "name": "DocInjectableService",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-injectable/doc-injectable.stories.ts"
+}

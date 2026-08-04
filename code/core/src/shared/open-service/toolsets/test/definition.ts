@@ -1,9 +1,9 @@
 import * as v from 'valibot';
 
-import { defineToolset } from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import type { StoryIndexAccess } from '../stories/definition.ts';
 import { storyInputArraySchema } from '../stories/story-input.ts';
-import { formatTestRun } from './format.ts';
+import { formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -62,6 +62,8 @@ const testRunResultSchema = v.object({
 const testRunOutputSchema = v.variant('status', [
   v.object({
     status: v.literal('no-stories'),
+    /** Per-selector lookup failures. When nothing matched, they are the whole answer. */
+    notFoundMessages: v.array(v.string()),
   }),
   v.object({
     status: v.literal('completed'),
@@ -82,50 +84,147 @@ const testRunOutputSchema = v.variant('status', [
 export type TestRunResult = v.InferOutput<typeof testRunResultSchema>;
 export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 
+/**
+ * What `run` renders: the run result plus whether accessibility tests were part of this run, which
+ * the result payload itself does not state.
+ */
+export type TestRunData = TestRunOutput & { a11y: boolean };
+
+/**
+ * The outcome split for `test.run`: a crashed or cancelled run is a failure that still carries its
+ * full report, so clients keying on the tag cannot count it as a pass while agents keep the
+ * diagnostic detail.
+ */
+export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 'no-stories' }> & {
+  a11y: boolean;
+};
+
+export type TestRunFailureData = Extract<TestRunOutput, { status: 'error' | 'cancelled' }> & {
+  a11y: boolean;
+};
+
+const runInputSchema = v.object({
+  stories: v.optional(
+    v.pipe(
+      storyInputArraySchema,
+      v.description(
+        `Stories to test for focused feedback. Omit this field to run tests for all available stories.
+Prefer running tests for specific stories while developing to get faster feedback,
+and only omit this when you explicitly need to run all tests for comprehensive verification.
+Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
+Use { storyId } when IDs were discovered from documentation tools.
+Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
+      )
+    )
+  ),
+  a11y: v.optional(
+    v.pipe(
+      v.boolean(),
+      v.description(
+        'Whether to run accessibility tests. Defaults to true. Disable if you only need component test results.'
+      )
+    ),
+    true
+  ),
+});
+
+type RunInput = v.InferOutput<typeof runInputSchema>;
+
+/**
+ * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
+ * promise is dropped from the description rather than made and then broken.
+ */
+function describeRun(a11yEnabled: boolean): string {
+  return (
+    `Run story tests.
+Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
+Provide stories for focused runs (faster while iterating),
+or omit stories to run all tests for full-project verification.
+Use this continuously to monitor test results as you work on your UI components and stories.
+Results will include passing/failing status` +
+    (a11yEnabled
+      ? `, and accessibility violation reports.
+For visual/design accessibility violations (for example color contrast), ask the user before changing styles.`
+      : '.')
+  );
+}
+
+/**
+ * Reports a run that reached a verdict. A run that never got one — a channel error, a cancellation —
+ * stays silent, so the event counts runs whose numbers mean something.
+ */
+async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: ToolsetCtx) {
+  const inputStoryCount = input.stories?.length ?? 0;
+
+  if (data.status === 'no-stories') {
+    await ctx.telemetry?.('tool:runStoryTests', {
+      runA11y: data.a11y,
+      inputStoryCount,
+      matchedStoryCount: 0,
+      passingStoryCount: 0,
+      failingStoryCount: 0,
+      a11yViolationCount: 0,
+      unhandledErrorCount: 0,
+    });
+    return;
+  }
+
+  if (data.status !== 'completed') {
+    return;
+  }
+
+  await ctx.telemetry?.('tool:runStoryTests', {
+    runA11y: data.a11y,
+    inputStoryCount,
+    // A partially resolved selector list never reaches a run, so every input matched by this point.
+    matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
+    ...summarizeTestRun(data.result, data.a11y),
+  });
+}
+
 export type CreateTestToolsetOptions = {
   channel: TestChannel;
   storyIndex: StoryIndexAccess;
+  /** Whether accessibility tests run alongside component tests (addon-a11y enabled). */
+  a11yEnabled: boolean;
 };
 
 /**
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex }: CreateTestToolsetOptions) {
+export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
   const queue = createAsyncQueue();
 
   return defineToolset({
     id: 'test',
     description: 'Run Storybook story tests via addon-vitest.',
+    telemetryGroup: 'test',
     methods: {
       run: {
-        schema: v.object({
-          stories: v.optional(
-            v.pipe(
-              storyInputArraySchema,
-              v.description('Stories to test. Omit to run all available stories.')
-            )
-          ),
-          a11y: v.optional(
-            v.pipe(
-              v.boolean(),
-              v.description('Whether to include accessibility tests. Defaults to true.')
-            ),
-            true
-          ),
-        }),
-        description:
-          'Runs story tests for the given selectors, or all stories when stories is omitted.',
-        handler: async (input, ctx) => {
+        schema: runInputSchema,
+        title: 'Storybook Tests',
+        description: describeRun(a11yEnabled),
+        handler: async (
+          input,
+          ctx
+        ): Promise<ToolsetOutcome<TestRunSuccessData, TestRunFailureData>> => {
           const done = await queue.wait();
           try {
-            const result = await runStoryTests({
+            const output = await runStoryTests({
               channel,
               getIndex: storyIndex.getIndex,
               stories: input.stories,
               a11y: input.a11y,
             });
-            return ctx.format === 'json' ? result : formatTestRun(result);
+            const data: TestRunData = { ...output, a11y: input.a11y };
+
+            await reportRunTelemetry(data, input, ctx);
+
+            const markdown = formatTestRun(data, ctx);
+            return data.status === 'error' || data.status === 'cancelled'
+              ? { ok: false, data, markdown }
+              : { ok: true, data, markdown };
           } finally {
             done();
           }

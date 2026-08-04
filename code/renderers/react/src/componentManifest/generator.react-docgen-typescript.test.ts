@@ -8,9 +8,9 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { manifests } from './generator';
-import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript';
-import { invalidateCache } from './utils';
+import { manifests } from './generator.ts';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
+import { invalidateCache } from './utils.ts';
 
 const repoRoot = process.cwd();
 type ManifestComponentWithReactDocgenTypescript = {

@@ -10,8 +10,8 @@ import {
   invalidateParser,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
-} from './reactDocgenTypescript';
-import { invalidateCache } from './utils';
+} from './reactDocgenTypescript.ts';
+import { invalidateCache } from './utils.ts';
 
 const tempDirs: string[] = [];
 

@@ -30,10 +30,15 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
+import { docsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
 
 import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
@@ -306,6 +311,10 @@ export const experimental_serverChannel = async (
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    // The returned teardown is intentionally unused: the server channel lives for the whole
+    // dev-server process and `experimental_serverChannel` has no teardown phase to call it from, so
+    // this listener is process-lifetime by design. Wiring cleanup here would add lifecycle
+    // infrastructure with nothing to invoke it, matching the other `init*Channel` calls above.
     initReviewChannel(channel);
   }
   initTelemetryChannel(channel);
@@ -342,9 +351,7 @@ globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? f
 
 export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
-    throw new Error(
-      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
-    );
+    throw new OpenServiceServicesAppliedTwiceError();
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
@@ -360,7 +367,19 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     presets: options.presets,
   });
 
+  // Toolsets register imperatively alongside their services: addons contribute both from their own
+  // `services` hook. The stories and test toolsets join once their boot-time dependencies are wired
+  // (stories factory; test moves to addon-vitest).
+  registerToolset(docsToolset);
+
   const features = await options.presets.apply('features');
+
+  if (isReviewFeatureEnabled(features)) {
+    registerReviewService({
+      getIndex: () => storyIndexGenerator.getIndex(),
+    });
+    registerToolset(reviewToolset);
+  }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
   // so registering it would force full story-index generation during manager-only builds (and

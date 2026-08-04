@@ -26,8 +26,10 @@ type MetaSource = {
 export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
+  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
+  const exclude =
+    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -315,6 +317,10 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
     // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
     // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
     schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
+    return;
+  }
+  if (schema.kind === 'literal') {
+    // a TS enum member: a qualified name plus the runtime value it stands for, nothing nested
     return;
   }
   delete schema.schema;

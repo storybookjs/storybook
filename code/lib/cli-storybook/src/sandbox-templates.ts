@@ -764,6 +764,16 @@ export const baseTemplates = {
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,
+      // Server-side Angular docgen is only exercised end to end by a sandbox that turns it on, and
+      // this is the template the recorded docgen baselines are captured from. `componentsManifest`
+      // is required alongside it: the docgen service only writes its per-component static snapshots
+      // when both are enabled.
+      mainConfig: () => ({
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      }),
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,

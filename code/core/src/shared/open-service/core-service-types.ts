@@ -1,8 +1,10 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
+import { reviewServiceDef } from './services/review/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
 import type {
   AnyServiceDefinition,
+  GetServiceOptions,
   RuntimeService,
   ServiceId,
   ServiceInstanceOf,
@@ -21,11 +23,17 @@ import type {
  * Each list only references definitions already loaded in that runtime, and the runtime entrypoints
  * import the derived *types* (`import type`), so these value imports add no runtime cost to the
  * manager/preview/server bundles — only the membership test pulls them in as values.
+ *
+ * Stateful services shared across realms appear in each matching list so their state can synchronize.
  */
-export const managerCoreServiceDefs = [docgenServiceDef];
+export const managerCoreServiceDefs = [docgenServiceDef, reviewServiceDef];
 export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
-export const serverCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef, moduleGraphServiceDef];
-
+export const serverCoreServiceDefs = [
+  docgenServiceDef,
+  storyDocsServiceDef,
+  moduleGraphServiceDef,
+  reviewServiceDef,
+];
 /** Maps a list of service definitions to `{ [id]: instance }`, keyed by each definition's id. */
 type CoreServices<TDefs extends readonly AnyServiceDefinition[]> = {
   [Def in TDefs[number] as Def['id']]: ServiceInstanceOf<Def>;
@@ -42,6 +50,6 @@ export type ServerCoreServices = CoreServices<typeof serverCoreServiceDefs>;
 
 /** Module-level `getService` overloads keyed by a per-runtime core-service map. */
 export interface TypedGetService<TMap> {
-  <K extends keyof TMap & ServiceId>(serviceId: K): TMap[K];
-  <TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
+  <K extends keyof TMap & ServiceId>(serviceId: K, options?: GetServiceOptions): TMap[K];
+  <TInstance = RuntimeService>(serviceId: ServiceId, options?: GetServiceOptions): TInstance;
 }

@@ -3,10 +3,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { skipWindows } from '../../code/vitest.helpers.ts';
 import type { Project } from './lib/projects.ts';
 import { syncStorybookVersion } from './sync-storybook-version.ts';
+
+// These tests drive real git subprocesses; the 5s default timeout flakes on loaded machines.
+vi.setConfig({ testTimeout: 30_000 });
 
 let TMP = '';
 

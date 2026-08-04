@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createLazyRoute,
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { fn } from 'storybook/test';
 
 import { createFileRoute } from '../export-mocks/react-router.ts';
 import { duplicateRouteTree } from './duplicate-tree.ts';
@@ -116,6 +116,49 @@ describe('duplicateRouteTree with pathless layout routes', () => {
 
     expect((await matchedRouteIds(cloned, '/posts/settings')).join(',')).toContain('settings');
   });
+
+  it('preserves composed ids through cloning so strict from-lookups match', async () => {
+    // Real routeTree.gen output for `posts/_archive/archived.tsx`: the nested
+    // pathless layout keeps its id AND carries the pathful prefix as `path`.
+    // Strict hooks (`Route.useLoaderData()`) resolve matches by the original
+    // composed id, so clones must compose to identical ids.
+    const root = createRootRoute();
+    const layout = (
+      createFileRoute('/posts/_archive')({ getParentRoute: () => root }) as any
+    ).update({ id: '/posts/_archive', path: '/posts', getParentRoute: () => root } as any);
+    const archived = (
+      createFileRoute('/posts/_archive/archived')({ getParentRoute: () => layout }) as any
+    ).update({ id: '/archived', path: '/archived', getParentRoute: () => layout } as any);
+    layout.addChildren([archived]);
+    root.addChildren([layout]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const ids = await matchedRouteIds(cloned, '/posts/archived');
+
+    expect(ids).toContain('/posts/_archive');
+    expect(ids).toContain('/posts/_archive/archived');
+  });
+
+  it('applies an override that sets its own id on a pathful route', async () => {
+    // An override may re-key a route by supplying `id`. That id must not reach
+    // `createRoute` alongside the route's `path` (TanStack rejects id+path);
+    // it is applied via `.update()` instead, and wins over the original id.
+    const root = createRootRoute();
+    const archive = (createRoute({ path: '/posts', getParentRoute: () => root }) as any).update({
+      id: '/posts/_archive',
+      path: '/posts',
+      getParentRoute: () => root,
+    });
+    root.addChildren([archive]);
+
+    const { root: cloned } = duplicateRouteTree(root as any, {
+      overrides: { '/posts/_archive': { id: '/custom' } } as any,
+    });
+    const ids = await matchedRouteIds(cloned, '/posts');
+
+    expect(ids).toContain('/custom');
+    expect(ids).not.toContain('/posts/_archive');
+  });
 });
 
 describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
@@ -177,8 +220,8 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
   });
 
   it('applies routeOverrides to cloned pathless routes by original id', async () => {
-    const original = fn();
-    const override = fn();
+    const original = vi.fn();
+    const override = vi.fn();
     const { root } = buildAuthedTree({ beforeLoad: original });
 
     const { root: cloned } = duplicateRouteTree(root as any, {
@@ -190,5 +233,39 @@ describe('duplicateRouteTree matrix (code-based and file-based trees)', () => {
 
     expect(override).toHaveBeenCalled();
     expect(original).not.toHaveBeenCalled();
+  });
+
+  it('carries lazy route bindings onto clones', async () => {
+    const marker = () => null;
+    const root = createRootRoute();
+    const page = createRoute({ path: '/lazy', getParentRoute: () => root });
+    page.lazy(() => Promise.resolve(createLazyRoute('/lazy')({ component: marker })));
+    root.addChildren([page]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const router = createRouter({
+      routeTree: cloned,
+      history: createMemoryHistory({ initialEntries: ['/lazy'] }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/lazy'].options.component).toBe(marker);
+  });
+
+  it('carries a lazy binding on the root route onto the clone', async () => {
+    const marker = () => null;
+    const root = createRootRoute();
+    (root as any).lazy(() => Promise.resolve(createLazyRoute('__root__')({ component: marker })));
+    const child = createRoute({ path: '/child', getParentRoute: () => root });
+    root.addChildren([child]);
+
+    const { root: cloned } = duplicateRouteTree(root as any);
+    const router = createRouter({
+      routeTree: cloned as any,
+      history: createMemoryHistory({ initialEntries: ['/child'] }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['__root__'].options.component).toBe(marker);
   });
 });

@@ -1,0 +1,112 @@
+{
+  "count": {
+    "description": "
+",
+    "name": "count",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": NaN,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "disabled": {
+    "description": "
+",
+    "name": "disabled",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "increment": {
+    "description": "
+",
+    "name": "increment",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": 1,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "label": {
+    "description": "
+Visible caption next to the control.",
+    "name": "label",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "toggled": {
+    "action": "toggled",
+    "description": "
+",
+    "name": "toggled",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "version": {
+    "description": "
+",
+    "name": "version",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "v1",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

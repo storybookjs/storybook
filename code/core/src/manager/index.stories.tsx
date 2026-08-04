@@ -16,6 +16,7 @@ import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
 import preview from '../../../.storybook/preview.tsx';
+import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
 

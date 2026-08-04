@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { errorToMCPContent, ManifestGetError } from './get-manifest.ts';
+import { ManifestGetError } from 'storybook/internal/toolsets-docs';
+
+import { errorToMCPContent } from './error-to-mcp-content.ts';
 
 describe('errorToMCPContent', () => {
   it('should convert ManifestGetError to MCP error content', () => {

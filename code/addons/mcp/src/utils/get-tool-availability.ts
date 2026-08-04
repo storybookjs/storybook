@@ -2,7 +2,7 @@ import type { Options } from 'storybook/internal/types';
 import { isModuleGraphSupported } from './module-graph.ts';
 import { getReviewStatus } from './is-review-available.ts';
 import { getManifestStatus, type ManifestFeatures } from '../tools/is-manifest-available.ts';
-import { getAddonVitestConstants } from '../tools/run-story-tests.ts';
+import { isAddonVitestEnabled } from './addon-vitest.ts';
 import { isAddonA11yEnabled } from './is-addon-a11y-enabled.ts';
 
 export interface ToolAvailability {
@@ -25,7 +25,10 @@ export interface ToolAvailability {
   docsHasManifests: boolean;
   /** The component-manifest feature flag is enabled (drives the docs "why disabled" copy). */
   docsFeatureEnabled: boolean;
-  /** `@storybook/addon-vitest` is installed. Gates the `test` toolset (`run-story-tests`). */
+  /**
+   * `@storybook/addon-vitest` is enabled (not merely installed), matching the condition under
+   * which it registers the `test` toolset. Gates the `test` toolset (`run-story-tests`).
+   */
   testSupported: boolean;
   /** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `run-story-tests`. */
   a11yEnabled: boolean;
@@ -91,12 +94,12 @@ export async function getToolAvailability(
       | (ManifestFeatures & { changeDetection?: boolean; experimentalReview?: boolean })
       | undefined);
 
-  const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestConstants, a11yEnabled] =
+  const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestEnabled, a11yEnabled] =
     await Promise.all([
       moduleGraphSupportedOverride ?? isModuleGraphSupported(),
       getReviewStatus(options, { features: resolvedFeatures }),
       getManifestStatus(options),
-      getAddonVitestConstants(),
+      isAddonVitestEnabled(options),
       isAddonA11yEnabled(options),
     ]);
 
@@ -108,7 +111,7 @@ export async function getToolAvailability(
     docsEnabled: manifestStatus.available,
     docsHasManifests: manifestStatus.hasManifests,
     docsFeatureEnabled: manifestStatus.hasFeatureFlag,
-    testSupported: !!addonVitestConstants,
+    testSupported: addonVitestEnabled,
     a11yEnabled,
     docgenServer: manifestStatus.docgenServer,
   };

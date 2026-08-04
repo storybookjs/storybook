@@ -205,6 +205,20 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   `config-dir.ts`, `schema-lines.ts`): the ai CLI is slated for removal, so the dependency runs
   from it into the tools CLI and never the other way. Nothing under `cli/tools/` may import from
   `cli/ai/` — `no-restricted-imports` in `code/.oxlintrc.json` enforces it.
+- `storybook skills` (`code/core/src/cli/skills/`) is a CLI construct, not an OSA toolset: `list`
+  and `get <id>` serve the three agent-facing skill documents (`stories`, `write-story`, `setup`)
+  as plain markdown, always on with no feature flag. The pure builders live in
+  `cli/skills/content/`, exported as `storybook/internal/skills`, and `@storybook/addon-mcp`
+  consumes the same builders with `consumer: 'mcp'` for byte-identical output; consumer-aware
+  cross-references go through `getSkillRef`/`getRef` instead of hardcoding either vocabulary.
+  Probing (`resolveSkillInputs`, `getToolAvailability`) lives in `cli/skills/` outside `content/`
+  and is exported via `storybook/internal/core-server`; `setup` uses the lighter `getProjectInfo`
+  probe instead, so it still works on a broken project. `cli/skills/**` may not import `cli/ai/**`,
+  and `cli/skills/content/**` may not import `core-server` either — both lint-enforced in
+  `code/.oxlintrc.json`, keeping the published `storybook/internal/skills` entry pure.
+- The `ai` MCP passthrough (`cli/ai/mcp/`) and the `experimental_storybookAi` preset deliberately
+  survive alongside the skills CLI for published-plugin compatibility; Milestone 7 deletes both
+  once plugins switch to a stub.
 
 ## Common Commands
 

@@ -90,6 +90,22 @@
       }
     },
     {
+      "files": ["core/src/cli/tools/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/cli/ai/**", "../ai/**"],
+                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/tools`, never the other way around. Move what you need into `cli/tools/` instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/*.compat.ts", "**/*.compat.tsx"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off"

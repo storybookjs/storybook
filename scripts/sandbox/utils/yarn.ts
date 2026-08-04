@@ -80,9 +80,9 @@ interface RefreshLockfileOptions {
  * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
  *    resolves it deterministically (no network `yarn set version`).
  * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions.
- * 4. Run `yarn up '*'` then `yarn install` (both `--mode=update-lockfile`).
- *    `yarn up` runs first so it rewrites bleeding-edge `package.json` ranges
- *    to the newest gate-satisfying versions before the install resolves them.
+ * 4. Run `yarn install --mode=update-lockfile`, falling back to `yarn up '*'`
+ *    plus a retry only when the template's own ranges cannot resolve under the
+ *    gate. Installing first keeps deliberately pinned majors intact.
  *
  * `YARN_ENABLE_IMMUTABLE_INSTALLS=false` is set via env (not `.yarnrc.yml`) so
  * the consumer-facing config stays clean.
@@ -132,16 +132,32 @@ export async function refreshBeforeStorybookLockfile({
   const gateMinutes = disableMinAgeGate ? 0 : BEFORE_SANDBOX_MIN_AGE_MINUTES;
   await runCommand(`yarn config set npmMinimalAgeGate ${gateMinutes}`, { cwd, env }, debug);
 
-  // `yarn up` must run BEFORE `yarn install`. The template's CLI pins
-  // bleeding-edge versions (`ng new` → `@angular/build@^21.x`) that are inside
-  // the age-gate window; resolving those as-is fails with "No candidates
-  // found". `yarn up '*'` rewrites every direct dependency in package.json to
-  // the newest version that satisfies the gate, so the subsequent install
-  // resolves cleanly.
-  //
+  // Resolve the template's own ranges first. This is the path almost every
+  // template takes, and it is the only one that preserves deliberately pinned
+  // majors: `nextjs/14-ts`, `react-webpack/17-ts`, `ember/3-js` and friends
+  // exist to exercise an old framework version, and `yarn up '*'` would rewrite
+  // those ranges to latest and silently turn them into duplicates of the
+  // `default` templates.
+  try {
+    await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
+    return;
+  } catch (error) {
+    if (debug) {
+      console.warn(error);
+    }
+  }
+
+  // The install only fails here when the template's CLI pinned a version that
+  // is itself inside the age-gate window (`ng new` → `@angular/build@^21.x`),
+  // leaving the range with no resolvable candidates. Widening is the last
+  // resort, and it is safe for these templates precisely because they track
+  // latest anyway.
+  console.warn(
+    `⚠️ install failed under the ${gateMinutes}min age gate; widening ranges via yarn up`
+  );
+
   // `yarn up '*'` errors when the project has no direct dependencies
-  // (`internal/server-webpack5` is just `yarn init -y`) — non-fatal, the
-  // install below still produces a valid lockfile.
+  // (`internal/server-webpack5` is just `yarn init -y`) — non-fatal.
   try {
     await runCommand(`yarn up '*' --mode=update-lockfile`, { cwd, env }, debug);
   } catch (error) {

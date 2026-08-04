@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddonVitestService, ProjectType, globalSettings } from 'storybook/internal/cli';
 import { PackageManagerName, isCI } from 'storybook/internal/common';
@@ -28,7 +28,18 @@ interface CommandWithPrivates {
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
-  const originalIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+  // `process.stdout.isTTY` is ambient process state and exposes no getter to spy on in this
+  // environment, so tests mutate it via Object.defineProperty through a small helper and
+  // always restore the original value after each test (mirrors withTelemetry.test.ts) to
+  // avoid leaking interactivity between tests.
+  const originalStdoutIsTTY = process.stdout.isTTY;
+
+  const setStdoutIsTTY = (value: boolean | undefined) => {
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value,
+      configurable: true,
+    });
+  };
 
   const defaultExecuteOptions = {
     framework: null as null,
@@ -39,15 +50,8 @@ describe('UserPreferencesCommand', () => {
     isAiSetupAvailable: false,
   };
 
-  afterAll(() => {
-    if (originalIsTTYDescriptor) {
-      Object.defineProperty(process.stdout, 'isTTY', originalIsTTYDescriptor);
-    } else {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: undefined,
-        configurable: true,
-      });
-    }
+  afterEach(() => {
+    setStdoutIsTTY(originalStdoutIsTTY);
   });
 
   beforeEach(() => {
@@ -110,12 +114,6 @@ describe('UserPreferencesCommand', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(isCI).mockReturnValue(false);
 
-    // Reset isTTY to avoid leaking between tests
-    Object.defineProperty(process.stdout, 'isTTY', {
-      value: undefined,
-      configurable: true,
-    });
-
     // Reset sandbox env to avoid leaking between tests (or from the actual test environment)
     delete process.env.IN_STORYBOOK_SANDBOX;
 
@@ -142,10 +140,7 @@ describe('UserPreferencesCommand', () => {
 
     it('should prompt for new user in interactive mode', async () => {
       // Mock TTY
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
@@ -163,10 +158,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should track prompt cancellation for the new user prompt and exit cleanly', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true);
 
@@ -185,10 +177,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should prompt for install type when not a new user', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
@@ -202,10 +191,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should remove test feature if isTestFeatureAvailable is false', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
@@ -245,10 +231,7 @@ describe('UserPreferencesCommand', () => {
 
   describe('AI setup prompt', () => {
     it('should include AI feature when user accepts AI setup in interactive mode', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
@@ -270,10 +253,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not include ONBOARDING feature when user accepts AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
@@ -288,10 +268,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should include ONBOARDING when AI is selected inside a sandbox (IN_STORYBOOK_SANDBOX)', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
 
@@ -316,10 +293,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not include AI feature when user declines AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
@@ -333,10 +307,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should default AI to true when prompts are skipped (non-interactive)', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: undefined,
-        configurable: true,
-      });
+      setStdoutIsTTY(undefined);
 
       const result = await command.execute({
         ...defaultExecuteOptions,
@@ -348,10 +319,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should default AI to true when --yes flag is used', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       const commandOptions: CommandOptions = {
         packageManager: PackageManagerName.NPM,
@@ -378,10 +346,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not prompt for AI setup when isAiSetupAvailable is false', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
@@ -395,10 +360,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should include test feature in minimal installs when user accepts AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
@@ -417,10 +379,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not include test feature in minimal installs when user declines AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not new user
@@ -438,10 +397,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should track ai-prompt-nudge telemetry when user accepts AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI setup: yes
@@ -456,10 +412,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should not track ai-prompt-nudge telemetry when user declines AI setup', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
       vi.mocked(prompt.confirm).mockResolvedValueOnce(false); // AI setup: no
@@ -488,10 +441,7 @@ describe('UserPreferencesCommand', () => {
 
   describe('React Native-only projects', () => {
     it('should skip the install-type prompt and use the minimal config for existing users', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       // Not a new user - normally this would trigger the install-type prompt
       vi.mocked(prompt.select).mockResolvedValueOnce(false);
@@ -519,10 +469,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should use the minimal config for new users without prompting', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
@@ -547,10 +494,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should use the minimal config when --yes is set', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       const commandOptions: CommandOptions = {
         packageManager: PackageManagerName.NPM,
@@ -576,10 +520,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should still prompt for install type for React Native Web projects', async () => {
-      Object.defineProperty(process.stdout, 'isTTY', {
-        value: true,
-        configurable: true,
-      });
+      setStdoutIsTTY(true);
 
       vi.mocked(prompt.select)
         .mockResolvedValueOnce(false) // not a new user

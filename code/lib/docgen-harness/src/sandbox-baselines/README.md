@@ -16,17 +16,23 @@ Components referenced through a global rather than an import are skipped.
 The monorepo's shared template stories point at `globalThis.__TEMPLATE_COMPONENTS__.*`, which leaves no import to resolve and no scanned file to find, so all of them error by construction and say nothing about docgen.
 Skipping them takes the Angular sandbox from 111 recorded components to 37, of which 30 are documented and 7 are Angular classes declared inline in story files.
 
+## Which templates are covered
+
+Every sandbox template whose main config turns on both `experimentalDocgenServer` and `componentsManifest`, read from the template definitions themselves rather than from a list kept here.
+Turning those flags on for a template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
+A template that is flagged but has nothing recorded yet fails rather than skipping quietly.
+
 ## Updating
 
 ```bash
-yarn task build --template angular-vite/docgen-server-ts --start-from auto
+yarn task build --template <template> --start-from auto
 cd code/lib/docgen-harness
-yarn baselines:sandbox            # verify
+yarn baselines:sandbox            # verify every server-docgen template
 yarn baselines:sandbox --update   # re-record
 ```
 
-CI runs the verify form after building each sandbox that has a baseline directory here.
-Adding a directory is what enables the gate for a template; there is no separate list to keep in sync.
+Pass `--template <key>` to work on one of them, and `--sandbox <dir>` to point at a sandbox somewhere other than the default location.
+CI runs the verify form after building each covered sandbox.
 
 ## Reading a failure
 

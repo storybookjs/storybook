@@ -783,8 +783,6 @@ export const baseTemplates = {
     // path is proven separately, rather than both riding on one configuration.
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
-    // TODO: remove once this sandbox has been published to the sandboxes repository.
-    inDevelopment: true,
     modifications: {
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,

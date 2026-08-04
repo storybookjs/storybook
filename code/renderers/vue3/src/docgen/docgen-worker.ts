@@ -9,9 +9,9 @@
  * The framework contributes the descriptor that points here; nothing in this module is bundler
  * specific, so it sits with the rest of the Vue docgen code in the renderer.
  */
-import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
+import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import { buildDocgenPayload } from './build-docgen.ts';
 import { VueComponentMetaManager } from './vue-project-manager.ts';
@@ -23,11 +23,9 @@ import { VueComponentMetaManager } from './vue-project-manager.ts';
  * manager is created lazily on the first eligible request and memoized; when it cannot be created
  * the middleware passes through to the rest of the chain.
  */
-export const createDocgenProvider = (): DocgenMiddleware => {
-  let managerPromise: Promise<VueComponentMetaManager | undefined>;
-
-  const getManager = () => {
-    managerPromise ??= (async () => {
+export const createDocgenProvider = (): DocgenMiddleware =>
+  createLazyDocgenMiddleware({
+    createManager: async () => {
       try {
         const typescript = await import('typescript');
         const manager = new VueComponentMetaManager(typescript.default ?? typescript);
@@ -41,33 +39,14 @@ export const createDocgenProvider = (): DocgenMiddleware => {
         );
         return undefined;
       }
-    })();
-    return managerPromise;
-  };
-
-  return (nextDocgen: DocgenProvider): DocgenProvider =>
-    async (input) => {
-      const storyImportPath = getStoryImportPathFromEntry(input.entry);
-      if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
-        return nextDocgen(input);
-      }
-
-      const manager = await getManager();
-      if (!manager) {
-        return nextDocgen(input);
-      }
-
+    },
+    extract: async (manager, input) => {
       const ours = await buildDocgenPayload(input, {
         getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
       });
       // Volar programs hold large type caches; check heap pressure after each extraction since Vue
       // has no batch surface to hang this on.
       manager.recycleIfHeapPressured();
-      if (!ours) {
-        return nextDocgen(input);
-      }
-
-      const downstream = await nextDocgen(input);
-      return { ...downstream, ...ours };
-    };
-};
+      return ours;
+    },
+  });

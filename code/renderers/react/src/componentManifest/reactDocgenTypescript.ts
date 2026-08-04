@@ -191,7 +191,7 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   // if the nearest root tsconfig is only a project-references shell, follow references and pick
   // the config that actually includes this file. This is the manifest-side extension of #34353.
   const configPath =
-    findTsconfigPathForFile(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
+    findOwningTsconfigPath(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
   const configKey = configPath ?? '<no-tsconfig>';
   const parserKey = `${configKey}::${optionsKey}`;
   const cachedParser = parserCache.get(parserKey);
@@ -345,7 +345,7 @@ export const parseWithReactDocgenTypescript = asyncCache(
   { name: 'parseWithReactDocgenTypescript' }
 );
 
-const findTsconfigPathForFile = cached(
+const findOwningTsconfigPath = cached(
   (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {
     const configPath = findTsconfigPath(cwd);
     if (!configPath) {
@@ -360,7 +360,7 @@ const findTsconfigPathForFile = cached(
         typescript,
         resolve(filePath)
       )}`,
-    name: 'findTsconfigPathForFile',
+    name: 'findOwningTsconfigPath',
   }
 );
 

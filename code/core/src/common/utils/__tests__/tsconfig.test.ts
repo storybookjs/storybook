@@ -4,8 +4,8 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { findTsconfigPathForFile } from '../tsconfig';
-import * as paths from '../paths';
+import { findTsconfigPathForFile } from '../tsconfig.ts';
+import * as paths from '../paths.ts';
 
 const tempDirs: string[] = [];
 

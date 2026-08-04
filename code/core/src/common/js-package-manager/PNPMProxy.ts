@@ -95,6 +95,7 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     try {
+      logger.debug('Executing command: pnpm --version');
       const stdout = executeCommandSync({
         cwd: this.cwd,
         command: 'pnpm',

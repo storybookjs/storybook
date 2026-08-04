@@ -81,10 +81,14 @@ function isPlaywrightInstall(args: string[]) {
   return joined.includes('playwright') && joined.includes('install');
 }
 
-function isPackageInstall(command: string, args: string[]) {
+function isPackageManagerCommand(command: string) {
   const normalizedCommand = command.replace(/\.(cmd|exe|ps1)$/i, '');
 
-  if (!PACKAGE_MANAGER_COMMANDS.has(normalizedCommand)) {
+  return PACKAGE_MANAGER_COMMANDS.has(normalizedCommand);
+}
+
+function isPackageInstall(command: string, args: string[]) {
+  if (!isPackageManagerCommand(command)) {
     return false;
   }
 
@@ -148,7 +152,7 @@ export function categorizeExecaError(error: unknown, context: ExecaErrorContext)
     return new PlaywrightInstallFailedError({ ...data, cause: error });
   }
 
-  if (isBinaryNotFound(data)) {
+  if (isBinaryNotFound(data) && isPackageManagerCommand(command)) {
     return new PackageManagerBinaryNotFoundError({ ...data, cause: error });
   }
 

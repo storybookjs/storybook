@@ -10,21 +10,13 @@ import {
   PlaywrightInstallFailedError,
   PnpmIgnoredBuildsError,
   PnpmNoTtyModulesDirError,
+  type ExecaCommandErrorData,
 } from '../../server-errors.ts';
 import { getErrorLogs } from '../js-package-manager/util.ts';
 
 export type ExecaErrorContext = {
   command: string;
   args?: string[];
-};
-
-export type ExecaCommandErrorData = {
-  command: string;
-  args: string[];
-  exitCode?: number | string;
-  signal?: string;
-  logs: string;
-  packageManagerErrorCode?: string;
 };
 
 type ExecaErrorLike = {
@@ -36,28 +28,7 @@ type ExecaErrorLike = {
 };
 
 const PACKAGE_MANAGER_COMMANDS = new Set(['npm', 'pnpm', 'yarn', 'bun']);
-
-export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
-  return [data.command, ...data.args].join(' ');
-}
-
-export function formatExecaFailureDetails(data: ExecaCommandErrorData): string {
-  const trimmedLogs = data.logs.trim();
-
-  if (trimmedLogs) {
-    return trimmedLogs;
-  }
-
-  if (data.exitCode != null) {
-    return `Process exited with code ${data.exitCode}`;
-  }
-
-  if (data.signal) {
-    return `Process was killed with signal ${data.signal}`;
-  }
-
-  return 'No additional output was captured.';
-}
+const PACKAGE_INSTALL_ARGS = new Set(['install', 'add', 'ci', 'i']);
 
 export function extractExecaCommandErrorData(
   error: unknown,
@@ -117,7 +88,7 @@ function isPackageInstall(command: string, args: string[]) {
     return false;
   }
 
-  return args[0] === 'install' || args.includes('install');
+  return args.some((arg) => PACKAGE_INSTALL_ARGS.has(arg));
 }
 
 function isBinaryNotFound(data: ExecaCommandErrorData) {
@@ -165,10 +136,6 @@ export function categorizeExecaError(error: unknown, context: ExecaErrorContext)
   const data = extractExecaCommandErrorData(error, context);
   const { command, args } = data;
 
-  if (isBinaryNotFound(data)) {
-    return new PackageManagerBinaryNotFoundError({ ...data, cause: error });
-  }
-
   if (isAutomigrateAddonA11yTest(args)) {
     return new AutomigrateAddonA11yTestError({ ...data, cause: error });
   }
@@ -179,6 +146,10 @@ export function categorizeExecaError(error: unknown, context: ExecaErrorContext)
 
   if (isPlaywrightInstall(args)) {
     return new PlaywrightInstallFailedError({ ...data, cause: error });
+  }
+
+  if (isBinaryNotFound(data)) {
+    return new PackageManagerBinaryNotFoundError({ ...data, cause: error });
   }
 
   if (isPackageInstall(command, args)) {

@@ -949,11 +949,11 @@ export type ExecaCommandErrorData = {
   packageManagerErrorCode?: string;
 };
 
-function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
+export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
   return [data.command, ...data.args].join(' ');
 }
 
-function formatExecaFailureDetails(data: ExecaCommandErrorData) {
+export function formatExecaFailureDetails(data: ExecaCommandErrorData) {
   const trimmedLogs = data.logs.trim();
 
   if (trimmedLogs) {

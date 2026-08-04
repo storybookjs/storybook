@@ -40,7 +40,7 @@ function attachCategorizedExecaFailureHandler(
   execaProcess.then = ((onFulfilled, onRejected) =>
     originalThen(
       onFulfilled,
-      onRejected
+      typeof onRejected === 'function'
         ? (error) => onRejected(categorize(error))
         : (error) => {
             throw categorize(error);
@@ -50,7 +50,7 @@ function attachCategorizedExecaFailureHandler(
   execaProcess.catch = ((onRejected) =>
     originalCatch((error) => {
       throw categorize(error);
-    }).catch(onRejected)) as ResultPromise['catch'];
+    }).catch(typeof onRejected === 'function' ? onRejected : undefined)) as ResultPromise['catch'];
 }
 
 function getExecaOptions({

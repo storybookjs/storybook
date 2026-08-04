@@ -1,6 +1,12 @@
+---
+description: Always use this when you are a Cursor Cloud agent
+globs:
+alwaysApply: false
+---
+
 # Cursor Cloud agent setup notes
 
-These notes apply **only** when running inside a Cursor Cloud agent VM. They are split out of `AGENTS.md` (which links here) so the always-loaded instructions stay lean. For everything else — architecture, commands, testing, lint, and formatting — follow `AGENTS.md`.
+These notes apply only when running inside a Cursor Cloud agent VM. For architecture, commands, testing, lint, and formatting, follow `AGENTS.md`.
 
 The cloud VM boots from a snapshot with dependencies already installed; the startup update script only runs `yarn` (install).
 

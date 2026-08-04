@@ -366,7 +366,3 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
-
-## Cursor Cloud specific instructions
-
-Cursor Cloud agents must also read [`.cursor/cloud-agent.md`](.cursor/cloud-agent.md).

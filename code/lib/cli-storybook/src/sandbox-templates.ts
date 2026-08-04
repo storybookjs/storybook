@@ -835,7 +835,12 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['bench'],
+    // This sandbox exists to guard the docgen baselines, and it differs from
+    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
+    // execution are already covered there on every run, so repeating them here would double the
+    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
+    // latter swaps in a test-runner job rather than dropping one.
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {

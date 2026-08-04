@@ -62,6 +62,33 @@ describe('readStaticDocgen', () => {
       /refusing to record an empty run/
     );
   });
+
+  it('skips components referenced through a global, which have no import to resolve', () => {
+    vol.fromJSON({
+      [`${DOCGEN}/global.json`]: snapshot('global', {
+        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+        jsDocTags: {},
+      }),
+      [`${DOCGEN}/real.json`]: snapshot('real', { name: 'ButtonComponent', jsDocTags: {} }),
+    });
+
+    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual([
+      'real',
+    ]);
+  });
+
+  it('refuses to record when every component is globally referenced', () => {
+    vol.fromJSON({
+      [`${DOCGEN}/global.json`]: snapshot('global', {
+        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+        jsDocTags: {},
+      }),
+    });
+
+    expect(() => readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX })).toThrow(
+      /globally referenced/
+    );
+  });
 });
 
 describe('toBaseline', () => {

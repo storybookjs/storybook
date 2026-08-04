@@ -764,10 +764,33 @@ export const baseTemplates = {
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,
-      // Server-side Angular docgen is only exercised end to end by a sandbox that turns it on, and
-      // this is the template the recorded docgen baselines are captured from. `componentsManifest`
-      // is required alongside it: the docgen service only writes its per-component static snapshots
-      // when both are enabled.
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
+  'angular-vite/docgen-server-ts': {
+    name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
+    // Identical to `angular-vite/default-ts` apart from the two feature flags below. Kept as its own
+    // template so the stable Angular sandbox keeps guarding today's browser docgen while the server
+    // path is proven separately, rather than both riding on one configuration.
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    // TODO: remove once this sandbox has been published to the sandboxes repository.
+    inDevelopment: true,
+    modifications: {
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      useCsfFactory: true,
+      // `componentsManifest` is required alongside `experimentalDocgenServer`: the docgen service
+      // only writes its per-component static snapshots, which the recorded baselines read, when both
+      // are on.
       mainConfig: () => ({
         features: {
           experimentalDocgenServer: true,
@@ -1166,6 +1189,11 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
+  // Daily rather than every run while server docgen is experimental: it doubles the Angular sandbox
+  // cost and the configuration it guards is not yet the shipping one.
+  // TODO(11.0): promote to `normal` and drop `angular-vite/default-ts` to a less frequent cadence,
+  // so the every-run sandbox tracks the shipping configuration.
+  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

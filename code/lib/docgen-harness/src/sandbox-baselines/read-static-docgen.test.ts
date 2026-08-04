@@ -10,7 +10,7 @@ vi.mock('node:fs', async () => {
   return { ...memfs.fs, default: memfs.fs };
 });
 
-const SANDBOX = '/sandboxes/angular-vite-default-ts';
+const SANDBOX = '/sandboxes/my-sandbox';
 const STATIC = `${SANDBOX}/storybook-static`;
 const DOCGEN = `${STATIC}/services/core/docgen`;
 
@@ -134,12 +134,12 @@ describe('toBaseline', () => {
   });
 
   it('replaces the sandbox path in its POSIX spelling so baselines cross platforms', () => {
-    const windowsSandbox = 'C:\\sandboxes\\angular-vite-default-ts';
+    const windowsSandbox = 'C:\\sandboxes\\my-sandbox';
     const result = toBaseline(
       payload({
         error: {
           name: 'ComponentNotDocumented',
-          message: 'Source: C:/sandboxes/angular-vite-default-ts/documentation.json',
+          message: 'Source: C:/sandboxes/my-sandbox/documentation.json',
         },
       }),
       windowsSandbox

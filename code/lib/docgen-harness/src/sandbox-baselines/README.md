@@ -19,7 +19,7 @@ Skipping them takes the Angular sandbox from 111 recorded components to 37, of w
 ## Updating
 
 ```bash
-yarn task build --template angular-vite/default-ts --start-from auto
+yarn task build --template angular-vite/docgen-server-ts --start-from auto
 cd code/lib/docgen-harness
 yarn baselines:sandbox            # verify
 yarn baselines:sandbox --update   # re-record

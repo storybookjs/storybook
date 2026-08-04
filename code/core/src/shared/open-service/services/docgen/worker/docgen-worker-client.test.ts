@@ -11,6 +11,8 @@ interface FakeWorker {
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
+  /** `message` listeners registered at the moment `unref()` ran; see the ordering test below. */
+  messageListenersAtUnref: number;
   emit: (event: string, ...args: unknown[]) => boolean;
 }
 
@@ -29,7 +31,10 @@ vi.mock('node:worker_threads', async () => {
       this.posted.push(msg);
     });
     terminate = vi.fn(async () => 0);
-    unref = vi.fn();
+    messageListenersAtUnref = -1;
+    unref = vi.fn(() => {
+      this.messageListenersAtUnref = this.listenerCount('message');
+    });
   }
 
   return { Worker: FakeWorkerImpl };
@@ -96,6 +101,12 @@ describe('createDocgenWorkerClient', () => {
     expect(fakeWorkers).toHaveLength(1);
     expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
     expect(worker.unref).toHaveBeenCalled();
+
+    // Attaching a `message` listener re-references the worker's port, so unreferencing before the
+    // listeners are on leaves the worker holding the event loop open and `build-storybook` never
+    // exits. Asserting the order here because a unit test cannot observe the process failing to
+    // exit; the ordering is what makes the difference.
+    expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
 
     // Drive the extract to completion so dispose isn't racing a not-yet-queued request.
     ackInit(worker);

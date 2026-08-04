@@ -64,9 +64,12 @@ export async function buildDocgenPayload(
   let storyFile: string;
   try {
     storyFile = await readFile(storyPath, 'utf8');
-  } catch {
-    // The file backing an indexed entry is gone. Nothing to document, so fall through.
-    return undefined;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // The file backing an indexed entry is gone. Nothing to document, so fall through.
+      return undefined;
+    }
+    throw error;
   }
 
   // IF the story has no meta.component

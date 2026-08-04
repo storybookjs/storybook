@@ -75,6 +75,22 @@ const RECORD: StorybookInstanceRecord = {
   mcp: { status: 'not-installed' },
 };
 
+/** The same instance, with `@storybook/addon-mcp` serving an endpoint the CLI can proxy to. */
+const MCP_RECORD: StorybookInstanceRecord = {
+  ...RECORD,
+  mcp: { status: 'ready', endpoint: '/mcp' },
+};
+
+/** A minimal valid `review create` input, passed via `--input`. */
+const REVIEW_INPUT = {
+  title: 'Button pass',
+  description: 'Spot-check the button.',
+  collections: [
+    { title: 'Buttons', rationale: 'The changed stories.', storyIds: ['button--primary'] },
+  ],
+  changedFiles: [],
+};
+
 function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRuntime> } = {}) {
   const { runtime: runtimeOverrides, ...deps } = overrides;
   const bootstrap =
@@ -224,11 +240,28 @@ describe('requires-dev-server contract', () => {
   });
 
   it('reports state-bound tools as not attachable when an instance is running', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'foreign',
+        description: 'Toolset whose method needs dev-server state the CLI cannot reach.',
+        telemetryGroup: 'dev',
+        methods: {
+          attach: {
+            title: 'Attach',
+            schema: v.object({}),
+            description: 'attach',
+            requiresDevServer: true,
+            handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
+          },
+        },
+      })
+    );
     const { deps } = makeDeps({
       discoverInstance: vi.fn(async () => ({ record: RECORD, records: [RECORD] })),
     });
 
-    const result = await run(['review', 'create', '--input', '{}'], deps);
+    const result = await run(['foreign', 'attach'], deps);
 
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
@@ -244,6 +277,85 @@ describe('requires-dev-server contract', () => {
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('requires a running Storybook dev server');
+  });
+});
+
+describe('review create over the dev server MCP endpoint', () => {
+  function makeProxyDeps(
+    call: ToolsRunDeps['mcpToolCall'],
+    record: StorybookInstanceRecord = MCP_RECORD
+  ) {
+    const mcpToolCall = vi.fn(call);
+    const { deps } = makeDeps({
+      discoverInstance: vi.fn(async () => ({ record, records: [record] })),
+      mcpToolCall,
+    });
+    return { deps, mcpToolCall };
+  }
+
+  it('sends the validated input to the frozen display-review tool and prints its text', async () => {
+    const { deps, mcpToolCall } = makeProxyDeps(async () => ({
+      content: [{ type: 'text', text: 'Review ready: http://localhost:6006/review/' }],
+    }));
+
+    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
+
+    expect(mcpToolCall).toHaveBeenCalledWith(MCP_RECORD, {
+      name: 'display-review',
+      arguments: REVIEW_INPUT,
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(result.output).toBe('Review ready: http://localhost:6006/review/');
+  });
+
+  it('prints the proxied structured content with --json', async () => {
+    const { deps } = makeProxyDeps(async () => ({
+      content: [{ type: 'text', text: 'Review ready' }],
+      structuredContent: { reviewUrl: 'http://localhost:6006/review/' },
+    }));
+
+    const result = await run(
+      ['review', 'create', '--json', '--input', JSON.stringify(REVIEW_INPUT)],
+      deps
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.output)).toEqual({ reviewUrl: 'http://localhost:6006/review/' });
+  });
+
+  it('maps a proxied error reply to a failing exit code', async () => {
+    const { deps } = makeProxyDeps(async () => ({
+      content: [{ type: 'text', text: 'Unknown story IDs: nope--nope' }],
+      isError: true,
+    }));
+
+    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'failure' });
+    expect(result.output).toContain('Unknown story IDs');
+  });
+
+  it('validates the input locally before sending anything', async () => {
+    const { deps, mcpToolCall } = makeProxyDeps(async () => ({ content: [] }));
+
+    const result = await run(['review', 'create', '--input', '{}'], deps);
+
+    expect(mcpToolCall).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+  });
+
+  it('asks for @storybook/addon-mcp when the running instance serves no endpoint', async () => {
+    const { deps, mcpToolCall } = makeProxyDeps(async () => ({ content: [] }), RECORD);
+
+    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
+
+    expect(mcpToolCall).not.toHaveBeenCalled();
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
+    expect(result.output).toContain('@storybook/addon-mcp');
   });
 });
 

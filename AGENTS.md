@@ -191,6 +191,20 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   UniversalStores were prepared on — the responder relays the vitest child's store events over that
   channel, so a second channel on either side hangs the run. Connect mode (attaching to a running
   dev server's OSA state) is Milestone 5b.
+- One method is the exception, and deliberately a temporary one: `review create` needs the dev
+  server's review state, so the CLI forwards it to that Storybook's `@storybook/addon-mcp`
+  endpoint (`PROXY_VIA_MCP_METHODS` in `cli/tools/run.ts`, over `cli/tools/mcp-client.ts`) and
+  unwraps the reply mechanically — text to stdout, `structuredContent` for `--json`, `isError` to
+  the exit code. The handler runs once, in the dev server, so its telemetry and side effects stay
+  there. Milestone 5b deletes the set, its dispatch branch and the injectable `mcpToolCall`
+  dependency; `mcp-client.ts` follows once `storybook ai` is removed. Keep the branch
+  self-contained: nothing outside it may learn that a method is proxied. One consequence to know
+  about: the handler executes with `consumer: 'mcp'`, so a proxied method's rendered prose is the
+  MCP variant even on the CLI (descriptions and `--help` are unaffected — those render locally).
+- `cli/tools/` also owns the modules `storybook ai` still uses (`instances/`, `mcp-client.ts`,
+  `config-dir.ts`, `schema-lines.ts`): the ai CLI is slated for removal, so the dependency runs
+  from it into the tools CLI and never the other way. Nothing under `cli/tools/` may import from
+  `cli/ai/` — `no-restricted-imports` in `code/.oxlintrc.json` enforces it.
 
 ## Common Commands
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import {
   incomingMessageToWebRequest,
   webResponseToServerResponse,
@@ -205,6 +206,8 @@ describe('mcpServerHandler', () => {
   beforeEach(async () => {
     // Reset modules and get fresh handler for each test to avoid state pollution
     vi.resetModules();
+    // The `services` preset hook does this in a real Storybook, before the MCP server boots.
+    registerCoreToolsetsForTest();
     const handler = await import('./mcp-handler.ts');
     mcpServerHandler = handler.mcpServerHandler;
   });
@@ -439,7 +442,7 @@ describe('mcpServerHandler', () => {
     expect(telemetry).not.toHaveBeenCalled();
   });
 
-  it('should register tools from @storybook/mcp when feature flag and generator are enabled', async () => {
+  it('should register the docs tools when feature flag and generator are enabled', async () => {
     const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
       if (key === 'core') {
         return { disableTelemetry: false };

@@ -391,6 +391,9 @@ export abstract class JsPackageManager {
       } catch (e: any) {
         logger.error('\nAn error occurred while adding dependencies to your package.json:');
         logger.log(String(e));
+        if (e?.fromStorybook) {
+          throw e;
+        }
         throw new HandledError(e);
       }
     }

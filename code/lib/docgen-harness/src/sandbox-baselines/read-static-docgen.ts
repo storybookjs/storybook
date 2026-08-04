@@ -73,10 +73,23 @@ export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxB
   ) as SandboxBaseline;
 
 /**
+ * Whether a component is only reachable through a global rather than an import.
+ *
+ * The monorepo's shared template stories reference their component as
+ * `globalThis.__TEMPLATE_COMPONENTS__.Html`, so there is no import for the resolver to follow and no
+ * file for Compodoc to have scanned. Every one of them is an error payload by construction, which
+ * says something about the template-story harness rather than about docgen. Recording them would
+ * bury the components that carry real signal.
+ */
+const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
+  payload.name.startsWith('globalThis');
+
+/**
  * Reads every per-component docgen snapshot from a static Storybook build.
  *
  * Each file holds a whole service state snapshot (`{ components: { <id>: payload } }`) built from
- * one query input, so a file contributes exactly one component.
+ * one query input, so a file contributes exactly one component. Globally-referenced components are
+ * skipped; see {@link isGloballyReferenced}.
  */
 export function readStaticDocgen({
   staticDir,
@@ -108,13 +121,19 @@ export function readStaticDocgen({
     };
 
     for (const [id, payload] of Object.entries(components ?? {})) {
-      baselines[id] = toBaseline(payload, sandboxDir);
+      const baseline = toBaseline(payload, sandboxDir);
+      if (!isGloballyReferenced(baseline)) {
+        baselines[id] = baseline;
+      }
     }
   }
 
   if (Object.keys(baselines).length === 0) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error(`${docgenDir} holds no component payloads; refusing to record an empty run.`);
+    throw new Error(
+      `${docgenDir} yielded no components to record; refusing to record an empty run. ` +
+        `Either the build produced no payloads, or every one of them is globally referenced.`
+    );
   }
 
   return Object.fromEntries(

@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, extname, relative, resolve } from 'node:path';
 
 import * as find from 'empathic/find';
 import picomatch from 'picomatch';
-import stripJsonComments from 'strip-json-comments';
+import ts from 'typescript';
 
 import { getProjectRoot } from './paths.ts';
 
@@ -193,12 +193,12 @@ function compareTsconfigEntries(filePath: string, left: TsconfigEntry, right: Ts
 }
 
 function readTsconfigConfig(configPath: string): TsconfigConfig | undefined {
-  try {
-    const content = readFileSync(configPath, 'utf-8');
-    return JSON.parse(stripJsonComments(content)) as TsconfigConfig;
-  } catch {
+  // Use TypeScript's own JSONC reader so comments/trailing commas match tsc.
+  const { config, error } = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (error || config === undefined) {
     return undefined;
   }
+  return config as TsconfigConfig;
 }
 
 function matchesPatterns(filePath: string, patterns: string[]) {

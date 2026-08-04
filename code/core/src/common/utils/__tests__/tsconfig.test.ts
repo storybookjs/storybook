@@ -95,6 +95,30 @@ describe('findTsconfigPathForFile', () => {
       join(dir, 'tsconfig.json')
     );
   });
+
+  it('reads referenced tsconfigs that use JSONC trailing commas', () => {
+    const dir = createTempProject({
+      'tsconfig.json': `{
+        "files": [],
+        "references": [
+          { "path": "./tsconfig.app.json" },
+        ],
+      }`,
+      'tsconfig.app.json': `{
+        "compilerOptions": {
+          "baseUrl": ".",
+        },
+        "include": ["src"],
+      }`,
+      'src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
+
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
+      join(dir, 'tsconfig.app.json')
+    );
+  });
 });
 
 describe('findTsconfigPathForPath', () => {

@@ -193,6 +193,11 @@
       "code": "./src/server-errors.ts",
       "default": "./dist/server-errors.js"
     },
+    "./internal/skills": {
+      "types": "./dist/cli/skills/content/index.d.ts",
+      "code": "./src/cli/skills/content/index.ts",
+      "default": "./dist/cli/skills/content/index.js"
+    },
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "code": "./src/telemetry/index.ts",

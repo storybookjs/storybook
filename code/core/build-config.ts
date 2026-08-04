@@ -215,6 +215,12 @@ const config: BuildEntries = {
         entryPoint: './src/shared/open-service/toolsets/docs/public.ts',
         portable: { external: ['valibot'] },
       },
+      {
+        // Pure skill-content builders shared by the skills CLI and addon-mcp so both consumers render
+        // the same instruction documents. Not portable: consumers resolve core normally.
+        exportEntries: ['./internal/skills'],
+        entryPoint: './src/cli/skills/content/index.ts',
+      },
     ],
     runtime: [
       {

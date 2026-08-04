@@ -16,6 +16,7 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
@@ -282,6 +283,13 @@ const toolsCommand = command('tools').description(
   'Run the agent tools provided by the target Storybook configuration'
 );
 registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
+
+// `storybook skills`: agent-facing instruction documents served by the target Storybook
+// configuration (storybookjs/storybook#35526, Milestone 6).
+const skillsCommand = command('skills').description(
+  'Agent skills served by the target Storybook configuration'
+);
+registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

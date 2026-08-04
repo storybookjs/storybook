@@ -76,6 +76,7 @@ export const moduleGraphServiceDef = defineService({
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
+    fileActivityRevision: 0,
     storiesByFile: {},
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
@@ -169,6 +170,13 @@ export const moduleGraphServiceDef = defineService({
         }
         return max;
       },
+    },
+    fileActivityRevision: {
+      description:
+        'Monotonic counter advanced on every processed file-change event, including out-of-graph paths that do not advance `graphRevision`. Change detection watches this to rescan git after working-tree edits.',
+      input: noInputSchema,
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.fileActivityRevision,
     },
     latestStoryChanges: {
       description:
@@ -276,8 +284,11 @@ export const moduleGraphServiceDef = defineService({
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
           state.storiesByFile = input.storiesByFile;
+          // Every processed file event advances file activity so change detection can rescan git,
+          // even when the path is out of graph (empty bumpedStoryFiles) and graphRevision stays put.
+          state.fileActivityRevision += 1;
           // An out-of-graph file change recomputes the (unchanged) reverse index but bumps no
-          // stories; it must not advance the revision, so watch-all and scoped subscribers stay put.
+          // stories; it must not advance graphRevision, so review / scoped subscribers stay put.
           if (input.bumpedStoryFiles.length === 0) {
             return;
           }

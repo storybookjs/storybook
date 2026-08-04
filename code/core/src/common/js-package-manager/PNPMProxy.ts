@@ -55,23 +55,8 @@ export type PnpmListOutput = PnpmListItem[];
 
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
-/**
- * Packages Storybook needs to run install scripts under pnpm 11+.
- * Without this, Storybook-owned `pnpm dlx` can block on an interactive
- * approve-builds picker (TTY) or fail with ERR_PNPM_IGNORED_BUILDS.
- *
- * Only passed as a per-command `--allow-build` flag on Storybook-run `dlx`.
- * Do not use on `pnpm add`: that persists `allowBuilds` into the user's project
- * config (e.g. pnpm-workspace.yaml). We deliberately do not seed `allowBuilds`
- * in the user's project.
- */
-const PNPM_ALLOWED_BUILD_DEPENDENCIES = ['esbuild'] as const;
-
 /** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
-
-const getPnpmAllowBuildArgs = (): string[] =>
-  PNPM_ALLOWED_BUILD_DEPENDENCIES.map((pkg) => `--allow-build=${pkg}`);
 
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
@@ -129,17 +114,6 @@ export class PNPMProxy extends JsPackageManager {
     return version != null && gte(version, minimum);
   }
 
-  /**
-   * `--allow-build` is only used for Storybook-owned `pnpm dlx`. Do not pass it on
-   * `pnpm add`: recent pnpm versions persist `allowBuilds` into the project config.
-   * `pnpm install` also rejects the flag.
-   */
-  #allowBuildArgsFor(command: 'dlx'): string[] {
-    return command === 'dlx' && this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN)
-      ? getPnpmAllowBuildArgs()
-      : [];
-  }
-
   getInstallArgs(): string[] {
     if (!this.installArgs) {
       this.installArgs = [];
@@ -163,10 +137,15 @@ export class PNPMProxy extends JsPackageManager {
     args: string[];
     useRemotePkg?: boolean;
   }): ResultPromise {
-    // Flag before `dlx`: `pnpm --allow-build=esbuild dlx <pkg>` (required on some pnpm versions).
-    // Storybook-owned remote package runs only — never on `add`/`install`.
+    // On pnpm 11+, Storybook-owned `dlx` can hang on approve-builds for esbuild.
+    // Pass `--allow-build` only here — not on `add`, which persists `allowBuilds`
+    // into the user's project config.
     const pnpmArgs = useRemotePkg
-      ? [...this.#allowBuildArgsFor('dlx'), 'dlx', ...args]
+      ? [
+          ...(this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN) ? ['--allow-build=esbuild'] : []),
+          'dlx',
+          ...args,
+        ]
       : ['exec', ...args];
 
     return executeCommand({

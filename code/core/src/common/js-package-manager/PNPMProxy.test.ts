@@ -74,7 +74,7 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('should run plain `pnpm install` without --allow-build', async () => {
+    it('should run `pnpm install`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -84,10 +84,7 @@ describe('PNPM Proxy', () => {
       await pnpmProxy.installDependencies();
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['install'],
-        })
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
     });
 
@@ -126,45 +123,57 @@ describe('PNPM Proxy', () => {
       );
     });
 
-    it('should pass --allow-build=esbuild before dlx on pnpm >= 10.2', () => {
-      mockPnpmVersion('10.2.0');
-      pnpmProxy = new PNPMProxy();
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+    describe('useRemotePkg (dlx)', () => {
+      describe('on pnpm >= 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.2.0');
+          pnpmProxy = new PNPMProxy();
+        });
 
-      pnpmProxy.runPackageCommand({
-        args: ['create-storybook@10.5.5', '-y'],
-        useRemotePkg: true,
+        it('should pass --allow-build=esbuild before dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
       });
 
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
-        })
-      );
-    });
+      describe('on pnpm < 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('9.15.9');
+          pnpmProxy = new PNPMProxy();
+        });
 
-    it('should not pass --allow-build on dlx for pnpm < 10.2', () => {
-      mockPnpmVersion('9.15.9');
-      pnpmProxy = new PNPMProxy();
-      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+        it('should not pass --allow-build on dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
 
-      pnpmProxy.runPackageCommand({
-        args: ['create-storybook@10.5.5', '-y'],
-        useRemotePkg: true,
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
       });
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['dlx', 'create-storybook@10.5.5', '-y'],
-        })
-      );
     });
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `pnpm add -D storybook` without --allow-build', async () => {
+    it('with devDep it should run `pnpm add -D storybook`', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
 
       await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);

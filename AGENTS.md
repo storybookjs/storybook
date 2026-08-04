@@ -175,7 +175,22 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   (`storybook/...`); import from the defining module instead of a barrel that does.
 - Toolset factories are exported from `storybook/internal/core-server`, not `storybook/open-service`:
   they reach server-only code, and the latter entry is built for the browser.
-- Still open: CLI generation and `storybook tools` wiring (Milestone 5).
+- The public `storybook tools` CLI (`code/core/src/cli/tools/`) is the toolsets' third consumer: it
+  loads the target Storybook configuration in its own process (which registers every service and
+  toolset via the `services` hook), derives its whole command surface from
+  `getRegisteredToolsets()` at runtime (`storybook tools <toolset> <kebab-method>`), and maps
+  `ToolsetOutcome` mechanically (markdown to stdout, `--json` prints `data`, `ok` drives the exit
+  code). It runs fully disconnected from any dev server: methods marked `requiresDevServer` on
+  their definition present one uniform "start the dev server first" contract, with `stories
+  preview` resolving its origin from the runtime instance registry. Graph-dependent methods host
+  the module graph in-process by repeating the dev server's change-detection bootstrap against
+  builder-vite's headless adapter. Story tests run locally too: addon-vitest wires the responder
+  answering `test run` requests in the same `services` hook that registers the `test` toolset
+  (lazy machinery, eagerly run by the dev server's channel hook for the manager UI), and
+  `experimental_loadStorybook` accepts a caller-supplied channel so the CLI can hand it the one its
+  UniversalStores were prepared on — the responder relays the vitest child's store events over that
+  channel, so a second channel on either side hangs the run. Connect mode (attaching to a running
+  dev server's OSA state) is Milestone 5b.
 
 ## Common Commands
 

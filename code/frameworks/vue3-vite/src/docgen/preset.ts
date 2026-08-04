@@ -9,7 +9,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { Vue3ViteDocgenManifestError } from './errors.ts';
-import { getFrameworkOptions, resolveDocgenOptions } from './options.ts';
+import { VUE_COMPONENT_META, resolveDocgenContext } from './options.ts';
 
 /**
  * Vue docgen provider.
@@ -20,17 +20,9 @@ export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
   options: Options
 ): Promise<DocgenProviderDescriptor[]> => {
-  const [frameworkOptions, features] = await Promise.all([
-    getFrameworkOptions(options),
-    options.presets.apply('features', {}),
-  ]);
-  const docgen = resolveDocgenOptions(frameworkOptions.docgen);
+  const { docgenServerActive } = await resolveDocgenContext(options);
 
-  if (
-    !features?.experimentalDocgenServer ||
-    docgen === false ||
-    docgen.plugin !== 'vue-component-meta'
-  ) {
+  if (!docgenServerActive) {
     return existing;
   }
 
@@ -47,25 +39,17 @@ export const experimental_manifests: PresetPropertyFn<
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  const [frameworkOptions, features] = await Promise.all([
-    getFrameworkOptions(options),
-    options.presets.apply('features', {}),
-  ]);
-  const docgen = resolveDocgenOptions(frameworkOptions.docgen);
+  const { features, docgenServerActive } = await resolveDocgenContext(options);
 
   if (
     features?.experimentalDocgenServer === true &&
     features.componentsManifest === true &&
-    (docgen === false || docgen.plugin !== 'vue-component-meta')
+    !docgenServerActive
   ) {
     throw new Vue3ViteDocgenManifestError();
   }
 
-  if (
-    !features?.experimentalDocgenServer ||
-    docgen === false ||
-    docgen.plugin !== 'vue-component-meta'
-  ) {
+  if (!docgenServerActive) {
     return existingManifests;
   }
 
@@ -74,7 +58,7 @@ export const experimental_manifests: PresetPropertyFn<
     components: {
       v: 0,
       components: {},
-      meta: { docgen: 'vue-component-meta', durationMs: 0 },
+      meta: { docgen: VUE_COMPONENT_META, durationMs: 0 },
     },
   };
 };

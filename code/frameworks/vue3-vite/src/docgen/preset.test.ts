@@ -9,8 +9,8 @@ const optionsWith = (docgen?: FrameworkOptions['docgen'], features: Record<strin
   ({
     presets: {
       apply: async (key: string) => {
-        if (key === 'framework') {
-          return { name: '@storybook/vue3-vite', options: { docgen } };
+        if (key === 'frameworkOptions') {
+          return { docgen };
         }
         return key === 'features' ? features : {};
       },

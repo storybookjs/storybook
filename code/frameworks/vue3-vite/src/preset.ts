@@ -22,11 +22,11 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   // add docgen plugin depending on framework option
   if (docgen !== false && !docgenServerActive) {
+    const engine: VueDocgenEngine = await options.presets.apply('experimental_vueDocgenEngine');
     if (docgen.plugin === VUE_COMPONENT_META) {
-      const engine: VueDocgenEngine = await options.presets.apply('experimental_vueDocgenEngine');
       plugins.push(await vueComponentMeta(engine, docgen.tsconfig));
     } else {
-      plugins.push(await vueDocgen());
+      plugins.push(await vueDocgen(engine));
     }
   }
 

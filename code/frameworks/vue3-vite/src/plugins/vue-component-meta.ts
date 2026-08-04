@@ -12,7 +12,8 @@ export async function vueComponentMeta(
   engine: VueDocgenEngine,
   tsconfigPath = 'tsconfig.json'
 ): Promise<Plugin> {
-  const { collectComponentMetaSources, createVueComponentMetaChecker } = engine;
+  const { collectComponentMetaSources, createVueComponentMetaChecker } =
+    await engine.componentMeta();
   const { createFilter } = await import('vite');
 
   // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`

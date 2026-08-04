@@ -1,7 +1,7 @@
 /**
  * Shared `vue-component-meta` extraction used by both Vue docgen paths.
  *
- * The legacy path is the Vite plugin in `../plugins/vue-component-meta.ts`, which injects the
+ * The legacy path is the Vite plugin in `@storybook/vue3-vite`, which injects the
  * extracted meta into the preview bundle as `__docgenInfo`. The server path is the docgen provider in
  * `./docgen-worker.ts`, which keeps the meta on the server and ships converted argTypes over the
  * `core/docgen` open service. Both must see identical meta, so all checker setup and normalization

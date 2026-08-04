@@ -35,6 +35,88 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
   const checker = await createVueComponentMetaChecker(tsconfigPath);
 
+  // Docgen last emitted per module, so hot updates can tell whether a change affects the docs.
+  const emittedMeta = new Map<string, string>();
+
+  const computeMetaSources = async (id: string): Promise<MetaSource[]> => {
+    const exportNames: string[] = [];
+    let componentsMeta: ComponentMeta[] = [];
+
+    for (const name of checker.getExportNames(id)) {
+      try {
+        const meta = checker.getComponentMeta(id, name);
+        exportNames.push(name);
+        componentsMeta.push(meta);
+      } catch {}
+    }
+
+    if (componentsMeta.length === 0) {
+      return [];
+    }
+
+    componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
+
+    const metaSources: MetaSource[] = [];
+
+    componentsMeta.forEach((meta, index) => {
+      // filter out empty meta
+      const isEmpty =
+        !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
+
+      if (isEmpty || meta.type === TypeMeta.Unknown) {
+        return;
+      }
+
+      const exportName = exportNames[index];
+
+      // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
+      // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
+      // it also reduced the bundle size when running "storybook build" when such schemas are used
+      (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
+        meta[key].forEach((value) => {
+          if (Array.isArray(value.schema)) {
+            value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
+          } else {
+            removeNestedSchemas(value.schema);
+          }
+        });
+      });
+
+      const exposed =
+        // the meta also includes duplicated entries in the "exposed" array with "on"
+        // prefix (e.g. onClick instead of click), so we need to filter them out here
+        meta.exposed
+          .filter((expose) => {
+            let nameWithoutOnPrefix = expose.name;
+
+            if (nameWithoutOnPrefix.startsWith('on')) {
+              nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+            }
+
+            const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
+            return !hasEvent;
+          })
+          // remove unwanted duplicated "$slots" expose
+          .filter((expose) => {
+            if (expose.name === '$slots') {
+              const slotNames = meta.slots.map((slot) => slot.name);
+              return !slotNames.every((slotName) => expose.type.includes(slotName));
+            }
+            return true;
+          });
+
+      metaSources.push({
+        exportName,
+        displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+        ...meta,
+        exposed,
+        sourceFiles: id,
+      });
+    });
+
+    return metaSources;
+  };
+
   return {
     name: 'storybook:vue-component-meta-plugin',
     transform: {
@@ -46,83 +128,8 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames: string[] = [];
-          let componentsMeta: ComponentMeta[] = [];
-
-          for (const name of checker.getExportNames(id)) {
-            try {
-              const meta = checker.getComponentMeta(id, name);
-              exportNames.push(name);
-              componentsMeta.push(meta);
-            } catch {}
-          }
-
-          if (componentsMeta.length === 0) {
-            return undefined;
-          }
-
-          componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
-
-          const metaSources: MetaSource[] = [];
-
-          componentsMeta.forEach((meta, index) => {
-            // filter out empty meta
-            const isEmpty =
-              !meta.props.length &&
-              !meta.events.length &&
-              !meta.slots.length &&
-              !meta.exposed.length;
-
-            if (isEmpty || meta.type === TypeMeta.Unknown) {
-              return;
-            }
-
-            const exportName = exportNames[index];
-
-            // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
-            // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
-            // it also reduced the bundle size when running "storybook build" when such schemas are used
-            (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
-              meta[key].forEach((value) => {
-                if (Array.isArray(value.schema)) {
-                  value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
-                } else {
-                  removeNestedSchemas(value.schema);
-                }
-              });
-            });
-
-            const exposed =
-              // the meta also includes duplicated entries in the "exposed" array with "on"
-              // prefix (e.g. onClick instead of click), so we need to filter them out here
-              meta.exposed
-                .filter((expose) => {
-                  let nameWithoutOnPrefix = expose.name;
-
-                  if (nameWithoutOnPrefix.startsWith('on')) {
-                    nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
-                  }
-
-                  const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
-                  return !hasEvent;
-                })
-                // remove unwanted duplicated "$slots" expose
-                .filter((expose) => {
-                  if (expose.name === '$slots') {
-                    const slotNames = meta.slots.map((slot) => slot.name);
-                    return !slotNames.every((slotName) => expose.type.includes(slotName));
-                  }
-                  return true;
-                });
-
-            metaSources.push({
-              exportName,
-              displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
-              ...meta,
-              exposed,
-              sourceFiles: id,
-            });
-          });
+          const metaSources = await computeMetaSources(id);
+          emittedMeta.set(id, JSON.stringify(metaSources));
 
           // if there is no component meta, return undefined
           if (metaSources.length === 0) {
@@ -170,6 +177,24 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
     async handleHotUpdate({ file, read, server, modules, timestamp }) {
       const content = await read();
       checker.updateFile(file, content);
+
+      // The reload only exists to get fresh docgen into the preview. When the docgen is
+      // unchanged, let Vue's own HMR handle the edit so story state (open dialogs, form
+      // values, scroll position) survives.
+      if (emittedMeta.has(file)) {
+        try {
+          const nextMeta = JSON.stringify(await computeMetaSources(file));
+
+          if (nextMeta === emittedMeta.get(file)) {
+            return undefined;
+          }
+
+          emittedMeta.set(file, nextMeta);
+        } catch {
+          // fall back to reloading if the meta could not be recomputed
+        }
+      }
+
       // Invalidate modules manually
       const invalidatedModules = new Set<ModuleNode>();
 

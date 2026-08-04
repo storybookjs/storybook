@@ -25,7 +25,9 @@ function makeComponentMeta() {
   };
 }
 
-async function getTransformHandler() {
+type TransformHandler = (src: string, id: string) => Promise<{ code: string } | undefined>;
+
+async function getPlugin() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
   const plugin = await vueComponentMeta();
 
@@ -34,7 +36,33 @@ async function getTransformHandler() {
       ? plugin.transform
       : (plugin.transform as { handler: (...args: unknown[]) => unknown }).handler;
 
-  return handler as (src: string, id: string) => Promise<{ code: string } | undefined>;
+  return {
+    transform: handler as TransformHandler,
+    handleHotUpdate: plugin.handleHotUpdate as (ctx: unknown) => Promise<unknown>,
+  };
+}
+
+async function getTransformHandler() {
+  return (await getPlugin()).transform;
+}
+
+/** Minimal Vite HMR context for exercising the handleHotUpdate hook. */
+function makeHotUpdateContext(file: string) {
+  const send = vi.fn();
+
+  return {
+    ctx: {
+      file,
+      read: async () => 'updated source',
+      server: {
+        ws: { send },
+        moduleGraph: { invalidateModule: vi.fn() },
+      },
+      modules: [{ id: file }],
+      timestamp: 1,
+    },
+    send,
+  };
 }
 
 describe('vue-component-meta plugin', () => {
@@ -193,6 +221,54 @@ describe('vue-component-meta plugin', () => {
 
       expect(result!.code).toContain('Tabs.__docgenInfo');
       expect(result!.code).toContain('"displayName":"Tabs"');
+    });
+  });
+
+  describe('hot update reloads (issue #35653)', () => {
+    const id = '/project/src/components/Tab.vue';
+    const src = `const _sfc_main = { name: 'Tab' };\nexport default _sfc_main;\n`;
+
+    beforeEach(() => {
+      mockChecker.getExportNames.mockReturnValue(['default']);
+    });
+
+    it('should not reload the preview when the docgen is unchanged', async () => {
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+
+      const { ctx, send } = makeHotUpdateContext(id);
+      const result = await handleHotUpdate(ctx);
+
+      // returning undefined hands the update back to Vue's own HMR
+      expect(result).toBeUndefined();
+      expect(send).not.toHaveBeenCalled();
+      // the checker must still be kept in sync with the file on disk
+      expect(mockChecker.updateFile).toHaveBeenCalledWith(id, 'updated source');
+    });
+
+    it('should reload the preview when the docgen changed', async () => {
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+
+      mockChecker.getComponentMeta.mockImplementation(() => ({
+        ...makeComponentMeta(),
+        props: [{ name: 'newProp', schema: 'number' }],
+      }));
+
+      const { ctx, send } = makeHotUpdateContext(id);
+      const result = await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
+      expect(result).toEqual([]);
+    });
+
+    it('should reload the preview for a file that has no docgen yet', async () => {
+      const { handleHotUpdate } = await getPlugin();
+
+      const { ctx, send } = makeHotUpdateContext('/project/src/components/Other.vue');
+      await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
     });
   });
 

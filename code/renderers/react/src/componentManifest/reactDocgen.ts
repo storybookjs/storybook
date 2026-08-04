@@ -76,6 +76,9 @@ export function matchPath(id: string, importerFilePath?: string) {
 export const getTsConfig = cached(
   (filePath: string) => {
     const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
+    if (!tsconfigPath) {
+      return { resultType: 'failed' as const, message: "Couldn't find tsconfig.json" };
+    }
     return TsconfigPaths.loadConfig(tsconfigPath);
   },
   { name: 'getTsConfig' }

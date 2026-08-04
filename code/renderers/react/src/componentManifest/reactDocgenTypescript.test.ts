@@ -45,8 +45,6 @@ describe('parseWithReactDocgenTypescript', () => {
       `,
     });
 
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
-
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'));
 
     expect(docs).toHaveLength(1);
@@ -76,8 +74,6 @@ describe('parseWithReactDocgenTypescript', () => {
       `,
     });
 
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
-
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Tag.tsx'));
 
     expect(docs).toHaveLength(1);
@@ -105,8 +101,6 @@ describe('parseWithReactDocgenTypescript', () => {
       `,
     });
 
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
-
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Alert.tsx'));
 
     expect(docs).toHaveLength(1);
@@ -133,8 +127,6 @@ describe('parseWithReactDocgenTypescript', () => {
         }
       `,
     });
-
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
 
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'));
     const manifest = {
@@ -181,8 +173,6 @@ describe('parseWithReactDocgenTypescript', () => {
       `,
     });
 
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
-
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Multi.tsx'));
     const match = matchComponentDoc(docs, { importName: 'CompB' });
 
@@ -210,8 +200,6 @@ describe('parseWithReactDocgenTypescript', () => {
         }
       `,
     });
-
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
 
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'FancyButton.tsx'));
     const propNames = Object.keys(docs[0].props);
@@ -258,8 +246,6 @@ describe('parseWithReactDocgenTypescript', () => {
       `,
     });
 
-    vi.spyOn(process, 'cwd').mockReturnValue(dir);
-
     const docs = await parseWithReactDocgenTypescript(path.join(dir, 'src/Button.tsx'));
 
     expect(docs).toHaveLength(1);
@@ -281,5 +267,6 @@ function createTempProject(files: Record<string, string>) {
     writeFileSync(filePath, content, 'utf-8');
   }
 
+  vi.spyOn(process, 'cwd').mockReturnValue(dir);
   return dir;
 }

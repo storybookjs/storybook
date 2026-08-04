@@ -178,6 +178,7 @@ let parserBuilds = new Map<string, Promise<ParserState>>();
 export function invalidateParser() {
   parserCache = new Map();
   parserBuilds = new Map();
+  previousProgramsByConfigKey.clear();
 }
 
 async function getParser(filePath: string, userOptions?: ParserOptions) {

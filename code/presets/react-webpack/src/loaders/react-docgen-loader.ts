@@ -153,7 +153,12 @@ export function getReactDocgenImporter(matchingPath: TsconfigPaths.MatchPath | u
 }
 
 function createTsconfigMatchPath(filePath: string) {
-  const tsconfig = TsconfigPaths.loadConfig(findTsconfigPathForFile(dirname(filePath), filePath));
+  const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
+  if (!tsconfigPath) {
+    return undefined;
+  }
+
+  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   if (tsconfig.resultType !== 'success') {
     return undefined;

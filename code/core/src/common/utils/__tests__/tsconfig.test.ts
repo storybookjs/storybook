@@ -2,12 +2,18 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../paths.ts', { spy: true });
 
 import { findTsconfigPathForFile } from '../tsconfig.ts';
 import * as paths from '../paths.ts';
 
 const tempDirs: string[] = [];
+
+beforeEach(() => {
+  vi.mocked(paths.getProjectRoot).mockReset();
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -39,7 +45,7 @@ describe('findTsconfigPathForFile', () => {
       'src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.spyOn(paths, 'getProjectRoot').mockReturnValue(dir);
+    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.app.json')
@@ -66,7 +72,7 @@ describe('findTsconfigPathForFile', () => {
       'src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.spyOn(paths, 'getProjectRoot').mockReturnValue(dir);
+    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.app.json')
@@ -83,7 +89,7 @@ describe('findTsconfigPathForFile', () => {
       'src/Button.tsx': 'export const Button = () => null;',
     });
 
-    vi.spyOn(paths, 'getProjectRoot').mockReturnValue(dir);
+    vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
 
     expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
       join(dir, 'tsconfig.json')

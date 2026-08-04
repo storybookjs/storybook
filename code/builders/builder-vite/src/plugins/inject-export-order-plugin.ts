@@ -22,7 +22,21 @@ export async function injectExportOrderPlugin() {
         // TODO: Maybe convert `injectExportOrderPlugin` to function that returns object,
         //  and run `await init;` once and then call `parse()` without `await`,
         //  instead of calling `await parse()` every time.
-        const [, exports] = await parse(code);
+        let exports;
+        try {
+          [, exports] = await parse(code);
+        } catch (parseError) {
+          if (id.endsWith('.js') || id.endsWith('.ts')) {
+            const message =
+              parseError instanceof Error ? parseError.message : String(parseError);
+            if (message.includes('Parse error')) {
+              throw new Error(
+                `Failed to parse ${id}. If this file contains JSX, try renaming it to use the .jsx or .tsx extension.`
+              );
+            }
+          }
+          throw parseError;
+        }
 
         const exportNames = exports.map((e) => code.substring(e.s, e.e));
 

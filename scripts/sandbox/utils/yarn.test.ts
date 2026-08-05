@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as memfs from 'memfs';
@@ -8,7 +10,7 @@ import { LOCALLY_PUBLISHED_PACKAGE_PATTERNS, preapproveLocallyPublishedPackages 
 
 vi.mock('node:fs/promises', { spy: true });
 
-const SANDBOX = '/sandbox';
+const SANDBOX = resolve('sandbox');
 const CONFIG = `${SANDBOX}/.yarnrc.yml`;
 
 const readConfig = () => yml.parse(vol.readFileSync(CONFIG, 'utf-8') as string);

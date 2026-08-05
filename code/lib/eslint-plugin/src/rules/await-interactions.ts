@@ -156,6 +156,17 @@ export default createStorybookRule({
       );
     };
 
+    const isUserEventOrExpectImported = (node: TSESTree.ImportDeclaration) => {
+      return (
+        node.specifiers.find(
+          (spec) =>
+            isImportSpecifier(spec) &&
+            'name' in spec.imported &&
+            (spec.imported.name === 'userEvent' || spec.imported.name === 'expect')
+        ) !== undefined
+      );
+    };
+
     //----------------------------------------------------------------------
     // Public
     //----------------------------------------------------------------------
@@ -169,12 +180,16 @@ export default createStorybookRule({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        isImportedFromStorybook =
-          isUserEventFromStorybookImported(node) || isExpectFromStorybookImported(node);
+        if (isUserEventFromStorybookImported(node) || isExpectFromStorybookImported(node)) {
+          isImportedFromStorybook = true;
+        } else if (isUserEventOrExpectImported(node)) {
+          isImportedFromStorybook = false;
+        }
       },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        isImportedFromStorybook =
-          isImportedFromStorybook && isIdentifier(node.id) && node.id.name !== 'userEvent';
+        if (isIdentifier(node.id) && (node.id.name === 'userEvent' || node.id.name === 'expect')) {
+          isImportedFromStorybook = false;
+        }
       },
       CallExpression(node: TSESTree.CallExpression) {
         const method = getMethodThatShouldBeAwaited(node);

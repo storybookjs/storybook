@@ -13,8 +13,8 @@ const hasOutputArg = (args: string[]) => readCompodocOutputDir(args) !== undefin
 
 // relative is necessary to workaround a compodoc issue with
 // absolute paths on windows machines
-const toRelativePath = (pathToTsConfig: string) => {
-  return isAbsolute(pathToTsConfig) ? relative('.', pathToTsConfig) : pathToTsConfig;
+const toRelativePath = (pathToTsConfig: string, from: string) => {
+  return isAbsolute(pathToTsConfig) ? relative(from, pathToTsConfig) : pathToTsConfig;
 };
 
 export type RunCompodocOptions = {
@@ -25,7 +25,7 @@ export type RunCompodocOptions = {
 
 export const runCompodoc = async (opts: RunCompodocOptions): Promise<void> => {
   const { compodocArgs, tsconfig, workspaceRoot } = opts;
-  const tsConfigPath = toRelativePath(tsconfig);
+  const tsConfigPath = toRelativePath(tsconfig, workspaceRoot || '.');
   const finalCompodocArgs = [
     'compodoc',
     ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),

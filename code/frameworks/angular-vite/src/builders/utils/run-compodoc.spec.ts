@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { join, resolve } from 'node:path';
+
 import { runCompodoc } from './run-compodoc.ts';
 
 const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
@@ -74,6 +76,25 @@ describe('runCompodoc', () => {
 
     expect(mockRunScript).toHaveBeenCalledWith({
       args: ['compodoc', '-p', 'path/to/tsconfig.json', '--output', 'path/to/customFolder'],
+      cwd: 'path/to/project',
+    });
+  });
+
+  it('should make an absolute tsconfig relative to the directory compodoc runs in', async () => {
+    await runCompodoc({
+      compodocArgs: [],
+      tsconfig: resolve(workspaceRoot, 'projects/lib/.storybook/tsconfig.json'),
+      workspaceRoot,
+    });
+
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: [
+        'compodoc',
+        '-p',
+        join('projects', 'lib', '.storybook', 'tsconfig.json'),
+        '-d',
+        'path/to/project',
+      ],
       cwd: 'path/to/project',
     });
   });

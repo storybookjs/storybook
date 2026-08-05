@@ -76,4 +76,8 @@ describe('preapproveLocallyPublishedPackages', () => {
       expect.arrayContaining(['storybook', '@storybook/*', 'create-storybook'])
     );
   });
+
+  it('preapproves third-party packages Storybook requires while they are still young', () => {
+    expect(LOCALLY_PUBLISHED_PACKAGE_PATTERNS).toContain('vue-component-meta');
+  });
 });

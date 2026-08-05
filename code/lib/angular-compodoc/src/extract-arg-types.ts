@@ -329,6 +329,21 @@ const readMembers = (componentData: CompodocEntry, key: string): (Method | Prope
     | (Method | Property)[]
     | undefined) || [];
 
+/**
+ * The `model()` members of a Compodoc entry: an output whose same-named input is declared on the
+ * same line. Compodoc marks a `model()` in no other way, and an `@Input('x')`/`@Output('x')` alias
+ * collision shares the name but not the line. The package README has the quirk in full.
+ */
+const getModelProperties = (componentData: CompodocEntry): Property[] => {
+  const inputsByName = new Map(
+    (readMembers(componentData, 'inputsClass') as Property[]).map((item) => [item.name, item])
+  );
+  return (readMembers(componentData, 'outputsClass') as Property[]).filter((item) => {
+    const input = inputsByName.get(item.name);
+    return input?.line !== undefined && input.line === item.line;
+  });
+};
+
 export const extractArgTypesFromData = (
   componentData: CompodocEntry,
   { compodocJson, filterNonInputControls, logger = NOOP_LOGGER, unwrapHtml }: ExtractArgTypesOptions
@@ -343,16 +358,7 @@ export const extractArgTypesFromData = (
     ? componentClasses
     : ['properties', 'methods'];
 
-  // Detect Angular `model()` signals. compodoc emits no `model()` marker: a
-  // `model()` lands under the same bare name in BOTH `inputsClass` and
-  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in
-  // both arrays is the only version-tolerant discriminator.
-  const inputClassNames = new Set<string>(
-    readMembers(componentData, 'inputsClass').map((item) => item.name)
-  );
-  const modelProperties = readMembers(componentData, 'outputsClass').filter((item) =>
-    inputClassNames.has(item.name)
-  ) as Property[];
+  const modelProperties = getModelProperties(componentData);
   const modelPropertyNames = new Set<string>(modelProperties.map((item) => item.name));
 
   compodocClasses.forEach((key: CompodocMemberKey) => {

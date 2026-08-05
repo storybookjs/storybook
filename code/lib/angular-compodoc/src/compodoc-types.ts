@@ -38,6 +38,11 @@ export interface Property {
    */
   required?: boolean;
   defaultValue?: string;
+  /**
+   * 1-based line the member is declared on. Compodoc emits it for every member, but a hand-written
+   * or truncated capture may not.
+   */
+  line?: number;
   description?: Html;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];

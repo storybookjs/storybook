@@ -25,6 +25,7 @@ import sveltekitFrameworkConfig from '../../code/frameworks/sveltekit/build-conf
 import vue3ViteFrameworkConfig from '../../code/frameworks/vue3-vite/build-config.ts';
 import webComponentsViteFrameworkConfig from '../../code/frameworks/web-components-vite/build-config.ts';
 import tanstackReactFrameworkConfig from '../../code/frameworks/tanstack-react/build-config.ts';
+import angularCompodocConfig from '../../code/lib/angular-compodoc/build-config.ts';
 import cliConfig from '../../code/lib/cli-storybook/build-config.ts';
 import codemodConfig from '../../code/lib/codemod/build-config.ts';
 import coreWebpackConfig from '../../code/lib/core-webpack/build-config.ts';
@@ -82,6 +83,7 @@ export const buildEntries = {
   '@storybook/tanstack-react': tanstackReactFrameworkConfig,
 
   // lib
+  '@storybook/angular-compodoc': angularCompodocConfig,
   '@storybook/cli': cliConfig,
   '@storybook/codemod': codemodConfig,
   '@storybook/core-webpack': coreWebpackConfig,

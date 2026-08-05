@@ -1,0 +1,20 @@
+{
+  "components": [
+    {
+      "name": "ButtonComponent",
+      "type": "component",
+      "file": "button.component.ts",
+      "selector": "sb-button",
+      "propertiesClass": [],
+      "methodsClass": [],
+      "inputsClass": [
+        { "name": "label", "type": "string", "optional": false, "defaultValue": "'Badge'" },
+        { "name": "count", "type": "number", "optional": true }
+      ],
+      "outputsClass": [{ "name": "clicked", "type": "EventEmitter<string>", "optional": false }]
+    }
+  ],
+  "directives": [],
+  "classes": [],
+  "miscellaneous": {}
+}

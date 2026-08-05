@@ -12,4 +12,10 @@ export const parameters: Parameters = {
   },
 };
 
-export const decorators: DecoratorFunction[] = [sourceDecorator];
+// With the server-side docs path on, `story-docs` emits the snippet for every story. Leaving the
+// client decorator registered would have two generators calling `emitTransformCode` for the same
+// story with nothing coordinating them. Same gate React puts on its own legacy snippet path.
+const useStaticServiceSnippets =
+  'FEATURES' in globalThis && globalThis?.FEATURES?.experimentalDocgenServer;
+
+export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];

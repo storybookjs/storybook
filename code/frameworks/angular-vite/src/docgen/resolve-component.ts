@@ -5,8 +5,9 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import { readFileSync } from 'node:fs';
 
 // Angular has no single-file-component format, so the JS/TS extensions the resolver already tries
-// are enough.
-const resolveMetaComponent = createMetaComponentResolver();
+// are enough. Exported so a caller that already parsed the story file resolves against that parse
+// instead of reading and parsing it a second time.
+export const resolveMetaComponent = createMetaComponentResolver();
 
 /**
  * Story file → the component it documents.

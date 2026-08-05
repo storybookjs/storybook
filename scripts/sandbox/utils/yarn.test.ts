@@ -101,18 +101,14 @@ describe('refreshBeforeStorybookLockfile', () => {
 
   const isResolveStep = (script: string) => /^yarn (install|up)\b/.test(script);
 
-  /** The `yarn install` / `yarn up` calls, in order, ignoring the `yarn config set` preamble. */
+  /** The resolve steps, ignoring the `yarn config set` preamble. */
   const yarnCommands = () =>
     vi
       .mocked(runCommand)
       .mock.calls.map(([script]) => script)
       .filter(isResolveStep);
 
-  /**
-   * Fail the first N resolve steps with the given errors and let everything else
-   * through, so a test can describe what Yarn reports without counting the
-   * `yarn config set` calls that precede it.
-   */
+  /** Fail the first N resolve steps, letting the `yarn config set` preamble through. */
   const failResolveSteps = (...errors: Error[]) => {
     const queue = [...errors];
     vi.mocked(runCommand).mockImplementation((async (script: string) => {
@@ -137,7 +133,6 @@ describe('refreshBeforeStorybookLockfile', () => {
   it('installs the template ranges as-is when nothing is quarantined', async () => {
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    // No `yarn up` at all: every declared range still has an installable version.
     expect(yarnCommands()).toEqual(['yarn install --mode=update-lockfile']);
   });
 
@@ -146,8 +141,7 @@ describe('refreshBeforeStorybookLockfile', () => {
 
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    // The regression this guards: `yarn up '*'` swept up `typescript: ~6.0.2` and
-    // rewrote it to `^7.0.2`, which Compodoc cannot parse.
+    // The regression: `yarn up '*'` swept up `typescript: ~6.0.2` into `^7.0.2`.
     expect(yarnCommands()).not.toContain(expect.stringContaining("'*'"));
     expect(yarnCommands()).toContain(`yarn up '@angular/build@^22.0.0' --mode=update-lockfile`);
   });
@@ -161,8 +155,7 @@ describe('refreshBeforeStorybookLockfile', () => {
 
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    // A bare `yarn up @angular/build` takes the newest gate-clearing release of any
-    // major, which would move this template onto Angular 22 and stop it testing 21.
+    // A bare `yarn up` would move this template to Angular 22 and stop it testing 21.
     expect(yarnCommands()).toContain(`yarn up '@angular/build@^21.0.0' --mode=update-lockfile`);
   });
 
@@ -171,8 +164,7 @@ describe('refreshBeforeStorybookLockfile', () => {
 
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    // Yarn re-resolves the whole project, so the second package has to be added to
-    // the first `yarn up` rather than upgraded on its own.
+    // Yarn re-resolves everything, so the second package joins the first `yarn up`.
     expect(yarnCommands()).toContain(
       `yarn up '@angular/build@^22.0.0' 'rxjs@^7.0.0' --mode=update-lockfile`
     );
@@ -185,8 +177,7 @@ describe('refreshBeforeStorybookLockfile', () => {
     );
     failResolveSteps(quarantined('next@npm:16.3.1-canary.3'));
 
-    // Every stable 16.x sorts above a 16.3.1 canary, so narrowing would drop a
-    // prerelease template onto stable. Exempting the package is the only fix.
+    // Every stable 16.x sorts above the canary, so narrowing would land on stable.
     await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
       /minAgeGateExemptions/
     );

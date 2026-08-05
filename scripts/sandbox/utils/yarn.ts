@@ -162,34 +162,24 @@ export async function refreshBeforeStorybookLockfile({
   await narrowQuarantinedRanges({ cwd, env, debug });
 }
 
-/**
- * Yarn's age-gate rejection, e.g.
- * `➤ YN0016: │ @angular/build@npm:^22.1.3: All versions satisfying "^22.1.3" are quarantined`.
- *
- * Yarn aborts resolution at the first such range, so one run reports one package.
- */
+/** `YN0016: @angular/build@npm:^22.1.3: All versions satisfying "^22.1.3" are quarantined` */
 const QUARANTINED_RANGE = /YN0016:.*?(\S+)@npm:.*?are quarantined/g;
 
-/** Package names Yarn reported as having no installable version under the age gate. */
 function parseQuarantinedPackages(output: string): string[] {
   return [...output.matchAll(QUARANTINED_RANGE)].map(([, name]) => name);
 }
 
-/** Yarn's own wording when `yarn up` is handed a package the manifest does not declare. */
+/** Yarn's wording when `yarn up` is handed a package the manifest does not declare. */
 const NOT_A_DIRECT_DEPENDENCY = /doesn't match any packages referenced by any workspace/;
 
 /**
- * The `yarn up` descriptor to move a quarantined package onto its newest installable
+ * The `yarn up` descriptor that moves a quarantined package onto its newest installable
  * release without leaving the major the template asked for.
  *
- * A bare `yarn up typescript` takes the newest release that clears the gate, from the
- * whole version list rather than the declared range, so a template pinned to an older
- * line would be silently upgraded off it. Re-anchoring the range at the bottom of its
- * own major keeps the pin: `~5.9.2` stays on 5.x, `^22.1.3` on 22.x. Caret ranges treat
- * a `0.x` major as breaking, so those keep their minor too.
- *
- * Ranges semver cannot read (`latest`, `workspace:*`, git URLs) fall back to the bare
- * name — they carry no major to preserve.
+ * A bare `yarn up typescript` ignores the declared range and takes the newest release of
+ * any major. Passing an explicit range bounds it instead, and the gate then picks the
+ * newest allowed version inside that range. Unparseable ranges (`latest`, `workspace:*`)
+ * carry no major to preserve, so they fall back to the bare name.
  */
 function narrowingDescriptor(name: string, range: string | undefined): string {
   const floor = range && semver.validRange(range) ? semver.minVersion(range) : null;
@@ -197,46 +187,38 @@ function narrowingDescriptor(name: string, range: string | undefined): string {
     return name;
   }
 
-  // A prerelease pin is the one range narrowing cannot repair: every stable release
-  // in the major sorts above it, so `^16.0.0` would quietly resolve a `canary`
-  // template onto stable. Exempting the package is the only correct answer.
+  // Every stable release in the major sorts above a prerelease, so no range can admit
+  // newer canaries without also admitting stable.
   if (semver.prerelease(floor)) {
     throw new Error(
       `${name}@${range} is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate, and narrowing a prerelease range would resolve it to a stable release. Add ${name} to the template's minAgeGateExemptions.`
     );
   }
 
+  // Caret treats a 0.x major as breaking, so those keep their minor.
   return floor.major === 0 ? `${name}@^0.${floor.minor}.0` : `${name}@^${floor.major}.0.0`;
 }
 
-/** The range a manifest declares for a package, across the fields `yarn up` rewrites. */
 async function declaredRange(cwd: string, name: string): Promise<string | undefined> {
   const manifest = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf-8'));
   return manifest.dependencies?.[name] ?? manifest.devDependencies?.[name];
 }
 
-/**
- * Yarn re-resolves the whole project on every attempt and stops at the first
- * offender, so each round can only reveal one more. Angular scaffolds eleven
- * lockstep-published packages, which is the widest case in the template set.
- */
+/** Angular, the widest template, needs 12. The rest is headroom. */
 const MAX_NARROWING_ROUNDS = 25;
 
 /**
  * Resolve a lockfile under the age gate, rewriting as few manifest ranges as possible.
  *
- * A range like `@angular/build@^22.1.3` has no installable version when its only
- * matching release is younger than the gate, and `yarn install` then fails outright.
- * `yarn up` is the escape hatch, but it is documented as the counterpart to
- * `yarn upgrade --latest`: it *ignores* the declared range and jumps every package it
- * is given to that package's newest gate-clearing release. Passing it `'*'` therefore
- * rewrites the whole manifest — that is what turned the Angular sandbox's
- * `typescript: ~6.0.2` into `^7.0.2`, which Compodoc (bundling TypeScript 6) cannot parse.
+ * A range whose every matching release is younger than the gate has nothing installable,
+ * and `yarn install` fails outright. `yarn up` is the escape hatch, but it rewrites the
+ * ranges of whatever it is given, so `yarn up '*'` rewrites the whole manifest — that is
+ * what turned the Angular sandbox's `typescript: ~6.0.2` into `^7.0.2`, which Compodoc
+ * (bundling TypeScript 6) cannot parse.
  *
- * So hand `yarn up` only the packages Yarn itself reported as quarantined. Everything
- * the template pinned deliberately keeps its range, and prerelease templates keep
- * tracking their prerelease: an exempted package is never quarantined, so it is never
- * passed to `yarn up` and never resolved to its stable `latest`.
+ * Yarn reports one offending range per run and re-resolves the whole project on each
+ * attempt, so the only way to fix them is to accumulate the names it reports and pass the
+ * growing set to a single `yarn up`.
  */
 async function narrowQuarantinedRanges({
   cwd,
@@ -257,8 +239,8 @@ async function narrowQuarantinedRanges({
       : `yarn install --mode=update-lockfile`;
 
     try {
-      // Capture rather than stream even under `debug`: the age-gate rejection is
-      // only readable off the failed command's stdout.
+      // Capture rather than stream even under `debug`: the rejection is only readable
+      // off the failed command's stdout.
       const { stdout } = await runCommand(command, { cwd, env, stdout: 'pipe' }, debug);
       if (debug) {
         console.log(stdout);
@@ -278,10 +260,8 @@ async function narrowQuarantinedRanges({
 
       const fresh = parseQuarantinedPackages(output).filter((name) => !quarantined.includes(name));
 
-      // Either the failure has nothing to do with the age gate, or the package is
-      // still quarantined across its whole major. Both need a human: the remaining
-      // escape is to exempt it, and picking that for them would either hide a real
-      // resolution error or upgrade the template off the version it exists to test.
+      // Either not an age-gate failure at all, or a package still quarantined across its
+      // whole major. Widening further would leave the major, so let a human decide.
       if (!fresh.length) {
         throw error;
       }
@@ -309,8 +289,7 @@ async function narrowQuarantinedRanges({
     `⚠️ narrowed ${descriptors.length} range(s) with no release older than the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate: ${descriptors.join(', ')}`
   );
 
-  // `yarn up` leaves the lockfile resolved, but run the install once more so the
-  // committed lockfile is always the product of a plain `yarn install`.
+  // So the committed lockfile is always the product of a plain `yarn install`.
   await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
 }
 

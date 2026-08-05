@@ -36,6 +36,7 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@compodoc/compodoc": "2.0.0",
+    "@storybook/angular-compodoc": "workspace:*",
     "@storybook/angular-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/vue3": "workspace:*",

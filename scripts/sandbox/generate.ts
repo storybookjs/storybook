@@ -30,7 +30,13 @@ import { esMain } from '../utils/esmain.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn.ts';
+import {
+  BEFORE_SANDBOX_MIN_AGE_GATE,
+  localizeYarnConfigFiles,
+  preapproveLocallyPublishedPackages,
+  refreshBeforeStorybookLockfile,
+  setupYarn,
+} from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
@@ -124,7 +130,26 @@ const addStorybook = async ({
       await addResolutions(tmpDir);
     }
 
-    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN1}`], debug);
+    // This install is the only step that runs package code, so it keeps the
+    // 7-day gate inherited from before-storybook. The locally published
+    // Storybook packages are seconds old and can never satisfy it, so they are
+    // allowlisted by name rather than the gate being switched off.
+    await preapproveLocallyPublishedPackages(tmpDir);
+
+    // Adding Storybook necessarily rewrites the lockfile this template now
+    // ships, and `sbInit` forces `CI=true`, which makes Yarn immutable by
+    // default. Without this the install aborts, nothing is linked, and the
+    // addon postinstall hooks then fail on the missing node_modules state.
+    // Set it here rather than relying on the generate-sandboxes workflow env,
+    // so a local run behaves the same as CI.
+    const sbInitEnv = { ...env, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
+
+    await sbInit(
+      tmpDir,
+      sbInitEnv,
+      [...flags, `--package-manager=${PackageManagerName.YARN2}`],
+      debug
+    );
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });
@@ -141,11 +166,25 @@ export const runCommand = async (script: string, options: ExecaOptions, debug = 
   }
 
   return execaCommand(script, {
-    stdout: debug ? 'inherit' : 'ignore',
+    // Capture (not discard) stdout when not streaming, so a failing command's
+    // output is available on the thrown error for diagnostics.
+    stdout: debug ? 'inherit' : 'pipe',
     shell: true,
     cleanup: true,
     ...options,
   });
+};
+
+/** Render an execa (or generic) error with its captured stdout/stderr for logs. */
+const formatCommandError = (error: unknown): string => {
+  const e = error as { stack?: string; message?: string; stdout?: string; stderr?: string };
+  return [
+    e.stack ?? e.message ?? String(error),
+    e.stdout ? `--- stdout ---\n${e.stdout}` : '',
+    e.stderr ? `--- stderr ---\n${e.stderr}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 };
 
 const addDocumentation = async (
@@ -206,7 +245,7 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, env, initOptions }) =>
+    generators.map(({ dirName, name, script, env, initOptions, minAgeGateExemptions }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
@@ -232,7 +271,7 @@ const runGenerators = async (
               const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
               if (isCI) {
                 ghActions.error(dedent`${message}
-                  ${(error as any).stack}`);
+                  ${formatCommandError(error)}`);
               } else {
                 console.error(message);
                 console.error(error);
@@ -245,6 +284,18 @@ const runGenerators = async (
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
 
+          // Age-gate the scaffold itself when the framework CLI resolves/installs
+          // via Yarn (create-*, yarn create, etc.). Many templates also pass
+          // --skip-install / --no-install so the CLI never installs; the env is
+          // still set so any Yarn-backed resolve during bootstrap is covered.
+          // npm/npx-only scaffolders ignore this variable — their installs are
+          // skipped where possible, then replaced by the Yarn 4 refresh below.
+          const scaffoldEnv = {
+            ...env,
+            CI: 'true',
+            YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
+          };
+
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to
           // handle different modes of operation.
@@ -255,23 +306,24 @@ const runGenerators = async (
                 scriptWithBeforeDir,
                 {
                   cwd: createBaseDir,
-                  env: {
-                    ...env,
-                    CI: 'true',
-                  },
+                  env: scaffoldEnv,
                   timeout: SCRIPT_TIMEOUT,
                 },
                 debug
               );
             } else {
               await mkdir(createBeforeDir, { recursive: true });
-              await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
+              await runCommand(
+                script,
+                { cwd: createBeforeDir, env: scaffoldEnv, timeout: SCRIPT_TIMEOUT },
+                debug
+              );
             }
           } catch (error) {
             const message = `❌ Failed to execute before-script for template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);
@@ -280,6 +332,47 @@ const runGenerators = async (
           }
 
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
+
+          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
+          // so consumers who clone the published sandbox install a reproducible,
+          // non-freshly-quarantined dependency tree.
+          //
+          // Stable templates (no allowlist): failure degrades gracefully — the
+          // template's original lockfile is already gone, but the consumer can
+          // still install from package.json.
+          //
+          // Prerelease templates (allowlist set): refreshBeforeStorybookLockfile
+          // refuses to widen ranges, because that would silently resolve stable.
+          // That failure must stay fatal here; soft-failing would ship a
+          // "prerelease" sandbox that no longer tracks a prerelease.
+          try {
+            await refreshBeforeStorybookLockfile({
+              cwd: createBeforeDir,
+              debug,
+              minAgeGateExemptions,
+            });
+          } catch (error) {
+            if (minAgeGateExemptions?.length) {
+              const message = `❌ Failed to refresh Yarn 4 lockfile for prerelease template: ${name} (${dirName})`;
+              if (isCI) {
+                ghActions.error(dedent`${message}
+                  ${formatCommandError(error)}`);
+              } else {
+                console.error(message);
+                console.error(error);
+              }
+              throw error;
+            }
+
+            const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
+            if (isCI) {
+              ghActions.warning(dedent`${message}
+                ${formatCommandError(error)}`);
+            } else {
+              console.warn(message);
+              console.warn(error);
+            }
+          }
 
           // Now move the created before dir into it's final location and add storybook
           await moveDir(createBeforeDir, beforeDir);
@@ -293,7 +386,7 @@ const runGenerators = async (
             const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
             if (isCI) {
               ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
+                ${formatCommandError(error)}`);
             } else {
               console.error(message);
               console.error(error);

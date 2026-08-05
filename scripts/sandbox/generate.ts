@@ -341,10 +341,10 @@ const runGenerators = async (
           // template's original lockfile is already gone, but the consumer can
           // still install from package.json.
           //
-          // Prerelease templates (allowlist set): refreshBeforeStorybookLockfile
-          // refuses to widen ranges, because that would silently resolve stable.
-          // That failure must stay fatal here; soft-failing would ship a
-          // "prerelease" sandbox that no longer tracks a prerelease.
+          // Prerelease templates (allowlist set): a failure here means a package
+          // published in lockstep with the prerelease is still quarantined and
+          // needs adding to the allowlist. That must stay fatal; soft-failing
+          // would ship a "prerelease" sandbox that no longer tracks a prerelease.
           try {
             await refreshBeforeStorybookLockfile({
               cwd: createBeforeDir,

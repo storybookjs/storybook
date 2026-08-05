@@ -86,7 +86,10 @@ afterEach(() => {
   vi.doUnmock('storybook/internal/core-server');
 });
 
-describe('resolveComponentStories', () => {
+// `resetModules` around every test means each one re-imports the subject and, with it, the mocked
+// `storybook/internal/core-server`. That import alone can outlast the 10s default on the first test
+// of the file when the rest of the suite is saturating the machine.
+describe('resolveComponentStories', { timeout: 30_000 }, () => {
   it('strips trailing slashes so `Badge.tsx/` queries the file, not the parent-name barrel', async () => {
     // Regression for the silent-corruption bug: when a caller pastes
     // `Badge/Badge.tsx/`, the trailing slash flipped `basename === dirname`

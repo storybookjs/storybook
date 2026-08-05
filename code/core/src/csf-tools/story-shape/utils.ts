@@ -4,7 +4,13 @@ import type { CsfFile } from '../CsfFile.ts';
 
 /** Static key of an object property, or `null` when computed/non-literal. */
 export const keyOf = (p: t.ObjectProperty): string | null =>
-  t.isIdentifier(p.key) ? p.key.name : t.isStringLiteral(p.key) ? p.key.value : null;
+  p.computed
+    ? null
+    : t.isIdentifier(p.key)
+      ? p.key.name
+      : t.isStringLiteral(p.key)
+        ? p.key.value
+        : null;
 
 /** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */
 export function resolveIdentifierInit(

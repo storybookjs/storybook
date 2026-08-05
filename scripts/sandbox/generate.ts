@@ -321,9 +321,16 @@ const runGenerators = async (
 
           // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
           // so consumers who clone the published sandbox install a reproducible,
-          // non-freshly-quarantined dependency tree. Failure here degrades gracefully:
-          // the template's original lockfile is already gone, but the consumer can
+          // non-freshly-quarantined dependency tree.
+          //
+          // Stable templates (no allowlist): failure degrades gracefully — the
+          // template's original lockfile is already gone, but the consumer can
           // still install from package.json.
+          //
+          // Prerelease templates (allowlist set): refreshBeforeStorybookLockfile
+          // refuses to widen ranges, because that would silently resolve stable.
+          // That failure must stay fatal here; soft-failing would ship a
+          // "prerelease" sandbox that no longer tracks a prerelease.
           try {
             await refreshBeforeStorybookLockfile({
               cwd: createBeforeDir,
@@ -331,6 +338,18 @@ const runGenerators = async (
               minAgeGateExemptions,
             });
           } catch (error) {
+            if (minAgeGateExemptions?.length) {
+              const message = `❌ Failed to refresh Yarn 4 lockfile for prerelease template: ${name} (${dirName})`;
+              if (isCI) {
+                ghActions.error(dedent`${message}
+                  ${formatCommandError(error)}`);
+              } else {
+                console.error(message);
+                console.error(error);
+              }
+              throw error;
+            }
+
             const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
             if (isCI) {
               ghActions.warning(dedent`${message}

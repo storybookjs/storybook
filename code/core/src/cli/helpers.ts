@@ -16,7 +16,7 @@ import {
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce, satisfies } from 'semver';
+import { coerce, satisfies } from 'slimsemver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 

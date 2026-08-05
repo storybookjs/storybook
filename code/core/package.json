@@ -263,7 +263,7 @@
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "^11.19.1",
     "recast": "^0.23.5",
-    "semver": "^7.7.3",
+    "slimsemver": "^1.0.1",
     "use-sync-external-store": "^1.5.0",
     "ws": "^8.21.1"
   },
@@ -314,7 +314,6 @@
     "@types/pretty-hrtime": "^1.0.0",
     "@types/prompts": "^2.0.9",
     "@types/react-syntax-highlighter": "11.0.5",
-    "@types/semver": "^7.7.1",
     "@types/ws": "^8",
     "@vitest/mocker": "3.2.4",
     "@vitest/utils": "^3.2.4",

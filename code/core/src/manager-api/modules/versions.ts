@@ -3,7 +3,7 @@ import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/in
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
-import semver from 'semver';
+import semver from 'slimsemver';
 
 import type { ModuleFn } from '../lib/types.tsx';
 import { version as currentVersion } from '../version.ts';

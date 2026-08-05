@@ -1,4 +1,4 @@
-import { gt, prerelease, valid } from 'semver';
+import { gt, prerelease, valid } from 'slimsemver';
 
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';

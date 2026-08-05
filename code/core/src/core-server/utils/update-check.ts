@@ -3,7 +3,7 @@ import { colors } from 'storybook/internal/node-logger';
 import type { VersionCheck } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
+import semver from 'slimsemver';
 import { dedent } from 'ts-dedent';
 
 const { STORYBOOK_VERSION_BASE = 'https://storybook.js.org', CI } = process.env;

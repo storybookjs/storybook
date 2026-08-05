@@ -9,7 +9,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
-import { coerce, minVersion, satisfies, validRange } from 'semver';
+import { coerce, minVersion, satisfies, validRange } from 'slimsemver';
 import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';

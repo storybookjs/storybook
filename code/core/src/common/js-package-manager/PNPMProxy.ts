@@ -11,7 +11,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { coerce, gte } from 'semver';
+import { coerce, gte } from 'slimsemver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 

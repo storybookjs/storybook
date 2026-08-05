@@ -10,7 +10,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import sort from 'semver/functions/sort.js';
+import sort from 'slimsemver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';

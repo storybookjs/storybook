@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import semver from 'semver';
+import semver from 'slimsemver';
 
 /**
  * Detect whether the project should be treated as TypeScript or JavaScript. The js/tsconfig lookup

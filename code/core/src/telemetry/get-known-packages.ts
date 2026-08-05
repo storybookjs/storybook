@@ -1,6 +1,6 @@
 import type { PackageJson } from 'storybook/internal/types';
 
-import semver from 'semver';
+import semver from 'slimsemver';
 
 import {
   DATA_FETCHING_PACKAGES,

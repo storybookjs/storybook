@@ -10,7 +10,7 @@ import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies, validRange } from 'semver';
+import { coerce, gt, satisfies, validRange } from 'slimsemver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';

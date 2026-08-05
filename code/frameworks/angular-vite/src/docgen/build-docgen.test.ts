@@ -107,7 +107,7 @@ const context = (
   compodocJson: CompodocJson | (() => CompodocJson),
   overrides: Partial<BuildDocgenContext['options']> = {}
 ): BuildDocgenContext => ({
-  options: { outputDir: OUTPUT_DIR, ...overrides },
+  options: { outputDir: OUTPUT_DIR, compodocArgs: ['-e', 'json'], ...overrides },
   readDocumentationJson: typeof compodocJson === 'function' ? compodocJson : () => compodocJson,
   logger,
 });

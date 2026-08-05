@@ -44,6 +44,7 @@ export const experimental_docgenProvider = async (
     // Structured-cloned onto the worker thread: plain JSON only, no closures or class instances.
     options: {
       outputDir: compodocConfig.outputDir,
+      compodocArgs: compodocConfig.compodocArgs,
       workspaceRoot: compodocConfig.workspaceRoot,
       angularFilterNonInputControls: features?.angularFilterNonInputControls,
       tsconfig: compodocConfig.tsconfig,

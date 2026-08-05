@@ -8,18 +8,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
+import { ensureCompodocDocumentation } from '../compodoc/ensure-documentation.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 import { createDocgenProvider } from './docgen-worker.ts';
 
 vi.mock('node:fs', { spy: true });
 // Spy-only: the real builder runs unless a test overrides it to exercise the provider's own wiring.
 vi.mock('./build-docgen.ts', { spy: true });
+// Compodoc generation is its own seam, tested next to the lock. Here it only has to happen, and to
+// happen before anything is served.
+vi.mock('../compodoc/ensure-documentation.ts', { spy: true });
 
 beforeEach(async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
   vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
   vi.mocked(statSync).mockImplementation(memfs.fs.statSync as typeof statSync);
   vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
+  vi.mocked(ensureCompodocDocumentation).mockResolvedValue('fresh');
 });
 
 afterEach(() => {
@@ -27,6 +32,7 @@ afterEach(() => {
   // `restoreAllMocks` does not put back the implementation behind a `spy: true` module mock, so a
   // per-test override would leak into every later test in the file.
   vi.mocked(buildDocgenPayload).mockReset();
+  vi.mocked(ensureCompodocDocumentation).mockReset();
   vi.restoreAllMocks();
 });
 
@@ -74,8 +80,13 @@ const givenWorkspace = ({ withDocumentationJson = true } = {}) => {
 
 const passthrough: DocgenProvider = async () => undefined;
 
-const run = (next: DocgenProvider = passthrough, input = { entry }) =>
-  createDocgenProvider({ outputDir: OUTPUT_DIR })(next)(input);
+const providerOptions = { outputDir: OUTPUT_DIR, compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR] };
+
+const createProvider = async (next: DocgenProvider = passthrough) =>
+  (await createDocgenProvider(providerOptions))(next);
+
+const run = async (next: DocgenProvider = passthrough, input = { entry }) =>
+  (await createProvider(next))(input);
 
 const downstream: DocgenPayload = {
   id: 'button',
@@ -91,12 +102,41 @@ describe('createDocgenProvider', () => {
 
     // The only input is a structured-cloneable options bag, exactly as it crosses the worker
     // boundary - no Storybook `Options`, no Vite config, no builder context.
-    const payload = await createDocgenProvider(structuredClone({ outputDir: OUTPUT_DIR }))(
-      passthrough
-    )({ entry });
+    const middleware = await createDocgenProvider(structuredClone(providerOptions));
+    const payload = await middleware(passthrough)({ entry });
 
     expect(payload).toMatchObject({ name: 'ButtonComponent', description: 'Renders a button.' });
     expect(payload?.argTypes?.label).toBeDefined();
+  });
+
+  it('triggers Compodoc and awaits it before serving anything', async () => {
+    givenWorkspace({ withDocumentationJson: false });
+    // Whatever the trigger produces has to be on disk by the time the first request is answered,
+    // which is only true because the run is awaited during construction rather than per request.
+    vi.mocked(ensureCompodocDocumentation).mockImplementation(async () => {
+      vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
+      return 'generated';
+    });
+
+    const payload = await run();
+
+    expect(ensureCompodocDocumentation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outputDir: OUTPUT_DIR,
+        compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR],
+      })
+    );
+    expect(payload?.argTypes?.label).toBeDefined();
+  });
+
+  it('runs Compodoc once per worker, not once per component', async () => {
+    givenWorkspace();
+    const provider = await createProvider();
+
+    await provider({ entry });
+    await provider({ entry });
+
+    expect(ensureCompodocDocumentation).toHaveBeenCalledOnce();
   });
 
   it('falls through for a file that is not a story', async () => {
@@ -148,7 +188,7 @@ describe('createDocgenProvider', () => {
 
   it('re-reads documentation.json when Compodoc is re-run mid-session', async () => {
     givenWorkspace();
-    const provider = createDocgenProvider({ outputDir: OUTPUT_DIR })(passthrough);
+    const provider = await createProvider();
 
     expect((await provider({ entry }))?.argTypes?.label).toBeDefined();
     expect(
@@ -170,7 +210,7 @@ describe('createDocgenProvider', () => {
 
   it('reports a documentation.json created after the first miss', async () => {
     givenWorkspace({ withDocumentationJson: false });
-    const provider = createDocgenProvider({ outputDir: OUTPUT_DIR })(passthrough);
+    const provider = await createProvider();
 
     expect((await provider({ entry }))?.error?.name).toBe('NoCompodocDocumentation');
 

@@ -31,6 +31,11 @@ export interface AngularDocgenOptions {
   /** Absolute directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
   outputDir: string;
   /**
+   * Compodoc's own argument list. Required rather than optional because the worker is the only
+   * trigger on this path: a descriptor without it would read a file nothing ever writes.
+   */
+  compodocArgs: string[];
+  /**
    * Directory Compodoc ran in, which is the base its entries' relative `file` paths are written
    * against. Defaults to the worker's cwd.
    */

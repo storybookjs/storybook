@@ -41,6 +41,23 @@ describe('resolveCompodocConfig', () => {
     });
   });
 
+  // Only `viteFinal` can pass Vite's root along; the docgen preset that tells the worker where to
+  // read has no access to it. Deriving the same directory from `configDir` is what keeps the two
+  // pointed at one place when Storybook is started from anywhere but the project directory.
+  it('agrees with builder-vite`s root when only `configDir` is known', async () => {
+    const configDir = resolve('/projects/lib/.storybook');
+    const viteRoot = resolve(configDir, '..');
+
+    const [fromWriter, fromReader] = await Promise.all([
+      resolveCompodocConfig(hostOptions({ options: {} }, { configDir }), { viteRoot }),
+      resolveCompodocConfig(hostOptions({ options: {} }, { configDir })),
+    ]);
+
+    expect(fromReader.workspaceRoot).toBe(viteRoot);
+    expect(fromReader.outputDir).toBe(fromWriter.outputDir);
+    expect(fromReader.workspaceRoot).not.toBe(process.cwd());
+  });
+
   it('falls back through the tsconfig chain the Compodoc run uses', async () => {
     const tsconfigOf = async (frameworkOptions: Record<string, unknown>, extra = {}) =>
       (await configFor(frameworkOptions, extra)).tsconfig;

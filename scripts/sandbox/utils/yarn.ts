@@ -182,10 +182,11 @@ const NOT_A_DIRECT_DEPENDENCY = /doesn't match any packages referenced by any wo
  * The `yarn up` descriptor to move a quarantined package onto its newest installable
  * release without leaving the major the template asked for.
  *
- * A bare `yarn up typescript` resolves to the `latest` dist-tag, so a template pinned
- * to an older line would be silently upgraded off it. Re-anchoring the range at the
- * bottom of its own major keeps the pin: `~5.9.2` stays on 5.x, `^22.1.3` on 22.x.
- * Caret ranges treat a `0.x` major as breaking, so those keep their minor too.
+ * A bare `yarn up typescript` takes the newest release that clears the gate, from the
+ * whole version list rather than the declared range, so a template pinned to an older
+ * line would be silently upgraded off it. Re-anchoring the range at the bottom of its
+ * own major keeps the pin: `~5.9.2` stays on 5.x, `^22.1.3` on 22.x. Caret ranges treat
+ * a `0.x` major as breaking, so those keep their minor too.
  *
  * Ranges semver cannot read (`latest`, `workspace:*`, git URLs) fall back to the bare
  * name — they carry no major to preserve.
@@ -227,10 +228,10 @@ const MAX_NARROWING_ROUNDS = 25;
  * A range like `@angular/build@^22.1.3` has no installable version when its only
  * matching release is younger than the gate, and `yarn install` then fails outright.
  * `yarn up` is the escape hatch, but it is documented as the counterpart to
- * `yarn upgrade --latest`: it *ignores* the declared range and jumps every package
- * it is given to the newest allowed release. Passing it `'*'` therefore rewrites the
- * whole manifest — that is what turned the Angular sandbox's `typescript: ~6.0.2`
- * into `^7.0.2`, which Compodoc (bundling TypeScript 6) cannot parse.
+ * `yarn upgrade --latest`: it *ignores* the declared range and jumps every package it
+ * is given to that package's newest gate-clearing release. Passing it `'*'` therefore
+ * rewrites the whole manifest — that is what turned the Angular sandbox's
+ * `typescript: ~6.0.2` into `^7.0.2`, which Compodoc (bundling TypeScript 6) cannot parse.
  *
  * So hand `yarn up` only the packages Yarn itself reported as quarantined. Everything
  * the template pinned deliberately keeps its range, and prerelease templates keep

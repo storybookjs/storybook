@@ -161,8 +161,8 @@ describe('refreshBeforeStorybookLockfile', () => {
 
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    // A bare `yarn up @angular/build` resolves the `latest` dist-tag, which would
-    // move the Angular 21 template onto Angular 22 and stop it testing Angular 21.
+    // A bare `yarn up @angular/build` takes the newest gate-clearing release of any
+    // major, which would move this template onto Angular 22 and stop it testing 21.
     expect(yarnCommands()).toContain(`yarn up '@angular/build@^21.0.0' --mode=update-lockfile`);
   });
 

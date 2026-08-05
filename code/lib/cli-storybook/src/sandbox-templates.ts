@@ -604,9 +604,11 @@ export const baseTemplates = {
     name: 'Vue v3 (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue',
     // @storybook/vue3-vite depends on vue-component-meta@^3.3.9; that release is
-    // still inside the 7-day age gate and contains a fix we need. Written onto
+    // still inside the 7-day age gate and contains a fix we need.
+    // vue-component-meta pins @vue/language-core to the same version, so both
+    // must be allowlisted (Yarn's gate is per-package). Written onto
     // before-storybook and inherited by the after-storybook install.
-    minAgeGateExemptions: ['vue-component-meta'],
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
@@ -621,7 +623,7 @@ export const baseTemplates = {
     name: 'Vue v3 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
     // See vue3-vite/default-js — same @storybook/vue3-vite dependency constraint.
-    minAgeGateExemptions: ['vue-component-meta'],
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',

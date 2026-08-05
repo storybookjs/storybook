@@ -45,7 +45,8 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/global": "^5.0.0"
+    "@storybook/global": "^5.0.0",
+    "entities": "^4.5.0"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

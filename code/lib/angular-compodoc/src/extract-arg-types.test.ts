@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CompodocJson } from './compodoc-types.ts';
 import { extractArgTypesFromData } from './extract-arg-types.ts';
+import { htmlToText } from './html-to-text.ts';
 
 const logger = { warn: () => {}, debug: () => {} };
 
@@ -31,8 +32,7 @@ const extract = (type: string, miscellaneous: CompodocJson['miscellaneous']) => 
     compodocJson,
     filterNonInputControls: false,
     logger,
-    // These cases are about type resolution, not HTML; the host supplies the real unwrapper.
-    unwrapHtml: (html: unknown) => String(html),
+    unwrapHtml: htmlToText,
   });
 };
 

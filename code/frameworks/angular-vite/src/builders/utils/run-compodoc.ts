@@ -4,9 +4,12 @@ import { JsPackageManagerFactory } from 'storybook/internal/common';
 
 import { prompt } from 'storybook/internal/node-logger';
 
+import { readCompodocOutputDir } from '../../compodoc-config.ts';
+
 const hasTsConfigArg = (args: string[]) => args.indexOf('-p') !== -1;
-const hasOutputArg = (args: string[]) =>
-  args.indexOf('-d') !== -1 || args.indexOf('--output') !== -1;
+// Derived from the reader rather than tested separately, so the directory Compodoc writes to and
+// the directory the docgen provider reads from cannot disagree.
+const hasOutputArg = (args: string[]) => readCompodocOutputDir(args) !== undefined;
 
 // relative is necessary to workaround a compodoc issue with
 // absolute paths on windows machines
@@ -26,6 +29,8 @@ export const runCompodoc = async (opts: RunCompodocOptions): Promise<void> => {
   const finalCompodocArgs = [
     'compodoc',
     ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),
+    // Compodoc's own default output directory is not the workspace root, so an invocation that
+    // names none is pinned to the directory the docgen provider reads from.
     ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${workspaceRoot || '.'}`]),
     ...compodocArgs,
   ];

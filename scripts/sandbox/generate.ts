@@ -31,6 +31,7 @@ import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 import {
+  BEFORE_SANDBOX_MIN_AGE_GATE,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -283,6 +284,18 @@ const runGenerators = async (
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
 
+          // Age-gate the scaffold itself when the framework CLI resolves/installs
+          // via Yarn (create-*, yarn create, etc.). Many templates also pass
+          // --skip-install / --no-install so the CLI never installs; the env is
+          // still set so any Yarn-backed resolve during bootstrap is covered.
+          // npm/npx-only scaffolders ignore this variable — their installs are
+          // skipped where possible, then replaced by the Yarn 4 refresh below.
+          const scaffoldEnv = {
+            ...env,
+            CI: 'true',
+            YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
+          };
+
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to
           // handle different modes of operation.
@@ -293,17 +306,18 @@ const runGenerators = async (
                 scriptWithBeforeDir,
                 {
                   cwd: createBaseDir,
-                  env: {
-                    ...env,
-                    CI: 'true',
-                  },
+                  env: scaffoldEnv,
                   timeout: SCRIPT_TIMEOUT,
                 },
                 debug
               );
             } else {
               await mkdir(createBeforeDir, { recursive: true });
-              await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
+              await runCommand(
+                script,
+                { cwd: createBeforeDir, env: scaffoldEnv, timeout: SCRIPT_TIMEOUT },
+                debug
+              );
             }
           } catch (error) {
             const message = `❌ Failed to execute before-script for template: ${name} (${dirName})`;

@@ -54,13 +54,16 @@ export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string
 }
 
 /**
- * 7 days, in minutes — the Yarn `npmMinimalAgeGate` window applied to the
- * generated `before-storybook` sandbox.
+ * 7-day Yarn `npmMinimalAgeGate` window applied to generated sandboxes.
  *
  * Consumers who pull a sandbox and run `yarn install` are protected from
  * dependency versions published within this window (defense against
  * supply-chain attacks via freshly-published malicious packages).
+ *
+ * Use the duration string for `YARN_NPM_MINIMAL_AGE_GATE` (scaffold env) and
+ * the minute value for `yarn config set npmMinimalAgeGate`.
  */
+export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 
 interface RefreshLockfileOptions {

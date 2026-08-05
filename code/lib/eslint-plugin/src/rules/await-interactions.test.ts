@@ -167,6 +167,43 @@ ruleTester.run('await-interactions', rule, {
     },
     {
       code: dedent`
+        import { expect } from '@storybook/test'
+        import Button from './Button'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      output: dedent`
+        import { expect } from '@storybook/test'
+        import Button from './Button'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          await expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'toHaveBeenCalledWith' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect } from '@storybook/test'
+                import Button from './Button'
+                WithModalOpen.play = async ({ args }) => {
+                  const label = Button.name
+                  await expect(args.onClick).toHaveBeenCalledWith(label)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
         import Button from './Button'
         import { expect } from '@storybook/test'
         WithModalOpen.play = async ({ args }) => {
@@ -312,43 +349,6 @@ ruleTester.run('await-interactions', rule, {
                 import Button from './Button'
                 Basic.play = async () => {
                   await userEvent.click(Button)
-                }
-              `,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      code: dedent`
-        import { expect } from '@storybook/test'
-        import Button from './Button'
-        WithModalOpen.play = async ({ args }) => {
-          const label = Button.name
-          expect(args.onClick).toHaveBeenCalledWith(label)
-        }
-      `,
-      output: dedent`
-        import { expect } from '@storybook/test'
-        import Button from './Button'
-        WithModalOpen.play = async ({ args }) => {
-          const label = Button.name
-          await expect(args.onClick).toHaveBeenCalledWith(label)
-        }
-      `,
-      errors: [
-        {
-          messageId: 'interactionShouldBeAwaited',
-          data: { method: 'toHaveBeenCalledWith' },
-          suggestions: [
-            {
-              messageId: 'fixSuggestion',
-              output: dedent`
-                import { expect } from '@storybook/test'
-                import Button from './Button'
-                WithModalOpen.play = async ({ args }) => {
-                  const label = Button.name
-                  await expect(args.onClick).toHaveBeenCalledWith(label)
                 }
               `,
             },

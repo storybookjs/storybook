@@ -12,6 +12,30 @@ export type NormalizedStoryDeclaration =
 
 type StoryDeclarationExpression = NodePath<t.FunctionDeclaration | t.Expression>;
 
+/**
+ * Resolve a story export's declaration to its snippet-ready story shape.
+ *
+ * @example
+ *
+ * ```ts
+ * export const A: Story = { args: {} }; //            → { type: 'config', path }
+ * export const B = {} satisfies Story; //             → { type: 'config', path }
+ * export const C = meta.story({ args: {} }); //       → { type: 'config', path }
+ * export const D = meta.story(); //                   → { type: 'emptyConfig', path }
+ * export const E = Template.bind({}); //              → Template's classified initializer
+ * ```
+ */
+export function normalizeStoryDeclaration(
+  storyDeclaration: NodePath<t.Node>
+): NormalizedStoryDeclaration {
+  const storyPath = declarationExpression(storyDeclaration);
+  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
+  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
+  const unwrappedPath = unwrapTypeExpression(normalizedPath);
+
+  return classifyStoryPath(unwrappedPath);
+}
+
 /** Declaration body that can be classified as a story shape. */
 function declarationExpression(storyDeclaration: NodePath<t.Node>): StoryDeclarationExpression {
   if (storyDeclaration.isFunctionDeclaration()) {
@@ -116,28 +140,4 @@ function classifyStoryPath(storyPath: StoryDeclarationExpression): NormalizedSto
   throw storyPath.buildCodeFrameError(
     'Expected story to be csf factory, function or an object expression'
   );
-}
-
-/**
- * Resolve a story export's declaration to its snippet-ready story shape.
- *
- * @example
- *
- * ```ts
- * export const A: Story = { args: {} }; //            → { type: 'config', path }
- * export const B = {} satisfies Story; //             → { type: 'config', path }
- * export const C = meta.story({ args: {} }); //       → { type: 'config', path }
- * export const D = meta.story(); //                   → { type: 'emptyConfig', path }
- * export const E = Template.bind({}); //              → Template's classified initializer
- * ```
- */
-export function normalizeStoryDeclaration(
-  storyDeclaration: NodePath<t.Node>
-): NormalizedStoryDeclaration {
-  const storyPath = declarationExpression(storyDeclaration);
-  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
-  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
-  const unwrappedPath = unwrapTypeExpression(normalizedPath);
-
-  return classifyStoryPath(unwrappedPath);
 }

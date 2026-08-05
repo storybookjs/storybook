@@ -13020,7 +13020,11 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
+    typescript: ">= 4.9.x"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -13031,14 +13035,21 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
+    "@vue/language-core": "npm:^3.2.7"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
+    vue-component-meta: "npm:^3.2.7"
     vue-component-type-helpers: "npm:^3.2.9"
+    vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
+    typescript: ">= 4.9.x"
     vue: ^3.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -16551,7 +16562,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/language-core@npm:3.3.9":
+"@vue/language-core@npm:3.3.9, @vue/language-core@npm:^3.2.7":
   version: 3.3.9
   resolution: "@vue/language-core@npm:3.3.9"
   dependencies:
@@ -39751,7 +39762,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

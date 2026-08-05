@@ -209,25 +209,19 @@ export async function refreshBeforeStorybookLockfile({
 }
 
 /**
- * Packages allowed past the age gate for the `after-storybook` install.
- *
- * Includes packages served by the local Verdaccio registry (published seconds
- * before install, so they can never satisfy the gate), plus third-party
- * packages Storybook depends on when their latest required version is still
- * inside the gate window (e.g. a fix we cannot wait a week for).
+ * Packages served by the local Verdaccio registry during sandbox generation.
+ * They are published seconds before they are installed, so they can never
+ * satisfy the age gate on their own.
  */
 export const LOCALLY_PUBLISHED_PACKAGE_PATTERNS = [
   ...STORYBOOK_PACKAGE_PATTERNS,
   'create-storybook',
   'sb',
-  // Required by @storybook/vue3-vite (^3.3.9); that release is still inside the
-  // 7-day window and contains a fix we depend on.
-  'vue-component-meta',
 ];
 
 /**
- * Allow the packages in {@link LOCALLY_PUBLISHED_PACKAGE_PATTERNS} past the age
- * gate for the `after-storybook` install, keeping the gate itself in force.
+ * Allow the locally published Storybook packages past the age gate for the
+ * `after-storybook` install, keeping the gate itself in force.
  *
  * This install is the only step in sandbox generation that executes package
  * code (lifecycle scripts, addon postinstall hooks), and it resolves
